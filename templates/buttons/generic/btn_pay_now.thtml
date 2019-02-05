@@ -1,0 +1,8 @@
+{# begin {templatelocation} #}
+<form style="display:inline;" class="frm_pay_now"
+    action="{action_url}" method="post">
+  {gateway_vars}
+  <input type="hidden" name="gateway" value="{gw_name}" />
+  <input type="submit" class="pluginPaypalButton green" name="processorder" value="{btn_text}" />
+</form>
+{# end {templatelocation} #}

@@ -1,0 +1,11 @@
+<plugin>
+    <id>paypal</id>
+    <name>Paypal</name>
+    <description>Provides a product catalog and PayPal interface for selling physical and virtual products.</description>
+    <version>0.6.1</version>
+    <glfusionversion>1.7.0</glfusionversion>
+    <phpversion>7.0.0</phpversion>
+    <url>http://www.glfusion.org</url>
+    <maintainer>Lee Garner</maintainer>
+    <requires>lglib,1.0.7</requires>
+</plugin>

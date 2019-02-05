@@ -1,0 +1,18 @@
+{# begin {templatelocation} #}
+<p>
+Thank you for your purchase from {site_name}.
+{!if gateway_name}
+<br />Payment was made via {gateway_name} and a receipt for your purchase has been emailed to you.
+{!endif}
+</p>
+{!if gateway_url}
+<p>
+You may log into your account at <a href="{gateway_url}">{gateway_url}</a> to view details of this transaction.
+</p>
+{!endif}
+{!if other_msg}
+<p>
+{other_msg}
+</p>
+{!endif}
+{# end {templatelocation} #}

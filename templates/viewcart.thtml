@@ -1,0 +1,189 @@
+{# begin {templatelocation} #}
+<a href="{pi_url}/index.php">{$LANG_PP['back_to_catalog']}</a>
+<div style="text-align:center; margin-left:auto;">
+  <h1>{$LANG_PP['cart_blocktitle']}</h1>
+  <form action="{pi_url}/index.php" method="post" class="ppViewCart" id="ppCartForm">
+    <input type="hidden" name="order_id" value="{order_number}" />
+
+    <table id="paypalViewCartTable" class="paypalViewCartTable">
+      <tr>
+        <th class="aligncenter">{$LANG_PP['description']}</th>
+        <th style="width:10%" class="aligncenter">{$LANG_PP['price']}</th>
+        <th style="width:15%" class="alignright">{$LANG_PP['quantity']}</th>
+        <th style="width:10%" class="alignright">{$LANG_PP['total']}</th>
+        <th style="width:5%" class="aligncenter"></th>
+        <th style="width:5%" class="aligncenter"></th>
+      </tr>
+      <!-- BEGIN ItemRow -->
+      <tr>
+        <td class="alignleft">
+{!if item_link}
+          <a href="{item_link}">{item_dscp}</a>
+{!else}
+          {item_dscp}
+{!endif}
+          {item_options}
+        </td>
+        <td class="alignright">{item_price}</td>
+        <td class="alignright">
+{!if fixed_q}
+          <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
+          {item_quantity}
+{!else}
+          <i class="uk-icon uk-icon-minus uk-text-success" onclick="updateQty('f_qty_{cart_item_id}', -1);"></i>
+          <input style="text-align:right;width:32px;" type="text" id="f_qty_{cart_item_id}"
+                onchange="mustUpdateCart();return false;"
+                name="quantity[{cart_item_id}]" value="{item_quantity}" size="3" maxlength="3" />
+          <i class="uk-icon uk-icon-plus uk-text-success" onclick="updateQty('f_qty_{cart_item_id}', 1);"></i>
+{!endif}
+        </td>
+        <td class="alignright">{item_total}</td>
+        <td class="aligncenter">
+          <a href="{pi_url}/index.php?delcartitem=x&id={cart_item_id}"><i
+              class="uk-icon uk-icon-trash uk-text-danger tooltip" title="{$LANG_PP['delete']}"></i></a>
+        </td>
+{!if taxable}
+        <td class="aligncenter">
+          <span class="tooltip" title="{$LANG_PP['taxable']}">{tax_icon}</i>
+        </td>
+{!else}
+        <td></td>
+{!endif}
+        <input type="hidden" name="item_name_{pp_id}" value="{item_descrip}" />
+        <input type="hidden" name="item_number_{pp_id}" value="{item_id}">
+        <input type="hidden" name="amount_{pp_id}" value="{item_price}">
+      </tr>
+      <!-- END ItemRow -->
+{!if subtotal}
+      <tr>
+        <td colspan="2" class="alignright"><b>{$LANG_PP['item_total']}</b></td>
+        <td colspan="2" class="alignright"><b>{subtotal}</b></td>
+        <td></td>
+      </tr>
+{!endif}
+{!if cart_tax}
+      <tr>
+        <td colspan="2" class="alignright">{tax_on_items}</td>
+        <td colspan="2" class="alignright">{cart_tax}</td>
+        <td></td>
+      </tr>
+{!endif}
+{!if ship_select}
+      <tr>
+        <td colspan="3" class="alignright">{$LANG_PP['shipping']}: {ship_select}</td>
+        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
+      </tr>
+{!elseif shipping}
+      <tr>
+        <td colspan="2" class="alignright">{$LANG_PP['shipping']}
+{!if ship_method}
+({ship_method})
+{!endif}
+        </td>
+        <td id="shipping_cell" colspan="2" class="alignright">{shipping}</td>
+        <td></td>
+      </tr>
+{!endif}
+{!if handling}
+      <tr>
+        <td colspan="2" class="alignright">{$LANG_PP['handling']}</td>
+        <td colspan="2" class="alignright">{handling}</td>
+        <td></td>
+      </tr>
+{!endif}
+      <tr>
+        <td colspan="2" class="alignright"><b>{$LANG_PP['total']}</b></td>
+        <td colspan="2" class="alignright"><b>
+{!if not_final}
+            {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
+{!else}
+        {total_sign} {total}
+{!endif}
+        </b></td>
+        <td></td>
+      </tr>
+    </table>
+    <div id="orderInstructions">{$LANG_PP['order_instr']}:<br />
+      <textarea name="order_instr" rows="4" cols="80">{order_instr}</textarea>
+    </div>
+    <input type="hidden" name="custom" value='{custom}' />
+    <button style="float:none;" type="submit" class="uk-button uk-button-primary" name="updatecart" id="updatebtn">
+      <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_PP['update_cart']}</button>
+    <button style="float:none;" type="reset" class="uk-button uk-button-danger" name="emptycart"
+      onclick="document.location.href='{pi_url}/index.php?emptycart=x';">
+      <i class="uk-icon uk-icon-trash-o"></i>&nbsp;{$LANG_PP['empty_cart']}</button>
+    <div class="uk-width-1-1 uk-margin">
+      <div class="uk-width-2-3 uk-margin floatleft">
+        <div class="gwRadiosOuter">
+          <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning"></i>&nbsp;&nbsp;
+          {$LANG_PP['hlp_gw_select']}<br />
+{!if gateway_radios}
+          {gateway_radios}
+{!if allow_gc}
+          <div class="enterGC ppGatewayRadios">{$LANG_PP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
+            <input type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem" value="{$LANG_PP['apply']}"
+              onclick="ppApplyGC('ppCartForm');return false;" />
+            <input type="hidden" name="refresh" value="viewcart" />
+          </div>
+{!endif}
+{!else}
+          <div class="uk-alert uk-alert-danger">{$LANG_PP['todo_nogateways']}</div>
+{!endif}
+        </div>
+        <div class="gwRadiosOuter">
+          <span class="ppGatewayRadios">{$LANG_PP['enter_email']}:</span>
+          <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_PP_HELP['enter_email']}"></i>
+          <br /><input class="ppGatewayRadios" required type="text" name="payer_email" size="40" value="{payer_email}"/>
+          <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_PP['required']}"></i>
+        </div>
+      </div>
+    
+      <div class="uk-width-1-4 uk-margin floatright" id="checkoutButtons">
+{!if gateway_radios}
+        <input type="hidden" name="next_step" value="{next_step}" />
+        <button style="float:none;" id="submit" type="submit" class="uk-button uk-button-success" name="checkout">
+          <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_PP['checkout']} &gt;&gt;</button>
+{!endif}
+      </div>
+    </div>
+  </form>
+{!if tc_link}
+  <div class="ppTOCLink">
+    <a href="{tc_link}" target="_new">{$LANG_PP['terms_and_cond']}</a>
+  </div>
+{!endif}
+</div>
+<script>
+// Update an item's quantity field.
+function updateQty(fld_id, qty, orig_qty)
+{
+    fld = document.getElementById(fld_id);
+    val = Number(fld.value) + Number(qty);
+    if (val < 1) val = 1;
+    fld.value = val;
+    // Disable checkout buttons to force cart update after changing qty
+    mustUpdateCart();
+    return false;
+}
+// Disables the checkout button to force recalculating the form after any changes.
+function mustUpdateCart()
+{
+    // Require the "update cart" selecttion to recalculate before displaying checkout
+    document.getElementById("checkoutButtons").style.visibility="hidden";
+    document.getElementById("updatebtn").classList.remove("uk-button-primary");
+    document.getElementById("updatebtn").classList.add("uk-button-success");
+    return false;
+}
+function PP_updateShipping(e)
+{
+    if (typeof(e) === "undefined") {
+        return;
+    }
+
+    var newship = e.options[e.selectedIndex].value;
+    var obj = JSON.parse(shipper_json);
+    document.getElementById("ord_total_span").innerHTML = obj[newship].total;
+    document.getElementById("shipping_cell").innerHTML = obj[newship].amount;
+}
+</script>
+{# end {templatelocation} #}

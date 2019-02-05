@@ -1,0 +1,9 @@
+{# begin {templatelocation} #}
+<form style="display:inline;" class="frm_buy_now" action="{action_url}" method="{method}">
+  {gateway_vars}
+  <input type="image"
+    src="https://www.paypalobjects.com/en_US/i/btn/btn_paynow_SM.gif"
+    name="submit"
+    alt="{btn_text}" title="{btn_text}" />
+</form>
+{# end {templatelocation} #}

@@ -1,0 +1,19 @@
+{# begin {templatelocation} #}
+<!-- BEGIN CartRow -->
+  <div class="CartItem">
+    {quantity} x
+{!if item_link}
+      <a href="{item_link}">{item_name}</a>
+{!else}
+      {item_name}
+{!endif}
+{!if options}
+        {options}
+{!endif}
+  </div>
+<!-- END CartRow -->
+  <div id="CartTotal">
+    {$LANG_PP['total']}:
+    <span id="CartTotalAmount">{grand_total}</span>
+  </div>
+{# begin {templatelocation} #}
