@@ -8,23 +8,23 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     0.6.0
  * @since       0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
-use \Paypal\Cart;
-use \Paypal\Coupon;
-use \Paypal\Currency;
+use Shop\Cart;
+use Shop\Coupon;
+use Shop\Currency;
 
 /**
  *  Coupon gateway class, just to provide checkout buttons for coupons
  */
-class test extends \Paypal\Gateway
+class test extends \Shop\Gateway
 {
     /**
      * Constructor.
@@ -32,12 +32,12 @@ class test extends \Paypal\Gateway
      */
     public function __construct()
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'test';
         $this->gw_desc = 'Internal Testing Gateway';
-        $this->gw_url = PAYPAL_URL . '/ipn/internal.php';
+        $this->gw_url = SHOP_URL . '/ipn/internal.php';
         parent::__construct();
     }
 
@@ -54,7 +54,7 @@ class test extends \Paypal\Gateway
      */
     public function checkoutRadio($selected = false)
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         // Get the order total from the cart, and the user's balance
         // to decide what kind of button to show.
@@ -125,7 +125,7 @@ class test extends \Paypal\Gateway
      */
     public function ProductButton($P)
     {
-        global $_PP_CONF, $LANG_PP;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
         $btn_type = $P->btn_type;
@@ -147,8 +147,8 @@ class test extends \Paypal\Gateway
             $vars['item_name'] = htmlspecialchars($P->short_description);
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
-            $vars['return'] = PAYPAL_URL . '/index.php?thanks=paypal';
-            $vars['cancel_return'] = PAYPAL_URL;
+            $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
+            $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();
 
             // Get the allowed buy-now quantity. If not defined, set
@@ -182,7 +182,7 @@ class test extends \Paypal\Gateway
             }
 
             if ($P->taxable) {
-                $vars['tax_rate'] = sprintf("%0.4f", PP_getTaxRate() * 100);
+                $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
             }
 
             // Buy-now product button, set default billing/shipping addresses
@@ -232,10 +232,10 @@ class test extends \Paypal\Gateway
         // phrase if not available
         $btn_text = $P->btn_text;    // maybe provided by a plugin
         if ($btn_text == '') {
-            $btn_text = isset($LANG_PP['buttons'][$btn_type]) ?
-                $LANG_PP['buttons'][$btn_type] : $LANG_PP['buy_now'];
+            $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
+                $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
-        $T = PP_getTemplate('btn_' . $btn_type, 'btn', 'buttons/generic');
+        $T = SHOP_getTemplate('btn_' . $btn_type, 'btn', 'buttons/generic');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,
