@@ -1,12 +1,12 @@
 <?php
 /**
-*   Installation functions for the Paypal plugin.
+*   Installation functions for the Shop plugin.
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @author     Mark Evans <mark@glfusion.org>
 *   @copyright  Copyright (c) 2009 Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2009 Mark Evans <mark@glfusion.org>
-*   @package    paypal
+*   @package    shop
 *   @version    0.4.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
@@ -16,7 +16,7 @@
 /** Import core glFusion functions */
 require_once '../../../lib-common.php';
 /** Import this plugin's installation routines */
-require_once $_CONF['path'].'/plugins/paypal/autoinstall.php';
+require_once $_CONF['path'].'/plugins/shop/autoinstall.php';
 
 USES_lib_install();
 
@@ -39,7 +39,7 @@ if (!SEC_inGroup('Root')) {
 if (SEC_checkToken()) {
     $action = COM_applyFilter($_GET['action']);
     if ($action == 'install') {
-        if (plugin_install_paypal()) {
+        if (plugin_install_shop()) {
     		// Redirects to the plugin editor
     		echo COM_refresh($_CONF['site_admin_url'] . '/plugins.php?msg=44');
     		exit;
@@ -48,7 +48,7 @@ if (SEC_checkToken()) {
     		exit;
         }
     } else if ($action == 'uninstall') {
-    	if (plugin_uninstall_paypal('installed')) {
+    	if (plugin_uninstall_shop('installed')) {
     		// Success - Redirects to the plugin editor
     		echo COM_refresh($_CONF['site_admin_url'] . '/plugins.php?msg=45');
     		exit;

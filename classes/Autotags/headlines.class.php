@@ -1,13 +1,13 @@
 <?php
 /**
- * Handle the headline autotag for the Paypal plugin.
+ * Handle the headline autotag for the Shop plugin.
  * Based on the glFusion headline autotag.
  *
- * @package     paypal
+ * @package     shop
  * @copyright   Copyright (c) 2018 Lee Garner <lee AT leegarner DOT com>
  * @license     GNU General Public License version 2 or later
  */
-namespace Paypal\Autotags;
+namespace Shop\Autotags;
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
@@ -15,7 +15,7 @@ if (!defined ('GVERSION')) {
 
 /**
  * Headline autotag class.
- * @package paypal
+ * @package shop
  */
 class headlines
 {
@@ -42,7 +42,7 @@ class headlines
         // template - the template name
 
         $cacheID = md5($p1 . $fulltag);
-        $retval = \Paypal\Cache::get($cacheID);
+        $retval = \Shop\Cache::get($cacheID);
         if ($retval !== NULL) {
             return $retval;
         } else {
@@ -108,7 +108,7 @@ class headlines
             $where .= ' AND featured = 1';
         }
         if ($category > 0) {
-            $objects = \Paypal\Category::getTree($category);
+            $objects = \Shop\Category::getTree($category);
             foreach ($objects as $Obj) {
                 $cats[] = $Obj->cat_id;
             }
@@ -121,8 +121,8 @@ class headlines
         // The "c.enabled IS NULL" is to allow products which have
         // no category record, as long as the product is enabled.
         $sql = "SELECT id
-            FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
             ON p.cat_id=c.cat_id
             WHERE
                 p.enabled=1 AND (c.enabled=1 OR c.enabled IS NULL) AND
@@ -148,21 +148,21 @@ class headlines
             $T->set_block('page','headlines','hl');
 
             foreach ($allItems as $A) {
-                $P = \Paypal\Product::getInstance($A['id']);
+                $P = \Shop\Product::getInstance($A['id']);
                 $img = $P->getOneImage();
                 $T->set_var(array(
-                    'url'       => PAYPAL_URL . '/detail.php?id='. $P->id,
+                    'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),
                     'title'     => $P->short_description,
-                    'thumb_url' => $img != '' ? PAYPAL_ImageUrl($img) : '',
-                    'large_url' => $img != '' ? PAYPAL_ImageUrl($img, 1024, 1024) : '',
+                    'thumb_url' => $img != '' ? SHOP_ImageUrl($img) : '',
+                    'large_url' => $img != '' ? SHOP_ImageUrl($img, 1024, 1024) : '',
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
                 ) );
                 $T->parse('hl', 'headlines', true);
             }
             $retval = $T->finish($T->parse('output', 'page'));
-            \Paypal\Cache::set($cacheID, $retval, array('products', 'categories'));
+            \Shop\Cache::set($cacheID, $retval, array('products', 'categories'));
         }
         return $retval;
     }

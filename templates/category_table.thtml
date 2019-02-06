@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <!--  <h2>
-    {$LANG_PP['product_categories']}
+    {$LANG_SHOP['product_categories']}
   </h2>
 -->
 <div style="float:left; width:55px;">

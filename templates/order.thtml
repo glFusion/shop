@@ -1,29 +1,29 @@
 {# begin {templatelocation} #}
-<div class="paypalOrderContainer">
+<div class="shopOrderContainer">
 {!if is_admin}
 {!else}
   <p>
-    <div style="display:inline-block;"><a href="{return_url}">{$LANG_PP['go_back']}</a></div>
+    <div style="display:inline-block;"><a href="{return_url}">{$LANG_SHOP['go_back']}</a></div>
 {!if not_anon}
-    <div style="display:inline-block;float:right;"><a href="{site_url}/paypal/index.php?orderhist=x">{$LANG_PP['my_account']}</a></div>
+    <div style="display:inline-block;float:right;"><a href="{site_url}/shop/index.php?orderhist=x">{$LANG_SHOP['my_account']}</a></div>
 {!endif}
   </p>
 {!endif}
-  <h1 class="aligncenter">{$LANG_PP['order_summary']}</h1>
+  <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!if not_final}
 {!else}
   <div class="floatright">
-    <a href="{site_url}/paypal/index.php?printorder={order_number}&token={token}" target="_blank"
-        title="{$LANG_PP['print']}"><i class="uk-icon uk-icon-print tooltip" title="{$LANG_PP['print_order']}"></i>
+    <a href="{site_url}/shop/index.php?printorder={order_number}&token={token}" target="_blank"
+        title="{$LANG_SHOP['print']}"><i class="uk-icon uk-icon-print tooltip" title="{$LANG_SHOP['print_order']}"></i>
     </a>
   </div>
 {!endif}
 
-  <div class="paypalOrder">
+  <div class="shopOrder">
 
     {!if have_billto}
-    <div id="paypalBilling">
-      <b>{$LANG_PP['bill_to']}:</b>
+    <div id="shopBilling">
+      <b>{$LANG_SHOP['bill_to']}:</b>
 {!if not_final}
       <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
@@ -56,8 +56,8 @@
     {!endif}
 
     {!if have_shipto}
-    <div id="paypalShipping">
-      <b>{$LANG_PP['ship_to']}:</b>&nbsp;
+    <div id="shopShipping">
+      <b>{$LANG_SHOP['ship_to']}:</b>&nbsp;
 {!if not_final}
       <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
@@ -91,19 +91,19 @@
 
     {!if checkout}
     {!else}
-    <div id="paypalOrderNumber">
-      {$LANG_PP['order_number']}:&nbsp;&nbsp;{order_number}<br />
-      {$LANG_PP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+    <div id="shopOrderNumber">
+      {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
+      {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
     </div>
     {!endif}
 
-    <div class="paypalOrderItems">
+    <div class="shopOrderItems">
       <table>
         <tr>
-          <th class="aligncenter">{$LANG_PP['description']}</th>
-          <th style="width:10%" class="alignright">{$LANG_PP['price']}</th>
-          <th style="width:10%" class="alignright">{$LANG_PP['quantity']}</th>
-          <th style="width:10%" class="alignright">{$LANG_PP['total']}</th>
+          <th class="aligncenter">{$LANG_SHOP['description']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['quantity']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
           <th style="width:5%;" class="aligncenter">
 {!if icon_dscp}
             <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
@@ -114,14 +114,14 @@
         <tr>
           <td>
 {!if is_admin}
-            <a href="{site_admin_url}/plugins/paypal/index.php?itemhist={item_id}" class="tooltip" title="{$LANG_PP['orderhist_item']}">
+            <a href="{site_admin_url}/plugins/shop/index.php?itemhist={item_id}" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">
 {!endif}
               {item_dscp}
 {!if is_admin}
             </a>
 {!endif}
 {!if is_file}
-            &nbsp;&nbsp;<a href="{site_url}/paypal/download.php?id={item_id}&token={token}" class="uk-icon uk-icon-download tooltip" title="{$LANG_PP['download']}"></a>
+            &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}" class="uk-icon uk-icon-download tooltip" title="{$LANG_SHOP['download']}"></a>
 {!endif}
         {item_options}
         <!-- BEGIN ItemOptions -->
@@ -133,7 +133,7 @@
           <td class="alignright">{item_total}</td>
           <td class="aligncenter">
 {!if taxable}
-            <span class="tooltip" title="{$LANG_PP['taxable']}">{tax_icon}</span>
+            <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
           </td>
         </tr>
@@ -143,7 +143,7 @@
         </tr>
 {!if subtotal}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_PP['item_total']}</td>
+          <td colspan="3" class="alignright">{$LANG_SHOP['item_total']}</td>
           <td class="alignright">{subtotal}</td>
           <td></td>
         </tr>
@@ -157,7 +157,7 @@
 {!endif}
 {!if shipping}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_PP['shipping']}
+          <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
 ({ship_method})
 {!endif}
@@ -168,24 +168,24 @@
 {!endif}
 {!if handling}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_PP['handling']}</td>
+          <td colspan="3" class="alignright">{$LANG_SHOP['handling']}</td>
           <td class="alignright">{handling}</td>
           <td></td>
         </tr>
 {!endif}
         <tr>
-          <td colspan="3" class="alignright"><b>{$LANG_PP['total']}</b></td>
+          <td colspan="3" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
           <td></td>
         </tr>
 {!if apply_gc}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_PP['apply_gc']}</td>
+          <td colspan="3" class="alignright">{$LANG_SHOP['apply_gc']}</td>
           <td class="alignright">-&nbsp;{apply_gc}</td>
           <td></td>
         </tr>
         <tr>
-          <td colspan="3" class="alignright"><b>{$LANG_PP['pmt_total']}</b></td>
+          <td colspan="3" class="alignright"><b>{$LANG_SHOP['pmt_total']}</b></td>
           <td class="alignright"><b>{net_total}</b></td>
           <td></td>
         </tr>
@@ -194,11 +194,11 @@
     </div>
   </div>
 
-  <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_PP['order_instr']}:</span><br />
+  <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
 {!if order_instr}
     {order_instr}
 {!else}
-    <span class="orderInstructions">{$LANG_PP['none']}</span>
+    <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
   </div>
   <hr />
@@ -207,30 +207,30 @@
     <div id="orderPmtMethod">{pmt_logo}</div>
     <div style="float:left;">
       <button class="uk-button uk-button-primary" type="submit" name="viewcart"
-        value="{$LANG_PP['viewcart']}"
-        onclick="document.location.href='{pi_url}/index.php?view=cart';">{$LANG_PP['edit_order']}</button>
+        value="{$LANG_SHOP['viewcart']}"
+        onclick="document.location.href='{pi_url}/index.php?view=cart';">{$LANG_SHOP['edit_order']}</button>
     </div>
-    <div class="paypalOrderButtons">
+    <div class="shopOrderButtons">
       {gateway_vars}
     </div>
     <div style="clear:both;"></div>
 {!if pmt_method}
     <p id="orderPaymentMethod">
-        {$LANG_PP['pmt_method']}: {pmt_method}<br />
-        {$LANG_PP['notify_email']}: {payer_email}
+        {$LANG_SHOP['pmt_method']}: {pmt_method}<br />
+        {$LANG_SHOP['notify_email']}: {payer_email}
 {!endif} 
   {!else}
 {!if is_admin}
-  <p id="orderPurchaser">{$LANG_PP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
-  <p>{$LANG_PP['status']}: {stat_update}</p>
+  <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
+  <p>{$LANG_SHOP['status']}: {stat_update}</p>
 {!else}
-  <p>{$LANG_PP['status']}: {status}</p>
+  <p>{$LANG_SHOP['status']}: {status}</p>
 {!endif}
   {!if pmt_method}
-    <p id="orderPaymentMethod">{$LANG_PP['pmt_method']}: {pmt_method}
+    <p id="orderPaymentMethod">{$LANG_SHOP['pmt_method']}: {pmt_method}
     {!if is_admin}
     {!if pmt_txn_id}
-    , {$LANG_PP['trans_id']}
+    , {$LANG_SHOP['trans_id']}
     <a href="{pi_admin_url}/index.php?ipnlog=x&amp;op=single&amp;txn_id={pmt_txn_id}">
     {pmt_txn_id}
     </a>
@@ -239,13 +239,13 @@
     </p>
   {!endif}
   <p>
-    <table id="paypalOrderLog">
+    <table id="shopOrderLog">
     <tr>
-      <th>{$LANG_PP['timestamp']}</th>
+      <th>{$LANG_SHOP['timestamp']}</th>
 {!if is_admin}
-      <th>{$LANG_PP['username']}</th>
+      <th>{$LANG_SHOP['username']}</th>
 {!endif}
-      <th>{$LANG_PP['message']}</th>
+      <th>{$LANG_SHOP['message']}</th>
     </tr>
     <!-- BEGIN LogMessages -->
     <tr style="line-height: 1.5rem;">

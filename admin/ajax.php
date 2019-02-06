@@ -4,7 +4,7 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2009-2017 Lee Garner <lee@leegarner.com>
-*   @package    paypal
+*   @package    shop
 *   @version    0.5.10
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
@@ -16,8 +16,8 @@ require_once '../../../lib-common.php';
 
 // This is for administrators only.  It's called by Javascript,
 // so don't try to display a message
-if (!plugin_ismoderator_paypal()) {
-    COM_accessLog("User {$_USER['username']} tried to illegally access the paypal admin ajax function.");
+if (!plugin_ismoderator_shop()) {
+    COM_accessLog("User {$_USER['username']} tried to illegally access the shop admin ajax function.");
     exit;
 }
 
@@ -28,7 +28,7 @@ case 'updatestatus':
         $newstatus = $_POST['newstatus'];
         $order_id = $_POST['order_id'];
         $showlog = $_POST['showlog'] == 1 ? 1 : 0;
-        $ord = \Paypal\Order::getInstance($order_id);
+        $ord = \Shop\Order::getInstance($order_id);
         if ($ord->isNew)  {     // non-existant order
             $L = array(
                 'showlog' => 0,
@@ -55,11 +55,11 @@ case 'toggle':
     case 'product':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Paypal\Product::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Product::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
         case 'featured':
-            $newval = \Paypal\Product::toggleFeatured($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Product::toggleFeatured($_POST['oldval'], $_POST['id']);
             break;
 
          default:
@@ -70,7 +70,7 @@ case 'toggle':
     case 'category':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Paypal\Category::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Category::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
          default:
@@ -81,7 +81,7 @@ case 'toggle':
     case 'attribute':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Paypal\Attribute::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Attribute::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
          default:
@@ -93,7 +93,7 @@ case 'toggle':
     case 'shipping':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Paypal\Shipper::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Shipper::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
          default:
@@ -105,15 +105,15 @@ case 'toggle':
     case 'gateway':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Paypal\Gateway::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
         case 'buy_now':
-            $newval = \Paypal\Gateway::toggleBuyNow($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleBuyNow($_POST['oldval'], $_POST['id']);
             break;
 
         case 'donation':
-            $newval = \Paypal\Gateway::toggleDonation($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Gateway::toggleDonation($_POST['oldval'], $_POST['id']);
             break;
 
         default:
@@ -123,13 +123,13 @@ case 'toggle':
 
     case 'workflow':
         $field = $_POST['type'];
-        $wf = \Paypal\Workflow::getInstance($_POST['id']);
+        $wf = \Shop\Workflow::getInstance($_POST['id']);
         if (!$wf) break;
         $newval = $_POST['oldval'];
         $_POST['oldval'] = $wf->enabled;
         switch ($field) {
         case 'enabled':
-            $newval = \Paypal\Workflow::setValue($_POST['id'], $field, $newval);
+            $newval = \Shop\Workflow::setValue($_POST['id'], $field, $newval);
             break;
 
         default:
@@ -143,7 +143,7 @@ case 'toggle':
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            $newval = \Paypal\OrderStatus::Toggle($_POST['id'], $field, $_POST['oldval']);
+            $newval = \Shop\OrderStatus::Toggle($_POST['id'], $field, $_POST['oldval']);
             break;
 
         default:
@@ -162,7 +162,7 @@ case 'toggle':
         'component' => $_POST['component'],
         'newval'    => $newval,
         'statusMessage' => $newval != $_POST['oldval'] ? 
-                $LANG_PP['msg_updated'] : $LANG_PP['msg_nochange'],
+                $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
     );
 
     header('Content-Type: applicsation/json');

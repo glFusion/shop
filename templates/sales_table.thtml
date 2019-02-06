@@ -1,16 +1,16 @@
 {# begin {templatelocation} #}
   <div class="uk-form-row uk-margin-large">
-    <label class="uk-form-label" for="grp_access">{$LANG_PP['sale_prices']}:
+    <label class="uk-form-label" for="grp_access">{$LANG_SHOP['sale_prices']}:
       <span id="sales_list" class="tooltip_cfg tooltipstered"></span>
       <a href="{edit_sale_url}" class="uk-icon uk-icon-edit"></a>
     </label>
     <div class="uk-form-controls">
       <table border="0" width="80%">
       <tr>
-        <th>{$LANG_PP['start']}</th>
-        <th>{$LANG_PP['end']}</th>
-        <th style="text-align:right;">{$LANG_PP['amount']}</th>
-        <th>{$LANG_PP['type']}</th>
+        <th>{$LANG_SHOP['start']}</th>
+        <th>{$LANG_SHOP['end']}</th>
+        <th style="text-align:right;">{$LANG_SHOP['amount']}</th>
+        <th>{$LANG_SHOP['type']}</th>
       </tr>
       <!-- BEGIN SaleList -->
         <tr>

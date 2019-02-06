@@ -4,7 +4,7 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -15,18 +15,18 @@
 require_once '../lib-common.php';
 
 $uid = (int)$_USER['uid'];
-$action = PP_getVar($_GET, 'action');
+$action = SHOP_getVar($_GET, 'action');
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
     $id = (int)$_GET['id']; // Sanitize address ID
-    \Paypal\UserInfo::deleteAddress($id);
+    \Shop\UserInfo::deleteAddress($id);
     break;
 
 case 'getAddress':
     if ($uid < 2) break;
     $id = (int)$_GET['id'];
-    $res = DB_query("SELECT * FROM {$_TABLES['paypal.address']} WHERE id=$id",1);
+    $res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
     $A = DB_fetchArray($res, false);
     break;
 
@@ -35,33 +35,33 @@ case 'addcartitem':
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
-    $P = \Paypal\Product::getInstance($_POST['item_number']);
+    $P = \Shop\Product::getInstance($_POST['item_number']);
     if ($P->isNew) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
-    $Cart = \Paypal\Cart::getInstance();
-    $unique = PP_getVar($_POST, '_unique', 'integer');
+    $Cart = \Shop\Cart::getInstance();
+    $unique = SHOP_getVar($_POST, '_unique', 'integer');
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
         break;
     }
     $args = array(
         'item_number'   => $_POST['item_number'],     // isset ensured above
-        'item_name'     => PP_getVar($_POST, 'item_name'),
-        'short_dscp'    => PP_getVar($_POST, 'short_dscp'),
-        'quantity'      => PP_getVar($_POST, 'quantity', 'int'),
-        //'price'         => PP_getVar($_POST, 'base_price', 'float'),
+        'item_name'     => SHOP_getVar($_POST, 'item_name'),
+        'short_dscp'    => SHOP_getVar($_POST, 'short_dscp'),
+        'quantity'      => SHOP_getVar($_POST, 'quantity', 'int'),
+        //'price'         => SHOP_getVar($_POST, 'base_price', 'float'),
         'price'         => $P->getPrice(),
-        'options'       => PP_getVar($_POST, 'options', 'array'),
-        'extras'        => PP_getVar($_POST, 'extras', 'array'),
-        'tax'           => PP_getVar($_POST, 'tax', 'float'),
+        'options'       => SHOP_getVar($_POST, 'options', 'array'),
+        'extras'        => SHOP_getVar($_POST, 'extras', 'array'),
+        'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
     $Cart->addItem($args);
     $A = array(
-        'content' => phpblock_paypal_cart_contents(),
-        'statusMessage' => $LANG_PP['msg_item_added'],
+        'content' => phpblock_shop_cart_contents(),
+        'statusMessage' => $LANG_SHOP['msg_item_added'],
         'ret_url' => isset($_POST['_ret_url']) && !empty($_POST['_ret_url']) ?
                 $_POST['_ret_url'] : '',
         'unique' => $unique ? true : false,
@@ -71,8 +71,8 @@ case 'addcartitem':
     break;
 
 case 'finalizecart':
-    $cart_id = PP_getVar($_POST, 'cart_id');
-    $status = \Paypal\Cart::setFinal($cart_id);
+    $cart_id = SHOP_getVar($_POST, 'cart_id');
+    $status = \Shop\Cart::setFinal($cart_id);
     $A = array(
         'status' => $status,
     );
@@ -83,15 +83,15 @@ case 'finalizecart':
 case 'redeem_gc':
     if (COM_isAnonUser()) {
         $A = array(
-            'statusMessage' => $LANG_PP['gc_need_acct'],
+            'statusMessage' => $LANG_SHOP['gc_need_acct'],
             'html' => '',
             'status' => false,
         );
     } else {
-        $code = PP_getVar($_POST, 'gc_code');
+        $code = SHOP_getVar($_POST, 'gc_code');
         $uid = $_USER['uid'];
-        list($status, $status_msg) = \Paypal\Coupon::Redeem($code, $uid);
-        $gw = \Paypal\Gateway::getInstance('_coupon');
+        list($status, $status_msg) = \Shop\Coupon::Redeem($code, $uid);
+        $gw = \Shop\Gateway::getInstance('_coupon');
         $gw_radio = $gw->checkoutRadio($status == 0 ? true : false);
         $A = array (
             'statusMessage' => $status_msg,

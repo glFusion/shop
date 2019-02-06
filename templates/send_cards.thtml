@@ -1,18 +1,18 @@
 {# begin {templatelocation} #}
 <script src="{site_url}/javascript/moveusers.js"></script>
-<h2 class="aligncenter">{$LANG_PP['sendgc_header']}</h2>
-<form id="submit" action="{site_admin_url}/plugins/paypal/index.php" method="post" class="uk-form uk-form-horizontal">
+<h2 class="aligncenter">{$LANG_SHOP['sendgc_header']}</h2>
+<form id="submit" action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal">
 
     <div class="uk-form-row">
-      <label class="uk-form-label">{$LANG_PP['amount']}:</label>
+      <label class="uk-form-label">{$LANG_SHOP['amount']}:</label>
       <div class="uk-form-controls">
         <input required type="text" name="amount" style="text-align:right;" placeholder="0.00" />
-        <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_PP['required']}"></i>
+        <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
       </div>
     </div>
 
     <div class="uk-form-row">
-      <label class="uk-form-label">{$LANG_PP['expiration']}:</label>
+      <label class="uk-form-label">{$LANG_SHOP['expiration']}:</label>
       <div class="uk-form-controls">
         <input type="text" name="expires" data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{expires}" />
       </div>
@@ -49,10 +49,10 @@
           </td>
           <td class="aligncenter">
             <button class="uk-button uk-button-mini uk-button-primary" name="right" type="submit"
-              onclick="moveSelectedOptions(this.form['fieldFrom'],this.form['fieldTo'],false);return false;">{$LANG_PP['include']}&nbsp;&gt;&gt;</button>
+              onclick="moveSelectedOptions(this.form['fieldFrom'],this.form['fieldTo'],false);return false;">{$LANG_SHOP['include']}&nbsp;&gt;&gt;</button>
             <br /><br />
             <button class="uk-button uk-button-mini uk-button-primary" name="left" type="submit"
-              onclick="moveSelectedOptions(this.form['fieldTo'],this.form['fieldFrom'],false);return false;">&lt;&lt;&nbsp;{$LANG_PP['exclude']}</button>
+              onclick="moveSelectedOptions(this.form['fieldTo'],this.form['fieldFrom'],false);return false;">&lt;&lt;&nbsp;{$LANG_SHOP['exclude']}</button>
           </td>
           <td width="40%" class="alignleft" style="padding-left:5px;">
             <select multiple="multiple" size="10" name="fieldTo"
@@ -68,8 +68,8 @@
     <div class="uk-form-row">
       <div class="uk-form-controls">
         <button type="submit" class="uk-button uk-button-success" name="sendcards"
-            value="{$LANG_PP['send_giftcards']}"
-            onclick="return confirm('{$LANG_PP['confirm_send_gc']}') && setUsers(this.form);">{$LANG_PP['send_giftcards']}</button>
+            value="{$LANG_SHOP['send_giftcards']}"
+            onclick="return confirm('{$LANG_SHOP['confirm_send_gc']}') && setUsers(this.form);">{$LANG_SHOP['send_giftcards']}</button>
       </div>
     </div>
 </form>

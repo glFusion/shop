@@ -4,24 +4,24 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
-use \Paypal\Cart;
-use \Paypal\Coupon;
-use \Paypal\Currency;
+use Shop\Cart;
+use Shop\Coupon;
+use Shop\Currency;
 
 /**
  * Coupon gateway class, just to provide checkout buttons for coupons.
- * @package paypal
+ * @package shop
  */
-class _coupon extends \Paypal\Gateway
+class _coupon extends \Shop\Gateway
 {
     /**
      * Constructor.
@@ -29,12 +29,12 @@ class _coupon extends \Paypal\Gateway
      */
     public function __construct()
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
         $this->gw_name = '_coupon';
-        $this->gw_desc = $LANG_PP['apply_gc'];
-        $this->gw_url = PAYPAL_URL . '/ipn/internal.php';
+        $this->gw_desc = $LANG_SHOP['apply_gc'];
+        $this->gw_url = SHOP_URL . '/ipn/internal.php';
         parent::__construct();
     }
 
@@ -51,7 +51,7 @@ class _coupon extends \Paypal\Gateway
      */
     public function checkoutRadio($selected = false)
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         // Get the order total from the cart, and the user's balance
         // to decide what kind of button to show.
@@ -76,7 +76,7 @@ class _coupon extends \Paypal\Gateway
             // GC balance is not enough, option to apply the whole thing.
             $radio = '<input type="checkbox" name="by_gc" value="' . $gc_bal .
                 '" checked="checked" />&nbsp;';
-            $radio .= sprintf($LANG_PP['use_gc_full'],
+            $radio .= sprintf($LANG_SHOP['use_gc_full'],
                     Currency::getInstance()->Format($gc_bal));
         } elseif ($gc_bal >= $gc_can_apply && $gc_can_apply == $total) {
             // GC balance is enough to pay for the order. Show a regular
@@ -84,7 +84,7 @@ class _coupon extends \Paypal\Gateway
             $sel = $selected ? 'checked="checked" ' : '';
             $radio = '<input required type="radio" name="gateway" value="' .
                 $this->gw_name . '" ' . $sel . '/>&nbsp;';
-            $radio .= sprintf($LANG_PP['use_gc_part'],
+            $radio .= sprintf($LANG_SHOP['use_gc_part'],
                     Currency::getInstance()->Format($gc_can_apply),
                     Currency::getInstance()->Format($gc_bal));
             // Make sure any apply_gc amount is hidden, it will be created
@@ -97,11 +97,11 @@ class _coupon extends \Paypal\Gateway
             $by_gc = min($gc_bal, $gc_can_apply);
             $radio = '<input type="checkbox" name="by_gc" value="' . $by_gc .
                 '" checked="checked" />&nbsp;';
-            $radio .= sprintf($LANG_PP['use_gc_part'],
+            $radio .= sprintf($LANG_SHOP['use_gc_part'],
                     Currency::getInstance()->Format($by_gc),
                     Currency::getInstance()->Format($gc_bal));
             if ($gc_can_apply < $total) {
-                $radio .= '<br /><div class="ppNoGCMsg">' . $LANG_PP['some_gc_disallowed'] . '</div>';
+                $radio .= '<br /><div class="ppNoGCMsg">' . $LANG_SHOP['some_gc_disallowed'] . '</div>';
             }
         }
         return $radio;

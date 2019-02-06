@@ -4,20 +4,20 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2013 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.5.2
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
 /**
  * Class for check payments.
  * @since   v0.5.1
- * @package paypal
+ * @package shop
  */
-class check extends \Paypal\Gateway
+class check extends \Shop\Gateway
 {
 
     /**
@@ -26,7 +26,7 @@ class check extends \Paypal\Gateway
      */
     public function __construct()
     {
-        global $_PP_CONF, $LANG, $LANG_PP;
+        global $_SHOP_CONF, $LANG, $LANG_SHOP;
 
         // These are used by the parent constructor, set them first
         $this->gw_name = 'check';
@@ -39,7 +39,7 @@ class check extends \Paypal\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->config = array();
-        foreach ($LANG_PP['prod_types'] as $typeID=>$text) {
+        foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
             $this->config['prod_types'][$typeID] = 1;
         }
 
@@ -53,7 +53,7 @@ class check extends \Paypal\Gateway
         // override defaults
         parent::__construct();
 
-        $this->gw_url = PAYPAL_URL;
+        $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
     }
 
@@ -129,16 +129,16 @@ class check extends \Paypal\Gateway
      */
     public function XProductButton($P)
     {
-        global $LANG_PP_check;
+        global $LANG_SHOP_check;
 
-        if (!$this->Supports($P->btn_type) || $P->prod_type != PP_PROD_PHYSICAL) {
+        if (!$this->Supports($P->btn_type) || $P->prod_type != SHOP_PROD_PHYSICAL) {
             return '';
         }
 
         // If this is a physical item, instruct the gateway to collect
         // the shipping address.
         /*$type = $P->prod_type;
-        if ($type & PP_PROD_PHYSICAL == PP_PROD_PHYSICAL) {
+        if ($type & SHOP_PROD_PHYSICAL == SHOP_PROD_PHYSICAL) {
             $this->get_shipping = 1;
         }*/
 
@@ -153,7 +153,7 @@ class check extends \Paypal\Gateway
                     '" value="' . $value. '" />' . LB;
         }
 
-        $T = PP_getTemplate('btn' . self::gwButtonType($P->btn_type), 'btn',
+        $T = SHOP_getTemplate('btn' . self::gwButtonType($P->btn_type), 'btn',
                     'buttons/' . $this->gw_name);
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
@@ -197,7 +197,7 @@ class check extends \Paypal\Gateway
         $this->_addItem($attribs['item_number'], $attribs['amount']);
         $gateway_vars = $this->_getButton($btn_type);
 
-        $T = PP_getTemplate('btn_buy_now', 'btn', 'buttons/' . $this->gw_name);
+        $T = SHOP_getTemplate('btn_buy_now', 'btn', 'buttons/' . $this->gw_name);
         $T->set_var('amazon_url', $this->getActionUrl());
         $T->set_var('gateway_vars', $gateway_vars);
         $retval = $T->parse('', 'btn');
@@ -217,7 +217,7 @@ class check extends \Paypal\Gateway
      */
     private function _getButton($btn_type)
     {
-        global $_PP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER;
 
         // Make sure we have at least one item
         if (!$this->Supports($btn_type) || empty($this->items)) return '';
@@ -235,8 +235,8 @@ class check extends \Paypal\Gateway
             'amount'            => $this->currency_code . ' ' . $total_amount,
             'referenceId'       => $custom,
             'description'       => $description,
-            'returnUrl'         => PAYPAL_URL . '/index.php?thanks=amazon',
-            'abandonUrl'        => PAYPAL_URL,
+            'returnUrl'         => SHOP_URL . '/index.php?thanks=amazon',
+            'abandonUrl'        => SHOP_URL,
         );
 
         $gateway_vars .= '<input type="hidden" name="signature" value="' .
@@ -312,19 +312,19 @@ class check extends \Paypal\Gateway
      */
     protected function getConfigFields()
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         $fields = array();
         foreach($this->config as $name=>$value) {
             switch ($name) {
             case 'prod_types':
                 $field = '';
-                foreach ($LANG_PP['prod_types'] as $typeID=>$text) {
+                foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
                     $chk = isset($this->config['prod_types'][$typeID]) ?
                             'checked="checked"' : '';
                     $field .= '<input type="checkbox" name="prod_types[' .
                         $typeID . ']" value="1" ' . $chk . ' />&nbsp;' .
-                        $LANG_PP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
+                        $LANG_SHOP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
                 }
                 break;
             case 'test_mode':
@@ -358,10 +358,10 @@ class check extends \Paypal\Gateway
      */
     public function XConfigure()
     {
-        global $_CONF, $LANG_PP, $LANG_PP_check;
+        global $_CONF, $LANG_SHOP, $LANG_SHOP_check;
 
         $T = self::getTemplate();
-        $doc_url = PAYPAL_getDocUrl('gwhelp_' . $this->gw_name . '.html',
+        $doc_url = SHOP_getDocUrl('gwhelp_' . $this->gw_name . '.html',
                 $_CONF['language']);
 
         $svc_boxes = $this->getServiceCheckboxes();
@@ -371,7 +371,7 @@ class check extends \Paypal\Gateway
             'gw_id'         => $this->gw_name,
             'enabled_chk'   => $this->enabled == 1 ? ' checked="checked"' : '',
             'orderby'       => $this->orderby,
-            'pi_admin_url'  => PAYPAL_ADMIN_URL,
+            'pi_admin_url'  => SHOP_ADMIN_URL,
             'doc_url'       => $doc_url,
             'svc_checkboxes' => $svc_boxes,
         ) );
@@ -381,12 +381,12 @@ class check extends \Paypal\Gateway
             switch ($name) {
             case 'prod_types':
                 $field = '';
-                foreach ($LANG_PP['prod_types'] as $typeID=>$text) {
+                foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
                     $chk = isset($this->config['prod_types'][$typeID]) ?
                             'checked="checked"' : '';
                     $field .= '<input type="checkbox" name="prod_types[' .
                         $typeID . ']" value="1" ' . $chk . ' />' .
-                        $LANG_PP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
+                        $LANG_SHOP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
                 }
                 break;
             case 'test_mode':
@@ -402,7 +402,7 @@ class check extends \Paypal\Gateway
             }
 
             $T->set_var(array(
-                'param_name'    => $LANG_PP_check[$name],
+                'param_name'    => $LANG_SHOP_check[$name],
                 'param_field'   => $field,
                 'field_name'    => $name,
                 'doc_url'       => $doc_url,
@@ -495,18 +495,18 @@ class check extends \Paypal\Gateway
      */
     public function handlePurchase($vals = array())
     {
-        global $LANG_PP_gateway, $_PP_CONF;
+        global $LANG_SHOP_gateway, $_SHOP_CONF;
 
-        $cart_id = PP_getVar($vals, 'cart_id');
+        $cart_id = SHOP_getVar($vals, 'cart_id');
         if (empty($cart_id)) {
             return '';
         }
-        $Order = \Paypal\Order::getInstance($cart_id);
+        $Order = \Shop\Order::getInstance($cart_id);
         if ($Order->isNew) {
             return '';
         } 
 
-        $T = new \Template(PAYPAL_PI_PATH . '/templates');
+        $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('remit', 'remit_form.thtml');
         $T->set_var(array(
             'order_id'  => $Order->order_id,
@@ -526,9 +526,9 @@ class check extends \Paypal\Gateway
      */
     private function _handlePurchase($vals)
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP_gateway;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP_gateway;
 
-        USES_paypal_functions();
+        USES_shop_functions();
         if (!empty($vals['cart_id'])) {
             $cart = new Cart($vals['cart_id']);
             if (!$cart->hasItems()) return; // shouldn't be empty
@@ -555,8 +555,8 @@ class check extends \Paypal\Gateway
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
-            if (PAYPAL_is_plugin_item($item_number)) {
-                PAYPAL_debug("handlePurchase for Plugin item " .
+            if (SHOP_is_plugin_item($item_number)) {
+                SHOP_debug("handlePurchase for Plugin item " .
                         $item_number);
 
                 // Initialize item info array to be used later
@@ -572,7 +572,7 @@ class check extends \Paypal\Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                PAYPAL_debug("Got name " . $items[$id]['name']);
+                SHOP_debug("Got name " . $items[$id]['name']);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -587,11 +587,11 @@ class check extends \Paypal\Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= PP_PROD_VIRTUAL;
+                $prod_types |= SHOP_PROD_VIRTUAL;
 
             } else {
-                PAYPAL_debug("Paypal item " . $item_number);
-                $P = new \Paypal\Product($item_number);
+                SHOP_debug("Shop item " . $item_number);
+                $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
                     'expiration' => $P->expiration,
@@ -621,7 +621,7 @@ class check extends \Paypal\Gateway
 
             // If it's a downloadable item, then get the full path to the file.
             if (!empty($A['file'])) {
-                $this->items[$id]['file'] = $_PP_CONF['download_path'] . $A['file'];
+                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $A['file'];
                 $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
@@ -637,10 +637,10 @@ class check extends \Paypal\Gateway
                 $items[$id]['name'] = $A['short_description'];
             }
 
-            // Add the purchase to the paypal purchase table
+            // Add the purchase to the shop purchase table
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
-            $sql = "INSERT INTO {$_TABLES['paypal.purchases']} SET
+            $sql = "INSERT INTO {$_TABLES['shop.purchases']} SET
                         order_id = '{$db_order_id}',
                         product_id = '{$item_number}',
                         description = '{$items[$id]['name']}',
@@ -653,7 +653,7 @@ class check extends \Paypal\Gateway
                         options = '" . DB_escapeString($item_opts) . "'";
 
             //echo $sql;die;
-            PAYPAL_debug($sql);
+            SHOP_debug($sql);
             DB_query($sql);
 
         }   // foreach item
@@ -662,14 +662,14 @@ class check extends \Paypal\Gateway
 
         // If this was a user's cart, then clear that also
         if (isset($vals['cart_id']) && !empty($vals['cart_id'])) {
-            DB_delete($_TABLES['paypal.cart'], 'cart_id', $vals['cart_id']);
+            DB_delete($_TABLES['shop.cart'], 'cart_id', $vals['cart_id']);
         }
 
-        $gw_msg = $LANG_PP_check['make_check_to'] . ':<br />' .
-                $_PP_CONF['shop_name'] . '<br /><br />' .
-                $LANG_PP_check['remit_to'] . ':<br />' .
-                $_PP_CONF['shop_name'] . '<br />' .
-                $_PP_CONF['shop_addr'];
+        $gw_msg = $LANG_SHOP_check['make_check_to'] . ':<br />' .
+                $_SHOP_CONF['shop_name'] . '<br /><br />' .
+                $LANG_SHOP_check['remit_to'] . ':<br />' .
+                $_SHOP_CONF['shop_name'] . '<br />' .
+                $_SHOP_CONF['shop_addr'];
         $Order->Notify('pending', $gw_msg);
     }
 

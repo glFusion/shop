@@ -5,18 +5,18 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
- * Base class for Paypal payment gateway.
+ * Base class for Shop payment gateway.
  * Provides common variables and methods required by payment gateway classes.
- * @package paypal
+ * @package shop
  * @since  0.5.0
  */
 class Gateway
@@ -39,7 +39,7 @@ class Gateway
      * @var mixed */
     public  $Error;
 
-    /** The short name of the gateway, e.g. "paypal" or "amazon".
+    /** The short name of the gateway, e.g. "shop" or "amazon".
      * @var string */
     protected $gw_name;
 
@@ -47,7 +47,7 @@ class Gateway
      * @var string*/
     protected $gw_desc;
 
-    /** The provider name, e.g. "Amazon" or "Paypal".
+    /** The provider name, e.g. "Amazon" or "Shop".
      * @var string; */
     protected $gw_provider;
 
@@ -134,14 +134,14 @@ class Gateway
      */
     function __construct($A = array())
     {
-        global $_PP_CONF, $_TABLES, $_USER;
+        global $_SHOP_CONF, $_TABLES, $_USER;
 
         $this->properties = array();
         $this->items = array();
         $this->custom = array();
-        $this->ipn_url = PAYPAL_URL . '/ipn/' . $this->gw_name . '.php';
-        $this->currency_code = empty($_PP_CONF['currency']) ? 'USD' :
-            $_PP_CONF['currency'];
+        $this->ipn_url = SHOP_URL . '/ipn/' . $this->gw_name . '.php';
+        $this->currency_code = empty($_SHOP_CONF['currency']) ? 'USD' :
+            $_SHOP_CONF['currency'];
 
         // Set the provider name if not supplied by the gateway
         if (empty($this->gw_provider)) {
@@ -162,7 +162,7 @@ class Gateway
 
         if (empty($A)) {
             $sql = "SELECT *
-                FROM {$_TABLES['paypal.gateways']}
+                FROM {$_TABLES['shop.gateways']}
                 WHERE id = '" . DB_escapeString($this->gw_name) . "'";
             $res = DB_query($sql);
             if ($res) $A = DB_fetchArray($res, false);
@@ -277,7 +277,7 @@ class Gateway
         $pi_name = DB_escapeString($P->pi_name);
         $item_id = DB_escapeString($P->item_id);
         $btn_key = DB_escapeString($btn_key);
-        $btn  = DB_getItem($_TABLES['paypal.buttons'], 'button',
+        $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
                 "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
                 gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'");
         return $btn;
@@ -301,7 +301,7 @@ class Gateway
         $btn_key = DB_escapeString($btn_key);
         $btn_value = DB_escapeString($btn_value);
 
-        $sql = "INSERT INTO {$_TABLES['paypal.buttons']}
+        $sql = "INSERT INTO {$_TABLES['shop.buttons']}
                 (pi_name, item_id, gw_name, btn_key, button)
             VALUES
                 ('{$pi_name}', '{$item_id}', '{$this->gw_name}', '{$btn_key}', '{$btn_value}')
@@ -326,7 +326,7 @@ class Gateway
         if (is_array($A)) {
             $this->enabled = isset($A['enabled']) ? 1 : 0;
             $this->orderby = (int)$A['orderby'];
-            $services = PP_getVar($A, 'service', 'array');
+            $services = SHOP_getVar($A, 'service', 'array');
         }
         $config = @serialize($this->config);
         if (!$config) return false;
@@ -335,7 +335,7 @@ class Gateway
         $services = DB_escapeString(@serialize($services));
         $id = DB_escapeString($this->gw_name);
 
-        $sql = "UPDATE {$_TABLES['paypal.gateways']} SET
+        $sql = "UPDATE {$_TABLES['shop.gateways']} SET
                 config = '$config',
                 services = '$services',
                 orderby = '{$this->orderby}',
@@ -374,7 +374,7 @@ class Gateway
         // Determing the new value (opposite the old)
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES['paypal.gateways']}
+        $sql = "UPDATE {$_TABLES['shop.gateways']}
                 SET $varname=$newvalue
                 WHERE id='$id'";
         //echo $sql;die;
@@ -438,7 +438,7 @@ class Gateway
         global $_TABLES;
 
         $sql = "SELECT id, orderby
-                FROM {$_TABLES['paypal.gateways']}
+                FROM {$_TABLES['shop.gateways']}
                 ORDER BY orderby ASC;";
         $result = DB_query($sql);
 
@@ -446,7 +446,7 @@ class Gateway
         $stepNumber = 10;
         while ($A = DB_fetchArray($result, false)) {
             if ($A['orderby'] != $order) {  // only update incorrect ones
-                $sql = "UPDATE {$_TABLES['paypal.gateways']}
+                $sql = "UPDATE {$_TABLES['shop.gateways']}
                     SET orderby = '$order'
                     WHERE id = '" . DB_escapeString($A['id']) . "'";
                 DB_query($sql);
@@ -481,7 +481,7 @@ class Gateway
 
         if (!empty($oper)) {
             $id = DB_escapeString($id);
-            $sql = "UPDATE {$_TABLES['paypal.gateways']}
+            $sql = "UPDATE {$_TABLES['shop.gateways']}
                     SET orderby = orderby $oper 11
                     WHERE id = '$id'";
             //echo $sql;die;
@@ -498,7 +498,7 @@ class Gateway
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['paypal.buttons'], 'gw_name', $this->gw_name);
+        DB_delete($_TABLES['shop.buttons'], 'gw_name', $this->gw_name);
     }
 
 
@@ -526,7 +526,7 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['paypal.gateways']}
+            $sql = "INSERT INTO {$_TABLES['shop.gateways']}
                 (id, orderby, enabled, description, config, services) VALUES (
                 '" . DB_escapeString($this->gw_name) . "',
                 '999',
@@ -551,7 +551,7 @@ class Gateway
         global $_TABLES;
 
         $this->ClearButtonCache();
-        DB_delete($_TABLES['paypal.gateways'], 'id', $this->gw_name);
+        DB_delete($_TABLES['shop.gateways'], 'id', $this->gw_name);
         Cache::clear('gateways');
     }
 
@@ -563,13 +563,13 @@ class Gateway
      */
     protected function getServiceCheckboxes()
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
-        $T = PP_getTemplate('gw_servicechk', 'tpl');
+        $T = SHOP_getTemplate('gw_servicechk', 'tpl');
         $T->set_block('tpl', 'ServiceCheckbox', 'cBox');
         foreach ($this->services as $name => $value) {
             $T->set_var(array(
-                'text'      => $LANG_PP['buttons'][$name],
+                'text'      => $LANG_SHOP['buttons'][$name],
                 'name'      => $name,
                 'checked'   => $value == 1 ? 'checked="checked"' : '',
             ) );
@@ -598,7 +598,7 @@ class Gateway
 
 
     /**
-     * Check if a gateway from the $_PP_CONF array supports a button type.
+     * Check if a gateway from the $_SHOP_CONF array supports a button type.
      * The $gw_info parameter should be the array of info for a single gateway
      * if only that gateway is to be checked.
      *
@@ -607,13 +607,13 @@ class Gateway
      */
     public function Supports($btn_type)
     {
-        return PP_getVar($this->services, $btn_type, 'integer', 0) ? true : false;
+        return SHOP_getVar($this->services, $btn_type, 'integer', 0) ? true : false;
     }
 
 
     /**
      * Load a gateway's language file.
-     * The language variable should be $LANG_PP_<gwname> and should be
+     * The language variable should be $LANG_SHOP_<gwname> and should be
      * declared "global" in the language file.
      *
      * @return  array   Array of language strings
@@ -623,13 +623,13 @@ class Gateway
         global $_CONF;
 
         $langfile = $this->gw_name . '_' . $_CONF['language'] . '.php';
-        if (!is_file(PAYPAL_PI_PATH . '/language/' . $langfile)) {
+        if (!is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
             $langfile = $this->gw_name . '_english.php';
         }
-        global $LANG_PP_gateway;
-        if (is_file(PAYPAL_PI_PATH . '/language/' . $langfile)) {
-            include_once PAYPAL_PI_PATH . '/language/' . $langfile;
-            return $LANG_PP_gateway;
+        global $LANG_SHOP_gateway;
+        if (is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
+            include_once SHOP_PI_PATH . '/language/' . $langfile;
+            return $LANG_SHOP_gateway;
         } else {
             return array();
         }
@@ -646,7 +646,7 @@ class Gateway
      */
     public function getPaidStatus($types)
     {
-        if ($types == PP_PROD_DOWNLOAD) {
+        if ($types == SHOP_PROD_DOWNLOAD) {
             // Only downloadable items
             $retval = 'closed';
         } else {
@@ -664,9 +664,9 @@ class Gateway
      */
     public function handlePurchase($vals = array())
     {
-        global $_TABLES, $_CONF, $_PP_CONF;
+        global $_TABLES, $_CONF, $_SHOP_CONF;
 
-        USES_paypal_functions();
+        USES_shop_functions();
 
         if (!empty($vals['cart_id'])) {
             $cart = new Cart($vals['cart_id']);
@@ -685,13 +685,13 @@ class Gateway
         // For each item purchased, record purchase in purchase table
         foreach ($items as $id=>$item) {
             //COM_errorLog("Processing item: $id");
-            list($item_number, $item_opts) = PAYPAL_explode_opts($id, true);
+            list($item_number, $item_opts) = SHOP_explode_opts($id, true);
 
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
-            if (PAYPAL_is_plugin_item($item_number)) {
-                PAYPAL_debug("handlePurchase for Plugin item " .
+            if (SHOP_is_plugin_item($item_number)) {
+                SHOP_debug("handlePurchase for Plugin item " .
                         $item_number);
 
                 // Initialize item info array to be used later
@@ -700,7 +700,7 @@ class Gateway
                 // Split the item number into component parts.  It could
                 // be just a single string, depending on the plugin's needs.
                 $pi_info = explode(':', $item['item_number']);
-                PAYPAL_debug('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true));
+                SHOP_debug('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true));
 
                 $status = LGLIB_invokeService($pi_info[0], 'productinfo',
                         array($item_number, $item_opts),
@@ -712,7 +712,7 @@ class Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                PAYPAL_debug("Paymentgw::handlePurchase() Got name " . $items[$id]['name']);
+                SHOP_debug("Paymentgw::handlePurchase() Got name " . $items[$id]['name']);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -724,10 +724,10 @@ class Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= PP_PROD_VIRTUAL;
+                $prod_types |= SHOP_PROD_VIRTUAL;
 
             } else {
-                PAYPAL_debug("Paypal item " . $item_number);
+                SHOP_debug("Shop item " . $item_number);
                 $P = Product::getInstance($item_number);
                 $A = array(
                     'name' => $P->getName(),
@@ -759,7 +759,7 @@ class Gateway
             // If it's a downloadable item, then get the full path to the file.
             // TODO: pp_data isn't available here, should be from $vals?
             if (!empty($A['file'])) {
-                $this->items[$id]['file'] = $_PP_CONF['download_path'] . $A['file'];
+                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $A['file'];
                 $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
@@ -775,10 +775,10 @@ class Gateway
                 $items[$id]['name'] = $A['short_description'];
             }
 
-            // Add the purchase to the paypal purchase table
+            // Add the purchase to the shop purchase table
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
-            $sql = "INSERT INTO {$_TABLES['paypal.purchases']} SET
+            $sql = "INSERT INTO {$_TABLES['shop.purchases']} SET
                         order_id = '{$db_order_id}',
                         product_id = '{$item_number}',
                         description = '{$items[$id]['name']}',
@@ -792,11 +792,11 @@ class Gateway
 
             // add an expiration date if appropriate
             if (is_numeric($A['expiration']) && $A['expiration'] > 0) {
-                $sql .= ", expiration = DATE_ADD('" . PAYPAL_now()->toMySQL() .
+                $sql .= ", expiration = DATE_ADD('" . SHOP_now()->toMySQL() .
                         "', INTERVAL {$A['expiration']} DAY)";
             }
             //echo $sql;die;
-            PAYPAL_debug($sql);
+            SHOP_debug($sql);
             DB_query($sql);
 
         }   // foreach item
@@ -898,12 +898,12 @@ class Gateway
      */
     public function checkoutButton($cart)
     {
-        global $_PP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER;
 
         if (!$this->_Supports('checkout')) return '';
 
         $gateway_vars = $this->gatewayVars($cart);
-        $T = PP_getTemplate('btn_checkout', 'btn', 'templates/buttons');
+        $T = SHOP_getTemplate('btn_checkout', 'btn', 'templates/buttons');
         $T->set_var(array(
             'action'    => $this->getActionUrl(),
             'method'    => $this->getMethod(),
@@ -1082,25 +1082,25 @@ class Gateway
      *
      * getServiceCheckboxes() is available to create the list of checkboxes
      * for button types handled by this gateway.  Refer to the instance in
-     * the paypal gateway for guidance.
+     * the shop gateway for guidance.
      *
      * @return  string      HTML for the configuration form.
      */
     public function Configure()
     {
-        global $_CONF, $LANG_PP, $_PP_CONF;
+        global $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
-        $T = PP_getTemplate('gateway_edit', 'tpl');
+        $T = SHOP_getTemplate('gateway_edit', 'tpl');
         $svc_boxes = $this->getServiceCheckboxes();
 
-        $doc_url = PAYPAL_getDocUrl('gwhelp_' . $this->gw_name,
+        $doc_url = SHOP_getDocUrl('gwhelp_' . $this->gw_name,
                 $_CONF['language']);
         $T->set_var(array(
             'gw_description' => $this->gw_desc,
             'gw_id'         => $this->gw_name,
             'orderby'       => $this->orderby,
             'enabled_chk'   => $this->enabled == 1 ? ' checked="checked"' : '',
-            'pi_admin_url'  => PAYPAL_ADMIN_URL,
+            'pi_admin_url'  => SHOP_ADMIN_URL,
             'doc_url'       => $doc_url,
             'svc_checkboxes' => $svc_boxes,
         ) );
@@ -1134,7 +1134,7 @@ class Gateway
      */
     public static function getInstance($gw_name, $A=array())
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
         static $gateways = array();
 
         if (!$gw_name) return NULL;
@@ -1158,7 +1158,7 @@ class Gateway
      */
     public static function getAll($enabled = true)
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         $key = $enabled ? 1 : 0;
         $cache_key = 'gateways_' . $key;
@@ -1166,7 +1166,7 @@ class Gateway
         if ($tmp === NULL) {
             $tmp = array();
             // Load the gateways
-            $sql = "SELECT * FROM {$_TABLES['paypal.gateways']}";
+            $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
             // If not loading all gateways, get just then enabled ones
             if ($enabled) $sql .= ' WHERE enabled=1';
             $sql .= ' ORDER BY orderby';

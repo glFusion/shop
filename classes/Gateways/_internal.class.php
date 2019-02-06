@@ -4,19 +4,19 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    paypal
+*   @package    shop
 *   @version    0.6.0
 *   @since      0.6.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
 /**
  *  Internal gateway class, just to support zero-balance orders
  */
-class _internal extends \Paypal\Gateway
+class _internal extends \Shop\Gateway
 {
     /**
     *   Constructor.
@@ -27,7 +27,7 @@ class _internal extends \Paypal\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name  = '_internal';
         $this->gw_desc  = 'Internal Payment Gateway';
-        $this->gw_url   = PAYPAL_URL . '/ipn/internal.php';
+        $this->gw_url   = SHOP_URL . '/ipn/internal.php';
 
         // This gateway can service all button type by default
         $this->services = array(
@@ -56,7 +56,7 @@ class _internal extends \Paypal\Gateway
      */
     public function ProductButton($P)
     {
-        global $_PP_CONF, $LANG_PP;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
         $btn_type = $P->btn_type;
@@ -80,8 +80,8 @@ class _internal extends \Paypal\Gateway
             $vars['item_name'] = htmlspecialchars($P->short_description);
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
-            $vars['return'] = PAYPAL_URL . '/index.php?thanks=paypal';
-            $vars['cancel_return'] = PAYPAL_URL;
+            $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
+            $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();
             $vars['notify_url'] = $this->ipn_url;
 
@@ -114,7 +114,7 @@ class _internal extends \Paypal\Gateway
             }
 
             if ($P->taxable) {
-                $vars['tax_rate'] = sprintf("%0.4f", PP_getTaxRate() * 100);
+                $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
             }
 
             // Buy-now product button, set default billing/shipping addresses
@@ -164,10 +164,10 @@ class _internal extends \Paypal\Gateway
         // phrase if not available
         $btn_text = $P->btn_text;    // maybe provided by a plugin
         if ($btn_text == '') {
-            $btn_text = isset($LANG_PP['buttons'][$btn_type]) ?
-                $LANG_PP['buttons'][$btn_type] : $LANG_PP['buy_now'];
+            $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
+                $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
-        $T = PP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
+        $T = SHOP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,

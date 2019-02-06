@@ -6,15 +6,15 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2018 Lee Garner
-*   @package    paypal
+*   @package    shop
 *   @version    0.6.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
-namespace Paypal\ipn;
+namespace Shop\ipn;
 
-use \Paypal\Cart;
+use \Shop\Cart;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -26,15 +26,15 @@ if (!defined ('GVERSION')) {
  *  such as zero-balance orders.
  *
  *  @since 0.6.0
- *  @package paypal
+ *  @package shop
  */
-class square extends \Paypal\IPN
+class square extends \Shop\IPN
 {
     /**
     *   Constructor.
     *   Fake payment gateway variables.
     *
-    *   @param  array   $A      $_POST'd variables from Paypal
+    *   @param  array   $A      $_POST'd variables from Shop
     */
     function __construct($A=array())
     {
@@ -43,8 +43,8 @@ class square extends \Paypal\IPN
         $this->gw_id = 'square';
         parent::__construct($A);
 
-        $order_id = PP_getVar($A, 'referenceId');
-        $trans_id = PP_getVar($A, 'transactionId');
+        $order_id = SHOP_getVar($A, 'referenceId');
+        $trans_id = SHOP_getVar($A, 'transactionId');
         $this->pp_data['pmt_gross'] = 0;
         $this->pp_data['pmt_fee'] = 0;
 
@@ -60,7 +60,7 @@ class square extends \Paypal\IPN
 
         $this->pp_data['payer_email'] = $this->Order->buyer_email;
         $this->pp_data['payer_name'] = $_USER['fullname'];
-        $this->pp_data['pmt_date'] = PAYPAL_now()->toMySQL(true);
+        $this->pp_data['pmt_date'] = SHOP_now()->toMySQL(true);
         $this->pp_data['gw_desc'] = $this->gw->Description();
         $this->pp_data['gw_name'] = $this->gw->Name();;
         $this->pp_data['pmt_status'] = $status;
@@ -69,14 +69,14 @@ class square extends \Paypal\IPN
         $this->pp_data['invoice'] = $this->Order->order_id;
 
         $this->pp_data['shipto'] = array(
-            'name'      => PP_getVar($shipto, 'name'),
-            'company'   => PP_getVar($shipto, 'company'),
-            'address1'  => PP_getVar($shipto, 'address1'),
-            'address2'  => PP_getVar($shipto, 'address2'),
-            'city'      => PP_getVar($shipto, 'city'),
-            'state'     => PP_getVar($shipto, 'state'),
-            'country'   => PP_getVar($shipto, 'country'),
-            'zip'       => PP_getVar($shipto, 'zip'),
+            'name'      => SHOP_getVar($shipto, 'name'),
+            'company'   => SHOP_getVar($shipto, 'company'),
+            'address1'  => SHOP_getVar($shipto, 'address1'),
+            'address2'  => SHOP_getVar($shipto, 'address2'),
+            'city'      => SHOP_getVar($shipto, 'city'),
+            'state'     => SHOP_getVar($shipto, 'state'),
+            'country'   => SHOP_getVar($shipto, 'country'),
+            'zip'       => SHOP_getVar($shipto, 'zip'),
         );
 
         // Set the custom data into an array.  If it can't be unserialized,
@@ -124,17 +124,17 @@ class square extends \Paypal\IPN
         $trans = $this->gw->getTransaction($this->pp_data['txn_id']);
         if ($trans) {
             // Get through the top-level array var
-            $trans= PP_getVar($trans, 'transaction', 'array');
+            $trans= SHOP_getVar($trans, 'transaction', 'array');
             if (empty($trans)) return false;
-            $tenders = PP_getVar($trans, 'tenders', 'array');
+            $tenders = SHOP_getVar($trans, 'tenders', 'array');
             if (empty($tenders)) return false;
-            $order_id = PP_getVar($trans, 'reference_id');
+            $order_id = SHOP_getVar($trans, 'reference_id');
             if (empty($order_id)) return false;
 
             $status = 'paid';
             foreach ($tenders as $tender) {
                 if ($tender['card_details']['status'] == 'CAPTURED') {
-                    $C = \Paypal\Currency::getInstance($tender['amount_money']['currency']);
+                    $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
                     $this->pp_data['pmt_gross'] += $C->fromInt($tender['amount_money']['amount']);
                     $this->pp_data['pmt_fee'] += $C->fromInt($tender['processing_fee_money']['amount']);
                 } else {
@@ -155,8 +155,8 @@ class square extends \Paypal\IPN
         // Order total must be zero to use the internal gateway
         $info = $this->Cart->getInfo();
         var_dump($info);die;
-        $by_gc = PP_getVar($info, 'apply_gc', 'float');
-        $total = PP_getVar($info, 'final_total', 'float');
+        $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
+        $total = SHOP_getVar($info, 'final_total', 'float');
         if ($by_gc < $total) return false;
         if (!Coupon::verifyBalance($by_gc, $this->pp_data['custom']['uid'])) {
             return false;
@@ -247,6 +247,6 @@ class square extends \Paypal\IPN
         return $this->handlePurchase();
     }   // function Process
 
-}   // class paypal_ipn
+}   // class shop_ipn
 
 ?>

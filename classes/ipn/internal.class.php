@@ -6,17 +6,17 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\ipn;
+namespace Shop\ipn;
 
-use \Paypal\Cart;
-use \Paypal\Currency;
-use \Paypal\Coupon;
+use \Shop\Cart;
+use \Shop\Currency;
+use \Shop\Coupon;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -27,9 +27,9 @@ if (!defined ('GVERSION')) {
  * Class to provide IPN for internal-only transactions, such as zero-balance orders.
  *
  * @since   v0.6.0
- * @package paypal
+ * @package shop
  */
-class internal extends \Paypal\IPN
+class internal extends \Shop\IPN
 {
     /** Holder for custom order data.
      * @var array */
@@ -39,7 +39,7 @@ class internal extends \Paypal\IPN
      * Constructor.
      * Fake payment gateway variables.
      *
-     * @param   array   $A      $_POST'd variables from Paypal
+     * @param   array   $A      $_POST'd variables from Shop
      */
     function __construct($A=array())
     {
@@ -48,7 +48,7 @@ class internal extends \Paypal\IPN
         $this->gw_id = '_internal';
         parent::__construct($A);
 
-        $cart_id = PP_getVar($A, 'cart_id');
+        $cart_id = SHOP_getVar($A, 'cart_id');
         if (!empty($cart_id)) {
             $this->Order = Cart::getInstance(0, $cart_id);
         }
@@ -60,17 +60,17 @@ class internal extends \Paypal\IPN
         if (empty($shipto)) $shipto = $billto;
         if (COM_isAnonUser()) $_USER['email'] = '';
 
-        $this->pp_data['payer_email'] = PP_getVar($A, 'payer_email', 'string', $_USER['email']);
-        $this->pp_data['payer_name'] = trim(PP_getVar($A, 'name') .' '. PP_getVar($A, 'last_name'));
+        $this->pp_data['payer_email'] = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
+        $this->pp_data['payer_name'] = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
         if ($this->pp_data['payer_name'] == '') {
             $this->pp_data['payer_name'] = $_USER['fullname'];
         }
-        $this->pp_data['pmt_date'] = PAYPAL_now()->toMySQL(true);
+        $this->pp_data['pmt_date'] = SHOP_now()->toMySQL(true);
         $this->pp_data['pmt_gross'] = $this->Order->getInfo('total');
         $this->pp_data['pmt_tax'] = $this->Order->getInfo('tax');
         $this->pp_data['gw_desc'] = 'Internal IPN';
         $this->pp_data['gw_name'] = 'Internal IPN';
-        $this->pp_data['pmt_status'] = PP_getVar($A, 'payment_status');
+        $this->pp_data['pmt_status'] = SHOP_getVar($A, 'payment_status');
         $this->pp_data['currency'] = Currency::getInstance()->code;
         $this->pp_data['discount'] = 0;
 
@@ -84,14 +84,14 @@ class internal extends \Paypal\IPN
             $this->pp_data['parent_txn_id'] = $A['parent_txn_id'];
 
         $this->pp_data['shipto'] = array(
-            'name'      => PP_getVar($shipto, 'name'),
-            'company'   => PP_getVar($shipto, 'company'),
-            'address1'  => PP_getVar($shipto, 'address1'),
-            'address2'  => PP_getVar($shipto, 'address2'),
-            'city'      => PP_getVar($shipto, 'city'),
-            'state'     => PP_getVar($shipto, 'state'),
-            'country'   => PP_getVar($shipto, 'country'),
-            'zip'       => PP_getVar($shipto, 'zip'),
+            'name'      => SHOP_getVar($shipto, 'name'),
+            'company'   => SHOP_getVar($shipto, 'company'),
+            'address1'  => SHOP_getVar($shipto, 'address1'),
+            'address2'  => SHOP_getVar($shipto, 'address2'),
+            'city'      => SHOP_getVar($shipto, 'city'),
+            'state'     => SHOP_getVar($shipto, 'state'),
+            'country'   => SHOP_getVar($shipto, 'country'),
+            'zip'       => SHOP_getVar($shipto, 'zip'),
         );
 
         // Set the custom data into an array.  If it can't be unserialized,
@@ -123,12 +123,12 @@ class internal extends \Paypal\IPN
 
         $info = $this->Order->getInfo();
         $uid = $this->Order->uid;
-        $gateway = PP_getVar($info, 'gateway');
+        $gateway = SHOP_getVar($info, 'gateway');
         $total = $this->Order->getTotal();
         switch ($gateway) {
         case '_coupon':
             // Order total must be zero to use the coupon gateway in full
-            $by_gc = PP_getVar($info, 'apply_gc', 'float');
+            $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
             if (is_null($by_gc)) {
                 $by_gc = Coupon::getUserBalance($uid);
             }
@@ -137,7 +137,7 @@ class internal extends \Paypal\IPN
             $this->pp_data['pmt_gross'] = 0;
             break;
         case 'test':
-            $this->pp_data['pmt_gross'] = PP_getVar($_POST, 'pmt_gross', 'float');
+            $this->pp_data['pmt_gross'] = SHOP_getVar($_POST, 'pmt_gross', 'float');
             break;
         }
         $this->pp_data['status'] = 'paid';
@@ -197,7 +197,7 @@ class internal extends \Paypal\IPN
         if (empty($this->ipn_data))
             return false;
 
-        $custom = PP_getVar($this->ipn_data, 'custom');
+        $custom = SHOP_getVar($this->ipn_data, 'custom');
         $this->custom = @unserialize($custom);
 
         if (!$this->Verify()) {
@@ -211,7 +211,7 @@ class internal extends \Paypal\IPN
 
         $Cart = $this->Order->Cart();
         if (empty($Cart)) {
-            COM_errorLog("Paypal\\internal_ipn::Process() - Empty Cart for id {$this->Order->cartID()}");
+            COM_errorLog("Shop\\internal_ipn::Process() - Empty Cart for id {$this->Order->cartID()}");
             return false;
         }
         $items = array();
@@ -240,6 +240,6 @@ class internal extends \Paypal\IPN
         return $this->handlePurchase();
     }   // function Process
 
-}   // class \Paypal\ipn\internal
+}   // class \Shop\ipn\internal
 
 ?>

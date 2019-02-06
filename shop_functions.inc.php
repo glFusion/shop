@@ -1,19 +1,19 @@
 <?php
 /**
- * Plugin-specific functions for the Paypal plugin for glFusion.
- * Based on the gl-paypal Plugin for Geeklog CMS by Vincent Furia.
+ * Plugin-specific functions for the Shop plugin for glFusion.
+ * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
  * @copyright   Copyright (c) 2009-2018 Lee Garner
  * @copyright   Copyright (C) 2005-2006 Vincent Furia
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Order History View.
@@ -26,7 +26,7 @@ namespace Paypal;
  */
 function listOrders($admin = false, $uid = 0)
 {
-    global $_CONF, $_PP_CONF, $_TABLES, $LANG_PP, $_USER, $LANG_PP_HELP;
+    global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_SHOP_HELP;
 
     if (!$admin) {
         $uid = $_USER['uid'];
@@ -51,41 +51,41 @@ function listOrders($admin = false, $uid = 0)
     $sql = "SELECT ord.*,
             SUM(itm.quantity * itm.price) as ord_total,
             u.username, $isAdmin as isAdmin
-        FROM {$_TABLES['paypal.orders']} AS ord
+        FROM {$_TABLES['shop.orders']} AS ord
         LEFT JOIN {$_TABLES['users']} AS u
             ON ord.uid = u.uid
-        LEFT JOIN {$_TABLES['paypal.purchases']} AS itm
+        LEFT JOIN {$_TABLES['shop.purchases']} AS itm
             ON ord.order_id = itm.order_id";
 
-    $base_url = $admin ? PAYPAL_ADMIN_URL : PAYPAL_URL;
+    $base_url = $admin ? SHOP_ADMIN_URL : SHOP_URL;
     $header_arr = array(
         array(
-            'text' => $LANG_PP['purch_date'],
+            'text' => $LANG_SHOP['purch_date'],
             'field' => 'order_date',
             'sort' => true,
         ),
         array(
-            'text' => $LANG_PP['order_number'],
+            'text' => $LANG_SHOP['order_number'],
             'field' => 'order_id',
             'sort' => true,
         ),
         array(
-            'text' => $LANG_PP['total'] .
+            'text' => $LANG_SHOP['total'] .
                 '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                $LANG_PP_HELP['orderlist_total'] . '"></i>',
+                $LANG_SHOP_HELP['orderlist_total'] . '"></i>',
             'field' => 'ord_total',
             'sort' => false,
             'align' => 'right',
         ),
         array(
-            'text' => $LANG_PP['status'],
+            'text' => $LANG_SHOP['status'],
             'field' => 'status',
             'sort' => true,
         ),
     );
     if ($admin) {
         $header_arr[] = array(
-            'text' => $LANG_PP['username'],
+            'text' => $LANG_SHOP['username'],
             'field' => 'username',
             'sort' => true,
         );
@@ -103,16 +103,16 @@ function listOrders($admin = false, $uid = 0)
             'chkfield' => 'order_id',
             'chkname' => 'upd_orders',
             'chkactions' => '<input name="updateorderstatus" type="image" src="'
-                . PAYPAL_URL . '/images/update.png'
-                . '" style="vertical-align:text-bottom;" title="' . $LANG_PP['update_status']
-                . '" class="tooltip" />&nbsp;' . $LANG_PP['update_status'],
+                . SHOP_URL . '/images/update.png'
+                . '" style="vertical-align:text-bottom;" title="' . $LANG_SHOP['update_status']
+                . '" class="tooltip" />&nbsp;' . $LANG_SHOP['update_status'],
         );
     } else {
         $options = '';
     }
 
     $query_arr = array(
-        'table' => 'paypal.orders',
+        'table' => 'shop.orders',
         'sql' => $sql,
         'query_fields' => array(
             'billto_name', 'billto_company', 'billto_address1',
@@ -134,14 +134,14 @@ function listOrders($admin = false, $uid = 0)
         'has_paging' => true,
     );
 
-    $filter = "{$LANG_PP['status']}: <select name=\"filt_status\">" . LB .
+    $filter = "{$LANG_SHOP['status']}: <select name=\"filt_status\">" . LB .
         '<option value=""';
     if ($filt_status == '') $filter .= ' selected="selected"';
     $filter .= '>All Statuses</option>' . LB;
     foreach (OrderStatus::getAll() as $stat) {
         $sel = $filt_status == $stat->getName() ? 'selected="selected"' : '';
         $filter .= '<option value="' . $stat->getName() . '" ' . $sel . '>' .
-            PP_getVar($LANG_PP['orderstatus'], $stat->getName(), 'string', $stat->getName()) .
+            SHOP_getVar($LANG_SHOP['orderstatus'], $stat->getName(), 'string', $stat->getName()) .
             '</option>' . LB;
     }
     $filter .= '</select>' . LB;
@@ -151,7 +151,7 @@ function listOrders($admin = false, $uid = 0)
 
     $display = COM_startBlock('', '',
         COM_getBlockTemplate('_admin_block', 'header'));
-    $display .= \ADMIN_list('paypal_orderlog',
+    $display .= \ADMIN_list('shop_orderlog',
         __NAMESPACE__ . '\getPurchaseHistoryField',
         $header_arr, $text_arr, $query_arr, $defsort_arr, $filter);
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
@@ -168,27 +168,27 @@ function listOrders($admin = false, $uid = 0)
  */
 function CouponLog($uid = 0)
 {
-    global $_TABLES, $_USER, $LANG_PP;
+    global $_TABLES, $_USER, $LANG_SHOP;
 
     if ($uid == 0) $uid = $_USER['uid'];
     $uid = (int)$uid;
 
     USES_lib_admin();
 
-    $sql = "SELECT * FROM {$_TABLES['paypal.coupon_log']}";
+    $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}";
     $header_arr = array(
         array(
-            'text' => $LANG_PP['datetime'],
+            'text' => $LANG_SHOP['datetime'],
             'field' => 'ts',
             'sort' => true,
         ),
         array(
-            'text' => $LANG_PP['description'],
+            'text' => $LANG_SHOP['description'],
             'field' => 'msg',
             'sort' => false,
         ),
         array(
-            'text' => $LANG_PP['amount'],
+            'text' => $LANG_SHOP['amount'],
             'field' => 'amount',
             'sort' => false,
             'align' => 'right',
@@ -201,7 +201,7 @@ function CouponLog($uid = 0)
     );
 
     $query_arr = array(
-        'table' => 'paypal.coupon_log',
+        'table' => 'shop.coupon_log',
         'sql' => $sql,
         'query_fields' => array(),
         'default_filter' => 'WHERE uid = ' . $uid,
@@ -209,7 +209,7 @@ function CouponLog($uid = 0)
 
     $text_arr = array(
         'has_extras' => false,
-        'form_url' => PAYPAL_URL . '/index.php?couponlog=x',
+        'form_url' => SHOP_URL . '/index.php?couponlog=x',
         'has_limit' => true,
         'has_paging' => true,
     );
@@ -220,8 +220,8 @@ function CouponLog($uid = 0)
     $display = COM_startBlock('', '',
         COM_getBlockTemplate('_admin_block', 'header'));
     $gc_bal = Coupon::getUserBalance();
-    $display .= $LANG_PP['gc_bal'] . ': ' . Currency::getInstance()->Format($gc_bal);
-    $display .= \ADMIN_list('paypal_couponlog', __NAMESPACE__ . '\getCouponLogField',
+    $display .= $LANG_SHOP['gc_bal'] . ': ' . Currency::getInstance()->Format($gc_bal);
+    $display .= \ADMIN_list('shop_couponlog', __NAMESPACE__ . '\getCouponLogField',
             $header_arr, $text_arr, $query_arr, $defsort_arr);
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
     return $display;
@@ -239,7 +239,7 @@ function CouponLog($uid = 0)
  */
 function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
 {
-    global $_CONF, $_PP_CONF, $LANG_PP, $_USER;
+    global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
     static $dt = NULL;
     $retval = '';
@@ -253,21 +253,21 @@ function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
     case 'ts':
         $dt->setTimestamp($fieldvalue);
         $retval = '<span class="tooltip" title="' .
-                $dt->format($_PP_CONF['datetime_fmt'], false) . '">' .
-                $dt->format($_PP_CONF['datetime_fmt'], true) . '</span>';
+                $dt->format($_SHOP_CONF['datetime_fmt'], false) . '">' .
+                $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
         break;
 
     case 'msg':
         switch ($fieldvalue) {
         case 'gc_redeemed':
             // Redeemed and added to account
-            $retval = sprintf($LANG_PP['msg_gc_redeemed'], Coupon::maskForDisplay($A['code']));
+            $retval = sprintf($LANG_SHOP['msg_gc_redeemed'], Coupon::maskForDisplay($A['code']));
             break;
         case 'gc_applied':
             // Applied as payment against an order
             $order = COM_createLink($A['order_id'],
-                    PAYPAL_URL . '/index.php?order=' . $A['order_id']);
-            $retval = sprintf($LANG_PP['msg_gc_applied'], $order);
+                    SHOP_URL . '/index.php?order=' . $A['order_id']);
+            $retval = sprintf($LANG_SHOP['msg_gc_applied'], $order);
             //$line['amount'] *= -1;
             break;
         default:
@@ -295,7 +295,7 @@ function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
  */
 function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
 {
-    global $_CONF, $_PP_CONF, $LANG_PP, $_USER;
+    global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
     static $dt = NULL;
     static $Cur = NULL;
@@ -313,17 +313,17 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
     case 'order_date':
         $dt->setTimestamp($fieldvalue);
         $retval = '<span class="tooltip" title="' .
-                $dt->format($_PP_CONF['datetime_fmt'], false) . '">' .
-                $dt->format($_PP_CONF['datetime_fmt'], true) . '</span>';
+                $dt->format($_SHOP_CONF['datetime_fmt'], false) . '">' .
+                $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
         break;
 
     case 'name':
-        list($item_id, $item_opts) = PAYPAL_explode_opts($A['product_id']);
+        list($item_id, $item_opts) = SHOP_explode_opts($A['product_id']);
         if (is_numeric($item_id)) {
             // One of our catalog items, so link to it
             $retval = COM_createLink(
                 $fieldvalue,
-                PAYPAL_URL . '/index.php?detail=x&amp;id=' . $item_id);
+                SHOP_URL . '/index.php?detail=x&amp;id=' . $item_id);
         } else {
             // Probably came from a plugin, just show the product name
             $retval = htmlspecialchars($A['product_id'], ENT_QUOTES, COM_getEncodingt());
@@ -332,7 +332,7 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'username':
         if ($A['isAdmin']) {
-            $url = PAYPAL_ADMIN_URL . '/index.php?orderhist=x&uid=' . $A['uid'];
+            $url = SHOP_ADMIN_URL . '/index.php?orderhist=x&uid=' . $A['uid'];
         } else {
             $url = $_CONF['site_url'] . '/users.php?mode=profile&uid=' .$A['uid'];
         }
@@ -351,9 +351,9 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'txn_id':
-        $base_url = $A['isAdmin'] ? PAYPAL_ADMIN_URL : PAYPAL_URL;
+        $base_url = $A['isAdmin'] ? SHOP_ADMIN_URL : SHOP_URL;
         // Admins get a link to the transaction log, regular users just
-        // get the ID to check against their Paypal account.
+        // get the ID to check against their Shop account.
         if ($A['isAdmin'] == 1) {
             $retval = COM_createLink($fieldvalue,
                 $base_url . '/index.php?ipnlog=x&amp;op=single&amp;txn_id=' .
@@ -365,12 +365,12 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'prod_type':
         // Return the plain-language product type description
-        //$retval = $LANG_PP['prod_types'][$fieldvalue];
-        $retval = $LANG_PP['prod_types'][$A['prod_type']];
-        //if ($fieldvalue == PP_PROD_DOWNLOAD && $A['exptime'] > time() ) {
+        //$retval = $LANG_SHOP['prod_types'][$fieldvalue];
+        $retval = $LANG_SHOP['prod_types'][$A['prod_type']];
+        //if ($fieldvalue == SHOP_PROD_DOWNLOAD && $A['exptime'] > time() ) {
         if ($A['file'] != '' && $A['exptime'] > time() ) {
             $retval = COM_createLink($retval,
-                    PAYPAL_URL . "/download.php?id={$A['product_id']}");
+                    SHOP_URL . "/download.php?id={$A['product_id']}");
         }
         break;
 
@@ -386,39 +386,39 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'status':
-        if ($A['isAdmin'] && is_array($LANG_PP['orderstatus'])) {
+        if ($A['isAdmin'] && is_array($LANG_SHOP['orderstatus'])) {
             $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
         } else {
-            $retval = PP_getVar($LANG_PP['orderstatus'], $fieldvalue, 'string', 'Unknown');
+            $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
         }
         break;
 
     case 'order_id':
-        $base_url = $A['isAdmin'] ? PAYPAL_ADMIN_URL : PAYPAL_URL;
+        $base_url = $A['isAdmin'] ? SHOP_ADMIN_URL : SHOP_URL;
         $retval = COM_createLink(
             $fieldvalue,
             $base_url. '/index.php?order=' . $fieldvalue,
             array(
                 'class' => 'tooltip',
-                'title' => $LANG_PP['vieworder'],
+                'title' => $LANG_SHOP['vieworder'],
             )
         );
         $retval .= '&nbsp;&nbsp;' . COM_createLink(
             '<i class="uk-icon-mini uk-icon-print"></i>',
-            PAYPAL_URL . '/index.php?printorder=' . $fieldvalue,
+            SHOP_URL . '/index.php?printorder=' . $fieldvalue,
             array(
                 'class' => 'tooltip',
-                'title' => $LANG_PP['print'],
+                'title' => $LANG_SHOP['print'],
                 'target' => '_new',
             )
         );
         if ($A['isAdmin']) {
             $retval .= '&nbsp;&nbsp;' . COM_createLink(
                 '<i class="uk-icon-mini uk-icon-list"></i>',
-                PAYPAL_URL . '/index.php?packinglist=' . $fieldvalue,
+                SHOP_URL . '/index.php?packinglist=' . $fieldvalue,
                 array(
                     'class' => 'tooltip',
-                    'title' => $LANG_PP['packinglist'],
+                    'title' => $LANG_SHOP['packinglist'],
                     'target' => '_new',
                 )
             );
@@ -429,17 +429,17 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
     case 'ord_total':
         $total = (float)$fieldvalue;
         $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
-        $tip .= '<tr><td>' . $LANG_PP['item_total'] .
+        $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
             ': </td><td style=&quot;text-align:right&quot;>' . $Cur->Format($fieldvalue) . '</td></tr>' . LB;
         foreach (array('tax', 'shipping', 'handling') as $fld) {
             if (is_numeric($A[$fld]) && $A[$fld] > 0) {
-                $tip .= '<tr><td>' . $LANG_PP[$fld] .
+                $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                     ': </td><td style=&quot;text-align:right&quot;>' . $Cur->FormatValue($A[$fld]) . '</td></tr>' . LB;
                 $total += (float)$A[$fld];
             }
         }
         if ($total > $fieldvalue) {
-            $tip .= '<tr><td>' . $LANG_PP['total'] .
+            $tip .= '<tr><td>' . $LANG_SHOP['total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' . $Cur->Format($total) . '</td></tr>' . LB;
         }
         $tip .= '</table>' . LB;
@@ -461,10 +461,10 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
  */
 function ProductList($cat_id = 0)
 {
-    global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $_USER, $_PLUGINS,
+    global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS,
             $_IMAGE_TYPE, $_GROUPS, $LANG13;
 
-    $isAdmin = plugin_ismoderator_paypal() ? true : false;
+    $isAdmin = plugin_ismoderator_shop() ? true : false;
     $cat_name = '';
     $breadcrumbs = '';
     $cat_img_url = '';
@@ -475,7 +475,7 @@ function ProductList($cat_id = 0)
     // If a cat ID is requested but doesn't exist or the user can't access
     // it, redirect to the homepage.
     if ($Cat->cat_id > 0 && ($Cat->isNew || !$Cat->hasAccess())) {
-        echo COM_refresh(PAYPAL_URL);
+        echo COM_refresh(SHOP_URL);
         exit;
     }
     $RootCat = Category::getRoot();
@@ -490,7 +490,7 @@ function ProductList($cat_id = 0)
                 $breadcrumbs .= "<li class=\"uk-active\"><span>{$cat->cat_name}</span></li>" . LB;
             } else {
                 $breadcrumbs .= "<li>" . COM_createLink($cat->cat_name,
-                    PAYPAL_URL . '/index.php?category=' .
+                    SHOP_URL . '/index.php?category=' .
                         (int)$cat->cat_id) . '</li>' . LB;
             }
         }
@@ -532,11 +532,11 @@ function ProductList($cat_id = 0)
         }
     }
 
-    $cat_cols = PP_getVar($_PP_CONF, 'cat_columns', 'integer', 0);
+    $cat_cols = SHOP_getVar($_SHOP_CONF, 'cat_columns', 'integer', 0);
     if ($cat_cols > 0) {
         // Now get categories from plugins
         foreach ($_PLUGINS as $pi_name) {
-            $pi_cats = PLG_callFunctionForOnePlugin('plugin_paypal_getcategories_' . $pi_name);
+            $pi_cats = PLG_callFunctionForOnePlugin('plugin_shop_getcategories_' . $pi_name);
             if (is_array($pi_cats) && !empty($pi_cats)) {
                 foreach ($pi_cats as $data) {
                     $A[] = $data;
@@ -547,7 +547,7 @@ function ProductList($cat_id = 0)
         $i = 1;
         $catrows = count($A);
         if ($catrows > 0) {
-            $CT = PP_getTemplate(array(
+            $CT = SHOP_getTemplate(array(
                     'table'    => 'category_table',
                     'row'      => 'category_row',
                     'category' => 'category',
@@ -562,7 +562,7 @@ function ProductList($cat_id = 0)
                 if (isset($info['url'])) {
                     $url = $info['url'];
                 } else {
-                    $url = PAYPAL_URL . '/index.php?category=' . urlencode($category);
+                    $url = SHOP_URL . '/index.php?category=' . urlencode($category);
                 }
                 $CT->set_var(array(
                     'category_name' => $info['name'],
@@ -586,7 +586,7 @@ function ProductList($cat_id = 0)
     if (isset($_REQUEST['sortby'])) {
         $sortby = $_REQUEST['sortby'];
     } else {
-        $sortby = PP_getVar($_PP_CONF, 'order', 'string', 'name');
+        $sortby = SHOP_getVar($_SHOP_CONF, 'order', 'string', 'name');
     }
     switch ($sortby){
     case 'price_l2h':   // price, low to high
@@ -613,16 +613,16 @@ function ProductList($cat_id = 0)
         break;
     }
     $sortby_options = '';
-    foreach ($LANG_PP['list_sort_options'] as $value=>$text) {
+    foreach ($LANG_SHOP['list_sort_options'] as $value=>$text) {
         $sel = $value == $sortby ? ' selected="selected"' : '';
         $sortby_options .= "<option value=\"$value\" $sel>$text</option>\n";
     }
 
     // Get products from database. "c.enabled is null" is to allow products
     // with no category defined
-    $today = PAYPAL_now()->format('Y-m-d', true);
-    $sql = " FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+    $today = SHOP_now()->format('Y-m-d', true);
+    $sql = " FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id
             WHERE p.enabled=1
             AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
@@ -660,12 +660,12 @@ function ProductList($cat_id = 0)
     if ($count === NULL) {
         $res = DB_query('SELECT COUNT(*) as cnt ' . $sql);
         $x = DB_fetchArray($res, false);
-        $count = PP_getVar($x, 'cnt', 'integer');
+        $count = SHOP_getVar($x, 'cnt', 'integer');
         Cache::set($cache_key, $count, array('products', 'categories'));
     }
 
     // If applicable, handle pagination of query
-    $prod_per_page = PP_getVar($_PP_CONF, 'prod_per_page', 'integer');
+    $prod_per_page = SHOP_getVar($_SHOP_CONF, 'prod_per_page', 'integer');
     if ($prod_per_page > 0) {
         // Make sure page requested is reasonable, if not, fix it
         if (!isset($_REQUEST['page']) || $_REQUEST['page'] <= 0) {
@@ -697,12 +697,12 @@ function ProductList($cat_id = 0)
     }
 
     // Create product template
-    if (empty($_PP_CONF['list_tpl_ver'])) $_PP_CONF['list_tpl_ver'] = 'v1';
-    $T = PP_getTemplate(array(
-        'wrapper'   => 'list/' . $_PP_CONF['list_tpl_ver'] . '/wrapper',
+    if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
+    $T = SHOP_getTemplate(array(
+        'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
         'start'   => 'product_list_start',
         'end'     => 'product_list_end',
-        //'product' => 'list/' . $_PP_CONF['list_tpl_ver'] .'/product_list_item',
+        //'product' => 'list/' . $_SHOP_CONF['list_tpl_ver'] .'/product_list_item',
         //    'product' => 'product_list',
         //'buy'     => 'buttons/btn_buy_now',
         //'cart'    => 'buttons/btn_add_cart',
@@ -711,15 +711,15 @@ function ProductList($cat_id = 0)
         'btn_details' => 'buttons/btn_details',
     ) );
     $T->set_var(array(
-        'pi_url'        => PAYPAL_URL,
+        'pi_url'        => SHOP_URL,
         'user_id'       => $_USER['uid'],
-        'currency'      => $_PP_CONF['currency'],
+        'currency'      => $_SHOP_CONF['currency'],
         'breadcrumbs'   => $breadcrumbs,
         'search_text'   => $search,
-        'tpl_ver'       => $_PP_CONF['list_tpl_ver'],
+        'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
         'sortby_options' => $sortby_options,
         'sortby'        => $sortby,
-        'table_columns' => $_PP_CONF['catalog_columns'],
+        'table_columns' => $_SHOP_CONF['catalog_columns'],
     ) );
 
     if (!empty($cat_name)) {
@@ -729,13 +729,13 @@ function ProductList($cat_id = 0)
             'cat_img_url' => $cat_img_url,
         ) );
     } else {
-        $T->set_var('title', $LANG_PP['blocktitle']);
+        $T->set_var('title', $LANG_SHOP['blocktitle']);
     }
 
     $display .= $T->parse('', 'start');
 
-    if ($_PP_CONF['ena_ratings'] == 1) {
-        $PP_ratedIds = RATING_getRatedIds($_PP_CONF['pi_name']);
+    if ($_SHOP_CONF['ena_ratings'] == 1) {
+        $SHOP_ratedIds = RATING_getRatedIds($_SHOP_CONF['pi_name']);
     }
 
     // Display each product
@@ -757,9 +757,9 @@ function ProductList($cat_id = 0)
             $voted = 0;
         }
 
-        if ($_PP_CONF['ena_ratings'] == 1 && $P->rating_enabled == 1) {
+        if ($_SHOP_CONF['ena_ratings'] == 1 && $P->rating_enabled == 1) {
             $static = 1;
-            $rating_box = RATING_ratingBar($_PP_CONF['pi_name'], $P->id,
+            $rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $P->id,
                     $P->votes, $P->rating,
                     $voted, 5, $static, 'sm');
             $T->set_var('rating_bar', $rating_box);
@@ -772,25 +772,25 @@ function ProductList($cat_id = 0)
             'id'            => $P->id,
             'name'          => htmlspecialchars($P->name),
             'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
-            'img_cell_width' => ($_PP_CONF['max_thumb_size'] + 20),
+            'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
             'encrypted'     => '',
-            'item_url'      => PAYPAL_URL . '/detail.php?id='. $P->id,
-            'img_cell_width' => ($_PP_CONF['max_thumb_size'] + 20),
+            'item_url'      => SHOP_URL . '/detail.php?id='. $P->id,
+            'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
             'track_onhand'  => $P->track_onhand ? 'true' : '',
             'qty_onhand'    => $P->onhand,
             'has_discounts' => $P->hasDiscounts() ? 'true' : '',
             'price'         => $P->getDisplayPrice(),
             'orig_price'    => $P->getDisplayPrice($P->price),
             'on_sale'       => $P->isOnSale(),
-            'small_pic'     => $pic_filename ? PAYPAL_ImageUrl($pic_filename) : '',
+            'small_pic'     => $pic_filename ? SHOP_ImageUrl($pic_filename) : '',
             'onhand'        => $P->track_onhand ? $P->onhand : '',
-            'tpl_ver'       => $_PP_CONF['list_tpl_ver'],
+            'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
         ) );
 
         if ($isAdmin) {
             $T->set_var(array(
                 'is_admin'  => 'true',
-                'pi_admin_url' => PAYPAL_ADMIN_URL,
+                'pi_admin_url' => SHOP_ADMIN_URL,
             ) );
         }
 
@@ -804,7 +804,7 @@ function ProductList($cat_id = 0)
                 $T->parse('Btn', 'BtnBlock', true);
             }
         } else {
-            if ($_PP_CONF['ena_cart']) {
+            if ($_SHOP_CONF['ena_cart']) {
                 // If the product has attributes, then the cart must be
                 // enabled to allow purchasing
                 $button = $T->parse('', 'btn_details') . '&nbsp;';
@@ -820,7 +820,7 @@ function ProductList($cat_id = 0)
     // Get products from plugins.
     // For now, this hack shows plugins only on the first page, since
     // they're not included in the page calculation.
-    if ($_PP_CONF['show_plugins']&& $page == 1 && $show_plugins && empty($search)) {
+    if ($_SHOP_CONF['show_plugins']&& $page == 1 && $show_plugins && empty($search)) {
         // Get the currency class for formatting prices
         $Cur = Currency::getInstance();
         $T->clear_var('rating_bar');  // no ratings for plugins (yet)
@@ -838,16 +838,16 @@ function ProductList($cat_id = 0)
                 // to wrap the item's detail page in the catalog page.
                 // Otherwise just use a link to the product's url.
                 if (isset($A['have_detail_svc'])) {
-                    $item_url = PAYPAL_URL . '/index.php?pidetail=' . $A['id'];
+                    $item_url = SHOP_URL . '/index.php?pidetail=' . $A['id'];
                 } elseif (isset($A['url'])) {
                     $item_url = $A['url'];
                 } else {
                     $item_url = '';
                 }
-                $item_name = PP_getVar($A, 'name', 'string', $A['id']);
-                $item_dscp = PP_getVar($A, 'short_description', 'string', $item_name);
-                $img = PP_getVar($A, 'image', 'string', '');
-                $price = PP_getVar($A, 'price', 'float', 0);
+                $item_name = SHOP_getVar($A, 'name', 'string', $A['id']);
+                $item_dscp = SHOP_getVar($A, 'short_description', 'string', $item_name);
+                $img = SHOP_getVar($A, 'image', 'string', '');
+                $price = SHOP_getVar($A, 'price', 'float', 0);
                 $T->set_var(array(
                     'id'        => $A['id'],        // required
                     'name'      => $item_name,
@@ -866,9 +866,9 @@ function ProductList($cat_id = 0)
 
                 if ( $price > 0 &&
                         $_USER['uid'] == 1 &&
-                        !$_PP_CONF['anon_buy'] ) {
+                        !$_SHOP_CONF['anon_buy'] ) {
                     $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
-                } elseif ( (!isset($A['prod_type']) || $A['prod_type'] > PP_PROD_PHYSICAL) &&
+                } elseif ( (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
                             $A['price'] == 0 ) {
                     // Free items or items purchases and not expired, download.
                     $buttons .= $T->set_var('', 'download') . '&nbsp;';
@@ -900,7 +900,7 @@ function ProductList($cat_id = 0)
     // Display pagination
     if ($prod_per_page > 0 && $count > $prod_per_page) {
         $T->set_var('pagination',
-            COM_printPageNavigation(PAYPAL_URL . '/index.php' . $pagenav_args,
+            COM_printPageNavigation(SHOP_URL . '/index.php' . $pagenav_args,
                         $page,
                         ceil($count / $prod_per_page)));
     } else {
@@ -909,7 +909,7 @@ function ProductList($cat_id = 0)
 
     // Display a "not found" message if count == 0
     if ($prodrows == 0) {
-        $display .= '<div class="uk-alert uk-alert-danger">' . $LANG_PP['no_products_match'] . '</div>';
+        $display .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['no_products_match'] . '</div>';
     }
 
     $display .= $T->parse('', 'end');
@@ -921,14 +921,14 @@ function ProductList($cat_id = 0)
  * Display a single row from the IPN log.
  *
  * @param  integer $id     Log Entry ID
- * @param  string  $txn_id Transaction ID from Paypal
+ * @param  string  $txn_id Transaction ID from Shop
  * @return string          HTML of the ipnlog row specified by $id
  */
 function ipnlogSingle($id, $txn_id)
 {
-    global $_TABLES, $_CONF, $LANG_PP;
+    global $_TABLES, $_CONF, $LANG_SHOP;
 
-    $sql = "SELECT * FROM {$_TABLES['paypal.ipnlog']} ";
+    $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
     $sql .= $id > 0 ? "WHERE id = $id" : "WHERE txn_id = '$txn_id'";
 
     $res = DB_query($sql);
@@ -941,7 +941,7 @@ function ipnlogSingle($id, $txn_id)
     $ipn = @unserialize($A['ipn_data']);
 
     // Create ipnlog template
-    $T = PP_getTemplate('ipnlog_detail', 'ipnlog');
+    $T = SHOP_getTemplate('ipnlog_detail', 'ipnlog');
 
     $gw = Gateway::getInstance($A['gateway']);
     if ($gw !== NULL) {
@@ -952,7 +952,7 @@ function ipnlogSingle($id, $txn_id)
         $T->set_var(array(
             'id'        => $A['id'],
             'ip_addr'   => $A['ip_addr'],
-            'time'      => PP_dateTooltip($Dt),
+            'time'      => SHOP_dateTooltip($Dt),
             'txn_id'    => $A['txn_id'],
             'gateway'   => $A['gateway'],
             //'pmt_gross' => $vals['pmt_gross'],
@@ -964,7 +964,7 @@ function ipnlogSingle($id, $txn_id)
             $T->set_block('ipnlog', 'DataBlock', 'Data');
             foreach ($vals as $key=>$value) {
                 $T->set_var(array(
-                    'prompt'    => isset($LANG_PP[$key]) ? $LANG_PP[$key] : $key,
+                    'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
                     'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
                 ) );
                 $T->parse('Data', 'DataBlock', true);
@@ -1002,11 +1002,11 @@ function ipnlogSingle($id, $txn_id)
  * @param   string          $title  Optional title string, shown above list
  * @return  string          Complete error message
  */
-function PAYPAL_errMsg($msg = array(), $title = '')
+function SHOP_errMsg($msg = array(), $title = '')
 {
     if (empty($msg)) return '';
 
-    $retval = '<span class="alert paypalErrorMsg">' . "\n";
+    $retval = '<span class="alert shopErrorMsg">' . "\n";
     if (!empty($title)) {
         $retval .= "<p>$title</p>\n";
     }
@@ -1031,32 +1031,32 @@ function PAYPAL_errMsg($msg = array(), $title = '')
  * @param   string  $view   View being shown, so set the help text
  * @return  string      Administrator menu
  */
-function PAYPAL_userMenu($view='')
+function SHOP_userMenu($view='')
 {
-    global $_CONF, $LANG_PP, $_PP_CONF;
+    global $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
     USES_lib_admin();
 
-    $hdr_txt = PP_getVar($LANG_PP, 'user_hdr_' . $view);
+    $hdr_txt = SHOP_getVar($LANG_SHOP, 'user_hdr_' . $view);
     $menu_arr = array(
         array(
-            'url'  => PAYPAL_URL . '/index.php',
-            'text' => $LANG_PP['back_to_catalog'],
+            'url'  => SHOP_URL . '/index.php',
+            'text' => $LANG_SHOP['back_to_catalog'],
         ),
     );
 
     $active = $view == 'orderhist' ? true : false;
     $menu_arr[] = array(
-        'url'  => PAYPAL_URL . '/index.php?orderhist=x',
-        'text' => $LANG_PP['purchase_history'],
+        'url'  => SHOP_URL . '/index.php?orderhist=x',
+        'text' => $LANG_SHOP['purchase_history'],
         'active' => $active,
     );
 
-    if ($_PP_CONF['gc_enabled']) {
+    if ($_SHOP_CONF['gc_enabled']) {
         $active = $view == 'couponlog' ? true : false;
         $menu_arr[] = array(
-            'url'  => PAYPAL_URL . '/index.php?couponlog=x',
-            'text' => $LANG_PP['gc_activity'],
+            'url'  => SHOP_URL . '/index.php?couponlog=x',
+            'text' => $LANG_SHOP['gc_activity'],
             'active' => $active,
         );
     }
@@ -1074,11 +1074,11 @@ function PAYPAL_userMenu($view='')
  */
 function siteHeader($title='', $meta='')
 {
-    global $_PP_CONF, $LANG_PP;
+    global $_SHOP_CONF, $LANG_SHOP;
 
     $retval = '';
 
-    switch($_PP_CONF['displayblocks']) {
+    switch($_SHOP_CONF['displayblocks']) {
     case 2:     // right only
     case 0:     // none
         $retval .= COM_siteHeader('none', $title, $meta);
@@ -1102,11 +1102,11 @@ function siteHeader($title='', $meta='')
  */
 function siteFooter()
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
     $retval = '';
 
-    switch($_PP_CONF['displayblocks']) {
+    switch($_SHOP_CONF['displayblocks']) {
     case 2 : // right only
     case 3 : // left and right
         $retval .= COM_siteFooter();

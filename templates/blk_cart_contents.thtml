@@ -13,7 +13,7 @@
   </div>
 <!-- END CartRow -->
   <div id="CartTotal">
-    {$LANG_PP['total']}:
+    {$LANG_SHOP['total']}:
     <span id="CartTotalAmount">{grand_total}</span>
   </div>
 {# begin {templatelocation} #}

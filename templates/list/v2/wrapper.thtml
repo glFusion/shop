@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<div class="ppProductListOuter {tpl_ver}">
+<div class="shopProductListOuter {tpl_ver}">
 {!!if {table_columns} == 6 !!}
   <ul class="uk-grid uk-grid-width-small-1-4 uk-grid-width-medium-1-5 uk-grid-width-large-1-6 uk-text-center">
 {!else}
@@ -28,7 +28,7 @@
 <!-- BEGIN ProductItems -->
     <li class="uk-vertical-align-top ppProductListItem v2 uk-margin-bottom">
       <a href="{item_url}">
-        <div class="paypalProductListItem v2">
+        <div class="shopProductListItem v2">
           <div class="ItemImage">
 {!if small_pic}
             <img src="{small_pic}" alt="{name}" />
@@ -38,26 +38,26 @@
             <div class="shortdescription">{short_description}</div>
 {!if price}
 {!if track_onhand}
-            ({qty_onhand} {$LANG_PP['available']})<br />
+            ({qty_onhand} {$LANG_SHOP['available']})<br />
 {!endif}
-            <div class="paypalPrice list normal v2">
+            <div class="shopPrice list normal v2">
 {!if on_sale}
-              <span class="paypalPrice list was v2">{orig_price}</span><br />
-              <span class="paypalPrice list sale v2" id="price" name="price">{price}</span>
+              <span class="shopPrice list was v2">{orig_price}</span><br />
+              <span class="shopPrice list sale v2" id="price" name="price">{price}</span>
 {!else}
               {price}
 {!endif}
 {!if has_discounts}
-              <span class="ppQtyDiscSmall">{$LANG_PP['qty_discounts_avail']}</span>
+              <span class="shopQtyDiscSmall">{$LANG_SHOP['qty_discounts_avail']}</span>
 {!endif}
             </div>
 {!endif}
             <div class="Button list v2">
-              <button type="button" class="paypalButton black">{$LANG_PP['customize']}</button>
+              <button type="button" class="shopButton black">{$LANG_SHOP['customize']}</button>
             </div>
           </div>
 {!if rating_bar}
-          <div class="ppRatingBar list v2">{rating_bar}</div>
+          <div class="shopRatingBar list v2">{rating_bar}</div>
 {!endif}
         </div>
       </a>

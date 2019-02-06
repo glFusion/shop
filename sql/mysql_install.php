@@ -1,13 +1,10 @@
 <?php
 /**
-*   Database creation and update statements for the Paypal plugin.
-*   Based on the gl-paypal Plugin for Geeklog CMS by Vincent Furia.
+*   Database creation and update statements for the Shop plugin.
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @author     Vincent Furia <vinny01@users.sourceforge.net
 *   @copyright  Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2005-2006 Vincent Furia
-*   @package    paypal
+*   @package    shop
 *   @version    0.6.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
@@ -18,13 +15,13 @@ if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
 
-global $_TABLES, $_SQL, $PP_UPGRADE, $_PP_SAMPLEDATA;
+global $_TABLES, $_SQL, $SHOP_UPGRADE, $_SHOP_SAMPLEDATA;
 $_SQL = array();
-$PP_UPGRADE = array();
+$SHOP_UPGRADE = array();
 
 // Move upgrade 0.5.4 SQL to the top so its large table creation can be used by the $_SQL array also
-$PP_UPGRADE['0.5.4'] = array(
-    "CREATE TABLE `{$_TABLES['paypal.currency']}` (
+$SHOP_UPGRADE['0.5.4'] = array(
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.currency']}` (
         `code` varchar(3) NOT NULL,
         `symbol` varchar(10) DEFAULT NULL,
         `name` varchar(255) DEFAULT NULL,
@@ -42,7 +39,7 @@ $PP_UPGRADE['0.5.4'] = array(
         `conversion_ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (`code`)
     ) ENGINE=MyISAM",
-    "INSERT INTO `{$_TABLES['paypal.currency']}` VALUES
+    "INSERT INTO `{$_TABLES['shop.currency']}` VALUES
     ('AED','?.?','United Arab Emirates Dirham',784,'hidden',' ','before',2,0.00,',','.','Dirham','Fils',1.00000,'2014-01-03 20:51:17'),
     ('AFN','Af','Afghan Afghani',971,'hidden',' ','after',0,0.00,',','.','Afghani','Pul',1.00000,'2014-01-03 20:54:44'),
 	('ANG','NAf.','Netherlands Antillean Guilder',532,'hidden',' ','after',2,0.00,',','.','Guilder','Cent',1.00000,'2014-01-03 20:54:44'),
@@ -189,10 +186,10 @@ $PP_UPGRADE['0.5.4'] = array(
 	('YER','YR','Yemeni Rial',886,'hidden',' ','after',0,0.00,',','.','Rial','Fils',1.00000,'2014-01-03 20:54:44'),
 	('ZAR','R','South African Rand',710,'before',' ','hidden',2,0.00,',','.','Rand','Cent',1.00000,'2014-01-03 20:49:55'),
 	('ZMK','ZK','Zambian Kwacha',894,'hidden',' ','after',0,0.00,',','.','Kwacha','Ngwee',1.00000,'2014-01-03 20:54:44');",
-    "ALTER TABLE `{$_TABLES['paypal.products']}` ADD sale_price DECIMAL(15,4)",
+    "ALTER TABLE `{$_TABLES['shop.products']}` ADD sale_price DECIMAL(15,4)",
 );
 
-$_SQL['paypal.ipnlog'] = "CREATE TABLE {$_TABLES['paypal.ipnlog']} (
+$_SQL['shop.ipnlog'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `ip_addr` varchar(15) NOT NULL,
   `ts` int(11) unsigned,
@@ -205,7 +202,7 @@ $_SQL['paypal.ipnlog'] = "CREATE TABLE {$_TABLES['paypal.ipnlog']} (
   KEY `ipnlog_txnid` (`txn_id`)
 ) ENGINE=MyISAM";
 
-$_SQL['paypal.products'] = "CREATE TABLE {$_TABLES['paypal.products']} (
+$_SQL['shop.products'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
   `cat_id` int(11) unsigned NOT NULL DEFAULT '0',
@@ -247,7 +244,7 @@ $_SQL['paypal.products'] = "CREATE TABLE {$_TABLES['paypal.products']} (
   KEY `avail_end` (`avail_end`)
 ) ENGINE=MyISAM";
 
-$_SQL['paypal.purchases'] = "CREATE TABLE {$_TABLES['paypal.purchases']} (
+$_SQL['shop.purchases'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.purchases']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,
@@ -272,7 +269,7 @@ $_SQL['paypal.purchases'] = "CREATE TABLE {$_TABLES['paypal.purchases']} (
   KEY `purchases_txnid` (`txn_id`)
 ) ENGINE=MyISAM";
 
-$_SQL['paypal.images'] = "CREATE TABLE {$_TABLES['paypal.images']} (
+$_SQL['shop.images'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
   `img_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(11) unsigned NOT NULL,
   `filename` varchar(255) DEFAULT NULL,
@@ -280,13 +277,13 @@ $_SQL['paypal.images'] = "CREATE TABLE {$_TABLES['paypal.images']} (
   KEY `idxProd` (`product_id`,`img_id`)
 ) ENGINE=MyISAM";
 
-/*$_SQL['paypal.prodXcat'] = "CREATE TABLE {$_TABLES['paypal.prodXcat']} (
+/*$_SQL['shop.prodXcat'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.prodXcat']} (
   `prod_id` int(11) unsigned NOT NULL,
   `cat_id` int(11) unsigned NOT NULL,
   PRIMARY KEY  (`prod_id`,`cat_id`)
 )";*/
 
-$_SQL['paypal.categories'] = "CREATE TABLE {$_TABLES['paypal.categories']} (
+$_SQL['shop.categories'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.categories']} (
   `cat_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `parent_id` smallint(5) unsigned DEFAULT '0',
   `cat_name` varchar(128) DEFAULT '',
@@ -303,7 +300,7 @@ $_SQL['paypal.categories'] = "CREATE TABLE {$_TABLES['paypal.categories']} (
 ) ENGINE=MyISAM";
 
 // since 0.4.5
-$_SQL['paypal.prod_attr'] = "CREATE TABLE `{$_TABLES['paypal.prod_attr']}` (
+$_SQL['shop.prod_attr'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
   `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(11) unsigned DEFAULT NULL,
   `attr_name` varchar(64) DEFAULT NULL,
@@ -316,8 +313,8 @@ $_SQL['paypal.prod_attr'] = "CREATE TABLE `{$_TABLES['paypal.prod_attr']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.0
-$_SQL['paypal.buttons'] = "CREATE TABLE `{$_TABLES['paypal.buttons']}` (
-  `pi_name` varchar(20) NOT NULL DEFAULT 'paypal',
+$_SQL['shop.buttons'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
+  `pi_name` varchar(20) NOT NULL DEFAULT 'shop',
   `item_id` varchar(40) NOT NULL,
   `gw_name` varchar(10) NOT NULL DEFAULT '',
   `btn_key` varchar(20) NOT NULL,
@@ -327,7 +324,7 @@ $_SQL['paypal.buttons'] = "CREATE TABLE `{$_TABLES['paypal.buttons']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.0
-$_SQL['paypal.orders'] = "CREATE TABLE `{$_TABLES['paypal.orders']}` (
+$_SQL['shop.orders'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orders']}` (
   `order_id` varchar(40) NOT NULL,
   `uid` int(11) NOT NULL DEFAULT '0',
   `order_date` int(11) unsigned NOT NULL DEFAULT '0',
@@ -370,7 +367,7 @@ $_SQL['paypal.orders'] = "CREATE TABLE `{$_TABLES['paypal.orders']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.0
-$_SQL['paypal.address'] = "CREATE TABLE `{$_TABLES['paypal.address']}` (
+$_SQL['shop.address'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.address']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '1',
   `name` varchar(255) DEFAULT NULL,
@@ -388,14 +385,14 @@ $_SQL['paypal.address'] = "CREATE TABLE `{$_TABLES['paypal.address']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.0
-$_SQL['paypal.userinfo'] = "CREATE TABLE `{$_TABLES['paypal.userinfo']}` (
+$_SQL['shop.userinfo'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
   `uid` int(11) unsigned NOT NULL,
   `cart` text,
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM";
 
 // since .5.0
-$_SQL['paypal.gateways'] = "CREATE TABLE `{$_TABLES['paypal.gateways']}` (
+$_SQL['shop.gateways'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.gateways']}` (
   `id` varchar(25) NOT NULL,
   `orderby` int(3) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) NOT NULL DEFAULT '1',
@@ -407,7 +404,7 @@ $_SQL['paypal.gateways'] = "CREATE TABLE `{$_TABLES['paypal.gateways']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.0
-$_SQL['paypal.workflows'] = "CREATE TABLE `{$_TABLES['paypal.workflows']}` (
+$_SQL['shop.workflows'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.workflows']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `wf_name` varchar(40) DEFAULT NULL,
   `orderby` int(2) DEFAULT NULL,
@@ -418,7 +415,7 @@ $_SQL['paypal.workflows'] = "CREATE TABLE `{$_TABLES['paypal.workflows']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.2
-$_SQL['paypal.orderstatus'] = "CREATE TABLE `{$_TABLES['paypal.orderstatus']}` (
+$_SQL['shop.orderstatus'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `orderby` int(3) unsigned NOT NULL DEFAULT '0',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
@@ -430,7 +427,7 @@ $_SQL['paypal.orderstatus'] = "CREATE TABLE `{$_TABLES['paypal.orderstatus']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.2
-$_SQL['paypal.order_log'] = "CREATE TABLE `{$_TABLES['paypal.order_log']}` (
+$_SQL['shop.order_log'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.order_log']}` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `ts` int(11) unsigned DEFAULT NULL,
   `order_id` varchar(40) DEFAULT NULL,
@@ -441,10 +438,10 @@ $_SQL['paypal.order_log'] = "CREATE TABLE `{$_TABLES['paypal.order_log']}` (
 ) ENGINE=MyISAM";
 
 // since 0.5.4
-$_SQL['paypal.currency'] = $PP_UPGRADE['0.5.4'][0];
+$_SQL['shop.currency'] = $SHOP_UPGRADE['0.5.4'][0];
 
 // since 0.6.0
-$_SQL['paypal.coupons'] = "CREATE TABLE `{$_TABLES['paypal.coupons']}` (
+$_SQL['shop.coupons'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.coupons']}` (
   `code` varchar(128) NOT NULL,
   `amount` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
   `balance` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
@@ -459,7 +456,7 @@ $_SQL['paypal.coupons'] = "CREATE TABLE `{$_TABLES['paypal.coupons']}` (
 ) ENGINE=MyIsam";
 
 // since 0.6.0
-$_SQL['paypal.coupon_log'] = "CREATE TABLE {$_TABLES['paypal.coupon_log']} (
+$_SQL['shop.coupon_log'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '0',
   `code` varchar(128) NOT NULL,
@@ -473,7 +470,7 @@ $_SQL['paypal.coupon_log'] = "CREATE TABLE {$_TABLES['paypal.coupon_log']} (
 ) ENGINE=MyIsam";
 
 // since 0.6.0
-$_SQL['paypal.sales'] = "CREATE TABLE {$_TABLES['paypal.sales']} (
+$_SQL['shop.sales'] = "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.sales']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(40),
   `item_type` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -487,7 +484,7 @@ $_SQL['paypal.sales'] = "CREATE TABLE {$_TABLES['paypal.sales']} (
 ) ENGINE=MyIsam";
 
 // since 0.6.0+
-$_SQL['paypal.shipping'] = "CREATE TABLE `gl_pp_shipping` (
+$_SQL['shop.shipping'] = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL DEFAULT '',
   `min_units` int(11) unsigned NOT NULL DEFAULT '0',
@@ -497,24 +494,24 @@ $_SQL['paypal.shipping'] = "CREATE TABLE `gl_pp_shipping` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyIsam";
 
-// Sample data to load up the Paypal gateway configuration
-$_PP_SAMPLEDATA = array(
-    "INSERT INTO {$_TABLES['paypal.categories']}
+// Sample data to load up the Shop gateway configuration
+$_SHOP_SAMPLEDATA = array(
+    "INSERT INTO {$_TABLES['shop.categories']}
             (cat_id, parent_id, cat_name, description, grp_access, lft, rgt)
         VALUES
             (1, 0, 'Home', 'Root Category', 2, 1, 2)",
-/*    "INSERT INTO {$_TABLES['paypal.gateways']}
+/*    "INSERT INTO {$_TABLES['shop.gateways']}
             (id, orderby, enabled, description, config, services)
         VALUES
-            ('paypal', 10, 0, 'Paypal Website Payments Standard', '',
+            ('shop', 10, 0, 'Shop Website Payments Standard', '',
              'a:6:{s:7:\"buy_now\";s:1:\"1\";s:8:\"donation\";s:1:\"1\";s:7:\"pay_now\";s:1:\"1\";s:9:\"subscribe\";s:1:\"1\";s:8:\"checkout\";s:1:\"1\";s:8:\"external\";s:1:\"1\";}')",*/
-    "INSERT INTO {$_TABLES['paypal.workflows']}
+    "INSERT INTO {$_TABLES['shop.workflows']}
             (id, wf_name, orderby, enabled, can_disable)
         VALUES
             (1, 'viewcart', 10, 3, 0),
             (2, 'billto', 20, 0, 1),
             (3, 'shipto', 30, 2, 1)",
-    "INSERT INTO {$_TABLES['paypal.orderstatus']}
+    "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer, notify_admin)
         VALUES
             (1, 10, 1, 'pending', 0, 0),
@@ -523,26 +520,26 @@ $_PP_SAMPLEDATA = array(
             (4, 40, 1, 'shipped', 1, 0),
             (5, 50, 1, 'closed', 0, 0),
             (6, 60, 1, 'refunded', 0, 0)",
-    $PP_UPGRADE['0.5.4'][1],
-    "INSERT INTO `{$_TABLES['paypal.shipping']}` VALUES
+    $SHOP_UPGRADE['0.5.4'][1],
+    "INSERT INTO `{$_TABLES['shop.shipping']}` VALUES
         (1,'USPS Priority Flat Rate',0.0001,50.0000,0,'[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
 );
 
 
 // Upgrade information for version 0.1.1 to version 0.2
-$PP_UPGRADE['0.2'] = array(
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+$SHOP_UPGRADE['0.2'] = array(
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD COLUMN quantity int NOT NULL DEFAULT 1 AFTER product_id",
-    "ALTER TABLE {$_TABLES['paypal.products']}
+    "ALTER TABLE {$_TABLES['shop.products']}
         ADD COLUMN category varchar(80) AFTER name,
         ADD KEY `products_category` (category)",
 );
 
-$PP_UPGRADE['0.4.0'] = array(
-    $_SQL['paypal.images'],
-    //$_SQL['paypal.prodXcat'],
-    $_SQL['paypal.categories'],
-    "ALTER TABLE {$_TABLES['paypal.products']}
+$SHOP_UPGRADE['0.4.0'] = array(
+    $_SQL['shop.images'],
+    //$_SQL['shop.prodXcat'],
+    $_SQL['shop.categories'],
+    "ALTER TABLE {$_TABLES['shop.products']}
         CHANGE download prod_type tinyint(2) default 0,
         ADD `enabled` tinyint(1) default 1,
         ADD `featured` tinyint(1) unsigned default '0',
@@ -562,7 +559,7 @@ $PP_UPGRADE['0.4.0'] = array(
         DROP `small_pic`,
         DROP `picture`,
         DROP `physical`",
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         CHANGE `product_id` `product_id` varchar(255) not null,
         ADD `txn_type` varchar(255) default '' AFTER `txn_id`,
         ADD `price` float(10,2) NOT NULL DEFAULT 0",
@@ -571,49 +568,49 @@ $PP_UPGRADE['0.4.0'] = array(
         owner_id, group_id,
         perm_owner, perm_group, perm_members, perm_anon)
     VALUES
-        ('phpblock', 'paypal_featured', 'Featured Product', 'all',
-            'phpblock_paypal_featured', 0, 2, 13, 3, 2, 2, 2),
-        ('phpblock', 'paypal_random', 'Random Product', 'all',
-            'phpblock_paypal_random', 0, 2, 13, 3, 2, 2, 2),
-        ('phpblock', 'paypal_categories', 'Product Categories', 'all',
-            'phpblock_paypal_categories', 0, 2, 13, 3, 2, 2, 2)",
+        ('phpblock', 'shop_featured', 'Featured Product', 'all',
+            'phpblock_shop_featured', 0, 2, 13, 3, 2, 2, 2),
+        ('phpblock', 'shop_random', 'Random Product', 'all',
+            'phpblock_shop_random', 0, 2, 13, 3, 2, 2, 2),
+        ('phpblock', 'shop_categories', 'Product Categories', 'all',
+            'phpblock_shop_categories', 0, 2, 13, 3, 2, 2, 2)",
 );
 
-$PP_UPGRADE['0.4.1'] = array(
-    "ALTER TABLE {$_TABLES['paypal.products']}
+$SHOP_UPGRADE['0.4.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.products']}
         ADD `show_random` tinyint(1) unsigned NOT NULL default '1',
         ADD `show_popular` tinyint(1) unsigned NOT NULL default '1',
         CHANGE comments_enabled comments_enabled tinyint(1)",
-    "UPDATE {$_TABLES['paypal.products']}
+    "UPDATE {$_TABLES['shop.products']}
         SET comments_enabled=-1 WHERE comments_enabled=2",
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD description varchar(255) AFTER product_id",
     "UPDATE {$_TABLES['conf_values']} SET
             fieldset=50,
             sort_order=20
         WHERE
-            name='debug_ipn' AND group_name='" . $_PP_CONF['pi_name'] . "'",
+            name='debug_ipn' AND group_name='" . $_SHOP_CONF['pi_name'] . "'",
 );
 
-$PP_UPGRADE['0.4.2'] = array(
-    "ALTER TABLE {$_TABLES['paypal.products']}
+$SHOP_UPGRADE['0.4.2'] = array(
+    "ALTER TABLE {$_TABLES['shop.products']}
         ADD `rating_enabled` tinyint(1) unsigned NOT NULL default '1'
             AFTER `comments_enabled`",
 );
-$PP_UPGRADE['0.4.3'] = array(
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+$SHOP_UPGRADE['0.4.3'] = array(
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD description varchar(255) AFTER product_id",
 );
 
-$PP_UPGRADE['0.4.4'] = array(
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+$SHOP_UPGRADE['0.4.4'] = array(
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD `token` varchar(40) AFTER `price`",
-    "ALTER TABLE {$_TABLES['paypal.products']}
+    "ALTER TABLE {$_TABLES['shop.products']}
         ADD `options` text",
 );
 
-$PP_UPGRADE['0.4.5'] = array(
-    "CREATE TABLE IF NOT EXISTS `{$_TABLES['paypal.prod_attr']}` (
+$SHOP_UPGRADE['0.4.5'] = array(
+    "CREATE TABLE IF NOT EXISTS IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
       `attr_id` int(11) unsigned NOT NULL auto_increment,
       `item_id` int(11) unsigned default NULL,
       `attr_name` varchar(32) default NULL,
@@ -626,20 +623,20 @@ $PP_UPGRADE['0.4.5'] = array(
     ) ENGINE=MyISAM",
 );
 
-$PP_UPGRADE['0.4.6'] = array(
-    "UPDATE {$_TABLES['paypal.products']} SET prod_type=4 WHERE prod_type=2",
-    "UPDATE {$_TABLES['paypal.products']} SET prod_type=2 WHERE prod_type=1",
-    "UPDATE {$_TABLES['paypal.products']} SET prod_type=1 WHERE prod_type=0",
+$SHOP_UPGRADE['0.4.6'] = array(
+    "UPDATE {$_TABLES['shop.products']} SET prod_type=4 WHERE prod_type=2",
+    "UPDATE {$_TABLES['shop.products']} SET prod_type=2 WHERE prod_type=1",
+    "UPDATE {$_TABLES['shop.products']} SET prod_type=1 WHERE prod_type=0",
 );
 
-$PP_UPGRADE['0.5.0'] = array(
-    "CREATE TABLE `{$_TABLES['paypal.buttons']}` (
+$SHOP_UPGRADE['0.5.0'] = array(
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
       `item_id` int(11) NOT NULL,
       `gw_name` varchar(10) NOT NULL,
       `button` text,
       `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`item_id`,`gw_name`)) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['paypal.orders']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orders']}` (
       `order_id` varchar(40) NOT NULL,
       `uid` int(11) NOT NULL DEFAULT '0',
       `order_date` datetime NOT NULL,
@@ -668,7 +665,7 @@ $PP_UPGRADE['0.5.0'] = array(
       `pmt_method` varchar(20) DEFAULT NULL,
       `pmt_txn_id` varchar(255) DEFAULT NULL,
       PRIMARY KEY (`order_id`) ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['paypal.address']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.address']}` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `uid` int(11) unsigned NOT NULL DEFAULT '1',
       `name` varchar(255) DEFAULT NULL,
@@ -682,13 +679,13 @@ $PP_UPGRADE['0.5.0'] = array(
       `billto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
       `shipto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`id`) ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['paypal.userinfo']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
       `uid` int(11) unsigned NOT NULL,
       `cart` text,
       PRIMARY KEY (`uid`)) ENGINE=MyISAM",
-    "ALTER TABLE `{$_TABLES['paypal.products']}`
+    "ALTER TABLE `{$_TABLES['shop.products']}`
         ADD `purch_grp` int(11) unsigned DEFAULT 1 AFTER `options`",
-    "CREATE TABLE `{$_TABLES['paypal.gateways']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.gateways']}` (
       `id` varchar(25) NOT NULL,
       `orderby` int(3) NOT NULL DEFAULT '0',
       `enabled` tinyint(1) NOT NULL DEFAULT '1',
@@ -697,14 +694,14 @@ $PP_UPGRADE['0.5.0'] = array(
       `services` varchar(255) DEFAULT NULL,
       PRIMARY KEY (`id`),
       KEY `orderby` (`orderby`) ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['paypal.workflows']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.workflows']}` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `wf_name` varchar(40) DEFAULT NULL,
       `orderby` int(2) DEFAULT NULL,
       `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       PRIMARY KEY (`id`),
       KEY `orderby` (`orderby`) ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['paypal.cart']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.cart']}` (
       `cart_id` varchar(40) NOT NULL,
       `cart_uid` int(11) unsigned NOT NULL,
       `cart_order_id` varchar(20) DEFAULT NULL,
@@ -712,37 +709,37 @@ $PP_UPGRADE['0.5.0'] = array(
       `cart_contents` text,
       `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (`cart_id`)) ENGINE=MyISAM",
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD order_id varchar(40) NOT NULL AFTER `id`,
         ADD options varchar(40) default '',
         ADD KEY (`order_id`)",
-    "INSERT INTO {$_TABLES['paypal.workflows']}
+    "INSERT INTO {$_TABLES['shop.workflows']}
             (id, wf_name, orderby, enabled)
         VALUES
             (1, 'viewcart', 10, 0),
             (2, 'billto', 20, 0),
             (3, 'shipto', 30, 0)",
-    "ALTER TABLE {$_TABLES['paypal.ipnlog']}
+    "ALTER TABLE {$_TABLES['shop.ipnlog']}
         ADD `gateway` varchar(25) AFTER `txn_id`",
-    "UPDATE {$_TABLES['paypal.ipnlog']} SET gateway='paypal'",
+    "UPDATE {$_TABLES['shop.ipnlog']} SET gateway='shop'",
     "INSERT INTO {$_TABLES['blocks']}
             (bid, is_enabled, name, type, title,
             tid, blockorder, content,
             rdfurl, rdfupdated, onleft, phpblockfn, help, group_id, owner_id,
             perm_owner, perm_group, perm_members,perm_anon)
         VALUES
-            ('', 1, 'paypal_cart', 'phpblock', 'Shopping Cart',
+            ('', 1, 'shop_cart', 'phpblock', 'Shopping Cart',
             'all', 5, '',
-            '', '', 1, 'phpblock_paypal_cart', '', 13, 2,
+            '', '', 1, 'phpblock_shop_cart', '', 13, 2,
             3, 2, 2, 2)",
 );
 
-$PP_UPGRADE['0.5.2'] = array(
-    "ALTER TABLE {$_TABLES['paypal.orders']}
+$SHOP_UPGRADE['0.5.2'] = array(
+    "ALTER TABLE {$_TABLES['shop.orders']}
         ADD buyer_email varchar(255) default '' after phone,
         CHANGE status status varchar(25) not null default 'pending'",
-    "UPDATE {$_TABLES['paypal.orders']} SET status='paid'",
-    "CREATE TABLE `{$_TABLES['paypal.orderstatus']}` (
+    "UPDATE {$_TABLES['shop.orders']} SET status='paid'",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
         `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
         `orderby` INT(3) UNSIGNED NOT NULL DEFAULT '0',
         `enabled` TINYINT(1) UNSIGNED NOT NULL DEFAULT '1',
@@ -750,7 +747,7 @@ $PP_UPGRADE['0.5.2'] = array(
         `notify_buyer` TINYINT(1) NOT NULL DEFAULT '0',
         PRIMARY KEY (`id`),
         KEY `orderby` (`orderby`) ) ENGINE=MyISAM",
-    "INSERT INTO {$_TABLES['paypal.orderstatus']}
+    "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer)
         VALUES
             (1, 10, 1, 'pending', 0),
@@ -758,7 +755,7 @@ $PP_UPGRADE['0.5.2'] = array(
             (3, 30, 1, 'processing', 0),
             (4, 40, 1, 'shipped', 0),
             (5, 50, 1, 'closed', 0)",
-    "CREATE TABLE `{$_TABLES['paypal.order_log']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.order_log']}` (
         `id` INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
         `ts` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         `order_id` VARCHAR(40) NULL DEFAULT NULL,
@@ -766,105 +763,105 @@ $PP_UPGRADE['0.5.2'] = array(
         `message` TEXT NULL,
         PRIMARY KEY (`id`),
         KEY `order_id` (`order_id`) ) ENGINE=MyISAM",
-    "ALTER TABLE `{$_TABLES['paypal.products']}`
+    "ALTER TABLE `{$_TABLES['shop.products']}`
         ADD track_onhand TINYINT(1) UNSIGNED NOT NULL DEFAULT '0',
         ADD onhand INT(10) NOT NULL DEFAULT '0'",
 );
 
-$PP_UPGRADE['0.5.6'] = array(
-    "ALTER TABLE {$_TABLES['paypal.products']}
+$SHOP_UPGRADE['0.5.6'] = array(
+    "ALTER TABLE {$_TABLES['shop.products']}
         ADD oversell tinyint(1) not null default 0",
 );
 
-$PP_UPGRADE['0.5.7'] = array(
+$SHOP_UPGRADE['0.5.7'] = array(
     "INSERT INTO {$_TABLES['blocks']}
         (type, name, title, tid, phpblockfn, is_enabled,
         owner_id, group_id,
         perm_owner, perm_group, perm_members, perm_anon)
     VALUES
-        ('phpblock', 'paypal_recent', 'Newest Items', 'all',
-            'phpblock_paypal_recent', 0, 2, 13, 3, 2, 2, 2)",
-    "ALTER TABLE {$_TABLES['paypal.products']}
+        ('phpblock', 'shop_recent', 'Newest Items', 'all',
+            'phpblock_shop_recent', 0, 2, 13, 3, 2, 2, 2)",
+    "ALTER TABLE {$_TABLES['shop.products']}
         CHANGE dt_add dt_add datetime not null,
         ADD `qty_discounts` text AFTER `oversell`,
         ADD `custom` varchar(255) NOT NULL DEFAULT ''",
-    "UPDATE {$_TABLES['paypal.products']}
+    "UPDATE {$_TABLES['shop.products']}
         SET dt_add = NOW()",
-    "ALTER TABLE {$_TABLES['paypal.cart']}
+    "ALTER TABLE {$_TABLES['shop.cart']}
         CHANGE last_update last_update datetime NOT NULL",
-    "ALTER TABLE {$_TABLES['paypal.orders']}
+    "ALTER TABLE {$_TABLES['shop.orders']}
         CHANGE last_mod last_mod datetime NOT NULL",
-    "ALTER TABLE {$_TABLES['paypal.order_log']}
+    "ALTER TABLE {$_TABLES['shop.order_log']}
         CHANGE ts ts datetime NOT NULL",
-    "ALTER TABLE {$_TABLES['paypal.categories']}
+    "ALTER TABLE {$_TABLES['shop.categories']}
         CHANGE description description text",
-    "TRUNCATE {$_TABLES['paypal.cart']}",
+    "TRUNCATE {$_TABLES['shop.cart']}",
 );
 
-$PP_UPGRADE['0.5.8'] = array(
-    "ALTER TABLE {$_TABLES['paypal.categories']}
+$SHOP_UPGRADE['0.5.8'] = array(
+    "ALTER TABLE {$_TABLES['shop.categories']}
         CHANGE group_id grp_access mediumint(8) unsigned not null default 13,
         DROP owner_id, DROP perm_owner, DROP perm_group, DROP perm_members, DROP perm_anon",
-    "ALTER TABLE {$_TABLES['paypal.products']}
+    "ALTER TABLE {$_TABLES['shop.products']}
         DROP purch_grp,
         ADD sale_beg DATE DEFAULT '1900-01-01',
         ADD sale_end DATE DEFAULT '1900-01-01',
         ADD avail_beg DATE DEFAULT '1900-01-01',
         ADD avail_end DATE DEFAULT '9999-12-31'",
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         ADD options_text text",
-    "DELETE FROM {$_TABLES['paypal.gateways']} WHERE id='amazon'",
-    "ALTER TABLE {$_TABLES['paypal.orders']}
+    "DELETE FROM {$_TABLES['shop.gateways']} WHERE id='amazon'",
+    "ALTER TABLE {$_TABLES['shop.orders']}
         ADD buyer_email varchar(255) DEFAULT NULL AFTER phone",
     // Altered in 0.4.1 but installation sql wasn't updated
-    "ALTER TABLE {$_TABLES['paypal.products']}
+    "ALTER TABLE {$_TABLES['shop.products']}
         CHANGE comments_enabled comments_enabled tinyint(1) default 0",
 );
 
-$PP_UPGRADE['0.5.9'] = array(
+$SHOP_UPGRADE['0.5.9'] = array(
     // Fix the subgroup value, originally used the wrong field
     "UPDATE {$_TABLES['conf_values']} SET subgroup=10 where name='sg_shop'",
-    "ALTER TABLE {$_TABLES['paypal.products']}
+    "ALTER TABLE {$_TABLES['shop.products']}
         CHANGE `name` `name` varchar(128) NOT NULL",
-    "ALTER TABLE {$_TABLES['paypal.purchases']}
+    "ALTER TABLE {$_TABLES['shop.purchases']}
         CHANGE `product_id` `product_id` varchar(128) NOT NULL,
         CHANGE `txn_id` `txn_id` varchar(128) default ''",
-    "ALTER TABLE {$_TABLES['paypal.images']}
+    "ALTER TABLE {$_TABLES['shop.images']}
         CHANGE `product_id` `product_id` int(11) unsigned NOT NULL",
-    "ALTER TABLE {$_TABLES['paypal.categories']}
+    "ALTER TABLE {$_TABLES['shop.categories']}
         CHANGE `cat_name` `cat_name` varchar(128) default ''",
     "INSERT INTO {$_TABLES['blocks']}
         (is_enabled, name, type, title, blockorder, phpblockfn)
         VALUES
-        (0, 'paypal_search', 'phpblock', 'Search Catalog',
-            9999, 'phpblock_paypal_search')",
+        (0, 'shop_search', 'phpblock', 'Search Catalog',
+            9999, 'phpblock_shop_search')",
 );
-$PP_UPGRADE['0.5.11'] = array(
-    "ALTER TABLE {$_TABLES['paypal.address']}
+$SHOP_UPGRADE['0.5.11'] = array(
+    "ALTER TABLE {$_TABLES['shop.address']}
         CHANGE `zip` `zip` varchar(40) DEFAUlT NULL,
         ADD KEY `uid` (`uid`,`zip`)",
-    "ALTER TABLE {$_TABLES['paypal.orders']}
+    "ALTER TABLE {$_TABLES['shop.orders']}
         CHANGE `billto_zip` `billto_zip` varchar(40) DEFAULT NULL,
         CHANGE `shipto_zip` `shipto_zip` varchar(40) DEFAULT NULL",
 );
-$PP_UPGRADE['0.6.0'] = array(
+$SHOP_UPGRADE['0.6.0'] = array(
     // Drop new tables in case of a failed previous attempt.
-    "DROP TABLE IF EXISTS {$_TABLES['paypal.sales']}",
-    "DROP TABLE IF EXISTS {$_TABLES['paypal.coupons']}",
-    "DROP TABLE IF EXISTS {$_TABLES['paypal.coupon_log']}",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} ADD extras text",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} ADD `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000'",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} ADD `handling` decimal(9,4) NOT NULL DEFAULT '0.0000'",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} ADD `tax` decimal(9,4) NOT NULL DEFAULT '0.0000'",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} ADD taxable tinyint(1) unsigned NOT NULL DEFAULT '0' after `price`",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} CHANGE price price decimal(12,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD by_gc decimal(12,4) unsigned AFTER handling",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD token varchar(20)",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD tax_rate decimal(7,5) NOT NULL DEFAULT '0.00000'",
-    "ALTER TABLE {$_TABLES['paypal.orders']} CHANGE shipping shipping decimal(9,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.orders']} CHANGE handling handling decimal(9,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.orders']} CHANGE tax tax decimal(9,4) NOT NULL DEFAULT 0",
-    "CREATE TABLE `{$_TABLES['paypal.coupons']}` (
+    "DROP TABLE IF EXISTS {$_TABLES['shop.sales']}",
+    "DROP TABLE IF EXISTS {$_TABLES['shop.coupons']}",
+    "DROP TABLE IF EXISTS {$_TABLES['shop.coupon_log']}",
+    "ALTER TABLE {$_TABLES['shop.purchases']} ADD extras text",
+    "ALTER TABLE {$_TABLES['shop.purchases']} ADD `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000'",
+    "ALTER TABLE {$_TABLES['shop.purchases']} ADD `handling` decimal(9,4) NOT NULL DEFAULT '0.0000'",
+    "ALTER TABLE {$_TABLES['shop.purchases']} ADD `tax` decimal(9,4) NOT NULL DEFAULT '0.0000'",
+    "ALTER TABLE {$_TABLES['shop.purchases']} ADD taxable tinyint(1) unsigned NOT NULL DEFAULT '0' after `price`",
+    "ALTER TABLE {$_TABLES['shop.purchases']} CHANGE price price decimal(12,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD by_gc decimal(12,4) unsigned AFTER handling",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD token varchar(20)",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD tax_rate decimal(7,5) NOT NULL DEFAULT '0.00000'",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE shipping shipping decimal(9,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE handling handling decimal(9,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE tax tax decimal(9,4) NOT NULL DEFAULT 0",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.coupons']}` (
       `code` varchar(128) NOT NULL,
       `amount` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
       `balance` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
@@ -877,7 +874,7 @@ $PP_UPGRADE['0.6.0'] = array(
       KEY `owner` (`redeemer`,`balance`,`expires`),
       KEY `purchased` (`purchased`)
     ) ENGINE=MyIsam",
-    "CREATE TABLE {$_TABLES['paypal.coupon_log']} (
+    "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `uid` int(11) unsigned NOT NULL DEFAULT '0',
       `code` varchar(128) NOT NULL,
@@ -889,12 +886,12 @@ $PP_UPGRADE['0.6.0'] = array(
       KEY `order_id` (`order_id`),
       KEY `code` (`code`)
     ) ENGINE=MyIsam",
-    "ALTER TABLE {$_TABLES['paypal.buttons']} ADD `pi_name` varchar(20) NOT NULL DEFAULT 'paypal' FIRST",
-    "ALTER TABLE {$_TABLES['paypal.buttons']} ADD `btn_key` varchar(20) AFTER gw_name",
-    "ALTER TABLE {$_TABLES['paypal.buttons']} CHANGE item_id item_id varchar(40)",
-    "ALTER TABLE {$_TABLES['paypal.buttons']} DROP PRIMARY KEY",
-    "ALTER TABLE {$_TABLES['paypal.buttons']} ADD PRIMARY KEY (`pi_name`, `item_id`,`gw_name`,`btn_key`)",
-    "CREATE TABLE {$_TABLES['paypal.sales']} (
+    "ALTER TABLE {$_TABLES['shop.buttons']} ADD `pi_name` varchar(20) NOT NULL DEFAULT 'shop' FIRST",
+    "ALTER TABLE {$_TABLES['shop.buttons']} ADD `btn_key` varchar(20) AFTER gw_name",
+    "ALTER TABLE {$_TABLES['shop.buttons']} CHANGE item_id item_id varchar(40)",
+    "ALTER TABLE {$_TABLES['shop.buttons']} DROP PRIMARY KEY",
+    "ALTER TABLE {$_TABLES['shop.buttons']} ADD PRIMARY KEY (`pi_name`, `item_id`,`gw_name`,`btn_key`)",
+    "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.sales']} (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `name` varchar(40),
       `item_type` varchar(10),
@@ -906,23 +903,23 @@ $PP_UPGRADE['0.6.0'] = array(
       PRIMARY KEY (`id`),
       KEY `item_type` (`item_type`,`item_id`,`start`,`end`)
     ) ENGINE=MyIsam",
-    "ALTER TABLE {$_TABLES['paypal.products']} DROP comments",
-    "ALTER TABLE {$_TABLES['paypal.products']} DROP sale_price",
-    "ALTER TABLE {$_TABLES['paypal.products']} DROP sale_beg",
-    "ALTER TABLE {$_TABLES['paypal.products']} DROP sale_end",
-    "ALTER TABLE {$_TABLES['paypal.products']} CHANGE weight weight decimal(9,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.products']} CHANGE shipping_amt shipping_amt decimal(9,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.products']} CHANGE price price decimal(12,4) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['paypal.products']} ADD shipping_units decimal(9,4) NOT NULL DEFAULT 0 AFTER shipping_amt",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD `info` text",
-    "ALTER TABLE {$_TABLES['paypal.orders']} CHANGE last_mod last_mod timestamp",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD `billto_id` int(11) unsigned NOT NULL DEFAULT '0'",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD `shipto_id` int(11) unsigned NOT NULL DEFAULT '0'",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} DROP purchase_date",
-    "ALTER TABLE {$_TABLES['paypal.purchases']} DROP user_id",
-    "DROP TABLE IF EXISTS {$_TABLES['paypal.cart']}",
-    "ALTER TABLE {$_TABLES['paypal.prod_attr']} CHANGE attr_price `attr_price` decimal(9,4) default '0.00'",
-    "CREATE TABLE IF NOT EXISTS `{$_TABLES['paypal.shipping']}` (
+    "ALTER TABLE {$_TABLES['shop.products']} DROP comments",
+    "ALTER TABLE {$_TABLES['shop.products']} DROP sale_price",
+    "ALTER TABLE {$_TABLES['shop.products']} DROP sale_beg",
+    "ALTER TABLE {$_TABLES['shop.products']} DROP sale_end",
+    "ALTER TABLE {$_TABLES['shop.products']} CHANGE weight weight decimal(9,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} CHANGE shipping_amt shipping_amt decimal(9,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} CHANGE price price decimal(12,4) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD shipping_units decimal(9,4) NOT NULL DEFAULT 0 AFTER shipping_amt",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `info` text",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE last_mod last_mod timestamp",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `billto_id` int(11) unsigned NOT NULL DEFAULT '0'",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipto_id` int(11) unsigned NOT NULL DEFAULT '0'",
+    "ALTER TABLE {$_TABLES['shop.purchases']} DROP purchase_date",
+    "ALTER TABLE {$_TABLES['shop.purchases']} DROP user_id",
+    "DROP TABLE IF EXISTS {$_TABLES['shop.cart']}",
+    "ALTER TABLE {$_TABLES['shop.prod_attr']} CHANGE attr_price `attr_price` decimal(9,4) default '0.00'",
+    "CREATE TABLE IF NOT EXISTS IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
         `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
         `name` varchar(255) NOT NULL DEFAULT '',
         `min_units` int(11) unsigned NOT NULL DEFAULT '0',
@@ -932,11 +929,11 @@ $PP_UPGRADE['0.6.0'] = array(
         PRIMARY KEY (`id`)
     ) ENGINE=MyIsam",
 );
-$PP_UPGRADE['0.6.1'] = array(
-    "ALTER TABLE {$_TABLES['paypal.prod_attr']} CHANGE orderby orderby int(3)",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD currency varchar(5) NOT NULL DEFAULT 'USD'",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD order_seq int(11) UNSIGNED",
-    "ALTER TABLE {$_TABLES['paypal.orders']} ADD UNIQUE (order_seq)",
+$SHOP_UPGRADE['0.6.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.prod_attr']} CHANGE orderby orderby int(3)",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD currency varchar(5) NOT NULL DEFAULT 'USD'",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD order_seq int(11) UNSIGNED",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD UNIQUE (order_seq)",
 );
 
 ?>

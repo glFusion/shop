@@ -1,12 +1,12 @@
-<p>{$LANG_PP_EMAIL['coupon_1']}</p>
+<p>{$LANG_SHOP_EMAIL['coupon_1']}</p>
 {!if sender_name}
-<p>{$LANG_PP['from']}: {sender_name}</p>
+<p>{$LANG_SHOP['from']}: {sender_name}</p>
 {!endif}
 <p>
-{$LANG_PP_EMAIL['coupon_id']}: <a href="{site_url}/paypal/index.php?redeem=x&gc_code={gc_code}">{gc_code}</a>
+{$LANG_SHOP_EMAIL['coupon_id']}: <a href="{site_url}/shop/index.php?redeem=x&gc_code={gc_code}">{gc_code}</a>
 </p>
 {!if expires}
 <p>
-{$LANG_PP_EMAIL['coupon_2']} {expires}.
+{$LANG_SHOP_EMAIL['coupon_2']} {expires}.
 </p>
 {!endif}

@@ -1,9 +1,9 @@
-# Paypal
-Shopping plugin for glFusion. Supports Paypal and other gateways.
+# Shop
+Shopping plugin for glFusion. Supports Shop and other gateways.
 
 This plugin provides a product catalog and shopping cart for physical
 and virtual products. The following payment gateways are supported:
-- Paypal
+- Shop
 - Authorize.Net
 - Square
 
@@ -11,11 +11,11 @@ You must sign up with the payment providers and enter your keys in the
 plugin configuration. You should also sign up for a developer or
 sandbox account for testing.
 
-If you use the Bad Behavior plugin, be sure that you whitelist your Paypal IPN
-URL (paypal/ipn/*provider*_ipn.php). Bad Behavior may block IPN messages from
-Paypal otherwise.
+If you use the Bad Behavior plugin, be sure that you whitelist your Shop IPN
+URL (shop/ipn/*provider*_ipn.php). Bad Behavior may block IPN messages from
+Shop otherwise.
 
-This version of the Paypal plugin requires at least version 1.0.7 of
+This version of the Shop plugin requires at least version 1.0.7 of
 the lgLib plugin for supporting functions.
 
 ## Plugin APIs
@@ -68,8 +68,8 @@ $output = array(        // Note: currently not used for plugin items
 );
 ```
 
-### `service_addCartItem_paypal()`
-This is a function provided by the Paypal plugin to allow other plugins to add their items to the shopping cart.
+### `service_addCartItem_shop()`
+This is a function provided by the Shop plugin to allow other plugins to add their items to the shopping cart.
 ```
 $args = array(
     'item_id'   => Item number string, including plugin name (plugin:item_id:sub1:sub2),
@@ -88,7 +88,7 @@ $args = array(
 $output is not set
 ```
 
-### `service_formatAmount_paypal()`
+### `service_formatAmount_shop()`
 Get a currency amount formatted based on the default currency.
 ```
 $args = array(
@@ -101,7 +101,7 @@ $ouptut contains the formatted string
 ```
 
 ## Functions Provided by Plugins
-These service functions should be provided by plugins wishing to leveraget the Paypal plugin.
+These service functions should be provided by plugins wishing to leveraget the Shop plugin.
 
 ### `service_getproducts_piname`
 Returns an array of product information to be included in the catalog display.
@@ -116,7 +116,7 @@ $output = array(
         'description' => Full item description,
         'price'     => Unit price,
         'buttons' => array(
-            button_type => button_contents (see plugin_genButton_paypal()),
+            button_type => button_contents (see plugin_genButton_shop()),
         ),
         'url'       => URL to item detail page, or...
         'have_detail_svc' => True to wrap the detail detail page in the catalog format (see plugin_getDetailPage_piname()),
@@ -128,7 +128,7 @@ $output = array(
 ```
 
 ### `service_getDetailPage_piname`
-Returns the product detail page HTML to be displayed by the Paypal plugin
+Returns the product detail page HTML to be displayed by the Shop plugin
 ```
 $args = array(
     'item_id' => piname . ':' . item_id ( . '|' . item_options)

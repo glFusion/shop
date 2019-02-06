@@ -4,18 +4,18 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for product and category sales.
- * @package paypal
+ * @package shop
  */
 class Sales
 {
@@ -82,7 +82,7 @@ class Sales
         global $_TABLES;
 
         $sql = "SELECT *
-                FROM {$_TABLES['paypal.sales']}
+                FROM {$_TABLES['shop.sales']}
                 WHERE id = $id";
         $res = DB_query($sql);
         if ($res) {
@@ -102,11 +102,11 @@ class Sales
      */
     public function setVars($A, $fromDB=true)
     {
-        $this->id = PP_getVar($A, 'id', 'integer');
-        $this->item_type = PP_getVar($A, 'item_type');
-        $this->discount_type = PP_getVar($A, 'discount_type');
-        $this->amount = PP_getVar($A, 'amount', 'float');
-        $this->name = PP_getVar($A, 'name', 'string');
+        $this->id = SHOP_getVar($A, 'id', 'integer');
+        $this->item_type = SHOP_getVar($A, 'item_type');
+        $this->discount_type = SHOP_getVar($A, 'discount_type');
+        $this->amount = SHOP_getVar($A, 'amount', 'float');
+        $this->name = SHOP_getVar($A, 'name', 'string');
         if (!$fromDB) {
             // convert to timestamps
             if (empty($A['start'])) {
@@ -158,7 +158,7 @@ class Sales
             if (!$sales[$type][$item_id]) {
                 // If not found in cache
                 $sales[$type][$item_id] = array();
-                $sql = "SELECT * FROM {$_TABLES['paypal.sales']}
+                $sql = "SELECT * FROM {$_TABLES['shop.sales']}
                         WHERE item_type = '$type' AND item_id = {$item_id}
                         ORDER BY start ASC";
                 //echo $sql;die;
@@ -214,7 +214,7 @@ class Sales
      */
     public static function getEffective($P)
     {
-        $now = Paypal_now()->toUnix();
+        $now = Shop_now()->toUnix();
         $sales = self::getProduct($P->id);
         $SaleObj = NULL;
         foreach ($sales as $obj) {
@@ -319,7 +319,7 @@ class Sales
      */
     public function Save($A = array())
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
             $this->setVars($A, false);
@@ -327,10 +327,10 @@ class Sales
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.sales']}";
+            $sql1 = "INSERT INTO {$_TABLES['shop.sales']}";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['paypal.sales']}";
+            $sql1 = "UPDATE {$_TABLES['shop.sales']}";
             $sql3 = " WHERE id={$this->id}";
         }
         $sql2 = " SET item_type = '" . DB_escapeString($this->item_type) . "',
@@ -366,7 +366,7 @@ class Sales
         if ($id <= 0)
             return false;
 
-        DB_delete($_TABLES['paypal.sales'], 'id', $id);
+        DB_delete($_TABLES['shop.sales'], 'id', $id);
         Cache::clear(self::$base_tag);
         return true;
     }
@@ -380,8 +380,8 @@ class Sales
     {
         global $_TABLES;
 
-        $now = PAYPAL_now()->toUnix();
-        $sql = "DELETE FROM {$_TABLES['paypal.sales']}
+        $now = SHOP_now()->toUnix();
+        $sql = "DELETE FROM {$_TABLES['shop.sales']}
                 WHERE end < '$now'";
         DB_query($sql);
     }
@@ -395,12 +395,12 @@ class Sales
      */
     public function Edit()
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $_SYSTEM;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         // If there are no products defined, return a formatted error message
         // instead of the form.
-        if (DB_count($_TABLES['paypal.products']) == 0) {
-            return PAYPAL_errMsg($LANG_PP['todo_noproducts']);
+        if (DB_count($_TABLES['shop.products']) == 0) {
+            return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
         }
 
         if ($this->end->toMySQL(true) == self::MAX_DATETIME) {
@@ -417,16 +417,16 @@ class Sales
             $st_dt = $this->start->format('Y-m-d', true);
             $st_tm = $this->start->format('H:i', true);
         }
-        $T = PP_getTemplate('sales_form', 'form');
+        $T = SHOP_getTemplate('sales_form', 'form');
         $retval = '';
         $T->set_var(array(
             'disc_id'       => $this->id,
-            'action_url'    => PAYPAL_ADMIN_URL,
-            'pi_url'        => PAYPAL_URL,
-            'doc_url'       => PAYPAL_getDocURL('sales_form',
+            'action_url'    => SHOP_ADMIN_URL,
+            'pi_url'        => SHOP_URL,
+            'doc_url'       => SHOP_getDocURL('sales_form',
                                             $_CONF['language']),
             'amount'        => $this->amount,
-            'product_select' => COM_optionList($_TABLES['paypal.products'],
+            'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'category_select' => Category::optionList($this->item_id),
             'it_sel_' . $this->item_type => 'checked="checked"',

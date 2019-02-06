@@ -4,7 +4,7 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -12,11 +12,11 @@
  * @filesource
  */
 
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for order line items.
- * @package paypal
+ * @package shop
  */
 class OrderItem
 {
@@ -72,12 +72,12 @@ class OrderItem
     */
     public function Read($rec_id)
     {
-        global $_PP_CONF, $_TABLES;
+        global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
         $sql = "SELECT *,
                 UNIX_TIMESTAMP(CONVERT_TZ(`expiration`, '+00:00', @@session.time_zone)) AS ux_exp
-                FROM {$_TABLES['paypal.purchases']}
+                FROM {$_TABLES['shop.purchases']}
                 WHERE id = $rec_id";
         //echo $sql;die;
         $res = DB_query($sql);
@@ -103,7 +103,7 @@ class OrderItem
                 $this->$field = $A[$field];
             }
         }
-        $this->ux_exp = PP_getVar($A, 'ux_exp');
+        $this->ux_exp = SHOP_getVar($A, 'ux_exp');
         return true;
     }
 
@@ -248,16 +248,16 @@ class OrderItem
         if (is_array($A)) {
             $this->setVars($A);
         }
-        $purchase_ts = PAYPAL_now()->toUnix();
+        $purchase_ts = SHOP_now()->toUnix();
         //$shipping = $this->product->getShipping($this->quantity);
         $shipping = 0;
         $handling = $this->product->getHandling($this->quantity);
 
         if ($this->id > 0) {
-            $sql1 = "UPDATE {$_TABLES['paypal.purchases']} ";
+            $sql1 = "UPDATE {$_TABLES['shop.purchases']} ";
             $sql3 = " WHERE id = '{$this->id}'";
         } else {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.purchases']} ";
+            $sql1 = "INSERT INTO {$_TABLES['shop.purchases']} ";
             $sql3 = '';
         }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',

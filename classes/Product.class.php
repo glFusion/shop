@@ -4,17 +4,17 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2016 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.5.7
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for product.
- * @package paypal
+ * @package shop
  */
 class Product
 {
@@ -92,11 +92,11 @@ class Product
      */
     public function __construct($id=0)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         $this->properties = array();
         $this->isNew = true;
-        $this->pi_name = $_PP_CONF['pi_name'];
+        $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
 
         if (is_array($id)) {
@@ -111,14 +111,14 @@ class Product
             $this->short_description = '';
             $this->description = '';
             $this->price = 0;
-            $this->prod_type = PP_PROD_VIRTUAL;
+            $this->prod_type = SHOP_PROD_VIRTUAL;
             $this->weight = 0;
             $this->file = '';
-            $this->expiration = $_PP_CONF['def_expiration'];
-            $this->enabled = $_PP_CONF['def_enabled'];
-            $this->featured = $_PP_CONF['def_featured'];
-            $this->taxable = $_PP_CONF['def_taxable'];
-            $this->dt_add = PAYPAL_now()->toMySQL();
+            $this->expiration = $_SHOP_CONF['def_expiration'];
+            $this->enabled = $_SHOP_CONF['def_enabled'];
+            $this->featured = $_SHOP_CONF['def_featured'];
+            $this->taxable = $_SHOP_CONF['def_taxable'];
+            $this->dt_add = SHOP_now()->toMySQL();
             $this->views = 0;
             $this->rating = 0;
             $this->votes = 0;
@@ -128,11 +128,11 @@ class Product
             $this->show_random = 1;
             $this->show_popular = 1;
             $this->keywords = '';
-            $this->comments_enabled = $_PP_CONF['ena_comments'] == 1 ?
-                    PP_COMMENTS_ENABLED : PP_COMMENTS_DISABLED;
-            $this->rating_enabled = $_PP_CONF['ena_ratings'] == 1 ? 1 : 0;
-            $this->track_onhand = $_PP_CONF['def_track_onhand'];
-            $this->oversell = $_PP_CONF['def_oversell'];
+            $this->comments_enabled = $_SHOP_CONF['ena_comments'] == 1 ?
+                    SHOP_COMMENTS_ENABLED : SHOP_COMMENTS_DISABLED;
+            $this->rating_enabled = $_SHOP_CONF['ena_ratings'] == 1 ? 1 : 0;
+            $this->track_onhand = $_SHOP_CONF['def_track_onhand'];
+            $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
             $this->custom = '';
             $this->Cat = NULL;
@@ -145,7 +145,7 @@ class Product
         if ($this->id > 0) {
             $this->getImages();
         }
-        $this->isAdmin = plugin_ismoderator_paypal() ? 1 : 0;
+        $this->isAdmin = plugin_ismoderator_shop() ? 1 : 0;
     }
 
 
@@ -188,7 +188,7 @@ class Product
                     $A = Cache::get($cache_key);
                     if (!$A) {
                         // If not found in cache
-                        $sql = "SELECT * FROM {$_TABLES['paypal.products']}
+                        $sql = "SELECT * FROM {$_TABLES['shop.products']}
                                 WHERE id = " . (int)$item[0];
                         $res = DB_query($sql);
                         $A = DB_fetchArray($res, false);
@@ -197,7 +197,7 @@ class Product
                         }
                     }
                 }
-                if (isset($A['prod_type']) && $A['prod_type'] == PP_PROD_COUPON) {
+                if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
                     $P[$id] = new Coupon($A);
                 } else {
                     $P[$id] = new self($A);
@@ -354,9 +354,9 @@ class Product
         $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
         $this->weight = $row['weight'];
         $this->taxable = isset($row['taxable']) ? $row['taxable'] : 0;
-        $this->shipping_type = PP_getVar($row, 'shipping_type', 'integer');
-        $this->shipping_amt = PP_getVar($row, 'shipping_amt', 'float');
-        $this->shipping_units = PP_getVar($row, 'shipping_units', 'float');
+        $this->shipping_type = SHOP_getVar($row, 'shipping_type', 'integer');
+        $this->shipping_amt = SHOP_getVar($row, 'shipping_amt', 'float');
+        $this->shipping_units = SHOP_getVar($row, 'shipping_units', 'float');
         $this->show_random = isset($row['show_random']) ? $row['show_random'] : 0;
         $this->show_popular = isset($row['show_popular']) ? $row['show_popular'] : 0;
         $this->track_onhand = isset($row['track_onhand']) ? $row['track_onhand'] : 0;
@@ -374,7 +374,7 @@ class Product
             $this->qty_discounts = $row['qty_discounts'];
             $this->dt_add = $row['dt_add'];
         } else {
-            $this->dt_add = PAYPAL_now()->toMySQL();
+            $this->dt_add = SHOP_now()->toMySQL();
             $qty_discounts = array();
             for ($i = 0; $i < count($row['disc_qty']); $i++) {
                 $disc_qty = (int)$row['disc_qty'][$i];
@@ -424,7 +424,7 @@ class Product
         $row = Cache::get($cache_key);
         if ($row === NULL) {
             $result = DB_query("SELECT *
-                        FROM {$_TABLES['paypal.products']}
+                        FROM {$_TABLES['shop.products']}
                         WHERE id='$id'");
             if (!$result || DB_numRows($result) != 1) {
                 return false;
@@ -453,7 +453,7 @@ class Product
         $cache_key = self::_makeCacheKey($this->id, 'attr');
         $this->options = Cache::get($cache_key);
         if ($this->options === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['paypal.prod_attr']}
+            $sql = "SELECT * FROM {$_TABLES['shop.prod_attr']}
                     WHERE item_id = '{$this->id}' AND enabled = 1
                     ORDER BY attr_name, orderby ASC";
             $result = DB_query($sql);
@@ -480,7 +480,7 @@ class Product
      */
     public function Save($A = '')
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
             $this->setVars($A);
@@ -497,7 +497,7 @@ class Product
             } elseif ($filename != '') {
                 $this->file = $filename;
             }
-            PAYPAL_debug('Uploaded file: ' . $this->file);
+            SHOP_debug('Uploaded file: ' . $this->file);
         }
 
         // For downloadable files, physical product options don't apply
@@ -515,12 +515,12 @@ class Product
 
         // Insert or update the record, as appropriate
         if ($this->id > 0) {
-            PAYPAL_debug('Preparing to update product id ' . $this->id);
-            $sql1 = "UPDATE {$_TABLES['paypal.products']} SET ";
+            SHOP_debug('Preparing to update product id ' . $this->id);
+            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
         } else {
-            PAYPAL_debug('Preparing to save a new product.');
-            $sql1 = "INSERT INTO {$_TABLES['paypal.products']} SET
+            SHOP_debug('Preparing to save a new product.');
+            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
                 dt_add = UTC_TIMESTAMP(), ";
             $sql3 = '';
         }
@@ -564,7 +564,7 @@ class Product
             }
             $status = true;
         } else {
-            COM_errorLog("Paypal- SQL error in Product::Save: $sql", 1);
+            COM_errorLog("Shop- SQL error in Product::Save: $sql", 1);
             $status = false;
         }
 
@@ -587,11 +587,11 @@ class Product
         }
 
         if (empty($this->Errors)) {
-            PAYPAL_debug('Update of product ' . $this->id . ' succeeded.');
-            PLG_itemSaved($this->id, $_PP_CONF['pi_name']);
+            SHOP_debug('Update of product ' . $this->id . ' succeeded.');
+            PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
-            PAYPAL_debug('Update of product ' . $this->id . ' failed.');
+            SHOP_debug('Update of product ' . $this->id . ' failed.');
             return false;
         }
     }
@@ -609,7 +609,7 @@ class Product
      */
     public function Delete()
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if ($this->id <= 0 ||
             self::isUsed($this->id) ||
@@ -620,11 +620,11 @@ class Product
         foreach ($this->Images as $prow) {
             self::deleteImage($prow['img_id'], $prow['filename']);
         }
-        DB_delete($_TABLES['paypal.products'], 'id', $this->id);
-        DB_delete($_TABLES['paypal.prod_attr'], 'item_id', $this->id);
+        DB_delete($_TABLES['shop.products'], 'id', $this->id);
+        DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
-        PLG_itemDeleted($this->id, $_PP_CONF['pi_name']);
+        PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
         $this->id = 0;
         $this->isNew = true;
         return true;
@@ -642,7 +642,7 @@ class Product
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['paypal.buttons'], 'item_id', $item_id);
+        DB_delete($_TABLES['shop.buttons'], 'item_id', $item_id);
     }
 
 
@@ -656,22 +656,22 @@ class Product
      */
     public static function deleteImage($img_id, $filename='')
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
         if ($img_id < 1) return;
 
         if ($filename == '') {
-            $filename = DB_getItem($_TABLES['paypal.images'], 'filename',
+            $filename = DB_getItem($_TABLES['shop.images'], 'filename',
                 "img_id=$img_id");
         }
 
-        if (is_file("{$_PP_CONF['image_dir']}/{$filename}")) {
+        if (is_file("{$_SHOP_CONF['image_dir']}/{$filename}")) {
             // Ignore errors due to file permissions, etc.
-            @unlink("{$_PP_CONF['image_dir']}/{$filename}");
+            @unlink("{$_SHOP_CONF['image_dir']}/{$filename}");
         }
 
-        DB_delete($_TABLES['paypal.images'], 'img_id', $img_id);
+        DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
         // This is broad, but the specific product ID isn't provided here.
         Cache::clear('products');
     }
@@ -689,35 +689,35 @@ class Product
      */
     private function XisValidRecord()
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         // Check that basic required fields are filled in
         if ($this->name == '')
-            $this->Errors[] = $LANG_PP['err_missing_name'];
+            $this->Errors[] = $LANG_SHOP['err_missing_name'];
 
         if ($this->short_description == '')
-            $this->Errors[] = $LANG_PP['err_missing_desc'];
+            $this->Errors[] = $LANG_SHOP['err_missing_desc'];
 
-        if ($this->prod_type == PP_PROD_DOWNLOAD) {
+        if ($this->prod_type == SHOP_PROD_DOWNLOAD) {
             if ($this->file == '') {
                 // Must have a file for a downloadable product
-                $this->Errors[] = $LANG_PP['err_missing_file'];
+                $this->Errors[] = $LANG_SHOP['err_missing_file'];
             }
             if ($this->expiration < 1) {
                 // Must have an expiration period for downloads
-                $this->Errors[] = $LANG_PP['err_missing_exp'];
+                $this->Errors[] = $LANG_SHOP['err_missing_exp'];
             }
         } elseif ($this->isPhysical() && $this->price < 0.01) {
-            // Paypal won't accept a zero amount, so non-downloadable items
+            // Shop won't accept a zero amount, so non-downloadable items
             // must have a positive price.  Use "Other Virtual" for free items.
-            $this->Errors[] = $LANG_PP['err_phys_need_price'];
+            $this->Errors[] = $LANG_SHOP['err_phys_need_price'];
         }
 
         if (!empty($this->Errors)) {
-            PAYPAL_debug('Errors encountered: ' . print_r($this->Errors,true));
+            SHOP_debug('Errors encountered: ' . print_r($this->Errors,true));
             return false;
         } else {
-            PAYPAL_debug('isValidRecord(): No errors');
+            SHOP_debug('isValidRecord(): No errors');
             return true;
         }
     }
@@ -731,21 +731,21 @@ class Product
      * then the current product is edited.  If an empty product was created,
      * then a new product is created here.
      *
-     * @uses    PAYPAL_getDocUrl()
-     * @uses    PAYPAL_errorMessage()
+     * @uses    SHOP_getDocUrl()
+     * @uses    SHOP_errorMessage()
      * @param   integer $id     Optional ID, current record used if zero
      * @return  string          HTML for edit form
      */
     public function showForm($id = 0)
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $LANG24, $LANG_postmodes,
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG24, $LANG_postmodes,
                 $_SYSTEM;
 
         $id = (int)$id;
         if ($id > 0) {
             // If an id is passed in, then read that record
             if (!$this->Read($id)) {
-                return PAYPAL_errorMessage($LANG_PP['invalid_product_id'], 'info');
+                return SHOP_errorMessage($LANG_SHOP['invalid_product_id'], 'info');
             }
         }
         $id = $this->id;
@@ -754,18 +754,18 @@ class Product
                         time() + 1200, $_CONF['cookie_path'],
                         $_CONF['cookiedomain'], $_CONF['cookiesecure'],false);
 
-        $T = PP_getTemplate('product_form', 'product');
+        $T = SHOP_getTemplate('product_form', 'product');
         // Set up the wysiwyg editor, if available
-        $tpl_var = $_PP_CONF['pi_name'] . '_entry';
+        $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {
         case 'ckeditor':
             $T->set_var('show_htmleditor', true);
-            PLG_requestEditor($_PP_CONF['pi_name'], $tpl_var, 'ckeditor_paypal.thtml');
+            PLG_requestEditor($_SHOP_CONF['pi_name'], $tpl_var, 'ckeditor_shop.thtml');
             PLG_templateSetVars($tpl_var, $T);
             break;
         case 'tinymce' :
             $T->set_var('show_htmleditor',true);
-            PLG_requestEditor($_PP_CONF['pi_name'], $tpl_var, 'tinymce_paypal.thtml');
+            PLG_requestEditor($_SHOP_CONF['pi_name'], $tpl_var, 'tinymce_shop.thtml');
             PLG_templateSetVars($tpl_var, $T);
             break;
         default :
@@ -778,11 +778,11 @@ class Product
         if ($id > 0) {
             $T->set_var('id', '<input type="hidden" name="id" value="' .
                         $this->id .'" />');
-            $retval = COM_startBlock($LANG_PP['edit'] . ': ' . $this->name);
+            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->name);
 
         } else {
             $T->set_var('id', '');
-            $retval = COM_startBlock($LANG_PP['new_product']);
+            $retval = COM_startBlock($LANG_SHOP['new_product']);
 
         }
 
@@ -796,13 +796,13 @@ class Product
             'price'         => Currency::getInstance()->formatValue($this->price),
             'file'          => htmlspecialchars($this->file, ENT_QUOTES, COM_getEncodingt()),
             'expiration'    => $this->expiration,
-            'action_url'    => PAYPAL_ADMIN_URL . '/index.php',
+            'action_url'    => SHOP_ADMIN_URL . '/index.php',
             'file_selection' => $this->FileSelector(),
             'keywords'      => htmlspecialchars($this->keywords, ENT_QUOTES, COM_getEncodingt()),
             'cat_select'    => Category::optionList($this->cat_id),
-            'currency'      => $_PP_CONF['currency'],
-            //'pi_url'        => PAYPAL_URL,
-            'doc_url'       => PAYPAL_getDocURL('product_form',
+            'currency'      => $_SHOP_CONF['currency'],
+            //'pi_url'        => SHOP_URL,
+            'doc_url'       => SHOP_getDocURL('product_form',
                                             $_CONF['language']),
             'prod_type'     => $this->prod_type,
             'weight'        => $this->weight,
@@ -836,7 +836,7 @@ class Product
         // or "none" if there is no button.
         $T->set_block('product', 'BtnRow', 'BRow');
         $have_chk = false;
-        foreach ($_PP_CONF['buttons'] as $key=>$checked) {
+        foreach ($_SHOP_CONF['buttons'] as $key=>$checked) {
             if ($key == $this->btn_type || ($this->isNew && $checked)) {
                 $btn_chk = 'checked="checked"';
                 $have_chk = true;
@@ -847,7 +847,7 @@ class Product
                 'btn_type'  => $key,
                 'btn_chk'   => $key == $this->btn_type ||
                         ($this->isNew && $checked) ? 'checked="checked"' : '',
-                'btn_name'  => $LANG_PP['buttons'][$key],
+                'btn_name'  => $LANG_SHOP['buttons'][$key],
             ));
             $T->parse('BRow', 'BtnRow', true);
         }
@@ -855,8 +855,8 @@ class Product
         $T->set_var('none_chk', $have_chk ? '' : 'checked="checked"');
 
         $T->set_block('product', 'ProdTypeRadio', 'ProdType');
-        foreach ($LANG_PP['prod_types'] as $value=>$text) {
-            if ($value == PP_PROD_COUPON && $_PP_CONF['gc_enabled'] == 0) {
+        foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
+            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
                 continue;
             }
             $T->set_var(array(
@@ -876,10 +876,10 @@ class Product
         $i = 0;     // initialize $i in case there are no images
         foreach ($this->Images as $i=>$prow) {
             $T->set_var(array(
-                'img_url'   => PAYPAL_URL . "/images/products/{$prow['filename']}",
-                'thumb_url' => PAYPAL_ImageUrl($prow['filename']),
+                'img_url'   => SHOP_URL . "/images/products/{$prow['filename']}",
+                'thumb_url' => SHOP_ImageUrl($prow['filename']),
                 'seq_no'    => $i,
-                'del_img_url' => PAYPAL_ADMIN_URL . '/index.php' .
+                'del_img_url' => SHOP_ADMIN_URL . '/index.php' .
                     '?delete_img=x' .
                     '&img_id=' . $prow['img_id'] .
                     '&id=' . $this->id,
@@ -889,7 +889,7 @@ class Product
 
         // add upload fields for unused images
         $T->set_block('product', 'UploadFld', 'UFLD');
-        for ($j = $i; $j < $_PP_CONF['max_images']; $j++) {
+        for ($j = $i; $j < $_SHOP_CONF['max_images']; $j++) {
             $T->parse('UFLD', 'UploadFld', true);
         }
 
@@ -904,9 +904,9 @@ class Product
 
         $Disc = Sales::getProduct($this->id);
         if (!empty($Disc)) {
-            $DT = PP_getTemplate('sales_table', 'stable');
+            $DT = SHOP_getTemplate('sales_table', 'stable');
             $DT->set_var('edit_sale_url',
-                PAYPAL_ADMIN_URL . '/index.php?sales');
+                SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
                 if ($D->discount_type == 'amount') {
@@ -950,7 +950,7 @@ class Product
         $oldvalue = $oldvalue == 1 ? 1 : 0;
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES['paypal.products']}
+        $sql = "UPDATE {$_TABLES['shop.products']}
                 SET $varname=$newvalue
                 WHERE id=$id";
         //echo $sql;die;
@@ -1009,7 +1009,7 @@ class Product
         global $_TABLES;
 
         $item_id = (int)$item_id;
-        if (DB_count($_TABLES['paypal.purchases'], 'product_id', $item_id) > 0) {
+        if (DB_count($_TABLES['shop.purchases'], 'product_id', $item_id) > 0) {
             return true;
         } else {
             return false;
@@ -1024,7 +1024,7 @@ class Product
      */
     public function Detail()
     {
-        global $_CONF, $_PP_CONF, $_TABLES, $LANG_PP, $_USER, $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $_SYSTEM;
 
         USES_lib_comments();
 
@@ -1036,8 +1036,8 @@ class Product
         $retval = COM_startBlock();
 
         // Set the template dir based on the configured template version
-        $T = PP_getTemplate('product_detail_attrib', 'product',
-                'detail/' . $_PP_CONF['product_tpl_ver']);
+        $T = SHOP_getTemplate('product_detail_attrib', 'product',
+                'detail/' . $_SHOP_CONF['product_tpl_ver']);
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
 
@@ -1057,7 +1057,7 @@ class Product
         $qty_disc_txt = '';
         $T->set_block('product', 'qtyDiscTxt', 'disc');
         foreach ($this->qty_discounts as $qty=>$pct) {
-            $T->set_var('qty_disc', sprintf($LANG_PP['buy_x_save'], $qty, $pct));
+            $T->set_var('qty_disc', sprintf($LANG_SHOP['buy_x_save'], $qty, $pct));
             $T->parse('disc', 'qtyDiscTxt', true);
         }
 
@@ -1077,18 +1077,18 @@ class Product
         // Retrieve the photos and put into the template
         foreach ($this->Images as $i=>$prow) {
             if ($prow['filename'] != '' &&
-                file_exists("{$_PP_CONF['image_dir']}/{$prow['filename']}")) {
+                file_exists("{$_SHOP_CONF['image_dir']}/{$prow['filename']}")) {
                 if ($i == 0) {
-                    $T->set_var('main_img', PAYPAL_ImageUrl($prow['filename'], 0, 0));
+                    $T->set_var('main_img', SHOP_ImageUrl($prow['filename'], 0, 0));
                     $T->set_var('main_imgfile', $prow['filename']);
                 }
                 $T->set_block('product', 'Thumbnail', 'PBlock');
                 $T->set_var(array(
                     'img_file'      => $prow['filename'],
-                    'disp_img'      => PAYPAL_ImageUrl($prow['filename'], 0, 0),
-                    'lg_img'        => PAYPAL_URL.'/images/products/'.$prow['filename'],
-                    'img_url'       => PAYPAL_URL.'/images/products',
-                    'thumb_url'     => PAYPAL_ImageUrl($prow['filename']),
+                    'disp_img'      => SHOP_ImageUrl($prow['filename'], 0, 0),
+                    'lg_img'        => SHOP_URL.'/images/products/'.$prow['filename'],
+                    'img_url'       => SHOP_URL.'/images/products',
+                    'thumb_url'     => SHOP_ImageUrl($prow['filename']),
                     'session_id'    => session_id(),
                     'small_imgfile' => $prow['filename'],
                 ) );
@@ -1163,13 +1163,13 @@ class Product
         }
 
         if ($this->getShipping()) {
-            $shipping_txt = sprintf($LANG_PP['plus_shipping'], Currency::getInstance()->formatValue($this->shipping_amt));
+            $shipping_txt = sprintf($LANG_SHOP['plus_shipping'], Currency::getInstance()->formatValue($this->shipping_amt));
         } else {
             $shipping_txt = '';
         }
         $T->set_var(array(
             'have_attributes'   => $this->hasAttributes(),
-            //'currency'          => $_PP_CONF['currency'],
+            //'currency'          => $_SHOP_CONF['currency'],
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_desc,
@@ -1180,7 +1180,7 @@ class Product
             'orig_price'        => Currency::getInstance()->Format($this->_orig_price),
             'on_sale'           => $this->isOnSale(),
             'sale_name'         => $this->isOnSale() ? $this->getSale()->name : '',
-            'img_cell_width'    => ($_PP_CONF['max_thumb_size'] + 20),
+            'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => Currency::getInstance()->Pre(),
             'price_postfix'     => Currency::getInstance()->Post(),
             'onhand'            => $this->track_onhand ? $this->onhand : '',
@@ -1214,8 +1214,8 @@ class Product
         }
 
         // Show the user comments if enabled globally and for this product
-        if (plugin_commentsupport_paypal() &&
-                $this->comments_enabled != PP_COMMENTS_DISABLED) {
+        if (plugin_commentsupport_shop() &&
+                $this->comments_enabled != SHOP_COMMENTS_DISABLED) {
                 // if enabled or closed
             if ($_CONF['commentsloginrequired'] == 1 && COM_isAnonUser()) {
                 // Set mode to "disabled"
@@ -1224,23 +1224,23 @@ class Product
                 $mode = $this->comments_enabled;
             }
             $T->set_var('usercomments',
-                CMT_userComments($prod_id, $this->short_description, $_PP_CONF['pi_name'],
+                CMT_userComments($prod_id, $this->short_description, $_SHOP_CONF['pi_name'],
                     '', '', 0, 1, false, false, $mode));
         }
 
         if ($this->rating_enabled == 1) {
-            $PP_ratedIds = RATING_getRatedIds($_PP_CONF['pi_name']);
-            if (in_array($prod_id, $PP_ratedIds)) {
+            $SHOP_ratedIds = RATING_getRatedIds($_SHOP_CONF['pi_name']);
+            if (in_array($prod_id, $SHOP_ratedIds)) {
                 $static = true;
                 $voted = 1;
-            } elseif (plugin_canuserrate_paypal($this->id, $_USER['uid'])) {
+            } elseif (plugin_canuserrate_shop($this->id, $_USER['uid'])) {
                 $static = 0;
                 $voted = 0;
             } else {
                 $static = 1;
                 $voted = 0;
             }
-            $rating_box = RATING_ratingBar($_PP_CONF['pi_name'], $prod_id,
+            $rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $prod_id,
                     $this->votes, $this->rating,
                     $voted, 5, $static, 'sm');
             $T->set_var('rating_bar', $rating_box);
@@ -1251,7 +1251,7 @@ class Product
         if ($this->isAdmin) {
             // Add the quick-edit link for administrators
             $T->set_var(array(
-                'pi_admin_url'  => PAYPAL_ADMIN_URL,
+                'pi_admin_url'  => SHOP_ADMIN_URL,
                 'can_edit'      => 'true',
             ) );
         }
@@ -1268,13 +1268,13 @@ class Product
         $retval .= $T->parse('output', 'product');
 
         // Update the hit counter
-        DB_query("UPDATE {$_TABLES['paypal.products']}
+        DB_query("UPDATE {$_TABLES['shop.products']}
                 SET views = views + 1
                 WHERE id = '$prod_id'");
 
         $retval .= COM_endBlock();
         //CACHE_create_instance($cacheInstance, $retval, 0);
-        $retval = PLG_outputFilter($retval, 'paypal');
+        $retval = PLG_outputFilter($retval, 'shop');
         return $retval;
     }
 
@@ -1286,11 +1286,11 @@ class Product
      */
     public function FileSelector()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         $retval = '';
 
-        $dh = opendir($_PP_CONF['download_path']);
+        $dh = opendir($_SHOP_CONF['download_path']);
         if ($dh) {
             while ($file = readdir($dh)) {
                 if ($file == '.' || $file == '..')
@@ -1325,14 +1325,14 @@ class Product
 
     /**
      * Gets the purchase links appropriate for the product.
-     * May be Paypal buttons, login-required link, or download button.
+     * May be Shop buttons, login-required link, or download button.
      *
      * @param   string  $type   View type where the button will be shown
      * @return  array   Array of buttons as name=>html.
      */
     public function PurchaseLinks($type='detail')
     {
-        global $_CONF, $_USER, $_PP_CONF, $_TABLES;
+        global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
         $buttons = array();
         $this->_view = $type;
@@ -1340,22 +1340,22 @@ class Product
         // Indicate that an "add to cart" button should be returned along with
         // the "buy now" button.  If the product has already been purchased
         // and is available for immediate download, this will be turned off.
-        $add_cart = $_PP_CONF['ena_cart'] == 1 ? true : false;
+        $add_cart = $_SHOP_CONF['ena_cart'] == 1 ? true : false;
 
-        if ($this->prod_type == PP_PROD_DOWNLOAD && $this->price == 0) {
+        if ($this->prod_type == SHOP_PROD_DOWNLOAD && $this->price == 0) {
             // Free, or unexpired downloads for non-anymous
-            $T = PP_getTemplate('btn_download', 'download', 'buttons');
-            $T->set_var('action_url', PAYPAL_URL . '/download.php');
+            $T = SHOP_getTemplate('btn_download', 'download', 'buttons');
+            $T->set_var('action_url', SHOP_URL . '/download.php');
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
             $add_cart = false;
         } elseif ($this->_OutOfStock() > 0) {
             // If out of stock, display but deny purchases
             $add_cart = false;
-        } elseif ($_USER['uid'] == 1 && !$_PP_CONF['anon_buy'] &&
+        } elseif ($_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy'] &&
                 !$this->hasAttributes() && $this->price > 0) {
             // Requires login before purchasing
-            $T = PP_getTemplate('btn_login_req', 'login_req', 'buttons');
+            $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
             $buttons['login'] = $T->parse('', 'login_req');
         } else {
             // Normal buttons for everyone else
@@ -1374,17 +1374,17 @@ class Product
         // can't be mixed with products, so don't allow adding to the cart.
         if ($add_cart && $this->btn_type != 'donation' &&
                 ($this->price > 0 || !$this->canBuyNow()) ) {
-            $T = PP_getTemplate('btn_add_cart_attrib', 'cart', 'buttons');
+            $T = SHOP_getTemplate('btn_add_cart_attrib', 'cart', 'buttons');
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
-                'action_url'    => PAYPAL_URL . '/index.php',
+                'action_url'    => SHOP_URL . '/index.php',
                 //'form_url'  => $this->hasAttributes() ? '' : 'true',
                 //'form_url'  => false,
                 'form_url'  => $this->_view == 'list' ? true : false,
-                'tpl_ver'   => $_PP_CONF['product_tpl_ver'],
+                'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
                 'frm_id'    => md5($this->id . rand()),
                 'quantity'  => $this->getFixedQuantity(),
             ) );
@@ -1447,7 +1447,7 @@ class Product
      * The field will not be added if $fld_name already exists for the
      * product.
      * The prompt string may be supplied or, if blank, then $fld_name is used
-     * to find a string in $LANG_PP. Final fallback is to use the field name
+     * to find a string in $LANG_SHOP. Final fallback is to use the field name
      * as the prompt.
      * Plugins should be sure to set $fld_lang.
      *
@@ -1457,7 +1457,7 @@ class Product
      */
     public function addSpecialField($fld_name, $fld_lang = '', $opts=array())
     {
-        global $LANG_PP, $LANG_PP_HELP;
+        global $LANG_SHOP, $LANG_SHOP_HELP;
 
         if (array_key_exists($fld_name, $this->special_fields)) {
             // Only add if the field doesn't already exist
@@ -1466,12 +1466,12 @@ class Product
 
         if (empty($fld_lang)) {
             // No text supplied, try to get one from the language file.
-            $fld_lang = PP_getVar($LANG_PP, $fld_name);
+            $fld_lang = SHOP_getVar($LANG_SHOP, $fld_name);
         }
 
         // Default to help string from the language file.
         // May be overridden from the $opts array if one is supplied there.
-        $fld_help = PP_getVar($LANG_PP_HELP, $fld_name);
+        $fld_help = SHOP_getVar($LANG_SHOP_HELP, $fld_name);
 
         $this->special_fields[$fld_name] = array(
             'name' => $fld_name,
@@ -1576,7 +1576,7 @@ class Product
     public function getTax($price, $qty = 1)
     {
         if ($this->taxable) {
-            return round(PP_getTaxRate() * $price * $qty, 2);
+            return round(SHOP_getTaxRate() * $price * $qty, 2);
         } else {
             return 0;
         }
@@ -1639,7 +1639,7 @@ class Product
         }
 
         if (!empty($opts)) {
-            $T = PP_getTemplate('view_options', 'options');
+            $T = SHOP_getTemplate('view_options', 'options');
             $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($opts as $opt) {
                 $T->set_var(array(
@@ -1695,7 +1695,7 @@ class Product
         global $_TABLES;
 
         $sql = "SELECT attr_name, attr_value
-                FROM {$_TABLES['paypal.prod_attr']}
+                FROM {$_TABLES['shop.prod_attr']}
                 WHERE attr_id IN ($options)";
         $optres = DB_query($sql);
         $opt_str = '';
@@ -1723,7 +1723,7 @@ class Product
 
         // update the qty on hand, if tracking and not already zero
         if ($this->track_onhand && $this->onhand > 0) {
-            $sql = "UPDATE {$_TABLES['paypal.products']} SET
+            $sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->quantity})
                     WHERE id = '{$this->id}'";
             Cache::clear('products');
@@ -1811,7 +1811,7 @@ class Product
      */
     public function Duplicate()
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if ($this->id == 0 || self::isPluginItem($this->id)) {
             // Don't handle new items or plugin products
@@ -1836,11 +1836,11 @@ class Product
         foreach ($this->Images as $A) {
             $parts = explode('_', $A['filename']);
             $new_fname = "{$new_id}_{$parts[1]}";
-            $src_f = $_PP_CONF['image_dir'] . '/' . $A['filename'];
-            $dst_f = $_PP_CONF['image_dir'] . '/' . $new_fname;
+            $src_f = $_SHOP_CONF['image_dir'] . '/' . $A['filename'];
+            $dst_f = $_SHOP_CONF['image_dir'] . '/' . $new_fname;
             if (@copy($src_f, $dst_f)) {
                 // copy successful, insert record into table
-                $sql = "INSERT INTO {$_TABLES['paypal.images']}
+                $sql = "INSERT INTO {$_TABLES['shop.images']}
                             (product_id, filename)
                         VALUES ('$new_id', '" . DB_escapeString($new_fname) . "')";
                 DB_query($sql);
@@ -1903,11 +1903,11 @@ class Product
      */
     public function isAvailable($isadmin = false)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         if ($isadmin) return true;  // Admin can always view
 
-        $today = PAYPAL_now()->format('Y-m-d', true);
+        $today = SHOP_now()->format('Y-m-d', true);
         if ($today < $this->avail_beg || $today > $this->avail_end) {
             return false;
         } else {
@@ -1924,8 +1924,8 @@ class Product
      */
     public function isTaxable()
     {
-        global $_PP_CONF;
-        return $this->taxable && PP_getTaxRate() > 0;
+        global $_SHOP_CONF;
+        return $this->taxable && SHOP_getTaxRate() > 0;
     }
 
 
@@ -1972,7 +1972,7 @@ class Product
      */
     public function getSpecialFields($values = array())
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         $retval = array();
         if (!is_array($values)) {
@@ -2051,7 +2051,7 @@ class Product
      */
     public function getLink()
     {
-        return PAYPAL_URL . '/detail.php?id=' . $this->id;
+        return SHOP_URL . '/detail.php?id=' . $this->id;
     }
 
 
@@ -2143,7 +2143,7 @@ class Product
      */
     public function isPhysical()
     {
-        return ($this->prod_type & PP_PROD_PHYSICAL) == PP_PROD_PHYSICAL;
+        return ($this->prod_type & SHOP_PROD_PHYSICAL) == SHOP_PROD_PHYSICAL;
     }
 
 
@@ -2163,7 +2163,7 @@ class Product
         if ($this->Images === NULL) {
             $this->Images = array();
             $sql = "SELECT img_id, filename
-                FROM {$_TABLES['paypal.images']}
+                FROM {$_TABLES['shop.images']}
                 WHERE product_id='". $this->id . "'";
             $res = DB_query($sql);
             while ($prow = DB_fetchArray($res, false)) {

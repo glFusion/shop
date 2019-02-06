@@ -1,25 +1,25 @@
 /**
 *   Add an item to the shopping cart.
 */
-var ppAddToCart = function(frm_id)
+var shopAddToCart = function(frm_id)
 {
     data = $("#"+frm_id).serialize();
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: glfusionSiteUrl + "/paypal/ajax.php?action=addcartitem",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=addcartitem",
         data: data,
         success: function(result) {
             try {
                 if (result.content != '') {
                     // Update the shopping cart block if it is displayed
-                    divid = document.getElementById("ppCartBlockContents");
+                    divid = document.getElementById("shopCartBlockContents");
                     if (divid != undefined) {
                         divid.innerHTML = result.content;
                         if (result.unique) {
                             var btn_id = frm_id + '_add_cart_btn';
                             document.getElementById(btn_id).disabled = true;
-                            document.getElementById(btn_id).className = 'paypalButton grey';
+                            document.getElementById(btn_id).className = 'shopButton grey';
                         }
                     }
                     $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
@@ -30,7 +30,7 @@ var ppAddToCart = function(frm_id)
                 }
             } catch(err) {
             }
-            blk_setvis_paypal_cart(result.content == "" ? "none" : "block");
+            blk_setvis_shop_cart(result.content == "" ? "none" : "block");
         }
     });
     return false;
@@ -39,9 +39,9 @@ var ppAddToCart = function(frm_id)
 /**
 *   Set the visibility of the cart block so it only appears if there are items
 */
-function blk_setvis_paypal_cart(newvis)
+function blk_setvis_shop_cart(newvis)
 {
-    blk = document.getElementById("paypal_cart");
+    blk = document.getElementById("shop_cart");
     if (typeof(blk) != 'undefined' && blk != null) {
         blk.style.display = newvis;
     }
@@ -65,7 +65,7 @@ function finalizeCart(cart_id, uid)
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: glfusionSiteUrl + "/paypal/ajax.php?action=finalizecart",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=finalizecart",
         data: data,
         success: function(result) {
             try {
@@ -84,13 +84,13 @@ function finalizeCart(cart_id, uid)
 /**
 *   Add an item to the shopping cart.
 */
-var ppApplyGC = function(frm_id)
+var shopApplyGC = function(frm_id)
 {
     data = $("#"+frm_id).serialize();
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: glfusionSiteUrl + "/paypal/ajax.php?action=redeem_gc",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=redeem_gc",
         data: data,
         success: function(result) {
             try {

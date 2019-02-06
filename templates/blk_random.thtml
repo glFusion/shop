@@ -11,7 +11,7 @@
 </a>
 <p>{descrip}</p>
 {!if price}
-<p>{$LANG_PP['price']}: {price} {currency}</p>
+<p>{$LANG_SHOP['price']}: {price} {currency}</p>
 {!endif}
 <p>{button}</p>
 {# end {templatelocation} #}

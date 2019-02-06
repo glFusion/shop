@@ -1,12 +1,12 @@
 {# begin {templatelocation} #}
 <noscript>
-  <span class="alert">{$LANG_PP['no_javascript']}</span>
+  <span class="alert">{$LANG_SHOP['no_javascript']}</span>
 </noscript>
 <script type="text/javascript">
-function PPupdateImage(disp_img, lg_img)
+function SHOPupdateImage(disp_img, lg_img)
 {
     document.getElementById("disp_img").src = "{site_url}/lglib/img.php?src=" +
-        disp_img + "&plugin=paypal&sess={session_id}&width=460&height=460";
+        disp_img + "&plugin=shop&sess={session_id}&width=460&height=460";
 //    document.getElementById("disp_img").src = disp_img;
 //    document.getElementById("lg_img").href = lg_img;
 }

@@ -4,24 +4,24 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
- * Class for Paypal Cache.
- * @package paypal
+ * Class for Shop Cache.
+ * @package shop
  */
 class Cache
 {
     /** Base tag added to all cache item IDs.
      * @const string */
-    const TAG = 'paypal';
+    const TAG = 'shop';
 
     /** Minimum glFusion version that supports caching.
      * @const string */
@@ -145,6 +145,6 @@ class Cache
         self::delete('items_order_' . $order_id);
     }
 
-}   // class Paypal\Cache
+}   // class Shop\Cache
 
 ?>

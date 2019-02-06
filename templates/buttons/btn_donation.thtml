@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<form style="display:inline;" action="{paypal_url}/cgi-bin/webscr"
+<form style="display:inline;" action="{shop_url}/cgi-bin/webscr"
     method="post">
 {!if encrypted}
   <input type="hidden" name="cmd" value="_s-xclick" />
@@ -20,10 +20,10 @@
   <!--<input type="hidden" name="quantity" value="1" />-->
   <input type="hidden" name="return" value="{return}" />
   <input type="hidden" name="rm" value="1" />
-  <!--<input type="image" src="{site_url}/paypal/images/donate.gif" border="0"
+  <!--<input type="image" src="{site_url}/shop/images/donate.gif" border="0"
     style="background:transparent;"
-    name="submit" alt="{$LANG_PP['donate']}"
-    title="{$LANG_PP['donate']}" />-->
-  <button type="submit" class="uk-button uk-button-small uk-button-primary">{$LANG-PP['donate']}</button>
+    name="submit" alt="{$LANG_SHOP['donate']}"
+    title="{$LANG_SHOP['donate']}" />-->
+  <button type="submit" class="uk-button uk-button-small uk-button-primary">{$LANG-SHOP['donate']}</button>
 </form>
 {# end {templatelocation} #}

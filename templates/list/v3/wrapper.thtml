@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<div class="ppProductListOuter {tpl_ver}">
+<div class="shopProductListOuter {tpl_ver}">
 {!!if {table_columns} == 6 !!}
   <ul class="uk-grid uk-grid-width-small-1-4 uk-grid-width-medium-1-5 uk-grid-width-large-1-6 uk-text-center">
 {!else}
@@ -28,7 +28,7 @@
 <!-- BEGIN ProductItems -->
     <li class="uk-vertical-align-top ppProductListItem v3 uk-margin-bottom">
       <a href="{item_url}">
-        <div class="paypalProductListItem v3">
+        <div class="shopProductListItem v3">
           <figure class="uk-overlay uk-overlay-hover" style="width:100%">
             <div class="ItemImage">
 {!if small_pic}
@@ -38,10 +38,10 @@
             <div class="ItemUrl">
               <div class="shortdescription">{short_description}</div>
 {!if price}
-              <div class="paypalPrice list normal v3">
+              <div class="shopPrice list normal v3">
 {!if on_sale}
-                <span class="paypalPrice list was v3">{orig_price}</span>
-                <span class="paypalPrice list sale v3" id="price" name="price">{price}</span>
+                <span class="shopPrice list was v3">{orig_price}</span>
+                <span class="shopPrice list sale v3" id="price" name="price">{price}</span>
 {!else}
                 {price}
 {!endif}
@@ -49,7 +49,7 @@
 {!endif}
             </div>
             <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
-              {$LANG_PP['see_details']}
+              {$LANG_SHOP['see_details']}
             </figcaption>
           </figure>
         </div>

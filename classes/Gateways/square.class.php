@@ -4,13 +4,13 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    paypal
+*   @package    shop
 *   @version    0.6.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
 require_once __DIR__ . '/square/connect-php-sdk/autoload.php';
 
@@ -18,9 +18,9 @@ require_once __DIR__ . '/square/connect-php-sdk/autoload.php';
 /**
 *   Class for Square payment gateway
 *   @since 0.6.0
-*   @package paypal
+*   @package shop
 */
-class square extends \Paypal\Gateway
+class square extends \Shop\Gateway
 {
 
     /** Square location value
@@ -35,7 +35,7 @@ class square extends \Paypal\Gateway
     */
     public function __construct()
     {
-        global $_PP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER;
 
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -56,7 +56,7 @@ class square extends \Paypal\Gateway
             'prod_loc_id'  => '',
             'prod_appid'   => '',
             'prod_token'   => '',
-            'ipn_url'           => PAYPAL_URL . '/ipn/square.php',
+            'ipn_url'           => SHOP_URL . '/ipn/square.php',
             'test_mode'         => 1,
         );
 
@@ -161,7 +161,7 @@ class square extends \Paypal\Gateway
     */
     public function gatewayVars($cart)
     {
-        global $_PP_CONF, $_USER, $_TABLES, $LANG_PP;
+        global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
         if (!$this->_Supports('checkout')) {
             return '';
@@ -169,7 +169,7 @@ class square extends \Paypal\Gateway
 
         $cartID = $cart->CartID();
         $shipping = 0;
-        $Cur = \Paypal\Currency::getInstance();
+        $Cur = \Shop\Currency::getInstance();
 
         $accessToken = $this->token;
         $locationId = $this->loc_id;
@@ -188,7 +188,7 @@ class square extends \Paypal\Gateway
             $PriceMoney->setCurrency($this->currency_code);
             $PriceMoney->setAmount($Cur->toInt($total_amount));
             $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-            $itm->setName($LANG_PP['all_items']);
+            $itm->setName($LANG_SHOP['all_items']);
             $itm->setQuantity('1');
             $itm->setBasePriceMoney($PriceMoney);
             //Puts our line item object in an array called lineItems.
@@ -217,11 +217,11 @@ class square extends \Paypal\Gateway
                     $TaxMoney->setCurrency($this->currency_code);
                     $taxObj = new \SquareConnect\Model\OrderLineItemTax(
                         array(
-                            'percentage' => (string)($_PP_CONF['tax_rate'] * 100),
+                            'percentage' => (string)($_SHOP_CONF['tax_rate'] * 100),
                             'name' => 'Sales Tax',
                         )
                     );
-                    $tax = $Item->price * $Item->quantity * $_PP_CONF['tax_rate'];
+                    $tax = $Item->price * $Item->quantity * $_SHOP_CONF['tax_rate'];
                     $tax = $Cur->toInt($tax);
                     $TaxMoney->setAmount($tax);
                     $taxObj->setAppliedMoney($TaxMoney);
@@ -239,7 +239,7 @@ class square extends \Paypal\Gateway
             $ShipMoney->setCurrency($this->currency_code);
             $ShipMoney->setAmount($Cur->toInt($shipping));
             $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-            $itm->setName($LANG_PP['shipping']);
+            $itm->setName($LANG_SHOP['shipping']);
             $itm->setQuantity('1');
             $itm->setBasePriceMoney($ShipMoney);
             array_push($lineItems, $itm);
@@ -449,9 +449,9 @@ class square extends \Paypal\Gateway
     */
     public function getLogo()
     {
-        global $_CONF, $_PP_CONF;
+        global $_CONF, $_SHOP_CONF;
         return COM_createImage($_CONF['site_url'] . '/' .
-            $_PP_CONF['pi_name'] . '/images/gateways/square-logo-100-27.png');
+            $_SHOP_CONF['pi_name'] . '/images/gateways/square-logo-100-27.png');
     }
 
 
@@ -519,7 +519,7 @@ class square extends \Paypal\Gateway
      */
     public function getTransaction($trans_id)
     {
-        //$trans_id = PP_getVar($_GET, 'transactionId');
+        //$trans_id = SHOP_getVar($_GET, 'transactionId');
         if (empty($trans_id)) {
             return false;
         }

@@ -4,22 +4,22 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2013 Lee Garner
- * @package     paypal
+ * @package     shop
  * @version     v0.5.2
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\ipn;
+namespace Shop\ipn;
 
-use \Paypal\Cart;
+use \Shop\Cart;
 
 /**
  * Authorize.Net IPN Processor.
  * @since   v0.5.3
- * @package paypal
+ * @package shop
  */
-class authorizenet extends \Paypal\IPN
+class authorizenet extends \Shop\IPN
 {
     /**
      * Constructor. Set up the pp_data array.
@@ -37,37 +37,37 @@ class authorizenet extends \Paypal\IPN
                     $A['x_last_name'];
         $this->pp_data['pmt_date'] =
                     strftime('%d %b %Y %H:%M:%S', time());
-        $this->pp_data['pmt_gross'] = PP_getVar($A, 'x_amount', 'float');
+        $this->pp_data['pmt_gross'] = SHOP_getVar($A, 'x_amount', 'float');
         $this->pp_data['gw_name'] = $this->gw->Description();
-        $this->pp_data['pmt_shipping'] = PP_getVar($A, 'x_freight', 'float');
+        $this->pp_data['pmt_shipping'] = SHOP_getVar($A, 'x_freight', 'float');
         $this->pp_data['pmt_handling'] = 0; // not supported?
-        $this->pp_data['pmt_tax'] = PP_getVar($A, 'x_tax', 'float');
-        $this->pp_data['invoice'] = PP_getVar($A, 'x_invoice_num');
+        $this->pp_data['pmt_tax'] = SHOP_getVar($A, 'x_tax', 'float');
+        $this->pp_data['invoice'] = SHOP_getVar($A, 'x_invoice_num');
 
         // Check a couple of vars to see if a shipping address was supplied
-        $shipto_addr = PP_getVar($A, 'x_ship_to_address');
-        $shipto_city = PP_getVar($A, 'x_ship_to_city');
+        $shipto_addr = SHOP_getVar($A, 'x_ship_to_address');
+        $shipto_city = SHOP_getVar($A, 'x_ship_to_city');
         if ($shipto_addr != '' && $shipto_city != '') {
             $this->pp_data['shipto'] = array(
-                'name'      => PP_getVar($A, 'x_ship_to_first_name') . ' ' . 
-                                PP_getVar($A, 'x_ship_to_last_name'),
+                'name'      => SHOP_getVar($A, 'x_ship_to_first_name') . ' ' . 
+                                SHOP_getVar($A, 'x_ship_to_last_name'),
                 'address1'  => $shipto_addr,
                 'address2'  => '',
                 'city'      => $shipto_city,
-                'state'     => PP_getVar($A, 'x_ship_to_state'),
-                'country'   => PP_getVar($A, 'x_ship_to_country'),
-                'zip'       => PP_getVar($A, 'x_ship_to_zip'),
-                'phone'     => PP_getVar($A, 'x_phone'),
+                'state'     => SHOP_getVar($A, 'x_ship_to_state'),
+                'country'   => SHOP_getVar($A, 'x_ship_to_country'),
+                'zip'       => SHOP_getVar($A, 'x_ship_to_zip'),
+                'phone'     => SHOP_getVar($A, 'x_phone'),
             );
         }
 
-        /*$custom = explode(';', PP_getVar($A, 'custom'));
+        /*$custom = explode(';', SHOP_getVar($A, 'custom'));
         foreach ($custom as $name => $temp) {
             list($name, $value) = explode(':', $temp);
             $this->pp_data['custom'][$name] = $value;
         }*/
 
-        switch(PP_getVar($A, 'x_response_code', 'integer')) {
+        switch(SHOP_getVar($A, 'x_response_code', 'integer')) {
         case 1:
             $this->pp_data['pmt_status'] = 'paid';
             break;
@@ -83,7 +83,7 @@ class authorizenet extends \Paypal\IPN
         $this->pp_data['custom']['uid'] = $this->Order->uid;
 
         // Hack to get the gift card amount into the right variable name
-        $by_gc = PP_getVar($this->pp_data['custom'], 'apply_gc', 'float');
+        $by_gc = SHOP_getVar($this->pp_data['custom'], 'apply_gc', 'float');
         if ($by_gc > 0) {
             $this->pp_data['custom']['by_gc'] = $by_gc;
         }
@@ -123,7 +123,7 @@ class authorizenet extends \Paypal\IPN
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->Log(true);
 
-        PAYPAL_debug("Received $item_gross gross payment");
+        SHOP_debug("Received $item_gross gross payment");
         if ($this->isSufficientFunds()) {
             $this->handlePurchase();
             return true;
@@ -172,22 +172,22 @@ class authorizenet extends \Paypal\IPN
         $result = json_decode($result, true);
 
         // Check return fields against known values
-        $trans = PP_getVar($result, 'transaction', 'array', NULL);
+        $trans = SHOP_getVar($result, 'transaction', 'array', NULL);
         if (!$trans) return false;
 
-        if (PP_getVar($trans, 'transId') != $this->pp_data['txn_id']) {
+        if (SHOP_getVar($trans, 'transId') != $this->pp_data['txn_id']) {
             return false;
         }
-        if (PP_getVar($trans, 'responseCode', 'integer') != 1) {
+        if (SHOP_getVar($trans, 'responseCode', 'integer') != 1) {
             return false;
         }
-        if (PP_getVar($trans, 'settleAmount', 'float') != $this->pp_data['pmt_gross']) {
+        if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->pp_data['pmt_gross']) {
             return false;
         }
 
-        $order = PP_getVar($trans, 'order', 'array');
+        $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) return false;
-        if (PP_getVar($order, 'invoiceNumber') != $this->pp_data['invoice']) {
+        if (SHOP_getVar($order, 'invoiceNumber') != $this->pp_data['invoice']) {
             return false;
         }
 

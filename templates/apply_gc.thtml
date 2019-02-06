@@ -1,16 +1,16 @@
 {# begin {templatelocation} #}
-<h2>{$LANG_PP['apply_gc_title']}</h2>
-<form class="uk-form uk-form-horizontal" action="{site_url}/paypal/index.php?redeem" method="post">
+<h2>{$LANG_SHOP['apply_gc_title']}</h2>
+<form class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php?redeem" method="post">
   <input type="hidden" name="refresh" value="apply_gc" />
   <div class="uk-form-row">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls">
-      {$LANG_PP['apply_gc_help']}
+      {$LANG_SHOP['apply_gc_help']}
     </div>
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_PP['gc_bal']}:
+    <label class="uk-form-label">{$LANG_SHOP['gc_bal']}:
     </label>
     <div class="uk-form-controls">
       {gc_bal}
@@ -18,7 +18,7 @@
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_PP['enter_gc']}:
+    <label class="uk-form-label">{$LANG_SHOP['enter_gc']}:
     </label>
     <div class="uk-form-controls">
       <input type="text" id="code" name="gc_code" value="{code}" size="32" maxlength="32" />
@@ -26,8 +26,8 @@
   </div>
 
   <div class="uk-form-row" align="center">
-    <button class="uk-button uk-button-success type="submit" name="saveopt" value="{$LANG_PP['update']}">{$LANG_PP['update']}</button>
-    <button class="uk-button" type="reset" />{$LANG_PP['clearform']}</button>
+    <button class="uk-button uk-button-success type="submit" name="saveopt" value="{$LANG_SHOP['update']}">{$LANG_SHOP['update']}</button>
+    <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
   </div>
 </form>
 {# end {templatelocation} #}

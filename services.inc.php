@@ -1,11 +1,11 @@
 <?php
 /**
- * Web service functions for the PayPal plugin.
- * This is used to supply PayPal functions to other plugins.
+ * Web service functions for the Shop plugin.
+ * This is used to supply Shop functions to other plugins.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.5.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -42,29 +42,29 @@ if (!defined ('GVERSION')) {
  * @param   array   &$svc_msg   Unused
  * @return  integer             Status code
  */
-function service_genButton_paypal($args, &$output, &$svc_msg)
+function service_genButton_shop($args, &$output, &$svc_msg)
 {
-    global $_CONF, $_PP_CONF;
+    global $_CONF, $_SHOP_CONF;
 
-    $Cart = \Paypal\Cart::getInstance();
+    $Cart = \Shop\Cart::getInstance();
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : '';
     $output = array();
 
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
-        foreach (\Paypal\Gateway::getall() as $gw) {
+        foreach (\Shop\Gateway::getall() as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 //$output[] = $gw->ExternalButton($args, $btn_type);
-                $P = \Paypal\Product::getInstance($args['item_number']);
+                $P = \Shop\Product::getInstance($args['item_number']);
                 $output[] = $gw->ProductButton($P);
             }
         }
     }
 
     // Now create an add-to-cart button, if requested.
-    if (isset($args['add_cart']) && $args['add_cart'] && $_PP_CONF['ena_cart'] == 1) {
-        if (!isset($args['item_type'])) $args['item_type'] = PP_PROD_VIRTUAL;
+    if (isset($args['add_cart']) && $args['add_cart'] && $_SHOP_CONF['ena_cart'] == 1) {
+        if (!isset($args['item_type'])) $args['item_type'] = SHOP_PROD_VIRTUAL;
         $btn_cls = 'orange';
         $btn_disabled = '';
         $unique = isset($args['unique']) ? 1 : 0;
@@ -76,7 +76,7 @@ function service_genButton_paypal($args, &$output, &$svc_msg)
                 $btn_disabled = 'disabled="disabled"';
             }
         }
-        $T = PP_getTemplate('btn_add_cart', 'cart', 'buttons');
+        $T = SHOP_getTemplate('btn_add_cart', 'cart', 'buttons');
         $T->set_var(array(
                 'item_name'     => $args['item_name'],
                 'item_number'   => $args['item_number'],
@@ -109,11 +109,11 @@ function service_genButton_paypal($args, &$output, &$svc_msg)
  * @param   string  $svc_msg    Not used
  * @return  integer     PLG_RET_OK value
  */
-function service_getCurrency_paypal($args, &$output, &$svc_msg)
+function service_getCurrency_shop($args, &$output, &$svc_msg)
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    $output = $_PP_CONF['currency'];
+    $output = $_SHOP_CONF['currency'];
     return PLG_RET_OK;
 }
 
@@ -125,16 +125,16 @@ function service_getCurrency_paypal($args, &$output, &$svc_msg)
  *
  * @return  string      Our configured currency code.
  */
-function plugin_getCurrency_paypal()
+function plugin_getCurrency_shop()
 {
-    global $_PP_CONF;
-    return $_PP_CONF['currency'];
+    global $_SHOP_CONF;
+    return $_SHOP_CONF['currency'];
 }
 
 
 /**
- * API function to return the url to a Paypal item.
- * This returns the url to a Paypal-controlled item, such as the
+ * API function to return the url to a Shop item.
+ * This returns the url to a Shop-controlled item, such as the
  * IPN transaction data.  This is meant to provide a backlink for other
  * plugins to use with their products.
  *
@@ -143,7 +143,7 @@ function plugin_getCurrency_paypal()
  * @param   array   &$svc_msg   Unused
  * @return  integer             Status code
  */
-function service_getUrl_paypal($args, &$output, &$svc_msg)
+function service_getUrl_shop($args, &$output, &$svc_msg)
 {
     if (!is_array($args)) {
         $args = array('type' => $args);
@@ -187,13 +187,13 @@ function service_getUrl_paypal($args, &$output, &$svc_msg)
  * @param   mixed   &$svc_msg   Service message
  * @return  integer     Status code
  */
-function service_addCartItem_paypal($args, &$output, &$svc_msg)
+function service_addCartItem_shop($args, &$output, &$svc_msg)
 {
     if (!is_array($args) || !isset($args['item_number']) || empty($args['item_number'])) {
         return PLG_RET_ERROR;
     }
 
-    $Cart = \Paypal\Cart::getInstance();
+    $Cart = \Shop\Cart::getInstance();
     $price = 0;
     foreach (array('amount', 'price') as $s) {
         if (isset($args[$s])) {
@@ -224,14 +224,14 @@ function service_addCartItem_paypal($args, &$output, &$svc_msg)
     $override = isset($args['override']) && $args['override'] ? true : false;
     $cart_args = array(
         'item_number'   => $item_number,
-        'quantity'      => PP_getVar($args, 'quantity', 'float', 1),
-        'item_name'     => PP_getVar($args, 'item_name', 'string'),
+        'quantity'      => SHOP_getVar($args, 'quantity', 'float', 1),
+        'item_name'     => SHOP_getVar($args, 'item_name', 'string'),
         'price'         => $price,
         'short_description' => $dscp,
-        'options'       => PP_getVar($args, 'options', 'array'),
-        'extras'        => PP_getVar($args, 'extras', 'array'),
+        'options'       => SHOP_getVar($args, 'options', 'array'),
+        'extras'        => SHOP_getVar($args, 'extras', 'array'),
         'override'      => $override,
-        'uid'           => PP_getVar($args, 'uid', 'int', 1),
+        'uid'           => SHOP_getVar($args, 'uid', 'int', 1),
     );
     if (isset($args['tax'])) {      // tax element not set at all if not present
         $cart_args['tax'] = $args['tax'];
@@ -240,7 +240,7 @@ function service_addCartItem_paypal($args, &$output, &$svc_msg)
     // If the "unique" flag is present, then only update specific elements
     // included in the "updates" array. If there are no specific updates, then
     // do nothing.
-    if (PP_getVar($args, 'unique', 'boolean', false) &&
+    if (SHOP_getVar($args, 'unique', 'boolean', false) &&
         $Cart->Contains($item_number) !== false) {
         // If the item exists, don't add it, but check if there's an update
         if (isset($args['update']) && is_array($args['update'])) {
@@ -267,14 +267,14 @@ function service_addCartItem_paypal($args, &$output, &$svc_msg)
  * @param   mixed   &$svc_msg   Service message
  * @return  integer     Status code
  */
-function service_btnCheckout_paypal($args, &$output, &$svc_msg)
+function service_btnCheckout_shop($args, &$output, &$svc_msg)
 {
-    global $LANG_PP;
+    global $LANG_SHOP;
 
     if (!is_array($args)) $args = array($args);
-    $text = isset($args['text']) ? $args['text'] : $LANG_PP['checkout'];
+    $text = isset($args['text']) ? $args['text'] : $LANG_SHOP['checkout'];
     $color = isset($args['color']) ? $args['color'] : 'green';
-    $output = '<a href="' . PAYPAL_URL . '/index.php?checkout=x"><button type="button" id="ppcheckout" class="paypalButton ' . $color . '">'
+    $output = '<a href="' . PAYPAL_URL . '/index.php?checkout=x"><button type="button" id="ppcheckout" class="shopButton ' . $color . '">'
         . $text . '</button></a>';
     return PLG_RET_OK;
 }
@@ -290,18 +290,18 @@ function service_btnCheckout_paypal($args, &$output, &$svc_msg)
  * @param   mixed   &$svc_msg   Service message
  * @return  integer     Status code
  */
-function service_formatAmount_paypal($args, &$output, &$svc_msg)
+function service_formatAmount_shop($args, &$output, &$svc_msg)
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
     if (is_array($args)) {
-        $amount = PP_getVar($args, 'amount', 'float');
-        $symbol = PP_getVar($args, 'symbol', 'boolean', true);
+        $amount = SHOP_getVar($args, 'amount', 'float');
+        $symbol = SHOP_getVar($args, 'symbol', 'boolean', true);
     } else {
         $amount = (float)$args;
         $symbol = true;
     }
-    $output = \Paypal\Currency::getInstance()->Format($amount, $symbol);
+    $output = \Shop\Currency::getInstance()->Format($amount, $symbol);
     return PLG_RET_OK;
 }
 
@@ -313,9 +313,9 @@ function service_formatAmount_paypal($args, &$output, &$svc_msg)
  * @param   float   $amount     Amount to format
  * @return  string      Formatted amount according to the currency in use
  */
-function plugin_formatAmount_paypal($amount)
+function plugin_formatAmount_shop($amount)
 {
-    return \Paypal\Currency::getInstance()->Format((float)$amount);
+    return \Shop\Currency::getInstance()->Format((float)$amount);
 }
 
 ?>

@@ -1,11 +1,11 @@
 /**
-*   Toggle field for Paypal products
+*   Toggle field for Shop products
 *
 *   @param  object  cbox    Checkbox
 *   @param  string  id      Sitemap ID, e.g. plugin name
 *   @param  string  type    Type of sitemap (XML or HTML)
 */
-var PP_toggle = function(cbox, id, type, component) {
+var SHOP_toggle = function(cbox, id, type, component) {
     oldval = cbox.checked ? 0 : 1;
     var dataS = {
         "action" : "toggle",
@@ -18,7 +18,7 @@ var PP_toggle = function(cbox, id, type, component) {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: site_admin_url + "/plugins/paypal/ajax.php",
+        url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
             cbox.checked = result.newval == 1 ? true : false;
@@ -33,7 +33,7 @@ var PP_toggle = function(cbox, id, type, component) {
     return false;
 };
 
-var PPupdateSel = function(sel, id, type, component) {
+var SHOPupdateSel = function(sel, id, type, component) {
     newval = sel.value;
     var dataS = {
         "action" : "toggle",
@@ -46,7 +46,7 @@ var PPupdateSel = function(sel, id, type, component) {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: site_admin_url + "/plugins/paypal/ajax.php",
+        url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
             try {
@@ -59,9 +59,9 @@ var PPupdateSel = function(sel, id, type, component) {
     });
 }
 
-var PP_status = {};
+var SHOP_status = {};
 
-function PP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
+function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
 {
     var dataS = {
         "action" : "updatestatus",
@@ -73,12 +73,12 @@ function PP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: site_admin_url + "/plugins/paypal/ajax.php",
+        url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(jsonObj) {
             try {
                 if (jsonObj.showlog == 1) {
-                    var tbl = document.getElementById("paypalOrderLog");
+                    var tbl = document.getElementById("shopOrderLog");
                     if (tbl) {
                         var lastRow = tbl.rows.length;
                         var iteration = lastRow;
@@ -101,7 +101,7 @@ function PP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
 
                 // Hide the button and update the new status in our array
                 document.getElementById("ppSetStat_" + jsonObj.order_id).style.visibility = "hidden";
-                PP_setStatus(jsonObj.order_id, jsonObj.newstatus);
+                SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
                 $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
             }
             catch(err) {
@@ -116,7 +116,7 @@ function PP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
 /*  Show the "update status" submit button if the order status selection has
     changed.
 */
-function PP_ordShowStatSubmit(order_id, oldvalue, newvalue)
+function SHOP_ordShowStatSubmit(order_id, oldvalue, newvalue)
 {
     var el = document.getElementById("ppSetStat_" + order_id);
     if (el) {
@@ -128,16 +128,16 @@ function PP_ordShowStatSubmit(order_id, oldvalue, newvalue)
     }
 }
 
-function PP_setStatus(order_id, newstatus)
+function SHOP_setStatus(order_id, newstatus)
 {
-    PP_status[order_id] = newstatus;
+    SHOP_status[order_id] = newstatus;
     sel = document.getElementById("statSelect_" + order_id);
     if (sel != null) {
         sel.selected = newstatus;
     }
 }
 
-function PP_getStatus(order_id)
+function SHOP_getStatus(order_id)
 {
-    return PP_status[order_id];
+    return SHOP_status[order_id];
 }

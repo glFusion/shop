@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
-<div class="ppProductListOuter {tpl_ver}">
+<div class="shopProductListOuter {tpl_ver}">
 <!-- BEGIN ProductItems -->
-<div class="paypalProductListItem v1">
+<div class="shopProductListItem v1">
   <div class="ItemUrl v1">
     <div class="shortdescription">
 {!if item_url}
@@ -32,14 +32,14 @@
 
   <div class="ItemButtons">
 {!if price}
-      <div class="paypalPrice list v1">
-        <span class="paypalPrice list v1 normal">
+      <div class="shopPrice list v1">
+        <span class="shopPrice list v1 normal">
 {!if Xtrack_onhand}
-        ({qty_onhand} {$LANG_PP['available']})&nbsp;&nbsp;
+        ({qty_onhand} {$LANG_SHOP['available']})&nbsp;&nbsp;
 {!endif}
 {!if on_sale}
-      <span class="paypalPrice was">{orig_price}</span>
-      <span class="paypalPrice sale">{price}</span>
+      <span class="shopPrice was">{orig_price}</span>
+      <span class="shopPrice sale">{price}</span>
 {!else}
         {price}</span>
 {!endif}

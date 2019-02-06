@@ -4,18 +4,18 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for a plugin-supplied product.
- * @package paypal
+ * @package shop
  */
 class PluginProduct extends Product
 {
@@ -61,7 +61,7 @@ class PluginProduct extends Product
             $mods['uid'] = $_USER['uid'];
         }
         $this->pi_info['mods'] = $mods;
-        $this->prod_type = PP_PROD_PLUGIN;
+        $this->prod_type = SHOP_PROD_PLUGIN;
 
         // Try to call the plugin's function to get product info.
         $status = LGLIB_invokeService($this->pi_name, 'productinfo',
@@ -70,17 +70,17 @@ class PluginProduct extends Product
             $svc_msg
         );
         if ($status == PLG_RET_OK) {
-            $this->price = PP_getVar($A, 'price', 'float', 0);
-            $this->item_name = PP_getVar($A, 'name');
-            $this->short_description = PP_getVar($A, 'short_description');
-            $this->description = PP_getVar($A, 'description', 'string', $this->short_description);
-            $this->taxable = PP_getVar($A, 'taxable', 'integer', 0);
-            $this->url = PP_getVar($A, 'url');
-            $this->override_price = PP_getVar($A, 'override_price', 'integer', 0);
-            $this->btn_type = PP_getVar($A, 'btn_type', 'string', 'buy_now');
-            $this->btn_text = PP_getVar($A, 'btn_text');
-            $this->_have_detail_svc = PP_getVar($A, 'have_detail_svc', 'boolean', false);
-            $this->_fixed_q = PP_getVar($A, 'fixed_q', 'integer', 0);
+            $this->price = SHOP_getVar($A, 'price', 'float', 0);
+            $this->item_name = SHOP_getVar($A, 'name');
+            $this->short_description = SHOP_getVar($A, 'short_description');
+            $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
+            $this->taxable = SHOP_getVar($A, 'taxable', 'integer', 0);
+            $this->url = SHOP_getVar($A, 'url');
+            $this->override_price = SHOP_getVar($A, 'override_price', 'integer', 0);
+            $this->btn_type = SHOP_getVar($A, 'btn_type', 'string', 'buy_now');
+            $this->btn_text = SHOP_getVar($A, 'btn_text');
+            $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
+            $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
             $this->isNew = false;
          } else {
             // probably an invalid product ID
@@ -129,7 +129,7 @@ class PluginProduct extends Product
      */
     public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
     {
-        PAYPAL_debug('Paypal\\PluginProduct::handlePurchase() pi_info: ' . $this->pi_name);
+        SHOP_debug('Shop\\PluginProduct::handlePurchase() pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
         $args = array(
             'item'  => array(
@@ -153,7 +153,7 @@ class PluginProduct extends Product
      * Handle a refund for this product.
      *
      * @param   object  $Order      Order being refunded
-     * @param   array   $pp_data    Paypal IPN data
+     * @param   array   $pp_data    Shop IPN data
      * @return  integer         Status from plugin's handleRefund function
      */
     public function handleRefund($Order, $pp_data = array())
@@ -225,7 +225,7 @@ class PluginProduct extends Product
 
     /**
      * Get the URL to the item detail page.
-     * If the plugin supplies its own detail service function, then use the Paypal
+     * If the plugin supplies its own detail service function, then use the Shop
      * detail page. Otherwise the plugin should supply its own url.
      *
      * @return  string      Item detail URL
@@ -233,7 +233,7 @@ class PluginProduct extends Product
     public function getLink()
     {
         if ($this->_have_detail_svc) {
-            return PAYPAL_URL . '/index.php?pidetail=' . $this->item_id;
+            return SHOP_URL . '/index.php?pidetail=' . $this->item_id;
         } else {
             return $this->url;
         }

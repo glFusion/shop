@@ -5,18 +5,18 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for product and category sales.
- * @package paypal
+ * @package shop
  */
 class Shipper
 {
@@ -82,7 +82,7 @@ class Shipper
         $A = Cache::get($cache_key);
         if ($A === NULL) {
             $sql = "SELECT *
-                    FROM {$_TABLES['paypal.shipping']}
+                    FROM {$_TABLES['shop.shipping']}
                     WHERE id = $id";
             //echo $sql;die;
             $res = DB_query($sql);
@@ -108,11 +108,11 @@ class Shipper
      */
     public function setVars($A, $fromDB=true)
     {
-        $this->id = PP_getVar($A, 'id', 'integer');
-        $this->name = PP_getVar($A, 'name');
-        $this->min_units = PP_getVar($A, 'min_units', 'integer');
-        $this->max_units = PP_getVar($A, 'max_units', 'integer');
-        $this->enabled = PP_getVar($A, 'enabled', 'integer');
+        $this->id = SHOP_getVar($A, 'id', 'integer');
+        $this->name = SHOP_getVar($A, 'name');
+        $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
+        $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
+        $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateDscp'] as $id=>$txt) {
@@ -146,7 +146,7 @@ class Shipper
         $shippers = Cache::get($cache_key);
         if ($shippers === NULL) {
             $shippers = array();
-            $sql = "SELECT * FROM {$_TABLES['paypal.shipping']}
+            $sql = "SELECT * FROM {$_TABLES['shop.shipping']}
                 WHERE enabled = 1";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
@@ -301,7 +301,7 @@ class Shipper
      */
     public function Save($A =NULL)
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
             $this->setVars($A, false);
@@ -309,10 +309,10 @@ class Shipper
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.shipping']}";
+            $sql1 = "INSERT INTO {$_TABLES['shop.shipping']}";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['paypal.shipping']}";
+            $sql1 = "UPDATE {$_TABLES['shop.shipping']}";
             $sql3 = " WHERE id={$this->id}";
         }
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
@@ -345,7 +345,7 @@ class Shipper
         if ($id <= 0)
             return false;
 
-        DB_delete($_TABLES['paypal.shipping'], 'id', $id);
+        DB_delete($_TABLES['shop.shipping'], 'id', $id);
         Cache::clear(self::$base_tag);
         return true;
     }
@@ -359,15 +359,15 @@ class Shipper
      */
     public function Edit()
     {
-        global $_CONF, $_PP_CONF, $LANG_PP;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        $T = PP_getTemplate('shipping_form', 'form');
+        $T = SHOP_getTemplate('shipping_form', 'form');
         $retval = '';
         $T->set_var(array(
             'id'            => $this->id,
             'name'          => $this->name,
-            'action_url'    => PAYPAL_ADMIN_URL,
-            'doc_url'       => PAYPAL_getDocURL('shipping_form',
+            'action_url'    => SHOP_ADMIN_URL,
+            'doc_url'       => SHOP_getDocURL('shipping_form',
                                             $_CONF['language']),
             'min_units'     => $this->min_units,
             'max_units'     => $this->max_units,
@@ -404,7 +404,7 @@ class Shipper
         $newvalue = $oldvalue == 1 ? 0 : 1;
         $id = (int)$id;
 
-        $sql = "UPDATE {$_TABLES['paypal.shipping']}
+        $sql = "UPDATE {$_TABLES['shop.shipping']}
                 SET enabled = $newvalue
                 WHERE id = $id";
         //echo $sql;die;

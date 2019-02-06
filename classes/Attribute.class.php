@@ -4,17 +4,17 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for product attributes - color, size, etc.
- * @package paypal
+ * @package shop
  */
 class Attribute
 {
@@ -153,7 +153,7 @@ class Attribute
         }
 
         $result = DB_query("SELECT *
-                    FROM {$_TABLES['paypal.prod_attr']}
+                    FROM {$_TABLES['shop.prod_attr']}
                     WHERE attr_id='$id'");
         if (!$result || DB_numRows($result) != 1) {
             return false;
@@ -174,7 +174,7 @@ class Attribute
      */
     public function Save($A = array())
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
             // Put this field at the end of the line by default
@@ -198,10 +198,10 @@ class Attribute
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.prod_attr']}";
+            $sql1 = "INSERT INTO {$_TABLES['shop.prod_attr']}";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['paypal.prod_attr']}";
+            $sql1 = "UPDATE {$_TABLES['shop.prod_attr']}";
             $sql3 = " WHERE attr_id={$this->attr_id}";
         }
 
@@ -244,7 +244,7 @@ class Attribute
         if ($attr_id <= 0)
             return false;
 
-        DB_delete($_TABLES['paypal.prod_attr'], 'attr_id', $attr_id);
+        DB_delete($_TABLES['shop.prod_attr'], 'attr_id', $attr_id);
         Cache::clear('products');
         return true;
     }
@@ -275,39 +275,39 @@ class Attribute
      */
     public function Edit()
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $_SYSTEM;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         // If there are no products defined, return a formatted error message
         // instead of the form.
-        if (DB_count($_TABLES['paypal.products']) == 0) {
-            return PAYPAL_errMsg($LANG_PP['todo_noproducts']);
+        if (DB_count($_TABLES['shop.products']) == 0) {
+            return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
         }
 
-        $T = PP_getTemplate('attribute_form', 'attrform');
+        $T = SHOP_getTemplate('attribute_form', 'attrform');
         $id = $this->attr_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_PP['edit'] . ': ' . $this->attr_value);
+            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->attr_value);
             $T->set_var('attr_id', $id);
         } else {
-            $retval = COM_startBlock($LANG_PP['new_option']);
+            $retval = COM_startBlock($LANG_SHOP['new_option']);
             $T->set_var('attr_id', '');
         }
 
         $T->set_var(array(
-            'action_url'    => PAYPAL_ADMIN_URL,
-            'pi_url'        => PAYPAL_URL,
-            'doc_url'       => PAYPAL_getDocURL('attribute_form',
+            'action_url'    => SHOP_ADMIN_URL,
+            'pi_url'        => SHOP_URL,
+            'doc_url'       => SHOP_getDocURL('attribute_form',
                                             $_CONF['language']),
             'attr_value'    => $this->attr_value,
             'attr_price'    => $this->attr_price,
-            'product_select' => COM_optionList($_TABLES['paypal.products'],
+            'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
-                        $_TABLES['paypal.prod_attr'],
+                        $_TABLES['shop.prod_attr'],
                         'DISTINCT attr_name,attr_name',
                         $this->attr_name, 1),
             'orderby'       => $this->orderby,
@@ -336,7 +336,7 @@ class Attribute
         $oldvalue = $oldvalue == 0 ? 0 : 1;
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES['paypal.prod_attr']}
+        $sql = "UPDATE {$_TABLES['shop.prod_attr']}
                 SET $varname=$newvalue
                 WHERE attr_id=$id";
         //echo $sql;die;
@@ -385,7 +385,7 @@ class Attribute
 
         $attr_name = DB_escapeString($this->attr_name);
         $sql = "SELECT attr_id, orderby
-                FROM {$_TABLES['paypal.prod_attr']}
+                FROM {$_TABLES['shop.prod_attr']}
                 WHERE item_id = '{$this->item_id}'
                 AND attr_name = '$attr_name'
                 ORDER BY orderby ASC;";
@@ -399,7 +399,7 @@ class Attribute
             COM_errorLog("Order by is {$A['orderby']}, should be $order");
             if ($A['orderby'] != $order) {  // only update incorrect ones
                 $changed = true;
-                $sql = "UPDATE {$_TABLES['paypal.prod_attr']}
+                $sql = "UPDATE {$_TABLES['shop.prod_attr']}
                     SET orderby = '$order'
                     WHERE attr_id = '{$A['attr_id']}'";
 COM_ErrorLog($sql);
@@ -436,7 +436,7 @@ COM_ErrorLog($sql);
         }
 
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['paypal.prod_attr']}
+            $sql = "UPDATE {$_TABLES['shop.prod_attr']}
                     SET orderby = orderby $oper 11
                     WHERE attr_id = '{$this->attr_id}'";
             //echo $sql;die;

@@ -14,13 +14,13 @@
  * @author      Vincent Furia <vinny01@users.sourceforge.net>
  * @copyright   Copyright (c) 2009-2018 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -28,7 +28,7 @@ if (!defined ('GVERSION')) {
 }
 
 // Just for E_ALL. If "testing" isn't defined, define it.
-if (!isset($_PP_CONF['sys_test_ipn'])) $_PP_CONF['sys_test_ipn'] = false;
+if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
 
 // Define failure reasons- maybe delete if not needed for all gateways
 define('IPN_FAILURE_UNKNOWN', 0);
@@ -41,7 +41,7 @@ define('IPN_FAILURE_FUNDS', 5);
 
 /**
  * Class to deal with IPN transactions from a payment gateway.
- * @package paypal
+ * @package shop
  */
 class IPN
 {
@@ -62,7 +62,7 @@ class IPN
      * @var array */
     var $items = array();
 
-    /** ID of payment gateway, e.g. 'paypal' or 'amazon'.
+    /** ID of payment gateway, e.g. 'shop' or 'amazon'.
      * @var string */
     var $gw_id;
 
@@ -94,13 +94,13 @@ class IPN
      */
     function __construct($A=array())
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         if (is_array($A)) {
             $this->ipn_data = $A;
         }
 
-        $this->sql_date = PAYPAL_now()->toMySQL();
+        $this->sql_date = SHOP_now()->toMySQL();
 
         $this->pp_data = array(
             'txn_id'        => '',
@@ -195,7 +195,7 @@ class IPN
         }
 
         // Log to database
-        $sql = "INSERT INTO {$_TABLES['paypal.ipnlog']} SET
+        $sql = "INSERT INTO {$_TABLES['shop.ipnlog']} SET
                 ip_addr = '{$_SERVER['REMOTE_ADDR']}',
                 ts = UNIX_TIMESTAMP(),
                 verified = $verified,
@@ -205,7 +205,7 @@ class IPN
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {
-            COM_errorLog("Paypal\IPN::Log() SQL error: $sql", 1);
+            COM_errorLog("Shop\IPN::Log() SQL error: $sql", 1);
         }
         return DB_insertId();
     }
@@ -219,11 +219,11 @@ class IPN
      */
     protected function isUniqueTxnId($data)
     {
-        global $_TABLES, $_PP_CONF;
-        if ($_PP_CONF['sys_test_ipn']) return true;
+        global $_TABLES, $_SHOP_CONF;
+        if ($_SHOP_CONF['sys_test_ipn']) return true;
 
         // Count purchases with txn_id, if > 0
-        $count = DB_count($_TABLES['paypal.purchases'], 'txn_id',
+        $count = DB_count($_TABLES['shop.purchases'], 'txn_id',
                     $data['txn_id']);
         if ($count > 0) {
             return false;
@@ -242,10 +242,10 @@ class IPN
     {
         // Get the amount paid along with any gift card balance used and
         // check against the total order amount.
-        $pmt = PP_getVar($this->pp_data, 'pmt_gross', 'float');
-        $by_gc = PP_getVar($this->pp_data['custom'], 'by_gc', 'float');
+        $pmt = SHOP_getVar($this->pp_data, 'pmt_gross', 'float');
+        $by_gc = SHOP_getVar($this->pp_data['custom'], 'by_gc', 'float');
         if ($by_gc > 0) {
-            $uid = PP_getVar($this->pp_data['custom'], 'uid', 'int');
+            $uid = SHOP_getVar($this->pp_data['custom'], 'uid', 'int');
             if (!Coupon::verifyBalance($by_gc, $uid)) {
                 $gc_bal = Coupon::getUserBalance($uid);
                 COM_errorLog("Insufficient Gift Card Balance, need $by_gc, have $gc_bal");
@@ -258,10 +258,10 @@ class IPN
         $total_order = $this->Order->getTotal();
         $msg = "$pmt received plus $by_gc coupon, require $total_order";
         if ($total_order <= $total_credit + .0001) {
-            PAYPAL_debug("OK: $msg");
+            SHOP_debug("OK: $msg");
             return true;
         } else {
-            PAYPAL_debug("Insufficient Funds: $msg");
+            SHOP_debug("Insufficient Funds: $msg");
             return false;
         }
     }   // isSufficientFunds()
@@ -278,7 +278,7 @@ class IPN
      */
     protected function handlePurchase()
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // For each item purchased, create an order item
         foreach ($this->items as $id=>$item) {
@@ -291,11 +291,11 @@ class IPN
 
             $this->items[$id]['prod_type'] = $P->prod_type;
 
-            PAYPAL_debug("Paypal item " . $item['item_number']);
+            SHOP_debug("Shop item " . $item['item_number']);
 
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
-                $this->items[$id]['file'] = $_PP_CONF['download_path'] . $P->file;
+                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->file;
                 $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
@@ -313,7 +313,7 @@ class IPN
                 $this->items[$id]['name'] = $P->short_description;
             }
 
-            // Add the purchase to the paypal purchase table
+            // Add the purchase to the shop purchase table
             if (is_numeric($this->pp_data['custom']['uid'])) {
                 $uid = $this->pp_data['custom']['uid'];
             } else {
@@ -337,11 +337,11 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $this->pp_data);
             }
-            $this->Order->Log(sprintf($LANG_PP['amt_paid_gw'], $this->pp_data['pmt_gross'], $this->gw->DisplayName()));
-            $by_gc = PP_getVar($this->pp_data['custom'], 'by_gc', 'float');
+            $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $this->pp_data['pmt_gross'], $this->gw->DisplayName()));
+            $by_gc = SHOP_getVar($this->pp_data['custom'], 'by_gc', 'float');
             $this->Order->by_gc = $by_gc;
             if ($by_gc > 0) {
-                $this->Order->Log(sprintf($LANG_PP['amt_paid_gw'], $by_gc, 'Gift Card'));
+                $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $by_gc, 'Gift Card'));
                 Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
             }
             $this->Order->log_user = 'IPN: ' . $this->gw->Description();
@@ -368,12 +368,12 @@ class IPN
      */
     protected function createOrder()
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         // See if an order already exists for this transaction.
         // If so, load it and update the status. If not, continue on
         // and create a new order
-        $order_id = DB_getItem($_TABLES['paypal.orders'], 'order_id',
+        $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
             "pmt_txn_id='" . DB_escapeString($this->pp_data['txn_id']) . "'");
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
@@ -390,7 +390,7 @@ class IPN
         if (isset($this->pp_data['custom']['cart_id'])) {
             $this->Cart = new Cart($this->pp_data['custom']['cart_id'], false);
             if (!$this->Cart->hasItems()) {
-                if (!$_PP_CONF['sys_test_ipn']) {
+                if (!$_SHOP_CONF['sys_test_ipn']) {
                     return 1; // shouldn't normally be empty except during testing
                 }
             }
@@ -454,7 +454,7 @@ class IPN
             if (!empty($options)) {
                 // options is expected as CSV
                 $sql = "SELECT attr_name, attr_value
-                        FROM {$_TABLES['paypal.prod_attr']}
+                        FROM {$_TABLES['shop.prod_attr']}
                         WHERE attr_id IN ($options)";
                 $optres = DB_query($sql);
                 $opt_str = '';
@@ -486,9 +486,9 @@ class IPN
                 'options' => $options,
                 'options_text' => $option_desc,
                 'extras' => $item['extras'],
-                'shipping' => PP_getVar($item, 'shipping', 'float'),
-                'handling' => PP_getVar($item, 'handling', 'float'),
-                'paid' => PP_getVar($item['overrides'], 'price', 'float', $item['price']),
+                'shipping' => SHOP_getVar($item, 'shipping', 'float'),
+                'handling' => SHOP_getVar($item, 'handling', 'float'),
+                'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
             );
             $this->Order->addItem($args);
         }   // foreach item
@@ -507,14 +507,14 @@ class IPN
      */
     protected function handleRefund()
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
         if (isset($this->pp_data['invoice'])) {
             $order_id = $this->pp_data['invoice'];
         } else {
-            $order_id = DB_getItem($_TABLES['paypal.orders'], 'order_id',
+            $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
                 "pmt_txn_id = '" . DB_escapeString($this->pp_data['parent_txn_id'])
                 . "'");
         }
@@ -544,7 +544,7 @@ class IPN
                 $P->handleRefund($Order, $this->pp_data);
             }
             // Update the order status to Refunded
-            $Order->updateStatus($LANG_PP['orderstatus']['refunded']);
+            $Order->updateStatus($LANG_SHOP['orderstatus']['refunded']);
         }
     }  // function handleRefund
 
@@ -614,7 +614,7 @@ class IPN
     /**
      * Instantiate and return an IPN class.
      *
-     * @param   string  $name   Gateway name, e.g. paypal
+     * @param   string  $name   Gateway name, e.g. shop
      * @param   array   $vars   Gateway variables to be passed to the IPN
      * @return  object          IPN handler object
      */

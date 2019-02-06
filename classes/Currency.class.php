@@ -4,17 +4,17 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2014-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class to handle currencies.
- * @package paypal
+ * @package shop
  */
 class Currency
 {
@@ -29,13 +29,13 @@ class Currency
      */
     public function __construct($code = NULL)
     {
-        global $_PP_CONF, $_TABLES;
+        global $_SHOP_CONF, $_TABLES;
 
         if (is_array($code)) {      // a DB record already read
             $this->setVars($code);
         } else {                    // just a currency code supplied
-            if ($code === NULL) $code = $_PP_CONF['currency'];
-            $res = DB_query("SELECT * FROM {$_TABLES['paypal.currency']}
+            if ($code === NULL) $code = $_SHOP_CONF['currency'];
+            $res = DB_query("SELECT * FROM {$_TABLES['shop.currency']}
                         WHERE code = '" . DB_escapeString($code) . "'");
             if ($res) {
                 $A = DB_fetchArray($res, false);
@@ -55,10 +55,10 @@ class Currency
      */
     public static function getInstance($code = NULL)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
         static $currencies = array();
 
-        if (empty($code)) $code = $_PP_CONF['currency'];
+        if (empty($code)) $code = $_SHOP_CONF['currency'];
 
         if (!isset($currencies[$code])) {
             $key = 'currency_' . $code;
@@ -311,10 +311,10 @@ class Currency
      */
     public static function ConversionRate($toCurrency, $fromCurrency='')
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
         static $rates = array();
 
-        if (empty($fromCurrency)) $fromCurrency = $_PP_CONF['currency'];
+        if (empty($fromCurrency)) $fromCurrency = $_SHOP_CONF['currency'];
         if (!isset($rates[$fromCurrency])) $rates[$fromCurrency] = array();
 
         // check if this conversion has already been done this session
@@ -359,7 +359,7 @@ class Currency
         static $currencies = NULL;
         if ($currencies === NULL) {
             $currencies = array();
-            $res = DB_query("SELECT * FROM {$_TABLES['paypal.currency']}");
+            $res = DB_query("SELECT * FROM {$_TABLES['shop.currency']}");
             while ($A = DB_fetchArray($res, false)) {
                 $currencies[$A['code']] = new self($A);
             }

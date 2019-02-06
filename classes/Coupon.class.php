@@ -5,7 +5,7 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -13,11 +13,11 @@
  * @filesource
  *
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for coupons.
- * @package paypal
+ * @package shop
  */
 class Coupon extends Product
 {
@@ -34,11 +34,11 @@ class Coupon extends Product
     public function __construct($prod_id = 0)
     {
         parent::__construct($prod_id);
-        $this->prod_type == PP_PROD_COUPON;
+        $this->prod_type == SHOP_PROD_COUPON;
         $this->taxable = 0; // coupons are not taxable
 
         // Add special fields for Coupon products
-        // Relies on $LANG_PP for the text prompts
+        // Relies on $LANG_SHOP for the text prompts
         $this->addSpecialField('recipient_email');
         $this->addSpecialField('sender_name');
     }
@@ -57,15 +57,15 @@ class Coupon extends Product
      */
     public static function generate($options = array())
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
-        $length = PP_getVar($options, 'length', 'int', $_PP_CONF['gc_length']);
-        $prefix = PP_getVar($options, 'prefix', 'string', $_PP_CONF['gc_prefix']);
-        $suffix = PP_getVar($options, 'suffix', 'string', $_PP_CONF['gc_suffix']);
-        $useLetters = PP_getVar($options, 'letters', 'int', $_PP_CONF['gc_letters']);
-        $useNumbers = PP_getVar($options, 'numbers', 'int', $_PP_CONF['gc_numbers']);
-        $useSymbols = PP_getVar($options, 'symbols', 'int', $_PP_CONF['gc_symbols']);
-        $mask = PP_getVar($options, 'mask', 'string', $_PP_CONF['gc_mask']);
+        $length = SHOP_getVar($options, 'length', 'int', $_SHOP_CONF['gc_length']);
+        $prefix = SHOP_getVar($options, 'prefix', 'string', $_SHOP_CONF['gc_prefix']);
+        $suffix = SHOP_getVar($options, 'suffix', 'string', $_SHOP_CONF['gc_suffix']);
+        $useLetters = SHOP_getVar($options, 'letters', 'int', $_SHOP_CONF['gc_letters']);
+        $useNumbers = SHOP_getVar($options, 'numbers', 'int', $_SHOP_CONF['gc_numbers']);
+        $useSymbols = SHOP_getVar($options, 'symbols', 'int', $_SHOP_CONF['gc_symbols']);
+        $mask = SHOP_getVar($options, 'mask', 'string', $_SHOP_CONF['gc_mask']);
 
         $uppercase = array('Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
                             'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
@@ -165,12 +165,12 @@ class Coupon extends Product
             // Make sure there are no duplicates
             $code = self::generate($options);
             $code = DB_escapeString($code);
-        } while (DB_count($_TABLES['paypal.coupons'], 'code', $code));
+        } while (DB_count($_TABLES['shop.coupons'], 'code', $code));
 
         $uid = (int)$uid;
         $exp = DB_escapeString($exp);
         $amount = (float)$amount;
-        $sql = "INSERT INTO {$_TABLES['paypal.coupons']} SET
+        $sql = "INSERT INTO {$_TABLES['shop.coupons']} SET
                 code = '$code',
                 buyer = $uid,
                 amount = $amount,
@@ -194,33 +194,33 @@ class Coupon extends Product
      */
     public static function Redeem($code, $uid = 0)
     {
-        global $_TABLES, $_USER, $LANG_PP, $_CONF;
+        global $_TABLES, $_USER, $LANG_SHOP, $_CONF;
 
         if ($uid == 0) {
             $uid = $_USER['uid'];
         }
         $uid = (int)$uid;
         if ($uid < 2) {
-            return array(2, sprintf($LANG_PP['coupon_apply_msg2'], $_CONF['site_email']));
+            return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
         }
 
         $code = DB_escapeString($code);
-        $sql = "SELECT * FROM {$_TABLES['paypal.coupons']}
+        $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
                 WHERE code = '$code'";
         $res = DB_query($sql);
         if (DB_numRows($res) == 0) {
             COM_errorLog("Attempting to redeem coupon $code, not found in database");
-            return array(3, sprintf($LANG_PP['coupon_apply_msg3'], $_CONF['site_mail']));;
+            return array(3, sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']));;
         } else {
             $A = DB_fetchArray($res, false);
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
                 COM_errorLog("Coupon code $code was already redeemed");
-                return array(1, $LANG_PP['coupon_apply_msg1']);
+                return array(1, $LANG_SHOP['coupon_apply_msg1']);
             }
         }
         $amount = (float)$A['amount'];
         if ($amount > 0) {
-            DB_query("UPDATE {$_TABLES['paypal.coupons']} SET
+            DB_query("UPDATE {$_TABLES['shop.coupons']} SET
                     redeemer = $uid,
                     redeemed = UNIX_TIMESTAMP()
                     WHERE code = '$code'");
@@ -228,10 +228,10 @@ class Coupon extends Product
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
                 COM_errorLog("A DB error occurred marking coupon $code as redeemed");
-                return array(2, sprintf($LANG_PP['coupon_apply_msg2'], $_CONF['site_email']));
+                return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
-        return array(0, sprintf($LANG_PP['coupon_apply_msg0'], Currency::getInstance()->Format($A['amount'])));
+        return array(0, sprintf($LANG_SHOP['coupon_apply_msg0'], Currency::getInstance()->Format($A['amount'])));
     }
 
 
@@ -275,7 +275,7 @@ class Coupon extends Product
                 $order_id = DB_escapeString($Order->order_id);
             }
             $uid = $Order->uid;
-            $sql = "UPDATE {$_TABLES['paypal.coupons']}
+            $sql = "UPDATE {$_TABLES['shop.coupons']}
                     SET balance = $bal
                     WHERE code = '$code';";
             self::writeLog($code, $uid, $applied, 'gc_applied', $order_id);
@@ -291,23 +291,23 @@ class Coupon extends Product
      *
      * @param  object  $Item       Item object, to get options, etc.
      * @param  object  $Order      Order object
-     * @param  array   $ipn_data   Paypal IPN data
+     * @param  array   $ipn_data   Shop IPN data
      * @return integer     Zero or error value
      */
     public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         $status = 0;
         $amount = (float)$Item->price;
-        $special = PP_getVar($Item->extras, 'special', 'array');
-        $recip_email = PP_getVar($special, 'recipient_email', 'string');
-        $sender_name = PP_getVar($special, 'sender_name', 'string');
+        $special = SHOP_getVar($Item->extras, 'special', 'array');
+        $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
+        $sender_name = SHOP_getVar($special, 'sender_name', 'string');
         $uid = $Item->getOrder()->uid;
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial
-        $Item->addOptionText($LANG_PP['code'] . ': ' . $gc_code, false);
+        $Item->addOptionText($LANG_SHOP['code'] . ': ' . $gc_code, false);
         $Item->addSpecial('gc_code', $gc_code);
 
         parent::handlePurchase($Item, $Order);
@@ -327,11 +327,11 @@ class Coupon extends Product
      */
     public static function Notify($gc_code, $recip, $amount, $sender='', $exp=self::MAX_EXP)
     {
-        global $_CONF, $LANG_PP_EMAIL;
+        global $_CONF, $LANG_SHOP_EMAIL;
 
         if ($recip!= '') {
-            PAYPAL_debug("Sending Coupon to " . $recip);
-            $T = PP_getTemplate('coupon_email_message', 'message');
+            SHOP_debug("Sending Coupon to " . $recip);
+            $T = SHOP_getTemplate('coupon_email_message', 'message');
             if ($exp != self::MAX_EXP) {
                 $dt = new \Date($exp, $_CONF['timezone']);
                 $exp = $dt->format($_CONF['shortdate']);
@@ -347,7 +347,7 @@ class Coupon extends Product
                     'to' => array(array('email'=>$recip, 'name' => $recip)),
                     'from' => $_CONF['site_mail'],
                     'htmlmessage' => $msg_text,
-                    'subject' => $LANG_PP_EMAIL['coupon_subject'],
+                    'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
             ) );
         }
     }
@@ -362,14 +362,14 @@ class Coupon extends Product
      */
     public function EmailExtra($item)
     {
-        global $LANG_PP;
-        $code = PP_getVar($item->extras['special'], 'gc_code', 'string');
+        global $LANG_SHOP;
+        $code = SHOP_getVar($item->extras['special'], 'gc_code', 'string');
         $s = '';
         if (!empty($code)) {
-            $s = sprintf($LANG_PP['apply_gc_email'],
-                PAYPAL_URL . '/index.php?apply_gc=x&code=' . $code,
-                PAYPAL_URL . '/index.php?apply_gc&code=' . $code,
-                PAYPAL_URL . '/index.php?apply_gc&code=' . $code);
+            $s = sprintf($LANG_SHOP['apply_gc_email'],
+                SHOP_URL . '/index.php?apply_gc=x&code=' . $code,
+                SHOP_URL . '/index.php?apply_gc&code=' . $code,
+                SHOP_URL . '/index.php?apply_gc&code=' . $code);
         }
         return $s;
     }
@@ -385,11 +385,11 @@ class Coupon extends Product
      */
     public function getDisplayPrice($price = NULL)
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
         $price = $this->getPrice();
         if ($price == 0) {
-            return $LANG_PP['see_details'];
+            return $LANG_SHOP['see_details'];
         } else {
             return Currency::getInstance()->Format($price);
         }
@@ -420,7 +420,7 @@ class Coupon extends Product
         $today = date('Y-m-d');
         if (!$coupons) {
             $coupons = array();
-            $sql = "SELECT * FROM {$_TABLES['paypal.coupons']}
+            $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
                 WHERE redeemer = '$uid'";
             if (!$all) {
                 $sql .= " AND expires >= '$today' AND balance > 0";
@@ -508,7 +508,7 @@ class Coupon extends Product
         $amount = (float)$amount;
         $uid = (int)$uid;
 
-        $sql = "INSERT INTO {$_TABLES['paypal.coupon_log']}
+        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']}
                 (code, uid, order_id, ts, amount, msg)
                 VALUES
                 ('{$code}', '{$uid}', '{$order_id}', UNIX_TIMESTAMP(), '$amount', '{$msg}');";
@@ -527,11 +527,11 @@ class Coupon extends Product
      */
     public static function getLog($uid, $code = '')
     {
-        global $_TABLES, $LANG_PP;
+        global $_TABLES, $LANG_SHOP;
 
         $log = array();
         $uid = (int)$uid;
-        $sql = "SELECT * FROM {$_TABLES['paypal.coupon_log']}
+        $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}
                 WHERE uid = $uid";
         if ($code != '') {
             $sql .= " AND code = '" . DB_escapeString($code) . "'";
@@ -585,7 +585,7 @@ class Coupon extends Product
         $items = $cart->Cart();
         foreach ($items as $item) {
             $P = $item->getProduct();
-            if ($P->isNew || $P->prod_type == PP_PROD_COUPON) {
+            if ($P->isNew || $P->prod_type == SHOP_PROD_COUPON) {
                 $gc_can_apply -= $P->getPrice($item->options, $item->quantity) * $item->quantity;
             }
         }
@@ -603,9 +603,9 @@ class Coupon extends Product
      */
     public function hasAccess()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
-        if (!$_PP_CONF['gc_enabled']) {
+        if (!$_SHOP_CONF['gc_enabled']) {
             return false;
         } else {
             return parent::hasAccess();

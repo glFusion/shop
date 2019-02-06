@@ -7,7 +7,7 @@
   <input type="hidden" name="cat_id" value="{cat_id}" />
 
   <div class="uk-form-row">
-    <label class="uk-form-label" for="cat_name">{$LANG_PP['cat_name']}:
+    <label class="uk-form-label" for="cat_name">{$LANG_SHOP['cat_name']}:
       <span id="cat_name" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
@@ -17,7 +17,7 @@
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label" for="parent_id">{$LANG_PP['parent_cat']}:
+    <label class="uk-form-label" for="parent_id">{$LANG_SHOP['parent_cat']}:
       <span id="parent_id" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
@@ -26,13 +26,13 @@
         {parent_sel}
       </select>
 {!else}
-      <input type="hidden" name="parent_id" value="0" />{$LANG_PP['dscp_root_cat']}
+      <input type="hidden" name="parent_id" value="0" />{$LANG_SHOP['dscp_root_cat']}
 {!endif}
     </div>
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label" for="description">{$LANG_PP['description']}:
+    <label class="uk-form-label" for="description">{$LANG_SHOP['description']}:
       <span id="descrip" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
@@ -41,22 +41,22 @@
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_PP['cat_image']}:
+    <label class="uk-form-label">{$LANG_SHOP['cat_image']}:
       <span id="image" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_PP['select_image']}" />
+      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
       {!if img_url}
         <img src="{img_url}" border="0" />
         <a href="{action_url}/index.php?deletecatimage=x&cat_id={cat_id}">
-            {$LANG_PP['delete_image']}
+            {$LANG_SHOP['delete_image']}
         </a>
       {!endif}
     </div>
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label" for="enabled">{$LANG_PP['enabled']}?
+    <label class="uk-form-label" for="enabled">{$LANG_SHOP['enabled']}?
       <span id="enabled" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
@@ -65,7 +65,7 @@
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label" for="grp_access">{$LANG_PP['visible_to']}:
+    <label class="uk-form-label" for="grp_access">{$LANG_SHOP['visible_to']}:
       <span id="grp_access" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
@@ -77,19 +77,19 @@
   <div class="uk-form-row" uk-margin-large" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls">
-      <button class="uk-button uk-button-success" type="submit" name="savecat" value="{$LANG_PP['savecat']}" />{$LANG_PP['savecat']}</button>
-      <button class="uk-button uk-button-primary" type="reset" name="reset" value="{$LANG_PP['clearform']}" />{$LANG_PP['clearform']}</button>
+      <button class="uk-button uk-button-success" type="submit" name="savecat" value="{$LANG_SHOP['savecat']}" />{$LANG_SHOP['savecat']}</button>
+      <button class="uk-button uk-button-primary" type="reset" name="reset" value="{$LANG_SHOP['clearform']}" />{$LANG_SHOP['clearform']}</button>
       {!if can_delete}
-      <button type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_PP['deletecat']}"
-            onclick="return confirm('{$LANG_PP['q_del_item']}');" />{$LANG_PP['deletecat']}</button>
+      <button type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_SHOP['deletecat']}"
+            onclick="return confirm('{$LANG_SHOP['q_del_item']}');" />{$LANG_SHOP['deletecat']}</button>
       {!endif}
       <button type="submit"  class="uk-button" name="catlist" value="{$LANG_ADMIN['cancel']}" />{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
 
   <div class="uk-form-row">
-    <font color="red">*</font>&nbsp;{$LANG_PP['ind_req_fld']}<br />
-    {$LANG_PP['del_cat_instr']}
+    <font color="red">*</font>&nbsp;{$LANG_SHOP['ind_req_fld']}<br />
+    {$LANG_SHOP['del_cat_instr']}
   </div>
 
 </form>

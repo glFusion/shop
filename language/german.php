@@ -5,20 +5,20 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @translated  Siegfried Gutschi <sigi AT modellbaukalender DOT info> (Dez 2016)
  * @copyright   Copyright (c) 2009-2016 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 
-global $_PP_CONF;
+global $_SHOP_CONF;
 
 /** Global array to hold all plugin-specific configuration items. */
-$LANG_PP = array (
-'plugin'            => 'Paypal',
+$LANG_SHOP = array (
+'plugin'            => 'Shop',
 'main_title'        => 'Online-Shop',
-'admin_title'       => 'Paypal Administration',
+'admin_title'       => 'Shop Administration',
 'blocktitle'        => 'Produkte',
 'cart_blocktitle'   => 'Warenkorb',
 'srchtitle'         => 'Produkte',
@@ -27,7 +27,7 @@ $LANG_PP = array (
 'featured_product'  => 'Aktions-Produkt',
 'popular_product'   => 'Top-Produkt',
 'product_categories' => 'Produkt-Kategorien',
-'mnu_paypal'        => 'Online-Shop',
+'mnu_shop'        => 'Online-Shop',
 'mnu_admin'         => 'Admin',
 'product'           => 'Produkt-Name/SKU',
 'qty'               => 'Stück',
@@ -397,18 +397,18 @@ $LANG_PP = array (
 'q_update_currency' => 'Are you sure you want to update the currency code for all outstanding carts?',
 'x_carts_updated' => 'Updated %d carts',
 );
-if (isset($_PP_CONF['ena_ratings']) && $_PP_CONF['ena_ratings']) {
-    $LANG_PP['list_sort_options']['top_rated'] = 'Top Rated';
+if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
+    $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
 }
 
-$LANG_PP_EMAIL = array(
+$LANG_SHOP_EMAIL = array(
     'coupon_1' => 'You have received a gift card. Click on the link below to redeem it.',
     'coupon_2' => 'Act now, your gift card expires',
     'coupon_id' => 'Gift Card',
     'coupon_subject' => 'You have a gift card!',
 );
 
-$LANG_PP_HELP = array(
+$LANG_SHOP_HELP = array(
 'enter_email' => 'Enter an e-mail address where your order receipt should be sent. It will not be used for any other purpose.',
 'notify_email' => 'Enter an optional email address to receive the notification of this order. Your own email address will be used if this is empty.',
 'hlp_cat_delete' => 'Only unused categories may be deleted',
@@ -418,24 +418,24 @@ $LANG_PP_HELP = array(
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
 );
 
-$LANG_MYACCOUNT['pe_paypal'] = 'Shopping';
+$LANG_MYACCOUNT['pe_shop'] = 'Shopping';
 
 /** Message indicating plugin version is up to date */
-$PLG_paypal_MESSAGE03 = 'Fehler beim Abrufen der aktuellen Versionsnummer';
-$PLG_paypal_MESSAGE04 = 'Fehler beim Durchführen des Plugin-Aktualisierung';
-$PLG_paypal_MESSAGE05 = 'Fehler beim Aktualisieren der Plugin-Versionsnummer';
-$PLG_paypal_MESSAGE06 = 'Plugin ist bereits auf dem aktuellen Stand';
-$PLG_paypal_MESSAGE07 = 'Ungültiger Download-Token gegeben';
-$PLG_paypal_MESSAGE08 = 'There was an error finalizing your order. Please contact the site administrator.';
+$PLG_shop_MESSAGE03 = 'Fehler beim Abrufen der aktuellen Versionsnummer';
+$PLG_shop_MESSAGE04 = 'Fehler beim Durchführen des Plugin-Aktualisierung';
+$PLG_shop_MESSAGE05 = 'Fehler beim Aktualisieren der Plugin-Versionsnummer';
+$PLG_shop_MESSAGE06 = 'Plugin ist bereits auf dem aktuellen Stand';
+$PLG_shop_MESSAGE07 = 'Ungültiger Download-Token gegeben';
+$PLG_shop_MESSAGE08 = 'There was an error finalizing your order. Please contact the site administrator.';
 
 /** Language strings for the plugin configuration section */
-$LANG_configsections['paypal'] = array(
+$LANG_configsections['shop'] = array(
     'label' => 'PayPal',
     'title' => 'PayPal-Konfiguration'
 );
 
 /** Language strings for the field names in the config section */
-$LANG_confignames['paypal'] = array(
+$LANG_confignames['shop'] = array(
     'currency'      => 'Währung',
     'anon_buy'      => 'Gäste können kaufen',
     'purch_email_user' => 'Bestätigung an Benutzer senden',
@@ -507,14 +507,14 @@ $LANG_confignames['paypal'] = array(
 );
 
 /** Language strings for the subgroup names in the config section */
-$LANG_configsubgroups['paypal'] = array(
+$LANG_configsubgroups['shop'] = array(
     'sg_main' => 'Haupteinstellungen',
     'sg_shop'   => 'Shop-Informationen',
     'sg_gc'     => 'Gift Cards',
 );
 
 /** Language strings for the field set names in the config section */
-$LANG_fs['paypal'] = array(
+$LANG_fs['shop'] = array(
     'fs_main'   => 'Allgemein',
     'fs_images' => 'Bilder',
     'fs_paths'  => 'Bilder & Pfade',
@@ -531,7 +531,7 @@ $LANG_fs['paypal'] = array(
 /**
 *   Language strings for the selection option names in the config section.
 */
-$LANG_configselects['paypal'] = array(
+$LANG_configselects['shop'] = array(
     0 => array('Ja' => 1, 'Nein' => 0),
     2 => array('Ja' => 1, 'Nein' => 0),
     5 => array('Name' => 'name', 'Preis' => 'price', 'Produkt-ID' => 'id'),

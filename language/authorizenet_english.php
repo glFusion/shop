@@ -4,14 +4,14 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2011 Lee Garner <lee@leegarner.com>
-*   @package    paypal
+*   @package    shop
 *   @version    0.5.2
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
 *   @filesource
 */
 
-$LANG_PP_gateway = array(
+$LANG_SHOP_gateway = array(
 'prod_api_login'    => 'Your Production API Login',
 'prod_trans_key'    => 'Your Production Transaction Key',
 'test_api_login'    => 'Your Test (Sandbox) API Login',

@@ -1,24 +1,24 @@
 <?php
 /**
- * Shopping cart class for the Paypal plugin.
+ * Shopping cart class for the Shop plugin.
  *
  * Based partially on work done for the unreleased "ecommerce" plugin
  * by Josh Pendergrass <cendent AT syndicate-gaming DOT com>
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  *
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Shopping cart class.
- * @package paypal
+ * @package shop
  */
 class Cart extends Order
 {
@@ -38,7 +38,7 @@ class Cart extends Order
      */
     public function __construct($cart_id='', $interactive=true)
     {
-        global $_TABLES, $_PP_CONF, $_USER;
+        global $_TABLES, $_SHOP_CONF, $_USER;
 
         if (empty($cart_id)) {
             $cart_id = self::getCart();
@@ -100,7 +100,7 @@ class Cart extends Order
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT order_id FROM {$_TABLES['paypal.orders']}
+        $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
             WHERE status = 'cart'";
         $res = DB_query($sql);
         if ($res) {
@@ -138,7 +138,7 @@ class Cart extends Order
 
         $AnonCart = self::getInstance(1, $cart_id);
         if (!empty($AnonCart->items)) {
-            $sql = "UPDATE {$_TABLES['paypal.purchases']}
+            $sql = "UPDATE {$_TABLES['shop.purchases']}
                     SET order_id = '" . DB_escapeString($this->order_id) . "'
                     WHERE order_id = '" . DB_escapeString($AnonCart->order_id) . "'";
             DB_query($sql);
@@ -162,18 +162,18 @@ class Cart extends Order
      */
     public function addItem($args)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         if (!isset($args['item_number'])) return false;
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getInstance($item_id);
-        $quantity   = PP_getVar($args, 'quantity', 'float', 1);
+        $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
         $override   = isset($args['override']) ? $args['price'] : NULL;
-        $extras     = PP_getVar($args, 'extras', 'array');
-        $options    = PP_getVar($args, 'options', 'array');
-        $item_name  = PP_getVar($args, 'item_name');
-        $item_dscp  = PP_getVar($args, 'description');
-        $uid        = PP_getVar($args, 'uid', 'int', 1);
+        $extras     = SHOP_getVar($args, 'extras', 'array');
+        $options    = SHOP_getVar($args, 'options', 'array');
+        $item_name  = SHOP_getVar($args, 'item_name');
+        $item_dscp  = SHOP_getVar($args, 'description');
+        $uid        = SHOP_getVar($args, 'uid', 'int', 1);
         if (!is_array($this->items))
             $this->items = array();
 
@@ -260,7 +260,7 @@ class Cart extends Order
      */
     public function Update($A)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         $items = $A['quantity'];
         if (!is_array($items)) {
@@ -277,8 +277,8 @@ class Cart extends Order
             }
         }
         // Now look for a coupon code to redeem against the user's account.
-        if ($_PP_CONF['gc_enabled']) {
-            $gc = PP_getVar($A, 'gc_code');
+        if ($_SHOP_CONF['gc_enabled']) {
+            $gc = SHOP_getVar($A, 'gc_code');
             if (!empty($gc)) {
                 if (Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
@@ -342,7 +342,7 @@ class Cart extends Order
         global $_TABLES;
 
         if (isset($this->items[$id])) {
-            DB_delete($_TABLES['paypal.purchases'], 'id', (int)$id);
+            DB_delete($_TABLES['shop.purchases'], 'id', (int)$id);
             unset($this->items[$id]);
             $this->Save();
         }
@@ -362,9 +362,9 @@ class Cart extends Order
 
         if ($this->status != 'cart') return $this->Cart();
 
-        DB_delete($_TABLES['paypal.purchases'], 'order_id', $this->cartID());
+        DB_delete($_TABLES['shop.purchases'], 'order_id', $this->cartID());
         if ($del_order) {
-            DB_delete($_TABLES['paypal.orders'], 'order_id', $this->cartID());
+            DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
             self::delAnonCart();
         }
         return array();
@@ -380,9 +380,9 @@ class Cart extends Order
      */
     public function checkoutButton($gw)
     {
-        global $_PP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER;
 
-        $T = PP_getTemplate('btn_checkout', 'checkout', 'buttons');
+        $T = SHOP_getTemplate('btn_checkout', 'checkout', 'buttons');
         $by_gc = (float)$this->getInfo('apply_gc');
         $net_total = $this->total - $by_gc;
         // Special handling if there is a zero total due to discounts
@@ -397,7 +397,7 @@ class Cart extends Order
                 '<input type="hidden" name="custom" value=\'' . @serialize($this->custom_info) . '\' />',
             );
             $T->set_var(array(
-                'action'        => PAYPAL_URL . '/ipn/internal_ipn.php',
+                'action'        => SHOP_URL . '/ipn/internal_ipn.php',
                 'gateway_vars'  => implode("\n", $gateway_vars),
                 'cart_id'       => $this->m_cart_id,
                 'uid'           => $_USER['uid'],
@@ -422,18 +422,18 @@ class Cart extends Order
      */
     public function getCheckoutButtons()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         $gateway_vars = '';
-        if ($_PP_CONF['anon_buy'] || !COM_isAnonUser()) {
+        if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             foreach (Gateway::getAll() as $gw) {
                 if ($gw->Supports('checkout')) {
-                    $gateway_vars .= '<div class="paypalCheckoutButton">' .
+                    $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
                 }
             }
         } else {
-            $L = PP_getTemplate('btn_login_req', 'login');
+            $L = SHOP_getTemplate('btn_login_req', 'login');
             $L->parse('login_btn', 'login');
             $gateway_vars = $L->finish($L->get_var('login_btn'));
         }
@@ -452,17 +452,17 @@ class Cart extends Order
      */
     public function getCheckoutRadios()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         $retval = '';
-        $T = PP_getTemplate('gw_checkout_select', 'radios');
+        $T = SHOP_getTemplate('gw_checkout_select', 'radios');
         $T->set_block('radios', 'Radios', 'row');
-        if ($_PP_CONF['anon_buy'] || !COM_isAnonUser()) {
+        if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             $gateways = Gateway::getAll();
-            if ($_PP_CONF['gc_enabled']) {
+            if ($_SHOP_CONF['gc_enabled']) {
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
-            $gc_bal = $_PP_CONF['gc_enabled'] ? Coupon::getUserBalance() : 0;
+            $gc_bal = $_SHOP_CONF['gc_enabled'] ? Coupon::getUserBalance() : 0;
             if (empty($gateways)) return NULL;  // no available gateways
             if (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
                 // Select the previously selected gateway
@@ -569,27 +569,27 @@ class Cart extends Order
      */
     public static function getCart($uid = 0)
     {
-        global $_USER, $_TABLES, $_PP_CONF, $_PLUGIN_INFO;
+        global $_USER, $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
         // Guard against invalid SQL if the DB hasn't been updated
-        if (!PP_isMinVersion()) return NULL;
+        if (!SHOP_isMinVersion()) return NULL;
 
         $cart_id = NULL;
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
         if (COM_isAnonUser()) {
             $cart_id = self::getAnonCartID();
             // Check if the order exists but is not a cart.
-            $status = DB_getItem($_TABLES['paypal.orders'], 'status',
+            $status = DB_getItem($_TABLES['shop.orders'], 'status',
                 "order_id = '" . DB_escapeString($cart_id) . "'");
             if ($status != NULL && $status != 'cart') {
                 $cart_id = NULL;
             }
         } else {
-            $cart_id = DB_getItem($_TABLES['paypal.orders'], 'order_id',
+            $cart_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
                 "uid = $uid AND status = 'cart' ORDER BY last_mod DESC limit 1");
             if (!empty($cart_id)) {
                 // For logged-in usrs, delete superfluous carts
-                DB_query("DELETE FROM {$_TABLES['paypal.orders']}
+                DB_query("DELETE FROM {$_TABLES['shop.orders']}
                     WHERE uid = $uid
                     AND status = 'cart'
                     AND order_id <> '" . DB_escapeString($cart_id) . "'");
@@ -657,14 +657,14 @@ class Cart extends Order
         $uid = (int)$uid;
         if ($uid < 2) return;       // Don't delete anonymous carts
         $msg = "All carts for user {$uid} deleted";
-        $sql = "DELETE FROM {$_TABLES['paypal.orders']}
+        $sql = "DELETE FROM {$_TABLES['shop.orders']}
             WHERE uid = $uid AND status = 'cart'";
         if ($save != '') {
             $sql .= " AND order_id <> '" . DB_escapeString($save) . "'";
             $msg .= " except $save";
         }
         DB_query($sql);
-        PAYPAL_debug($msg);
+        SHOP_debug($msg);
     }
 
 
@@ -726,7 +726,7 @@ class Cart extends Order
      */
     public static function setFinal($cart_id, $status=true)
     {
-        global $_TABLES, $LANG_PP;
+        global $_TABLES, $LANG_SHOP;
 
         $Order = self::getInstance(0, $cart_id);
         if ($Order->isNew) {
@@ -737,7 +737,7 @@ class Cart extends Order
         $oldstatus = $Order->status;
         $newstatus = $status ? 'pending' : 'cart';
         $Order->status = $newstatus;
-        $Order->tax_rate = PP_getTaxRate();
+        $Order->tax_rate = SHOP_getTaxRate();
         $Order->order_date = time();
         $Order->Save();
         self::setSession('order_id', $cart_id);
@@ -752,7 +752,7 @@ class Cart extends Order
             self::deleteUser(0, $cart_id);
         }
         // Is it really necessary to log that it changed from a cart to pending?
-        //$Order->Log(sprintf($LANG_PP['status_changed'], $oldstatus, $newstatus));
+        //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
         return;
     }
 
@@ -778,8 +778,8 @@ class Cart extends Order
                 return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
-            $U = new \Paypal\UserInfo();
-            $A = isset($_POST['address1']) ? $_POST : \Paypal\Cart::getInstance()->getAddress($wf_name);
+            $U = new \Shop\UserInfo();
+            $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($wf_name);
             return $U->AddressForm($wf_name, $A, $step);
 /*        case 'shipping_method':
             // Select the shipping method, if shippers are configured
@@ -836,8 +836,8 @@ class Cart extends Order
     public static function Purge()
     {
         global $_TABLES;
-        DB_delete($_TABLES['paypal.orders'], 'status', 'cart');
-        PAYPAL_debug("All carts for all users deleted");
+        DB_delete($_TABLES['shop.orders'], 'status', 'cart');
+        SHOP_debug("All carts for all users deleted");
     }
 
 
@@ -848,9 +848,9 @@ class Cart extends Order
      */
     private static function _setCookie($value)
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
-        $exp = time() + ($_PP_CONF['days_purge_cart'] * 86400);
+        $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
         SEC_setCookie(self::$session_var, $value, $exp, '/');
     }
 

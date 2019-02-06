@@ -1,23 +1,23 @@
 <?php
 /**
- * English language file for the Paypal plugin.
+ * English language file for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2016 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 
-global $_PP_CONF;
+global $_SHOP_CONF;
 
 /** Global array to hold all plugin-specific configuration items. */
-$LANG_PP = array (
-'plugin'            => 'Paypal',
+$LANG_SHOP = array (
+'plugin'            => 'Shop',
 'main_title'        => 'Product Catalog',
-'admin_title'       => 'Paypal Administration',
+'admin_title'       => 'Shop Administration',
 'blocktitle'        => 'Products',
 'cart_blocktitle'   => 'Shopping Cart',
 'srchtitle'         => 'Products',
@@ -26,7 +26,7 @@ $LANG_PP = array (
 'featured_product'  => 'Featured Product',
 'popular_product'   => 'Popular Products',
 'product_categories' => 'Product Categories',
-'mnu_paypal'        => 'Products {shopping-cart}',
+'mnu_shop'        => 'Shop {shopping-cart}',
 'mnu_admin'         => 'Admin',
 'product'           => 'Product Name/SKU',
 'qty'               => 'Qty',
@@ -52,12 +52,12 @@ $LANG_PP = array (
 'new_category'      => 'New Category',
 'product_list'      => 'Product List',
 'category_list'     => 'Category List',
-'admin_hdr'         => 'Create, delete and modify products in the catalog. You may also view purchase histories and the Paypal IPN data for each transaction.',
+'admin_hdr'         => 'Create, delete and modify products in the catalog. You may also view purchase histories and the Shop IPN data for each transaction.',
 'admin_hdr_editattr' => 'Create or update a product attribute.',
 'admin_hdr_catlist' => 'Edit product categories, or select "New Category" to create a new one. A category may be deleted only if it is not associated with any products.',
 'admin_hdr_ipnlog'  => 'This is a list of IPN messages that have been received. Click on either the ID or the Txn ID to view the message detail.',
 'admin_hdr_history' => 'This is a list of all purchases in the database. Click on a link for more information about that item',
-'admin_hdr_attributes' => 'Attributes can be associated with products. For instance, you may wish to offer small, medium and large sizes, and charge extra for large.<br /><span class="paypalAlertText">Note: Products with attributes cannot be purchased via "Buy-Now" buttons. The shopping cart must be enabled.</span>',
+'admin_hdr_attributes' => 'Attributes can be associated with products. For instance, you may wish to offer small, medium and large sizes, and charge extra for large.<br /><span class="shopAlertText">Note: Products with attributes cannot be purchased via "Buy-Now" buttons. The shopping cart must be enabled.</span>',
 'admin_hdr_wfadmin' => 'Enable, Disable, and Re-order the items that must be completed before checkout. Workflow items cannot be deleted. &quot;Confirm Order&quot; is always the last item in the workflow.',
 'admin_hdr_wfstatus' => 'Update order status values. You can edit and order them, and indicate whether the buyer is notified when a status becomes active.',
 'username'          => 'User Name',
@@ -411,18 +411,18 @@ $LANG_PP = array (
 'q_update_currency' => 'Are you sure you want to update the currency code for all outstanding carts?',
 'x_carts_updated' => 'Updated %d carts',
 );
-if (isset($_PP_CONF['ena_ratings']) && $_PP_CONF['ena_ratings']) {
-    $LANG_PP['list_sort_options']['top_rated'] = 'Top Rated';
+if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
+    $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
 }
 
-$LANG_PP_EMAIL = array(
+$LANG_SHOP_EMAIL = array(
     'coupon_1' => 'You have received a gift card. Click on the link below to redeem it.',
     'coupon_2' => 'Act now, your gift card expires',
     'coupon_id' => 'Gift Card',
     'coupon_subject' => 'You have a gift card!',
 );
 
-$LANG_PP_HELP = array(
+$LANG_SHOP_HELP = array(
 'enter_email' => 'Enter an e-mail address where your order receipt should be sent. It will not be used for any other purpose.',
 'notify_email' => 'Enter an optional email address to receive the notification of this order. Your own email address will be used if this is empty.',
 'hlp_cat_delete' => 'Only unused categories may be deleted',
@@ -432,24 +432,24 @@ $LANG_PP_HELP = array(
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
 );
 
-$LANG_MYACCOUNT['pe_paypal'] = 'Shopping';
+$LANG_MYACCOUNT['pe_shop'] = 'Shopping';
 
 /** Message indicating plugin version is up to date */
-$PLG_paypal_MESSAGE03 = 'Error retrieving current version number';
-$PLG_paypal_MESSAGE04 = 'Error performing the plugin upgrade';
-$PLG_paypal_MESSAGE05 = 'Error upgrading the plugin version number';
-$PLG_paypal_MESSAGE06 = 'Plugin is already up to date';
-$PLG_paypal_MESSAGE07 = 'Invalid download token given';
-$PLG_paypal_MESSAGE08 = 'There was an error finalizing your order. Please contact the site administrator.';
+$PLG_shop_MESSAGE03 = 'Error retrieving current version number';
+$PLG_shop_MESSAGE04 = 'Error performing the plugin upgrade';
+$PLG_shop_MESSAGE05 = 'Error upgrading the plugin version number';
+$PLG_shop_MESSAGE06 = 'Plugin is already up to date';
+$PLG_shop_MESSAGE07 = 'Invalid download token given';
+$PLG_shop_MESSAGE08 = 'There was an error finalizing your order. Please contact the site administrator.';
 
 /** Language strings for the plugin configuration section */
-$LANG_configsections['paypal'] = array(
-    'label' => 'PayPal',
-    'title' => 'PayPal Configuration'
+$LANG_configsections['shop'] = array(
+    'label' => 'Shop',
+    'title' => 'Shop Configuration'
 );
 
 /** Language strings for the field names in the config section */
-$LANG_confignames['paypal'] = array(
+$LANG_confignames['shop'] = array(
     'currency'      => 'Currency',
     'anon_buy'      => 'Anonymous users can buy?',
     'prod_per_page' => 'Max products displayed per page',
@@ -516,14 +516,14 @@ $LANG_confignames['paypal'] = array(
 );
 
 /** Language strings for the subgroup names in the config section */
-$LANG_configsubgroups['paypal'] = array(
+$LANG_configsubgroups['shop'] = array(
     'sg_main'   => 'Main Settings',
     'sg_shop'   => 'Shop Information',
     'sg_gc'     => 'Gift Cards',
 );
 
 /** Language strings for the field set names in the config section */
-$LANG_fs['paypal'] = array(
+$LANG_fs['shop'] = array(
     'fs_main'   => 'General Settings',
     'fs_images' => 'Image Settings',
     'fs_paths'  => 'Images and Paths',
@@ -542,7 +542,7 @@ $LANG_fs['paypal'] = array(
 *
 *   Item 4 is also used in functions.inc to provide a currency selector.
 */
-$LANG_configselects['paypal'] = array(
+$LANG_configselects['shop'] = array(
     0 => array('True' => 1, 'False' => 0),
     2 => array('Yes' => 1, 'No' => 0),
     5 => array('Name' => 'name', 'Price' => 'price', 'Product ID' => 'id'),

@@ -1,13 +1,13 @@
 <?php
 /**
- * glFusion API functions for the Paypal plugin.
- * Based on the gl-paypal Plugin for Geeklog CMS by Vincent Furia.
+ * glFusion API functions for the Shop plugin.
+ * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
  * @copyright   Copyright (c) 2009-2018 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
- * @package     paypal
+ * @package     shop
  * @version     0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -21,40 +21,40 @@ if (!defined ('GVERSION')) {
 
 /** Include the system configuration class */
 $pp_config = config::get_instance();
-$_PP_CONF= $pp_config->get_config('paypal');
+$_SHOP_CONF= $pp_config->get_config('shop');
 
 /** Include plugin config file  */
-require_once __DIR__ . '/paypal.php';
+require_once __DIR__ . '/shop.php';
 
-$_PP_CONF['datetime_fmt'] = 'Y-m-d H:i:s T';
+$_SHOP_CONF['datetime_fmt'] = 'Y-m-d H:i:s T';
 
 /** Define base path to plugin */
-define('PAYPAL_PI_PATH', __DIR__);
+define('SHOP_PI_PATH', __DIR__);
 /** Define base URL to plugin */
-define('PAYPAL_URL', "{$_CONF['site_url']}/{$_PP_CONF['pi_name']}");
+define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
 /** Define URL to plugin admin interface */
-define('PAYPAL_ADMIN_URL',
-        "{$_CONF['site_admin_url']}/plugins/{$_PP_CONF['pi_name']}");
+define('SHOP_ADMIN_URL',
+        "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
 
 // Define product types
-define('PP_PROD_PHYSICAL',  1);
-define('PP_PROD_DOWNLOAD',  2);
-define('PP_PROD_VIRTUAL',   4);
-define('PP_PROD_COUPON',    8);
-define('PP_PROD_PLUGIN',    16);
+define('SHOP_PROD_PHYSICAL',  1);
+define('SHOP_PROD_DOWNLOAD',  2);
+define('SHOP_PROD_VIRTUAL',   4);
+define('SHOP_PROD_COUPON',    8);
+define('SHOP_PROD_PLUGIN',    16);
 
 // Define comment status
-define('PP_COMMENTS_ENABLED',   0);
-define('PP_COMMENTS_CLOSED' ,   1);
-define('PP_COMMENTS_DISABLED',  -1);
+define('SHOP_COMMENTS_ENABLED',   0);
+define('SHOP_COMMENTS_CLOSED' ,   1);
+define('SHOP_COMMENTS_DISABLED',  -1);
 
 // Order status codes
-define('PP_STATUS_OPEN', 0);
-define('PP_STATUS_PAID', 1);
+define('SHOP_STATUS_OPEN', 0);
+define('SHOP_STATUS_PAID', 1);
 
 // Session variables for TimThumb image url, if used
-SESS_setVar($_PP_CONF['pi_name'], array(
-    'origpath' => $_PP_CONF['image_dir'],
+SESS_setVar($_SHOP_CONF['pi_name'], array(
+    'origpath' => $_SHOP_CONF['image_dir'],
 ));
 
 // Load the site's language file, falling back to English.
@@ -86,7 +86,7 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
 spl_autoload_register(function ($class)
 {
     // project-specific namespace prefix
-    $prefix = 'Paypal\\';
+    $prefix = 'Shop\\';
 
     // does the class use the namespace prefix?
     $len = strlen($prefix);
@@ -113,11 +113,11 @@ spl_autoload_register(function ($class)
 });
 
 /** Import plugin-specific functions */
-function USES_paypal_functions()
-{   require_once __DIR__ . '/paypal_functions.inc.php'; }
+function USES_shop_functions()
+{   require_once __DIR__ . '/shop_functions.inc.php'; }
 
 /** Import report functions */
-function USES_paypal_reports()
+function USES_shop_reports()
 {   require_once __DIR__ . '/reports.inc.php';  }
 
 /**
@@ -125,7 +125,7 @@ function USES_paypal_reports()
  *
  * @param   string  $name   Report class basename
  */
-function USES_paypal_class_report($name='')
+function USES_shop_class_report($name='')
 {
     $classfile = __DIR__ . '/classes/reports/' . $name . '.class.php';
     if (is_file($classfile)) {
@@ -145,22 +145,22 @@ function USES_paypal_class_report($name='')
  * @param   string  $topic  Which topics to show with (All)
  * @return  string      HTML code for submission form
  */
-function plugin_centerblock_paypal($where = 1, $page = 1, $topic = '')
+function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 {
-    global $_PP_CONF, $LANG_PP;
+    global $_SHOP_CONF, $LANG_SHOP;
 
     $display = '';
 
     // Only show if no topic is requested
-    if ($_PP_CONF['centerblock'] == 1 && $topic == '') {
-        USES_paypal_functions();
-        $display = \Paypal\siteHeader();
+    if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
+        USES_shop_functions();
+        $display = \Shop\siteHeader();
         $T = new Template(__DIR__ . '/templates');
-        $T->set_file('title', 'paypal_title.thtml');
-        $T->set_var('title', $LANG_PP['main_title']);
+        $T->set_file('title', 'shop_title.thtml');
+        $T->set_var('title', $LANG_SHOP['main_title']);
         $display .= $T->parse('', 'title');
-        $display .= \Paypal\ProductList();
-        $display .= \Paypal\siteFooter();
+        $display .= \Shop\ProductList();
+        $display .= \Shop\siteFooter();
     }
     return $display;
 }
@@ -171,10 +171,10 @@ function plugin_centerblock_paypal($where = 1, $page = 1, $topic = '')
  *
  * @return  boolean     True on success, False on failure
  */
-function plugin_upgrade_paypal()
+function plugin_upgrade_shop()
 {
     require_once __DIR__ . '/upgrade.inc.php';
-    return PAYPAL_do_upgrade();
+    return SHOP_do_upgrade();
 }
 
 
@@ -183,18 +183,18 @@ function plugin_upgrade_paypal()
  *
  *  @return array   Associative array of menu items to be added to menu
  */
-function plugin_getmenuitems_paypal()
+function plugin_getmenuitems_shop()
 {
-    global $_CONF, $_PP_CONF, $LANG_PP;
+    global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $menuitems = array();
-    if (SEC_hasRights('paypal.user,paypal.admin,paypal.view', 'OR') &&
-            $_PP_CONF['menuitem']) {
+    if (SEC_hasRights('shop.user,shop.admin,shop.view', 'OR') &&
+            $_SHOP_CONF['menuitem']) {
         $a = preg_replace(
             '/\{(.*)\}/i',
             '<i class="uk-icon-${1}"></i>',
-            $LANG_PP['mnu_paypal']);
-        $menuitems[$a] = PAYPAL_URL . '/index.php';
+            $LANG_SHOP['mnu_shop']);
+        $menuitems[$a] = SHOP_URL . '/index.php';
     }
     return $menuitems;
 }
@@ -205,10 +205,10 @@ function plugin_getmenuitems_paypal()
  *
  *  @return boolean     True if comments supported, false otherwise
  */
-function plugin_commentsupport_paypal()
+function plugin_commentsupport_shop()
 {
-    global $_PP_CONF;
-    return $_PP_CONF['ena_comments'] == 0 ? false : true;
+    global $_SHOP_CONF;
+    return $_SHOP_CONF['ena_comments'] == 0 ? false : true;
 }
 
 
@@ -222,13 +222,13 @@ function plugin_commentsupport_paypal()
  * @param   string  $postmode   'html' or 'text'
  * @return  mixed   false for failure, HTML string (redirect?) for success
  */
-function plugin_savecomment_paypal($title,$comment,$id,$pid,$postmode)
+function plugin_savecomment_shop($title,$comment,$id,$pid,$postmode)
 {
-    global $LANG03, $_PP_CONF;
+    global $LANG03, $_SHOP_CONF;
 
     // Without comment support, we shouldn't get here unless something
     // nefarious is going on, but just in case...
-    if (!plugin_commentsupport_paypal())
+    if (!plugin_commentsupport_shop())
         return;
 
     $id = (int)$id;
@@ -237,15 +237,15 @@ function plugin_savecomment_paypal($title,$comment,$id,$pid,$postmode)
     $postmode = COM_applyFilter ($postmode);
 
     // Actually save the comment
-    $ret = CMT_saveComment($title, $comment, $id, $pid, $_PP_CONF['pi_name'], $postmode);
+    $ret = CMT_saveComment($title, $comment, $id, $pid, $_SHOP_CONF['pi_name'], $postmode);
 
     if ($ret > 0) {     // failure
         return COM_siteHeader()
             . CMT_commentform ($title, $comment, $id, $pid,
-                    $_PP_CONF['pi_name'], $LANG03[14], $postmode)
+                    $_SHOP_CONF['pi_name'], $LANG03[14], $postmode)
             . COM_siteFooter();
     } else {        // success - update the comment counter for this item
-        return COM_refresh(COM_buildUrl(PAYPAL_URL . "/detail.php?id=$id"));
+        return COM_refresh(COM_buildUrl(SHOP_URL . "/detail.php?id=$id"));
     }
 }
 
@@ -262,26 +262,26 @@ function plugin_savecomment_paypal($title,$comment,$id,$pid,$postmode)
  * @param   boolean $view   True to view comment (by cid), false to display (by $pid)
  * @return  mixed   Results of calling the plugin_displaycomment_ function
  */
-function plugin_displaycomment_paypal($id, $cid, $title, $order,$format, $page, $view)
+function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $view)
 {
-    global $_USER, $LANG_ACCESS, $_PP_CONF;
+    global $_USER, $LANG_ACCESS, $_SHOP_CONF;
 
     $retval = '';
 
     // Without comment support, we shouldn't get here unless something
     // nefarious is going on, but just in case...
-    if (!plugin_commentsupport_paypal())
+    if (!plugin_commentsupport_shop())
         return $retval;
 
-    $P = new \Paypal\Product($id);
+    $P = new \Shop\Product($id);
     if ($P->isNew)
         return $retval;
 
     $allowed = 1;
 
     if ($allowed == 1) {
-        $delete_option = plugin_ismoderator_paypal();
-        $retval .= CMT_userComments($id, $title, $_PP_CONF['pi_name'], $order, $format,
+        $delete_option = plugin_ismoderator_shop();
+        $retval .= CMT_userComments($id, $title, $_SHOP_CONF['pi_name'], $order, $format,
                                      $cid, $page, $view, $delete_option,
                                      $P->comments_enabled, $_USER['uid']);
     } else {
@@ -302,22 +302,22 @@ function plugin_displaycomment_paypal($id, $cid, $title, $order,$format, $page, 
  * @param   string  $id     Item id to which $cid belongs
  * @return  mixed   false for failure, HTML string (redirect?) for success
  */
-function plugin_deletecomment_paypal($cid, $id)
+function plugin_deletecomment_shop($cid, $id)
 {
-    global $_CONF, $_TABLES, $_PP_CONF;
+    global $_CONF, $_TABLES, $_SHOP_CONF;
 
-    if (plugin_ismoderator_paypal()) {
-        if (CMT_deleteComment($cid, $id, $_PP_CONF['pi_name']) == 0) {
+    if (plugin_ismoderator_shop()) {
+        if (CMT_deleteComment($cid, $id, $_SHOP_CONF['pi_name']) == 0) {
             $count = DB_count($_TABLES['comments'],
                         array('sid', 'type'),
-                        array($id, $_PP_CONF['pi_name']));
+                        array($id, $_SHOP_CONF['pi_name']));
             $count--;
             if ($count < 0) $count = 0;
-            DB_query("UPDATE {$_TABLES['paypal.products']}
+            DB_query("UPDATE {$_TABLES['shop.products']}
                     SET comments=$count
                     WHERE id='$id'");
             // Redirect back to the product detail page
-            return COM_refresh(PAYPAL_URL . '/detail.php?id=' . $id);
+            return COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
         }
     }
 
@@ -334,9 +334,9 @@ function plugin_deletecomment_paypal($cid, $id)
  * @param   integer $cid    Comment ID
  * @param   mixed   $id     Item ID
  */
-function plugin_editcomment_paypal($cid, $id)
+function plugin_editcomment_shop($cid, $id)
 {
-    echo COM_refresh(PAYPAL_URL . '/detail.php?id=' . $id);
+    echo COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
     exit;
 }
 
@@ -346,24 +346,24 @@ function plugin_editcomment_paypal($cid, $id)
  *
  * @return  string      URL of the icon
  */
-function plugin_geticon_paypal()
+function plugin_geticon_shop()
 {
-    return PAYPAL_URL . '/images/paypal.png';
+    return SHOP_URL . '/images/shop.png';
 }
 
 
 /**
  * Check if this is a plugin administrator.
- * There is no "moderator" for the Paypal plugin.
+ * There is no "moderator" for the Shop plugin.
  * Saves a static value to conserve calls to SEC_hasRights()
  *
  * @return  boolean     True for admins, False for regular users
  */
-function plugin_ismoderator_paypal()
+function plugin_ismoderator_shop()
 {
     static $isadmin = NULL;
     if ($isadmin === NULL) {
-        $isadmin = SEC_hasRights('paypal.admin');
+        $isadmin = SEC_hasRights('shop.admin');
     }
     return $isadmin;
 }
@@ -374,32 +374,32 @@ function plugin_ismoderator_paypal()
  *
  * @return  array   Array containing (pi_name, admin_url, icon_url)
  */
-function plugin_cclabel_paypal()
+function plugin_cclabel_shop()
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    if (plugin_ismoderator_paypal()) {
-        return array($_PP_CONF['pi_display_name'],
-                    PAYPAL_ADMIN_URL . '/index.php',
-                    plugin_geticon_paypal());
+    if (plugin_ismoderator_shop()) {
+        return array($_SHOP_CONF['pi_display_name'],
+                    SHOP_ADMIN_URL . '/index.php',
+                    plugin_geticon_shop());
     }
 }
 
 
 /**
- * Adds the paypal plugin to the Admin menu.
+ * Adds the shop plugin to the Admin menu.
  *
  * @return  array   Array containing (pi_name, pi_admin_url, # of items or '')
  */
-function plugin_getadminoption_paypal()
+function plugin_getadminoption_shop()
 {
-    global $_TABLES, $_PP_CONF;
+    global $_TABLES, $_SHOP_CONF;
 
-    if (plugin_ismoderator_paypal()) {
+    if (plugin_ismoderator_shop()) {
         return array(
-            $_PP_CONF['pi_display_name'],
-            PAYPAL_ADMIN_URL . '/index.php',
-            DB_count($_TABLES['paypal.products']),
+            $_SHOP_CONF['pi_display_name'],
+            SHOP_ADMIN_URL . '/index.php',
+            DB_count($_TABLES['shop.products']),
         );
     }
 }
@@ -410,36 +410,36 @@ function plugin_getadminoption_paypal()
  *
  * @return  array   Array containing (plugin name, plugin user url, 0)
  */
-function plugin_getuseroption_paypal()
+function plugin_getuseroption_shop()
 {
-    global $LANG_PP, $_TABLES, $_USER;
+    global $LANG_SHOP, $_TABLES, $_USER;
 
     $retval = array();
     if (!COM_isAnonUser()) {
         $retval[] = array(
-            $LANG_PP['my_account'],
-            PAYPAL_URL . '/index.php?orderhist=x',
+            $LANG_SHOP['my_account'],
+            SHOP_URL . '/index.php?orderhist=x',
         );
     }
     // View cart option is available to anonymous users
-    if (\Paypal\Cart::getCart() && \Paypal\Cart::getInstance()->hasItems()) {
-        $retval[] = array($LANG_PP['viewcart'],
-                PAYPAL_URL . '/index.php?view=cart');
+    if (\Shop\Cart::getCart() && \Shop\Cart::getInstance()->hasItems()) {
+        $retval[] = array($LANG_SHOP['viewcart'],
+                SHOP_URL . '/index.php?view=cart');
     }
     return $retval;
 }
 
 
 /**
- * Returns the current version of the paypal plugin.
+ * Returns the current version of the shop plugin.
  *
  * @return  string  Plugin version
  */
-function plugin_chkVersion_paypal()
+function plugin_chkVersion_shop()
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    return $_PP_CONF['pi_version'];
+    return $_SHOP_CONF['pi_version'];
 }
 
 
@@ -450,17 +450,17 @@ function plugin_chkVersion_paypal()
  *
  * @param   integer $uid    User ID that is being deleted
  */
-function plugin_user_delete_paypal($uid)
+function plugin_user_delete_shop($uid)
 {
     global $_TABLES;
 
     $uid = (int)$uid;
-    $sql = "UPDATE {$_TABLES['paypal.orders']}
+    $sql = "UPDATE {$_TABLES['shop.orders']}
             SET uid = 1
             WHERE uid = '$uid'";
 
-    \Paypal\UserInfo::deleteUser($uid);
-    \Paypal\Cart::deleteUser($uid);
+    \Shop\UserInfo::deleteUser($uid);
+    \Shop\Cart::deleteUser($uid);
 }
 
 
@@ -470,24 +470,24 @@ function plugin_user_delete_paypal($uid)
  * @param   integer $origUID    Original (remote) user ID
  * @param   integer $destUID    Merged (local) user ID
  */
-function plugin_user_move_paypal($origUID, $destUID)
+function plugin_user_move_shop($origUID, $destUID)
 {
     global $_TABLES;
 
     $origUID = (int)$origUID;
     $destUID = (int)$destUID;
 
-    DB_query("UPDATE {$_TABLES['paypal.address']}
+    DB_query("UPDATE {$_TABLES['shop.address']}
             SET uid = $destUID WHERE uid = $origUID", 1);
-    DB_query("UPDATE {$_TABLES['paypal.orders']}
+    DB_query("UPDATE {$_TABLES['shop.orders']}
             SET uid = $destUID WHERE uid = $origUID", 1);
-    DB_query("UPDATE {$_TABLES['paypal.userinfo']}
+    DB_query("UPDATE {$_TABLES['shop.userinfo']}
             SET uid = $destUID WHERE uid = $origUID", 1);
 }
 
 
 /**
- * Implements the [paypal:] autotag.
+ * Implements the [shop:] autotag.
  *
  * Currently only allows for a single product ID, which will generate
  * a link to that product's detail page.
@@ -498,11 +498,11 @@ function plugin_user_move_paypal($origUID, $destUID)
  * @param   array   $autotag    Autotag details
  * @return  string              Updated $content
  */
-function plugin_autotags_paypal ($op, $content = '', $autotag = '')
+function plugin_autotags_shop ($op, $content = '', $autotag = '')
 {
-    global $_CONF, $_TABLES, $_PP_CONF;
+    global $_CONF, $_TABLES, $_SHOP_CONF;
 
-    $pi_name = $_PP_CONF['pi_name'];
+    $pi_name = $_SHOP_CONF['pi_name'];
     if ($op == 'tagname' ) {
         return array(
             $pi_name,
@@ -522,15 +522,15 @@ function plugin_autotags_paypal ($op, $content = '', $autotag = '')
             $id = $autotag['parm1'];
             switch ($id) {
             case 'headlines':
-                $AT = new \Paypal\Autotags\headlines;
+                $AT = new \Shop\Autotags\headlines;
                 $repl = $AT->parse($autotag['parm1'], $opts, $autotag['tagstr']);
                 break;
             default:
-                // Default tag [paypal:prod_id]is a product link
-                $P  = \Paypal\Product::getInstance($id);
+                // Default tag [shop:prod_id]is a product link
+                $P  = \Shop\Product::getInstance($id);
                 if (!$P->isNew) {
                     $url = $P->getLink();
-                    //$url = COM_buildUrl(PAYPAL_URL . '/detail.php?id=' . $id);
+                    //$url = COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
                     // Allow the author to use different text for the link.  Default
                     // is the stored product name.
                     if (empty($autotag['parm2'])) {
@@ -546,11 +546,11 @@ function plugin_autotags_paypal ($op, $content = '', $autotag = '')
 
         case $pi_name . '_cat':
             $id = COM_applyFilter($autotag['parm1'], true);
-            $Cat = \Paypal\Category::getInstance($id);
+            $Cat = \Shop\Category::getInstance($id);
             if (!$Cat->isNew) {
-                $url = PAYPAL_URL.'/index.php?category='.$id;
+                $url = SHOP_URL.'/index.php?category='.$id;
                 if (empty($autotag['parm2'])) {
-                    $linktext = DB_getItem($_TABLES['paypal.categories'],
+                    $linktext = DB_getItem($_TABLES['shop.categories'],
                         'cat_name', "cat_id = '$id'");
                 } else {
                     $linktext = $autotag['parm2'];
@@ -559,7 +559,7 @@ function plugin_autotags_paypal ($op, $content = '', $autotag = '')
             }
             break;
         case $pi_name . '_headlines':
-            $AT = new \Paypal\Autotags\headlines;
+            $AT = new \Shop\Autotags\headlines;
             $repl = $AT->parse($autotag['parm1'], $opts, $autotag['tagstr']);
             break;
         }
@@ -580,7 +580,7 @@ function plugin_autotags_paypal ($op, $content = '', $autotag = '')
  *
  * @param   string  $rights     Comma-separated list of allowable rights
  */
-function PAYPAL_access_check($rights = 'paypal.user,paypal.admin,paypal.view')
+function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
 {
     global $_PLUGINS;
 
@@ -597,7 +597,7 @@ function PAYPAL_access_check($rights = 'paypal.user,paypal.admin,paypal.view')
  * This function is deprecated, but is kept to avoid completely breaking
  * if some plugin that calls this function is still in place.
  *
- * Plugins should call LGLIB_invokeService('paypal, 'genButton'...) instead.
+ * Plugins should call LGLIB_invokeService('shop, 'genButton'...) instead.
  *
  * Provided $vars should include:
  *  'item_number', 'item_name', 'amount', and optionally 'item_type'
@@ -609,9 +609,9 @@ function PAYPAL_access_check($rights = 'paypal.user,paypal.admin,paypal.view')
  * @param   string  $item_type  Optional type indicator (physical, virtual)
  * @return  string          HTML of requested button
  */
-function PAYPAL_genButton($btn_type, $vars, $item_type=0)
+function SHOP_genButton($btn_type, $vars, $item_type=0)
 {
-    global $_CONF, $_PP_CONF, $_USER, $LANG_configselects;
+    global $_CONF, $_SHOP_CONF, $_USER, $LANG_configselects;
 
     $retval = '';
 
@@ -622,22 +622,22 @@ function PAYPAL_genButton($btn_type, $vars, $item_type=0)
     }
 
     if ($btn_type == 'add_cart') {
-        if ($_PP_CONF['ena_cart'] == 1) {
+        if ($_SHOP_CONF['ena_cart'] == 1) {
             $tpl_add_cart = 'btn_add_cart.thtml';
-            if ($item_type == 0) $item_type = PP_PROD_VIRTUAL;
+            if ($item_type == 0) $item_type = SHOP_PROD_VIRTUAL;
             $T = new Template(__DIR__ . '/templates');
             $T->set_file('cart', 'buttons/btn_add_cart.thtml');
             $T->set_var(array(
                 'item_name'     => $vars['item_name'],
                 'item_number'   => $vars['item_number'],
                 'amount'        => $vars['amount'],
-                'action_url'    => PAYPAL_URL . '/index.php',
+                'action_url'    => SHOP_URL . '/index.php',
                 'item_type'     => $item_type,
             ) );
             $retval = $T->parse('', 'cart');
         }
     } else {
-        foreach (\Paypal\Gateway::getAll() as $gw) {
+        foreach (\Shop\Gateway::getAll() as $gw) {
             $retval = $gw->ExternalButton($vars, $btn_type);
             break;
         }
@@ -651,11 +651,11 @@ function PAYPAL_genButton($btn_type, $vars, $item_type=0)
  *
  * @return  array   Associative array (typename => title)
  */
-function plugin_searchtypes_paypal()
+function plugin_searchtypes_shop()
 {
-    global $_PP_CONF, $LANG_PP;
+    global $_SHOP_CONF, $LANG_SHOP;
 
-    return array($_PP_CONF['pi_name'] => $LANG_PP['srchtitle']);
+    return array($_SHOP_CONF['pi_name'] => $LANG_SHOP['srchtitle']);
 }
 
 
@@ -670,15 +670,15 @@ function plugin_searchtypes_paypal()
  * @param   string  $author     Limit results to this author (not used)
  * @return  object              Search object to be processed by Search class
  */
-function plugin_dopluginsearch_paypal(
+function plugin_dopluginsearch_shop(
     $query, $datestart, $dateend, $topic, $keyType, $author
 )
 {
-    global $_CONF, $_TABLES, $_PP_CONF, $LANG_PP;
+    global $_CONF, $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
     // Products aren't "auhored", so return null if searching by author
     if (!empty($author) ||
-            !SEC_hasRights('paypal.user,paypal.admin,paypal.view', 'OR')) {
+            !SEC_hasRights('shop.user,shop.admin,shop.view', 'OR')) {
         return NULL;
     }
 
@@ -694,14 +694,14 @@ function plugin_dopluginsearch_paypal(
     $sql = "SELECT
                 p.id, p.name as title, p.description as description,
                 dt_add as date,  views as hits,
-                CONCAT('/{$_PP_CONF['pi_name']}/detail.php?id=',p.id,'&query=$htmlquery') as url
-            FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+                CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',p.id,'&query=$htmlquery') as url
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id=c.cat_id
             WHERE p.enabled = 1
             AND (c.enabled=1 OR c.enabled IS NULL)";
 
-    $search = new SearchCriteria($_PP_CONF['pi_name'], $LANG_PP['blocktitle']);
+    $search = new SearchCriteria($_SHOP_CONF['pi_name'], $LANG_SHOP['blocktitle']);
     $columns = array('p.name', 'p.short_description', 'p.description',
                     'p.keywords', 'c.cat_name', 'c.description');
     list($sql, $ftsql) =
@@ -716,7 +716,7 @@ function plugin_dopluginsearch_paypal(
  *
  * @return  array   Array of filenames to import
  */
-function plugin_getheaderjs_paypal()
+function plugin_getheaderjs_shop()
 {
     $files = array(
         //__DIR__ . '/js/toggleEnabled.js',
@@ -732,13 +732,13 @@ function plugin_getheaderjs_paypal()
  *
  * @return  array   List of paths to CSS files
  */
-function plugin_getheadercss_paypal()
+function plugin_getheadercss_shop()
 {
-    global $_CONF, $_PP_CONF;
+    global $_CONF, $_SHOP_CONF;
 
     $styles = array();
-    $pi_css = $_CONF['path_html'] . 'paypal/css/';
-    $layout_css = "{$_CONF['path_layout']}plugins/{$_PP_CONF['pi_name']}/";
+    $pi_css = $_CONF['path_html'] . 'shop/css/';
+    $layout_css = "{$_CONF['path_layout']}plugins/{$_SHOP_CONF['pi_name']}/";
 
     $files = array('style.css');
 
@@ -759,14 +759,14 @@ function plugin_getheadercss_paypal()
 /**
  * Get the URL to the localized configuration help file.
  *
- * @uses    PAYPAL_getDocURL()
+ * @uses    SHOP_getDocURL()
  * @param   string  $option     Configuration option to display
  * @param   string  $doclang    Documentation language requested
  * @return  array   Array of (url, window_type)
  */
-function plugin_getconfigelementhelp_paypal($option, $doclang='english')
+function plugin_getconfigelementhelp_shop($option, $doclang='english')
 {
-    $doc_url = PAYPAL_getDocURL('config', $doclang);
+    $doc_url = SHOP_getDocURL('config', $doclang);
     if (empty($doc_url))
         return false;
 
@@ -782,13 +782,13 @@ function plugin_getconfigelementhelp_paypal($option, $doclang='english')
  * Get the link to a documentation file.
  * Returns the URL to the file, or to the directory if no file requested.
  *
- * @see    plugin_getconfigelementhelp_paypal()
- * @see    \Paypal\Product::showForm()
+ * @see    plugin_getconfigelementhelp_shop()
+ * @see    \Shop\Product::showForm()
  * @param  string  $file       HTML file
  * @param  string  $doclang    Documentation language
  * @return string              URL to document directory or file
  */
-function PAYPAL_getDocURL($file='', $doclang='english')
+function SHOP_getDocURL($file='', $doclang='english')
 {
     $doc_path = __DIR__ . "/docs/$doclang/";
     $doc_url = '';
@@ -799,12 +799,12 @@ function PAYPAL_getDocURL($file='', $doclang='english')
         if (!file_exists($doc_path . $file)) {
             $doclang = 'english';
         }
-        $doc_url = PAYPAL_URL . "/docs/$doclang/$file";
+        $doc_url = SHOP_URL . "/docs/$doclang/$file";
     } else {
         if (!is_dir($doc_path)) {
             $doclang = 'english';
         }
-        $doc_url = PAYPAL_URL . "/docs/$doclang/";
+        $doc_url = SHOP_URL . "/docs/$doclang/";
     }
     return $doc_url;
 }
@@ -815,59 +815,59 @@ function PAYPAL_getDocURL($file='', $doclang='english')
  *
  * @return  array   Array of items to be removed.
  */
-function plugin_autouninstall_paypal()
+function plugin_autouninstall_shop()
 {
     $out = array (
         // Give the name of the tables, without $_TABLES[]
         'tables' => array(
-            'paypal.address',
-            'paypal.buttons',
-            'paypal.categories',
-            'paypal.currency',
-            'paypal.gateways',
-            'paypal.images',
-            'paypal.ipnlog',
-            'paypal.order_log',
-            'paypal.orderstatus',
-            'paypal.orders',
-            'paypal.prod_attr',
-            'paypal.products',
-            'paypal.purchases',
-            'paypal.userinfo',
-            'paypal.workflows',
-            'paypal.coupons',
-            'paypal.coupon_log',
-            'paypal.sales',
-            'paypal.shipping',
+            'shop.address',
+            'shop.buttons',
+            'shop.categories',
+            'shop.currency',
+            'shop.gateways',
+            'shop.images',
+            'shop.ipnlog',
+            'shop.order_log',
+            'shop.orderstatus',
+            'shop.orders',
+            'shop.prod_attr',
+            'shop.products',
+            'shop.purchases',
+            'shop.userinfo',
+            'shop.workflows',
+            'shop.coupons',
+            'shop.coupon_log',
+            'shop.sales',
+            'shop.shipping',
             // deprecated, leave here to facilitate rollbacks
-            'paypal.cart',
+            'shop.cart',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
-            'paypal Admin',
+            'shop Admin',
         ),
         // Give the full name of the feature, as in the db
         'features' => array(
-            'paypal.admin',
-            'paypal.user',
-            'paypal.view'
+            'shop.admin',
+            'shop.user',
+            'shop.view'
         ),
         // Give the full name of the block, including 'phpblock_', etc
         'php_blocks' => array(
-            'phpblock_paypal_random',
-            'phpblock_paypal_featured',
-            'phpblock_paypal_categories',
-            'phpblock_paypal_popular',
-            'phpblock_paypal_cart',
-            'phpblock_paypal_recent',
-            'phpblock_paypal_search',
+            'phpblock_shop_random',
+            'phpblock_shop_featured',
+            'phpblock_shop_categories',
+            'phpblock_shop_popular',
+            'phpblock_shop_cart',
+            'phpblock_shop_recent',
+            'phpblock_shop_search',
         ),
         // List all vars by name
         'vars'=> array(
-            'paypal_gid',
+            'shop_gid',
         ),
     );
-    \Paypal\Cache::clear();  // clear everything from cache
+    \Shop\Cache::clear();  // clear everything from cache
     return $out;
 }
 
@@ -880,16 +880,16 @@ function plugin_autouninstall_paypal()
  *
  * @param   boolean $enabled    Plugin's new "enabled" state
  */
-function plugin_enablestatechange_paypal($enabled)
+function plugin_enablestatechange_shop($enabled)
 {
-    global $_TABLES, $_PLUGINS, $_PP_CONF;
+    global $_TABLES, $_PLUGINS, $_SHOP_CONF;
 
     $enabled = $enabled == true ? 1 : 0;
     // If trying to enable the plugin but lgLib is not available,
     // take no action and return
     if ($enabled && !in_array('lglib', $_PLUGINS)) {
         // Re-disable the plugin
-        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_PP_CONF['pi_name']);
+        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_SHOP_CONF['pi_name']);
     }
 }
 
@@ -900,20 +900,20 @@ function plugin_enablestatechange_paypal($enabled)
  * @param  mixed   $id     Item ID
  * @param  string  $type   Plugin Name
  */
-function plugin_itemdeleted_paypal($id, $type)
+function plugin_itemdeleted_shop($id, $type)
 {
-    global $_TABLES, $_PP_CONF;
+    global $_TABLES, $_SHOP_CONF;
 
     // If the lgLib plugin is disabled or removed, disable thie plugin
     if ($type == 'lglib' && $id == '*') {
-        plugin_enablestatechange_paypal(false);
-        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_PP_CONF['pi_name']);
-        unset($_POST['enabledplugins'][$_PP_CONF['pi_name']]);
-        unset($_POST['pluginarray'][$_PP_CONF['pi_name']]);
-    } elseif ($type == 'paypal' && $id != '*') {
+        plugin_enablestatechange_shop(false);
+        DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_SHOP_CONF['pi_name']);
+        unset($_POST['enabledplugins'][$_SHOP_CONF['pi_name']]);
+        unset($_POST['pluginarray'][$_SHOP_CONF['pi_name']]);
+    } elseif ($type == 'shop' && $id != '*') {
         $type = DB_escapeString($type);
         $id = DB_escapeString($id);
-        $sql = "DELETE FROM {$_TABLES['paypal.buttons']}
+        $sql = "DELETE FROM {$_TABLES['shop.buttons']}
                 WHERE pi_name = '$type' AND item_id = '{$id}'";
         DB_query($sql);
     }
@@ -925,25 +925,25 @@ function plugin_itemdeleted_paypal($id, $type)
  *
  * @return  array   Array containing main plugin URL and the unqiue id name
  */
-function plugin_getcommenturlid_paypal()
+function plugin_getcommenturlid_shop()
 {
-    return array(COM_buildUrl(PAYPAL_URL . '/detail.php'), 'product');
+    return array(COM_buildUrl(SHOP_URL . '/detail.php'), 'product');
 }
 
 
 /**
  * Creates the shopping cart block, if the cart is not empty.
  *
- * @uses    phpblock_paypal_cart_contents()
+ * @uses    phpblock_shop_cart_contents()
  * @return  string      HTML for the shopping cart block.
  */
-function phpblock_paypal_cart()
+function phpblock_shop_cart()
 {
-    if (!PP_isMinVersion()) return '';
+    if (!SHOP_isMinVersion()) return '';
 
     $T = new Template(__DIR__ . '/templates');
     $T->set_file('shopping_cart', 'blk_cart.thtml');
-    $contents = phpblock_paypal_cart_contents();
+    $contents = phpblock_shop_cart_contents();
     $vis = empty($contents) ? 'none' : 'block';
     $T->set_var(array(
         'cart_contents' => $contents,
@@ -961,19 +961,19 @@ function phpblock_paypal_cart()
  * Each item in the cart is shown along with its quantity, and links
  * to view the cart or check out.
  *
- * @see     phpblock_paypal_cart()
+ * @see     phpblock_shop_cart()
  * @return  string      HTML for the shopping cart block.
  */
-function phpblock_paypal_cart_contents()
+function phpblock_shop_cart_contents()
 {
-    global $_PP_CONF, $LANG_PP;
+    global $_SHOP_CONF, $LANG_SHOP;
 
     // If the cart is not enabled, or there is no cart, return
-    if ($_PP_CONF['ena_cart'] == 0 || !\Paypal\Cart::getCart()) {
+    if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
         return '';
     }
 
-    $cart = \Paypal\Cart::getInstance();
+    $cart = \Shop\Cart::getInstance();
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) return '';
 
@@ -981,11 +981,11 @@ function phpblock_paypal_cart_contents()
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
-    $Cur = \Paypal\Currency::getInstance($cart->currency);
+    $Cur = \Shop\Currency::getInstance($cart->currency);
     foreach ($cart->Cart() as $id=>$item) {
         $item_id = $item->product_id;
         if ($item->options != '') $item_id .= '|' . $item->options;
-        $P = \Paypal\Product::getInstance($item_id);
+        $P = \Shop\Product::getInstance($item_id);
 
         $item_total = (float)$item->price * $item->quantity;
         $T->set_var(array(
@@ -995,7 +995,7 @@ function phpblock_paypal_cart_contents()
             'price'         => $Cur->FormatValue($item->price),
             'quantity'      => $item->quantity,
             'item_total'    => $Cur->FormatValue($item_total),
-//            'pi_url'        => PAYPAL_URL,
+//            'pi_url'        => SHOP_URL,
             'item_link'     => $P->getLink(),
         ) );
         $T->parse('cRow', 'CartRow', true);
@@ -1014,7 +1014,7 @@ function phpblock_paypal_cart_contents()
  *
  * @return  string  HTML for search form
  */
-function phpblock_paypal_search()
+function phpblock_shop_search()
 {
     global $_TABLES;
 
@@ -1022,17 +1022,17 @@ function phpblock_paypal_search()
     $T->set_file('search', 'blk_search.thtml');
 
     $cache_key = 'cat_options_cat_id_cat_name';
-    $category_options = \Paypal\Cache::get($cache_key);
+    $category_options = \Shop\Cache::get($cache_key);
     if ($category_options === NULL) {
-        $category_options = COM_optionList($_TABLES['paypal.categories'],
+        $category_options = COM_optionList($_TABLES['shop.categories'],
             'cat_id, cat_name', '', 1, SEC_buildAccessSql(''));
         // Configured cache age is not used since the cache will be
         // cleared when categories are changed.
-        \Paypal\Cache::set($cache_key, $category_options, 'categories');
+        \Shop\Cache::set($cache_key, $category_options, 'categories');
     }
     $T->set_var(array(
         'category_options'  => $category_options,
-        'action_url'        => PAYPAL_URL . '/index.php',
+        'action_url'        => SHOP_URL . '/index.php',
     ) );
     $T->parse('output', 'search');
     return $T->finish($T->get_var('output'));
@@ -1043,15 +1043,15 @@ function phpblock_paypal_search()
  * Create a random product block.
  * Shows a single product selected from all enabled products.
  *
- * @uses    PAYPAL_phpblock_product_sql()
+ * @uses    SHOP_phpblock_product_sql()
  * @param   string  $cat    Optional single category
  * @return  string          HTML for the block
  */
-function phpblock_paypal_random($cat='')
+function phpblock_shop_random($cat='')
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    $limit = (int)$_PP_CONF['blk_random_limit'];
+    $limit = (int)$_SHOP_CONF['blk_random_limit'];
     if ($limit < 1)
         $limit = 1;
 
@@ -1060,7 +1060,7 @@ function phpblock_paypal_random($cat='')
         $sql .= "AND category='" . DB_escapeString($cat). "' ";
     }
 
-    return PAYPAL_phpblock_product_sql($sql, $limit);
+    return SHOP_phpblock_product_sql($sql, $limit);
 }
 
 
@@ -1068,15 +1068,15 @@ function phpblock_paypal_random($cat='')
  * Create a featured product block.
  * Shows a single product selected from all enabled featured products.
  *
- * @uses    PAYPAL_phpblock_product_sql()
+ * @uses    SHOP_phpblock_product_sql()
  * @param   string  $cat    Optional single category
  * @return  string          HTML for the block
  */
-function phpblock_paypal_featured($cat='')
+function phpblock_shop_featured($cat='')
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    $limit = (int)$_PP_CONF['blk_featured_limit'];
+    $limit = (int)$_SHOP_CONF['blk_featured_limit'];
     if ($limit < 1)
         $limit = 1;
 
@@ -1085,7 +1085,7 @@ function phpblock_paypal_featured($cat='')
         $sql .= "AND category='" . DB_escapeString($cat) . "' ";
     }
 
-    return PAYPAL_phpblock_product_sql($sql, $limit);
+    return SHOP_phpblock_product_sql($sql, $limit);
 }
 
 
@@ -1096,14 +1096,14 @@ function phpblock_paypal_featured($cat='')
  *
  * @return  string  HTML for the block
  */
-function phpblock_paypal_categories()
+function phpblock_shop_categories()
 {
     global $_TABLES;
 
-    $parents = '0, ' . \Paypal\Category::getRoot()->cat_id;
+    $parents = '0, ' . \Shop\Category::getRoot()->cat_id;
     $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id
             WHERE c.cat_id > 0
             AND c.enabled = 1
@@ -1114,7 +1114,7 @@ function phpblock_paypal_categories()
             ORDER BY c.cat_name";
     //echo $sql;die;
     $cache_key = md5($sql);
-    $Cats = \Paypal\Cache::get($cache_key);
+    $Cats = \Shop\Cache::get($cache_key);
     if ($Cats === NULL) {
         $Cats = array();
         $res = DB_query($sql);
@@ -1123,20 +1123,20 @@ function phpblock_paypal_categories()
                 $Cats[] = $A;
             }
         }
-        \Paypal\Cache::set($cache_key, $Cats, array('categories','products'));
+        \Shop\Cache::set($cache_key, $Cats, array('categories','products'));
     }
     $T = new Template(__DIR__ . '/templates');
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
 
     foreach ($Cats as $A) {
         $cnt = (int)$A['cnt'];
-        $cnt += PAYPAL_child_cat_product_count($A['cat_id']);
+        $cnt += SHOP_child_cat_product_count($A['cat_id']);
         if ($cnt == 0) continue;
         $T->set_block('blk_category', 'row', 'ItemRow');
         $T->set_var(array(
             'category'  => $A['cat_name'],
             'count'     => $cnt,
-            'url'       => PAYPAL_URL . '/index.php?category=' . $A['cat_id'],
+            'url'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
         ) );
         $T->parse('ItemRow', 'row', true);
     }
@@ -1150,20 +1150,20 @@ function phpblock_paypal_categories()
  *
  * @return  string              HTML for "Popular Items" block
  */
-function phpblock_paypal_popular()
+function phpblock_shop_popular()
 {
-    global $_TABLES, $_PP_CONF;
+    global $_TABLES, $_SHOP_CONF;
 
-    $limit = (int)$_PP_CONF['blk_popular_limit'];
+    $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
         $limit = 1;
 
     $sql = "SELECT DISTINCT
                 pr.id,
-                (SELECT count(*) FROM {$_TABLES['paypal.purchases']} pu
+                (SELECT count(*) FROM {$_TABLES['shop.purchases']} pu
                     WHERE product_id = pr.id) AS cnt
-            FROM {$_TABLES['paypal.products']} pr
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.categories']} c
             ON pr.cat_id=c.cat_id
             WHERE pr.enabled=1
             AND (c.enabled=1 OR c.enabled IS NULL)
@@ -1174,7 +1174,7 @@ function phpblock_paypal_popular()
             LIMIT $limit";
     //echo $sql;die;
 
-    $retval = PAYPAL_phpblock_product($sql);
+    $retval = SHOP_phpblock_product($sql);
     return $retval;
 }
 
@@ -1183,24 +1183,24 @@ function phpblock_paypal_popular()
  * Create a "New Products" block.
  * Shows most recently-added products
  *
- * @uses    PAYPAL_phpblock_product_sql()
+ * @uses    SHOP_phpblock_product_sql()
  * @param   string  $cat    Optional single category
  * @return  s tring          HTML for the block
  */
-function phpblock_paypal_recent($cat='')
+function phpblock_shop_recent($cat='')
 {
-    global $_TABLES, $_PP_CONF;
+    global $_TABLES, $_SHOP_CONF;
 
-    $limit = (int)$_PP_CONF['blk_popular_limit'];
+    $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
         $limit = 1;
 
     $sql = "SELECT DISTINCT
                 pr.id,
-                (SELECT count(*) FROM {$_TABLES['paypal.purchases']} pu
+                (SELECT count(*) FROM {$_TABLES['shop.purchases']} pu
                     WHERE product_id = pr.id) AS cnt
-            FROM {$_TABLES['paypal.products']} pr
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.categories']} c
             ON pr.cat_id=c.cat_id
             WHERE pr.enabled=1
             AND (c.enabled=1 OR c.enabled IS NULL)
@@ -1211,7 +1211,7 @@ function phpblock_paypal_recent($cat='')
             LIMIT $limit";
     //echo $sql;die;
 
-    $retval = PAYPAL_phpblock_product($sql);
+    $retval = SHOP_phpblock_product($sql);
     return $retval;
 }
 
@@ -1226,9 +1226,9 @@ function phpblock_paypal_recent($cat='')
  * @param   string $header  Optional header text.
  * @return  string          HTML for formatted error message
  */
-function PAYPAL_errorMessage($msg = '', $type = '', $header = '')
+function SHOP_errorMessage($msg = '', $type = '', $header = '')
 {
-    global $LANG_PP;
+    global $LANG_SHOP;
 
     // Require a valid message
     if ($msg == '')
@@ -1239,19 +1239,19 @@ function PAYPAL_errorMessage($msg = '', $type = '', $header = '')
     switch (strtolower($type)) {
     case 'info':
         $class = 'info';
-        if ($header == '') $header = $LANG_PP['info'];
+        if ($header == '') $header = $LANG_SHOP['info'];
         break;
 
     case 'note':
     case 'warn':
         $class = 'note';
-        if ($header == '') $header = $LANG_PP['warning'];
+        if ($header == '') $header = $LANG_SHOP['warning'];
         break;
 
     case 'alert':
     default:
         $class = 'alert';
-        if ($header == '') $header = $LANG_PP['alert'];
+        if ($header == '') $header = $LANG_SHOP['alert'];
         break;
     }
 
@@ -1266,14 +1266,14 @@ function PAYPAL_errorMessage($msg = '', $type = '', $header = '')
 /**
  * Create the SQL for a product block and return the block contents.
  *
- * @uses    PAYPAL_phpblock_product()
+ * @uses    SHOP_phpblock_product()
  * @param   string  $where  Search condition, starting with AND
  * @param   integer $limit  Number of items to show.
  * @return  string      HTML for the random-product block
  */
-function PAYPAL_phpblock_product_sql($where, $limit=1)
+function SHOP_phpblock_product_sql($where, $limit=1)
 {
-    global $_TABLES, $_PP_CONF, $LANG_PP;
+    global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
     $retval = '';
 
@@ -1288,8 +1288,8 @@ function PAYPAL_phpblock_product_sql($where, $limit=1)
     // The "c.enabled IS NULL" is to allow products which have
     // no category record, as long as the product is enabled.
     $sql = "SELECT  id
-            FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
             ON p.cat_id=c.cat_id
             WHERE
                 p.enabled=1 AND (c.enabled=1 OR c.enabled IS NULL) " .
@@ -1298,7 +1298,7 @@ function PAYPAL_phpblock_product_sql($where, $limit=1)
             ORDER BY RAND()
             $limit";
 
-    $retval = PAYPAL_phpblock_product($sql);
+    $retval = SHOP_phpblock_product($sql);
     return $retval;
 }
 
@@ -1312,17 +1312,17 @@ function PAYPAL_phpblock_product_sql($where, $limit=1)
  * @param   string  $sql    Complete SQL query to be executed.
  * @return  string          HTML for the product block.
  */
-function PAYPAL_phpblock_product($sql)
+function SHOP_phpblock_product($sql)
 {
-    global $_PP_CONF, $_TABLES, $_CONF;
+    global $_SHOP_CONF, $_TABLES, $_CONF;
 
     // By default, return nothing
     $retval = '';
 
     // Check for a recent cached copy of the block to save DB calls
     $cache_key = md5($sql);
-    if ((int)$_PP_CONF['cache_max_age'] > 0) {
-        $retval = \Paypal\Cache::get($cache_key);
+    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
+        $retval = \Shop\Cache::get($cache_key);
         if ($retval !== NULL) {
             return $retval;
         }
@@ -1332,7 +1332,7 @@ function PAYPAL_phpblock_product($sql)
     // item to show
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        COM_errorLog("PAYPAL_phpblock_product() SQL error: $sql", 1);
+        COM_errorLog("SHOP_phpblock_product() SQL error: $sql", 1);
     }
     if ($res && DB_numRows($res) > 0) {
 
@@ -1343,18 +1343,18 @@ function PAYPAL_phpblock_product($sql)
         ));
 
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
-            $P = \Paypal\Product::getInstance($A['id']);
+            $P = \Shop\Product::getInstance($A['id']);
             $T->set_var(array(
                 'name'      => $P->name,
-                'item_url'  => COM_buildUrl(PAYPAL_URL . '/detail.php?id=' .
+                'item_url'  => COM_buildUrl(SHOP_URL . '/detail.php?id=' .
                                 $A['id']),
                 'descrip'   => $P->short_description,
                 'price'     => $P->price > 0 ?
-                                \Paypal\Currency::getInstance()->Format($P->price) : '',
-                'currency'  => $_PP_CONF['currency'],
+                                \Shop\Currency::getInstance()->Format($P->price) : '',
+                'currency'  => $_SHOP_CONF['currency'],
                 'rec_num'   => $i,      // to separate items by <hr/>
                 'id'        => $A['id'],
-                'pi_url'    => PAYPAL_URL,
+                'pi_url'    => SHOP_URL,
             ) );
 
             if (!$P->hasAttributes()) {
@@ -1365,7 +1365,7 @@ function PAYPAL_phpblock_product($sql)
                 }
                 $T->set_var('button', $btn_txt);
             } else {
-                if ($_PP_CONF['ena_cart']) {
+                if ($_SHOP_CONF['ena_cart']) {
                     // If the product has attributes, then the cart must be
                     // enabled to allow purchasing
                     $button = $T->parse('', 'btn_details') . '&nbsp;';
@@ -1376,7 +1376,7 @@ function PAYPAL_phpblock_product($sql)
 
             $img = $P->getOneImage();
             if ($img != '') {
-                $T->set_var('img_url', PAYPAL_ImageUrl($img));
+                $T->set_var('img_url', SHOP_ImageUrl($img));
             } else {
                 $T->set_var('img_url', '');
             }
@@ -1385,8 +1385,8 @@ function PAYPAL_phpblock_product($sql)
     }
 
     // Write the cache file if used
-    if ((int)$_PP_CONF['cache_max_age'] > 0) {
-        \Paypal\Cache::set($cache_key, $retval, array('products','categories'), $_PP_CONF['cache_max_age']);
+    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
+        \Shop\Cache::set($cache_key, $retval, array('products','categories'), $_SHOP_CONF['cache_max_age']);
     }
     return $retval;
 }
@@ -1401,12 +1401,12 @@ function PAYPAL_phpblock_product($sql)
  * @param   float   $rating Rating Value
  * @param   integer $votes  Number of votes cast
  */
-function plugin_itemrated_paypal($id, $rating, $votes)
+function plugin_itemrated_shop($id, $rating, $votes)
 {
     global $_TABLES;
 
     $rating = number_format($rating, 2, '.', '');
-    $sql = "UPDATE {$_TABLES['paypal.products']}
+    $sql = "UPDATE {$_TABLES['shop.products']}
             SET rating = $rating, votes = $votes
             WHERE id=".$id;
     DB_query($sql);
@@ -1424,13 +1424,13 @@ function plugin_itemrated_paypal($id, $rating, $votes)
  * @param   integer $uid        User ID of the one doing the rating
  * @return  boolean             True if user is allowed, false if not
  */
-function plugin_canuserrate_paypal($item_id, $uid)
+function plugin_canuserrate_shop($item_id, $uid)
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
     static $canRate = NULL;
 
     if ($canRate === NULL) {
-        if ($_PP_CONF['anon_can_rate'] == 0 && COM_isAnonUser()) {
+        if ($_SHOP_CONF['anon_can_rate'] == 0 && COM_isAnonUser()) {
             $canRate = false;
         } else {
             $canRate = true;
@@ -1446,15 +1446,15 @@ function plugin_canuserrate_paypal($item_id, $uid)
  *
  * @param   integer $uid    User ID
  */
-function plugin_user_login_paypal($uid)
+function plugin_user_login_shop($uid)
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    if ($uid < 2 || $_PP_CONF['ena_cart'] == 0) return;
+    if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
 
-    $anon_cart = \Paypal\Cart::getAnonCartID();  // get the anonymous cart ID
+    $anon_cart = \Shop\Cart::getAnonCartID();  // get the anonymous cart ID
     if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = \Paypal\Cart::getInstance($uid);    // get the logged-in user's cart
+    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
     $user_cart->Merge($anon_cart);
 }
 
@@ -1464,17 +1464,17 @@ function plugin_user_login_paypal($uid)
  * - Delete old carts that aren't assigned to any user.
  * - Call PLG_itemDeleted to notify plugins that an item is not available
  */
-function plugin_runScheduledTask_paypal()
+function plugin_runScheduledTask_shop()
 {
-    global $_PP_CONF, $_TABLES, $_CONF;
+    global $_SHOP_CONF, $_TABLES, $_CONF;
 
     $orders = array();
     $conds = array();
-    $sql = "SELECT ord.order_id FROM {$_TABLES['paypal.orders']} ord
-        LEFT JOIN {$_TABLES['paypal.purchases']} pur
+    $sql = "SELECT ord.order_id FROM {$_TABLES['shop.orders']} ord
+        LEFT JOIN {$_TABLES['shop.purchases']} pur
             ON ord.order_id = pur.order_id WHERE ";
 
-    if ($_PP_CONF['ena_cart'] == 1) {
+    if ($_SHOP_CONF['ena_cart'] == 1) {
         // Get empty carts over 2 days old, no need to keep them around
         $conds[] = "(ord.status='cart'
                 AND order_seq IS NULL
@@ -1482,7 +1482,7 @@ function plugin_runScheduledTask_paypal()
                 AND pur.order_id IS NULL)";
 
         // Get all carts not updated in a while
-        $days = PP_getVar($_PP_CONF, 'days_purge_cart', 'integer');
+        $days = SHOP_getVar($_SHOP_CONF, 'days_purge_cart', 'integer');
         if ($days > 0) {
             $conds[] = "(ord.status = 'cart' AND
                 ord.order_seq IS NULL AND
@@ -1491,7 +1491,7 @@ function plugin_runScheduledTask_paypal()
     }
 
     // Get pending (unpaid) orders not updated in a while
-    $days = PP_getVar($_PP_CONF, 'days_purge_pending', 'integer');
+    $days = SHOP_getVar($_SHOP_CONF, 'days_purge_pending', 'integer');
     if ($days > 0) {
         $conds[] = "(ord.status = 'pending' AND
                 ord.order_seq IS NULL AND
@@ -1508,16 +1508,16 @@ function plugin_runScheduledTask_paypal()
 
     if (!empty($orders)) {
         foreach ($orders as $order_id) {
-            \Paypal\Order::Delete($order_id);
+            \Shop\Order::Delete($order_id);
         }
     }
 
     // Clean up the HTML cache if used
-    if ((int)$_PP_CONF['cache_max_age'] > 0) {
+    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
         $cachedir = "{$_CONF['path_data']}/layout_cache";
-        $files = glob("$cachedir/__paypal__*");
+        $files = glob("$cachedir/__shop__*");
         if ($files) {
-            $timeAgo = time() - (int)$_PP_CONF['cache_max_age'];
+            $timeAgo = time() - (int)$_SHOP_CONF['cache_max_age'];
             foreach ($files as $file) {
                 if (@filemtime($file) < $timeAgo) {
                     @unlink($file);
@@ -1528,23 +1528,23 @@ function plugin_runScheduledTask_paypal()
 
     // Treat disabled and expired products as "deleted" to get them out of
     // search results, etc.
-    $sql = "SELECT id, prod_type FROM {$_TABLES['paypal.products']}
-            WHERE enabled = 1 AND avail_end < '" . PAYPAL_now()->format('Y-m-d', true) . "'";
+    $sql = "SELECT id, prod_type FROM {$_TABLES['shop.products']}
+            WHERE enabled = 1 AND avail_end < '" . SHOP_now()->format('Y-m-d', true) . "'";
     $res = DB_query($sql);
     while ($A = DB_fetchArray($res, false)) {
         PLG_itemDeleted($A['id'], $A['prod_type']);
         // Toggle to disabled, also clears the product cache
-        \Paypal\Product::toggleEnabled(1, $A['id']);
+        \Shop\Product::toggleEnabled(1, $A['id']);
     }
 
     // Delete old cached buttons which are keyed by item_id and price.
     // Sale-priced items will get stuck in the DB.
-    DB_query("DELETE FROM {$_TABLES['paypal.buttons']}
+    DB_query("DELETE FROM {$_TABLES['shop.buttons']}
             WHERE last_update < NOW() - INTERVAL 120 DAY");
 
     // Clean up the sale price table if so configured.
-    if ($_PP_CONF['purge_sale_prices']) {
-        \Paypal\Sales::Clean();
+    if ($_SHOP_CONF['purge_sale_prices']) {
+        \Shop\Sales::Clean();
     }
 }
 
@@ -1554,7 +1554,7 @@ function plugin_runScheduledTask_paypal()
  *
  * @return  boolean     True, if webservices are supported
  */
-function plugin_wsEnabled_paypal()
+function plugin_wsEnabled_shop()
 {
     return true;
 }
@@ -1570,7 +1570,7 @@ function plugin_wsEnabled_paypal()
  * @param   mixed   $item_number    Item Number to check
  * @return  boolean     True if it's a plugin item, false if it's ours
  */
-function PAYPAL_is_plugin_item($item_number)
+function SHOP_is_plugin_item($item_number)
 {
     if (!is_numeric($item_number)) {
         return true;
@@ -1588,13 +1588,13 @@ function PAYPAL_is_plugin_item($item_number)
  * @param   integer $height     Optional height, assume thumbnail
  * @return  string      URL to resized image
  */
-function PAYPAL_ImageUrl($imgname, $width=0, $height=0)
+function SHOP_ImageUrl($imgname, $width=0, $height=0)
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    $width = $width == 0 ? $_PP_CONF['max_thumb_size'] : (int)$width;
-    $height = $height == 0 ? $_PP_CONF['max_thumb_size'] : (int)$height;
-    return LGLIB_ImageUrl($_PP_CONF['image_dir'] . '/' . $imgname, $width, $height);
+    $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
+    $height = $height == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$height;
+    return LGLIB_ImageUrl($_SHOP_CONF['image_dir'] . '/' . $imgname, $width, $height);
 }
 
 
@@ -1607,20 +1607,20 @@ function PAYPAL_ImageUrl($imgname, $width=0, $height=0)
  * @param   string  $msg    Text message to display, may be blank.
  * @param   string  $type   Type of message
  */
-function PAYPAL_debug($msg, $type = 'debug')
+function SHOP_debug($msg, $type = 'debug')
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
     switch ($type) {
     case 'error':
         // Always log an error message
-        COM_errorLog('PP Error: ' . $msg, 1);
+        COM_errorLog('SHOP Error: ' . $msg, 1);
         break;
     case 'debug':
     default:
         // Log a message only if the message type is enabled
-        if (isset($_PP_CONF[$type]) && $_PP_CONF[$type] == 1) {
-            COM_errorLog('PP DEBUG: ' . $msg, 1);
+        if (isset($_SHOP_CONF[$type]) && $_SHOP_CONF[$type] == 1) {
+            COM_errorLog('SHOP DEBUG: ' . $msg, 1);
         }
     }
 }
@@ -1631,7 +1631,7 @@ function PAYPAL_debug($msg, $type = 'debug')
  *
  * @return  array   $option => path
  */
-function plugin_configmanager_select_product_tpl_ver_paypal()
+function plugin_configmanager_select_product_tpl_ver_shop()
 {
     $A = array();
     $dirs = glob(__DIR__ . '/templates/detail/*', GLOB_ONLYDIR);
@@ -1649,7 +1649,7 @@ function plugin_configmanager_select_product_tpl_ver_paypal()
  *
  * @return  array   $option => path
  */
-function plugin_configmanager_select_list_tpl_ver_paypal()
+function plugin_configmanager_select_list_tpl_ver_shop()
 {
     $A = array();
     $dirs = glob(__DIR__ . '/templates/list/*', GLOB_ONLYDIR);
@@ -1667,10 +1667,10 @@ function plugin_configmanager_select_list_tpl_ver_paypal()
  *
  * @return  array   Array of description => value
  */
-function plugin_configmanager_select_currency_paypal()
+function plugin_configmanager_select_currency_shop()
 {
     $A = array();
-    $tmp = \Paypal\Currency::getAll();
+    $tmp = \Shop\Currency::getAll();
     foreach ($tmp as $code => $data) {
         $A["{$code} - {$data->name}"] = $code;
     }
@@ -1686,13 +1686,13 @@ function plugin_configmanager_select_currency_paypal()
  * @param   string  $fieldset   Name of fieldset being populated
  * @return  string              HTML for edit form. Never NULL.
  */
-function plugin_profileedit_paypal($uid, $panel, $fieldset)
+function plugin_profileedit_shop($uid, $panel, $fieldset)
 {
-    global $_PP_CONF, $_USER, $_TABLES, $LANG_PP;
+    global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
     $retval = '';
     // Make sure that a valid UID was passed in.
-    if (empty($uid) || (!plugin_ismoderator_paypal() && $uid != $_USER['uid'])) {
+    if (empty($uid) || (!plugin_ismoderator_shop() && $uid != $_USER['uid'])) {
         return $retval;
     }
 
@@ -1702,11 +1702,11 @@ function plugin_profileedit_paypal($uid, $panel, $fieldset)
         $LT->set_file(array(
             'block' => 'profileblock.thtml',
         ));
-        $LT->set_var('is_uikit', $_PP_CONF['_is_uikit']);
-        $U = \Paypal\UserInfo::getInstance($uid);
-        if ($_PP_CONF['gc_enabled']) {
-            $gc_bal = \Paypal\Coupon::getUserBalance($uid);
-            $LT->set_var('gc_bal', \Paypal\Currency::getInstance()->Format($gc_bal));
+        $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
+        $U = \Shop\UserInfo::getInstance($uid);
+        if ($_SHOP_CONF['gc_enabled']) {
+            $gc_bal = \Shop\Coupon::getUserBalance($uid);
+            $LT->set_var('gc_bal', \Shop\Currency::getInstance()->Format($gc_bal));
         }
         if (!empty($U->cart)) {
             $cart = true;
@@ -1714,13 +1714,13 @@ function plugin_profileedit_paypal($uid, $panel, $fieldset)
         } else {
             $cart = false;
         }
-        $ord_count = DB_count($_TABLES['paypal.orders'], 'uid', $uid);
+        $ord_count = DB_count($_TABLES['shop.orders'], 'uid', $uid);
         $LT->set_var('orders', $ord_count);
 
         // Only display the template if there's something to show
         /*if ($ord_count > 0 || $cart || $gc_bal > 0) {
-            USES_paypal_functions();
-            //$LT->set_var('order_hist', \Paypal\listOrders());
+            USES_shop_functions();
+            //$LT->set_var('order_hist', \Shop\listOrders());
         }*/
         $LT->parse('output', 'block');
         $retval .= $LT->finish($LT->get_var('output'));
@@ -1730,11 +1730,11 @@ function plugin_profileedit_paypal($uid, $panel, $fieldset)
 
 
 /**
- * Save the Paypal profile settings when updated from Account Settings.
+ * Save the Shop profile settings when updated from Account Settings.
  *
  * @param   integer $uid    ID of user being saved
  */
-function plugin_profilesave_paypal($uid=0)
+function plugin_profilesave_shop($uid=0)
 {
     global $_USER;
 
@@ -1746,9 +1746,9 @@ function plugin_profilesave_paypal($uid=0)
         return;
     }
 
-    $apply_gc = PP_getVar($_POST, 'pp_apply_gc', 'string');
+    $apply_gc = SHOP_getVar($_POST, 'pp_apply_gc', 'string');
     if (!empty($apply_gc)) {
-        \Paypal\Coupon::Redeem($apply_gc, $uid);
+        \Shop\Coupon::Redeem($apply_gc, $uid);
     }
 }
 
@@ -1762,15 +1762,15 @@ function plugin_profilesave_paypal($uid=0)
  * @param   integer $parent_cat Parent category ID to check
  * @return  integer             Product count for all child categories
  */
-function PAYPAL_child_cat_product_count($parent_cat)
+function SHOP_child_cat_product_count($parent_cat)
 {
     global $_TABLES;
 
     $parent_total = 0;
 
     $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id
             WHERE c.cat_id > 0
             AND c.enabled = 1
@@ -1784,7 +1784,7 @@ function PAYPAL_child_cat_product_count($parent_cat)
         // Add the total products in the child category
         $parent_total += (int)$A['cnt'];
         // And call again to get the child's children
-        $parent_total += PAYPAL_child_cat_product_count($A['cat_id']);
+        $parent_total += SHOP_child_cat_product_count($A['cat_id']);
     }
     return $parent_total;
 }
@@ -1799,7 +1799,7 @@ function PAYPAL_child_cat_product_count($parent_cat)
  * @param   boolean $opt_string True to return options as a string
  * @return  array       Array of (item_id, options)
  */
-function PAYPAL_explode_opts($item, $opt_string = false)
+function SHOP_explode_opts($item, $opt_string = false)
 {
     if (strpos($item, '|')) {
         list($item_id, $options) = explode('|', $item);
@@ -1826,7 +1826,7 @@ function PAYPAL_explode_opts($item, $opt_string = false)
  *
  * @return  object      Date object
  */
-function PAYPAL_now()
+function SHOP_now()
 {
     global $_CONF;
     static $dt = NULL;
@@ -1842,7 +1842,7 @@ function PAYPAL_now()
  *
  * @return  object  DateTimeZone object
  */
-function PAYPAL_timezone()
+function SHOP_timezone()
 {
     global $_CONF;
     static $tz = NULL;
@@ -1863,9 +1863,9 @@ require_once __DIR__ . '/services.inc.php';
  * @param   array   $options    Not used
  * @return  array           Array of product information
  */
-function plugin_getiteminfo_paypal($id, $what, $uid=0, $options=array())
+function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 {
-    global $_TABLES, $_CONF, $LANG_PP;
+    global $_TABLES, $_CONF, $LANG_SHOP;
 
     $properties = explode(',', $what);
     $fields = array('p.id');        // always get item id
@@ -1917,10 +1917,10 @@ function plugin_getiteminfo_paypal($id, $what, $uid=0, $options=array())
 
     $retval = array();
     $sql = "SELECT $fields
-             FROM {$_TABLES['paypal.products']} p
-            LEFT JOIN {$_TABLES['paypal.categories']} c
+             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
                 ON c.cat_id = p.cat_id ";
-    $today = PAYPAL_now()->format('Y-m-d');
+    $today = SHOP_now()->format('Y-m-d');
     if ($id == '*') {
         $where = ' WHERE 1 = 1 ';
     } else {
@@ -1982,7 +1982,7 @@ function plugin_getiteminfo_paypal($id, $what, $uid=0, $options=array())
             }
         }
         $props['url'] = COM_buildUrl($_CONF['site_url'] .
-                    '/paypal/detail.php?id=' . urlencode($A['id']));
+                    '/shop/detail.php?id=' . urlencode($A['id']));
         $mapped = array();
         foreach ($props as $key => $value) {
             if ($id == '*') {
@@ -2023,21 +2023,21 @@ function plugin_getiteminfo_paypal($id, $what, $uid=0, $options=array())
  * @param   string  $ip         IP address (not used)
  * @return  string              XML-formatted data
  */
-function plugin_privacy_export_paypal($uid, $email='', $username='', $ip='')
+function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
-    $U = \Paypal\UserInfo::getInstance($uid);
+    $U = \Shop\UserInfo::getInstance($uid);
 
-    $retval = "<paypal>\n";
+    $retval = "<shop>\n";
 
     foreach ($U->addresses as $addr) {
-        foreach (\Paypal\UserInfo::Fields() as $fld) {
+        foreach (\Shop\UserInfo::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));
                 $retval .= '<'.$fld.'>'.$d.'</'.$fld.">\n";
             }
         }
     }
-    $retval .= "</paypal>\n";
+    $retval .= "</shop>\n";
 
     if ( function_exists('tidy_repair_string')) {
         $retval = tidy_repair_string($retval, array('input-xml' => 1));
@@ -2054,7 +2054,7 @@ function plugin_privacy_export_paypal($uid, $email='', $username='', $ip='')
  * @param  string  $type   Item Type, e.g. plugin name
  * @param  string  $old_id Old ID, in case the ID was changed
  */
-function plugin_itemsaved_paypal($id, $type, $old_id = '')
+function plugin_itemsaved_shop($id, $type, $old_id = '')
 {
     global $_TABLES;
 
@@ -2062,7 +2062,7 @@ function plugin_itemsaved_paypal($id, $type, $old_id = '')
     if ($old_id != $id) $id = $old_id;
     $type = DB_escapeString($type);
     $id = DB_escapeString($id);
-    $sql = "DELETE FROM {$_TABLES['paypal.buttons']}
+    $sql = "DELETE FROM {$_TABLES['shop.buttons']}
             WHERE pi_name = '$type' AND item_id = '{$id}'";
     DB_query($sql);
 }
@@ -2077,7 +2077,7 @@ function plugin_itemsaved_paypal($id, $type, $old_id = '')
  * @param   mixed   $default    Default value, if any
  * @return  array       Array element or NULL, cast to $type
  */
-function PP_getVar($A, $varname, $type = 'string', $default = NULL)
+function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
 {
     if (!isset($A[$varname])) {
         return $default;
@@ -2119,11 +2119,11 @@ function PP_getVar($A, $varname, $type = 'string', $default = NULL)
  *
  * @return  float   Tax Rate
  */
-function PP_getTaxRate()
+function SHOP_getTaxRate()
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
-    return PP_getVar($_PP_CONF, 'tax_rate', 'float');
+    return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
 }
 
 
@@ -2133,9 +2133,9 @@ function PP_getTaxRate()
  * @param   float   $amount     Taxable amount
  * @return  float               Sales Tax
  */
-function PP_getTax($amount)
+function SHOP_getTax($amount)
 {
-    return round($amount * PP_getTaxRate(), 2);
+    return round($amount * SHOP_getTaxRate(), 2);
 }
 
 
@@ -2149,9 +2149,9 @@ function PP_getTax($amount)
  * @param   string  $path   Optional path if not "templates/"
  * @return  s tring      Full filename, e.g. "editor.uikit.thtml"
  */
-function PP_getTemplate($name, $id='', $path='')
+function SHOP_getTemplate($name, $id='', $path='')
 {
-    global $_PP_CONF;
+    global $_SHOP_CONF;
 
     $templates = array();
 
@@ -2186,14 +2186,14 @@ function PP_getTemplate($name, $id='', $path='')
  * @param   string  $required   Required version, default to code version
  * @return  boolean     True if current >= installed version, False if not
  */
-function PP_isMinVersion($required = '')
+function SHOP_isMinVersion($required = '')
 {
-    global $_PP_CONF, $_PLUGIN_INFO;
+    global $_SHOP_CONF, $_PLUGIN_INFO;
 
     // If not specified, use the current code version as required.
-    if ($required == '') $required = $_PP_CONF['pi_version'];
+    if ($required == '') $required = $_SHOP_CONF['pi_version'];
 
-    $pi_name = $_PP_CONF['pi_name'];
+    $pi_name = $_SHOP_CONF['pi_name'];
     if (isset($_PLUGIN_INFO[$pi_name])) {
         if (is_array($_PLUGIN_INFO[$pi_name])) {
             // glFusion > = 1.6.6
@@ -2203,8 +2203,8 @@ function PP_isMinVersion($required = '')
         }
     }
     if (!COM_checkVersion($installed, $required)) {
-        if (plugin_ismoderator_paypal()) {
-            COM_setMsg("Paypal Plugin has not been updated from $installed to $required", 'error');
+        if (plugin_ismoderator_shop()) {
+            COM_setMsg("Shop Plugin has not been updated from $installed to $required", 'error');
         }
         return false;
     } else {
@@ -2219,7 +2219,7 @@ function PP_isMinVersion($required = '')
  * @param   object  $Dt     Date object
  * @return  string          HTML for date display with tooltip
  */
-function PP_dateTooltip($Dt)
+function SHOP_dateTooltip($Dt)
 {
     return '<span class="tooltip" title="' . $Dt->toMySQL(false) . ' UTC">'
             . $Dt->toMySQL(true) . '</span>';
@@ -2231,7 +2231,7 @@ function PP_dateTooltip($Dt)
  *
  * @param   string  $url    URL to save
  */
-function PP_setUrl($url='')
+function SHOP_setUrl($url='')
 {
     if ($url == '') {
         $url = "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
@@ -2246,7 +2246,7 @@ function PP_setUrl($url='')
  * @param   string  $def_url    Default url if one is not set in the session
  * @return  string  URL
  */
-function PP_getUrl($def_url = '')
+function SHOP_getUrl($def_url = '')
 {
     $url = SESS_getVar('pp_ret_url');
     if (!$url) {
@@ -2254,7 +2254,7 @@ function PP_getUrl($def_url = '')
             $url = $def_url;
         } else {
             // final failsafe
-            $url = PAYPAL_URL;
+            $url = SHOP_URL;
         }
     } else {
         // This is a one-time use value

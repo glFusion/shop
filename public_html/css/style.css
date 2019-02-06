@@ -1,8 +1,8 @@
-.paypalSavedAddress {
+.shopSavedAddress {
     text-align: left;
 }
 
-.paypalForm label {
+.shopForm label {
     width: 8em;
     float: left;
     text-align: right;
@@ -10,7 +10,7 @@
     display: block;
 }
 
-.paypalProductForm label {
+.shopProductForm label {
     width: 20em;
     float: left;
     text-align: right;
@@ -19,12 +19,12 @@
     display: block;
 }
 
-.paypalProductForm p {
+.shopProductForm p {
     line-height: 1px;
     margin-top: 0px;
 }
 
-.paypalProductForm form div {
+.shopProductForm form div {
     clear: left;
     display: block;
     height: expression('1%');
@@ -32,7 +32,7 @@
     padding: 1px 3px;
 }
 
-.paypalButton {
+.shopButton {
     padding: 3px 6px;
     display: inline;
     border: none;
@@ -48,40 +48,40 @@
     margin-bottom: 3px;
 }
 
-.paypalButton:hover {
+.shopButton:hover {
     background-position: 0 center;
 }
 
-.paypalButton:active {
+.shopButton:active {
     background-position: 0 top;
     position: relative;
     top: 1px;
     /*padding: 4px 7px 4px;*/
 }
 
-.paypalButton.red { background-color: #CC6666; }
-.paypalButton.purple { background-color: #9400BF; }
-.paypalButton.green { background-color: #7AB61D; }
-.paypalButton.orange { background-color: #FF9C00; }
-.paypalButton.blue { background-color: #2C6DA0; }
-.paypalButton.black { background-color: #222222; }
-.paypalButton.black:hover { background-color: #333333; }
-.paypalButton.grey { background-color: #666666; }
-.paypalButton.white {
+.shopButton.red { background-color: #CC6666; }
+.shopButton.purple { background-color: #9400BF; }
+.shopButton.green { background-color: #7AB61D; }
+.shopButton.orange { background-color: #FF9C00; }
+.shopButton.blue { background-color: #2C6DA0; }
+.shopButton.black { background-color: #222222; }
+.shopButton.black:hover { background-color: #333333; }
+.shopButton.grey { background-color: #666666; }
+.shopButton.white {
     background-color: #FFFFFF; color: #000000; text-shadow: 1px 1px #fff;
 }
-.paypalButton.small { font-size: 75%; padding: 3px 7px; }
-.paypalButton.small:active {
+.shopButton.small { font-size: 75%; padding: 3px 7px; }
+.shopButton.small:active {
     padding: 4px 7px 2px;
     background-position: 0 top;
 }
-.paypalButton.large { font-size: 125%; padding: 7px 12px; }
-.paypalButton.large:active {
+.shopButton.large { font-size: 125%; padding: 7px 12px; }
+.shopButton.large:active {
     padding: 8px 12px 6px;
     background-position: 0 top;
 }
 
-.paypalContent {
+.shopContent {
     background: none repeat scroll 0 0 #F7F7F7;
     border: 1px solid #DDDDDD;
     margin-bottom:10px;
@@ -89,7 +89,7 @@
     padding:10px;
 }
 
-div.paypalProductDetail {
+div.shopProductDetail {
     clear: right;
     /*margin: 0px 40px 0px 40px;*/
     /*margin: 0px 10px;*/
@@ -98,19 +98,19 @@ div.paypalProductDetail {
     /*margin-left: 10px;*/
 }
 
-div.paypalProductDetail.v1 {
+div.shopProductDetail.v1 {
     width: 100%;
 }
-.paypalProductDetail #paypalShortDesc,
-div.paypalProductDetail .ppShortDesc {
+.shopProductDetail #shopShortDesc,
+div.shopProductDetail .shopShortDesc {
     float: left;
     margin-bottom: 10px;
 }
-.paypalProductDetail.v2 .main_img {
+.shopProductDetail.v2 .main_img {
     height: 400px;
 }
 
-.paypalProductDetail h1 {
+.shopProductDetail h1 {
     font-size: 200%;
 }
 
@@ -124,7 +124,7 @@ div.paypalProductDetail .ppShortDesc {
     float:right;
 }
 
-.paypalProductDetail #paypalProductAttrib {
+.shopProductDetail #shopProductAttrib {
     float: right;
     text-align: right;
     margin-right: 30px;
@@ -132,73 +132,73 @@ div.paypalProductDetail .ppShortDesc {
     padding-bottom: 10px;
 }
 
-.ppDetailAddCart.v2,
-.ppDetailBuyNow.v2 {
+.shopDetailAddCart.v2,
+.shopDetailBuyNow.v2 {
     float: right;
     /*text-align: right;*/
     clear: right;
 }
 
-.ppDetailAddCart.v2 {
+.shopDetailAddCart.v2 {
     margin-top: 10px;
     width: 100%;
 }
 
-.ppDetailPrice.v2 {
+.shopDetailPrice.v2 {
     float:right;
     text-align:right;
 }
 
-div.paypalDetailAttrib {
+div.shopDetailAttrib {
     float:right;
     margin-bottom: 5px;
 }
-div.paypalDetailAttrib.v2 {
+div.shopDetailAttrib.v2 {
     margin-bottom: 2em;
 }
 
-.paypalProductDetail #paypalProductDesc,
-.ppProductDesc {
+.shopProductDetail #shopProductDesc,
+.shopProductDesc {
     clear: both;
     margin-bottom: 1em;
     margin-top: 2em;
     font-size: 1.2em;
 }
-.ppProductDesc.v2 {
+.shopProductDesc.v2 {
     margin-bottom: 2em;
 }
-div.paypalProductThumbWrapper {
+div.shopProductThumbWrapper {
     clear: both;
     float: left;
     margin-top: .5em;
     margin-bottom: 1em;
 }
-div.paypalProductThumb {
+div.shopProductThumb {
     float: left;
     margin-right: .25em;
 }
-div.paypalProductThumb.v1 img {
+div.shopProductThumb.v1 img {
     max-height: 150px;
 }
-div.paypalProductThumb.v2 img {
+div.shopProductThumb.v2 img {
     max-height: 80px;
 }
 
-div.ppProductListOuter {
+div.shopProductListOuter {
   clear:both;
   padding-top: 15px;
   padding-bottom: 10px;
   overflow: hidden;
 }
 
-.paypalProductListItem {
+.shopProductListItem {
     position: relative;
     padding: 5px;
     text-decoration: none;
     overflow: hidden;
 }
 
-.paypalProductListItem.v1 {
+.shopProductListItem.v1 {
   border-bottom-style: solid;
   border-bottom-width: thin;
   padding-top: 20px;
@@ -206,8 +206,8 @@ div.ppProductListOuter {
   clear: both;
 }
 
-.paypalProductListItem.v2,
-.paypalProductListItem.v3 {
+.shopProductListItem.v2,
+.shopProductListItem.v3 {
   cursor: pointer;
   position:relative;
   border: 2px solid #ddd;
@@ -218,58 +218,58 @@ div.ppProductListOuter {
   height: 100%;
 }
 
-.paypalProductListItem.v3 {
+.shopProductListItem.v3 {
     text-align: center;
     display: block;
 }
 
-.paypalProductListItem.v3 div.ItemImage {
+.shopProductListItem.v3 div.ItemImage {
     height: 145px;
     display: block;
 }
 
-.paypalProductListItemUrl2 div.ratingbar,
-.ppRatingBar {
+.shopProductListItemUrl2 div.ratingbar,
+.shopRatingBar {
   /*position: relative;*/
   bottom: 0;
   margin-bottom: 4px;
 }
 
-.ppRatingBar.list.v1 {
+.shopRatingBar.list.v1 {
     margin-bottom: 9px;
     position: absolute;
     display: block;
     width: 100%;
 }
 
-.ppRatingBar.v2 {
+.shopRatingBar.v2 {
   text-align:center;
   font-size: x-small;
   width: 100%;
 }
 
-.ppRatingBar.list.v2 {
+.shopRatingBar.list.v2 {
   clear:both;
   width: 100%;
 }
 
-.ppRatingBar.detail.v2 {
+.shopRatingBar.detail.v2 {
   position: relative;
   clear: both;
   padding-top: 10px;
   text-align: center;
 }
 
-.ppRatingBar.detail {
+.shopRatingBar.detail {
   font-size: inherit;
 }
 
-.paypalProductListItem itemname {
+.shopProductListItem itemname {
     font-size:1.2em;
     font-weight:bold;
 }
 
-div.paypalProductListItem.v1 div.ItemImage {
+div.shopProductListItem.v1 div.ItemImage {
     float: left;
     width: 110px;
     text-decoration: none;
@@ -279,12 +279,12 @@ div.paypalProductListItem.v1 div.ItemImage {
     margin: 0px 10px;
 }
 
-div.paypalProductListItem.v1 div.ItemImage img {
+div.shopProductListItem.v1 div.ItemImage img {
     max-height: 120px;
     max-width: 120px;
 }
 
-div.paypalProductListItem.v2 div.ItemImage {
+div.shopProductListItem.v2 div.ItemImage {
     text-decoration: none;
     border: 5px;
     text-align: center;
@@ -292,19 +292,19 @@ div.paypalProductListItem.v2 div.ItemImage {
     max-height: 140px;
 }
 
-div.paypalProductListItem.v2 div.ItemImage img,
-div.paypalProductListItem.v3 div.ItemImage img {
+div.shopProductListItem.v2 div.ItemImage img,
+div.shopProductListItem.v3 div.ItemImage img {
     max-height: 140px;
 }
 
-div.paypalProductListItem.v1 div.ItemUrl {
+div.shopProductListItem.v1 div.ItemUrl {
     float: left;
     width: 60%;
     font-weight: bold;
 }
 
-div.paypalProductListItem.v3 div.ItemUrl,
-div.paypalProductListItem.v2 div.ItemUrl {
+div.shopProductListItem.v3 div.ItemUrl,
+div.shopProductListItem.v2 div.ItemUrl {
     margin-top: 5px;
     margin-bottom: 5px;
     margin-left: auto;
@@ -323,112 +323,112 @@ div.Button.list.v2 {
     width: 100%;
 }
 
-div.paypalProductListItem.v1 div.ItemButtons {
+div.shopProductListItem.v1 div.ItemButtons {
     float:right;
     /*width:200px;*/
     text-align:right;
 }
 
-.paypalComments {
+.shopComments {
     clear: both;
 }
 
-.paypalListSeparator {
+.shopListSeparator {
     clear: both;
     border-bottom: 3px;
     padding-top: .5em;
 }
-.paypalListSeparator hr {
+.shopListSeparator hr {
     width: 85%;
 }
 
-.paypalOrderContainer {
+.shopOrderContainer {
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
 }
 
-.paypalOrderContainer.print h1 {
+.shopOrderContainer.print h1 {
     font-size: 24px;
 }
 
-.paypalOrder {
+.shopOrder {
     clear:both;
 }
 
-.paypalOrder #paypalShopInfo {
+.shopOrder #shopShopInfo {
     /*width: 200px;*/
     float: right;
 }
-.paypalOrder #paypalShopInfo .name{
+.shopOrder #shopShopInfo .name{
     font-size: 24px;
 }
 
-.paypalOrder #paypalAddr {
+.shopOrder #shopAddr {
     margin-top: 2em;
     padding-bottom: 1em;
     position:relative;
 }
 
-.paypalOrder #paypalBilling {
+.shopOrder #shopBilling {
     float: left;
     margin-left: 0;
     width: 50%;
 }
 
-.paypalOrder #paypalShipping {
+.shopOrder #shopShipping {
     float: left;
     width: 50%;
 }
 
-.paypalOrder #paypalOrderNumber {
+.shopOrder #shopOrderNumber {
     clear: both;
     text-align: left;
     padding: 1em 0 1em 0;
 }
 
-.paypalOrderItems {
+.shopOrderItems {
     clear: both;
     text-align: left;
 }
 
-.paypalOrderItems table {
+.shopOrderItems table {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
 }
 
-.paypalOrderItems td {
+.shopOrderItems td {
     vertical-align: top;
 }
 
-.paypalOrderButtons {
+.shopOrderButtons {
     position: relative;
     float: right;
     margin-right: 50px;
     clear: right;
 }
 
-.paypalStateSelect {
+.shopStateSelect {
     width: 264px;
 }
 
-.paypalCheckoutButton {
+.shopCheckoutButton {
     display: inline;
     margin-right: 20px;
     vertical-align: top;
 }
 
-.paypalAlertText {
+.shopAlertText {
     color: red;
     font-weight: bold;
 }
 
-.paypalBlock #CartTotal {
+.shopBlock #CartTotal {
     font-weight: bold;
 }
 
-.paypalBlock #CartTotalAmount {
+.shopBlock #CartTotalAmount {
     float: right;
 }
 
@@ -437,16 +437,16 @@ div.ItemOptions {
     padding-left: 2em;
 }
 
-.paypalBlock div.CartItem {
+.shopBlock div.CartItem {
     padding-bottom: .5em;
 }
 
-.paypalCategorySelectRoot {
+.shopCategorySelectRoot {
     /*background-color: lightblue;*/
     font-weight: bold;
 }
 
-.paypalErrorMsg p {
+.shopErrorMsg p {
     font-weight: bold;
 }
 
@@ -454,11 +454,11 @@ div.ItemOptions {
     padding-top: 2em;
 }
 
-#paypalOrderLog th {
+#shopOrderLog th {
     text-align: center;
 }
 
-#paypalOrderLog td {
+#shopOrderLog td {
     padding-right: 1em;
     padding-left: 1em;
 }
@@ -467,69 +467,69 @@ div.ItemOptions {
     color: #FF0000;
 }*/
 
-.paypalPrice {
+.shopPrice {
     font-weight:bold;
 }
 
-.paypalPrice.list.v1 {
+.shopPrice.list.v1 {
     padding-bottom: 1rem;
     position: relative;
 }
 
-.paypalPrice.list.v2 {
+.shopPrice.list.v2 {
     text-align:center;
 }
 
-.paypalPrice.list.v3 {
+.shopPrice.list.v3 {
     color: #666666;
     font-size:inherit;
     text-align:right;
     margin-right: 5px;
 }
 
-.paypalPrice.v2 {
+.shopPrice.v2 {
     margin-top: 4px;
     text-align: right;
 }
 
-.paypalPrice.was {
+.shopPrice.was {
     color:#666666;
     text-decoration:line-through;
 }
 
-.paypalPrice.list.was.v3 {
+.shopPrice.list.was.v3 {
     color:#999999;
     text-decoration:line-through;
 }
 
-.paypalPrice.normal {
+.shopPrice.normal {
     color: #666666;
     font-size:120%;
 }
 
-.paypalDetailAttrib.v2 .paypalPrice {
+.shopDetailAttrib.v2 .shopPrice {
     font-size: 140%;
 }
 
-.paypalPrice.sale,
-.paypalQtyDisc
+.shopPrice.sale,
+.shopQtyDisc
 {
     color: #FF0000;
     font-size:150%;
     font-style:italic;
 }
-.paypalQtyDiscText {
+.shopQtyDiscText {
     font-style: italic;
 }
 
-.paypalOnhand {
+.shopOnhand {
     margin-top: 1em;
     color: #666666;
     font-size: 120%;
     font-style:italic;
 }
 
-.paypalProductLgImg {
+.shopProductLgImg {
     /*max-width: 460px;
     max-height: 400px;*/
     width: 460px;
@@ -537,7 +537,7 @@ div.ItemOptions {
     margin-bottom: 2px;
 }
 
-.paypalProductLgImg.v2 {
+.shopProductLgImg.v2 {
     margin-bottom: 2px;
 }
 
@@ -545,16 +545,16 @@ div.ItemOptions {
     text-align: right;
 }
 
-.ppNewAdminItem {
+.shopNewAdminItem {
     font-style: italic;
     font-weight: bold;
     color: red;
 }
 
-div.paypalProductSort {
+div.shopProductSort {
     float: left;
 }
-div.paypalProductSearch {
+div.shopProductSearch {
     float: right;
 }
 #orderInstructions {
@@ -568,15 +568,15 @@ div.paypalProductSearch {
 .orderInstructions {
     font-style: italic;
 }
-table.paypalViewCartTable {
+table.shopViewCartTable {
     width: 80%;
 }
 
-.paypalViewCartTable a {
+.shopViewCartTable a {
     text-decoration: none;
 }
 
-.paypalProductCustomText {
+.shopProductCustomText {
     margin-bottom: 5px;
     line-height: 1.3rem;
     width: 100%;
@@ -586,41 +586,41 @@ table.paypalViewCartTable {
     /*max-height: 400px;*/
 }
 
-.paypalRatingBar {
+.shopRatingBar {
     margin-top: 2em;
 }
 
-.paypalCatHeaderImage {
+.shopCatHeaderImage {
     float: left;
     margin-right: 6px;
 }
 
-.ppQtyDiscSmall {
+.shopQtyDiscSmall {
     font-size: small;
     font-style: italic;
 }
 
-div.ppTOCLink {
+div.shopTOCLink {
     margin-top: 10px;
 }
 
 form.frm_buy_now {
     clear:left;
 }
-.pp-icon-ok {
+.shop-icon-ok {
     color: green;
 }
-.pp-icon-danger {
+.shop-icon-danger {
     color: red;
 }
-.pp-icon-warning {
+.shop-icon-warning {
     /*color: #FFD300;*/
     color: #FF9900;
 }
-.pp-icon-info {
+.shop-icon-info {
     color: #0077dd;
 }
-.pp-icon-unknown {
+.shop-icon-unknown {
     color: #530E53;
 }
 
@@ -629,7 +629,7 @@ form.frm_buy_now {
     min-width: 50%;
 }
 
-form.ppViewCart .ppGatewayRadios {
+form.shopViewCart .shopGatewayRadios {
     margin-top:10px;
     text-align:left;
     font-size: 110%;
@@ -651,18 +651,18 @@ div #orderPmtMethod {
 div.enterGC {
     clear:both;
 }
-div.ppNoGCMsg {
+div.shopNoGCMsg {
     font-size: small;
     font-style:italic;
     float:right;
     clear:both;
 }
-span.ppPlusShipping {
+span.shopPlusShipping {
     font-size: small;
     font-style: italic;
 }
 
-li.ppProductListItem.v2 {
+li.shopProductListItem.v2 {
   padding-bottom: 10px;
 }
 

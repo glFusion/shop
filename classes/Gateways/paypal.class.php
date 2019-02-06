@@ -4,20 +4,20 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
 /**
  * Class for Paypal payment gateway
  * @since   v0.5.0
- * @package paypal
+ * @package shop
  */
-class paypal extends \Paypal\Gateway
+class paypal extends \Shop\Gateway
 {
 
     /** Business e-mail to be used for creating buttons.
@@ -35,7 +35,7 @@ class paypal extends \Paypal\Gateway
      */
     public function __construct()
     {
-        global $_PP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER;
 
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -201,7 +201,7 @@ class paypal extends \Paypal\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_PP_CONF, $_USER, $_TABLES, $LANG_PP;
+        global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
         if (!$this->_Supports('checkout')) {
             return '';
@@ -218,8 +218,8 @@ class paypal extends \Paypal\Gateway
         $fields = array(
             'cmd'       => '_cart',
             'upload'    => '1',
-            'cancel_return' => PAYPAL_URL.'/index.php?view=cart&cid=' . urlencode($cart->CartID()),
-            'return'    => PAYPAL_URL.'/index.php?thanks=paypal',
+            'cancel_return' => SHOP_URL.'/index.php?view=cart&cid=' . urlencode($cart->CartID()),
+            'return'    => SHOP_URL.'/index.php?thanks=paypal',
             'rm'        => '1',     // simple GET return url
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
@@ -251,12 +251,12 @@ class paypal extends \Paypal\Gateway
         // If using a gift card, the gc amount could exceed the item total
         // which won't work with Paypal. Just create one cart item to
         // represent the entire cart including tax, shipping, etc.
-        //if (PP_getVar($custom_arr, 'by_gc', 'float') > 0) {
+        //if (SHOP_getVar($custom_arr, 'by_gc', 'float') > 0) {
         $by_gc = $cart->getInfo('apply_gc');
         if ($by_gc > 0) {
             $total_amount = $cart->getTotal() - $by_gc;
-            $fields['item_number_1'] = $LANG_PP['cart'];
-            $fields['item_name_1'] = $LANG_PP['all_items'];
+            $fields['item_number_1'] = $LANG_SHOP['cart'];
+            $fields['item_name_1'] = $LANG_SHOP['all_items'];
             $fields['amount_1'] = $total_amount;
         } else {
             $cartItems = $cart->Cart();
@@ -265,7 +265,7 @@ class paypal extends \Paypal\Gateway
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
-                $P = \Paypal\Product::getInstance($item->product_id, $custom_arr);
+                $P = \Shop\Product::getInstance($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
                 //$options = explode(',', $item->options);
@@ -323,7 +323,7 @@ class paypal extends \Paypal\Gateway
             if ($shipping > 0) $total_amount += $shipping;
             if ($weight > 0) {
                 $fields['weight_cart'] = $weight;
-                $fields['weight_unit'] = $_PP_CONF['weight_unit'] == 'kgs' ?
+                $fields['weight_unit'] = $_SHOP_CONF['weight_unit'] == 'kgs' ?
                             'kgs' : 'lbs';
             }
         }
@@ -373,7 +373,7 @@ class paypal extends \Paypal\Gateway
      */
     private function _encButton($fields)
     {
-        global $_CONF, $_PP_CONF;
+        global $_CONF, $_SHOP_CONF;
 
         // Make sure button encryption is enabled and needed values are set
         if ($this->config['encrypt'] != 1 ||
@@ -387,7 +387,7 @@ class paypal extends \Paypal\Gateway
         $keys = array();
         // Now check that the files exist and can be read
         foreach (array('prv_key', 'pub_key', 'pp_cert') as $idx=>$name) {
-            $keys[$name] = $_PP_CONF['tmpdir'] . 'keys/' . $this->config[$name];
+            $keys[$name] = $_SHOP_CONF['tmpdir'] . 'keys/' . $this->config[$name];
             if (!is_file($keys[$name]) ||
                 !is_readable($keys[$name])) {
                 return '';
@@ -396,7 +396,7 @@ class paypal extends \Paypal\Gateway
 
         // Create a temporary file to begin storing our data.  If this fails,
         // then return.
-        $dataFile = tempnam($_PP_CONF['tmpdir'].'cache/', 'data');
+        $dataFile = tempnam($_SHOP_CONF['tmpdir'].'cache/', 'data');
         if (!is_writable($dataFile))
             return '';
 
@@ -505,7 +505,7 @@ class paypal extends \Paypal\Gateway
      */
     public function ProductButton($P)
     {
-        global $_PP_CONF, $LANG_PP;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
         $btn_type = $P->btn_type;
@@ -529,8 +529,8 @@ class paypal extends \Paypal\Gateway
             $vars['item_name'] = htmlspecialchars($P->short_description);
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
-            $vars['return'] = PAYPAL_URL . '/index.php?thanks=paypal';
-            $vars['cancel_return'] = PAYPAL_URL;
+            $vars['return'] = SHOP_URL . '/index.php?thanks=paypal';
+            $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();
 
             // Get the allowed buy-now quantity. If not defined, set
@@ -564,7 +564,7 @@ class paypal extends \Paypal\Gateway
             }
 
             if ($P->taxable) {
-                $vars['tax_rate'] = sprintf("%0.4f", PP_getTaxRate() * 100);
+                $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
             }
 
             // Buy-now product button, set default billing/shipping addresses
@@ -614,10 +614,10 @@ class paypal extends \Paypal\Gateway
         // phrase if not available
         $btn_text = $P->btn_text;    // maybe provided by a plugin
         if ($btn_text == '') {
-            $btn_text = isset($LANG_PP['buttons'][$btn_type]) ?
-                $LANG_PP['buttons'][$btn_type] : $LANG_PP['buy_now'];
+            $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
+                $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
-        $T = PP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
+        $T = SHOP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,
@@ -641,11 +641,11 @@ class paypal extends \Paypal\Gateway
      */
     public function ExternalButton($attribs = array(), $type = 'buy_now')
     {
-        global $_PP_CONF, $LANG_PP;
+        global $_SHOP_CONF, $LANG_SHOP;
 
-        $T = PP_getTemplate('btn_' . $type, 'btn', 'buttons/' . $this->gw_name);
-        $btn_text = isset($LANG_PP['buttons'][$type]) ?
-                $LANG_PP['buttons'][$type] : $LANG_PP['buy_now'];
+        $T = SHOP_getTemplate('btn_' . $type, 'btn', 'buttons/' . $this->gw_name);
+        $btn_text = isset($LANG_SHOP['buttons'][$type]) ?
+                $LANG_SHOP['buttons'][$type] : $LANG_SHOP['buy_now'];
         $amount = isset($attribs['amount']) ? (float)$attribs['amount'] : 0;
         $this->setReceiver($amount);
         $this->AddCustom('transtype', $type);
@@ -671,7 +671,7 @@ class paypal extends \Paypal\Gateway
             'currency_code' => $this->currency_code,
             'custom'        => $this->PrepareCustom(),
             'return'        => isset($attribs['return']) ? $attribs['return'] :
-                            PAYPAL_URL . '/index.php?thanks=paypal',
+                            SHOP_URL . '/index.php?thanks=paypal',
             'rm'            => 1,
             'notify_url'    => $this->ipn_url,
             'amount'        => $amount,

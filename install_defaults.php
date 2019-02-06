@@ -1,12 +1,12 @@
 <?php
 /**
- * Configuration Defaults Paypal plugin for glFusion.
- * Based on the gl-paypal Plugin for Geeklog CMS.
+ * Configuration Defaults Shop plugin for glFusion.
+ * Based on the gl-shop Plugin for Geeklog CMS.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (C) 2005-2006 Vincent Furia <vinny01@users.sourceforge.net>
- * @package     paypal
+ * @package     shop
  * @version     0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,8 +20,8 @@ if (!defined ('GVERSION')) {
 }
 
 /** @var global config data */
-global $paypalConfigData;
-$paypalConfigData = array(
+global $shopConfigData;
+$shopConfigData = array(
     array(
         'name' => 'sg_main',
         'default_value' => NULL,
@@ -31,7 +31,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'fs_main',
@@ -42,7 +42,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'admin_email_addr',
@@ -53,7 +53,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'currency',
@@ -64,7 +64,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'anon_buy',
@@ -75,7 +75,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'menuitem',
@@ -86,7 +86,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'order',
@@ -97,7 +97,7 @@ $paypalConfigData = array(
         'selection_array' => 5,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'prod_per_page',
@@ -108,7 +108,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 60,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'cat_columns',
@@ -119,7 +119,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 70,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'catalog_columns',
@@ -130,7 +130,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 80,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'show_plugins',
@@ -141,7 +141,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 90,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'ena_comments',
@@ -152,7 +152,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 100,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'ena_ratings',
@@ -163,7 +163,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 110,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'anon_can_rate',
@@ -174,7 +174,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 120,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'displayblocks',
@@ -185,7 +185,7 @@ $paypalConfigData = array(
         'selection_array' => 13,
         'sort' => 130,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'centerblock',
@@ -196,7 +196,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 140,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'ena_cart',
@@ -207,7 +207,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 150,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'weight_unit',
@@ -218,7 +218,7 @@ $paypalConfigData = array(
         'selection_array' => 15,
         'sort' => 160,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'tc_link',
@@ -229,7 +229,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 170,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'days_purge_cart',
@@ -240,7 +240,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 180,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'days_purge_pending',
@@ -251,7 +251,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 190,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'product_tpl_ver',
@@ -262,7 +262,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 200,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'list_tpl_ver',
@@ -273,7 +273,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 210,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -285,7 +285,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'max_images',
@@ -296,7 +296,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'max_image_size',
@@ -307,7 +307,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'max_thumb_size',
@@ -318,7 +318,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'img_max_width',
@@ -329,7 +329,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'img_max_height',
@@ -340,7 +340,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'max_file_size',
@@ -351,7 +351,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 60,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -363,7 +363,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_enabled',
@@ -374,7 +374,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_taxable',
@@ -385,7 +385,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_featured',
@@ -396,7 +396,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_expiration',
@@ -407,7 +407,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_track_onhand',
@@ -418,7 +418,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'def_oversell',
@@ -429,7 +429,7 @@ $paypalConfigData = array(
         'selection_array' => 16,
         'sort' => 60,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -441,7 +441,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'blk_random_limit',
@@ -452,7 +452,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'blk_featured_limit',
@@ -463,7 +463,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'blk_popular_limit',
@@ -474,7 +474,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'cache_max_age',
@@ -485,7 +485,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -497,7 +497,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'debug',
@@ -508,7 +508,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'debug_ipn',
@@ -519,7 +519,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -531,7 +531,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'get_street',
@@ -542,7 +542,7 @@ $paypalConfigData = array(
         'selection_array' => 14,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'get_city',
@@ -553,7 +553,7 @@ $paypalConfigData = array(
         'selection_array' => 14,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'get_state',
@@ -564,7 +564,7 @@ $paypalConfigData = array(
         'selection_array' => 14,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'get_country',
@@ -575,7 +575,7 @@ $paypalConfigData = array(
         'selection_array' => 14,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'get_postal',
@@ -586,7 +586,7 @@ $paypalConfigData = array(
         'selection_array' => 14,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     // Shop Information SG
     array(
@@ -598,7 +598,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'fs_shop',
@@ -609,7 +609,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'shop_name',
@@ -620,7 +620,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'shop_addr',
@@ -631,7 +631,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'shop_phone',
@@ -642,7 +642,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'shop_email',
@@ -653,7 +653,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'tax_rate',
@@ -664,7 +664,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'purge_sale_prices',
@@ -675,7 +675,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 60,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     // Gift Card SG
     array(
@@ -687,7 +687,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'fs_gc',
@@ -698,7 +698,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_enabled',
@@ -709,7 +709,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_exp_days',
@@ -720,7 +720,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 
     array(
@@ -732,7 +732,7 @@ $paypalConfigData = array(
         'selection_array' => NULL,
         'sort' => 0,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_letters',
@@ -743,7 +743,7 @@ $paypalConfigData = array(
         'selection_array' => 17,
         'sort' => 10,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_numbers',
@@ -754,7 +754,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 20,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_symbols',
@@ -765,7 +765,7 @@ $paypalConfigData = array(
         'selection_array' => 2,
         'sort' => 30,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_prefix',
@@ -776,7 +776,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_suffix',
@@ -787,7 +787,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 50,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_length',
@@ -798,7 +798,7 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 60,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
     array(
         'name' => 'gc_mask',
@@ -809,13 +809,13 @@ $paypalConfigData = array(
         'selection_array' => 0,
         'sort' => 70,
         'set' => true,
-        'group' => 'paypal',
+        'group' => 'shop',
     ),
 );
 
 
 /**
- * Initialize Paypal plugin configuration
+ * Initialize Shop plugin configuration
  *
  * No longer imports a pre-0.4.0 config.php. Only configuration items shown
  * above are imported.
@@ -823,18 +823,18 @@ $paypalConfigData = array(
  * @param   integer $group_id   Admin Group ID (not used)
  * @return  boolean             True
  */
-function plugin_initconfig_paypal($group_id = 0)
+function plugin_initconfig_shop($group_id = 0)
 {
-    global $paypalConfigData;
+    global $shopConfigData;
 
     $c = config::get_instance();
-    if (!$c->group_exists('paypal')) {
+    if (!$c->group_exists('shop')) {
         USES_lib_install();
-        foreach ($paypalConfigData AS $cfgItem) {
+        foreach ($shopConfigData AS $cfgItem) {
             _addConfigItem($cfgItem);
         }
     } else {
-        COM_errorLog('initconfig error: Paypal config group already exists');
+        COM_errorLog('initconfig error: Shop config group already exists');
     }
     return true;
 }

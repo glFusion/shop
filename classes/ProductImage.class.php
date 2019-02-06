@@ -4,20 +4,20 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 // Import core glFusion upload functions
 //USES_class_upload();
 
 /**
  * Image-handling class.
- * @package paypal
+ * @package shop
  */
 class ProductImage extends \upload
 {
@@ -41,7 +41,7 @@ class ProductImage extends \upload
      */
     function __construct($product_id, $varname='photo')
     {
-        global $_PP_CONF, $_CONF;
+        global $_SHOP_CONF, $_CONF;
 
         $this->setContinueOnError(true);
         $this->setLogFile('/tmp/warn.log');
@@ -49,19 +49,19 @@ class ProductImage extends \upload
         $this->_setAvailableMimeTypes();
 
         // Before anything else, check the upload directory
-        if (!$this->setPath($_PP_CONF['image_dir'])) {
+        if (!$this->setPath($_SHOP_CONF['image_dir'])) {
             return;
         }
         $this->product_id = trim($product_id);
-        $this->pathImage = $_PP_CONF['image_dir'];
+        $this->pathImage = $_SHOP_CONF['image_dir'];
         $this->setAllowedMimeTypes(array(
                 'image/pjpeg' => '.jpg,.jpeg',
                 'image/jpeg'  => '.jpg,.jpeg',
         ));
-        $this->setMaxFileSize($_PP_CONF['max_image_size']);
+        $this->setMaxFileSize($_SHOP_CONF['max_image_size']);
         $this->setMaxDimensions(
-                $_PP_CONF['img_max_width'],
-                $_PP_CONF['img_max_height']
+                $_SHOP_CONF['img_max_width'],
+                $_SHOP_CONF['img_max_height']
         );
         $this->setAutomaticResize(true);
         $this->setFieldName($varname);
@@ -90,7 +90,7 @@ class ProductImage extends \upload
         $this->MakeThumbs();
 
         foreach ($this->goodfiles as $filename) {
-            $sql = "INSERT INTO {$_TABLES['paypal.images']}
+            $sql = "INSERT INTO {$_TABLES['shop.images']}
                     (product_id, filename)
                 VALUES (
                     '{$this->product_id}', '".
@@ -148,9 +148,9 @@ class ProductImage extends \upload
     */
     private function MakeThumbs()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
-        $thumbsize = (int)$_PP_CONF['max_thumb_size'];
+        $thumbsize = (int)$_SHOP_CONF['max_thumb_size'];
         if ($thumbsize < 50) $thumbsize = 100;
 
         if (!is_array($this->_fileNames))

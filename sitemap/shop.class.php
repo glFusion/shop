@@ -1,10 +1,10 @@
 <?php
 /**
- * Sitemap driver for the Paypal plugin
+ * Sitemap driver for the Shop plugin
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2017-2018 Lee Garner
- * @package     paypal
+ * @package     shop
  * @version     v0.5.10
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -12,14 +12,14 @@
  */
 
 /**
- * Sitemap driver class for Paypal
- * @paackage paypal
+ * Sitemap driver class for Shop
+ * @paackage shop
  */
-class sitemap_paypal extends sitemap_base
+class sitemap_shop extends sitemap_base
 {
     /** Plugin name.
      * @var string */
-    protected $name = 'paypal';
+    protected $name = 'shop';
 
     /**
      * Get the plugin main URL.
@@ -59,7 +59,7 @@ class sitemap_paypal extends sitemap_base
         if ($cat_id > 0) {
             $opts['cat_id'] = $cat_id;
         }
-        $items = PLG_getItemInfo('paypal', '*', 'id,title,date,url', $_USER['uid'], $opts);
+        $items = PLG_getItemInfo('shop', '*', 'id,title,date,url', $_USER['uid'], $opts);
         if (is_array($items)) {
             foreach ($items as $A) {
                 $entries[] = array(
@@ -89,11 +89,11 @@ class sitemap_paypal extends sitemap_base
         $base = (int)$base;
         $retval = array();
 
-        $sql = "SELECT * FROM {$_TABLES['paypal.categories']}
+        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
                 WHERE parent_id = $base";
         $res = DB_query($sql, 1);
         if (DB_error()) {
-            COM_errorLog("Paypal getChildCategories error: $sql");
+            COM_errorLog("Shop getChildCategories error: $sql");
             return $retval;
         }
 

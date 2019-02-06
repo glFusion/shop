@@ -1,6 +1,6 @@
 <?php
 /**
- * Public index page for users of the paypal plugin.
+ * Public index page for users of the shop plugin.
  *
  * By default displays available products along with links to purchase history
  * and detailed product views.
@@ -9,7 +9,7 @@
  * @author      Vincent Furia <vinny01@users.sourceforge.net
  * @copyright   Copyright (c) 2009-2018 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,15 +20,15 @@
 require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
-if (!isset($_PP_CONF) || !in_array($_PP_CONF['pi_name'], $_PLUGINS)) {
+if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
     COM_404();
 }
 
 // Ensure sufficient privs and dependencies to read this page
-PAYPAL_access_check();
+SHOP_access_check();
 
 // Import plugin-specific functions
-USES_paypal_functions();
+USES_shop_functions();
 
 $action = '';
 $actionval = '';
@@ -75,15 +75,15 @@ $content = '';
 
 switch ($action) {
 case 'updatecart':
-    \Paypal\Cart::getInstance()->Update($_POST);
+    \Shop\Cart::getInstance()->Update($_POST);
     $view = 'cart';
     break;
 
 case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
-    $Cart = \Paypal\Cart::getInstance();
-    $gateway = PP_getVar($_POST, 'gateway');
+    $Cart = \Shop\Cart::getInstance();
+    $gateway = SHOP_getVar($_POST, 'gateway');
     if ($gateway !== '') {
         $Cart->setGateway($gateway);
     }
@@ -110,8 +110,8 @@ case 'checkout':
         $Cart->Update($_POST);
     }
     // See what workflow elements we already have.
-    $next_step = PP_getVar($_POST, 'next_step', 'integer', 0);
-    if ($_PP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+    $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
+    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
         $view = 'none';
         $content .= $Cart->getView($next_step);
         break;
@@ -124,40 +124,40 @@ case 'checkout':
 case 'savebillto':
 case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
-    $status = \Paypal\UserInfo::isValidAddress($_POST);
+    $status = \Shop\UserInfo::isValidAddress($_POST);
     if ($status != '') {
-        $content .= \Paypal\PAYPAL_errMsg($status, $LANG_PP['invalid_form']);
+        $content .= \Shop\SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
-    $U = new \Paypal\UserInfo();
+    $U = new \Shop\UserInfo();
     if ($U->uid > 1) {      // only save addresses for logged-in users
         $addr_id = $U->SaveAddress($_POST, $addr_type);
         if ($addr_id[0] < 0) {
             if (!empty($addr_id[1]))
-                $content .= PAYPAL_errorMessage($addr_id[1], 'alert',
-                        $LANG_PP['missing_fields']);
+                $content .= SHOP_errorMessage($addr_id[1], 'alert',
+                        $LANG_SHOP['missing_fields']);
             $view = $addr_type;
             break;
         } else {
             $_POST['useaddress'] = $addr_id[0];
         }
     }
-    //$view = \Paypal\Workflow::getNextView($addr_type);
-    \Paypal\Cart::getInstance()->setAddress($_POST, $addr_type);
-    $next_step = PP_getVar($_POST, 'next_step', 'integer');
-    $content = \Paypal\Cart::getInstance()->getView($next_step);
+    //$view = \Shop\Workflow::getNextView($addr_type);
+    \Shop\Cart::getInstance()->setAddress($_POST, $addr_type);
+    $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
+    $content = \Shop\Cart::getInstance()->getView($next_step);
     $view = 'none';
     break;
 
 case 'addcartitem':
-case 'addcartitem_x':   // using the image submit button, such as Paypal's
+case 'addcartitem_x':   // using the image submit button, such as Shop's
     $view = 'productlist';
     if (isset($_POST['_unique']) && $_POST['_unique'] &&
-            \Paypal\Cart::getInstance()->Contains($_POST['item_number']) !== false) {
+            \Shop\Cart::getInstance()->Contains($_POST['item_number']) !== false) {
         break;
     }
-    \Paypal\Cart::getInstance()->addItem(array(
+    \Shop\Cart::getInstance()->addItem(array(
         'item_number' => isset($_POST['item_number']) ? $_POST['item_number'] : '',
         'item_name' => isset($_POST['item_name']) ? $_POST['item_name'] : '',
         'description' => isset($$_POST['item_descr']) ? $_POST['item_descr'] : '',
@@ -169,35 +169,35 @@ case 'addcartitem_x':   // using the image submit button, such as Paypal's
     if (isset($_POST['_ret_url'])) {
         COM_refresh($_POST['_ret_url']);
         exit;
-    } elseif (PAYPAL_is_plugin_item($$_POST['item_number'])) {
-        COM_refresh(PAYPAL_URL . '/index.php');
+    } elseif (SHOP_is_plugin_item($$_POST['item_number'])) {
+        COM_refresh(SHOP_URL . '/index.php');
         exit;
     } else {
-        COM_refresh(PAYPAL_URL.'/detail.php?id='.$_POST['item_number']);
+        COM_refresh(SHOP_URL.'/detail.php?id='.$_POST['item_number']);
         exit;
     }
     break;
 
 case 'delcartitem':
-    \Paypal\Cart::getInstance()->Remove($_GET['id']);
+    \Shop\Cart::getInstance()->Remove($_GET['id']);
     $view = 'cart';
     break;
 
 case 'emptycart':
-    \Paypal\Cart::getInstance()->Clear();
-    COM_setMsg($LANG_PP['cart_empty']);
-    echo COM_refresh(PAYPAL_URL . '/index.php');
+    \Shop\Cart::getInstance()->Clear();
+    COM_setMsg($LANG_SHOP['cart_empty']);
+    echo COM_refresh(SHOP_URL . '/index.php');
     break;
 
 case 'thanks':
     // Allow for no thanksVars function
-    $message = $LANG_PP['thanks_title'];
+    $message = $LANG_SHOP['thanks_title'];
     if (!empty($actionval)) {
-        $gw = \Paypal\Gateway::getInstance($actionval);
+        $gw = \Shop\Gateway::getInstance($actionval);
         if ($gw !== NULL) {
             $tVars = $gw->thanksVars();
             if (!empty($tVars)) {
-                $T = PP_getTemplate('thanks_for_order', 'msg');
+                $T = SHOP_getTemplate('thanks_for_order', 'msg');
                 $T->set_var('site_name', $_CONF['site_name']);
                 foreach ($tVars as $name=>$val) {
                     $T->set_var($name, $val);
@@ -206,22 +206,22 @@ case 'thanks':
             }
         }
     }
-    $content .= COM_showMessageText($message, $LANG_PP['thanks_title'], true, 'success');
+    $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
     $view = 'productlist';
     break;
 
 case 'redeem':
     if (COM_isAnonUser()) {
         SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
-        COM_setMsg($LANG_PP['gc_need_acct']);
+        COM_setMsg($LANG_SHOP['gc_need_acct']);
         COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
         exit;
     }
     // Using REQUEST here since this could be from a link in an email of from
     // the apply_gc form
-    $code = PP_getVar($_REQUEST, 'gc_code');
+    $code = SHOP_getVar($_REQUEST, 'gc_code');
     $uid = $_USER['uid'];
-    list($status, $msg) = \Paypal\Coupon::Redeem($code, $uid);
+    list($status, $msg) = \Shop\Coupon::Redeem($code, $uid);
     if ($status > 0) {
         $persist = true;
         $type = 'error';
@@ -232,7 +232,7 @@ case 'redeem':
     // Redirect back to the provided view, or to the default page
     if (isset($_REQUEST['refresh'])) {
         COM_setMsg($msg, $type, $persist);
-        COM_refresh(PAYPAL_URL . '/index.php?' . $_REQUEST['refresh']);
+        COM_refresh(SHOP_URL . '/index.php?' . $_REQUEST['refresh']);
     } else {
         $content .= COM_showMessageText($msg, '', $persist, $type);
     }
@@ -241,29 +241,29 @@ case 'redeem':
 /*case 'setshipper':
     $s_id = (int)$_POST['shipper_id'];
     if ($s_id > 0) {
-        $order = \Paypal\Cart::getInstance($_POST['order_id']);
+        $order = \Shop\Cart::getInstance($_POST['order_id']);
         $info = $order->getItemShipping();
-        $shippers = \Paypal\Shipper::getShippers($info['units']);
+        $shippers = \Shop\Shipper::getShippers($info['units']);
         $order->setField('shipping', $shippers[$s_id]->best_rate);
     }
-    $next_step = PP_getVar($_POST, 'next_step', 'integer', 0);
-    $content = \Paypal\Cart::getInstance()->getView($next_step);
+    $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
+    $content = \Shop\Cart::getInstance()->getView($next_step);
     $view = 'none';
     break;
  */
 case 'action':      // catch all the "?action=" urls
     switch ($actionval) {
     case 'thanks':
-        $T = PP_getTemplate('thanks_for_order', 'msg');
+        $T = SHOP_getTemplate('thanks_for_order', 'msg');
         $T->set_var(array(
             'site_name'     => $_CONF['site_name'],
             'payment_date'  => $_POST['payment_date'],
             'currency'      => $_POST['mc_currency'],
             'mc_gross'      => $_POST['mc_gross'],
-            'paypal_url'    => $_PP_CONF['paypal_url'],
+            'shop_url'    => $_SHOP_CONF['shop_url'],
         ) );
         $content .= COM_showMessageText($T->parse('output', 'msg'),
-                    $LANG_PP['thanks_title'], true);
+                    $LANG_SHOP['thanks_title'], true);
         $view = 'productlist';
         break;
     }
@@ -277,7 +277,7 @@ case 'processorder':
     // Process the order, similar to what an IPN would normally do.
     // This is for internal, manual processes like C.O.D. or Prepayment orders
     $gw_name = isset($_POST['gateway']) ? $_POST['gateway'] : 'check';
-    $gw = \Paypal\Gateway::getInstance($gw_name);
+    $gw = \Shop\Gateway::getInstance($gw_name);
     if ($gw !== NULL) {
         $output = $gw->handlePurchase($_POST);
         if (!empty($output)) {
@@ -286,7 +286,7 @@ case 'processorder':
             break;
         }
         $view = 'thanks';
-        \Paypal\Cart::getInstance()->Clear(false);
+        \Shop\Cart::getInstance()->Clear(false);
     }
     $view = 'productlist';
     break;
@@ -299,20 +299,20 @@ default:
 switch ($view) {
 case 'couponlog':
     if (COM_isAnonUser()) COM_404();
-    $content .= \Paypal\PAYPAL_userMenu($view);
-    $content .= \Paypal\CouponLog();
-    $menu_opt = $LANG_PP['gc_activity'];
-    $page_title = $LANG_PP['gc_activity'];
+    $content .= \Shop\SHOP_userMenu($view);
+    $content .= \Shop\CouponLog();
+    $menu_opt = $LANG_SHOP['gc_activity'];
+    $page_title = $LANG_SHOP['gc_activity'];
     break;
 
 case 'orderhist':
 case 'history':
     if (COM_isAnonUser()) COM_404();
-    PP_setUrl($_SERVER['request_uri']);
-    $content .= \Paypal\PAYPAL_userMenu($view);
-    $content .= \Paypal\listOrders();
-    $menu_opt = $LANG_PP['purchase_history'];
-    $page_title = $LANG_PP['purchase_history'];
+    SHOP_setUrl($_SERVER['request_uri']);
+    $content .= \Shop\SHOP_userMenu($view);
+    $content .= \Shop\listOrders();
+    $menu_opt = $LANG_SHOP['purchase_history'];
+    $page_title = $LANG_SHOP['purchase_history'];
     break;
 
 case 'billto':
@@ -321,15 +321,15 @@ case 'shipto':
     // This is accessed from the final order confirmation page, so return
     // there after submission
     $step = 8;     // form will return to ($step + 1)
-    $U = new \Paypal\UserInfo();
-    $A = isset($_POST['address1']) ? $_POST : \Paypal\Cart::getInstance()->getAddress($view);
+    $U = new \Shop\UserInfo();
+    $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($view);
     $content .= $U->AddressForm($view, $A, $step);
     break;
 
 case 'order':
     // View a completed order record
-    if ($_PP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
-        $order = \Paypal\Order::getInstance($actionval);
+    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+        $order = \Shop\Order::getInstance($actionval);
         if ($order->canView()) {
             $content .= $order->View();
         } else {
@@ -342,8 +342,8 @@ case 'order':
 
 case 'packinglist':
 case 'printorder':
-    if ($_PP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
-        $order = \Paypal\Order::getInstance($actionval);
+    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+        $order = \Shop\Order::getInstance($actionval);
         if ($order->canView()) {
             echo $order->View($view);
             exit;
@@ -354,10 +354,10 @@ case 'printorder':
     break;
 
 case 'vieworder':
-    if ($_PP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
-        \Paypal\Cart::setSession('prevpage', $view);
-        $content .= \Paypal\Cart::getInstance()->View($view);
-        $page_title = $LANG_PP['vieworder'];
+    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+        \Shop\Cart::setSession('prevpage', $view);
+        $content .= \Shop\Cart::getInstance()->View($view);
+        $page_title = $LANG_SHOP['vieworder'];
     } else {
         COM_404();
     }
@@ -374,10 +374,10 @@ case 'pidetail':
         $svc_msg
     );
     if ($status != PLG_RET_OK) {
-        $output = $LANG_PP['item_not_found'];
+        $output = $LANG_SHOP['item_not_found'];
     }
-    $T = PP_getTemplate('paypal_title', 'header');
-    $T->set_var('breadcrumbs', COM_createLink($LANG_PP['back_to_catalog'], PAYPAL_URL . '/index.php'));
+    $T = SHOP_getTemplate('shop_title', 'header');
+    $T->set_var('breadcrumbs', COM_createLink($LANG_SHOP['back_to_catalog'], SHOP_URL . '/index.php'));
     $T->parse('output', 'header');
     $content .= $T->finish($T->get_var('output'));
     $content .= $output;
@@ -387,52 +387,52 @@ case 'detail':
     // deprecated, should be displayed via detail.php
     COM_errorLog("Called detail from index.php, deprecated");
     COM_404();
-    $P = new \Paypal\Product($id);
+    $P = new \Shop\Product($id);
     $content .= $P->Detail();
-    $menu_opt = $LANG_PP['product_list'];
+    $menu_opt = $LANG_SHOP['product_list'];
     break;
 
 case 'cart':
 case 'viewcart':
     // If a cart ID is supplied, probably coming from a cancelled purchase.
     // Restore cart since the payment was not processed.
-    PP_setUrl($_SERVER['request_uri']);
-    $cid = PP_getVar($_REQUEST, 'cid');
+    SHOP_setUrl($_SERVER['request_uri']);
+    $cid = SHOP_getVar($_REQUEST, 'cid');
     if (!empty($cid)) {
-        \Paypal\Cart::setFinal($cid, false);
-        COM_refresh(PAYPAL_URL. '/index.php?view=cart');
+        \Shop\Cart::setFinal($cid, false);
+        COM_refresh(SHOP_URL. '/index.php?view=cart');
     }
-    $menu_opt = $LANG_PP['viewcart'];
-    $Cart = \Paypal\Cart::getInstance();
+    $menu_opt = $LANG_SHOP['viewcart'];
+    $Cart = \Shop\Cart::getInstance();
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= $Cart->getView(0);
     } else {
-        COM_setMsg($LANG_PP['cart_empty']);
-        COM_refresh(PAYPAL_URL . '/index.php');
+        COM_setMsg($LANG_SHOP['cart_empty']);
+        COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
     break;
 
 case 'checkoutcart':
     echo "DEPRECATED";die;
-    $content .= \Paypal\Cart::getInstance()->View(5);
+    $content .= \Shop\Cart::getInstance()->View(5);
     break;
 
 case 'productlist':
 default:
-    PP_setUrl($_SERVER['request_uri']);
+    SHOP_setUrl($_SERVER['request_uri']);
     $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
-    $content .= \Paypal\ProductList($cat_id);
-    $menu_opt = $LANG_PP['product_list'];
-    $page_title = $LANG_PP['main_title'];
+    $content .= \Shop\ProductList($cat_id);
+    $menu_opt = $LANG_SHOP['product_list'];
+    $page_title = $LANG_SHOP['main_title'];
     break;
 
 case 'apply_gc':
-    $C = \Paypal\Currency::getInstance();
-    $code = PP_getVar($_GET, 'code');
-    $T = PP_getTemplate('apply_gc', 'tpl');
+    $C = \Shop\Currency::getInstance();
+    $code = SHOP_getVar($_GET, 'code');
+    $T = SHOP_getTemplate('apply_gc', 'tpl');
     $T->set_var(array(
-        'gc_bal' => $C->format(\Paypal\Coupon::getUserBalance($_USER['uid'])),
+        'gc_bal' => $C->format(\Shop\Coupon::getUserBalance($_USER['uid'])),
         'code' => $code,
     ) );
     $content .= $T->finish($T->parse('output', 'tpl'));
@@ -443,15 +443,15 @@ case 'none':
     break;
 }
 
-$display = \Paypal\siteHeader();
-$T = PP_getTemplate('paypal_title', 'title');
+$display = \Shop\siteHeader();
+$T = SHOP_getTemplate('shop_title', 'title');
 $T->set_var(array(
     'title' => isset($page_title) ? $page_title : '',
-    'is_admin' => plugin_ismoderator_paypal(),
+    'is_admin' => plugin_ismoderator_shop(),
 ) );
 $display .= $T->parse('', 'title');
 $display .= $content;
-$display .= \Paypal\siteFooter();
+$display .= \Shop\siteFooter();
 echo $display;
 
 ?>

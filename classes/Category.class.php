@@ -4,18 +4,18 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
+ * @package     shop
  * @version     v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for product categories.
  * Each product belongs to one category.
- * @package paypal
+ * @package shop
  */
 class Category
 {
@@ -71,7 +71,7 @@ class Category
                 $this->cat_id = 0;
             }
         }
-        $this->isAdmin = plugin_ismoderator_paypal() ? 1 : 0;
+        $this->isAdmin = plugin_ismoderator_shop() ? 1 : 0;
     }
 
 
@@ -173,7 +173,7 @@ class Category
         }
 
         $result = DB_query("SELECT *
-                    FROM {$_TABLES['paypal.categories']}
+                    FROM {$_TABLES['shop.categories']}
                     WHERE cat_id='$id'");
         if (!$result || DB_numRows($result) != 1) {
             return false;
@@ -216,7 +216,7 @@ class Category
      */
     public function Save($A = array())
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
             $this->SetVars($A);
@@ -227,7 +227,7 @@ class Category
         // uploaded, we should leave it unchanged.  So we'll first
         // retrieve the existing image filename, if any.
         if (!$this->isNew) {
-            $img_filename = DB_getItem($_TABLES['paypal.categories'],
+            $img_filename = DB_getItem($_TABLES['shop.categories'],
                         'image', "cat_id='" . $this->cat_id . "'");
         } else {
             // New entry, assume no image
@@ -237,8 +237,8 @@ class Category
             $img_filename =  rand(100,999) .  "_" .
                      COM_sanitizeFilename($_FILES['imagefile']['name'], true);
             $status = IMG_resizeImage($_FILES['imagefile']['tmp_name'],
-                    $_PP_CONF['catimgpath']."/$img_filename",
-                    $_PP_CONF['max_thumb_size'], $_PP_CONF['max_thumb_size'],
+                    $_SHOP_CONF['catimgpath']."/$img_filename",
+                    $_SHOP_CONF['max_thumb_size'], $_SHOP_CONF['max_thumb_size'],
                     '', true);
             if ($status[0] == false) {
                 $this->AddError('Error Moving Image');
@@ -257,10 +257,10 @@ class Category
         // previous error didn't occur.
         if (empty($this->Errors)) {
             if ($this->isNew) {
-                $sql1 = "INSERT INTO {$_TABLES['paypal.categories']} SET ";
+                $sql1 = "INSERT INTO {$_TABLES['shop.categories']} SET ";
                 $sql3 = '';
             } else {
-                $sql1 = "UPDATE {$_TABLES['paypal.categories']} SET ";
+                $sql1 = "UPDATE {$_TABLES['shop.categories']} SET ";
                 $sql3 = " WHERE cat_id='{$this->cat_id}'";
             }
             $sql2 = "parent_id='" . $this->parent_id . "',
@@ -316,7 +316,7 @@ class Category
         }
         if (!empty($upd_cats)) {
             $upd_cats = implode(',', $upd_cats);
-            $sql = "UPDATE {$_TABLES['paypal.categories']}
+            $sql = "UPDATE {$_TABLES['shop.categories']}
                     SET grp_access = {$this->grp_access}
                     WHERE cat_id IN ($upd_cats)";
             DB_query($sql);
@@ -329,14 +329,14 @@ class Category
      */
     public function Delete()
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         if ($this->cat_id <= 1)
             return false;
 
         $this->deleteImage(false);
-        DB_delete($_TABLES['paypal.categories'], 'cat_id', $this->cat_id);
-        PLG_itemDeleted($this->cat_id, 'paypal_category');
+        DB_delete($_TABLES['shop.categories'], 'cat_id', $this->cat_id);
+        PLG_itemDeleted($this->cat_id, 'shop_category');
         Cache::clear('categories');
         $this->cat_id = 0;
         return true;
@@ -351,15 +351,15 @@ class Category
      */
     public function deleteImage($del_db = true)
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
         $filename = $this->image;
-        if (is_file("{$_PP_CONF['catimgpath']}/{$filename}")) {
-            @unlink("{$_PP_CONF['catimgpath']}/{$filename}");
+        if (is_file("{$_SHOP_CONF['catimgpath']}/{$filename}")) {
+            @unlink("{$_SHOP_CONF['catimgpath']}/{$filename}");
         }
 
         if ($del_db) {
-            DB_query("UPDATE {$_TABLES['paypal.categories']}
+            DB_query("UPDATE {$_TABLES['shop.categories']}
                     SET image=''
                     WHERE cat_id='" . $this->cat_id . "'");
         }
@@ -391,21 +391,21 @@ class Category
      */
     public function showForm()
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $_SYSTEM;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = PP_getTemplate('category_form', 'category');
+        $T = SHOP_getTemplate('category_form', 'category');
         $id = $this->cat_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_PP['edit'] . ': ' . $this->cat_name);
+            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->cat_name);
             $T->set_var('cat_id', $id);
             //$not = 'NOT';
             //$items = $id;
         } else {
-            $retval = COM_startBlock($LANG_PP['create_category']);
+            $retval = COM_startBlock($LANG_SHOP['create_category']);
             $T->set_var('cat_id', '');
             //$not = '';
             //$items = '';
@@ -418,19 +418,19 @@ class Category
             $T->set_var('parent_sel', self::optionList($this->parent_id, $this->cat_id));
         }
         $T->set_var(array(
-            'action_url'    => PAYPAL_ADMIN_URL,
-            'pi_url'        => PAYPAL_URL,
+            'action_url'    => SHOP_ADMIN_URL,
+            'pi_url'        => SHOP_URL,
             'cat_name'      => $this->cat_name,
             'description'   => $this->description,
             'ena_chk'       => $this->enabled == 1 ? 'checked="checked"' : '',
             'old_parent'    => $this->parent_id,
             'old_grp'       => $this->grp_access,
             'group_sel'     => SEC_getGroupDropdown($this->grp_access, 3, 'grp_access'),
-            'doc_url'       => PAYPAL_getDocURL('category_form'),
+            'doc_url'       => SHOP_getDocURL('category_form'),
         ) );
 
         if ($this->image != '') {
-            $T->set_var('img_url', PAYPAL_URL . '/images/categories/' .
+            $T->set_var('img_url', SHOP_URL . '/images/categories/' .
                 $this->image);
         }
 
@@ -441,9 +441,9 @@ class Category
         // Display any time-based sales pricing for this category
         $Disc = Sales::getCategory($this->cat_id);
         if (!empty($Disc)) {
-            $DT = PP_getTemplate('sales_table', 'stable');
+            $DT = SHOP_getTemplate('sales_table', 'stable');
             $DT->set_var('edit_sale_url',
-                PAYPAL_ADMIN_URL . '/index.php?sales');
+                SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
                 if ($D->discount_type == 'amount') {
@@ -466,7 +466,7 @@ class Category
         /*
         // Might want this later to set default buttons per category
         $T->set_block('product', 'BtnRow', 'BRow');
-        foreach ($LANG_PP['buttons'] as $key=>$value) {
+        foreach ($LANG_SHOP['buttons'] as $key=>$value) {
             $T->set_var(array(
                 'btn_type'  => $key,
                 'btn_chk'   => isset($this->buttons[$key]) ?
@@ -480,7 +480,7 @@ class Category
         // a link to delete it
         if ($this->image != '') {
             $T->set_var('img_url',
-                    PAYPAL_URL . '/images/categories/' . $this->image);
+                    SHOP_URL . '/images/categories/' . $this->image);
         }
 
         $retval .= $T->parse('output', 'category');
@@ -512,7 +512,7 @@ class Category
         $oldvalue = $oldvalue == 0 ? 0 : 1;
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES['paypal.categories']}
+        $sql = "UPDATE {$_TABLES['shop.categories']}
                 SET $varname=$newvalue
                 WHERE cat_id=$id";
         //echo $sql;die;
@@ -553,12 +553,12 @@ class Category
         $cat_id = (int)$cat_id;
 
         // Check if any products are under this category
-        if (DB_count($_TABLES['paypal.products'], 'cat_id', $cat_id) > 0) {
+        if (DB_count($_TABLES['shop.products'], 'cat_id', $cat_id) > 0) {
             return true;
         }
 
         // Check if any categories are under this one.
-        if (DB_count($_TABLES['paypal.categories'], 'parent_id', $cat_id) > 0) {
+        if (DB_count($_TABLES['shop.categories'], 'parent_id', $cat_id) > 0) {
             return true;
         }
 
@@ -620,12 +620,12 @@ class Category
      */
     public function ImageUrl()
     {
-        global $_CONF, $_PP_CONF;
+        global $_CONF, $_SHOP_CONF;
 
         if ($this->image != '' &&
-                is_file($_CONF['path_html'] . $_PP_CONF['pi_name'] .
+                is_file($_CONF['path_html'] . $_SHOP_CONF['pi_name'] .
                 '/images/categories/' . $A['image'])) {
-            $retval = PAYPAL_URL . '/images/categories/' . $this->image;
+            $retval = SHOP_URL . '/images/categories/' . $this->image;
         } else {
             $retval = '';
         }
@@ -644,7 +644,7 @@ class Category
      */
     public static function Breadcrumbs($id)
     {
-        global $_TABLES, $LANG_PP;
+        global $_TABLES, $LANG_SHOP;
 
         $A = array();
         $location = '';
@@ -658,7 +658,7 @@ class Category
 
         while (true) {
             $sql = "SELECT cat_name, cat_id, parent_id, grp_access
-                FROM {$_TABLES['paypal.categories']}
+                FROM {$_TABLES['shop.categories']}
                 WHERE cat_id='$parent'";
 
             $result = DB_query($sql);
@@ -671,7 +671,7 @@ class Category
                 continue;
             }
             $A[] = '<li>' . COM_createLink($row['cat_name'],
-                    PAYPAL_URL . '/index.php?category=' .
+                    SHOP_URL . '/index.php?category=' .
                         (int)$row['cat_id']) . '<li>';
             if ($parent == 0) {
                 break;
@@ -679,8 +679,8 @@ class Category
         }
 
         // Always add link to shop home
-        //$A[] = COM_createLink($LANG_PP['home'],
-        //        COM_buildURL(PAYPAL_URL . '/index.php'));
+        //$A[] = COM_createLink($LANG_SHOP['home'],
+        //        COM_buildURL(SHOP_URL . '/index.php'));
         $B = array_reverse($A);
         //$location = implode(' :: ', $B);
         return $location;
@@ -710,7 +710,7 @@ class Category
     {
         global $_TABLES;
 
-        if (!PP_isMinVersion()) return array();
+        if (!SHOP_isMinVersion()) return array();
 
         $between = '';
         $root_id = (int)$root_id;
@@ -724,8 +724,8 @@ class Category
             }
             $prefix = DB_escapeString($prefix);
             $sql = "SELECT node.*, CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
-                FROM {$_TABLES['paypal.categories']} AS node,
-                    {$_TABLES['paypal.categories']} AS parent
+                FROM {$_TABLES['shop.categories']} AS node,
+                    {$_TABLES['shop.categories']} AS parent
                 WHERE node.lft BETWEEN parent.lft AND parent.rgt
                 $between
                 GROUP BY node.cat_name
@@ -807,7 +807,7 @@ class Category
 
     /**
      * Get the root category.
-     * Depending on how Paypal was installed or updated this might not be #1.
+     * Depending on how Shop was installed or updated this might not be #1.
      *
      * @return  mixed   Category object
      */
@@ -815,7 +815,7 @@ class Category
     {
         global $_TABLES;
 
-        $parent = (int)DB_getItem($_TABLES['paypal.categories'], 'cat_id',
+        $parent = (int)DB_getItem($_TABLES['shop.categories'], 'cat_id',
                 'parent_id = 0');
         return self::getInstance($parent);
     }
@@ -842,7 +842,7 @@ class Category
         $right = $left + 1;
 
         // get all children of this node
-        $sql = "SELECT cat_id FROM {$_TABLES['paypal.categories']}
+        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}
                 WHERE parent_id ='$parent'";
         $result = DB_query($sql);
         while ($row = DB_fetchArray($result, false)) {
@@ -855,7 +855,7 @@ class Category
 
         // we've got the left value, and now that we've processed
         // the children of this node we also know the right value
-        $sql1 = "UPDATE {$_TABLES['paypal.categories']}
+        $sql1 = "UPDATE {$_TABLES['shop.categories']}
                 SET lft = '$left', rgt = '$right'
                 WHERE cat_id = '$parent'";
         DB_query($sql1);

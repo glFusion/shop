@@ -16,13 +16,13 @@
     <div class="uk-form-controls">
 {!if quantity}
       <input type="hidden" name="quantity" value="{quantity}" />
-      {$LANG_PP['qty']}: {quantity}
+      {$LANG_SHOP['qty']}: {quantity}
 {!else}
       <input type="text" name="quantity" size="3" maxlength="5" value="1" />
 {!endif}
-      &nbsp;&nbsp;<button type="submit" class="paypalButton orange" border="0"
+      &nbsp;&nbsp;<button type="submit" class="shopButton orange" border="0"
         onclick='ppAddToCart("add_cart_{item_number}");return false;'>
-        <i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_PP['add_to_cart']}
+        <i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
       </button>
     </div>
   </div>

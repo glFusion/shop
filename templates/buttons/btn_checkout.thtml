@@ -9,7 +9,7 @@
 {!if set_final}
     onclick="return finalizeCart('{cart_id}','{uid}');"
 {!endif}
-type="submit" class="uk-button uk-button-success" name="submit">{$LANG_PP['confirm_order']}</button>
+type="submit" class="uk-button uk-button-success" name="submit">{$LANG_SHOP['confirm_order']}</button>
 {!endif}
 </form>
 {# end {templatelocation} #}

@@ -4,14 +4,14 @@
 *
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2011 Lee Garner <lee@leegarner.com>
-*   @package    paypal
+*   @package    shop
 *   @version    0.5.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
 *   @filesource
 */
 
-$LANG_PP_gateway = array(
+$LANG_SHOP_gateway = array(
 'bus_prod_email' => 'Production Business E-Mail',
 'bus_test_email' => 'Sandbox Business E-Mail',
 'micro_prod_email' => 'Production Micro-Payment E-Mail',

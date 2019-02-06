@@ -4,21 +4,21 @@
  *
  * @author     Lee Garner <lee@leegarner.com>
  * @copyright  Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
- * @package    paypal
+ * @package    shop
  * @version    v0.6.0
  * @since      v0.6.0
  * @license    http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal\Gateways;
+namespace Shop\Gateways;
 
 /**
  * Class for Authorize.Net Hosted Accept payment gateway.
  * @since   v0.6.0
- * @package paypal
+ * @package shop
  */
-class authorizenet extends \Paypal\Gateway
+class authorizenet extends \Shop\Gateway
 {
     /** Authorize.net transaction key.
      * @var string */
@@ -46,7 +46,7 @@ class authorizenet extends \Paypal\Gateway
      */
     function __construct()
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         // These are used by the parent constructor, set them first
         $this->gw_name = 'authorizenet';
@@ -144,16 +144,16 @@ class authorizenet extends \Paypal\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_PP_CONF, $_USER, $LANG_PP;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
         // Make sure we have at least one item
         if (empty($cart->Cart())) return '';
         $total_amount = 0;
-        $Cur = \Paypal\Currency::getInstance();
+        $Cur = \Shop\Currency::getInstance();
 
         $return_opts = array(
-            'url'       => PAYPAL_URL . '/index.php?' . urlencode('thanks=authorizenet'),
-            'cancelUrl' => PAYPAL_URL . '/index.php?' . urlencode('view=cart&cid=' . $cart->order_id),
+            'url'       => SHOP_URL . '/index.php?' . urlencode('thanks=authorizenet'),
+            'cancelUrl' => SHOP_URL . '/index.php?' . urlencode('view=cart&cid=' . $cart->order_id),
         );
 
         $json = array(
@@ -214,9 +214,9 @@ class authorizenet extends \Paypal\Gateway
         if ($by_gc > 0) {
             $total_amount = $cart->getTotal() - $by_gc;
             $json['getHostedPaymentPageRequest']['transactionRequest']['lineItems']['lineItem'][] = array(
-                    'itemId' => $LANG_PP['cart'],
-                    'name' => $LANG_PP['all_items'],
-                    'description' => $LANG_PP['all_items'],
+                    'itemId' => $LANG_SHOP['cart'],
+                    'name' => $LANG_SHOP['all_items'],
+                    'description' => $LANG_SHOP['all_items'],
                     'quantity' => 1,
                     'unitPrice' => $Cur->FormatValue($total_amount),
                     'taxable' => false,
@@ -414,7 +414,7 @@ class authorizenet extends \Paypal\Gateway
     {
         global $_CONF;
         return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" border="0" alt="Authorize.Net Logo" style="width:160px;height:40px" />';
-        //return '<img src="' . $_CONF['site_url'] . '/paypal/images/creditcard.svg" border="0" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;"/>';
+        //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" border="0" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;"/>';
     }
 
 }   // class authorizenet
