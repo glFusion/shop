@@ -839,8 +839,6 @@ function plugin_autouninstall_shop()
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
-            // deprecated, leave here to facilitate rollbacks
-            'shop.cart',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
