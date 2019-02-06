@@ -1,5 +1,5 @@
 # Shop
-Shopping plugin for glFusion. Supports Shop and other gateways.
+Shopping plugin for glFusion. Supports multiple payment gateways.
 
 This plugin provides a product catalog and shopping cart for physical
 and virtual products. The following payment gateways are supported:
@@ -8,15 +8,14 @@ and virtual products. The following payment gateways are supported:
 - Square
 
 You must sign up with the payment providers and enter your keys in the
-plugin configuration. You should also sign up for a developer or
+gateway configuration. You should also sign up for a developer or
 sandbox account for testing.
 
 If you use the Bad Behavior plugin, be sure that you whitelist your Shop IPN
-URL (shop/ipn/*provider*_ipn.php). Bad Behavior may block IPN messages from
-Shop otherwise.
+URL (`shop/ipn/*provider*_ipn.php`). Bad Behavior may otherwise block IPN messages from
+your gateway provider.
 
-This version of the Shop plugin requires at least version 1.0.7 of
-the lgLib plugin for supporting functions.
+This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
 
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.
