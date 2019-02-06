@@ -1,7 +1,7 @@
 Dear Site Administrator;
 <p>
 You have received a new order via your web site.  Check the purchase information at 
-{site_admin_url}/plugins/paypal/index.php?order={order_id}
+{site_admin_url}/plugins/shop/index.php?order={order_id}
  for any action that you may need to take.
 </p>
 <p>

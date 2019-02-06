@@ -15,7 +15,7 @@
    <input type="hidden" name="tax" value="{tax}" />
   {!endif}
 {!if quantity}
-    <!--{$LANG_PP['qty']}: {quantity}-->
+    <!--{$LANG_SHOP['qty']}: {quantity}-->
     <input type="hidden" name="quantity" value="{quantity}" />
 {!else}
     <input type="text" name="quantity" size="3" maxlength="5" value="1" />
@@ -24,6 +24,6 @@
     <input type="hidden" name="_ret_url" value="{_ret_url}" />
   {!endif}
   <button id="{frm_id}_add_cart_btn" type="button" class="paypalButton {btn_cls}" border="0" {btn_disabled}
-    onclick='ppAddToCart("{frm_id}");return false;' value="{$LANG_PP['add_to_cart']}">{$LANG_PP['add_to_cart']}</button>
+    onclick='shopAddToCart("{frm_id}");return false;' value="{$LANG_SHOP['add_to_cart']}">{$LANG_SHOP['add_to_cart']}</button>
 </form>
 {# end {templatelocation} #}

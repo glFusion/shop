@@ -2,10 +2,6 @@
 <form style="display:inline;" class="frm_checkout"
     action="{paypal_url}/cgi-bin/webscr" method="post">
   {gateway_vars}
-  <button type="submit" class="uk-button uk-button-success" name="submit">{$LANG_PP['checkout']}</button>
-<!--  <input type="image"
-    src="https://www.paypalobjects.com/en_US/i/btn/btn_buynowCC_LG.gif"
-    name="submit"
-    alt="{btn_text}" title="{$LANG_PP['buy_now']}" />-->
+  <button type="submit" class="uk-button uk-button-success" name="submit">{$LANG_SHOP['checkout']}</button>
 </form>
 {# end {templatelocation} #}

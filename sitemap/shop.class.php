@@ -28,7 +28,7 @@ class sitemap_shop extends sitemap_base
      */
     public function getEntryPoint()
     {
-        return PAYPAL_URL;
+        return SHOP_URL;
     }
 
 
@@ -39,8 +39,8 @@ class sitemap_shop extends sitemap_base
      */
     public function getDisplayName()
     {
-        global $LANG_PP;
-        return $LANG_PP['main_title'];
+        global $LANG_SHOP;
+        return $LANG_SHOP['main_title'];
     }
 
 
@@ -101,9 +101,9 @@ class sitemap_shop extends sitemap_base
             $retval[] = array(
                 'id'        => $A['cat_id'],
                 'title'     => $A['cat_name'],
-                'uri'       => PAYPAL_URL . '/index.php?category=' . $A['cat_id'],
+                'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
                 'date'      => false,
-                'image_uri' => PAYPAL_URL . '/images/categories/' . $A['image'],
+                'image_uri' => SHOP_URL . '/images/categories/' . $A['image'],
             );
         }
         return $retval;

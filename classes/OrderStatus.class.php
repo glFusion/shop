@@ -4,25 +4,25 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
- * @version     v0.6.0
+ * @package     shop
+ * @version     v0.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for order processing workflow items.
  * Order statuses are defined in the database and can be re-ordered and
  * individually enabled or disabled.
- * @package paypal
+ * @package shop
  */
 class OrderStatus extends Workflow
 {
     /** Table name.
      * @var string */
-    public static $table = 'paypal.orderstatus';
+    public static $table = 'shop.orderstatus';
 
     /** Status Name.
      * @var string */
@@ -54,11 +54,11 @@ class OrderStatus extends Workflow
     public function __construct($A=array())
     {
         if (is_array($A)) {
-            $this->name         = PP_getVar($A, 'name', 'string', 'undefined');
-            $this->enabled      = PP_getVar($A, 'enabled', 'integer', 1);
-            $this->orderby      = PP_getVar($A, 'orderby', 'integer', 999);
-            $this->notify_buyer = PP_getVar($A, 'notify_buyer', 'integer', 1);
-            $this->notify_admin = PP_getVar($A, 'notify_admin', 'integer', 1);
+            $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
+            $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 1);
+            $this->orderby      = SHOP_getVar($A, 'orderby', 'integer', 999);
+            $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 1);
+            $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 1);
         } else {
             $this->name         = 'undefined';
             $this->enabled      = 0;
@@ -121,9 +121,9 @@ class OrderStatus extends Workflow
      */
     public static function Selection($order_id, $showlog=0, $selected = '')
     {
-        global $LANG_PP;
+        global $LANG_SHOP;
 
-        $T = PP_getTemplate('orderstatus', 'ordstat');
+        $T = SHOP_getTemplate('orderstatus', 'ordstat');
         $T->set_var(array(
             'order_id'  => $order_id,
             'oldvalue'  => $selected,
@@ -136,8 +136,8 @@ class OrderStatus extends Workflow
                 'selected' => $key == $selected ?
                                 'selected="selected"' : '',
                 'stat_key' => $key,
-                'stat_descr' => isset($LANG_PP['orderstatus'][$key]) ?
-                        $LANG_PP['orderstatus'][$key] : $key,
+                'stat_descr' => isset($LANG_SHOP['orderstatus'][$key]) ?
+                        $LANG_SHOP['orderstatus'][$key] : $key,
             ) );
             $T->parse('Sel', 'StatusSelect', true);
         }

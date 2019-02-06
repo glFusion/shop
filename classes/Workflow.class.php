@@ -5,20 +5,20 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
- * @version     v0.6.0
+ * @package     shop
+ * @version     v0.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for workflow items.
  * Workflows are defined in the database and can be re-ordered and
  * individually enabled or disabled. The workflows determine which screens
  * are displayed during checkout and in what order they appear.
- * @package paypal
+ * @package shop
  */
 class Workflow
 {
@@ -40,7 +40,7 @@ class Workflow
 
     /** Database table name.
      * @var string */
-    static $table = 'paypal.workflows';
+    static $table = 'shop.workflows';
 
     /** Workflow Name.
      * @var string */
@@ -80,17 +80,17 @@ class Workflow
      */
     public static function Load()
     {
-        global $_TABLES, $_PP_CONF;
+        global $_TABLES, $_SHOP_CONF;
 
-        if (!isset($_PP_CONF['workflows'])) {
-            $_PP_CONF['workflows'] = array();
+        if (!isset($_SHOP_CONF['workflows'])) {
+            $_SHOP_CONF['workflows'] = array();
             $sql = "SELECT wf_name
                     FROM {$_TABLES[self::$table]}
                     WHERE enabled > 0
                     ORDER BY orderby ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $_PP_CONF['workflows'][] = $A['wf_name'];
+                $_SHOP_CONF['workflows'][] = $A['wf_name'];
             }
         }
     }
@@ -300,7 +300,7 @@ class Workflow
      */
     public static function getNextView($currview = '')
     {
-        global $_PP_CONF;
+        global $_SHOP_CONF;
 
         /** Load the views, if not done already */
         $workflows = self::getAll();

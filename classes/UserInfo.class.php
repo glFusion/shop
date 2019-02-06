@@ -1,21 +1,20 @@
 <?php
 /**
- * Class to handle user account info for the Paypal plugin.
+ * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
- * @package     paypal
- * @version     v0.6.0
+ * @package     shop
+ * @version     v0.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Paypal;
+namespace Shop;
 
 /**
  * Class for user info such as addresses.
- * @since   v0.5.0
- * @package paypal
+ * @package shop
  */
 class UserInfo
 {
@@ -120,13 +119,13 @@ class UserInfo
             return;
         }
 
-        $res = DB_query("SELECT * FROM {$_TABLES['paypal.address']}
+        $res = DB_query("SELECT * FROM {$_TABLES['shop.address']}
                             WHERE uid=$uid");
         while ($A = DB_fetchArray($res, false)) {
             $this->addresses[] = $A;
             //$this->SetAddresses($A);
         }
-        $res = DB_query("SELECT * FROM {$_TABLES['paypal.userinfo']}
+        $res = DB_query("SELECT * FROM {$_TABLES['shop.userinfo']}
                             WHERE uid = $uid");
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
@@ -152,7 +151,7 @@ class UserInfo
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['paypal.address']}
+        $sql = "SELECT * FROM {$_TABLES['shop.address']}
                 WHERE id='" . (int)$add_id . "'";
         $A = DB_fetchArray(DB_query($sql), false);
         return $A;
@@ -207,10 +206,10 @@ class UserInfo
         if (!empty($msg)) return array(-1, $msg);
 
         if ($id > 0) {
-            $sql1 = "UPDATE {$_TABLES['paypal.address']} SET ";
+            $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
             $sql2 = " WHERE id='$id'";
         } else {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.address']} SET ";
+            $sql1 = "INSERT INTO {$_TABLES['shop.address']} SET ";
             $sql2 = '';
         }
 
@@ -234,7 +233,7 @@ class UserInfo
 
         // If this is the new default address, turn off the other default
         if ($is_default) {
-            DB_query("UPDATE {$_TABLES['paypal.address']}
+            DB_query("UPDATE {$_TABLES['shop.address']}
                     SET {$type}def = 0
                     WHERE id <> $id AND {$type}def = 1");
         }
@@ -253,11 +252,11 @@ class UserInfo
         global $_TABLES;
 
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['paypal.userinfo']} SET
+            $sql1 = "INSERT INTO {$_TABLES['shop.userinfo']} SET
                     uid = {$this->uid},";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['paypal.userinfo']} SET ";
+            $sql1 = "UPDATE {$_TABLES['shop.userinfo']} SET ";
             $sql3 = " WHERE uid = {$this->uid}";
         }
         $cart = DB_escapeString(@serialize($this->cart));
@@ -272,7 +271,7 @@ class UserInfo
 
     /**
      * Delete all information for a user.
-     * Called from plugin_user_deleted_paypal() when a user account is
+     * Called from plugin_user_deleted_shop() when a user account is
      * removed.
      *
      * @param   integer $uid    User ID
@@ -282,8 +281,8 @@ class UserInfo
         global $_TABLES;
 
         $uid = (int)$uid;
-        DB_delete($_TABLES['paypal.userinfo'], 'uid', $uid);
-        DB_delete($_TABLES['paypal.address'], 'uid', $uid);
+        DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
+        DB_delete($_TABLES['shop.address'], 'uid', $uid);
         Cache::delete('ppuser_' . $uid);
     }
 
@@ -300,7 +299,7 @@ class UserInfo
 
         if ($id < 1) return false;
         $id = (int)$id;
-        DB_delete($_TABLES['paypal.address'], 'id', $id);
+        DB_delete($_TABLES['shop.address'], 'id', $id);
         Cache::delete('ppuser_' . $this->uid);
     }
 
@@ -313,7 +312,7 @@ class UserInfo
      */
     public static function isValidAddress($A)
     {
-        global $LANG_PP, $_PP_CONF;
+        global $LANG_SHOP, $_SHOP_CONF;
 
         $invalid = array();
         $retval = '';
@@ -322,20 +321,20 @@ class UserInfo
             $invalid[] = 'name_or_company';
         }
 
-        if ($_PP_CONF['get_street'] == 2 && empty($A['address1']))
+        if ($_SHOP_CONF['get_street'] == 2 && empty($A['address1']))
             $invalid[] = 'address1';
-        if ($_PP_CONF['get_city'] == 2 && empty($A['city']))
+        if ($_SHOP_CONF['get_city'] == 2 && empty($A['city']))
             $invalid[] = 'city';
-        if ($_PP_CONF['get_state'] == 2 && empty($A['state']))
+        if ($_SHOP_CONF['get_state'] == 2 && empty($A['state']))
             $invalid[] = 'state';
-        if ($_PP_CONF['get_postal'] == 2 && empty($A['zip']))
+        if ($_SHOP_CONF['get_postal'] == 2 && empty($A['zip']))
             $invalid[] = 'zip';
-        if ($_PP_CONF['get_country'] == 2 && empty($A['country']))
+        if ($_SHOP_CONF['get_country'] == 2 && empty($A['country']))
             $invalid[] = 'country';
 
         if (!empty($invalid)) {
             foreach ($invalid as $id) {
-                $retval .= '<li> ' . $LANG_PP[$id] . '</li>' . LB;
+                $retval .= '<li> ' . $LANG_SHOP[$id] . '</li>' . LB;
             }
             $retval = '<ul>' . $retval . '</ul>';
         }
@@ -354,12 +353,12 @@ class UserInfo
      */
     public function AddressForm($type='billto', $A=array(), $step)
     {
-        global $_TABLES, $_CONF, $_PP_CONF, $LANG_PP, $_USER;
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
-        $T = PP_getTemplate('address', 'address');
+        $T = SHOP_getTemplate('address', 'address');
 
         // Set the address to select by default. Start by using the one
         // already stored in the cart, if any.
@@ -411,11 +410,11 @@ class UserInfo
         }
 
         $T->set_var(array(
-            'pi_url'        => PAYPAL_URL,
+            'pi_url'        => SHOP_URL,
             'billship'      => $type,
             'order_id'      => $this->order_id,
-            'sel_addr_text' => $LANG_PP['sel_' . $type . '_addr'],
-            'addr_type'     => $LANG_PP[$type . '_info'],
+            'sel_addr_text' => $LANG_SHOP['sel_' . $type . '_addr'],
+            'addr_type'     => $LANG_SHOP[$type . '_info'],
             'allow_default' => $this->uid > 1 ? 'true' : '',
             'have_addresses' => $count > 0 ? 'true' : '',
             'addr_id'   => empty($addr_id) ? '' : $addr_id,
@@ -430,16 +429,16 @@ class UserInfo
             'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
                                 'checked="checked"' : '',
 
-            'req_street'    => $_PP_CONF['get_street'] == 2 ? 'true' : '',
-            'req_city'      => $_PP_CONF['get_city'] == 2 ? 'true' : '',
-            'req_state'     => $_PP_CONF['get_state'] == 2 ? 'true' : '',
-            'req_country'   => $_PP_CONF['get_country'] == 2 ? 'true' : '',
-            'req_postal'    => $_PP_CONF['get_postal'] == 2 ? 'true' : '',
-            'get_street'    => $_PP_CONF['get_street'] > 0 ? 'true' : '',
-            'get_city'      => $_PP_CONF['get_city'] > 0 ? 'true' : '',
-            'get_state'     => $_PP_CONF['get_state'] > 0 ? 'true' : '',
-            'get_country'   => $_PP_CONF['get_country'] > 0 ? 'true' : '',
-            'get_postal'    => $_PP_CONF['get_postal'] > 0 ? 'true' : '',
+            'req_street'    => $_SHOP_CONF['get_street'] == 2 ? 'true' : '',
+            'req_city'      => $_SHOP_CONF['get_city'] == 2 ? 'true' : '',
+            'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',
+            'req_country'   => $_SHOP_CONF['get_country'] == 2 ? 'true' : '',
+            'req_postal'    => $_SHOP_CONF['get_postal'] == 2 ? 'true' : '',
+            'get_street'    => $_SHOP_CONF['get_street'] > 0 ? 'true' : '',
+            'get_city'      => $_SHOP_CONF['get_city'] > 0 ? 'true' : '',
+            'get_state'     => $_SHOP_CONF['get_state'] > 0 ? 'true' : '',
+            'get_country'   => $_SHOP_CONF['get_country'] > 0 ? 'true' : '',
+            'get_postal'    => $_SHOP_CONF['get_postal'] > 0 ? 'true' : '',
 
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,

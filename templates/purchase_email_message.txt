@@ -43,7 +43,7 @@ follow:
 
 {!if files}
 <p />
-Attached to this email are the files you purchased.  If you were logged into {site_name} when you made your purchase, you can also download your files from {site_url}/paypal/index.php.
+Attached to this email are the files you purchased.  If you were logged into {site_name} when you made your purchase, you can also download your files from {site_url}/shop/index.php.
 {!endif}
 
 <p />
