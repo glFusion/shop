@@ -29,7 +29,7 @@ $_SHOP_CONF['pi_version']         = '0.0.1';
 $_SHOP_CONF['gl_version']         = '1.7.0';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
-$_SHOP_table_prefix = $_DB_table_prefix . 'pp_';
+$_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
 
 $_TABLES['shop.ipnlog']       = $_SHOP_table_prefix . 'ipnlog';
 $_TABLES['shop.products']     = $_SHOP_table_prefix . 'products';

@@ -3,9 +3,7 @@
  * Automatic installation functions for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @author      Mark Evans <mark@glfusion.org>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009 Mark Evans <mark@glfusion.org>
  * @package     shop
  * @version     v0.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -209,12 +207,13 @@ function plugin_load_configuration_shop()
 
 
 /**
-*   Plugin-specific post-installation function
-*   Creates the file download path and working area
-*/
+ * Plugin-specific post-installation function.
+ * - Creates the file download path and working area.
+ * - Migrates data from the Paypal plugin, if installed and up to date.
+ */
 function plugin_postinstall_shop()
 {
-    global $_CONF, $_SHOP_CONF, $_SHOP_DEFAULTS, $_SHOP_SAMPLEDATA, $_TABLES;
+    global $_CONF, $_SHOP_CONF, $_SHOP_DEFAULTS, $_SHOP_SAMPLEDATA, $_TABLES, $_PLUGIN_INFO;
 
     // Create the working directory.  Under private/data by default
     // 0.5.0 - download path moved under tmpdir, so both are created
@@ -249,7 +248,76 @@ function plugin_postinstall_shop()
         COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
-    if (is_array($_SHOP_SAMPLEDATA)) {
+    // If the Paypal plugin is installed and enabled, migrate database data from it.
+    // Otherwise install the sample data.
+    $have_data = false;
+    if (isset($_PLUGIN_INFO['paypal'])) {
+        $pp_ver = $_PLUGIN_INFO['paypal']['pi_version'];
+        if (COM_checkVersion($pp_ver, '0.6.0')) {   // if at least paypal 0.6.0
+            $have_data = true;
+            $tables = array('address', 'buttons', 'categories', 'coupon_log', 'coupons',
+            'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus', 'prod_attr',
+            'products', 'purchases', 'sales', 'shipping', 'userinfo', 'workflows',
+            'currency',
+            );
+
+            $sql = array();
+            foreach ($tables as $tbl) {
+                $shop = $_TABLES['shop.' . $tbl];
+                $pp = $_TABLES['paypal.' . $tbl];
+                $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
+            }
+
+            // The orders table was updated in 0.6.1. It is the only schema change.
+            $sql[] = "TRUNCATE {$_TABLES['shop.orders']};";
+            if (!COM_checkVersion($pp_ver, '0.6.1')) {
+                $flds = array('order_id', 'uid', 'order_date', 'last_mod',
+                    'billto_id', 'billto_name', 'billto_company', 'billto_address1', 'billto_address2',
+                    'billto_city', 'billto_state', 'billto_country', 'billto_zip',
+                    'shipto_id', 'shipto_name', 'shipto_company', 'shipto_address1', 'shipto_address2',
+                    'shipto_city', 'shipto_state', 'shipto_country', 'shipto_zip',
+                    'phone', 'buyer_email', 'tax', 'shipping', 'handling', 'by_gc', 'status', 'pmt_method',
+                    'pmt_txn_id', 'instructions', 'token', 'tax_rate', 'info',
+                );
+                $fld_sql = implode(',', $flds);
+                $sql[] = "INSERT INTO {$_TABLES['shop.orders']} ($fld_sql, currency, order_seq)
+                    (SELECT $fld_sql, 'USD', NULL  FROM {$_TABLES['paypal.orders']} ORDER BY order_date)";
+                $sql[] = "SET @i:=0";
+                $sql[] = "UPDATE {$_TABLES['shop.orders']}
+                    SET order_seq = @i:=@i+1
+                    WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC";
+            } else {
+                $sql[] = "INSERT INTO {$_TABLES['shop.orders']} (SELECT * FROM {$_TABLES['paypal.orders']})";
+            }
+
+            foreach ($sql as $s) {
+                DB_query($s, 1);
+                if (DB_error()) {
+                    COM_errorLog("Error migrating Paypal to Shop: $s");
+                }
+            }
+        }
+
+        // Copy images and other assets
+        $dirs = array(
+            $_CONF['path'] . 'data/paypal/files' => $_CONF['path'] . 'data/shop/files',
+            $_CONF['path_html'] . 'paypal/images/products' => $_CONF['path_html'] . 'shop/images/products',
+            $_CONF['path_html'] . 'paypal/images/categories' => $_CONF['path_html'] . 'shop/images/categories',
+            $_CONF['path_html'] . 'paypal/images/gateways' => $_CONF['path_html'] . 'shop/images/gateways',
+        );
+        foreach ($dirs as $src=>$dst) {
+            $handle = opendir($src);
+            while (false !== ($file = readdir($handle))) {
+                if ($file != '.' && $file != '..' && !is_dir($src . '/' . $file)) {
+                    copy($src . '/' . $file, $dst . '/' . $file);
+                }
+            }
+            closedir($handle);
+        }
+    }
+
+    // If data not loaded from the Paypal plugin, use default sample data
+    if (!$have_data && is_array($_SHOP_SAMPLEDATA)) {
         foreach ($_SHOP_SAMPLEDATA as $sql) {
             DB_query($sql, 1);
             if (DB_error()) {
