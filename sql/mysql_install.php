@@ -311,7 +311,7 @@ $_SQL = array(
   `amount` decimal(6,4) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `item_type` (`item_type`,`item_id`,`start`,`end`)
-) ENGINE=MyIsam";
+) ENGINE=MyIsam",
 
 'shop.shipping' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
