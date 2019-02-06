@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.1
+ * @version     v0.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -19,599 +19,27 @@ require_once __DIR__ . "/sql/mysql_install.php";
 /**
  * Perform the upgrade starting at the current version.
  *
- * @since   v0.4.0
  * @param   boolean $dvlp   True for development update, ignore errors
  * @return  boolean     True on success, False on failure
  */
-function PAYPAL_do_upgrade($dvlp = false)
+function SHOP_do_upgrade($dvlp = false)
 {
     global $_TABLES, $_CONF, $_SHOP_CONF, $shopConfigData, $SHOP_UPGRADE, $_PLUGIN_INFO, $_DB_name;
 
     $pi_name = $_SHOP_CONF['pi_name'];
     if (isset($_PLUGIN_INFO[$pi_name])) {
-        if (is_array($_PLUGIN_INFO[$pi_name])) {
-            // glFusion >= 1.6.6
-            $current_ver = $_PLUGIN_INFO[$pi_name]['pi_version'];
-        } else {
-            // legacy
-            $current_ver = $_PLUGIN_INFO[$pi_name];
-        }
+        $current_ver = $_PLUGIN_INFO[$pi_name]['pi_version'];
     } else {
         return false;
     }
     $installed_ver = plugin_chkVersion_shop();
 
-    if (!COM_checkVersion($current_ver, '0.2')) {
-        // upgrade to 0.2.2
-        $current_ver = '0.2.2';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.0')) {
-        // upgrade to 0.4.0
-        $current_ver = '0.4.0';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!plugin_initconfig_shop()) return false;
-
-        // Migrate existing categories to the new category table
-        $r = DB_query("SELECT DISTINCT category
-                FROM {$_TABLES['shop.products']}
-                WHERE category <> '' and category IS NOT NULL");
-        if (DB_error()) {
-            COM_errorLog("Could not retrieve old categories", 1);
-            return false;
-        }
-        if (DB_numRows($r) > 0) {
-            while ($A = DB_fetchArray($r, false)) {
-                DB_query("INSERT INTO {$_TABLES['shop.categories']}
-                        (cat_name)
-                    VALUES ('{$A['category']}')");
-                if (DB_error()) {
-                    COM_errorLog("Could not add new category {$A['category']}", 1);
-                    return false;
-                }
-                $cats[$A['category']] = DB_insertID();
-            }
-            // Now populate the cross-reference table
-            $r = DB_query("SELECT id, category
-                    FROM {$_TABLES['shop.products']}");
-            if (DB_error()) {
-                COM_errorLog("Error retrieving category data from products", 1);
-                return false;
-            }
-            if (DB_numRows($r) > 0) {
-                while ($A = DB_fetchArray($r, false)) {
-                    DB_query("UPDATE {$_TABLES['shop.products']}
-                        SET cat_id = '{$cats[$A['category']]}'
-                        WHERE id = '{$A['id']}'");
-                    if (DB_error()) {
-                        COM_errorLog("Error updating prodXcat table", 1);
-                        return false;
-                    }
-                }
-            }
-            DB_query("ALTER TABLE {$_TABLES['shop.products']}
-                    DROP category");
-        }
-
-        // Add buttons to the product records or they won't be shown.
-        // Old shop version always has buy_now and add_cart buttons.
-        $buttons = serialize(array('buy_now' => '', 'add_cart' => ''));
-        DB_query("UPDATE {$_TABLES['shop.products']}
-                SET buttons='$buttons',
-                dt_add = UNIX_TIMESTAMP()");
-
-        // Finally, rename any existing config.php file since we now use
-        // the online configuration.
-        if (is_file(__DIR__ . '/config.php')) {
-            COM_errorLog('Renaming old config.php file to ' . __DIR . '/config.old.php', 1);
-            if (!rename(__DIR__ . '/config.php', $pi_path . '/config.old.php')) {
-                COM_errorLog("Failed to rename old config.php file.  Manual intervention needed", 1);
-            }
-        }
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.1')) {
-        // upgrade to 0.4.1
-        $current_ver = '0.4.1';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.2')) {
-        // upgrade to 0.4.2
-        $current_ver = '0.4.2';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.3')) {
-        // upgrade to 0.4.3
-        // this adds a field that was possibly missing in the initial
-        // installation, but could have been added in the 0.4.1 update. So,
-        // an error is to be expected and ignored
-        $current_ver = '0.4.3';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.4')) {
-        $current_ver = '0.4.4';
-        // Remove individual block selections and combine into one
-        $displayblocks = 0;
-        if ($_SHOP_CONF['leftblocks'] == 1) $displayblocks += 1;
-        if ($_SHOP_CONF['rightblocks'] == 1) $displayblocks += 2;
-
-        // This is here since there are specific config values to be set
-        // leftblocks and rightblocks will be deleted on PAYPAL_update_config().
-        $c = config::get_instance();
-        $c->add('displayblocks', $displayblocks,
-                'select', 0, 0, 13, 210, true, $pi_name);
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.5')) {
-        $current_ver = '0.4.5';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.4.5')) {
-        $current_ver = '0.4.5';
-        // Move the buy_now buttons into a separate table
-        $sql = "SELECT id, buttons FROM {$_TABLES['shop.products']}";
-        $res = DB_query($sql, 1);
-        while ($A = DB_fetchArray($res, false)) {
-            $id = $A['id'];
-            $btns = @unserialize($A['buttons']);
-            if ($btns && isset($btns['buy_now'])) {
-                $button = DB_escapeString($btns['buy_now']);
-            } else {
-                $button = '';
-            }
-            DB_query("INSERT INTO {$_TABLES['shop.buttons']} VALUES
-                ('$id', $pi_name, '$button')", 1);
-        }
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.0')) {
-        $current_ver = '0.5.0';
-
-        // Perform the main database upgrades
-        // The first few lines get the schema updated for elements that
-        // may have been missed (0.4.4 wasn't updated properly).
-        // Errors need to be ignored for these.
-        DB_query("ALTER TABLE {$_TABLES['shop.products']}
-                ADD options text after show_popular", 1);
-        DB_query("ALTER TABLE {$_TABLES['shop.purchases']}
-                ADD token varchar(40) after price", 1);
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-
-        // Move the global Shop-specific configurations into the config table
-        $receiver_email = DB_escapeString($_SHOP_CONF['receiver_email'][0]);
-        $gwconfig = array(
-            'bus_prod_email' => $receiver_email,
-            'bus_test_email' => $receiver_email,
-            'micro_prod_email' => $receiver_email,
-            'micro_test_email' => $receiver_email,
-            'micro_threshold' => 10,
-            'prod_url'      => 'https://www.shop.com',
-            'sandbox_url'   => 'https://www.sandbox.shop.com',
-            'test_mode'     => (int)$_SHOP_CONF['testing'],
-            'prv_key'       => DB_escapeString($_SHOP_CONF['prv_key']),
-            'pub_key'       => DB_escapeString($_SHOP_CONF['pub_key']),
-            'pp_cert'       => DB_escapeString($_SHOP_CONF['pp_cert']),
-            'pp_cert_id'    => DB_escapeString($_SHOP_CONF['pp_cert_id']),
-            'micro_cert_id' => DB_escapeString($_SHOP_CONF['pp_cert_id']),
-            'encrypt'       => (int)$_SHOP_CONF['encrypt_buttons'],
-        );
-        $db_config = DB_escapeString(@serialize($gwconfig));
-        $services = array(
-            'buy_now' => 1,
-            'pay_now' => 1,
-            'checkout' => 1,
-            'donation' => 1,
-            'subscribe' => 1,
-            'external' => 1,
-        );
-        $db_services = DB_escapeString(@serialize($services));
-        $sql = "INSERT INTO {$_TABLES['shop.gateways']}
-                (id, orderby, enabled, description, config, services)
-                VALUES
-                ('shop', 10, 1, 'Shop Website Payments Standard',
-                    '$db_config', '$db_services'),
-                ('amazon', 20, 0, 'Amazon SimplePay', '', '$db_services')";
-        //echo $sql;die;
-
-        // Convert saved buttons in the product records to simple text strings
-        // indicating the type of button to use.  Don't save the button in the
-        // new cache table; that will be done when the button is needed.
-        DB_query("UPDATE {$_TABLES['shop.products']} SET buttons='buy_now'");
-
-        // Create order records and associate with the existing purchase table.
-        // We create our own sid to try and use the original purchase date.
-        // Since this function runs so fast, there could still be duplicate
-        // sid's so we check for an existing sid before trying to use it.
-        // If that happens, the order_id will just be a current sid.
-        $sql = "SELECT * FROM {$_TABLES['shop.purchases']}";
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) > 0) {
-            USES_shop_class_Order();
-            while ($A = DB_fetchArray($res, false)) {
-                $dt_tm = explode(' ', $A['purchase_date']);
-                list($y, $m, $d) = explode('-', $dt_tm[0]);
-                list($h, $i, $s) = explode(':', $dt_tm[1]);
-                $sid = $y.$m.$d.$h.$i.$s;
-                $order_id = $sid . mt_rand(0, 999);
-                while (DB_count($_TABLES['shop.orders'], 'order_id', $order_id) > 0) {
-                    $order_id = COM_makeSid();
-                }
-
-                // Discovered that the "price" field isn't filled in for the
-                // purchase table.  Read the IPN data and use mc_gross.
-                $IPN = DB_getItem($_TABLES['shop.ipnlog'], 'ipn_data',
-                        "txn_id = '" . DB_escapeString($A['txn_id']) . "'");
-                $price = 0;
-                if (!empty($IPN)) {
-                    $data = @unserialize($IPN);
-                    if ($data && isset($data['mc_gross'])) {
-                        $price = (float)$data['mc_gross'];
-                        if (isset($data['tax'])) {
-                            $tax = (float)$data['tax'];
-                            $price -= $tax;
-                        } else {
-                            $tax = 0;
-                        }
-                        if (isset($data['shipping'])) {
-                            $shipping = (float)$data['shipping'];
-                            $price -= $shipping;
-                        } else {
-                            $shipping = 0;
-                        }
-                        if (isset($data['handling'])) {
-                            $handling = (float)$data['handling'];
-                            $price -= $handling;
-                        } else {
-                            $handling = 0;
-                        }
-                    }
-                }
-
-                $ord = new \Shop\Order($order_id);
-                $ord->uid = $A['user_id'];
-                $ord->order_date = DB_escapeString($A['purchase_date']);
-                $ord->status = SHOP_STATUS_PAID;
-                $ord->pmt_method = 'shop';
-                $ord->pmt_txn_id = $A['txn_id'];
-                $ord->tax = $tax;
-                $ord->shipping = $shipping;
-                $ord->handling = $handling;
-                $order_id = $ord->Save();
-
-                // Also, split out the item number from any attributes.
-                // Starting with 0.5.0 we store the actual item number
-                // and options separately.
-                // * PAYPAL_explode_opts() not available in this version *
-                list($item_num, $options) = explode('|', $A['product_id']);
-                if (!$options) $options = '';
-                DB_query("UPDATE {$_TABLES['shop.purchases']} SET
-                        order_id = '" . DB_escapeString($order_id) . "',
-                        price = '$price',
-                        product_id = '" . DB_escapeString($item_num) . "',
-                        options = '" . DB_escapeString($options) . "'
-                    WHERE txn_id = '{$A['txn_id']}'");
-            }
-        }
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.2')) {
-        $current_ver = '0.5.2';
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.4')) {
-        $current_ver = '0.5.4';
-        // Addes the currency table and formatting functions
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.6')) {
-        $current_ver = '0.5.6';
-        // SQL updates in 0.5.4 weren't included in new installation, so check
-        // if they're done and add them to the upgrade process if not.
-        $res = DB_query("SHOW TABLES LIKE '{$_TABLES['shop.currency']}'",1);
-        if (!$res || DB_numRows($res) < 1) {
-            // Add the table
-            $SHOP_UPGRADE['0.5.6'][] = $SHOP_UPGRADE['0.5.4'][0];
-            // Populate with data
-            $SHOP_UPGRADE['0.5.6'][] = $SHOP_UPGRADE['0.5.4'][1];
-        }
-        if (!_SHOP_tableHasColumn('shop.products', 'sale_price')) {
-            // Add the field to the products table
-            $SHOP_UPGRADE['0.5.6'][] = $SHOP_UPGRADE['0.5.4'][2];
-        }
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.7')) {
-        $current_ver = '0.5.7';
-        $gid = (int)DB_getItem($_TABLES['groups'], 'grp_id',
-            "grp_name='{$pi_name} Admin'");
-        if ($gid < 1)
-            $gid = 1;        // default to Root if shop group not found
-        DB_query("INSERT INTO {$_TABLES['vars']}
-                SET name='shop_gid', value=$gid");
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.8')) {
-        $current_ver = '0.5.8';
-        // Upgrade sql changes from owner/group/member/anon perms to group id
-        // First update the group_id based on the perms.
-        $sql = "SELECT cat_id,group_id,perm_group,perm_members,perm_anon
-                FROM {$_TABLES['shop.categories']}";
-        $res = DB_query($sql,1);
-        while ($A = DB_fetchArray($res, false)) {
-            if ($A['perm_anon'] >= 2) $grp_id = 2;      // all users
-            elseif ($A['perm_members'] >= 2) $grp_id = 13;  // logged-in users
-            else $grp_id = $A['group_id'];
-            if ($A['group_id'] != $grp_id) {
-                $grp_id = (int)$grp_id;
-                DB_query("UPDATE {$_TABLES['shop.categories']}
-                        SET group_id = $grp_id
-                        WHERE cat_id = {$A['cat_id']}");
-            }
-        }
-        // Remove Amazon Simplepay gateway file to prevent re-enabling
-        @unlink(__DIR__ . '/classes/gateways/amazon.class.php');
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.9')) {
-        $current_ver = '0.5.9';
-        // Create default path for downloads (even if not used)
-        @mkdir($_CONF['path'] . 'data/' . $pi_name . '/files', true);
-        // Remove stray .htaccess file that interferes with plugin removal
-        @unlink(__DIR__ . '/files/.htaccess');
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.10')) {
-        $current_ver = '0.5.10';
-        // Changed working dir to a static config item, so make sure the
-        // paths are set up in case the web admin changed them
-        // Set the tmpdir to a static path, config value will be removed
-        // later.
-        $tmpdir = $_CONF['path'] . 'data/shop/';
-        $paths = array(
-            $tmpdir,
-            $tmpdir . 'keys',
-            $tmpdir . 'cache',
-            $tmpdir . 'files',
-        );
-        foreach ($paths as $path) {
-            COM_errorLog("Creating $path", 1);
-            if (!is_dir($path)) {
-                mkdir($path, 0755, true);
-            }
-            if (!is_writable($path)) {
-                COM_errorLog("Cannot write to $path", 1);
-            }
-        }
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.5.11')) {
-        $current_ver = '0.5.11';
-        // Make sure a "uid" key doesn't exist in this table.
-        // This will fail if it already doesn't exist, so ignore any error
-        DB_query("ALTER TABLE {$_TABLES['shop.address']}
-                DROP KEY `uid`", 1);
-        if (!PAYPAL_do_upgrade_sql($current_ver)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    if (!COM_checkVersion($current_ver, '0.6.0')) {
-        $current_ver = '0.6.0';
-
-        // Previously, categories were not required. With the MPTT method,
-        // there must be at least one. Collect all the categories, increment
-        // the ID and parent_id, add the home category, and update the products
-        // to match.
-        if (!_SHOPtableHasColumn('shop.categories', 'rgt')) { // Category table hasn't been updated yet
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.categories']} ADD `lft` smallint(5) unsigned NOT NULL DEFAULT '0'";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.categories']} ADD `rgt` smallint(5) unsigned NOT NULL DEFAULT '0'";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.categories']} ADD KEY `cat_lft` (`lft`)";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.categories']} ADD KEY `cat_rgt` (`rgt`)";
-            $res = DB_query("SELECT * FROM {$_TABLES['shop.categories']}");
-            $cats = array();
-            if ($res) {
-                while ($A = DB_fetchArray($res, false)) {
-                    // Escape string values
-                    $A['cat_name'] = DB_escapeString($A['cat_name']);
-                    $A['description'] = DB_escapeString($A['description']);
-                    $cats[] = $A;
-                }
-                $sql_cats = array();
-                foreach ($cats as $id=>$cat) {
-                    $cats[$id]['cat_id']++;
-                    $cats[$id]['parent_id']++;
-                    $sql_cats[] = "('" . implode("','", $cats[$id]) . "')";
-                }
-                $sql_cats = implode(', ', $sql_cats);
-                $SHOP_UPGRADE[$current_ver][] = "TRUNCATE {$_TABLES['shop.categories']}";
-                $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.categories']}
-                        (cat_id, cat_name, description, grp_access, lft, rgt)
-                    VALUES
-                        (1, 'Home', 'Root Category', 2, 1, 2)";
-                if (!empty($sql_cats)) {
-                    $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.categories']}
-                            (cat_id, parent_id, cat_name, description, enabled, grp_access, image)
-                        VALUES $sql_cats";
-                }
-                $SHOP_UPGRADE[$current_ver][]= "UPDATE {$_TABLES['shop.products']} SET cat_id = cat_id + 1";
-            }
-            $add_cat_mptt = true;
-        } else {
-            $add_cat_mptt = false;
-        }
-
-        // Update the order_date to an int if not already done
-        if (_SHOPcolumnType('shop.orders', 'order_date') == 'datetime') {
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orders']} CHANGE order_date order_date_old datetime";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orders']} ADD order_date int(11) unsigned NOT NULL DEFAULT 0 AFTER uid";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.orders']} SET
-                last_mod = NOW(),
-                order_date = UNIX_TIMESTAMP(CONVERT_TZ(`order_date_old`, '+00:00', @@session.time_zone))";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orders']} DROP order_date_old";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orders']} ADD KEY (`order_date`)";
-        }
-        if (_SHOPcolumnType('shop.purchases', 'expiration') == 'datetime') {
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.purchases']} DROP key purchases_expiration";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.purchases']} CHANGE expiration exp_old datetime";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.purchases']} ADD expiration int(11) unsigned not null default 0 after status";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.purchases']} SET
-                expiration = UNIX_TIMESTAMP(CONVERT_TZ(`exp_old`, '+00:00', @@session.time_zone))";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.purchases']} DROP exp_old";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.purchases']} ADD KEY `purchases_expiration` (`expiration`)";
-        }
-        // Sales and discounts have been moved to another table. Collect any active sales
-        // and move them over.
-        if (_SHOPtableHasColumn('shop.products', 'sale_price')) {        // Sales haven't been moved to new table yet
-            $sql = "SELECT id, sale_price, sale_beg, sale_end, price FROM {$_TABLES['shop.products']}";
-            $res = DB_query($sql);
-            if ($res) {
-                $sql = array();
-                while ($A = DB_fetchArray($res, false)) {
-                    $s_price = (float)$A['sale_price'];
-                    if ($s_price != 0) {
-                        $price = (float)$A['price'];
-                        $discount = (float)($price - $s_price);
-                        // Fix dates to fit in an Unix timestamp
-                        foreach (array('sale_beg', 'sale_end') as $key) {
-                            if ($A[$key] < '1970-01-01') {
-                                $A[$key] = '1970-01-01';
-                            } elseif ($A[$key] > '2037-12-31') {
-                                $A[$key] = '2017-12-31';
-                            }
-                        }
-                        $st = new Date($A['sale_beg'], $_CONF['timezone']);
-                        $end = new Date($A['sale_end'] . ' 23:59:59', $_CONF['timezone']);
-                        $sql[] = "('product', '{$A['id']}', '{$st->toUnix()}', '{$end->toUnix()}', 'amount', '$discount')";
-                    }
-                }
-                if (!empty($sql)) {
-                    $sql = implode(',', $sql);
-                    $SHOP_UPGRADE['0.6.0'][] = "INSERT INTO {$_TABLES['shop.sales']}
-                            (item_type, item_id, start, end, discount_type, amount)
-                            VALUES $sql";
-                }
-            }
-        }
-
-        // Update workflows table with can_delete flag, and change enabled values if this is the first pass.
-        if (!_SHOPtableHasColumn('shop.workflows', 'can_disable')) {
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.workflows']} ADD `can_disable` tinyint(1) unsigned NOT NULL DEFAULT '1'";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.workflows']} SET can_disable = 0, enabled = 3 WHERE wf_name = 'viewcart'";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.workflows']} SET enabled = 3 WHERE enabled = 1";
-        }
-
-        if (!_SHOPtableHasColumn('shop.orderstatus', 'notify_admin')) {
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD `notify_admin` TINYINT(1) NOT NULL DEFAULT '0'";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.orderstatus']} SET notify_admin = 1, notify_buyer = 1 WHERE name = 'paid'";
-        }
-
-        // Change the log table to use Unix timestamps.
-        if (_SHOPcolumnType('shop.order_log', 'ts') == 'datetime') {
-            // 1. Change to datetime so timestamp doesn't get updated by these changes
-            // 2. Add an integer field to get the timestamp value
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.order_log']} CHANGE ts ts_old datetime";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.order_log']} ADD ts int(11) unsigned after id";
-            // 3. Set the int field to the Unix timestamp
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.order_log']} SET ts = UNIX_TIMESTAMP(CONVERT_TZ(`ts_old`, '+00:00', @@session.time_zone))";
-            // 4. Drop the old timestamp field
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.order_log']} DROP ts_old";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.order_log']} DROP KEY `order_id`";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.order_log']} ADD KEY `order_id` (`order_id`, `ts`)";
-        }
-
-        // Change the IPN log table to use Unix timestamps.
-        if (_SHOPtableHasColumn('shop.ipnlog', 'time')) {
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD ts int(11) unsigned after `ip_addr`";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.ipnlog']} SET ts = UNIX_TIMESTAMP(CONVERT_TZ(`time`, '+00:00', @@session.time_zone))";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.ipnlog']} DROP `time`";
-            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD KEY `ipnlog_ts` (`ts`)";
-        }
-
-        if (!DB_checkTableExists('shop.shipping')) {
-            $rate_table = array(
-                array(
-                    'dscp' => 'Small',
-                    'units' => 5,
-                    'rate' => 7.20,
-                ),
-                array(
-                    'dscp' => 'Medium',
-                    'units' => 20,
-                    'rate' => 13.65,
-                ),
-                array(
-                    'dscp' => 'Large',
-                    'units' => 50,
-                    'rate' => 18.90,
-                ),
-            );
-            $rate_table = DB_escapeString(json_encode($rate_table));
-            $SHOP_UPGRADE[$current_ver][] = "INSERT INTO `{$_TABLES['shop.shipping']}` VALUES (1,'USPS Priority Flat Rate',0.0001,50.0000,1,'$rate_table')";
-        }
-
-        // Templates now use CSS to limit thumbnail sizes. If the configured max_thumb_size
-        // is still the old default, change it to the new default
-        if ($_SHOP_CONF['max_thumb_size'] == 100) {
-            $C = config::get_instance();
-            $C->set('max_thumb_size', 250, 'shop');
-        }
-
-        if (!PAYPAL_do_upgrade_sql($current_ver, $dvlp)) return false;
-        // Rebuild the tree after the lft/rgt category fields are added.
-        if ($add_cat_mptt) {
-            \Shop\Category::rebuildTree();
-        }
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-
-    if (!COM_checkVersion($current_ver, '0.6.1')) {
-        $current_ver = '0.6.1';
-        if (!_SHOPtableHasColumn('shop.orders', 'order_seq')) {
-            // Add sql to create sequence numbers. Sequence field is already included
-            $SHOP_UPGRADE[$current_ver][] = "SET @i:=0";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.orders']}
-                SET order_seq = @i:=@i+1
-                WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC";
-        }
-        if (!PAYPAL_do_upgrade_sql($current_ver, $dvlp)) return false;
-        if (!PAYPAL_do_set_version($current_ver)) return false;
-    }
-
-    PAYPAL_update_config();
+    SHOP_update_config();
     if (!COM_checkVersion($current_ver, $installed_ver)) {
-        if (!PAYPAL_do_set_version($installed_ver)) return false;
+        if (!SHOP_do_set_version($installed_ver)) return false;
     }
     \Shop\Cache::clear();
-    PAYPAL_remove_old_files();
+    SHOP_remove_old_files();
     CTL_clearCache();   // clear cache to ensure CSS updates come through
     COM_errorLog("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", 1);
     // Set a message in the session to replace the "has not been upgraded" message
@@ -625,12 +53,11 @@ function PAYPAL_do_upgrade($dvlp = false)
  * Gets the sql statements from the $UPGRADE array defined (maybe)
  * in the SQL installation file.
  *
- * @since   v0.4.0
  * @param   string  $version    Version being upgraded TO
  * @param   boolean $ignore_error   True to ignore SQL errors.
  * @return  boolean     True on success, False on failure
  */
-function PAYPAL_do_upgrade_sql($version, $ignore_error = false)
+function SHOP_do_upgrade_sql($version, $ignore_error = false)
 {
     global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE;
 
@@ -667,7 +94,7 @@ function PAYPAL_do_upgrade_sql($version, $ignore_error = false)
  * @param   string  $ver    New version to set
  * @return  boolean         True on success, False on failure
  */
-function PAYPAL_do_set_version($ver)
+function SHOP_do_set_version($ver)
 {
     global $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
@@ -695,7 +122,7 @@ function PAYPAL_do_set_version($ver)
 /**
  * Update the plugin configuration
  */
-function PAYPAL_update_config()
+function SHOP_update_config()
 {
     USES_lib_install();
 
@@ -708,108 +135,22 @@ function PAYPAL_update_config()
  * Remove deprecated files
  * Errors in unlink() and rmdir() are ignored.
  */
-function PAYPAL_remove_old_files()
+function SHOP_remove_old_files()
 {
     global $_CONF;
 
     $paths = array(
         // private/plugins/shop
         __DIR__ => array(
-            // 0.6.0
-            'language/authorizenetsim_english.php',
-            'templates/viewcart.uikit.thtml',
-            'templates/detaul/product_detail_attrib.thtml',
-            'templates/detail/v2/product_detail.thtml',
-            'templates/detail/v1/product_detail.thtml',
-            'templates/list/v1/product_list_item.thtml',
-            'templates/list/v2/product_list_item.thtml',
-            'templates/order.uikit.thtml',
-            'classes/paymentgw.class.php',
-            'classes/ppFile.class.php',
-            'classes/ipn/internal_ipn.class.php',
-            'classes/ipn/shop_ipn.class.php',
-            'classes/ipn/authorizenet_sim.class.php',
-            'classes/ipn/BaseIPN.class.php',
-            // 0.6.1
-            'templates/address.uikit.thtml',
-            'templates/attribute_form.uikit.thtml',
-            'templates/category_form.uikit.thtml',
-            'templates/gateway_edit.uikit.thtml',
-            'templates/product_form.uikit.thtml',
-            'templates/sales_form.uikit.thtml',
-            'templates/sales_table.uikit.thtml',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
-            'ipn/shop_ipn.php',
-            'ipn/authorizenetsim_ipn.php',
-            'images/paynow.gif',
-            'images/subscribe.gif',
-            'images/subscribe.sav.gif',
-            'images/addtocart.gif',
-            'images/addtocart.sav.gif',
-            'images/btnbgGreen.gif',
-            'images/btnbgRed.gif',
-            'images/btn_bg_sprite.gif',
-            'images/button.png',
-            'images/buynow.gif',
-            'images/buynow.png',
-            'images/buynow.sav.gif',
-            'images/closelabel.gif',
-            'images/creditcart.svg',
-            'images/db_commit.png',
-            'images/deleteitem.png',
-            'images/donate2.gif',
-            'images/donate.gif',
-            'images/donate.sav.gif',
-            'images/down.png',
-            'images/download.png',
-            'images/formbg.gif',
-            'images/loading.gif',
-            'images/nextlabel.gif',
-            'images/off.png',
-            'images/on.png',
-            'images/prevlabel.gif',
-            'images/undo.png',
-            'images/up.png',
-            'images/update.png',
-            'images/viewcart.gif',
-            'docs/english/authorizenetsim.html',
         ),
         // admin/plugins/shop
         $_CONF['path_html'] . 'admin/plugins/shop' => array(
         ),
     );
 
-    // Files that were renamed, changing case only.
-    // Only delete thes on non-case-sensitive systems.
-    $user_agent = getenv("HTTP_USER_AGENT");
-    if (strpos($user_agent, "Win") === FALSE &&
-        strpos($user_agent, "Mac") === FALSE) {
-        $files = array(
-            'classes/attribute.class.php',
-            'classes/cart.class.php',
-            'classes/category.class.php',
-            'classes/currency.class.php',
-            'classes/order.class.php',
-            'classes/orderstatus.class.php',
-            'classes/product.class.php',
-            'classes/workflow.class.php',
-        );
-        $paths[__DIR__] = array_merge($paths[__DIR__], $files);
-
-        // The gateways class dir has been renamed to Gatways for better namespacing.
-        // Remove the old class dir and files, only if not on Windows or Mac
-        $dir = __DIR__ . '/classes/gateways';
-        if (is_dir($dir)) {
-            $files = array_diff(scandir($dir), array('.','..'));
-            foreach ($files as $file) {
-                $path = "$dir/$file";
-                if (is_file($path)) @unlink($path);
-            }
-            @rmdir($dir);
-        }
-    }
     foreach ($paths as $path=>$files) {
         foreach ($files as $file) {
             @unlink("$path/$file");
