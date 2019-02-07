@@ -173,7 +173,16 @@ foreach ($tables as $table) {
 */
 function plugin_install_shop()
 {
-    global $INSTALL_plugin, $_SHOP_CONF;
+    global $INSTALL_plugin, $_SHOP_CONF, $_PLUGIN_INFO;
+
+
+    if (array_key_exists('paypal', $_PLUGIN_INFO)) {
+        $ver = $_PLUGIN_INFO['paypal']['pi_version'];
+        if (!COM_checkVersion($ver, '0.6.1')) {
+            COM_setMsg(sprintf('Paypal Plugin must be version 0.6.1 or greater, version %s installed.', $ver), 'error');
+            return false;
+        }
+    }
 
     $pi_name            = $_SHOP_CONF['pi_name'];
     $pi_display_name    = $_SHOP_CONF['pi_display_name'];
@@ -248,17 +257,19 @@ function plugin_postinstall_shop()
         COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
-    // If the Paypal plugin is installed and enabled, migrate database data from it.
+    // If the Paypal plugin is installed and enabled,
+    // migrate database data from it.
     // Otherwise install the sample data.
     $have_data = false;
-    if (isset($_PLUGIN_INFO['paypal'])) {
+    if (array_key_exists('paypal', $_PLUGIN_INFO)) {
         $pp_ver = $_PLUGIN_INFO['paypal']['pi_version'];
-        if (COM_checkVersion($pp_ver, '0.6.0')) {   // if at least paypal 0.6.0
+
+        if (COM_checkVersion($pp_ver, '0.6.1')) {   // if at least paypal 0.6.1
             $have_data = true;
             $tables = array('address', 'buttons', 'categories', 'coupon_log', 'coupons',
             'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus', 'prod_attr',
             'products', 'purchases', 'sales', 'shipping', 'userinfo', 'workflows',
-            'currency',
+            'currency', 'orders',
             );
 
             $sql = array();
@@ -266,28 +277,6 @@ function plugin_postinstall_shop()
                 $shop = $_TABLES['shop.' . $tbl];
                 $pp = $_TABLES['paypal.' . $tbl];
                 $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
-            }
-
-            // The orders table was updated in 0.6.1. It is the only schema change.
-            $sql[] = "TRUNCATE {$_TABLES['shop.orders']};";
-            if (!COM_checkVersion($pp_ver, '0.6.1')) {
-                $flds = array('order_id', 'uid', 'order_date', 'last_mod',
-                    'billto_id', 'billto_name', 'billto_company', 'billto_address1', 'billto_address2',
-                    'billto_city', 'billto_state', 'billto_country', 'billto_zip',
-                    'shipto_id', 'shipto_name', 'shipto_company', 'shipto_address1', 'shipto_address2',
-                    'shipto_city', 'shipto_state', 'shipto_country', 'shipto_zip',
-                    'phone', 'buyer_email', 'tax', 'shipping', 'handling', 'by_gc', 'status', 'pmt_method',
-                    'pmt_txn_id', 'instructions', 'token', 'tax_rate', 'info',
-                );
-                $fld_sql = implode(',', $flds);
-                $sql[] = "INSERT INTO {$_TABLES['shop.orders']} ($fld_sql, currency, order_seq)
-                    (SELECT $fld_sql, 'USD', NULL  FROM {$_TABLES['paypal.orders']} ORDER BY order_date)";
-                $sql[] = "SET @i:=0";
-                $sql[] = "UPDATE {$_TABLES['shop.orders']}
-                    SET order_seq = @i:=@i+1
-                    WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC";
-            } else {
-                $sql[] = "INSERT INTO {$_TABLES['shop.orders']} (SELECT * FROM {$_TABLES['paypal.orders']})";
             }
 
             foreach ($sql as $s) {
