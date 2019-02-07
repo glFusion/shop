@@ -973,7 +973,7 @@ class Order
      *
      * @return  boolean     True if allowed to view, False if denied.
      */
-    public function canView()
+    public function canView($token='')
     {
         global $_USER;
 
@@ -983,6 +983,8 @@ class Order
         } elseif ($this->uid > 1 && $_USER['uid'] == $this->uid ||
             plugin_ismoderator_shop()) {
             // Administrator, or logged-in buyer
+            return true;
+        } elseif ($token !== '' && $token == $this->token) {
             return true;
         } elseif (isset($_GET['token']) && $_GET['token'] == $this->token) {
             // Anonymous with the correct token

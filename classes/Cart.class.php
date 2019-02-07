@@ -806,9 +806,10 @@ class Cart extends Order
      * Checks that this is actually a cart, then calls Order::_checkAcess()
      * to check user permissions.
      *
-     * @return boolean     True if allowed to view, False if denied.
+     * @param   string  $token  Item token, not used in the Cart class
+     * @return  boolean     True if allowed to view, False if denied.
      */
-    public function canView()
+    public function canView($token='')
     {
         global $_USER;
 
