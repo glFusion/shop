@@ -100,7 +100,7 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
                 el.value = jsonObj.newstatus;
 
                 // Hide the button and update the new status in our array
-                document.getElementById("ppSetStat_" + jsonObj.order_id).style.visibility = "hidden";
+                document.getElementById("shopSetStat_" + jsonObj.order_id).style.visibility = "hidden";
                 SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
                 $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
             }
@@ -118,7 +118,7 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
 */
 function SHOP_ordShowStatSubmit(order_id, oldvalue, newvalue)
 {
-    var el = document.getElementById("ppSetStat_" + order_id);
+    var el = document.getElementById("shopSetStat_" + order_id);
     if (el) {
         if (newvalue != oldvalue) {
             el.style.visibility = '';
