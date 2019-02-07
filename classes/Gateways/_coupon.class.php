@@ -35,6 +35,15 @@ class _coupon extends \Shop\Gateway
         $this->gw_name = '_coupon';
         $this->gw_desc = $LANG_SHOP['apply_gc'];
         $this->gw_url = SHOP_URL . '/ipn/internal.php';
+        // Set the services that this gateway can provide
+        $this->services = array(
+            'buy_now'   => 0,
+            'donation'  => 0,
+            'pay_now'   => 0,
+            'subscribe' => 0,
+            'checkout'  => 1,
+            'external'  => 0,
+        );
         parent::__construct();
     }
 
