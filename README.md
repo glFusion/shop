@@ -17,6 +17,12 @@ your gateway provider.
 
 This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
 
+## Installation
+Installation is accomplished by using the glFusion automated plugin installer.
+
+If you have the Paypal plugin installed, version 0.6.1 or later, then data from that plugin is automatically
+transferred into the Shop plugin.
+
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.
 Functions are called via `LGLIB_invokeService()`, which is similar to `PLG_invokeService()` for web services.
