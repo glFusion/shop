@@ -82,7 +82,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
                 'item_number'   => $args['item_number'],
                 'short_description' => $args['short_description'],
                 'amount'        => $args['amount'],
-                'pi_url'        => PAYPAL_URL,
+                'pi_url'        => SHOP_URL,
                 'item_type'     => $args['item_type'],
                 'have_tax'      => isset($args['tax']) ? 'true' : '',
                 'tax'           => isset($args['tax']) ? $args['tax'] : 0,
@@ -156,13 +156,13 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
     case 'ipn':
         $id = isset($args['id']) ? $args['id'] : '';
         if ($id != '') {
-            $url = PAYPAL_ADMIN_URL .
+            $url = SHOP_ADMIN_URL .
                     '/index.php?ipnlog=x&op=single&txn_id=' . $id;
         }
         break;
     case 'checkout':
     case 'cart':
-        $url = PAYPAL_URL . '/index.php?view=cart';
+        $url = SHOP_URL . '/index.php?view=cart';
         break;
     }
 
@@ -274,7 +274,7 @@ function service_btnCheckout_shop($args, &$output, &$svc_msg)
     if (!is_array($args)) $args = array($args);
     $text = isset($args['text']) ? $args['text'] : $LANG_SHOP['checkout'];
     $color = isset($args['color']) ? $args['color'] : 'green';
-    $output = '<a href="' . PAYPAL_URL . '/index.php?checkout=x"><button type="button" id="ppcheckout" class="shopButton ' . $color . '">'
+    $output = '<a href="' . SHOP_URL . '/index.php?checkout=x"><button type="button" id="ppcheckout" class="shopButton ' . $color . '">'
         . $text . '</button></a>';
     return PLG_RET_OK;
 }
@@ -317,5 +317,39 @@ function plugin_formatAmount_shop($amount)
 {
     return \Shop\Currency::getInstance()->Format((float)$amount);
 }
+
+if (!function_exists('service_genButton_paypal')) {
+    function service_genButton_paypal($args, &$output, &$svc_msg)
+    {
+        return service_genButton_shop($args, $output, $svc_msg);
+    }
+    function service_getCurrency_paypal($args, &$output, &$svc_msg)
+    {
+        return service_getCurrency_shop($args, $output, $svc_msg);
+    }
+    function service_getUrl_paypal($args, &$output, &$svc_msg)
+    {
+        return service_getUrl_shop($args, $output, $svc_msg);
+    }
+    function service_addCartItem_paypal($args, &$output, &$svc_msg)
+    {
+        return service_AddCartItem_shop($args, $output, $svc_msg);
+    }
+    function service_btnCheckout_paypal($args, &$output, &$svc_msg)
+    {
+        return service_btnCheckout_shop($args, $output, $svc_msg);
+    }
+    function service_formatAmount_paypal($args, &$output, &$svc_msg)
+    {
+        return service_formatAmount_shop($args, $output, $svc_msg);
+    }
+    function plugin_formatAmount_paypal($amount)
+    {
+        return plugin_formatAmount_shop($amount);
+    }
+    function plugin_getCurrency_paypal()
+    {
+        return plugin_getCurrency_shop();
+    }}
 
 ?>
