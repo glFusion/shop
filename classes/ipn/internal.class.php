@@ -125,10 +125,10 @@ class internal extends \Shop\IPN
         $uid = $this->Order->uid;
         $gateway = SHOP_getVar($info, 'gateway');
         $total = $this->Order->getTotal();
+        $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
         switch ($gateway) {
         case '_coupon':
             // Order total must be zero to use the coupon gateway in full
-            $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
             if (is_null($by_gc)) {
                 $by_gc = Coupon::getUserBalance($uid);
             }

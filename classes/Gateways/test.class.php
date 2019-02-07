@@ -85,12 +85,16 @@ class test extends \Shop\Gateway
         $cust['transtype'] = 'coupon';
         $cust['cart_id'] = $cart->CartID();
 
+        $pmt_gross = $cart->getTotal();
+        if (isset($cust['by_gc'])) {
+            $pmt_gross -= (float)$cust['by_gc'];
+        }
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="by_gc" />',
             '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
             '<input type="hidden" name="custom" value=\'' . @serialize($cust) . '\' />',
             '<input type="hidden" name="payment_status" value="Completed" />',
-            '<input type="hidden" name="pmt_gross" value="' . $cart->getTotal() . '" />',
+            '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
         );
         if (COM_isAnonUser()) {
             //$T->set_var('need_email', true);
