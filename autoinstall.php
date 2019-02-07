@@ -263,9 +263,18 @@ function plugin_postinstall_shop()
     $have_data = false;
     if (array_key_exists('paypal', $_PLUGIN_INFO)) {
         $pp_ver = $_PLUGIN_INFO['paypal']['pi_version'];
-
         if (COM_checkVersion($pp_ver, '0.6.1')) {   // if at least paypal 0.6.1
             $have_data = true;
+
+            // Migrate plugin configuration
+            global $_PP_CONF;
+            if (is_array($_PP_CONF)) {
+                $c = config::get_instance('shop');
+                foreach ($_PP_CONF as $key=>$val) {
+                    $c->set($key, $val, 'shop');
+                }
+            }
+
             $tables = array('address', 'buttons', 'categories', 'coupon_log', 'coupons',
             'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus', 'prod_attr',
             'products', 'purchases', 'sales', 'shipping', 'userinfo', 'workflows',
