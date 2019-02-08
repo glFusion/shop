@@ -1,20 +1,18 @@
 <?php
 /**
-*   Global configuration items for the Shop plugin.
-*   These are either static items, such as the plugin name and table
-*   definitions, or are items that don't lend themselves well to the
-*   glFusion configuration system, such as allowed file types.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @author     Mark Evans <mark@glfusion.org
-*   @copyright  Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
-*   @copyright  Mark Evans <mark@glfusion.org
-*   @package    shop
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Global configuration items for the Shop plugin.
+ * These are either static items, such as the plugin name and table
+ * definitions, or are items that don't lend themselves well to the
+ * glFusion configuration system, such as allowed file types.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
@@ -25,7 +23,7 @@ global $_SHOP_CONF;
 
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
-$_SHOP_CONF['pi_version']         = '0.0.1';
+$_SHOP_CONF['pi_version']         = '0.7.0';
 $_SHOP_CONF['gl_version']         = '1.7.0';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 

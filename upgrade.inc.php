@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.0.1
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -37,6 +37,7 @@ function SHOP_do_upgrade($dvlp = false)
     SHOP_update_config();
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;
+        $current_ver = $installed_ver;
     }
     \Shop\Cache::clear();
     SHOP_remove_old_files();

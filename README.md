@@ -3,7 +3,7 @@ Shopping plugin for glFusion. Supports multiple payment gateways.
 
 This plugin provides a product catalog and shopping cart for physical
 and virtual products. The following payment gateways are supported:
-- Shop
+- PayPal
 - Authorize.Net
 - Square
 
@@ -22,6 +22,9 @@ Installation is accomplished by using the glFusion automated plugin installer.
 
 If you have the Paypal plugin installed, version 0.6.1 or later, then data from that plugin is automatically
 transferred into the Shop plugin.
+
+If you have an earlier version installed, you *must* either disable the Paypal plugin or update it to v0.6.1+.
+There will be function name conflicts if you don't do this.
 
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.
