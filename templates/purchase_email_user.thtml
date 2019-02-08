@@ -20,7 +20,7 @@ Your payment is pending.  Once your payment is received, you will receive
 another email message confirming your payment.
 </p>
 {!endif}
-<p>You may view your order at {site_url}/paypal/index.php?order={order_id}&token={token}</p>
+<p>You may view your order at {order_url}</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

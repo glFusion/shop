@@ -1,0 +1,91 @@
+<?php
+/**
+ * View and print orders.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner
+ * @package     shop
+ * @version     v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
+
+/** Require core glFusion code */
+require_once '../lib-common.php';
+
+// If plugin is installed but not enabled, display an error and exit gracefully
+if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
+    COM_404();
+}
+
+// Ensure sufficient privs and dependencies to read this page
+SHOP_access_check();
+
+// Import plugin-specific functions
+USES_shop_functions();
+
+$action = '';
+$actionval = '';
+$view = '';
+
+// Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
+COM_setArgNames(array('mode', 'id', 'token'));
+
+if (isset($_GET['mode'])) {
+    $mode = COM_applyFilter($_GET['mode']);
+} else {
+    $mode = COM_getArgument('mode');
+}
+if (isset($_GET['id'])) {
+    $id = COM_sanitizeID($_GET['id']);
+} else {
+    $id = COM_applyFilter(COM_getArgument('id'));
+}
+if (isset($_GET['token'])) {
+    $token = COM_sanitizeID($_GET['token']);
+} else {
+    $token = COM_applyFilter(COM_getArgument('token'));
+}
+if (empty($mode) && !empty($id)) {
+    $mode = 'view';
+}
+$content = '';
+
+switch ($mode) {
+case 'view':
+    // View a completed order record
+    $order = \Shop\Order::getInstance($id);
+    if ($order->canView($token)) {
+        $content .= $order->View();
+    } else {
+        COM_404();
+    }
+    break;
+
+case 'packinglist':
+case 'print':
+    // Display a printed order or packing list and exit.
+    // This is expected to be shown in a _blank browser window/tab.
+    $order = \Shop\Order::getInstance($id);
+    if ($order->canView($token)) {
+        echo $order->View($mode);
+        exit;
+    } else {
+        COM_404();
+    }
+    break;
+}
+
+$display = \Shop\siteHeader();
+$T = SHOP_getTemplate('shop_title', 'title');
+$T->set_var(array(
+    'title' => isset($page_title) ? $page_title : '',
+    'is_admin' => plugin_ismoderator_shop(),
+) );
+$display .= $T->parse('', 'title');
+$display .= $content;
+$display .= \Shop\siteFooter();
+echo $display;
+
+?>

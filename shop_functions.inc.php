@@ -392,10 +392,14 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'order_id':
-        $base_url = $A['isAdmin'] ? SHOP_ADMIN_URL : SHOP_URL;
+        if ($A['isAdmin']) {
+            $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
+        } else {
+            $url = SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue;
+        }
         $retval = COM_createLink(
             $fieldvalue,
-            $base_url. '/index.php?order=' . $fieldvalue,
+            $url,
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['vieworder'],

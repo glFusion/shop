@@ -13,7 +13,7 @@
 {!if not_final}
 {!else}
   <div class="floatright">
-    <a href="{site_url}/shop/index.php?printorder={order_number}&token={token}" target="_blank"
+    <a href="{print_url}" target="_blank"
         title="{$LANG_SHOP['print']}"><i class="uk-icon uk-icon-print tooltip" title="{$LANG_SHOP['print_order']}"></i>
     </a>
   </div>

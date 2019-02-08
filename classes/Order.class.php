@@ -76,7 +76,7 @@ class Order
 
     /** Statuses that indicate an order is still in a "cart" phase.
      * @var array */
-    protected static $cart_statuses = array('cart', 'pending');
+    protected static $nonfinal_statuses = array('cart', 'pending');
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -600,13 +600,14 @@ class Order
             'return_url'    => SHOP_getUrl(),
             'is_invoice'    => $is_invoice,
             'icon_dscp'     => $icon_tooltips,
+            'print_url'     => $this->buildUrl('print'),
         ) );
         if ($this->isAdmin) {
             $T->set_var(array(
-                'is_admin'  => true,
-                'purch_name' => COM_getDisplayName($this->uid),
-                'purch_uid' => $this->uid,
-                'stat_update' => OrderStatus::Selection($this->order_id, 1, $this->status),
+                'is_admin'      => true,
+                'purch_name'    => COM_getDisplayName($this->uid),
+                'purch_uid'     => $this->uid,
+                'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->status),
             ) );
         }
 
@@ -899,6 +900,7 @@ class Order
             'token'             => $this->token,
             'email_extras'      => implode('<br />' . LB, $email_extras),
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
+            'order_url'         => $this->buildUrl('view'),
         ) );
 
         $this->_setAddressTemplate($T);
@@ -1507,7 +1509,7 @@ class Order
         if ($status === NULL) {     // checking current status
             $status = $this->status;
         }
-        return !in_array($status, self::$cart_statuses);
+        return !in_array($status, self::$nonfinal_statuses);
     }
 
 
@@ -1541,6 +1543,18 @@ class Order
         $this->currency = $new;
         $this->Save();
         return true;
+    }
+
+
+    /**
+     * Provide a central location to get the URL to print or view a single order.
+     *
+     * @param   string  $view   View type (order or print)
+     * @return  string      URL to the view/print page
+     */
+    public function buildUrl($view)
+    {
+        return COM_buildUrl(SHOP_URL . "/order.php?mode=$view&id={$this->order_id}&token={$this->token}");
     }
 
 }
