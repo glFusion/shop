@@ -968,12 +968,16 @@ function phpblock_shop_cart_contents()
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
+        SHOP_debug("Cart disable or there is no cart");
         return '';
     }
 
     $cart = \Shop\Cart::getInstance();
     // If the cart is empty, the block isn't shown
-    if (!$cart->hasItems()) return '';
+    if (!$cart->hasItems()) {
+        SHOP_debug("Cart {$cart->order_id} has no items");
+        return '';
+    }
 
     $T = new Template(__DIR__ . '/templates');
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
@@ -1452,7 +1456,7 @@ function plugin_user_login_shop($uid)
 
     $anon_cart = \Shop\Cart::getAnonCartID();  // get the anonymous cart ID
     if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's carta
     $user_cart->Merge($anon_cart);
 }
 

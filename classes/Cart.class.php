@@ -6,9 +6,9 @@
  * by Josh Pendergrass <cendent AT syndicate-gaming DOT com>
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -406,7 +406,8 @@ class Cart extends Order
             return $T->finish($T->get_var('checkout_btn'));
         } elseif ($gw->Supports('checkout')) {
             // Else, if amount > 0, regular checkout button
-            $this->custom_info['by_gc'] = $by_gc;  // pass GC amount used via gateway
+            $this->custom_info['by_gc'] = $by_gc;   // pass GC amount used via gateway
+            $this->by_gc = $by_gc;                  // pass GC amount used via gateway
             return $gw->checkoutButton($this);
         } else {
             return 'Gateway does not support checkout';
@@ -708,11 +709,13 @@ class Cart extends Order
      */
     public static function getAnonCartID()
     {
+        $cart_id = NULL;
         if (isset($_COOKIE[self::$session_var]) && !empty($_COOKIE[self::$session_var])) {
-            return $_COOKIE[self::$session_var];
+            $cart_id = $_COOKIE[self::$session_var];
         } else {
-            return NULL;
+            $cart_id = self::getSession('cart_id');
         }
+        return $cart_id;
     }
 
 
@@ -844,6 +847,8 @@ class Cart extends Order
 
     /**
      * Helper function to set a cookie that expires after days_purge_cart days.
+     * Also sets the cart in the session since the cookie may not be immediately
+     * available the first time something is added to the cart.
      *
      * @param   mixed   $value      Value to set
      */
@@ -853,6 +858,7 @@ class Cart extends Order
 
         $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
         SEC_setCookie(self::$session_var, $value, $exp, '/');
+        self::setSession('cart_id', $value);
     }
 
 

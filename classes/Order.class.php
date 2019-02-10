@@ -20,7 +20,7 @@ class Order
 {
     /** Session variable name for storing cart info.
      * @var string */
-    protected static $session_var = 'ppGCart';
+    protected static $session_var = 'glShopCart';
 
     /** Flag to indicate that administrative actions are being done.
      * @var boolean */
