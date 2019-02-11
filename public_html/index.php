@@ -328,13 +328,9 @@ case 'shipto':
 
 case 'order':
     // View a completed order record
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
-        $order = \Shop\Order::getInstance($actionval);
-        if ($order->canView()) {
-            $content .= $order->View();
-        } else {
-            COM_404();
-        }
+    $order = \Shop\Order::getInstance($actionval);
+    if ($order->canView()) {
+        $content .= $order->View();
     } else {
         COM_404();
     }
@@ -342,15 +338,15 @@ case 'order':
 
 case 'packinglist':
 case 'printorder':
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
-        $order = \Shop\Order::getInstance($actionval);
-        if ($order->canView()) {
-            echo $order->View($view);
-            exit;
-        }
+    // Display a printed order or packing list and exit.
+    // This is expected to be shown in a _blank browser window/tab.
+    $order = \Shop\Order::getInstance($actionval);
+    if ($order->canView()) {
+        echo $order->View($view);
+        exit;
+    } else {
+        COM_404();
     }
-    // else
-    COM_404();
     break;
 
 case 'vieworder':
