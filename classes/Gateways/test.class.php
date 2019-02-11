@@ -95,6 +95,7 @@ class test extends \Shop\Gateway
             '<input type="hidden" name="custom" value=\'' . @serialize($cust) . '\' />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
+            '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
         );
         if (COM_isAnonUser()) {
             //$T->set_var('need_email', true);
