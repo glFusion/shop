@@ -205,7 +205,7 @@ class Order
         $items = Cache::get('items_order_' . $this->order_id);
         if ($items === NULL) {
             $items = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.purchases']}
+            $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
                     WHERE order_id = '{$this->order_id}'";
             $res = DB_query($sql);
             if ($res) {
@@ -318,9 +318,9 @@ class Order
         $this->pmt_method = SHOP_getVar($A, 'pmt_method');
         $this->pmt_txn_id = SHOP_getVar($A, 'pmt_txn_id');
         $this->currency = SHOP_getVar($A, 'currency', 'string', $_SHOP_CONF['currency']);
-        $this->order_date = SHOP_getVar($A, 'order_date', 'integer');
-        if ($this->order_date > 0) {
-            $this->order_date = new \Date($this->order_date, $tzid);
+        $dt = SHOP_getVar($A, 'order_date', 'integer');
+        if ($dt > 0) {
+            $this->order_date = new \Date($dt, $tzid);
         }
         $this->order_id = SHOP_getVar($A, 'order_id');
         $this->shipping = SHOP_getVar($A, 'shipping', 'float');
@@ -389,7 +389,7 @@ class Order
 
         // Checks passed, delete the order and items
         $sql = "START TRANSACTION;
-            DELETE FROM {$_TABLES['shop.purchases']} WHERE order_id = '$order_id';
+            DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
             COMMIT;";
         DB_query($sql);
@@ -1036,15 +1036,16 @@ class Order
             $this->tax_items = 0;
             $this->tax = 0;
         } else {
-            $tax_amt = 0;
+            $tax = 0;
             $this->tax_items = 0;
             foreach ($this->items as $item) {
                 if ($item->getProduct()->taxable) {
-                    $tax_amt += ($item->price * $item->quantity);
+                    $tax += Currency::getInstance()->RoundVal($this->tax_rate * $item->quantity * $item->price);
                     $this->tax_items += 1;
                 }
             }
-            $this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);
+            //$this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);
+            $this->tax = $tax;
         }
         return $this->tax;
     }
