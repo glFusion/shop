@@ -47,34 +47,48 @@ class IPN
 {
     /** Standard IPN data items required for all IPN types.
      * @var array */
-    var $pp_data = array();
+//    var $pp_data = array();
+    private $properties = array();
 
     /**
      * Holder for the complete IPN data array.
      * Used only for recording the raw data; no processing is done on this data
-     * by the base class.
+     * by the base class. Instantiated classes will use this to populate the
+     * standard variables.
      * @var array
-     * */
-    var $ipn_data = array();
+     */
+    protected $ipn_data = array();
+
+    /**
+     * Custom data that comes from the IPN provider, typically pass-through.
+     * @var array
+     */
+    protected $custom = array();
+
+    /**
+     * Shipping address information.
+     * @var array
+     */
+    protected $shipto = array();
 
     /** Array of items purchased.
      * Extracted from $ipn_data by the derived IPN processor class.
      * @var array */
-    var $items = array();
+    protected $items = array();
 
     /** ID of payment gateway, e.g. 'shop' or 'amazon'.
      * @var string */
-    var $gw_id;
+    public $gw_id;
 
     /** Instance of the appropriate gateway object.
     * @var object */
-    var $gw;
+    protected $gw;
 
     /**
      * This is just a holder for the current date in SQL format,
      * so we don't have to rely on the database's NOW() function.
      * @var string */
-    var $sql_date;
+    //var $sql_date;
 
     /** Order object.
      * @var object */
@@ -85,14 +99,13 @@ class IPN
     protected $Cart;
 
     /**
-     * Constructor.
-     * Set up variables received in the IPN message. Stores the complete
-     * IPN message in ipn_data, and initializes a pp_data for standard
-     * values to be filled in by the gateway's IPN processor.
+     * Set up variables received in the IPN message.
+     * Stores the complete IPN message in ipn_data.
+     * Must be called by the IPN processor's constructor after gw_id is set.
      *
      * @param   array   $A      $_POST'd variables from the gateway
      */
-    function __construct($A=array())
+    public function __construct($A=array())
     {
         global $_SHOP_CONF;
 
@@ -100,28 +113,87 @@ class IPN
             $this->ipn_data = $A;
         }
 
+        // Make sure values are defined
         $this->sql_date = SHOP_now()->toMySQL();
-
-        $this->pp_data = array(
-            'txn_id'        => '',
-            'payer_email'   => '',
-            'payer_name'    => '',
-            'pmt_date'      => '',
-            'sql_date'      => $this->sql_date,
-            'pmt_gross'     => 0,
-            'pmt_shipping'  => 0,
-            'pmt_handling'  => 0,
-            'pmt_tax'       => 0,
-            'gw_name'       => '',
-            'pmt_status'    => 0,
-            'currency'      => '',
-            'shipto'        => array(),
-            'custom'        => array(),
-            'status'        => '',
-        );
 
         // Create a gateway object to get some of the config values
         $this->gw = Gateway::getInstance($this->gw_id);
+    }
+
+
+    /**
+     * Set a property value.
+     * These are mostly values obtained from the IPN message.
+     * This also provides a partial list of variables that are expected for every IPN.
+     *
+     * @param   string  $key    Property name
+     * @param   mixed   $val    Property value
+     */
+    public function __set($key, $val)
+    {
+        switch ($key) {
+        case 'pmt_gross':       // Gross (total) payment amt
+            $this->properties[$key] = (float)$val;
+            break;
+        case 'pmt_shipping':    // Shipping payment (included in  gross)
+        case 'pmt_handling':    // Handling payment (included in gross)
+        case 'pmt_tax':         // Tax payment (included in gross)
+        case 'pmt_net':         // Net payment for order items
+        case 'total_credit':    // total payment, coupons, discounts, etc.
+            $this->properties[$key] = (float)$val;
+            break;
+
+        case 'uid':             // ID of user submitting the payment
+            $this->properties[$key] = (int)$val;
+            break;
+
+        case 'txn_id':          // IPN transaction ID
+        case 'payer_email':     // Payer email address
+        case 'payer_name':      // Payer name
+        case 'pmt_date':        // Payment date
+        case 'sql_date':        // Payment date (SQL format)
+        case 'gw_name':         // Name of gateway used for payment
+        case 'currency':        // Currenc code of payment
+        case 'order_id':        // Internal order ID
+            $this->properties[$key] = trim($val);
+            break;
+
+        case 'status':          // Payment status, certain values allowed
+            switch ($val) {
+            case 'pending':
+            case 'paid':
+            case 'refunded':
+                $this->properties[$key] = $val;
+                break;
+            default:
+                $this->properties[$key] = 'unknown';
+                break;
+            }
+            break;
+        }
+
+/*
+            'shipto'        => array(),
+            'custom'        => array(),
+            'pmt_other'     => array(),     // pmt-equivalents, coupons, discounts, etc.
+        );*/
+
+    }
+
+
+    /**
+     * Get a value from the properties array, or NULL if not defined.
+     *
+     * @param   string  $key    Name of property
+     * @return  mixed       Value of property, NULL if undefined
+     */
+    public function __get($key)
+    {
+        if (array_key_exists($key, $this->properties)) {
+            return $this->properties[$key];
+        } else {
+            return NULL;
+        }
     }
 
 
@@ -139,7 +211,7 @@ class IPN
 
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
-        $P = Product::getInstance($tmp[0], $this->pp_data['custom']);
+        $P = Product::getInstance($tmp[0], $this->custom);
         if ($P->isNew) {
             COM_errorLog("Product {$args['item_id']} not found in catalog");
             return;      // no product found to add
@@ -151,7 +223,7 @@ class IPN
         }
         // If the product allows the price to be overridden, just take the
         // IPN-supplied price. This is the case for donations.
-        $overrides = $this->pp_data['custom'];
+        $overrides = $this->custom;
         $overrides['price'] = $args['price'];
         $price = $P->getPrice($opts, $args['quantity'], $overrides);
 
@@ -199,7 +271,7 @@ class IPN
                 ip_addr = '{$_SERVER['REMOTE_ADDR']}',
                 ts = UNIX_TIMESTAMP(),
                 verified = $verified,
-                txn_id = '" . DB_escapeString($this->pp_data['txn_id']) . "',
+                txn_id = '" . DB_escapeString($this->txn_id) . "',
                 gateway = '{$this->gw_id}',
                 ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . '\'';
         // Ignore DB error in order to not block IPN
@@ -214,17 +286,15 @@ class IPN
     /**
      * Checks that the transaction id is unique to prevent double counting.
      *
-     * @param   array   $data   Array of data, includes txn_id to verify
      * @return  boolean             True if unique, False otherwise
      */
-    protected function isUniqueTxnId($data)
+    protected function isUniqueTxnId()
     {
         global $_TABLES, $_SHOP_CONF;
         if ($_SHOP_CONF['sys_test_ipn']) return true;
 
         // Count purchases with txn_id, if > 0
-        $count = DB_count($_TABLES['shop.purchases'], 'txn_id',
-                    $data['txn_id']);
+        $count = DB_count($_TABLES['shop.ipnlog'], 'txn_id', $this->txn_id);
         if ($count > 0) {
             return false;
         } else {
@@ -240,23 +310,11 @@ class IPN
      */
     protected function isSufficientFunds()
     {
-        // Get the amount paid along with any gift card balance used and
-        // check against the total order amount.
-        $pmt = SHOP_getVar($this->pp_data, 'pmt_gross', 'float');
-        $by_gc = SHOP_getVar($this->pp_data['custom'], 'by_gc', 'float');
-        if ($by_gc > 0) {
-            $uid = SHOP_getVar($this->pp_data['custom'], 'uid', 'int');
-            if (!Coupon::verifyBalance($by_gc, $uid)) {
-                $gc_bal = Coupon::getUserBalance($uid);
-                COM_errorLog("Insufficient Gift Card Balance, need $by_gc, have $gc_bal");
-                $by_gc = 0;     // ignore the gift card amount
-            }
-        }
-        $total_credit = $pmt + $by_gc;
+        $total_credit = $this->calcTotalCredit();
         // Compare total order amount to gross payment.  The ".0001" is to help
         // kill any floating-point errors. Include any discount.
         $total_order = $this->Order->getTotal();
-        $msg = "$pmt received plus $by_gc coupon, require $total_order";
+        $msg = "{$this->pmt_gross} received plus $total_credits credit, require $total_order";
         if ($total_order <= $total_credit + .0001) {
             SHOP_debug("OK: $msg");
             return true;
@@ -285,7 +343,7 @@ class IPN
             $P = Product::getInstance($item['item_number']);
             if ($P->isNew) {
                 $this->Error("Item {$item['item_number']} not found - txn " .
-                        $this->pp_data['txn_id']);
+                        $this->txn_id);
                 continue;
             }
 
@@ -296,7 +354,7 @@ class IPN
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
                 $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->file;
-                $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
+                $token_base = $this->txn_id . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
             } else {
@@ -312,13 +370,6 @@ class IPN
             if (empty($item['name'])) {
                 $this->items[$id]['name'] = $P->short_description;
             }
-
-            // Add the purchase to the shop purchase table
-            if (is_numeric($this->pp_data['custom']['uid'])) {
-                $uid = $this->pp_data['custom']['uid'];
-            } else {
-                $uid = 1;       // Anonymous as a fallback
-            }
         }   // foreach item
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
@@ -327,7 +378,7 @@ class IPN
             // funds. If OK, then save the order and call each handlePurchase()
             // for each item.
             if (!$this->isSufficientFunds()) {
-                $logId = $this->pp_data['gw_name'] . ' - ' . $this->pp_data['txn_id'];
+                $logId = $this->gw_name . ' - ' . $this->txn_id;
                 $this->handleFailure(IPN_FAILURE_FUNDS,
                         "($logId) Insufficient/incorrect funds for purchase");
                 return false;
@@ -337,15 +388,15 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $this->pp_data);
             }
-            $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $this->pp_data['pmt_gross'], $this->gw->DisplayName()));
-            $by_gc = SHOP_getVar($this->pp_data['custom'], 'by_gc', 'float');
+            $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $this->pmt_gross, $this->gw->DisplayName()));
+            $by_gc = $this->getCredit('gc');
             $this->Order->by_gc = $by_gc;
             if ($by_gc > 0) {
                 $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $by_gc, 'Gift Card'));
                 Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
             }
             $this->Order->log_user = 'IPN: ' . $this->gw->Description();
-            $this->Order->updateStatus($this->pp_data['status']);
+            $this->Order->updateStatus($this->status);
         } else {
             COM_errorLog('Error creating order: ' . print_r($status,true));
         }
@@ -374,12 +425,12 @@ class IPN
         // If so, load it and update the status. If not, continue on
         // and create a new order
         $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
-            "pmt_txn_id='" . DB_escapeString($this->pp_data['txn_id']) . "'");
+            "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'");
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->order_id != '') {
                 $this->Order->log_user = $this->gw->Description();
-                $this->Order->updateStatus($this->pp_data['status']);
+                $this->Order->updateStatus($this->status);
             }
             return 2;
         }
@@ -511,8 +562,8 @@ class IPN
 
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
-        if (isset($this->pp_data['invoice'])) {
-            $order_id = $this->pp_data['invoice'];
+        if ($this->order_id !== NULL) {
+            $order_id = $this->order_id;
         } else {
             $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
                 "pmt_txn_id = '" . DB_escapeString($this->pp_data['parent_txn_id'])
@@ -630,6 +681,72 @@ class IPN
             }
         }
         return $ipns[$name];
+    }
+
+
+    /**
+     * Calculate the total credit amount after all payments, discounts, etc.
+     */
+    protected function calcTotalCredit()
+    {
+        $total = $this->pmt_gross;
+        foreach ($this->credits as $credit) {
+            $total += (float)$credit;
+        }
+        $this->total_credit = $total;
+        return $this->total_credit;
+    }
+
+
+    /**
+     * Add a credit amount to the credits array.
+     *
+     * @param   string  $name   Name of credit, to accumulate
+     * @param   float   $amount Amount to add
+     */
+    protected function addCredit($name, $amount)
+    {
+        if ($amount != 0) {
+            $this->credits[$name] = (float)$amount;
+        }
+    }
+
+
+    /**
+     * Get the amount of a particular credit type.
+     *
+     * @param   string  $key    Key to credit
+     * @return  float       Credit amount
+     */
+    protected function getCredit($key)
+    {
+        if (array_key_exists($this->credits[$key])) {
+            return (float)$this->credits[$key];
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Get the gift card/coupon amount from the payment info.
+     *
+     * @return  float   Amount paid by gift card
+     */
+    protected function verifyGC()
+    {
+        $retval = true;
+        if (array_key_exists($this->credits['gc'])) {
+            $by_gc = (float)$this->credits['gc'];
+            if ($by_gc > 0) {
+                if (!Coupon::verifyBalance($by_gc, $this->uid)) {
+                    $gc_bal = Coupon::getUserBalance($this->uid);
+                    COM_errorLog("Insufficient Gift Card Balance, need $by_gc, have $gc_bal");
+                    $retval = false;
+                }
+            }
+        }
+        return $retval;
     }
 
 }   // class IPN
