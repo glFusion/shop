@@ -1456,8 +1456,23 @@ function plugin_user_login_shop($uid)
 
     $anon_cart = \Shop\Cart::getAnonCartID();  // get the anonymous cart ID
     if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's carta
+    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
     $user_cart->Merge($anon_cart);
+}
+
+
+/**
+ * Handle actions needed when the current user logs out.
+ * Saves the current cart ID to the cookie to handle the session change.
+ *
+ * @param   integer $uid    User ID
+ */
+function plugin_user_logout_shop($uid)
+{
+    global $_SHOP_CONF;
+
+    $C = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+    \Shop\Cart::setAnonCartID($C->order_id);    // save the cart ID for the anon yser
 }
 
 
