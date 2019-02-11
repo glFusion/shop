@@ -52,7 +52,7 @@ function listOrders($admin = false, $uid = 0)
         FROM {$_TABLES['shop.orders']} AS ord
         LEFT JOIN {$_TABLES['users']} AS u
             ON ord.uid = u.uid
-        LEFT JOIN {$_TABLES['shop.purchases']} AS itm
+        LEFT JOIN {$_TABLES['shop.orderitems']} AS itm
             ON ord.order_id = itm.order_id";
 
     $base_url = $admin ? SHOP_ADMIN_URL : SHOP_URL;
@@ -393,9 +393,9 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'order_id':
         if ($A['isAdmin']) {
-            $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
-        } else {
             $url = SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue;
+        } else {
+            $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
         }
         $retval = COM_createLink(
             $fieldvalue,

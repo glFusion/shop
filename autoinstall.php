@@ -152,7 +152,7 @@ $INSTALL_plugin['shop'] = array(
 );
 
 $tables = array(
-    'products', 'categories', 'purchases', 'ipnlog', 'orders', 'sales',
+    'products', 'categories', 'orderitems', 'ipnlog', 'orders', 'sales',
     'prod_attr', 'images', 'gateways', 'address', 'userinfo', 'workflows',
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
     'shipping',
@@ -277,7 +277,7 @@ function plugin_postinstall_shop()
 
             $tables = array('address', 'buttons', 'categories', 'coupon_log', 'coupons',
             'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus', 'prod_attr',
-            'products', 'purchases', 'sales', 'shipping', 'userinfo', 'workflows',
+            'products', 'sales', 'shipping', 'userinfo', 'workflows',
             'currency', 'orders',
             );
 
@@ -287,6 +287,11 @@ function plugin_postinstall_shop()
                 $pp = $_TABLES['paypal.' . $tbl];
                 $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
             }
+
+            // This version renames the "purchases" table to "orderitems"
+            $shop = $_TABLES['shop.orderitems'];
+            $pp = $_TABLES['paypal.purchases'];
+            $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
 
             foreach ($sql as $s) {
                 DB_query($s, 1);

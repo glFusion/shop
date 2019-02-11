@@ -832,7 +832,7 @@ function plugin_autouninstall_shop()
             'shop.orders',
             'shop.prod_attr',
             'shop.products',
-            'shop.purchases',
+            'shop.orderitems',
             'shop.userinfo',
             'shop.workflows',
             'shop.coupons',
@@ -968,7 +968,7 @@ function phpblock_shop_cart_contents()
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
-        SHOP_debug("Cart disable or there is no cart");
+        //SHOP_debug("Cart disabled or there is no cart");
         return '';
     }
 
@@ -1162,7 +1162,7 @@ function phpblock_shop_popular()
 
     $sql = "SELECT DISTINCT
                 pr.id,
-                (SELECT count(*) FROM {$_TABLES['shop.purchases']} pu
+                (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
             LEFT JOIN {$_TABLES['shop.categories']} c
@@ -1199,7 +1199,7 @@ function phpblock_shop_recent($cat='')
 
     $sql = "SELECT DISTINCT
                 pr.id,
-                (SELECT count(*) FROM {$_TABLES['shop.purchases']} pu
+                (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
             LEFT JOIN {$_TABLES['shop.categories']} c
@@ -1467,12 +1467,12 @@ function plugin_user_login_shop($uid)
  *
  * @param   integer $uid    User ID
  */
-function plugin_user_logout_shop($uid)
+function NOOP_plugin_user_logout_shop($uid)
 {
     global $_SHOP_CONF;
 
     $C = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-    \Shop\Cart::setAnonCartID($C->order_id);    // save the cart ID for the anon yser
+    \Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
 }
 
 
@@ -1488,7 +1488,7 @@ function plugin_runScheduledTask_shop()
     $orders = array();
     $conds = array();
     $sql = "SELECT ord.order_id FROM {$_TABLES['shop.orders']} ord
-        LEFT JOIN {$_TABLES['shop.purchases']} pur
+        LEFT JOIN {$_TABLES['shop.orderitems']} pur
             ON ord.order_id = pur.order_id WHERE ";
 
     if ($_SHOP_CONF['ena_cart'] == 1) {

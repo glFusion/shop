@@ -49,9 +49,9 @@ class Cart extends Order
             $this->status = 'cart';
             $this->Save();    // Save to reserve the ID
         }
-        if (COM_isAnonUser()) {
-            self::setAnonCartID($this->order_id);
-        }
+        //if (COM_isAnonUser()) {
+            self::_setCookie($this->order_id);
+        //}
     }
 
 
@@ -138,7 +138,7 @@ class Cart extends Order
 
         $AnonCart = self::getInstance(1, $cart_id);
         if (!empty($AnonCart->items)) {
-            $sql = "UPDATE {$_TABLES['shop.purchases']}
+            $sql = "UPDATE {$_TABLES['shop.orderitems']}
                     SET order_id = '" . DB_escapeString($this->order_id) . "'
                     WHERE order_id = '" . DB_escapeString($AnonCart->order_id) . "'";
             DB_query($sql);
@@ -342,7 +342,7 @@ class Cart extends Order
         global $_TABLES;
 
         if (isset($this->items[$id])) {
-            DB_delete($_TABLES['shop.purchases'], 'id', (int)$id);
+            DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
             unset($this->items[$id]);
             $this->Save();
         }
@@ -362,7 +362,7 @@ class Cart extends Order
 
         if ($this->status != 'cart') return $this->Cart();
 
-        DB_delete($_TABLES['shop.purchases'], 'order_id', $this->cartID());
+        DB_delete($_TABLES['shop.orderitems'], 'order_id', $this->cartID());
         if ($del_order) {
             DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
             self::delAnonCart();
@@ -676,7 +676,7 @@ class Cart extends Order
      *
      * @param  string  $cart_id    Cart ID
      */
-    public static function setAnonCartID($cart_id)
+    public static function storeCartID($cart_id)
     {
         self::_setCookie($cart_id);
     }
@@ -750,7 +750,7 @@ class Cart extends Order
             self::_expireCookie();
         } else {
             // restoring the cart, put back the cookie
-            self::setAnonCartID($cart_id);
+            self::_setCookie($cart_id);
             // delete all open user carts except this one
             self::deleteUser(0, $cart_id);
         }
@@ -816,20 +816,20 @@ class Cart extends Order
     {
         global $_USER;
 
+        $canview = false;
+
         // Check that this is an existing record
         if ($this->isNew || $this->status != 'cart') {
-            return false;
+            $canview  = false;
         } elseif ($this->uid > 1 && $_USER['uid'] == $this->uid) {
             // Logged-in cart owner
-            return true;
+            $canview = true;
         } elseif ($this->uid == 1 && isset($_SESSION[self::$session_var]['order_id']) &&
             $_SESSION[self::$session_var]['order_id'] == $this->order_id) {
             // Anonymous with this cart ID set in the session
-            return true;
-        } else {
-            // Unauthorized
-            return false;
+            $canview = true;
         }
+        return $canview;
     }
 
 

@@ -74,7 +74,7 @@ $_SQL = array(
   KEY `avail_end` (`avail_end`)
 ) ENGINE=MyISAM",
 
-'shop.purchases' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.purchases']} (
+'shop.orderitems' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.orderitems']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,

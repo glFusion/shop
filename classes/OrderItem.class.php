@@ -77,7 +77,7 @@ class OrderItem
         $rec_id = (int)$rec_id;
         $sql = "SELECT *,
                 UNIX_TIMESTAMP(CONVERT_TZ(`expiration`, '+00:00', @@session.time_zone)) AS ux_exp
-                FROM {$_TABLES['shop.purchases']}
+                FROM {$_TABLES['shop.orderitems']}
                 WHERE id = $rec_id";
         //echo $sql;die;
         $res = DB_query($sql);
@@ -254,10 +254,10 @@ class OrderItem
         $handling = $this->product->getHandling($this->quantity);
 
         if ($this->id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.purchases']} ";
+            $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
             $sql3 = " WHERE id = '{$this->id}'";
         } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.purchases']} ";
+            $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
             $sql3 = '';
         }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',

@@ -1009,7 +1009,7 @@ class Product
         global $_TABLES;
 
         $item_id = (int)$item_id;
-        if (DB_count($_TABLES['shop.purchases'], 'product_id', $item_id) > 0) {
+        if (DB_count($_TABLES['shop.orderitems'], 'product_id', $item_id) > 0) {
             return true;
         } else {
             return false;

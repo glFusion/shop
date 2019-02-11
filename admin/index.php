@@ -2175,7 +2175,7 @@ function SHOP_itemhist($item_id = '')
     }
 
     $sql = "SELECT purch.*, sum(purch.quantity) as qty, ord.order_date, ord.uid AS user_id
-        FROM {$_TABLES['shop.purchases']} purch
+        FROM {$_TABLES['shop.orderitems']} purch
         LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = purch.order_id";
     if ($item_id != '') {
         $sql .= " WHERE purch.product_id = '" . DB_escapeString($item_id) . "'";
