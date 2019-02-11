@@ -21,7 +21,7 @@ if ($_SHOP_CONF['debug_ipn'] == 1) {
 }
 
 // Process IPN request
-$ipn = \Shop\IPN::getInstance('shop', $_POST);
+$ipn = \Shop\IPN::getInstance('paypal', $_POST);
 $ipn->Process();
 
 // Finished (this isn't necessary...but heck...why not?)
