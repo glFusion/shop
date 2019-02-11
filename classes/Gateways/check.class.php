@@ -640,7 +640,7 @@ class check extends \Shop\Gateway
             // Add the purchase to the shop purchase table
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
-            $sql = "INSERT INTO {$_TABLES['shop.purchases']} SET
+            $sql = "INSERT INTO {$_TABLES['shop.orderitems']} SET
                         order_id = '{$db_order_id}',
                         product_id = '{$item_number}',
                         description = '{$items[$id]['name']}',

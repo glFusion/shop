@@ -37,7 +37,7 @@ if ($id > 0) {
     $id_sql = '';
 }
 $sql = "SELECT prod.id, prod.file, prod.prod_type
-        FROM {$_TABLES['shop.purchases']} AS item
+        FROM {$_TABLES['shop.orderitems']} AS item
         LEFT JOIN {$_TABLES['shop.products']} AS prod
             ON prod.id = item.product_id
         WHERE $id_sql item.token = '$token'
