@@ -188,8 +188,7 @@ function plugin_getmenuitems_shop()
     global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $menuitems = array();
-    if (SEC_hasRights('shop.user,shop.admin,shop.view', 'OR') &&
-            $_SHOP_CONF['menuitem']) {
+    if ( $_SHOP_CONF['menuitem'] && PAYPAL_access_check()) {
         $a = preg_replace(
             '/\{(.*)\}/i',
             '<i class="uk-icon-${1}"></i>',
@@ -583,17 +582,21 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
 function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
 {
     global $_PLUGINS, $_SHOP_CONF;
+    static $access = array();
 
-    if (!$_SHOP_CONF['pi_enabled'] && !SEC_inGroup('root')) {
-        COM_404();
-        exit;
-    }
+    if (!array_key_exists($rights, $access)) {
+        $acc = true;
+        if (!$_SHOP_CONF['shop_enabled'] && !SEC_inGroup('root')) {
+            $acc = false;
+        }
+        // If this plugin or a required plugin isn't available, abort gracefully
+        if (!in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')) {
+            $acc = false;
+        }
 
-    // If this plugin or a required plugin isn't available, abort gracefully
-    if (!in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')) {
-        COM_404();
-        exit;
+        $access[$rights] = $acc;
     }
+    return $access[$rights];
 }
 
 
@@ -942,7 +945,7 @@ function plugin_getcommenturlid_shop()
  */
 function phpblock_shop_cart()
 {
-    if (!SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $T = new Template(__DIR__ . '/templates');
     $T->set_file('shopping_cart', 'blk_cart.thtml');
@@ -970,6 +973,8 @@ function phpblock_shop_cart()
 function phpblock_shop_cart_contents()
 {
     global $_SHOP_CONF, $LANG_SHOP;
+
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
@@ -1025,6 +1030,8 @@ function phpblock_shop_search()
 {
     global $_TABLES;
 
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+
     $T = new Template(__DIR__ . '/templates/');
     $T->set_file('search', 'blk_search.thtml');
 
@@ -1058,6 +1065,8 @@ function phpblock_shop_random($cat='')
 {
     global $_SHOP_CONF;
 
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+
     $limit = (int)$_SHOP_CONF['blk_random_limit'];
     if ($limit < 1)
         $limit = 1;
@@ -1083,6 +1092,8 @@ function phpblock_shop_featured($cat='')
 {
     global $_SHOP_CONF;
 
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+
     $limit = (int)$_SHOP_CONF['blk_featured_limit'];
     if ($limit < 1)
         $limit = 1;
@@ -1106,6 +1117,8 @@ function phpblock_shop_featured($cat='')
 function phpblock_shop_categories()
 {
     global $_TABLES;
+
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $parents = '0, ' . \Shop\Category::getRoot()->cat_id;
     $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
@@ -1161,6 +1174,8 @@ function phpblock_shop_popular()
 {
     global $_TABLES, $_SHOP_CONF;
 
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
         $limit = 1;
@@ -1197,6 +1212,8 @@ function phpblock_shop_popular()
 function phpblock_shop_recent($cat='')
 {
     global $_TABLES, $_SHOP_CONF;
+
+    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)

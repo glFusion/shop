@@ -1093,7 +1093,9 @@ function siteHeader($title='', $meta='')
         break;
     }
 
-    $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
+    if (!$_SHOP_CONF['shop_enabled']) {
+        $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
+    }
     return $retval;
 }
 

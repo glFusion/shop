@@ -25,7 +25,10 @@ if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
 }
 
 // Ensure sufficient privs and dependencies to read this page
-SHOP_access_check();
+if (!SHOP_access_check()) {
+    COM_404();
+    exit;
+}
 
 // Import plugin-specific functions
 USES_shop_functions();

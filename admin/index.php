@@ -25,7 +25,10 @@ if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
 require_once('../../auth.inc.php');
 
 // Check for required permissions
-SHOP_access_check('shop.admin');
+if (!SHOP_access_check('shop.admin')) {
+    COM_404();
+    exit;
+}
 
 USES_shop_functions();
 USES_lib_admin();
