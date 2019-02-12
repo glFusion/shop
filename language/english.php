@@ -26,7 +26,7 @@ $LANG_SHOP = array (
 'featured_product'  => 'Featured Product',
 'popular_product'   => 'Popular Products',
 'product_categories' => 'Product Categories',
-'mnu_shop'        => 'Products {shopping-cart}',
+'mnu_shop'        => 'Shop {shopping-cart}',
 'mnu_admin'         => 'Admin',
 'product'           => 'Product Name/SKU',
 'qty'               => 'Qty',
@@ -410,6 +410,7 @@ $LANG_SHOP = array (
 'packinglist' => 'Packing List',
 'q_update_currency' => 'Are you sure you want to update the currency code for all outstanding carts?',
 'x_carts_updated' => 'Updated %d carts',
+'shop_closed'   => 'The Shop plugin is only available to administrators.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -514,6 +515,7 @@ $LANG_confignames['shop'] = array(
     'purge_sale_prices' => 'Purge Expired Sale Prices?',
     'catalog_columns' => 'Catalog Columns',
     'enable_svc_funcs' => 'Enable Service Functions',
+    'shop_enabled'  => 'Enable public access?',
 );
 
 /** Language strings for the subgroup names in the config section */

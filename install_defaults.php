@@ -286,6 +286,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'shop_enabled',
+        'default_value' => 1,
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 2,
+        'sort' => 230,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array(
         'name' => 'fs_paths',               // Paths fieldset

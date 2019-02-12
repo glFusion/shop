@@ -582,7 +582,12 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
  */
 function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
 {
-    global $_PLUGINS;
+    global $_PLUGINS, $_SHOP_CONF;
+
+    if (!$_SHOP_CONF['pi_enabled'] && !SEC_inGroup('root')) {
+        COM_404();
+        exit;
+    }
 
     // If this plugin or a required plugin isn't available, abort gracefully
     if (!in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')) {
