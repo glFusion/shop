@@ -188,7 +188,7 @@ function plugin_getmenuitems_shop()
     global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $menuitems = array();
-    if ( $_SHOP_CONF['menuitem'] && PAYPAL_access_check()) {
+    if ( $_SHOP_CONF['menuitem'] && SHOP_access_check()) {
         $a = preg_replace(
             '/\{(.*)\}/i',
             '<i class="uk-icon-${1}"></i>',
