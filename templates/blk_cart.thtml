@@ -4,7 +4,7 @@
 </div>
 
 <span class="aligncenter">
-  <a href="{site_url}/shop/index.php?view=cart">{$LANG_SHOP['viewcart']}</a>
+  <a href="{cart_url}">{$LANG_SHOP['viewcart']}</a>
 </span>
 {# end {templatelocation} #}
 <script type="text/javascript">

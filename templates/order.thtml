@@ -208,7 +208,7 @@
     <div style="float:left;">
       <button class="uk-button uk-button-primary" type="submit" name="viewcart"
         value="{$LANG_SHOP['viewcart']}"
-        onclick="document.location.href='{pi_url}/index.php?view=cart';">{$LANG_SHOP['edit_order']}</button>
+        onclick="document.location.href='{pi_url}/account.php?mode=cart';">{$LANG_SHOP['edit_order']}</button>
     </div>
     <div class="shopOrderButtons">
       {gateway_vars}
