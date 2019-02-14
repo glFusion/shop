@@ -3,6 +3,8 @@
 */
 var shopAddToCart = function(frm_id)
 {
+    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
+    spinner.show();
     data = $("#"+frm_id).serialize();
     $.ajax({
         type: "POST",
@@ -30,7 +32,11 @@ var shopAddToCart = function(frm_id)
                 }
             } catch(err) {
             }
+            spinner.hide();
             blk_setvis_shop_cart(result.content == "" ? "none" : "block");
+        },
+        error: function() {
+            spinner.hide();
         }
     });
     return false;
