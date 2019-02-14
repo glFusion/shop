@@ -254,7 +254,7 @@ class Order
             // If set, the user has selected an existing address. Read
             // that value and use it's values.
             Cart::setSession('billing', $addr_id);
-            $A = UserInfo::getAddress($addr_id);
+            $A = UserInfo::getInstance($this->uid)->getAddress($addr_id);
         }
 
         if (!empty($A)) {
@@ -283,7 +283,7 @@ class Order
         if ($addr_id > 0) {
             // If set, read and use an existing address
             Cart::setSession('shipping', $addr_id);
-            $A = UserInfo::getAddress($addr_id);
+            $A = UserInfo::getInstance($this->uid)->getAddress($addr_id);
         }
 
         if (!empty($A)) {
@@ -383,7 +383,7 @@ class Order
 
         // Only orders with no sequence number can be deleted.
         // Only orders with certain status values can be deleted.
-        if ($Ord->order_seq !== NULL || !$Ord->isFinal()) {
+        if ($Ord->order_seq !== NULL || $Ord->isFinal()) {
             return false;
         }
 
