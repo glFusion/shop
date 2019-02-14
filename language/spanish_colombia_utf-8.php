@@ -404,6 +404,13 @@ $LANG_SHOP = array (
 'q_update_currency' => 'Are you sure you want to update the currency code for all outstanding carts?',
 'x_carts_updated' => 'Updated %d carts',
 'shop_closed'   => 'The Shop plugin is only available to administrators.',
+'last_x_days'   => 'Last %d Days',
+'periods' => array(
+    'tm'    => 'This Month',
+    'lm'    => 'Last Month',
+    'ty'    => 'This Year',
+    'ly'    => 'Last Year',
+),
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

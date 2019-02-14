@@ -33,6 +33,44 @@ function listOrders($admin = false, $uid = 0)
 
     USES_lib_admin();
 
+    $start_ts = 0;
+    $end_ts = SHOP_now()->toUnix();
+    $period = 'x';
+    if (isset($_REQUEST['period']) && !empty($_REQUEST['period'])) {
+        $period = $_REQUEST['period'];
+        switch ($period) {
+        case 'tm':
+            $d1 = new \Date('first day of this month', $_CONF['timezone']);
+            $start_ts = $d1->toUnix();
+            break;
+        case 'lm':
+            $d1 = new \Date('first day of last month', $_CONF['timezone']);
+            $d2 = new \Date('last day of last month', $_CONF['timezone']);
+            $start_ts = $d1->toUnix();
+            $end_ts = $d2->toUnix();
+            break;
+        case '30':
+        case '60':
+        case '90':
+            $days = (int)substr($_REQUEST['period'], 1);
+            $d1 = new \Date('-' . $days . ' days', $_CONF['timezone']);
+            $start_ts = $d1->toUnix();
+            break;
+        case 'ty':
+            $d1 = new \Date(SHOP_now()->format('Y-01-01', $_CONF['timezone']));
+            $start_ts = $d1->toUnix();
+            break;
+        case 'ly':
+            $year = SHOP_now()->format('Y') - 1;
+            $d1 = new \Date($year . '-01-01 00:00:00', $_CONF['timezone']);
+            $d2 = new \Date($year . '-12-31 23:59:59', $_CONF['timezone']);
+            $start_ts = $d1->toUnix();
+            $end_ts = $d2->toUnix();
+            break;
+       }
+
+    }
+
     if (isset($_REQUEST['filt_status']) && !empty($_REQUEST['filt_status'])) {
         $filt_status = DB_escapeString($_REQUEST['filt_status']);
         $where = " WHERE ord.status = '$filt_status'";
@@ -43,6 +81,8 @@ function listOrders($admin = false, $uid = 0)
     if ($uid > 0) {
         $where .= " AND ord.uid = '" . (int)$uid . "'";
     }
+    $where .= " AND ord.order_date >= $start_ts AND ord.order_date <= $end_ts ";
+    COM_errorLog($where);
 
     $isAdmin = $admin == true ? 1 : 0;
 
@@ -94,6 +134,17 @@ function listOrders($admin = false, $uid = 0)
         'direction' => 'DESC',
     );
 
+    $opt_frm = 'Period: <select name="period"><option value="x">' . $LANG_SHOP['all'] . '</option>' . LB;
+    foreach ($LANG_SHOP['periods'] as $key=>$str) {
+        $sel = $key == $period ? 'selected="selected"' : '';
+        $opt_frm .= '<option value="' . $key . '"' . $sel . '>' . $str . '</option>' . LB;
+    }
+    foreach (array(30, 60, 90) as $days) {
+        $sel = $days == $period ? 'selected="selected"' : '';
+        $opt_frm .= '<option value="' . $days. '">' . sprintf($LANG_SHOP['last_x_days'], $days) . '</option>' . LB;
+    }
+    $opt_frm .= '</select>' . LB;
+
     if ($admin) {
         $options = array(
             'chkdelete' => false,
@@ -126,13 +177,14 @@ function listOrders($admin = false, $uid = 0)
     );
 
     $text_arr = array(
-        'has_extras' => $admin ? true : false,
-        'form_url' => $base_url . '/index.php?orderhist=x&filt_status=' . $filt_status,
+        //'has_extras' => $admin ? true : false,
+        'form_url' => $base_url . '/index.php?orderhist=x&filt_status=' . $filt_status . '&period=' . $period,
         'has_limit' => true,
         'has_paging' => true,
+        'has_search' => true,
     );
 
-    $filter = "{$LANG_SHOP['status']}: <select name=\"filt_status\">" . LB .
+    $filter = $opt_frm . "{$LANG_SHOP['status']}: <select name=\"filt_status\">" . LB .
         '<option value=""';
     if ($filt_status == '') $filter .= ' selected="selected"';
     $filter .= '>All Statuses</option>' . LB;
