@@ -33,7 +33,7 @@ define('SHOP_FAILURE_FUNDS', 5);
  * @since   v0.5.0
  * @package shop
  */
-class shop extends \Shop\IPN
+class paypal extends \Shop\IPN
 {
     /** Variable to hold unserialized custom data
      * @var array */
@@ -47,7 +47,7 @@ class shop extends \Shop\IPN
      */
     function __construct($A=array())
     {
-        $this->gw_id = 'shop';
+        $this->gw_id = 'paypal';
         parent::__construct($A);
 
         $this->pp_data['txn_id'] = SHOP_getVar($A, 'txn_id');
