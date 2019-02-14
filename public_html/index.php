@@ -19,13 +19,12 @@
 /** Require core glFusion code */
 require_once '../lib-common.php';
 
-// If plugin is installed but not enabled, display an error and exit gracefully
-if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
-    COM_404();
-}
-
-// Ensure sufficient privs and dependencies to read this page
-if (!SHOP_access_check()) {
+// Ensure sufficient privleges and dependencies to read this page
+if (
+    !isset($_SHOP_CONF) ||
+    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !SHOP_access_check()
+) {
     COM_404();
     exit;
 }
@@ -133,9 +132,9 @@ case 'saveshipto':
         $view = $addr_type;
         break;
     }
-    $U = new \Shop\UserInfo();
+    $U = \Shop\UserInfo::getInstance();
     if ($U->uid > 1) {      // only save addresses for logged-in users
-        $addr_id = $U->SaveAddress($_POST, $addr_type);
+        $addr_id = $U->saveAddress($_POST, $addr_type);
         if ($addr_id[0] < 0) {
             if (!empty($addr_id[1]))
                 $content .= SHOP_errorMessage($addr_id[1], 'alert',
@@ -395,6 +394,7 @@ case 'cart':
 case 'viewcart':
     // If a cart ID is supplied, probably coming from a cancelled purchase.
     // Restore cart since the payment was not processed.
+    echo "DEPRECATED";die;
     SHOP_setUrl($_SERVER['request_uri']);
     $cid = SHOP_getVar($_REQUEST, 'cid');
     if (!empty($cid)) {

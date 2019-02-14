@@ -19,15 +19,15 @@ $action = SHOP_getVar($_GET, 'action');
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
-    $id = (int)$_GET['id']; // Sanitize address ID
-    \Shop\UserInfo::deleteAddress($id);
+    $U = \Shop\UserInfo::getInstance($uid);
+    $U->deleteAddress($_GET['id']);
     break;
 
 case 'getAddress':
     if ($uid < 2) break;
-    $id = (int)$_GET['id'];
-    $res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
-    $A = DB_fetchArray($res, false);
+    $A = \Shop\UserInfo::getInstance($uid)->getAddress($_GET['id']);
+    //$res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
+    //$A = DB_fetchArray($res, false);
     break;
 
 case 'addcartitem':
@@ -35,24 +35,33 @@ case 'addcartitem':
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
-    $P = \Shop\Product::getInstance($_POST['item_number']);
+    $item_number = $_POST['item_number'];     // isset ensured above
+    $item_name = SHOP_getVar($_POST, 'item_name');
+
+    $P = \Shop\Product::getInstance($item_number);
     if ($P->isNew) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
     $Cart = \Shop\Cart::getInstance();
+    $nonce = $Cart->makeNonce($item_number . $item_name);
+    if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
+        COM_errorLog("Bad nonce: " . $_POST['nonce'] . " for cart {$Cart->order_id}, should be " . md5($Cart->order_id));
+        echo json_encode(array('content' => '', 'statusMessage' => ''));
+        exit;
+    }
+
     $unique = SHOP_getVar($_POST, '_unique', 'integer');
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
         break;
     }
     $args = array(
-        'item_number'   => $_POST['item_number'],     // isset ensured above
-        'item_name'     => SHOP_getVar($_POST, 'item_name'),
+        'item_number'   => $item_number,     // isset ensured above
+        'item_name'     => $item_name,
         'short_dscp'    => SHOP_getVar($_POST, 'short_dscp'),
         'quantity'      => SHOP_getVar($_POST, 'quantity', 'int'),
-        //'price'         => SHOP_getVar($_POST, 'base_price', 'float'),
         'price'         => $P->getPrice(),
         'options'       => SHOP_getVar($_POST, 'options', 'array'),
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),

@@ -122,8 +122,7 @@ class UserInfo
         $res = DB_query("SELECT * FROM {$_TABLES['shop.address']}
                             WHERE uid=$uid");
         while ($A = DB_fetchArray($res, false)) {
-            $this->addresses[] = $A;
-            //$this->SetAddresses($A);
+            $this->addresses[$A['id']] = $A;
         }
         $res = DB_query("SELECT * FROM {$_TABLES['shop.userinfo']}
                             WHERE uid = $uid");
@@ -136,7 +135,7 @@ class UserInfo
         } else {
             $this->cart = array();
             $this->isNew = true;
-            $this->SaveUser();
+            $this->saveUser();
         }
     }
 
@@ -147,13 +146,28 @@ class UserInfo
      * @param   integer $add_id     DB Id of address
      * @return  array               Array of address values
      */
-    public static function getAddress($add_id)
+    public function getAddress($add_id)
     {
-        global $_TABLES;
+        global $_TABLES, $_USER;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.address']}
-                WHERE id='" . (int)$add_id . "'";
-        $A = DB_fetchArray(DB_query($sql), false);
+        $add_id = (int)$add_id;
+        if (array_key_exists($this->addresses[$add_id])) {
+            return $this->addresses[$add_id];
+        } else {
+            return array();
+        }
+
+        $cache_key = 'address_' . $add_id;
+        $A = Cache::get($cache_key);
+        if ($A === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['shop.address']}
+                WHERE id = $add_id";
+            $A = DB_fetchArray(DB_query($sql), false);
+            if (empty($A)) {
+                $A = array();
+            }
+            Cache::set($cache_key, $A, 'user_' . $A['uid']);
+        }
         return $A;
     }
 
@@ -188,7 +202,7 @@ class UserInfo
      * @param   string  $type   Type of address (billing or shipping)
      * @return  array       Array of DB record ID, -1 for failure and message
      */
-    public function SaveAddress($A, $type='')
+    public function saveAddress($A, $type='')
     {
         global $_TABLES, $_USER;
 
@@ -237,7 +251,7 @@ class UserInfo
                     SET {$type}def = 0
                     WHERE id <> $id AND {$type}def = 1");
         }
-        Cache::delete('ppuser_' . $this->uid);
+        Cache::clear('shopuser_' . $this->uid);
         return array($id, '');
     }
 
@@ -247,7 +261,7 @@ class UserInfo
      *
      * @return  boolean     True on success, False on failure
      */
-    public function SaveUser()
+    public function saveUser()
     {
         global $_TABLES;
 
@@ -264,7 +278,7 @@ class UserInfo
         $sql2 = " cart = '$cart'";
         $sql = $sql1 . $sql2 . $sql3;
         DB_query($sql);
-        Cache::delete('ppuser_' . $this->uid);
+        Cache::clear('shopuser_' . $this->uid);
         return DB_error() ? false : true;
     }
 
@@ -283,7 +297,7 @@ class UserInfo
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
-        Cache::delete('ppuser_' . $uid);
+        Cache::clear('shopuser_' . $uid);
     }
 
 
@@ -293,14 +307,15 @@ class UserInfo
      *
      * @param   integer $id     Record ID of address to delete
      */
-    public static function deleteAddress($id)
+    public function deleteAddress($id)
     {
         global $_TABLES;
 
         if ($id < 1) return false;
         $id = (int)$id;
         DB_delete($_TABLES['shop.address'], 'id', $id);
-        Cache::delete('ppuser_' . $this->uid);
+        Cache::clear('shopuser_' . $this->uid);
+        return true;
     }
 
 
@@ -487,13 +502,13 @@ class UserInfo
 
         if ($uid == 0) $uid = $_USER['uid'];
         $uid = (int)$uid;
-        $key = 'ppuser_' . $uid;
+        $key = 'shopuser_' . $uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
             self::$users[$uid] = Cache::get($key);
             if (!self::$users[$uid]) {
                 self::$users[$uid] = new self($uid);
-                Cache::set($key, self::$users[$uid]);
+                Cache::set($key, self::$users[$uid], $key);
             }
         }
         return self::$users[$uid];

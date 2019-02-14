@@ -414,16 +414,20 @@ function plugin_getuseroption_shop()
     global $LANG_SHOP, $_TABLES, $_USER;
 
     $retval = array();
-    if (!COM_isAnonUser()) {
-        $retval[] = array(
-            $LANG_SHOP['my_account'],
-            SHOP_URL . '/index.php?orderhist=x',
-        );
-    }
-    // View cart option is available to anonymous users
-    if (\Shop\Cart::getCart() && \Shop\Cart::getInstance()->hasItems()) {
-        $retval[] = array($LANG_SHOP['viewcart'],
-                SHOP_URL . '/index.php?view=cart');
+    if (SHOP_access_check()) {
+        if (!COM_isAnonUser()) {
+            $retval[] = array(
+                $LANG_SHOP['my_account'],
+                SHOP_URL . '/account.php',
+            );
+        }
+        // View cart option is available to anonymous users
+        if (\Shop\Cart::getCart() && \Shop\Cart::getInstance()->hasItems()) {
+            $retval[] = array(
+                $LANG_SHOP['viewcart'],
+                COM_buildUrl(SHOP_URL . '/account.php?mode=cart'),
+            );
+        }
     }
     return $retval;
 }
@@ -620,7 +624,7 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
  * @param   string  $item_type  Optional type indicator (physical, virtual)
  * @return  string          HTML of requested button
  */
-function SHOP_genButton($btn_type, $vars, $item_type=0)
+function XX_SHOP_genButton($btn_type, $vars, $item_type=0)
 {
     global $_CONF, $_SHOP_CONF, $_USER, $LANG_configselects;
 
@@ -637,7 +641,9 @@ function SHOP_genButton($btn_type, $vars, $item_type=0)
             $tpl_add_cart = 'btn_add_cart.thtml';
             if ($item_type == 0) $item_type = SHOP_PROD_VIRTUAL;
             $T = new Template(__DIR__ . '/templates');
-            $T->set_file('cart', 'buttons/btn_add_cart.thtml');
+            $T->set_file(array(
+                'cart'  => 'buttons/btn_add_cart.thtml',
+            ) );
             $T->set_var(array(
                 'item_name'     => $vars['item_name'],
                 'item_number'   => $vars['item_number'],
@@ -957,6 +963,7 @@ function phpblock_shop_cart()
     $T->set_var(array(
         'cart_contents' => $contents,
         'visibility'    => $vis,
+        'cart_url'      => COM_buildUrl(SHOP_URL . '/account.php?mode=cart'),
     ) );
     $T->parse('output', 'shopping_cart');
     return $T->finish ($T->get_var('output'));
@@ -986,6 +993,10 @@ function phpblock_shop_cart_contents()
     }
 
     $cart = \Shop\Cart::getInstance();
+    if (!$cart->canView()) {
+        \Shop\Cart::delAnonCart();
+        return '';
+    }
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) {
         SHOP_debug("Cart {$cart->order_id} has no items");
@@ -1124,20 +1135,20 @@ function phpblock_shop_categories()
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $parents = '0, ' . \Shop\Category::getRoot()->cat_id;
-    $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
+    $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt, c.lft, c.rgt
+            FROM {$_TABLES['shop.categories']} c
+            LEFT JOIN {$_TABLES['shop.products']} p
                 ON p.cat_id = c.cat_id
             WHERE c.cat_id > 0
             AND c.enabled = 1
-            AND p.enabled = 1
             AND c.parent_id IN ($parents) " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " GROUP BY c.cat_id
             ORDER BY c.cat_name";
-    //echo $sql;die;
+    echo $sql;die;
     $cache_key = md5($sql);
     $Cats = \Shop\Cache::get($cache_key);
+    //var_dump($Cats);die;
     if ($Cats === NULL) {
         $Cats = array();
         $res = DB_query($sql);
@@ -1153,7 +1164,7 @@ function phpblock_shop_categories()
 
     foreach ($Cats as $A) {
         $cnt = (int)$A['cnt'];
-        $cnt += SHOP_child_cat_product_count($A['cat_id']);
+        $cnt += SHOP_child_cat_product_count($A);
         if ($cnt == 0) continue;
         $T->set_block('blk_category', 'row', 'ItemRow');
         $T->set_var(array(
@@ -1430,14 +1441,7 @@ function SHOP_phpblock_product($sql)
  */
 function plugin_itemrated_shop($id, $rating, $votes)
 {
-    global $_TABLES;
-
-    $rating = number_format($rating, 2, '.', '');
-    $sql = "UPDATE {$_TABLES['shop.products']}
-            SET rating = $rating, votes = $votes
-            WHERE id=".$id;
-    DB_query($sql);
-    return true;
+    return \Shop\Product::getInstance($id)->updateRating($rating, $votes);
 }
 
 
@@ -1801,32 +1805,33 @@ function plugin_profilesave_shop($uid=0)
  * Get all parent categories and a product count.
  * Recurses through all child categories.
  *
- * @param   integer $parent_cat Parent category ID to check
- * @return  integer             Product count for all child categories
+ * @param   array   $p_cat  Parent category ID to check
+ * @return  integer         Product count for all child categories
  */
-function SHOP_child_cat_product_count($parent_cat)
+function SHOP_child_cat_product_count($p_cat)
 {
     global $_TABLES;
 
     $parent_total = 0;
-
+    $lft = (int)$p_cat['lft'];
+    $rgt = (int)$p_cat['rgt'];
     $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
+            FROM {$_TABLES['shop.categories']} c
+            LEFT JOIN {$_TABLES['shop.products']} p
                 ON p.cat_id = c.cat_id
-            WHERE c.cat_id > 0
-            AND c.enabled = 1
-            AND c.parent_id = $parent_cat " .
+            WHERE c.lft > $lft AND c.lft < $rgt
+            AND c.enabled = 1 " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " GROUP BY c.cat_id
             ORDER BY c.cat_name";
+            //AND c.parent_id = $parent_cat " .
     //echo $sql;die;
     $result = DB_query($sql);
     while ($A = DB_fetchArray($result, false)) {
         // Add the total products in the child category
         $parent_total += (int)$A['cnt'];
         // And call again to get the child's children
-        $parent_total += SHOP_child_cat_product_count($A['cat_id']);
+        //$parent_total += SHOP_child_cat_product_count($A['cat_id']);
     }
     return $parent_total;
 }

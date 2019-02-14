@@ -693,10 +693,14 @@ class Cart extends Order
 
         $cart_id = self::getAnonCartID();
         if ($cart_id) {
-            // Remove the cookie
+            // Remove the cookie - always
             self::_expireCookie();
-            // And delete the cart record
-            Order::Delete($cart_id);
+            // And delete the cart record - only if it's anonymous
+            $C = new self($cart_id);
+            if (!$C->isNew && $C->uid == 1) {
+                Order::Delete($cart_id);
+            }
+            // Always clear clear the cache to be sure
             Cache::deleteOrder($cart_id);
         }
     }
@@ -824,8 +828,7 @@ class Cart extends Order
         } elseif ($this->uid > 1 && $_USER['uid'] == $this->uid) {
             // Logged-in cart owner
             $canview = true;
-        } elseif ($this->uid == 1 && isset($_SESSION[self::$session_var]['order_id']) &&
-            $_SESSION[self::$session_var]['order_id'] == $this->order_id) {
+        } elseif ($this->uid == 1 && self::getSession('order_id') == $this->order_id) {
             // Anonymous with this cart ID set in the session
             $canview = true;
         }
@@ -870,6 +873,17 @@ class Cart extends Order
     {
         unset($_COOKIE[self::$session_var]);
         SEC_setCookie(self::$session_var, '', time()-3600, '/');
+    }
+
+
+    /**
+     * Create a unique key based on some string.
+     *
+     * @return  string  Nonce string
+     */
+    public function makeNonce($str='')
+    {
+        return md5($str . $this->order_id);
     }
 
 }   // class Cart

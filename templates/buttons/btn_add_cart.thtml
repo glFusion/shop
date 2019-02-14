@@ -8,6 +8,7 @@
   <input type="hidden" name="base_price" value="{amount}" />
   <input type="hidden" name="custom" value='{custom}' />
   <input type="hidden" name="flags" value='{flags}' />
+  <input type="hidden" name="nonce" value='{nonce}' />
 {!if _unique}
   <input type="hidden" name="_unique" value='{_unique}' />
 {!endif}

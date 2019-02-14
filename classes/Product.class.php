@@ -185,6 +185,7 @@ class Product
                 // Product internal to this plugin
                 if (!is_array($A)) {
                     $cache_key = self::_makeCacheKey($item[0]);
+                    //Cache::delete($cache_key);
                     $A = Cache::get($cache_key);
                     if (!$A) {
                         // If not found in cache
@@ -1373,8 +1374,11 @@ class Product
         // and cart is enabled, and product is not a donation. Donations
         // can't be mixed with products, so don't allow adding to the cart.
         if ($add_cart && $this->btn_type != 'donation' &&
-                ($this->price > 0 || !$this->canBuyNow()) ) {
-            $T = SHOP_getTemplate('btn_add_cart_attrib', 'cart', 'buttons');
+            ($this->price > 0 || !$this->canBuyNow()) ) {
+            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T->set_file(array(
+                'cart'  => 'buttons/btn_add_cart_attrib.thtml',
+            ) );
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
@@ -1387,6 +1391,7 @@ class Product
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
                 'frm_id'    => md5($this->id . rand()),
                 'quantity'  => $this->getFixedQuantity(),
+                'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -2051,7 +2056,7 @@ class Product
      */
     public function getLink()
     {
-        return SHOP_URL . '/detail.php?id=' . $this->id;
+        return COM_buildUrl(SHOP_URL . '/detail.php?id=' . $this->id);
     }
 
 
@@ -2187,6 +2192,31 @@ class Product
         } else {
             return '';
         }
+    }
+
+
+    /**
+     * Update a product rating and perform related housekeeping tasks.
+     *
+     * @see     plugin_itemrated_shop()
+     * @param   integer $id     Product ID
+     * @param   integer $rating New rating value
+     * @param   integer $votes  New total number of votes
+     * @return  boolean     True on success, False on DB error
+     */
+    public static function updateRating($id, $rating, $votes)
+    {
+        global $_TABLES;
+
+        $id = (int)$id;
+        $rating = number_format($rating, 2, '.', '');
+        $votes = (int)$votes;
+        $sql = "UPDATE {$_TABLES['shop.products']}
+                SET rating = $rating, votes = $votes
+                WHERE id = $id";
+        DB_query($sql);
+        Cache::delete(self::_makeCacheKey($id));
+        return DB_error() ? false : true;
     }
 
 }   // class Product
