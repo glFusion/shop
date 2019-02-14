@@ -18,18 +18,16 @@
 require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
-if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
-    COM_404();
-}
-
-require_once('../../auth.inc.php');
-
-// Check for required permissions
-if (!SHOP_access_check('shop.admin')) {
+if (
+    !isset($_SHOP_CONF) ||
+    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !SHOP_access_check('shop.admin')
+) {
     COM_404();
     exit;
 }
 
+require_once('../../auth.inc.php');
 USES_shop_functions();
 USES_lib_admin();
 

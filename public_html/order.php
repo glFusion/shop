@@ -14,13 +14,14 @@
 /** Require core glFusion code */
 require_once '../lib-common.php';
 
-// If plugin is installed but not enabled, display an error and exit gracefully
-if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
+if (
+    !isset($_SHOP_CONF) ||
+    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !SHOP_access_check()
+) {
     COM_404();
+    exit;
 }
-
-// Ensure sufficient privs and dependencies to read this page
-SHOP_access_check();
 
 // Import plugin-specific functions
 USES_shop_functions();
