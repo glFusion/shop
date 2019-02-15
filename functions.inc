@@ -1135,7 +1135,7 @@ function phpblock_shop_categories()
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $parents = '0, ' . \Shop\Category::getRoot()->cat_id;
-    $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt, c.lft, c.rgt
+    $sql = "SELECT c.*, count(p.id) AS cnt
             FROM {$_TABLES['shop.categories']} c
             LEFT JOIN {$_TABLES['shop.products']} p
                 ON p.cat_id = c.cat_id
@@ -1145,7 +1145,7 @@ function phpblock_shop_categories()
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " GROUP BY c.cat_id
             ORDER BY c.cat_name";
-    echo $sql;die;
+    //echo $sql;die;
     $cache_key = md5($sql);
     $Cats = \Shop\Cache::get($cache_key);
     //var_dump($Cats);die;
@@ -1164,7 +1164,10 @@ function phpblock_shop_categories()
 
     foreach ($Cats as $A) {
         $cnt = (int)$A['cnt'];
-        $cnt += SHOP_child_cat_product_count($A);
+        if ($A['parent_id'] > 0) {
+            // Doesn't render right if the home category counts all subcats
+            $cnt += SHOP_child_cat_product_count($A);
+        }
         if ($cnt == 0) continue;
         $T->set_block('blk_category', 'row', 'ItemRow');
         $T->set_var(array(
@@ -1379,7 +1382,6 @@ function SHOP_phpblock_product($sql)
             'blk_random' => 'blk_random.thtml',
             'btn_details' => 'buttons/btn_details.thtml',
         ));
-
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
             $P = \Shop\Product::getInstance($A['id']);
             $T->set_var(array(
@@ -1819,7 +1821,7 @@ function SHOP_child_cat_product_count($p_cat)
             FROM {$_TABLES['shop.categories']} c
             LEFT JOIN {$_TABLES['shop.products']} p
                 ON p.cat_id = c.cat_id
-            WHERE c.lft > $lft AND c.lft < $rgt
+            WHERE c.lft BETWEEN $lft AND $rgt
             AND c.enabled = 1 " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " GROUP BY c.cat_id
