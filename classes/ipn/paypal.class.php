@@ -35,11 +35,6 @@ define('SHOP_FAILURE_FUNDS', 5);
  */
 class paypal extends \Shop\IPN
 {
-    /** Variable to hold unserialized custom data
-     * @var array */
-    private $custom = array();
-
-
     /**
      * Constructor.  Set up variables received from Shop.
      *
@@ -50,25 +45,24 @@ class paypal extends \Shop\IPN
         $this->gw_id = 'paypal';
         parent::__construct($A);
 
-        $this->pp_data['txn_id'] = SHOP_getVar($A, 'txn_id');
-        $this->pp_data['payer_email'] = SHOP_getVar($A, 'payer_email');
-        $this->pp_data['payer_name'] = SHOP_getVar($A, 'first_name') .' '. SHOP_getVar($A, 'last_name');
-        $this->pp_data['pmt_date'] = SHOP_getVar($A, 'payment_date');
-        $this->pp_data['pmt_gross'] = SHOP_getVar($A, 'mc_gross', 'float');
-        $this->pp_data['pmt_tax'] = SHOP_getVar($A, 'tax', 'float');
-        $this->pp_data['gw_desc'] = $this->gw->Description();
-        $this->pp_data['gw_name'] = $this->gw->Name();
-        $this->pp_data['pmt_status'] = SHOP_getVar($A, 'payment_status');
-        $this->pp_data['currency'] = SHOP_getVar($A, 'mc_currency');
-        $this->pp_data['discount'] = SHOP_getVar($A, 'discount', 'float');
+        $this->txn_id = SHOP_getVar($A, 'txn_id');
+        $this->payer_email = SHOP_getVar($A, 'payer_email');
+        $this->payer_name = SHOP_getVar($A, 'first_name') .' '. SHOP_getVar($A, 'last_name');
+        $this->pmt_date = SHOP_getVar($A, 'payment_date');
+        $this->pmt_gross = SHOP_getVar($A, 'mc_gross', 'float');
+        $this->pmt_tax = SHOP_getVar($A, 'tax', 'float');
+        $this->gw_desc = $this->gw->Description();
+        $this->gw_name = $this->gw->Name();
+        $this->currency = SHOP_getVar($A, 'mc_currency', 'string', 'Unk');
+        $this->addCredit('discount', SHOP_getVar($A, 'discount', 'float', 0));
         if (isset($A['invoice']))
-            $this->pp_data['invoice'] = $A['invoice'];
-        if (isset($A['parent_txn_id']))
-            $this->pp_data['parent_txn_id'] = $A['parent_txn_id'];
+            $this->order_id = $A['invoice'];
+        //if (isset($A['parent_txn_id']))
+        //    $this->parent_txn_id = $A['parent_txn_id'];
 
         // Check a couple of vars to see if a shipping address was supplied
         if (isset($A['address_street']) || isset($A['address_city'])) {
-            $this->pp_data['shipto'] = array(
+            $this->shipto = array(
                 'name'      => SHOP_getVar($A, 'address_name'),
                 'address1'  => SHOP_getVar($A, 'address_street'),
                 'address2'  => '',
@@ -87,28 +81,29 @@ class paypal extends \Shop\IPN
                 $this->custom = array('uid' => $A['custom']);
             }
         }
+        $this->uid = SHOP_getVar($this->custom, 'uid', 'integer', 1);
 
-        switch ($this->pp_data['pmt_status']) {
+        switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->pp_data['status'] = 'pending';
+            $this->status = 'pending';
             break;
         case 'Completed':
-            $this->pp_data['status'] = 'paid';
+            $this->status = 'paid';
             break;
         case 'Refunded':
-            $this->pp_data['status'] = 'refunded';
+            $this->status = 'refunded';
             break;
         }
 
         switch (SHOP_getVar($A, 'txn_type')) {
         case 'web_accept':
         case 'send_money':
-            $this->pp_data['pmt_shipping'] = SHOP_getVar($A, 'shipping', 'float');
-            $this->pp_data['pmt_handling'] = SHOP_getVar($A, 'handling', 'float');
+            $this->pmt_shipping = SHOP_getVar($A, 'shipping', 'float');
+            $this->pmt_handling = SHOP_getVar($A, 'handling', 'float');
             break;
         case 'cart':
-            $this->pp_data['pmt_shipping'] = SHOP_getVar($A, 'mc_shipping', 'float');
-            $this->pp_data['pmt_handling'] = SHOP_getVar($A, 'mc_handling', 'float');
+            $this->pmt_shipping = SHOP_getVar($A, 'mc_shipping', 'float');
+            $this->pmt_handling = SHOP_getVar($A, 'mc_handling', 'float');
             break;
         }
     }
@@ -218,18 +213,14 @@ class paypal extends \Shop\IPN
 
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
-        $this->pp_data['custom'] = $this->custom;
+        //$this->custom = $this->custom;
 
         switch ($this->ipn_data['txn_type']) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
-            // Process Buy Now & Send Money
-
             $item_number = SHOP_getVar($this->ipn_data, 'item_number');
             $quantity = SHOP_getVar($this->ipn_data, 'quantity', 'float');
-            $fees_paid = SHOP_getVar($this->ipn_data, 'tax', 'float') +
-                        SHOP_getVar($this->pp_data, 'pmt_shipping', 'float') +
-                        SHOP_getVar($this->pp_data, 'pmt_handling', 'float');
+            $fees_paid = $this->pmt_tax + $this->pmt_shipping + $this->pmt_handling;
 
             if (empty($item_number)) {
                 $this->handleFailure(NULL, 'Missing Item Number in Buy-now process');
@@ -239,45 +230,36 @@ class paypal extends \Shop\IPN
                 $quantity = 1;
             }
 
-            $payment_gross = SHOP_getVar($this->pp_data, 'pmt_gross', 'float') - $fees_paid;
+            $this->pmt_net = $this->pmt_gross - $fees_paid;
             $unit_price = $payment_gross / $quantity;
             $this->AddItem(array(
                 'item_id'   => $item_number,
                 'quantity'  => $quantity,
                 'price'     => $unit_price,
                 'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
-                'shipping'  => SHOP_getVar($this->pp_data, 'pmt_shipping', 'float'),
-                'handling'  => SHOP_getVar($this->pp_data, 'pmt_handling', 'float'),
+                'shipping'  => $this->pmt_shipping,
+                'handling'  => $this->pmt_handling,
             ) );
 
-            $currency = SHOP_getVar($this->pp_data, 'currency', 'string', 'Unk');
-            SHOP_debug("Net Settled: $payment_gross $currency");
+            SHOP_debug("Net Settled: $payment_gross $this->currency");
             $this->handlePurchase();
             break;
 
         case 'cart':
             // shopping cart
             // Create a cart and read the info from the cart table.
-            $uid = SHOP_getVar($this->pp_data['custom'], 'uid', 'integer');
-            $this->Order = Cart::getInstance($uid, $this->pp_data['invoice']);
+            $this->Order = Cart::getInstance($this->uid, $this->order_id);
             if ($this->Order->isNew) {
-                $this->handleFailure(NULL, "Order ID {$this->pp_data['invlice']} not found for cart purchases");
+                $this->handleFailure(NULL, "Order ID {$this->order_id} not found for cart purchases");
                 return false;
             }
-            $this->pp_data['pmt_tax'] = (float)$this->Order->getInfo('tax');
-            $this->pp_data['pmt_shipping'] = (float)$this->Order->getInfo('shipping');
-            $this->pp_data['pmt_handling'] = (float)$this->Order->getInfo('handling');
-            /*$fees_paid = $this->pp_data['pmt_tax'] +
-                        $this->pp_data['pmt_shipping'] +
-                        $this->pp_data['pmt_handling'];*/
+            $this->pmt_tax = (float)$this->Order->getInfo('tax');
+            $this->pmt_shipping = (float)$this->Order->getInfo('shipping');
+            $this->pmt_handling = (float)$this->Order->getInfo('handling');
             $fees_paid = 0;
-            if (empty($this->pp_data['custom']['cart_id'])) {
-                $this->handleFailure(NULL, 'Missing Cart ID');
-                return false;
-            }
             $Cart = $this->Order->Cart();
             if (empty($Cart)) {
-                COM_errorLog("Shop\\shop_ipn::Process() - Empty Cart for id {$this->pp_data['custom']['cart_id']}");
+                COM_errorLog("Shop\\shop_ipn::Process() - Empty Cart for id {$this->Order->order_id}");
                 return false;
             }
 
@@ -299,21 +281,22 @@ class paypal extends \Shop\IPN
                 $this->AddItem($args);
             }
 
-            $payment_gross = $this->ipn_data['mc_gross'] - $fees_paid;
+            $payment_gross = SHOP_getVar($this->ipn_data, 'mc_gross', 'float') - $fees_paid;
             SHOP_debug("Received $payment_gross gross payment");
-            //$currency = $this->ipn_data['mc_currency'];
             $this->handlePurchase();
             break;
 
         // other, unknown, unsupported
         default:
-            switch ($this->ipn_data['reason_code']) {
+            switch (SHOP_getVar($this->ipn_data, 'reason_code')) {
             case 'refund':
                 $this->handleRefund();
                 break;
             default:
-                $this->handleFailure(SHOP_FAILURE_UNKNOWN,
-                        "($logId) Unknown transaction type");
+                $this->handleFailure(
+                    SHOP_FAILURE_UNKNOWN,
+                    "($logId) Unknown transaction type"
+                );
                 return false;
                 break;
             }

@@ -31,10 +31,6 @@ if (!defined ('GVERSION')) {
  */
 class internal extends \Shop\IPN
 {
-    /** Holder for custom order data.
-     * @var array */
-    private $custom;
-
     /**
      * Constructor.
      * Fake payment gateway variables.
@@ -54,36 +50,28 @@ class internal extends \Shop\IPN
         }
         if (!$this->Order) return NULL;
 
-        $this->pp_data['txn_id'] = $cart_id;
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
         if (empty($shipto)) $shipto = $billto;
         if (COM_isAnonUser()) $_USER['email'] = '';
 
-        $this->pp_data['payer_email'] = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
-        $this->pp_data['payer_name'] = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
-        if ($this->pp_data['payer_name'] == '') {
-            $this->pp_data['payer_name'] = $_USER['fullname'];
+        $this->payer_email = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
+        $this->payer_name = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
+        if ($this->payer_name == '') {
+            $this->payer_name = $_USER['fullname'];
         }
-        $this->pp_data['pmt_date'] = SHOP_now()->toMySQL(true);
-        $this->pp_data['pmt_gross'] = $this->Order->getInfo('total');
-        $this->pp_data['pmt_tax'] = $this->Order->getInfo('tax');
-        $this->pp_data['gw_desc'] = 'Internal IPN';
-        $this->pp_data['gw_name'] = 'Internal IPN';
-        $this->pp_data['pmt_status'] = SHOP_getVar($A, 'payment_status');
-        $this->pp_data['currency'] = Currency::getInstance()->code;
-        $this->pp_data['discount'] = 0;
+        $this->order_id = $this->Order->order_id;
+        $this->txn_id = SHOP_getVar($A, 'txn_id');
+        $this->pmt_date = SHOP_now()->toMySQL(true);
+        $this->pmt_gross = $this->Order->getTotal();
+        $this->pmt_tax = $this->Order->getInfo('tax');
+        $this->gw_desc = 'Internal IPN';
+        $this->gw_name = 'Internal IPN';
+        $this->pmt_status = SHOP_getVar($A, 'payment_status');
+        $this->currency = Currency::getInstance()->code;
 
-        if (isset($A['invoice'])) {
-            $this->pp_data['invoice'] = $A['invoice'];
-        } else {
-            $this->pp_data['invoice'] = $this->Order->order_id;
-        }
 
-        if (isset($A['parent_txn_id']))
-            $this->pp_data['parent_txn_id'] = $A['parent_txn_id'];
-
-        $this->pp_data['shipto'] = array(
+        $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
             'company'   => SHOP_getVar($shipto, 'company'),
             'address1'  => SHOP_getVar($shipto, 'address1'),
@@ -94,16 +82,16 @@ class internal extends \Shop\IPN
             'zip'       => SHOP_getVar($shipto, 'zip'),
         );
 
-        // Set the custom data into an array.  If it can't be unserialized,
+        // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
         if (isset($A['custom'])) {
-            $this->pp_data['custom'] = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->pp_data['custom']) {
-                $this->pp_data['custom'] = array('uid' => $A['custom']);
+            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
+            if (!$this->custom) {
+                $this->custom = array('uid' => $A['custom']);
             }
         }
-        $this->pp_data['custom']['transtype'] = 'internal_ipn';
-        $this->pp_data['pmt_status'] = 'paid';
+        $this->uid = $this->custom['uid'];
+        $this->pmt_status = 'paid';
     }
 
 
@@ -125,7 +113,6 @@ class internal extends \Shop\IPN
         $uid = $this->Order->uid;
         $gateway = SHOP_getVar($info, 'gateway');
         $total = $this->Order->getTotal();
-        $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
         switch ($gateway) {
         case '_coupon':
             // Order total must be zero to use the coupon gateway in full
@@ -134,13 +121,15 @@ class internal extends \Shop\IPN
             }
             if ($by_gc < $total) return false;
             // This only handles fully-paid items
-            $this->pp_data['pmt_gross'] = 0;
+            $this->pmt_gross = 0;
+            $this->addCredit('gc', min($by_gc, $total));
             break;
         case 'test':
-            $this->pp_data['pmt_gross'] = SHOP_getVar($_POST, 'pmt_gross', 'float');
+            $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
+            $this->pmt_gross = SHOP_getVar($_POST, 'pmt_gross', 'float');
             break;
         }
-        $this->pp_data['status'] = 'paid';
+        $this->status = 'paid';
         return true;
     }
 
@@ -194,8 +183,14 @@ class internal extends \Shop\IPN
     public function Process()
     {
         // If no data has been received, then there's nothing to do.
-        if (empty($this->ipn_data))
+        if (empty($this->ipn_data)) {
             return false;
+        }
+
+        // Make sure this transaction hasn't already been counted.
+        if (!$this->isUniqueTxnId()) {
+            return false;
+        }
 
         $custom = SHOP_getVar($this->ipn_data, 'custom');
         $this->custom = @unserialize($custom);
@@ -235,8 +230,8 @@ class internal extends \Shop\IPN
             $total_shipping += $item->shipping;
             $total_handling += $item->handling;
         }
-        $this->pp_data['pmt_shipping'] = $total_shipping;
-        $this->pp_data['pmt_handling'] = $total_handling;
+        $this->pmt_shipping = $total_shipping;
+        $this->pmt_handling = $total_handling;
         return $this->handlePurchase();
     }   // function Process
 

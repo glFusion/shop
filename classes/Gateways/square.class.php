@@ -28,6 +28,7 @@ class square extends \Shop\Gateway
     private $loc_id;
     private $appid;
     private $token;
+    const IPN_URL = SHOP_URL . '/ipn/square.php';
 
     /**
     *   Constructor.
@@ -56,7 +57,6 @@ class square extends \Shop\Gateway
             'prod_loc_id'  => '',
             'prod_appid'   => '',
             'prod_token'   => '',
-            'ipn_url'           => SHOP_URL . '/ipn/square.php',
             'test_mode'         => 1,
         );
 
@@ -82,11 +82,6 @@ class square extends \Shop\Gateway
         // this gateway cannot be used, so disable it.
         if (!in_array($this->currency_code, $supported_currency)) {
             $this->enabled = 0;
-        }
-
-         // Override the default IPN URL if an override is provided
-        if (!empty($this->config['ipn_url'])) {
-            $this->ipn_url = $this->config['ipn_url'];
         }
     }
 
@@ -194,6 +189,7 @@ class square extends \Shop\Gateway
             //Puts our line item object in an array called lineItems.
             array_push($lineItems, $itm);
         } else {
+            $shipping = $cart->shipping;
             foreach ($cart->Cart() as $Item) {
                 $P = $Item->getProduct();
 
@@ -202,6 +198,7 @@ class square extends \Shop\Gateway
                 $Item->Price = $P->getPrice($Item->options);
                 $PriceMoney->setAmount($Cur->toInt($Item->price));
                 $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+
                 $opts = $P->getOptionDesc($Item->options);
                 $dscp = $Item->description;
                 if (!empty($opts)) {
@@ -228,10 +225,10 @@ class square extends \Shop\Gateway
                     $itm->setTaxes(array($taxObj));
                 }
                 $shipping += $Item->shipping;
-            }
 
-            //Puts our line item object in an array called lineItems.
-            array_push($lineItems, $itm);
+                //Puts our line item object in an array called lineItems.
+                array_push($lineItems, $itm);
+            }
         }
 
         if ($shipping > 0) {
@@ -252,13 +249,12 @@ class square extends \Shop\Gateway
 
         //sets the lineItems array in the order object
         $order->setLineItems($lineItems);
-        //COM_errorLog(print_r($order,true));
 
         $checkout = new \SquareConnect\Model\CreateCheckoutRequest();
         $checkout->setPrePopulateBuyerEmail($cart->getInfo('payer_email'));
         $checkout->setIdempotencyKey(uniqid()); //uniqid() generates a random string.
         $checkout->setOrder($order); //this is the order we created in the previous step
-        $checkout->setRedirectUrl($this->ipn_url . '?thanks=square');
+        $checkout->setRedirectUrl(self::IPN_URL . '?thanks=square');
 
         $url = '';
         $gatewayVars = array();

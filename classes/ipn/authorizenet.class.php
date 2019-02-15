@@ -22,7 +22,7 @@ use \Shop\Cart;
 class authorizenet extends \Shop\IPN
 {
     /**
-     * Constructor. Set up the pp_data array.
+     * Constructor.
      *
      * @param   array   $A  Array of IPN data
      */
@@ -31,24 +31,23 @@ class authorizenet extends \Shop\IPN
         $this->gw_id = 'authorizenet';
         parent::__construct($A);
 
-        $this->pp_data['txn_id'] = $A['x_trans_id'];
-        $this->pp_data['payer_email'] = $A['x_email'];
-        $this->pp_data['payer_name'] = $A['x_first_name'] . ' ' .
-                    $A['x_last_name'];
-        $this->pp_data['pmt_date'] =
-                    strftime('%d %b %Y %H:%M:%S', time());
-        $this->pp_data['pmt_gross'] = SHOP_getVar($A, 'x_amount', 'float');
-        $this->pp_data['gw_name'] = $this->gw->Description();
-        $this->pp_data['pmt_shipping'] = SHOP_getVar($A, 'x_freight', 'float');
-        $this->pp_data['pmt_handling'] = 0; // not supported?
-        $this->pp_data['pmt_tax'] = SHOP_getVar($A, 'x_tax', 'float');
-        $this->pp_data['invoice'] = SHOP_getVar($A, 'x_invoice_num');
+        $this->txn_id = SHOP_getVar($A, 'x_trans_id');
+        $this->payer_email = SHOP_getVar($A, 'x_email');
+        $this->payer_name = SHOP_getVar($A, 'x_first_name') . ' ' .
+                    SHOP_getVar($A, 'x_last_name');
+        $this->pmt_date = strftime('%d %b %Y %H:%M:%S', time());
+        $this->pmt_gross = SHOP_getVar($A, 'x_amount', 'float');
+        $this->gw_name = $this->gw->Description();
+        $this->pmt_shipping = SHOP_getVar($A, 'x_freight', 'float');
+        $this->pmt_handling = 0; // not supported?
+        $this->pmt_tax = SHOP_getVar($A, 'x_tax', 'float');
+        $this->order_id = SHOP_getVar($A, 'x_invoice_num');
 
         // Check a couple of vars to see if a shipping address was supplied
         $shipto_addr = SHOP_getVar($A, 'x_ship_to_address');
         $shipto_city = SHOP_getVar($A, 'x_ship_to_city');
         if ($shipto_addr != '' && $shipto_city != '') {
-            $this->pp_data['shipto'] = array(
+            $this->shipto = array(
                 'name'      => SHOP_getVar($A, 'x_ship_to_first_name') . ' ' . 
                                 SHOP_getVar($A, 'x_ship_to_last_name'),
                 'address1'  => $shipto_addr,
@@ -61,31 +60,25 @@ class authorizenet extends \Shop\IPN
             );
         }
 
-        /*$custom = explode(';', SHOP_getVar($A, 'custom'));
-        foreach ($custom as $name => $temp) {
-            list($name, $value) = explode(':', $temp);
-            $this->pp_data['custom'][$name] = $value;
-        }*/
-
         switch(SHOP_getVar($A, 'x_response_code', 'integer')) {
         case 1:
-            $this->pp_data['pmt_status'] = 'paid';
+            $this->status = 'paid';
             break;
         default:
-            $this->pp_data['pmt_status'] = 'pending';
+            $this->status = 'pending';
             break;
         }
 
-        $this->Order = Cart::getInstance(0, $this->pp_data['invoice']);
+        $this->Order = Cart::getInstance(0, $this->order_id);
         // Get the custom data from the order since authorize.net doesn't
         // support pass-through user variables
-        $this->pp_data['custom'] = $this->Order->getInfo();
-        $this->pp_data['custom']['uid'] = $this->Order->uid;
+        $this->custom = $this->Order->getInfo();
+        $this->custom['uid'] = $this->Order->uid;
 
         // Hack to get the gift card amount into the right variable name
-        $by_gc = SHOP_getVar($this->pp_data['custom'], 'apply_gc', 'float');
+        $by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');
         if ($by_gc > 0) {
-            $this->pp_data['custom']['by_gc'] = $by_gc;
+            $this->custom['by_gc'] = $by_gc;
         }
 
         /*$items = explode('::', $A['item_var']);
@@ -112,12 +105,11 @@ class authorizenet extends \Shop\IPN
             return false;
         }
 
-        if ('paid' != $this->pp_data['pmt_status']) 
+        if ('paid' != $this->status) {
             return false;
-        else
-            $this->pp_data['status'] = 'paid';
+        }
 
-        if (!$this->isUniqueTxnId($this->pp_data))
+        if (!$this->isUniqueTxnId()
             return false;
 
         // Log the IPN.  Verified is 'true' if we got this far.
@@ -151,8 +143,8 @@ class authorizenet extends \Shop\IPN
                     'name' => $this->gw->getApiLogin(),
                     'transactionKey' => $this->gw->getTransKey(),
                 ),
-                'refId' => $this->pp_data['invoice'],
-                'transId' => $this->pp_data['txn_id'],
+                'refId' => $this->order_id,
+                'transId' => $this->txn_id,
             ),
         );
         $jsonEncoded = json_encode($json);
@@ -175,19 +167,19 @@ class authorizenet extends \Shop\IPN
         $trans = SHOP_getVar($result, 'transaction', 'array', NULL);
         if (!$trans) return false;
 
-        if (SHOP_getVar($trans, 'transId') != $this->pp_data['txn_id']) {
+        if (SHOP_getVar($trans, 'transId') != $this->txn_id) {
             return false;
         }
         if (SHOP_getVar($trans, 'responseCode', 'integer') != 1) {
             return false;
         }
-        if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->pp_data['pmt_gross']) {
+        if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->pmt_gross) {
             return false;
         }
 
         $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) return false;
-        if (SHOP_getVar($order, 'invoiceNumber') != $this->pp_data['invoice']) {
+        if (SHOP_getVar($order, 'invoiceNumber') != $this->order_id) {
             return false;
         }
 
@@ -198,15 +190,15 @@ class authorizenet extends \Shop\IPN
 
     /**
      * Test function that can be run from a script.
-     * Adjust pp_data params as needed to test the Verify() function
+     * Adjust params as needed to test the Verify() function
      *
      * @return  boolean     Results from Verify()
      */
     public function testVerify()
     {
-        $this->pp_data['invoice'] = '20180925224531700';
-        $this->pp_data['txn_id'] = '40018916851';
-        $this->pp_data['pmt_gross'] = 23.77;
+        $this->order_id = '20180925224531700';
+        $this->txn_id = '40018916851';
+        $this->pmt_gross = 23.77;
         return $this->Verify();
     }
 

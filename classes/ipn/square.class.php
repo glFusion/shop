@@ -44,31 +44,28 @@ class square extends \Shop\IPN
         parent::__construct($A);
 
         $order_id = SHOP_getVar($A, 'referenceId');
-        $trans_id = SHOP_getVar($A, 'transactionId');
-        $this->pp_data['pmt_gross'] = 0;
-        $this->pp_data['pmt_fee'] = 0;
+        $this->pmt_gross = 0;
+        $this->pmt_fee = 0;
 
         if (!empty($order_id)) {
             $this->Order = Cart::getInstance(0, $order_id);
         }
         if (!$this->Order) return NULL;
 
-        $this->pp_data['txn_id'] = $trans_id;
+        $this->order_id = $this->Order->order_id;
+        $this->txn_id = SHOP_getVar($A, 'transactionId');
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
         if (empty($shipto)) $shipto = $billto;
 
-        $this->pp_data['payer_email'] = $this->Order->buyer_email;
-        $this->pp_data['payer_name'] = $_USER['fullname'];
-        $this->pp_data['pmt_date'] = SHOP_now()->toMySQL(true);
-        $this->pp_data['gw_desc'] = $this->gw->Description();
-        $this->pp_data['gw_name'] = $this->gw->Name();;
-        $this->pp_data['pmt_status'] = $status;
-        $this->pp_data['currency'] = $C->code;
-        $this->pp_data['discount'] = 0;
-        $this->pp_data['invoice'] = $this->Order->order_id;
+        $this->payer_email = $this->Order->buyer_email;
+        $this->payer_name = $_USER['fullname'];
+        $this->pmt_date = SHOP_now()->toMySQL(true);
+        $this->gw_name = $this->gw->Name();;
+        $this->status = $status;
+        $this->currency = $C->code;
 
-        $this->pp_data['shipto'] = array(
+        $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
             'company'   => SHOP_getVar($shipto, 'company'),
             'address1'  => SHOP_getVar($shipto, 'address1'),
@@ -82,12 +79,12 @@ class square extends \Shop\IPN
         // Set the custom data into an array.  If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
         if (isset($A['custom'])) {
-            $this->pp_data['custom'] = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->pp_data['custom']) {
-                $this->pp_data['custom'] = array('uid' => $A['custom']);
+            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
+            if (!$this->custom) {
+                $this->custom = array('uid' => $A['custom']);
             }
         }
-        $this->pp_data['custom'] = array(
+        $this->custom = array(
             'transtype' => $this->gw->Name(),
             'uid'       => $this->Order->uid,
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
@@ -107,8 +104,8 @@ class square extends \Shop\IPN
             $total_shipping += $item->shipping;
             $total_handling += $item->handling;
         }
-        $this->pp_data['pmt_shipping'] = $total_shipping;
-        $this->pp_data['pmt_handling'] = $total_handling;
+        $this->pmt_shipping = $total_shipping;
+        $this->pmt_handling = $total_handling;
     }
 
 
@@ -121,13 +118,18 @@ class square extends \Shop\IPN
     */
     private function Verify()
     {
-        $trans = $this->gw->getTransaction($this->pp_data['txn_id']);
+        // Gets the transaction via the Square API to get the real values.
+        $trans = $this->gw->getTransaction($this->txn_id);
+        COM_errorLog(var_export($trans,true));
+        $status = 'pending';
         if ($trans) {
             // Get through the top-level array var
             $trans= SHOP_getVar($trans, 'transaction', 'array');
             if (empty($trans)) return false;
+
             $tenders = SHOP_getVar($trans, 'tenders', 'array');
             if (empty($tenders)) return false;
+
             $order_id = SHOP_getVar($trans, 'reference_id');
             if (empty($order_id)) return false;
 
@@ -135,15 +137,14 @@ class square extends \Shop\IPN
             foreach ($tenders as $tender) {
                 if ($tender['card_details']['status'] == 'CAPTURED') {
                     $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
-                    $this->pp_data['pmt_gross'] += $C->fromInt($tender['amount_money']['amount']);
-                    $this->pp_data['pmt_fee'] += $C->fromInt($tender['processing_fee_money']['amount']);
+                    $this->pmt_gross += $C->fromInt($tender['amount_money']['amount']);
+                    $this->pmt_fee += $C->fromInt($tender['processing_fee_money']['amount']);
                 } else {
                     $status = 'pending';
                 }
             }
         }
-        $this->pp_data['status'] = $status;
-        $this->pp_data['pmt_status'] = $status;
+        $this->status = $status;
         return true;
 
 
@@ -158,10 +159,10 @@ class square extends \Shop\IPN
         $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
         $total = SHOP_getVar($info, 'final_total', 'float');
         if ($by_gc < $total) return false;
-        if (!Coupon::verifyBalance($by_gc, $this->pp_data['custom']['uid'])) {
+        if (!Coupon::verifyBalance($by_gc, $this->uid)) {
             return false;
         }
-        $this->pp_data['status'] = 'paid';
+        $this->status = 'paid';
         return true;
     }
 
@@ -173,11 +174,11 @@ class square extends \Shop\IPN
     *   @param  string  $payment_status     Payment status to verify
     *   @return boolean                     True if complete, False otherwise
     */
-    private function isStatusCompleted($payment_status)
+/*    private function isStatusCompleted($payment_status)
     {
         return ($payment_status == 'Completed');
     }
-
+ */
 
     /**
     *   Checks if payment status is reversed or refunded.
@@ -186,11 +187,11 @@ class square extends \Shop\IPN
     *   @param  string  $payment_status     Payment status to check
     *   @return boolean                     True if reversed or refunded
     */
-    private function isStatusReversed($payment_status)
+/*    private function isStatusReversed($payment_status)
     {
         return ($payment_status == 'Reversed' || $payment_status == 'Refunded');
     }
-
+ */
 
     /**
     *   Process an incoming IPN transaction
@@ -238,8 +239,10 @@ class square extends \Shop\IPN
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);
-            $this->handleFailure(IPN_FAILURE_VERIFY,
-                            "($logId) Verification failed");
+            $this->handleFailure(
+                IPN_FAILURE_VERIFY,
+                "($logId) Verification failed"
+            );
             return false;
         } else {
             $logId = $this->Log(true);
@@ -247,6 +250,6 @@ class square extends \Shop\IPN
         return $this->handlePurchase();
     }   // function Process
 
-}   // class shop_ipn
+}
 
 ?>
