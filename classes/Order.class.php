@@ -401,10 +401,9 @@ class Order
     /**
      * Save the current order to the database
      *
-     * @param   boolean $log    True to log the update, False for silent update
      * @return  string      Order ID
      */
-    public function Save($log=true)
+    public function Save()
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -708,9 +707,8 @@ class Order
                 COMMIT;";
         } else {
             // Update the status but leave the sequence alone
-            $sql = "UPDATE {$_TABLES['shop.orders']}
-                SET status = '". DB_escapeString($newstatus) . "'
-                $seq_sql
+            $sql = "UPDATE {$_TABLES['shop.orders']} SET
+                    status = '". DB_escapeString($newstatus) . "'
                 WHERE order_id = '$db_order_id';";
         }
         //echo $sql;die;

@@ -15,7 +15,7 @@
  * @copyright   Copyright (c) 2009-2018 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -395,8 +395,10 @@ class IPN
                 $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $by_gc, 'Gift Card'));
                 Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
             }
-            $this->Order->log_user = 'IPN: ' . $this->gw->Description();
-            $this->Order->updateStatus($this->status);
+            $this->Order->pmt_method = $this->gw_id;
+            $this->Order->pmt_txn_id = $this->txn_id;
+            $this->Order->Save();
+            $this->Order->updateStatus($this->status, 'IPN: ' . $this->gw->Description());
         } else {
             COM_errorLog('Error creating order: ' . print_r($status,true));
         }
