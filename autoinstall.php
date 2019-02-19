@@ -304,6 +304,7 @@ function plugin_postinstall_shop()
         // Copy images and other assets
         $dirs = array(
             $_CONF['path'] . 'data/paypal/files' => $_CONF['path'] . 'data/shop/files',
+            $_CONF['path'] . 'data/paypal/keys' => $_CONF['path'] . 'data/shop/keys',
             $_CONF['path_html'] . 'paypal/images/products' => $_CONF['path_html'] . 'shop/images/products',
             $_CONF['path_html'] . 'paypal/images/categories' => $_CONF['path_html'] . 'shop/images/categories',
             $_CONF['path_html'] . 'paypal/images/gateways' => $_CONF['path_html'] . 'shop/images/gateways',
