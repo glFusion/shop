@@ -151,7 +151,7 @@ class UserInfo
         global $_TABLES, $_USER;
 
         $add_id = (int)$add_id;
-        if (array_key_exists($this->addresses[$add_id])) {
+        if (array_key_exists($add_id, $this->addresses)) {
             return $this->addresses[$add_id];
         } else {
             return array();
