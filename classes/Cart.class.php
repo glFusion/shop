@@ -65,26 +65,17 @@ class Cart extends Order
     public static function getInstance($uid = 0, $cart_id = '')
     {
         global $_TABLES, $_USER;
-        static $carts = array();
 
         if ($uid == 0) $uid = $_USER['uid'];
         $uid = (int)$uid;
-        if ($uid > 1) {
-            if (!array_key_exists($uid, $carts)) {
-                $carts[$uid] = new self($cart_id);
-            }
-            $cart = $carts[$uid];
-        } else {
-            // Get a cart for another user. Used to get the anonymous
-            // cart by ID to merge when logging in. Can't cache this.
-            $cart = new self($cart_id);
-            // If the cart user ID doesn't match the requested one, then the
-            // cookie may have gotten out of sync. This can happen when the
-            // user leaves the browser and the glFusion session expires.
-            if ($cart->uid != $uid) {
-                self::_expireCookie();
-                $cart = new self();
-            }
+        $cart = new self($cart_id);
+
+        // If the cart user ID doesn't match the requested one, then the
+        // cookie may have gotten out of sync. This can happen when the
+        // user leaves the browser and the glFusion session expires.
+        if ($cart->uid != $uid) {
+            self::_expireCookie();
+            $cart = new self();
         }
         return $cart;
     }
@@ -128,7 +119,6 @@ class Cart extends Order
      * Saves the updated cart to the database.
      *
      * @param   string  $cart_id    ID of cart being merged into this one
-     * @return  array       Current cart contents
      */
     public function Merge($cart_id)
     {
@@ -144,8 +134,7 @@ class Cart extends Order
             DB_query($sql);
         }
         self::delAnonCart();    // Delete to avoid re-merging
-        Cache::deleteOrder($this->order_id);
-        return $this->Cart();
+        $this->Save();
     }
 
 
