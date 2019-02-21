@@ -162,9 +162,16 @@ class Cart extends Order
      */
     public function addItem($args)
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $_USER;
 
-        if (!isset($args['item_number'])) return false;
+        if (
+            !isset($args['item_number'])
+            ||
+            $this->uid != $_USER['uid']
+        ) {
+            return false;
+        }
+
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getInstance($item_id);
         $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
@@ -174,8 +181,9 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
-        if (!is_array($this->items))
+        if (!is_array($this->items)) {
             $this->items = array();
+        }
 
         // Extract the attribute IDs from the options array to create
         // the item_id.
@@ -636,9 +644,13 @@ class Cart extends Order
      *
      * @param   string  $key    Name of variable
      */
-    public static function clearSession($key)
+    public static function clearSession($key=NULL)
     {
-        unset($_SESSION[self::$session_var][$key]);
+        if ($key === NULL) {
+            unset($_SESSION[self::$session_var]);
+        } else {
+            unset($_SESSION[self::$session_var][$key]);
+        }
     }
 
 
@@ -696,7 +708,8 @@ class Cart extends Order
             // Remove the cookie - always
             self::_expireCookie();
             // And delete the cart record - only if it's anonymous
-            $C = new self($cart_id);
+            //$C = new self($cart_id);
+            $C = new self();
             if (!$C->isNew && $C->uid == 1) {
                 Order::Delete($cart_id);
             }
@@ -872,6 +885,7 @@ class Cart extends Order
     private static function _expireCookie()
     {
         unset($_COOKIE[self::$session_var]);
+        self::clearSession();
         SEC_setCookie(self::$session_var, '', time()-3600, '/');
     }
 
