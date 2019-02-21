@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -152,6 +152,7 @@ class Order
             $this->properties[$name] = (float)$value;
             break;
 
+        case 'order_seq':
         default:
             $this->properties[$name] = $value;
             break;
@@ -188,6 +189,7 @@ class Order
         if ($id != '') {
             $this->order_id = $id;
         }
+
         $A = Cache::get('order_' . $this->order_id);
         if ($A === NULL) {
             $sql = "SELECT * FROM {$_TABLES['shop.orders']}
@@ -199,7 +201,7 @@ class Order
             if (empty($A)) return false;
             Cache::set('order_' . $this->order_id, $A, 'orders');
         }
-        if ($this->SetVars($A)) $this->isNew = false;
+        if ($this->setVars($A)) $this->isNew = false;
 
         // Now load the items
         $items = Cache::get('items_order_' . $this->order_id);
@@ -306,7 +308,7 @@ class Order
      *
      * @param   array   $A      Array of items
      */
-    function SetVars($A)
+    function setVars($A)
     {
         global $_USER, $_CONF, $_SHOP_CONF;
 
@@ -332,6 +334,7 @@ class Order
         $this->buyer_email = SHOP_getVar($A, 'buyer_email');
         $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
         $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
+        $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer');
         if ($this->status != 'cart') {
             $this->tax_rate = SHOP_getVar($A, 'tax_rate');
         }
@@ -476,8 +479,7 @@ class Order
      */
     public function View($view = 'order', $step = 0)
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_ADMIN, $_TABLES, $_CONF,
-            $_SYSTEM;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
         // canView should be handled by the caller
         if (!$this->canView()) return '';
@@ -506,7 +508,8 @@ class Order
         }
         $step = (int)$step;
 
-        $T = SHOP_getTemplate($tplname, 'order');
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('order', $tplname . '.thtml');
         foreach (array('billto', 'shipto') as $type) {
             foreach ($this->_addr_fields as $name) {
                 $fldname = $type . '_' . $name;
@@ -549,6 +552,7 @@ class Order
                 'item_link'     => $P->getLink(),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
+                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -567,6 +571,7 @@ class Order
         $by_gc = (float)$this->getInfo('apply_gc');
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
+            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->is_final,
@@ -686,18 +691,19 @@ class Order
         global $_TABLES, $LANG_SHOP;
 
         $oldstatus = $this->status;
+        // If the status isn't really changed, don't bother updating anything
+        // and just treat it as successful
+        if ($oldstatus == $newstatus) return true;
+
         $this->status = $newstatus;
         $db_order_id = DB_escapeString($this->order_id);
         $log_user = $this->log_user;
+
+        // Clear the order from cache
         Cache::delete('order_' . $this->order_id);
 
-        // If the status isn't really changed, don't bother updating anything
-        // and just treat it as successful
-        //COM_errorLog("updateStatus from $oldstatus to $newstatus");
-        if ($oldstatus == $newstatus) return true;
-
         // If promoting from a cart status to a real order, add the sequence number.
-        if (!$this->isFinal($oldstatus) && $this->isFinal()) {
+        if (!$this->isFinal($oldstatus) && $this->isFinal() && $this->order_seq < 1) {
             $sql = "START TRANSACTION;
                 SELECT COALESCE(MAX(order_seq)+1,1) FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE;
                 UPDATE {$_TABLES['shop.orders']}
@@ -705,22 +711,25 @@ class Order
                     order_seq = @seqno
                 WHERE order_id = '$db_order_id';
                 COMMIT;";
+            DB_query($sql);
+            $this->order_seq = (int)DB_getItem($_TABLES['shop.orders'], 'order_seq', "order_id = '{$db_order_id}'");
         } else {
             // Update the status but leave the sequence alone
             $sql = "UPDATE {$_TABLES['shop.orders']} SET
                     status = '". DB_escapeString($newstatus) . "'
                 WHERE order_id = '$db_order_id';";
+            DB_query($sql);
         }
         //echo $sql;die;
         //COM_errorLog($sql);
-        DB_query($sql);
         if (DB_error()) return false;
         $this->status = $newstatus;     // update in-memory object
         if ($log) {
-            $this->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus),
-                    $log_user);
+            $this->Log(
+                sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus),
+                $log_user
+            );
         }
-
         $this->Notify($newstatus);
         return true;
     }
