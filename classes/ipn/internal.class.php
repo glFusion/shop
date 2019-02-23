@@ -209,7 +209,6 @@ class internal extends \Shop\IPN
             COM_errorLog("Shop\\internal_ipn::Process() - Empty Cart for id {$this->Order->cartID()}");
             return false;
         }
-        $items = array();
         $total_shipping = 0;
         $total_handling = 0;
 
@@ -217,8 +216,12 @@ class internal extends \Shop\IPN
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
         foreach ($Cart as $idx=>$item) {
+            $item_id = $item->product_id;
+            if ($item->options != '') {
+                $item_id .= '|' . $item->options;
+            }
             $args = array(
-                'item_id'   => $item->item_id,
+                'item_id'   => $item_id,
                 'quantity'  => $item->quantity,
                 'price'     => $item->price,
                 'item_name' => $item->name,
