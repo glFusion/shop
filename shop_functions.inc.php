@@ -459,7 +459,7 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
         );
         $retval .= '&nbsp;&nbsp;' . COM_createLink(
             '<i class="uk-icon-mini uk-icon-print"></i>',
-            SHOP_URL . '/index.php?printorder=' . $fieldvalue,
+            COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $fieldvalue),
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['print'],
@@ -469,7 +469,7 @@ function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
         if ($A['isAdmin']) {
             $retval .= '&nbsp;&nbsp;' . COM_createLink(
                 '<i class="uk-icon-mini uk-icon-list"></i>',
-                SHOP_URL . '/index.php?packinglist=' . $fieldvalue,
+                COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['packinglist'],
@@ -828,7 +828,7 @@ function ProductList($cat_id = 0)
             'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
             'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
             'encrypted'     => '',
-            'item_url'      => SHOP_URL . '/detail.php?id='. $P->id,
+            'item_url'      => COM_buildUrl(SHOP_URL . '/detail.php?id='. $P->id),
             'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
             'track_onhand'  => $P->track_onhand ? 'true' : '',
             'qty_onhand'    => $P->onhand,
@@ -1101,7 +1101,7 @@ function SHOP_userMenu($view='')
 
     $active = $view == 'orderhist' ? true : false;
     $menu_arr[] = array(
-        'url'  => SHOP_URL . '/index.php?orderhist=x',
+        'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
         'text' => $LANG_SHOP['purchase_history'],
         'active' => $active,
     );
@@ -1109,7 +1109,7 @@ function SHOP_userMenu($view='')
     if ($_SHOP_CONF['gc_enabled']) {
         $active = $view == 'couponlog' ? true : false;
         $menu_arr[] = array(
-            'url'  => SHOP_URL . '/index.php?couponlog=x',
+            'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
             'text' => $LANG_SHOP['gc_activity'],
             'active' => $active,
         );
