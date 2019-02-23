@@ -3,9 +3,9 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -376,6 +376,27 @@ class OrderItem
         return true;
     }
 
+
+    /**
+     * Check if the supplied OrderItem object matches this object.
+     * Checks the product ID, options and extras.
+     *
+     * @param   object  $Item2  Item object to check
+     * @return  boolean     True if $Item2 matches this item, False if not
+     */
+    public function Matches($Item2)
+    {
+        if ($this->product_id != $Item2->product_id) {
+            return false;
+        }
+        if ($this->options != $Item2->options) {
+            return false;
+        }
+        if ($this->extras != $Item2->extras) {
+            return false;
+        }
+        return true;
+    }
 
 }
 

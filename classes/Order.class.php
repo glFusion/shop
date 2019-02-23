@@ -472,6 +472,8 @@ class Order
 
     /**
      * View or print the current order.
+     * Access is controlled by the caller invoking canView() since a token
+     * may be required.
      *
      * @param  string  $view       View to display (cart, final order, etc.)
      * @param  integer $step       Current step, for updating next_step in the form
@@ -481,8 +483,6 @@ class Order
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
-        // canView should be handled by the caller
-        if (!$this->canView()) return '';
         $this->is_final = false;
         $is_invoice = true;    // normal view/printing view
         $icon_tooltips = array();
@@ -1207,20 +1207,22 @@ class Order
      *
      * @param   string  $item_id    Item ID to check, e.g. "1|2,3,4"
      * @param   array   $extras     Option custom values, e.g. text fields
-     * @return  mixed       Item cart ID if item exists in cart, False if not
+     * @return  integer|boolean Item cart record ID if item exists in cart, False if not
      */
     public function Contains($item_id, $extras=array())
     {
         $id_parts = SHOP_explode_opts($item_id, true);
         if (!isset($id_parts[1])) $id_parts[1] = '';
-        foreach ($this->items as $id=>$info) {
-            if ($info->product_id == $id_parts[0] && $info->options == $id_parts[1]) {
-                // Found a matching item, now check for extra text field values
-                if ($info->extras == $extras) {
-                    return $id;
-                } else {
-                    return false;
-                }
+        $args = array(
+            'product_id'    => $id_parts[0],
+            'options'       => $id_parts[1],
+            'extras'        => $extras,
+        );
+        $Item2 = new OrderItem($args);
+
+        foreach ($this->items as $id=>$Item1) {
+            if ($Item1->Matches($Item2)) {
+                return $id;
             }
         }
         // No matching item_id found
