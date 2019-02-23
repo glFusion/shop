@@ -425,7 +425,7 @@ function plugin_getuseroption_shop()
         if (\Shop\Cart::getCart() && \Shop\Cart::getInstance()->hasItems()) {
             $retval[] = array(
                 $LANG_SHOP['viewcart'],
-                COM_buildUrl(SHOP_URL . '/account.php?mode=cart'),
+                COM_buildUrl(SHOP_URL . '/cart.php'),
             );
         }
     }
@@ -963,7 +963,7 @@ function phpblock_shop_cart()
     $T->set_var(array(
         'cart_contents' => $contents,
         'visibility'    => $vis,
-        'cart_url'      => COM_buildUrl(SHOP_URL . '/account.php?mode=cart'),
+        'cart_url'      => COM_buildUrl(SHOP_URL . '/cart.php'),
     ) );
     $T->parse('output', 'shopping_cart');
     return $T->finish ($T->get_var('output'));
@@ -999,7 +999,7 @@ function phpblock_shop_cart_contents()
     }
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) {
-        SHOP_debug("Cart {$cart->order_id} has no items");
+        //SHOP_debug("Cart {$cart->order_id} has no items");
         return '';
     }
 
@@ -1494,16 +1494,16 @@ function plugin_user_login_shop($uid)
 
 /**
  * Handle actions needed when the current user logs out.
- * Saves the current cart ID to the cookie to handle the session change.
  *
  * @param   integer $uid    User ID
  */
 function NOOP_plugin_user_logout_shop($uid)
 {
-    global $_SHOP_CONF;
+/*    global $_SHOP_CONF;
 
     $C = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
     \Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
+*/
 }
 
 

@@ -53,7 +53,7 @@ function removeAddress(id)
 </script>
 
 <h2>{addr_type}</h2>
-<form action="{pi_url}/index.php" method="post" class="uk-form uk-form-horizontal">
+<form action="{pi_url}/cart.php" method="post" class="uk-form uk-form-horizontal">
   <input type="hidden" name="order_id" value="{order_id}" />
   {# This is recruited for the country and State Field #}
   <input type="hidden" value="countrySelect" name="cs_config_country_field" id="cs_config_country_field">
