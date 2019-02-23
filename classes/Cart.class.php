@@ -127,13 +127,24 @@ class Cart extends Order
         if ($_USER['uid'] < 2) return;
 
         $AnonCart = self::getInstance(1, $cart_id);
-        if (!empty($AnonCart->items)) {
-            $sql = "UPDATE {$_TABLES['shop.orderitems']}
-                    SET order_id = '" . DB_escapeString($this->order_id) . "'
-                    WHERE order_id = '" . DB_escapeString($AnonCart->order_id) . "'";
-            DB_query($sql);
+        if (empty($AnonCart->items)) {
+            return;
         }
-        self::delAnonCart();    // Delete to avoid re-merging
+
+        // Merge the items into the user cart
+        foreach ($AnonCart->items as $Item) {
+            $args = array(
+                'item_number'   => $Item->product_id,
+                'options'       => explode(',', $Item->options),
+                'extras'        => $Item->extras,
+                'description'   => $Item->description,
+                'quantity'      => $Item->quantity,
+            );
+            $this->addItem($args);
+        }
+
+        // Remove the anonymous cart and save this user's cart
+        $AnonCart->Clear();
         $this->Save();
     }
 
@@ -192,7 +203,7 @@ class Cart extends Order
         }
 
         // Look for identical items, including options (to catch
-        // attributes).  If found, just update the quantity.
+        // attributes). If found, just update the quantity.
         if ($P->cartCanAccumulate()) {
             $have_id = $this->Contains($item_id, $extras);
         } else {
