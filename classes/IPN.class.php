@@ -84,6 +84,11 @@ class IPN
     * @var object */
     protected $gw;
 
+    /** Accumulator for credits applied to orders.
+     * @var array */
+    protected $credits = array();
+
+
     /**
      * This is just a holder for the current date in SQL format,
      * so we don't have to rely on the database's NOW() function.
@@ -391,8 +396,14 @@ class IPN
             $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $this->pmt_gross, $this->gw->DisplayName()));
             $by_gc = $this->getCredit('gc');
             $this->Order->by_gc = $by_gc;
-            if ($by_gc > 0) {
-                $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $by_gc, 'Gift Card'));
+            foreach ($this->credits as $key=>$val) {
+                $this->Order->Log(
+                    sprintf(
+                        $LANG_SHOP['amt_paid_gw'],
+                        $val,
+                        SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
+                    )
+                );
                 Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
             }
             $this->Order->pmt_method = $this->gw_id;
@@ -695,8 +706,7 @@ class IPN
         foreach ($this->credits as $credit) {
             $total += (float)$credit;
         }
-        $this->total_credit = $total;
-        return $this->total_credit;
+        return $total;
     }
 
 
@@ -722,7 +732,7 @@ class IPN
      */
     protected function getCredit($key)
     {
-        if (array_key_exists($this->credits[$key])) {
+        if (array_key_exists($key, $this->credits)) {
             return (float)$this->credits[$key];
         } else {
             return 0;
