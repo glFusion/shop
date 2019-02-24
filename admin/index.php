@@ -1684,6 +1684,12 @@ function SHOP_adminlist_Workflow()
 {
     global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
+    $extra = array(
+        'rec_type'  => 'workflow',
+        'max_orderby' => DB_getItem($_TABLES['shop.workflows'], 'MAX(orderby)', '1=1'),
+        'min_order_dn' => 0,
+        'min_order_up' => 10,
+    );
     $sql = "SELECT *, 'workflow' AS rec_type
             FROM {$_TABLES['shop.workflows']}";
 
@@ -1732,7 +1738,7 @@ function SHOP_adminlist_Workflow()
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_workflowlist',
             __NAMESPACE__ . '\getAdminField_Workflow',
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', '');
+            '', $extra, '', '');
 
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
     return $display;
@@ -1838,7 +1844,13 @@ function SHOP_adminlist_OrderStatus()
 {
     global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
-    $sql = "SELECT *, 'orderstatus' AS rec_type
+    $extra = array(
+        'rec_type'  => 'orderstatus',
+        'max_orderby' => DB_getItem($_TABLES['shop.orderstatus'], 'MAX(orderby)', '1=1'),
+        'min_order_dn' => 10,
+        'min_order_up' => 20,
+    );
+    $sql = "SELECT *
             FROM {$_TABLES['shop.orderstatus']}";
 
     $header_arr = array(
@@ -1899,7 +1911,7 @@ function SHOP_adminlist_OrderStatus()
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_statuslist',
             __NAMESPACE__ . '\getAdminField_Workflow',
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', '');
+            '', $extra, '', '');
 
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
     return $display;
@@ -1999,11 +2011,12 @@ function getAdminField_Sales($fieldname, $fieldvalue, $A, $icon_arr)
  * @param   array   $icon_arr   System icon array (not used)
  * @return  string              HTML for field display in the table
  */
-function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr)
+function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr, $extra)
 {
     global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $retval = '';
+    $rec_type = $extra['rec_type'];
 
     switch($fieldname) {
     case 'wf_enabled':
@@ -2034,23 +2047,26 @@ function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr)
         $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"{$fieldname}_check\"
                 id=\"tog{$fieldname}{$A['id']}\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
-                "\"{$A['rec_type']}\");' />" . LB;
+                "\"{$rec_type}\");' />" . LB;
         break;
 
     case 'orderby':
+        $min_up = $extra['min_order_up'];
+        $min_dn = $extra['min_order_dn'];
+        $max_dn = $extra['max_orderby'];
         $url = SHOP_ADMIN_URL .
-            "/index.php?id={$A['id']}&amp;type={$A['rec_type']}&amp;wfmove=";
-        if ($A['rec_type'] != 'orderstatus' || $A['orderby'] > 20) {
+            "/index.php?id={$A['id']}&amp;type={$rec_type}&amp;wfmove=";
+        if ($fieldvalue > $min_up) {
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-up"></i>',
+                '<i class="uk-icon uk-icon-arrow-up" style="width:16px;"></i>',
                 $url . 'up'
                 );
         } else {
             $retval .= '<i class="uk-icon uk-icon-dummy" style="width:16px"></i>';
         }
-        if ($A['rec_type'] != 'orderstatus' || $A['orderby'] > 10) {
+        if ($fieldvalue > $min_dn && $fieldvalue < $max_dn) {
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-down"></i>',
+                '<i class="uk-icon uk-icon-arrow-down" style="width:16px"></i>',
                 $url . 'down'
             );
         } else {
