@@ -226,6 +226,8 @@ class OrderStatus extends Workflow
         default:
             return;
         }
+        if ($id == 1) return;   // cannot move item 1 (pending)
+
         $sql = "UPDATE {$_TABLES[self::$table]}
                 SET orderby = orderby $oper 11
                 WHERE id = '$id'";
