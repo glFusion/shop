@@ -2040,12 +2040,22 @@ function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr)
     case 'orderby':
         $url = SHOP_ADMIN_URL .
             "/index.php?id={$A['id']}&amp;type={$A['rec_type']}&amp;wfmove=";
-        $retval = COM_createLink('<i class="uk-icon uk-icon-arrow-up"></i>',
+        if ($A['rec_type'] != 'orderstatus' || $A['orderby'] > 20) {
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-arrow-up"></i>',
                 $url . 'up'
-            ) .
-            COM_createLink('<i class="uk-icon uk-icon-arrow-down"></i>',
+                );
+        } else {
+            $retval .= '<i class="uk-icon uk-icon-dummy" style="width:16px"></i>';
+        }
+        if ($A['rec_type'] != 'orderstatus' || $A['orderby'] > 10) {
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-arrow-down"></i>',
                 $url . 'down'
             );
+        } else {
+            $retval .= '<i class="uk-icon uk-icon-dummy" style="width:16px"></i>';
+        }
         break;
 
     case 'wf_name':
