@@ -3,9 +3,9 @@
  * This file contains the IPN processor for Authorize.Net.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2013 Lee Garner
+ * @copyright   Copyright (c) 2013-2019 Lee Garner
  * @package     shop
- * @version     v0.5.2
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
@@ -23,6 +23,8 @@ class authorizenet extends \Shop\IPN
 {
     /**
      * Constructor.
+     * Most of the variables for this IPN come from the transaction,
+     * which is retrieved in Verify().
      *
      * @param   array   $A  Array of IPN data
      */
@@ -31,62 +33,21 @@ class authorizenet extends \Shop\IPN
         $this->gw_id = 'authorizenet';
         parent::__construct($A);
 
-        $this->txn_id = SHOP_getVar($A, 'x_trans_id');
-        $this->payer_email = SHOP_getVar($A, 'x_email');
-        $this->payer_name = SHOP_getVar($A, 'x_first_name') . ' ' .
-                    SHOP_getVar($A, 'x_last_name');
+        // Get the needed values from the Webhook payload
+        $payload = SHOP_getVar($A, 'payload', 'array', array());
+        $this->txn_id = SHOP_getVar($payload, 'id');
         $this->pmt_date = strftime('%d %b %Y %H:%M:%S', time());
-        $this->pmt_gross = SHOP_getVar($A, 'x_amount', 'float');
+        $this->pmt_gross = SHOP_getVar($payload, 'authAmount', 'float');
         $this->gw_name = $this->gw->Description();
-        $this->pmt_shipping = SHOP_getVar($A, 'x_freight', 'float');
-        $this->pmt_handling = 0; // not supported?
-        $this->pmt_tax = SHOP_getVar($A, 'x_tax', 'float');
-        $this->order_id = SHOP_getVar($A, 'x_invoice_num');
 
-        // Check a couple of vars to see if a shipping address was supplied
-        $shipto_addr = SHOP_getVar($A, 'x_ship_to_address');
-        $shipto_city = SHOP_getVar($A, 'x_ship_to_city');
-        if ($shipto_addr != '' && $shipto_city != '') {
-            $this->shipto = array(
-                'name'      => SHOP_getVar($A, 'x_ship_to_first_name') . ' ' . 
-                                SHOP_getVar($A, 'x_ship_to_last_name'),
-                'address1'  => $shipto_addr,
-                'address2'  => '',
-                'city'      => $shipto_city,
-                'state'     => SHOP_getVar($A, 'x_ship_to_state'),
-                'country'   => SHOP_getVar($A, 'x_ship_to_country'),
-                'zip'       => SHOP_getVar($A, 'x_ship_to_zip'),
-                'phone'     => SHOP_getVar($A, 'x_phone'),
-            );
-        }
-
-        switch(SHOP_getVar($A, 'x_response_code', 'integer')) {
-        case 1:
+        switch(SHOP_getVar($A, 'eventType')) {
+        case 'net.authorize.payment.authcapture.created':
             $this->status = 'paid';
             break;
         default:
             $this->status = 'pending';
             break;
         }
-
-        $this->Order = Cart::getInstance(0, $this->order_id);
-        // Get the custom data from the order since authorize.net doesn't
-        // support pass-through user variables
-        $this->custom = $this->Order->getInfo();
-        $this->custom['uid'] = $this->Order->uid;
-
-        // Hack to get the gift card amount into the right variable name
-        $by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');
-        if ($by_gc > 0) {
-            $this->custom['by_gc'] = $by_gc;
-        }
-
-        /*$items = explode('::', $A['item_var']);
-        foreach ($items as $item) {
-            list($itm_id, $price, $qty) = explode(';', $item);
-            $this->AddItem($itm_id, $qty, $price);
-        }*/
-
     }
 
 
@@ -109,8 +70,9 @@ class authorizenet extends \Shop\IPN
             return false;
         }
 
-        if (!$this->isUniqueTxnId()
+        if (!$this->isUniqueTxnId()) {
             return false;
+        }
 
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->Log(true);
@@ -135,15 +97,18 @@ class authorizenet extends \Shop\IPN
      */
     private function Verify()
     {
-        return true;
+        //return true;
 
+        if ($this->isEmpty('txn_id')) {
+            return false;
+        }
         $json = array(
             'getTransactionDetailsRequest' => array(
                 'merchantAuthentication' => array(
                     'name' => $this->gw->getApiLogin(),
                     'transactionKey' => $this->gw->getTransKey(),
                 ),
-                'refId' => $this->order_id,
+                //'refId' => $this->order_id,
                 'transId' => $this->txn_id,
             ),
         );
@@ -179,9 +144,22 @@ class authorizenet extends \Shop\IPN
 
         $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) return false;
-        if (SHOP_getVar($order, 'invoiceNumber') != $this->order_id) {
-            return false;
+        $this->order_id = SHOP_getVar($order, 'invoiceNumber');
+        $this->Order = Cart::getInstance(0, $this->order_id);
+        // Get the custom data from the order since authorize.net doesn't
+        // support pass-through user variables
+        $this->custom = $this->Order->getInfo();
+        $this->custom['uid'] = $this->Order->uid;
+
+        // Hack to get the gift card amount into the right variable name
+        $by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');
+        if ($by_gc > 0) {
+            $this->custom['by_gc'] = $by_gc;
         }
+        $shipping = SHOP_getVar($trans, 'shipping', 'array');
+        $this->pmt_shipping = SHOP_getVar($shipping, 'amount', 'float');
+        $tax = SHOP_getVar($trans, 'tax', 'array');
+        $this->pmt_tax = SHOP_getVar($tax, 'amount', 'float');
 
         // All conditions met
         return true;

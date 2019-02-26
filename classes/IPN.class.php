@@ -203,6 +203,23 @@ class IPN
 
 
     /**
+     * Check if a key variable is empty.
+     * Used because empty() doesn't work right with __set() and __get().
+     *
+     * @param   string  $key    Variable name
+     * @return  boolean     True if the var is empty, False if not.
+     */
+    protected function isEmpty($key)
+    {
+        if (empty($this->properties[$key])) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
      * Add an item from the IPN message to our $items array.
      *
      * @param   array   $args   Array of arguments
@@ -301,6 +318,7 @@ class IPN
         // Count purchases with txn_id, if > 0
         $count = DB_count($_TABLES['shop.ipnlog'], 'txn_id', $this->txn_id);
         if ($count > 0) {
+            COM_errorLog("Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
             return false;
         } else {
             return true;
