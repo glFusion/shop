@@ -28,7 +28,7 @@ class authorizenet extends \Shop\Gateway
      * @var string */
     private $api_login;
 
-    /** MD5 Hash key configured on Authorize.Net
+    /** Signature key configured on Authorize.Net
      * @var string */
     private $hash_key;
 
@@ -63,8 +63,8 @@ class authorizenet extends \Shop\Gateway
 //            'prod_md5_hash'     => '',
 //            'test_md5_hash'     => '',
             'test_mode'         => 1,
-//            'test_hash_key'     => '',
-//            'prod_hash_key'     => '',
+            'test_hash_key'     => '',
+            'prod_hash_key'     => '',
         );
 
         // Set the supported services as this gateway only supports cart checkout
@@ -79,15 +79,15 @@ class authorizenet extends \Shop\Gateway
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
         if ($this->config['test_mode'] == '1') {
-            $this->api_login = $this->config['test_api_login'];
-            $this->trans_key = $this->config['test_trans_key'];
-            //$this->hash_key = $this->config['test_hash_key'];
+            $this->api_login    = trim($this->config['test_api_login']);
+            $this->trans_key    = trim($this->config['test_trans_key']);
+            $this->hash_key     = trim($this->config['test_hash_key']);
             $this->token_url = 'https://apitest.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://test.authorize.net/payment/payment';
         } else {
-            $this->api_login = $this->config['prod_api_login'];
-            $this->trans_key = $this->config['prod_trans_key'];
-            //$this->hash_key = $this->config['prod_hash_key'];
+            $this->api_login    = trim($this->config['prod_api_login']);
+            $this->trans_key    = trim($this->config['prod_trans_key']);
+            $this->hash_key     = trim($this->config['prod_hash_key']);
             $this->token_url = 'https://api.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://accept.authorize.net/payment/payment';
         }
@@ -165,7 +165,7 @@ class authorizenet extends \Shop\Gateway
                 'refId' => $cart->order_id,
                 'transactionRequest' => array(
                     'transactionType' => 'authCaptureTransaction',
-                    'amount' => '0.00',
+                    'amount' => '0.00',         // this will be overridden later
                     'order' => array(
                         'invoiceNumber' => $cart->order_id,
                     ),
@@ -226,8 +226,8 @@ class authorizenet extends \Shop\Gateway
                 $P = $Item->getProduct();
                 $json['getHostedPaymentPageRequest']['transactionRequest']['lineItems']['lineItem'][] = array(
                     'itemId'    => substr($P->item_id, 0, 31),
-                    'name'      => substr($P->short_description, 0, 31),
-                    'description' => substr($P->description, 0, 255),
+                    'name'      => substr(strip_tags($P->short_description), 0, 31),
+                    'description' => substr(strip_tags($P->description), 0, 255),
                     'quantity' => $Item->quantity,
                     'unitPrice' => $Cur->FormatValue($Item->price),
                     'taxable' => $Item->taxable ? true : false,
@@ -241,8 +241,10 @@ class authorizenet extends \Shop\Gateway
 
         $json['getHostedPaymentPageRequest']['transactionRequest']['amount'] = $Cur->FormatValue($total_amount);
         $jsonEncoded = json_encode($json, JSON_UNESCAPED_SLASHES);
+        //var_export($json);
 
         $ch = curl_init();
+        //var_dump($this->token_url);die;
         curl_setopt($ch, CURLOPT_URL, $this->token_url);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonEncoded);
@@ -252,14 +254,19 @@ class authorizenet extends \Shop\Gateway
         )); 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
+        //var_dump($result);die;
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
         if ($code != 200) {             // Check for a 200 code before anything else
             COM_setMsg("Error checking out");
+            COM_errorLog('Shop Error: ' . __CLASS__ . '/' . __FUNCTION__ .
+                'Bad response from token request: ' . print_r($result,true));
             return false;
         }
         $bom = pack('H*','EFBBBF');
         $result = preg_replace("/^$bom/", '', $result);
         $result = json_decode($result);
+        //var_export($result);die;
         if ($result->messages->resultCode != 'Ok') {  // Check for errors due to invalid data, etc.
             foreach ($result->messages->message as $msg) {
                 COM_errorlog($this->gw_provider . ' error: ' . $msg->code . ' - ' . $msg->text);
@@ -415,6 +422,19 @@ class authorizenet extends \Shop\Gateway
         global $_CONF;
         return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" border="0" alt="Authorize.Net Logo" style="width:160px;height:40px" />';
         //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" border="0" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;"/>';
+    }
+
+
+    /**
+     * Hash a text string using the hash_key.
+     *
+     * @param   string  $text   Text to hash
+     * @return  string      Hashed text
+     */
+    public function _genHash($text)
+    {
+        $sig = hash_hmac('sha512', $text, hex2bin($this->hash_key));
+        return $sig;
     }
 
 }   // class authorizenet
