@@ -1318,6 +1318,28 @@ class Gateway
         $this->config[$key] = $value;
     }
 
+
+    /**
+     * Set a gateway ID as the selected one to remember between orders.
+     *
+     * @param   string  $gw_id  Gateway ID
+     */
+    public static function setSelected($gw_id)
+    {
+        SESS_setVar('shop_gateway_sel', $gw_id);
+    }
+
+
+    /**
+     * Get the remembered gateway ID to use as the default on later orders.
+     *
+     * @return  string|null  Saved gateway, NULL if none previously saved
+     */
+    public static function getSelected()
+    {
+        return SESS_getVar('shop_gateway_sel');
+    }
+
 }   // class Gateway
 
 ?>

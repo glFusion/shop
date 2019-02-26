@@ -481,7 +481,7 @@ class Cart extends Order
                 $gw_sel = '_coupon';
             } else {
                 // Select the first if there's one, otherwise select none.
-                $gw_sel = '';
+                $gw_sel = Gateway::getSelected();
             }
             foreach ($gateways as $gw_id=>$gw) {
                 if (is_null($gw)) {

@@ -73,9 +73,9 @@ case 'checkout':
     $Cart = \Shop\Cart::getInstance();
     $gateway = SHOP_getVar($_POST, 'gateway');
     if ($gateway !== '') {
+        \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
     }
-    if ($gateway !== '') $Cart->setGateway($gateway);
     if (isset($_POST['by_gc'])) {
         $Cart->setGC($_POST['by_gc']);
     } elseif ($gateway == '_coupon') {
