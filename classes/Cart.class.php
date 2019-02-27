@@ -785,15 +785,44 @@ class Cart extends Order
      */
     public function getView($step = 0)
     {
-        $wf = Workflow::getAll($this);
-        if ($step < count($wf)) {
-            $wf_name = $wf[$step]->wf_name;
-        } else {
+        // $step == 0 is just to view the cart. Any step beyond 0 goes
+        // into the workflow and displays the first incomplete step..
+        if ($step > 0) {
+            $wf = Workflow::getAll($this);
             $wf_name = 'checkout';
             $step = 9;
+            foreach ($wf as $w) {
+                if (!$w->isSatisfied($this)) {
+                    $wf_name = $w->wf_name;
+                    break;
+                }
+            }
+        } else {
+            $wf_name = 'viewcart';
         }
         switch($wf_name) {
         case 'viewcart':
+            // Initial cart view. Check here and populate the billing and
+            // shipping addresses if not already set, and only for logged-in
+            // users.
+            // This allows subsequent steps to go directly to the checkout
+            // page if all other workflows are complete.
+            if ($this->uid > 1) {
+                $U = UserInfo::getInstance($this->uid);
+                if ($this->billto_id == 0) {
+                    $A = $U->getDefaultAddress('billto');
+                    if ($A) {
+                        $this->setAddress($A, 'billto');
+                    }
+                }
+                if ($this->shipto_id == 0) {
+                    $A = $U->getDefaultAddress('shipto');
+                    if ($A) {
+                        $this->setAddress($A, 'shipto');
+                    }
+                }
+            }
+            // Fall through to the checkout view
         case 'checkout':
                 return $this->View($wf_name, $step);
         case 'billto':
@@ -801,18 +830,6 @@ class Cart extends Order
             $U = new \Shop\UserInfo();
             $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($wf_name);
             return $U->AddressForm($wf_name, $A, $step);
-/*        case 'shipping_method':
-            // Select the shipping method, if shippers are configured
-            if (Shipper::haveShippers()) {
-                return $this->selectShipper($step);
-            } else {
-                $A = $this->getItemShipping();
-                $this->shipping = $A['amount'];
-                $this->Save();
-                return $this->View(Workflow::getNextView($wf_name)->wf_name, $step++);
-            }
-            break;
- */
         case 'finalize':
             return $this->View('checkout');
         default:
