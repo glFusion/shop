@@ -103,7 +103,7 @@ class Order
         }
         if ($this->isNew) {
             $this->order_id = self::_createID();
-            $this->order_date = SHOP_now()->toUnix();
+            $this->order_date = SHOP_now();
             $this->token = self::_createToken();
             $this->shipping = 0;
             $this->handling = 0;
@@ -276,26 +276,39 @@ class Order
     /**
      * Set the shipping address.
      *
-     * @param   array   $A      Array of info, such as from $_POST
+     * @param   array|NULL  $A      Array of info, or NULL to clear
      */
     public function setShipping($A)
     {
-        $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
-        if ($addr_id > 0) {
-            // If set, read and use an existing address
-            Cart::setSession('shipping', $addr_id);
-        }
+        if ($A === NULL) {
+            // Clear out the shipping address
+            $this->shipto_id        = 0;
+            $this->shipto_name      = '';
+            $this->shipto_company   = '';
+            $this->shipto_address1  = '';
+            $this->shipto_address2  = '';
+            $this->shipto_city      = '';
+            $this->shipto_state     = '';
+            $this->shipto_country   = '';
+            $this->shipto_zip       = '';
+        } elseif (is_array($A)) {
+             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
+            if ($addr_id > 0) {
+                // If set, read and use an existing address
+                Cart::setSession('shipping', $addr_id);
+            }
 
-        if (!empty($A)) {
-            $this->shipto_id        = $addr_id;
-            $this->shipto_name      = SHOP_getVar($A, 'name');
-            $this->shipto_company   = SHOP_getVar($A, 'company');
-            $this->shipto_address1  = SHOP_getVar($A, 'address1');
-            $this->shipto_address2  = SHOP_getVar($A, 'address2');
-            $this->shipto_city      = SHOP_getVar($A, 'city');
-            $this->shipto_state     = SHOP_getVar($A, 'state');
-            $this->shipto_country   = SHOP_getVar($A, 'country');
-            $this->shipto_zip       = SHOP_getVar($A, 'zip');
+            if (!empty($A)) {
+                $this->shipto_id        = $addr_id;
+                $this->shipto_name      = SHOP_getVar($A, 'name');
+                $this->shipto_company   = SHOP_getVar($A, 'company');
+                $this->shipto_address1  = SHOP_getVar($A, 'address1');
+                $this->shipto_address2  = SHOP_getVar($A, 'address2');
+                $this->shipto_city      = SHOP_getVar($A, 'city');
+                $this->shipto_state     = SHOP_getVar($A, 'state');
+                $this->shipto_country   = SHOP_getVar($A, 'country');
+                $this->shipto_zip       = SHOP_getVar($A, 'zip');
+            }
         }
         $this->Save();
     }
@@ -321,6 +334,8 @@ class Order
         $dt = SHOP_getVar($A, 'order_date', 'integer');
         if ($dt > 0) {
             $this->order_date = new \Date($dt, $tzid);
+        } else {
+            $this->order_date = SHOP_now();
         }
         $this->order_id = SHOP_getVar($A, 'order_id');
         $this->shipping = SHOP_getVar($A, 'shipping', 'float');
@@ -425,7 +440,7 @@ class Order
             // Set field values that can only be set once and not updated
             $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
                     order_id='{$this->order_id}',
-                    order_date = '{$this->order_date}',
+                    order_date = '{$this->order_date->toUnix()}',
                     token = '" . DB_escapeString($this->token) . "',
                     uid = '" . (int)$this->uid . "', ";
             $sql2 = '';
@@ -830,7 +845,6 @@ class Order
         $item_total = 0;
         $dl_links = '';         // Start with empty download links
         $email_extras = array();
-
         $Cur = Currency::getInstance();     // get currency for formatting
 
         foreach ($this->items as $id=>$item) {
