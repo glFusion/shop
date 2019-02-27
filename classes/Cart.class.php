@@ -815,16 +815,20 @@ class Cart extends Order
                         $this->setAddress($A, 'billto');
                     }
                 }
-                if ($this->shipto_id == 0) {
-                    $A = $U->getDefaultAddress('shipto');
-                    if ($A) {
-                        $this->setAddress($A, 'shipto');
+                if ($this->hasPhysical()) {
+                    if ($this->shipto_id == 0) {
+                        $A = $U->getDefaultAddress('shipto');
+                        if ($A) {
+                            $this->setShipping($A);
+                        }
                     }
+                } else {
+                    $this->setShipping(NULL);
                 }
             }
             // Fall through to the checkout view
         case 'checkout':
-                return $this->View($wf_name, $step);
+            return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
             $U = new \Shop\UserInfo();
