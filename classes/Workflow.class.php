@@ -136,6 +136,28 @@ class Workflow
 
 
     /**
+     * Check if this workflow has been satisfided based on the cart contents.
+     *
+     * @param   object  $Cart   Shopping cart/Order object
+     * @return  boolean     True if the workflow is complete, False if not
+     */
+    public function isSatisfied($Cart)
+    {
+        switch ($this->wf_name) {
+        case 'billto':
+        case 'shipto':
+            $A = $Cart->getAddress($this->wf_name);
+            $status = UserInfo::isValidAddress($A) == '' ? true : false;
+            break;
+        default:
+            $status = true;
+            break;
+        }
+        return $status;
+    }
+
+
+    /**
      * Get an instance of a workflow step.
      *
      * @uses    self::getall() to take advantage of caching
