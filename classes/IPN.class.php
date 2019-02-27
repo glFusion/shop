@@ -333,11 +333,15 @@ class IPN
      */
     protected function isSufficientFunds()
     {
+        $Cur = \Shop\Currency::getInstance();
         $total_credit = $this->calcTotalCredit();
+        $credit = $this->getCredit();
         // Compare total order amount to gross payment.  The ".0001" is to help
         // kill any floating-point errors. Include any discount.
         $total_order = $this->Order->getTotal();
-        $msg = "{$this->pmt_gross} received plus $total_credits credit, require $total_order";
+        $msg = $Cur->FormatValue($this->pmt_gross) . ' received plus ' .
+            $Cur->FormatValue($this->getCredit()) .' credit, require ' .
+            $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
             SHOP_debug("OK: $msg");
             return true;
@@ -748,9 +752,15 @@ class IPN
      * @param   string  $key    Key to credit
      * @return  float       Credit amount
      */
-    protected function getCredit($key)
+    protected function getCredit($key=NULL)
     {
-        if (array_key_exists($key, $this->credits)) {
+        if ($key === NULL) {
+            $total = 0;
+            foreach ($this->credits as $credit) {
+                $total += (float)$credit;
+            }
+            return $total;
+        } elseif (array_key_exists($key, $this->credits)) {
             return (float)$this->credits[$key];
         } else {
             return 0;
