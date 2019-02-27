@@ -256,7 +256,6 @@ class Order
             // If set, the user has selected an existing address. Read
             // that value and use it's values.
             Cart::setSession('billing', $addr_id);
-            $A = UserInfo::getInstance($this->uid)->getAddress($addr_id);
         }
 
         if (!empty($A)) {
@@ -285,7 +284,6 @@ class Order
         if ($addr_id > 0) {
             // If set, read and use an existing address
             Cart::setSession('shipping', $addr_id);
-            $A = UserInfo::getInstance($this->uid)->getAddress($addr_id);
         }
 
         if (!empty($A)) {
@@ -1310,8 +1308,6 @@ class Order
      */
     public function setGC($amt)
     {
-        global $_TABLES;
-
         $amt = (float)$amt;
         if ($amt == -1) {
             $gc_bal = Coupon::getUserBalance();
