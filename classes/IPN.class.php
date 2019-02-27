@@ -343,10 +343,10 @@ class IPN
             $Cur->FormatValue($this->getCredit()) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
-            SHOP_debug("OK: $msg");
+            SHOP_debug("OK: $msg", 'debug_ipn');
             return true;
         } else {
-            SHOP_debug("Insufficient Funds: $msg");
+            SHOP_debug("Insufficient Funds: $msg", 'debug_ipn');
             return false;
         }
     }   // isSufficientFunds()
@@ -375,8 +375,7 @@ class IPN
             }
 
             $this->items[$id]['prod_type'] = $P->prod_type;
-
-            SHOP_debug("Shop item " . $item['item_number']);
+            SHOP_debug("Shop item " . $item['item_number'], 'debug_ipn');
 
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
@@ -473,8 +472,8 @@ class IPN
         // Need to create a new, empty order object
         $this->Order = new Order();
 
-        if (isset($this->pp_data['custom']['cart_id'])) {
-            $this->Cart = new Cart($this->pp_data['custom']['cart_id'], false);
+        if ($this->order_id != '') {
+            $this->Cart = new Cart($this->order_id);
             if (!$this->Cart->hasItems()) {
                 if (!$_SHOP_CONF['sys_test_ipn']) {
                     return 1; // shouldn't normally be empty except during testing
@@ -484,9 +483,8 @@ class IPN
             $this->Cart = NULL;
         }
 
-        $uid = (int)$this->pp_data['custom']['uid'];
-        $this->Order->uid = $uid;
-        $this->Order->buyer_email = $this->pp_data['payer_email'];
+        $this->Order->uid = $this->uid;
+        $this->Order->buyer_email = $this->payer_email;
         $this->Order->status = 'pending';
         if ($uid > 1) {
             $U = new UserInfo($uid);
@@ -508,7 +506,7 @@ class IPN
             $this->Order->setBilling($BillTo);
         }
 
-        $ShipTo = $this->pp_data['shipto'];
+        $ShipTo = $this->shipto;
         if (empty($ShipTo)) {
             if ($this->Cart) $ShipTo = $this->Cart->getAddress('shipto');
             if (empty($ShipTo) && $uid > 1) {
@@ -518,14 +516,14 @@ class IPN
         if (is_array($ShipTo)) {
             $this->Order->setShipping($ShipTo);
         }
-        if (isset($this->pp_data['shipto']['phone'])) {
-            $this->Order->phone = $this->pp_data['shipto']['phone'];
+        if (isset($this->shipto['phone'])) {
+            $this->Order->phone = $this->shipto['phone'];
         }
         $this->Order->pmt_method = $this->gw_id;
-        $this->Order->pmt_txn_id = $this->pp_data['txn_id'];
-        $this->Order->shipping = $this->pp_data['pmt_shipping'];
-        $this->Order->handling = $this->pp_data['pmt_handling'];
-        $this->Order->buyer_email = $this->pp_data['payer_email'];
+        $this->Order->pmt_txn_id = $this->txn_id;
+        $this->Order->shipping = $this->pmt_shipping;
+        $this->Order->handling = $this->pmt_handling;
+        $this->Order->buyer_email = $this->payer_email;
         $this->Order->log_user = $this->gw->Description();
 
         $this->Order->items = array();
@@ -535,7 +533,7 @@ class IPN
             //$tmp = explode('|', $item['item_number']);
             //list($item_number,$options) =
             //if (is_numeric($item_number)) {
-            $P = Product::getInstance($item['item_id'], $this->pp_data['custom']);
+            $P = Product::getInstance($item['item_id'], $this->custom);
             $item['short_description'] = $P->short_description;
             if (!empty($options)) {
                 // options is expected as CSV
@@ -563,8 +561,8 @@ class IPN
                 'product_id' => $item['item_number'],
                 'description' => $item['short_description'],
                 'quantity' => $item['quantity'],
-                'txn_type' => $this->pp_data['custom']['transtype'],
-                'txn_id' => $this->pp_data['txn_id'],
+                'txn_type' => $this->custom['transtype'],
+                'txn_id' => $this->txn_id,
                 'status' => 'paid',
                 'token' => md5(time()),
                 'price' => $item['price'],
@@ -595,13 +593,15 @@ class IPN
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
+        return true;
+
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
         if ($this->order_id !== NULL) {
             $order_id = $this->order_id;
         } else {
             $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
-                "pmt_txn_id = '" . DB_escapeString($this->pp_data['parent_txn_id'])
+                "pmt_txn_id = '" . DB_escapeString($this->parent_txn_id)
                 . "'");
         }
 
@@ -611,7 +611,7 @@ class IPN
         }
 
         // Figure out if the entire order was refunded
-        $refund_amt = abs((float)$this->pp_data['pmt_gross']);
+        $refund_amt = abs((float)$this->pmt_gross);
 
         $item_total = 0;
         foreach ($Order->items as $key => $data) {
@@ -624,10 +624,10 @@ class IPN
             // actions.  None for catalog items (since there's no inventory,
             // but plugin items may need to do something.
             foreach ($Order->items as $key=>$data) {
-                $P = Product::getInstance($data['product_id'], $this->pp_data['custom']);
+                $P = Product::getInstance($data['product_id'], $this->custom);
                 // Don't care about the status, really.  May not even be
                 // a plugin function to handle refunds
-                $P->handleRefund($Order, $this->pp_data);
+                $P->handleRefund($Order, $this->ipn_data);
             }
             // Update the order status to Refunded
             $Order->updateStatus($LANG_SHOP['orderstatus']['refunded']);
