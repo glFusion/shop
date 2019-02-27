@@ -2284,7 +2284,7 @@ function SHOP_setUrl($url='')
     if ($url == '') {
         $url = "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
     }
-    SESS_setVar('pp_ret_url', $url);
+    SESS_setVar('shop_ret_url', $url);
 }
 
 
@@ -2296,7 +2296,7 @@ function SHOP_setUrl($url='')
  */
 function SHOP_getUrl($def_url = '')
 {
-    $url = SESS_getVar('pp_ret_url');
+    $url = SESS_getVar('shop_ret_url');
     if (!$url) {
         if ($def_url !== '') {
             $url = $def_url;
@@ -2306,7 +2306,7 @@ function SHOP_getUrl($def_url = '')
         }
     } else {
         // This is a one-time use value
-        SESS_unSet('ipp_ret_url');
+        SESS_unSet('shop_ret_url');
     }
     return $url;
 }
