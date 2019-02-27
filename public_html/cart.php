@@ -83,6 +83,7 @@ case 'checkout':
     } else {
         $Cart->setGC(0);
     }
+    
     if (isset($_POST['order_instr'])) {
         $Cart->instructions = $_POST['order_instr'];
     }
@@ -96,6 +97,8 @@ case 'checkout':
         // Update the cart quantities if coming from the cart view.
         // This also calls Save() on the cart
         $Cart->Update($_POST);
+    } else {
+        $Cart->Save();
     }
     // See what workflow elements we already have.
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
