@@ -15,10 +15,8 @@
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
 
-if ($_SHOP_CONF['debug_ipn'] == 1) {
-    // Get the complete IPN message prior to any processing
-    COM_errorLog('Recieved Square IPN: ' . print_r($_GET, true));
-}
+// Get the complete IPN message prior to any processing
+SHOP_debug('Recieved Square IPN: ' . print_r($_GET, true), 'debug_ipn');
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('square', $_GET);

@@ -19,12 +19,15 @@ require_once '../../lib-common.php';
 if (empty($_POST)) {
     // Received a webhook, a single parameter string
     $json = file_get_contents('php://input');
+    SHOP_debug("WEBHOOK: $json", 'debug_ipn');
     $post= json_decode($json,true);
 } elseif (isset($_POST['shop_test_ipn'])) {
     // Received POST, testing only. Must already be complete
     $post = $_POST;
+    SHOP_debug("TEST: " . var_export($post,true), 'debug_ipn');
 } else {
     // Received a Silent URL post. Convert to webhook format.
+    SHOP_debug("Silent URL: " . var_export($_POST,true), 'debug_ipn');
     switch (SHOP_getVar($_POST, 'x_type')) {
     case 'auth_capture':
         $eventtype = 'net.authorize.payment.authcapture.created';

@@ -55,8 +55,9 @@ class paypal extends \Shop\IPN
         $this->gw_name = $this->gw->Name();
         $this->currency = SHOP_getVar($A, 'mc_currency', 'string', 'Unk');
         $this->addCredit('discount', SHOP_getVar($A, 'discount', 'float', 0));
-        if (isset($A['invoice']))
+        if (isset($A['invoice'])) {
             $this->order_id = $A['invoice'];
+        }
         //if (isset($A['parent_txn_id']))
         //    $this->parent_txn_id = $A['parent_txn_id'];
 
@@ -214,7 +215,6 @@ class paypal extends \Shop\IPN
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
         //$this->custom = $this->custom;
-
         switch ($this->ipn_data['txn_type']) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
@@ -232,16 +232,17 @@ class paypal extends \Shop\IPN
 
             $this->pmt_net = $this->pmt_gross - $fees_paid;
             $unit_price = $payment_gross / $quantity;
-            $this->AddItem(array(
+            $args = array(
                 'item_id'   => $item_number,
                 'quantity'  => $quantity,
                 'price'     => $unit_price,
                 'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
                 'shipping'  => $this->pmt_shipping,
                 'handling'  => $this->pmt_handling,
-            ) );
+            );
+            $this->AddItem($args);
 
-            SHOP_debug("Net Settled: $payment_gross $this->currency");
+            SHOP_debug("Net Settled: $payment_gross $this->currency", 'debug_ipn');
             $this->handlePurchase();
             break;
 
@@ -282,7 +283,7 @@ class paypal extends \Shop\IPN
             }
 
             $payment_gross = SHOP_getVar($this->ipn_data, 'mc_gross', 'float') - $fees_paid;
-            SHOP_debug("Received $payment_gross gross payment");
+            SHOP_debug("Received $payment_gross gross payment", 'debug_ipn');
             $this->handlePurchase();
             break;
 
