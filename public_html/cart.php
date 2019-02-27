@@ -49,7 +49,7 @@ foreach($expected as $provided) {
     }
 }
 if ($action == '') {
-    // Not defined in $_POST or $_GET 
+    // Not defined in $_POST or $_GET
     // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
     COM_setArgNames(array('action', 'id'));
     $action = COM_getArgument('action');
@@ -83,7 +83,7 @@ case 'checkout':
     } else {
         $Cart->setGC(0);
     }
-    
+
     if (isset($_POST['order_instr'])) {
         $Cart->instructions = $_POST['order_instr'];
     }
@@ -134,10 +134,10 @@ case 'saveshipto':
             $_POST['useaddress'] = $addr_id[0];
         }
     }
-    //$view = \Shop\Workflow::getNextView($addr_type);
-    \Shop\Cart::getInstance()->setAddress($_POST, $addr_type);
+    $Cart = \Shop\Cart::getInstance();
+    $Cart->setAddress($_POST, $addr_type);
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
-    $content = \Shop\Cart::getInstance()->getView($next_step);
+    $content = $Cart->getView($next_step);
     $view = 'none';
     break;
 
@@ -152,7 +152,7 @@ case 'none':
 
 case 'view':
 default:
-    COM_getArgument('id');
+    $id = COM_getArgument('id');
     SHOP_setUrl($_SERVER['request_uri']);
     if (!empty($id)) {
         \Shop\Cart::setFinal($id, false);
