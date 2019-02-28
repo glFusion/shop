@@ -746,7 +746,7 @@ class Cart extends Order
      */
     public static function setFinal($cart_id, $status=true)
     {
-        global $_TABLES, $LANG_SHOP;
+        global $_TABLES, $LANG_SHOP, $_CONF;
 
         $Order = self::getInstance(0, $cart_id);
         if ($Order->isNew) {
@@ -758,7 +758,7 @@ class Cart extends Order
         $newstatus = $status ? 'pending' : 'cart';
         $Order->status = $newstatus;
         $Order->tax_rate = SHOP_getTaxRate();
-        $Order->order_date = time();
+        $Order->order_date->setTimestamp(time());
         $Order->Save();
         self::setSession('order_id', $cart_id);
 
