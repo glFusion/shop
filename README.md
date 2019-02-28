@@ -18,12 +18,23 @@ from your gateway provider.
 
 This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
 
+## Considerations if you have the Paypal Plugin installed
+  - If you have Paypal version 0.6.1 or later installed, data from that plugin is automatically transferred into the Shop plugin.
+  - If you have an earlier version installed, you *must* either disable the Paypal plugin or update it to v0.6.1+. There will be function name conflicts if you don't do this and Shop cannot be installed.
+  - The Shop plugin is initially visible only to Administrators. Before opening the store publicly you should disable the Paypal plugin. A message is displayed on the Shop pages as a reminder.
+  - You will need to manually change any autotags or other explicit links to the Paypal plugin.
+  - You may wish to enable rewrite rules on your server to redirect `/paypal/` to `/shop/` for search engines and external links.
+
+Shop and Paypal (0.6.1+) both contain wrapper functions to support the `service_XXX_paypal()` functions, and will not load those functions if they're already defined. If both plugins are enabled there is no way to know which version of the function will be loaded so you should disable Paypal as soon as possible.
+
+If you have the Paypal plugin version 0.6.0 and choose to disable it during installation, you can still migrate data from it into the Shop plugin.
+Open the Shop administration area and click on the `Maintenance` menu option. If the following conditions are met you can migrate data from the Paypal plugin:
+  - There have been no orders entered in the Shop plugin.
+  - There have been
 ## Installation
 Installation is accomplished by using the glFusion automated plugin installer.
 
-If you have the Paypal plugin installed:
-  - version 0.6.1 or later, data from that plugin is automatically transferred into the Shop plugin.
-  - If you have an earlier version installed, you *must* either disable the Paypal plugin or update it to v0.6.1+. There will be function name conflicts if you don't do this.
+When the Shop plugin is first installed, it is only available to members of the Root group. To open the shop publicly, set the `Enable public access` setting to `Yes` in the plugin's global configuration.
 
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.

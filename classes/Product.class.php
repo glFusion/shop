@@ -2219,6 +2219,22 @@ class Product
         return DB_error() ? false : true;
     }
 
+
+    /**
+     * Check if there are any products in the database.
+     * Used to determine if data can be migrated from Paypal.
+     *
+     * @return  boolean     True if orders table is empty
+     */
+    public static function haveProducts()
+    {
+        global $_TABLES;
+
+        return (
+            DB_count($_TABLES['shop.products']) > 0
+        );
+    }
+
 }   // class Product
 
 ?>

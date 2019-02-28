@@ -1583,6 +1583,27 @@ class Order
         return COM_buildUrl(SHOP_URL . "/order.php?mode=$view&id={$this->order_id}&token={$this->token}");
     }
 
+
+    /**
+     * Check if there are any non-cart orders or IPN messages in the database.
+     * Used to determine if data can be migrated from Paypal.
+     *
+     * @return  boolean     True if orders table is empty
+     */
+    public static function haveOrders()
+    {
+        global $_TABLES;
+
+        return (
+            (int)DB_getItem(
+                $_TABLES['shop.orders'],
+                'count(*)',
+                "status <> 'cart'"
+            ) > 0 ||
+            DB_count($_TABLES['shop.ipnlog']) > 0
+        );
+    }
+
 }
 
 ?>

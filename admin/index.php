@@ -50,6 +50,7 @@ $expected = array(
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
+    'migrate_pp',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'catlist',
     'attributes', 'editattr', 'other', 'productlist', 'gwadmin', 'gwedit',
@@ -180,6 +181,16 @@ case 'updcartcurrency':
         $updated++;
     }
     COM_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
+    break;
+
+case 'migrate_pp':
+    include_once SHOP_PI_PATH . '/migrate_pp.php';
+    if (SHOP_migrate_pp()) {
+        COM_setMsg($LANG_SHOP['migrate_pp_ok']);
+    } else {
+        COM_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
+    }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
@@ -491,7 +502,15 @@ case 'editdiscount':
 
 case 'other':
     $T = SHOP_getTemplate('other_functions', 'funcs');
-    $T->set_var('admin_url', SHOP_ADMIN_URL . '/index.php');
+    $can_migrate_pp = (
+        is_file($_CONF['path'] . '/plugins/paypal/paypal.php') &&
+        !\Shop\Order::haveOrders() &&
+        !\Shop\Product::haveProducts()
+    );
+    $T->set_var(array(
+        'admin_url' => SHOP_ADMIN_URL . '/index.php',
+        'can_migrate_pp' => $can_migrate_pp,
+    ) );
     $T->parse('output', 'funcs');
     $content = $T->finish($T->get_var('output'));
     break;

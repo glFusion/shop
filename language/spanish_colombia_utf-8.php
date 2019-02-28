@@ -412,6 +412,11 @@ $LANG_SHOP = array (
     'ly'    => 'Last Year',
 ),
 'gc'    => 'Gift Card',
+'migrate_pp' => 'Migrate from Paypal',
+'q_migrate_pp' => 'Are you sure? This will delete ALL existing data from the Shop plugin',
+'dscp_migrate_pp' => 'Migrate data from the Paypal plugin version 0.6.0 or higher, if available, into the Shop plugin.<br /><b>This function empties ALL data from the Shop plugin before migration.</b>',
+'migrate_pp_ok' => 'Paypal data was successfully migrated.',
+'migrate_pp_error' => 'There was an error migrating from Paypal. Check the system log.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

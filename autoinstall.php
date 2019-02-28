@@ -179,7 +179,12 @@ function plugin_install_shop()
     if (array_key_exists('paypal', $_PLUGIN_INFO)) {
         $ver = $_PLUGIN_INFO['paypal']['pi_version'];
         if (!COM_checkVersion($ver, '0.6.1')) {
-            COM_setMsg(sprintf('Paypal Plugin must be version 0.6.1 or greater, version %s installed.', $ver), 'error');
+            $msg = sprintf(
+                'Paypal Plugin must be version 0.6.1 or greater, version %s installed.',
+                $ver
+            ) . ' Please upgrade or disable the Paypal plugin to install the Shop plugin.';
+            COM_setMsg($msg, 'error');
+            COM_errorLog($msg);
             return false;
         }
     }
@@ -274,49 +279,8 @@ function plugin_postinstall_shop()
                     $c->set($key, $val, 'shop');
                 }
             }
-
-            $tables = array('address', 'buttons', 'categories', 'coupon_log', 'coupons',
-            'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus', 'prod_attr',
-            'products', 'sales', 'shipping', 'userinfo', 'workflows',
-            'currency', 'orders',
-            );
-
-            $sql = array();
-            foreach ($tables as $tbl) {
-                $shop = $_TABLES['shop.' . $tbl];
-                $pp = $_TABLES['paypal.' . $tbl];
-                $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
-            }
-
-            // This version renames the "purchases" table to "orderitems"
-            $shop = $_TABLES['shop.orderitems'];
-            $pp = $_TABLES['paypal.purchases'];
-            $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
-
-            foreach ($sql as $s) {
-                DB_query($s, 1);
-                if (DB_error()) {
-                    COM_errorLog("Error migrating Paypal to Shop: $s");
-                }
-            }
-        }
-
-        // Copy images and other assets
-        $dirs = array(
-            $_CONF['path'] . 'data/paypal/files' => $_CONF['path'] . 'data/shop/files',
-            $_CONF['path'] . 'data/paypal/keys' => $_CONF['path'] . 'data/shop/keys',
-            $_CONF['path_html'] . 'paypal/images/products' => $_CONF['path_html'] . 'shop/images/products',
-            $_CONF['path_html'] . 'paypal/images/categories' => $_CONF['path_html'] . 'shop/images/categories',
-            $_CONF['path_html'] . 'paypal/images/gateways' => $_CONF['path_html'] . 'shop/images/gateways',
-        );
-        foreach ($dirs as $src=>$dst) {
-            $handle = opendir($src);
-            while (false !== ($file = readdir($handle))) {
-                if ($file != '.' && $file != '..' && !is_dir($src . '/' . $file)) {
-                    copy($src . '/' . $file, $dst . '/' . $file);
-                }
-            }
-            closedir($handle);
+            include_once __DIR__ . '/migrate_pp.php';
+            SHOP_migrate_pp();
         }
     }
 
