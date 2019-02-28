@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @since       v0.6.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -52,34 +52,25 @@ class Coupon extends Product
      * @author      Joash Pereira
      * @author      Alex Rabinovich
      * @see         https://github.com/joashp/simple-php-coupon-code-generator
-     * @param   array   $options
      * @return  string      Coupon code
      */
-    public static function generate($options = array())
+    public static function generate()
     {
         global $_SHOP_CONF;
 
-        $length = SHOP_getVar($options, 'length', 'int', $_SHOP_CONF['gc_length']);
-        $prefix = SHOP_getVar($options, 'prefix', 'string', $_SHOP_CONF['gc_prefix']);
-        $suffix = SHOP_getVar($options, 'suffix', 'string', $_SHOP_CONF['gc_suffix']);
-        $useLetters = SHOP_getVar($options, 'letters', 'int', $_SHOP_CONF['gc_letters']);
-        $useNumbers = SHOP_getVar($options, 'numbers', 'int', $_SHOP_CONF['gc_numbers']);
-        $useSymbols = SHOP_getVar($options, 'symbols', 'int', $_SHOP_CONF['gc_symbols']);
-        $mask = SHOP_getVar($options, 'mask', 'string', $_SHOP_CONF['gc_mask']);
+        $length = SHOP_getVar($_SHOP_CONF, 'gc_length', 'int', 10);
+        $prefix = $_SHOP_CONF['gc_prefix'];
+        $suffix = $_SHOP_CONF[ 'gc_suffix'];
+        $useLetters = SHOP_getVar($_SHOP_CONF, 'gc_letters', 'int');
+        $useNumbers = SHOP_getVar($_SHOP_CONF, 'gc_numbers', 'int');
+        $useSymbols = SHOP_getVar($_SHOP_CONF, 'gc_symbols', 'int');
+        $mask = $_SHOP_CONF['gc_mask'];
 
-        $uppercase = array('Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
-                            'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L',
-                            'Z', 'X', 'C', 'V', 'B', 'N', 'M',
-        );
-        $lowercase = array('q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p',
-                            'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l',
-                            'z', 'x', 'c', 'v', 'b', 'n', 'm',
-        );
-        $numbers = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-        $symbols = array('`', '~', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
-                        '-', '_', '=', '+', '\\', '|', '/', '[', ']', '{', '}',
-                        '"', "'", ';', ':', '<', '>', ',', '.', '?',
-        );
+        $uppercase  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $lowercase  = 'abcdefghijklmnopqrstuvwxyz';
+        $numbers    = '1234567890';
+        $symbols    = '`~!@#$%^&*()-_=+[]{}|";:/?.>,<';
+
         $characters = array();
         $coupon = '';
 
@@ -91,19 +82,19 @@ class Coupon extends Product
             $characters = $lowercase;
             break;
         case 3:     // both upper and lower
-            $characters = array_merge($characters, $uppercase, $lowercase);
+            $characters = $uppercase . $lowercase;
             break;
         case 0:     // no letters
         default:
             break;
         }
         if ($useNumbers) {
-            $characters = array_merge($characters, $numbers);
+            $characters .= $numbers;
         }
         if ($useSymbols) {
-            $characters = array_merge($characters, $symbols);
+            $characters .= $symbols;
         }
-        $charcount = count($characters);
+        $charcount = strlen($characters);
 
         // If a mask is specified, use it and substitute 'X' for coupon chars.
         // Otherwise use the specified length.
@@ -544,31 +535,6 @@ class Coupon extends Product
             }
         }
         return $log;
-    }
-
-
-    /**
-     * Mask a gift card code for display in the log.
-     * Replaces characters, except symbols, with "X".
-     * Leaves the last 4 characters alone for identification if the total
-     * string length is > 10 characters, otherwise all characters are replaced.
-     *
-     * @param   string  $code   Original gift card code
-     * @return  string          Masked code
-     */
-    public static function maskForDisplay($code)
-    {
-        $len = strlen($code);
-        // If the code length is > 10 characters, leave the last 4 alone.
-        if ($len > 10) {
-            $len -= 4;
-        }
-        for ($i = 0; $i < $len; $i++) {
-            if (ctype_alnum($code[$i])) {
-                $code[$i] = 'X';
-            }
-        }
-        return $code;
     }
 
 
