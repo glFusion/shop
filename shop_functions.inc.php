@@ -311,7 +311,7 @@ function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
         switch ($fieldvalue) {
         case 'gc_redeemed':
             // Redeemed and added to account
-            $retval = sprintf($LANG_SHOP['msg_gc_redeemed'], Coupon::maskForDisplay($A['code']));
+            $retval = sprintf($LANG_SHOP['msg_gc_redeemed'], $A['code']);
             break;
         case 'gc_applied':
             // Applied as payment against an order
