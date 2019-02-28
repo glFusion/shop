@@ -78,6 +78,12 @@ class Order
      * @var array */
     protected static $nonfinal_statuses = array('cart', 'pending');
 
+    /** Order Date.
+     * This field is defined here since it contains an object and
+     * needs to be accessed directly.
+     * @var object */
+    protected $order_date;
+
     /**
      * Set internal variables and read the existing order if an id is provided.
      *
@@ -440,7 +446,6 @@ class Order
             // Set field values that can only be set once and not updated
             $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
                     order_id='{$this->order_id}',
-                    order_date = '{$this->order_date->toUnix()}',
                     token = '" . DB_escapeString($this->token) . "',
                     uid = '" . (int)$this->uid . "', ";
             $sql2 = '';
@@ -451,6 +456,7 @@ class Order
         $this->calcTotalCharges();
 
         $fields = array(
+                "order_date = '{$this->order_date->toUnix()}'",
                 "status = '{$this->status}'",
                 "pmt_txn_id = '" . DB_escapeString($this->pmt_txn_id) . "'",
                 "pmt_method = '" . DB_escapeString($this->pmt_method) . "'",
