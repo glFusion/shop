@@ -290,16 +290,16 @@
         <th>{$LANG_SHOP['min_purch']}</th><th>{$LANG_SHOP['discount']} %</th>
       </tr>
       <tr>
-        <td align="center"><input type="text" size="5" name="disc_qty[0]" value="{disc_qty0}" /></td>
-        <td align="center"><input type="text" size="5" name="disc_amt[0]" value="{disc_amt0}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_qty[0]" value="{disc_qty0}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_amt[0]" value="{disc_amt0}" /></td>
       </tr>
       <tr>
-        <td><input type="text" size="5" name="disc_qty[1]" value="{disc_qty1}" /></td>
-        <td><input type="text" size="5" name="disc_amt[1]" value="{disc_amt1}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_qty[1]" value="{disc_qty1}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_amt[1]" value="{disc_amt1}" /></td>
       </tr>
       <tr>
-        <td><input type="text" size="5" name="disc_qty[2]" value="{disc_qty2}" /></td>
-        <td><input type="text" size="5" name="disc_amt[2]" value="{disc_amt2}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_qty[2]" value="{disc_qty2}" /></td>
+        <td class="aligncenter"><input type="text" size="5" name="disc_amt[2]" value="{disc_amt2}" /></td>
       </tr>
       </table>
       </div>
