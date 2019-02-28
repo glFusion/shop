@@ -121,7 +121,7 @@
             </a>
 {!endif}
 {!if is_file}
-            &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}" class="uk-icon uk-icon-download tooltip" title="{$LANG_SHOP['download']}"></a>
+            &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}"><button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['download']}</button></a>
 {!endif}
         {item_options}
         <!-- BEGIN ItemOptions -->
