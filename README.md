@@ -30,7 +30,9 @@ Shop and Paypal (0.6.1+) both contain wrapper functions to support the `service_
 If you have the Paypal plugin version 0.6.0 and choose to disable it during installation, you can still migrate data from it into the Shop plugin.
 Open the Shop administration area and click on the `Maintenance` menu option. If the following conditions are met you can migrate data from the Paypal plugin:
   - There have been no orders entered in the Shop plugin.
-  - There have been
+  - There have been no products added to the catalog.
+Note that the Paypal tables will be updated to version 0.6.1 which may make it more difficult to update it later. The recommended approach is to update to Paypal 0.6.1 before installing Shop.
+
 ## Installation
 Installation is accomplished by using the glFusion automated plugin installer.
 
