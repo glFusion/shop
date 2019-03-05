@@ -332,6 +332,7 @@ class Report
     {
         global $_CONF;
 
+        $d2 = SHOP_now();
         switch ($period) {
         case 'tm':
             $d1 = new \Date('first day of this month', $_CONF['timezone']);
