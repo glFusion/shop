@@ -295,9 +295,18 @@ $LANG_SHOP = array (
 'statuses' => 'Order Statuses',
 'reports' => 'Reports',
 'reports_avail' => array(
-    'orderlist' => 'Order Listing',
-    'ipnlog' => 'Payment Listing',
-    'pendingship' => 'Pending Shipments',
+    'orderlist' => array(
+        'name' => 'Order Listing',
+        'dscp' => 'List all orders for a given time period, optionally filtering by status.',
+    ),
+    'ipnlog' => array(
+        'name' => 'Payment Listing',
+        'dscp' => 'List payments received during a time period.',
+    ),
+    'pendingship' => array(
+        'name' => 'Pending Shipments by Item',
+        'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
+    ),
 ),
 'my_orders' => 'My Orders',
 'no_products_match' => 'No products match your search parameters',
@@ -418,10 +427,14 @@ $LANG_SHOP = array (
 'shop_closed'   => 'The Shop plugin is only available to administrators.',
 'last_x_days'   => 'Last %d Days',
 'periods' => array(
+    'at'    => 'All time',
     'tm'    => 'This Month',
     'lm'    => 'Last Month',
+    'tq'    => 'This Quarter',
+    'lq'    => 'Last Quarter',
     'ty'    => 'This Year',
     'ly'    => 'Last Year',
+    'cust'  => 'Custom Dates',
 ),
 'gc'    => 'Gift Card',
 'migrate_pp' => 'Migrate from Paypal',

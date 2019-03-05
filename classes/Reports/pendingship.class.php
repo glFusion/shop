@@ -14,28 +14,44 @@
 namespace Shop\Reports;
 
 /**
- * Class for Order History Report.
+ * Class for Pending Shipments Report.
  * @package shop
  */
 class pendingship extends \Shop\Report
 {
     /**
-     * Creates the report form.
+     * Constructor. Override the allowed statuses.
+     */
+    public function __construct()
+    {
+        // This report doesn't show shipped or closed statuses.
+        $this->allowed_statuses = array(
+            'pending',
+            'paid',
+            'processing',
+        );
+        parent::__construct();
+    }
+
+
+    /**
+     * Creates the configuration form for elements unique to this report.
      *
      * @return  string          HTML for edit form
      */
-    public function Configure()
+    protected function getReportConfig()
     {
         global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $retval = '';
+        $this->uses_dates = false;
         $T = $this->getTemplate('config');
-        $type = self::_getSessVar('output_type', 'html');
         $item_id = self::_getSessVar('item_id');
         $items = \Shop\Product::getAll();
         $T->set_block('report', 'itemSelect', 'itemsel');
         foreach ($items as $id => $obj) {
             if (!$obj->isPhysical()) {
+                // No shipping required for non-physical items
                 continue;
             }
             $T->set_var(array(
@@ -45,13 +61,9 @@ class pendingship extends \Shop\Report
             ) );
             $T->parse('itemsel', 'itemSelect', true);
         }
-        $T->set_var(array(
-            $type . '_sel'  => 'checked="checked"',
-            'report_key'    => $this->key,
-        ) );
         $retval .= $T->parse('output', 'report');
         return $retval;
-    }   // function showForm()
+    }
 
 
     /**
@@ -65,20 +77,13 @@ class pendingship extends \Shop\Report
 
         $this->setType($_GET['out_type']);
         self::_setSessVar('item_id', $_GET['item_id']);
+        self::_setSessVar('orderstatus', $_GET['orderstatus']);
+        $this->setStatuses($_GET['orderstatuses']);
         $T = $this->getTemplate();
-        $statuses = \Shop\OrderStatus::getAll();
-        if (!array_key_exists('shipped', $statuses)) {
-            // TODO, actual error message
-            echo "no shipping status defined";die;
-        }
-        $shipped_orderby = (int)$statuses['shipped']->orderby;
         $nonshipped = array();
-        foreach ($statuses as $s) {
-            if ($s->orderby < $shipped_orderby) {
-                $nonshipped[] = $s->getName();
-            } else {
-                // getAll() sorts by orderby, so we can quit checking here
-                break;
+        foreach ($this->statuses as $key=>$info) {
+            if (!empty($info['chk'])) {
+                $nonshipped[] = $key;
             }
         }
         $nonshipped = "'" . implode("','", $nonshipped) . "'";
@@ -123,10 +128,6 @@ class pendingship extends \Shop\Report
             LEFT JOIN {$_TABLES['shop.orders']} ord
                 ON itm.order_id = ord.order_id";
 
-            /*WHERE ord.status IN ($nonshipped)
-                AND itm.product_id = '{$Item->id}'*/
-//            ORDER BY ord.order_date ASC";
-
         $query_arr = array(
             'table' => 'shop.orders',
             'sql' => $sql,
@@ -147,7 +148,8 @@ class pendingship extends \Shop\Report
         case 'html':
             $T->set_var(array(
                 'output'    => \ADMIN_list(
-                    'shop_rep_pendingship', '\Shop\getReportField',
+                    'shop_rep_pendingship',
+                    array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr
                 ),
             ) );
@@ -189,6 +191,6 @@ class pendingship extends \Shop\Report
         return $this->getOutput($report);
     }
 
-}   // class orderlist
+}
 
 ?>

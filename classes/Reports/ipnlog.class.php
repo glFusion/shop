@@ -19,26 +19,25 @@ namespace Shop\Reports;
 class ipnlog extends \Shop\Report
 {
     /**
-     * Creates the report form.
+     * Creates the configuration form for elements unique to this report.
      *
      * @return  string          HTML for edit form
      */
-    public function Configure()
+    protected function getReportConfig()
     {
-        global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
-
         $retval = '';
+        $this->uses_status = false;
         $T = $this->getTemplate('config');
-        $type = self::_getSessVar('output_type');
-        $period = self::_getSessVar('period');
-        // Get previously-selected statuses from the session var
-        $T->set_var(array(
-            'from_date' => '1970-01-01',
-            'to_date' => SHOP_now()->format('Y-m-d', true),
-            $type . '_sel' => 'checked="checked"',
-            $period . '_sel' => 'selected="selected"',
-            'report_key'    => $this->key,
-        ) );
+        $gws = \Shop\Gateway::getAll();
+        $T->set_block('config', 'gw_opts', 'opt');
+        foreach ($gws as $GW) {
+            $T->set_var(array(
+                'gw_name'   => $GW->Name(),
+                'gw_dscp'   => $GW->DisplayName(),
+                'sel'       => $gateway == $GW->Name() ? 'selected="selected"' : '',
+            ) );
+            $T->parse('opt', 'gw_opts', true);
+        }
         $retval .= $T->parse('output', 'report');
         return $retval;
     }
@@ -54,9 +53,10 @@ class ipnlog extends \Shop\Report
         global $_TABLES, $_CONF, $LANG_SHOP;
 
         $this->setType($_GET['out_type']);
-        $dates = parent::getDates($_GET['period']);
+        $dates = parent::getDates($_GET['period'], $_GET['from_date'], $_GET['to_date']);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
+        $gateway = $this->setGateway($_GET['gateway']);
         $T = $this->getTemplate();
 
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
@@ -105,11 +105,15 @@ class ipnlog extends \Shop\Report
             'query_fields' => array('ip_addr', 'txn_id'),
             'default_filter' => "WHERE ts BETWEEN {$this->startDate->toUnix()} AND {$this->endDate->toUnix()}",
         );
+        if (!empty($gateway)) {
+            $query_arr['default_filter'] .= " AND gateway = '" .
+                DB_escapeString($gateway) . "'";
+        }
 
         $text_arr = array(
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&perod=' . $period,
+                '&perod=' . $period . '&gateway=' . $gateway,
         );
 
         if (!isset($_REQUEST['query_limit'])) {
@@ -121,10 +125,10 @@ class ipnlog extends \Shop\Report
             $T->set_var(array(
                 'output' => \ADMIN_list(
                     $_SHOP_CONF['pi_name'] . '_ipnlog',
-                    '\Shop\getReportField',
+                    array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
                     '', '', '', ''
-                )
+                ),
             ) );
             break;
         case 'csv':
@@ -146,14 +150,28 @@ class ipnlog extends \Shop\Report
         }
 
         $T->set_var(array(
-            'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
-            'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
+            'startDate'     => $this->startDate->format($_CONF['shortdate'], true),
+            'endDate'       => $this->endDate->format($_CONF['shortdate'], true),
+            'report_key'    => $this->key,
         ) );
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
         return $this->getOutput($report);
     }
 
-}   // class ipnlog
+
+    /**
+     * Set the selected gateway name and return a DB-safe version of it.
+     *
+     * @param   string  $gw_name    Gateway name
+     * @return  string      Sanitized version of the gateway name
+     */
+    private function setGateway($gw_name)
+    {
+        $this->_setSessVar('gateway', $gw_name);
+        return DB_escapeString($gw_name);
+    }
+
+}
 
 ?>

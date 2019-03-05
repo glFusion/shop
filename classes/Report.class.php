@@ -43,6 +43,26 @@ class Report
      * @var string */
     protected $type = 'html';
 
+    /**
+     * Allowed order statuses to show in the config form.
+     * @var array */
+    protected $allowed_status = array();
+
+    /**
+     * Array of status selection info
+     * @var array */
+    protected $statuses = array();
+
+    /**
+     * Indicate whether the config uses date ranges.
+     * @var boolean */
+    protected $uses_dates = true;
+
+    /**
+     * Indicate whether the config uses order statuses.
+     * @var boolean */
+    protected $uses_status = true;
+
 
     /**
      * Initializes the report.
@@ -50,6 +70,11 @@ class Report
     protected function __construct()
     {
         $this->key = (new \ReflectionClass($this))->getShortName();
+        $type = self::_getSessVar('output_type');
+        if ($type) {
+            $this->setType($type);
+        }
+        $this->setStatuses($status_sess);
     }
 
 
@@ -72,11 +97,18 @@ class Report
     {
         global $LANG_SHOP;
 
-        $retval = '';
-        foreach ($LANG_SHOP['reports_avail'] as $key => $descrip) {
-            $retval .= '<div><a href="' . SHOP_ADMIN_URL .
-                '/report.php?configure=' . $key . '">' . $descrip . '</a></div>';
+        $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+        $T->set_file('list', 'list.thtml');
+        $T->set_block('list', 'reportList', 'rlist');
+        foreach ($LANG_SHOP['reports_avail'] as $key=>$data) {
+            $T->set_var(array(
+                'rpt_key'   => $key,
+                'rpt_dscp'  => $data['dscp'],
+                'rpt_name'  => $data['name'],
+            ) );
+            $T->parse('rlist', 'reportList', true);
         }
+        $retval .= $T->parse('output', 'list');
         return $retval;
     }
 
@@ -171,6 +203,67 @@ class Report
 
 
     /**
+     * Get the report configuration form.
+     *
+     * @param   string|null $base   Base template name
+     * @return  object      Template object
+     */
+    public function Configure()
+    {
+        global $LANG_SHOP;
+
+        $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+        $T->set_file(array(
+            'main'  => 'config.thtml',
+        ) );
+        $period = self::_getSessVar('period');
+        $from_date = self::_getSessVar('from_date', '1970-01-01');
+        $to_date = self::_getSessVar('to_date', SHOP_now());
+        $gateway = self::_getSessVar('gateway');
+        // Get previously-selected statuses from the session var
+        $T->set_var(array(
+            'title' => $LANG_SHOP['reports_avail'][$this->key]['name'],
+            'from_date' => $from_date,
+            'to_date' => $to_date,
+            $this->type . '_sel' => 'checked="checked"',
+            'period_options' => self::getPeriodSelection($period),
+            'report_key'    => $this->key,
+            'period'    => $period,
+            'uses_dates'    => $this->uses_dates,
+            'uses_status'   => $this->uses_status,
+            'report_configs' => $this->getReportConfig(),
+        ) );
+
+        if ($this->uses_status) {
+            $T->set_block('report', 'statusOpts', 'statOpt');
+            foreach ($this->statuses as $key => $data) {
+                $T->set_var(array(
+                    'status_key' => $key,
+                    'status' => $data['dscp'],
+                    'checked' => $data['chk'],
+                ) );
+                $T->parse('statOpt', 'statusOpts', true);
+            }
+        }
+
+        $T->parse('output', 'main');
+        return $T->finish ($T->get_var('output'));
+    }
+
+
+    /**
+     * Get the report-specific config elements.
+     * This is a stub that may be overridden.
+     *
+     * @return  string  HTML for report-specific configuration items
+     */
+    protected function getReportConfig()
+    {
+        return '';
+    }
+
+
+    /**
      * Get the report template.
      * Gets the configuration template if requested, or the appropriate
      * report template depending on the selected output type.
@@ -211,11 +304,34 @@ class Report
     }
 
 
-    public static function getDates($period)
+    /**
+     * Get the time period selector.
+     *
+     * @param   string  $period     Selected period
+     * @return  string      HTML for the period selector
+     */
+    public static function getPeriodSelection($period=NULL)
+    {
+        global $LANG_SHOP;
+
+        foreach ($LANG_SHOP['periods'] as $key=>$text) {
+            $sel = $key == $period ? 'selected="selected"' : '';
+            $retval .= "<option value=\"$key\" $sel>$text</option>" . LB;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Given a period designation return the starting and ending date objects.
+     *
+     * @param   string  $period     Period designator
+     * @return  array       Array of (start date, end date) objects
+     */
+    public static function getDates($period, $from=NULL, $to=NULL)
     {
         global $_CONF;
 
-        $d2 = SHOP_now();
         switch ($period) {
         case 'tm':
             $d1 = new \Date('first day of this month', $_CONF['timezone']);
@@ -247,6 +363,12 @@ class Report
             $year = SHOP_now()->format('Y') - 1;
             $d1 = new \Date($year . '-01-01 00:00:00', $_CONF['timezone']);
             $d2 = new \Date($year . '-12-31 23:59:59', $_CONF['timezone']);
+            break;
+        case'cust':
+            $d1 = new \Date($from, $_CONF['timezone']);
+            $d2 = new \Date($to, $_CONF['timezone']);
+            self::_setSessVar('from_date', $from);
+            self::_setSessVar('to_date', $to);
             break;
         default:
             // All time, use default end
@@ -342,111 +464,140 @@ class Report
         return $str;
     }
 
-}   // class Report
 
+    protected function setStatuses()
+    {
+        global $LANG_SHOP;
 
-/**
- * Get an individual field for the history screen.
- *
- * @param   string  $fieldname  Name of field (from the array, not the db)
- * @param   mixed   $fieldvalue Value of the field
- * @param   array   $A          Array of all fields from the database
- * @param   array   $icon_arr   System icon array (not used)
- * @return  string              HTML for field display in the table
- */
-function getReportField($fieldname, $fieldvalue, $A, $icon_arr)
-{
-    global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
-
-    static $dt = NULL;
-    static $Cur = NULL;
-    $retval = '';
-
-    if ($dt === NULL) {
-        // Instantiate a date object once
-        $dt = new \Date('now', $_USER['tzid']);
+        $this->statuses = array();
+        $statuses = \Shop\OrderStatus::getAll();
+        $status_sess = self::_getSessVar('orderstatus');
+        foreach ($statuses as $key=>$data) {
+            // Check if this is in the allowed statuses array
+            if (!empty($this->allowed_statuses) &&
+                !in_array($key, $this->allowed_statuses)) {
+                continue;
+            }
+            $chk = 'checked="checked"';
+            // If there is a session var but it doesn't contain this status,
+            // then it was unchecked.
+            if (is_array($status_sess) && !in_array($key, $status_sess)) {
+                $chk = '';
+            }
+            $this->statuses[$key] = array(
+                'dscp'  => SHOP_getVar($LANG_SHOP['orderstatus'], $key, 'string', $key),
+                'chk'   => $chk,
+            );
+        }
+        return $this->statuses;
     }
-    if ($Cur === NULL) {
-        $Cur = Currency::getInstance();
-    }
 
-    switch($fieldname) {
-    case 'order_id':
-        $retval = COM_createLink(
-            $fieldvalue,
-            SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
-        );
-        $retval .= '&nbsp;&nbsp;' . COM_createLink(
-            '<i class="uk-icon-mini uk-icon-print"></i>',
-            COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $fieldvalue),
-            array(
-                'class' => 'tooltip',
-                'title' => $LANG_SHOP['print'],
-                'target' => '_new',
-            )
-        );
-        $retval .= '&nbsp;&nbsp;' . COM_createLink(
-            '<i class="uk-icon-mini uk-icon-list"></i>',
-            COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
-            array(
-                'class' => 'tooltip',
-                'title' => $LANG_SHOP['packinglist'],
-                'target' => '_new',
-            )
-        );
-        break;
+    /**
+     * Get an individual field for the history screen.
+     * @access  public so ADMIN_list() can access it.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getReportField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
-    case 'ipn_id':
-        $retval = COM_createLink(
-            $A['id'],
-            SHOP_ADMIN_URL . '/index.php?ipnlog=x&amp;op=single&amp;id=' . $A['id']
-        );
-        break;
+        static $dt = NULL;
+        static $Cur = NULL;
+        $retval = '';
 
-    case 'verified':
-        $retval = $fieldvalue > 0 ? 'True' : 'False';
-        break;
+        if ($dt === NULL) {
+            // Instantiate a date object once
+            $dt = new \Date('now', $_USER['tzid']);
+        }
+        if ($Cur === NULL) {
+            $Cur = Currency::getInstance();
+        }
 
-    case 'order_date':
-        $dt->setTimestamp($fieldvalue);
-        $retval = '<span class="tooltip" title="' .
+        switch($fieldname) {
+        case 'order_id':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
+            );
+            $retval .= '&nbsp;&nbsp;' . COM_createLink(
+                '<i class="uk-icon-mini uk-icon-print"></i>',
+                COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $fieldvalue),
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['print'],
+                    'target' => '_new',
+                )
+            );
+            $retval .= '&nbsp;&nbsp;' . COM_createLink(
+                '<i class="uk-icon-mini uk-icon-list"></i>',
+                COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['packinglist'],
+                    'target' => '_new',
+                )
+            );
+            break;
+
+        case 'ipn_id':
+            $retval = COM_createLink(
+                $A['id'],
+                SHOP_ADMIN_URL . '/index.php?ipnlog=x&amp;op=single&amp;id=' . $A['id']
+            );
+            break;
+
+        case 'verified':
+            $retval = $fieldvalue > 0 ? 'True' : 'False';
+            break;
+
+        case 'order_date':
+        case 'ts':
+            $dt->setTimestamp($fieldvalue);
+            $retval = '<span class="tooltip" title="' .
                 $dt->format($_SHOP_CONF['datetime_fmt'], false) . '">' .
                 $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
-        break;
+            break;
 
-    case 'order_total':
-        $sales = SHOP_getVar($A, 'sales_amt', 'float');
-        $tax = SHOP_getVar($A, 'tax', 'float');
-        $shipping = SHOP_getVar($A, 'shipping', 'float');
-        $retval = $Cur->formatValue($sales + $tax + $shipping);
-        break;
+        case 'order_total':
+            $sales = SHOP_getVar($A, 'sales_amt', 'float');
+            $tax = SHOP_getVar($A, 'tax', 'float');
+            $shipping = SHOP_getVar($A, 'shipping', 'float');
+            $retval = $Cur->formatValue($sales + $tax + $shipping);
+            break;
 
-    case 'status':
-        if (is_array($LANG_SHOP['orderstatus'])) {
-            $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
-        } else {
-            $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
+        case 'status':
+            if (is_array($LANG_SHOP['orderstatus'])) {
+                $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
+            } else {
+                $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
+            }
+            break;
+
+        case 'sales_amt':
+        case 'total':
+        case 'shipping':
+        case 'tax':
+            $retval = $Cur->formatValue($fieldvalue);
+            break;
+
+        case 'customer':
+            if (!empty($A['billto_company'])) {
+                $fieldvalue = $A['billto_company'];
+            } else {
+                $fieldvalue = $A['billto_name'];
+            }
+        default:
+            $retval = str_replace('"', '&quot;', $fieldvalue);
+            break;
         }
-        break;
-
-    case 'sales_amt':
-    case 'total':
-    case 'shipping':
-    case 'tax':
-        $retval = $Cur->formatValue($fieldvalue);
-        break;
-
-    case 'customer':
-        if (!empty($A['billto_company'])) {
-            $fieldvalue = $A['billto_company'];
-        } else {
-            $fieldvalue = $A['billto_name'];
-        }
-    default:
-        $retval = str_replace('"', '&quot;', $fieldvalue);
-        break;
+        return $retval;
     }
-    return $retval;
-}
+
+}   // class Report
 
 ?>

@@ -19,61 +19,6 @@ namespace Shop\Reports;
 class orderlist extends \Shop\Report
 {
     /**
-     * Creates the report form.
-     *
-     * @return  string          HTML for edit form
-     */
-    public function Configure()
-    {
-        global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
-
-        $retval = '';
-        $T = $this->getTemplate('config');
-        /*$T = new \Template(SHOP_PI_PATH . '/templates/reports');
-        $T->set_file(array(
-            'report'    => $this->key . '_config.thtml',
-        ) );*/
-        $type = self::_getSessVar('output_type');
-        if (!$type) $type = 'html';
-        $period = self::_getSessVar('period');
-        // Get previously-selected statuses from the session var
-        $status_sess = self::_getSessVar('orderstatus');
-        $statuses = \Shop\OrderStatus::getAll();
-        foreach ($statuses as $key=>$data) {
-            $chk = 'checked="checked"';
-            // If there is a session var but it doesn't contain this status,
-            // then it was unchecked.
-            if ($status_sess && !in_array($key, $status_sess)) {
-                $chk = '';
-            }
-            $statuses[$key] = array(
-                'dscp'  => SHOP_getVar($LANG_SHOP['orderstatus'], $key, 'string', $key),
-                'chk'   => $chk,
-            );
-        }
-        $T->set_var(array(
-            'from_date' => '1970-01-01',
-            'to_date' => SHOP_now()->format('Y-m-d', true),
-            $type . '_sel' => 'checked="checked"',
-            $period . '_sel' => 'selected="selected"',
-            'report_key'    => $this->key,
-        ) );
-
-        $T->set_block('report', 'statusOpts', 'statOpt');
-        foreach ($statuses as $key => $data) {
-            $T->set_var(array(
-                'status_key' => $key,
-                'status' => $data['dscp'],
-                'checked' => $data['chk'],
-            ) );
-            $T->parse('statOpt', 'statusOpts', true);
-        }
-        $retval .= $T->parse('output', 'report');
-        return $retval;
-    }   // function showForm()
-
-
-    /**
      * Create and render the report contents.
      *
      * @return  string  HTML for report
@@ -84,7 +29,7 @@ class orderlist extends \Shop\Report
 
         $this->setType($_GET['out_type']);
         self::_setSessVar('orderstatus', $_GET['orderstatus']);
-        $dates = parent::getDates($_GET['period']);
+        $dates = parent::getDates($_GET['period'], $_GET['from_date'], $_GET['to_date']);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
         $T = $this->getTemplate();
@@ -196,7 +141,8 @@ class orderlist extends \Shop\Report
             $T->set_var(
                 'output',
                 \ADMIN_list(
-                    'shop_rep_orderlist', '\Shop\getReportField',
+                    'shop_rep_orderlist',
+                    array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr
                 )
             );

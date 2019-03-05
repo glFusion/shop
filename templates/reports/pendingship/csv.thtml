@@ -1,4 +1,4 @@
-"Order Number","Date","Customer","{$LANG_SHOP['quantity']}","{$LANG_SHOP['status']}",{{nl}
+"{$LANG_SHOP['order_number']}","{$LANG_SHOP['order_date']}","{$LANG_SHOP['customer']}","{$LANG_SHOP['quantity']}","{$LANG_SHOP['status']}",{nl}
 <!-- BEGIN ItemRow -->
 "{order_id}","{order_date}","{customer}","{quantity}","{status}"{nl}
-<!-- END ItemRow -->{# begin {templatelocation} #}
+<!-- END ItemRow -->
