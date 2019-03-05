@@ -32,10 +32,6 @@ class OrderStatus extends Workflow
      * @var integer */
     public $enabled;
 
-    /** Display and usage order.
-     * @var integer */
-    public $orderby;
-
     /** True to notify the buyer when an order changes to this status.
      * @var boolean */
     private $notify_buyer;
@@ -56,13 +52,11 @@ class OrderStatus extends Workflow
         if (is_array($A)) {
             $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
             $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 1);
-            $this->orderby      = SHOP_getVar($A, 'orderby', 'integer', 999);
             $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 1);
             $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 1);
         } else {
             $this->name         = 'undefined';
             $this->enabled      = 0;
-            $this->orderby      = 0;
             $this->notify_buyer = 0;
             $this->notify_admin = 0;
         }
@@ -83,7 +77,8 @@ class OrderStatus extends Workflow
             $statuses = array();
             $sql = "SELECT *
                     FROM {$_TABLES[self::$table]}
-                    ORDER BY orderby ASC";
+                    WHERE enabled = 1
+                    ORDER BY id ASC";
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
@@ -200,78 +195,6 @@ class OrderStatus extends Workflow
             COM_errorLog("OrderStatus::Toggle() SQL error: $sql", 1);
             return $oldvalue;
         }
-    }
-
-
-    /**
-     * Move a workflow up or down the admin list.
-     *
-     * @param   string  $id     Workflow database ID
-     * @param   string  $where  Direction to move (up or down)
-     */
-    public static function moveRow($id, $where)
-    {
-        global $_TABLES;
-
-        $retval = '';
-        $id = DB_escapeString($id);
-
-        switch ($where) {
-        case 'up':
-            $oper = '-';
-            break;
-        case 'down':
-            $oper = '+';
-            break;
-        default:
-            return;
-        }
-        if ($id == 1) return;   // cannot move item 1 (pending)
-
-        $sql = "UPDATE {$_TABLES[self::$table]}
-                SET orderby = orderby $oper 11
-                WHERE id = '$id'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            self::ReOrder();
-        } else {
-            COM_errorLog("Workflow::moveRow() SQL error: $sql", 1);
-        }
-    }
-
-
-    /**
-     * Reorder all workflow items.
-     * Called after moveRow()
-     */
-    public static function ReOrder()
-    {
-        global $_TABLES;
-
-        $sql = "SELECT id, orderby
-                FROM {$_TABLES[self::$table]}
-                ORDER BY orderby ASC;";
-        //echo $sql;die;
-        $result = DB_query($sql);
-
-        $order = 10;
-        $stepNumber = 10;
-        $changed = false;
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
-                $changed = true;
-                $sql = "UPDATE {$_TABLES[self::$table]}
-                    SET orderby = '$order'
-                    WHERE id = '{$A['id']}'";
-                DB_query($sql, 1);
-                if (DB_error()) {
-                    COM_errorLog("Workflow::ReOrder() SQL error: $sql", 1);
-                }
-            }
-            $order += $stepNumber;
-        }
-        if ($changed) Cache::clear('orderstatuses');
     }
 
 

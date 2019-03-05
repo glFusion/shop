@@ -10,3 +10,4 @@ Release TBD
 - Save the last-selected gateway to pre-fill subsequent order forms.
 - Speed checkout by pre-filling default addresses
 - Remove masking of gift card numbers for display
+- Order Workflows and Statuses can no longer be re-ordered.

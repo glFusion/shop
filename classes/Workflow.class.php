@@ -46,10 +46,6 @@ class Workflow
      * @var string */
     public $wf_name;
 
-    /** Workflow orderby numer.
-     * @var integer */
-    public $orderby;
-
     /** Database ID of the workflow record.
      * @var integer */
     public $wf_id;
@@ -70,7 +66,6 @@ class Workflow
             $this->wf_name = $A['wf_name'];
             $this->enabled = (int)$A['enabled'];
             $this->wf_id = (int)$A['id'];
-            $this->orderby = (int)$A['orderby'];
         }
     }
 
@@ -87,7 +82,7 @@ class Workflow
             $sql = "SELECT wf_name
                     FROM {$_TABLES[self::$table]}
                     WHERE enabled > 0
-                    ORDER BY orderby ASC";
+                    ORDER BY id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $_SHOP_CONF['workflows'][] = $A['wf_name'];
@@ -124,7 +119,7 @@ class Workflow
             $workflows = array();
             $sql = "SELECT * FROM {$_TABLES[self::$table]}
                 $where
-                ORDER BY orderby ASC";
+                ORDER BY id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $workflows[] = new self($A);
@@ -179,35 +174,6 @@ class Workflow
 
 
     /**
-     * Toggle a boolean value from the supplied original value.
-     *
-     * @param   integer $oldvalue   Original value to be changed
-     * @param   string  $varname    Field name to change
-     * @param   integer $id         ID number of element to modify
-     * @return  integer         New value, or old value upon failure
-     */
-    protected static function _toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        // If it's still an invalid ID, return the old value
-        if ($id < 1)
-            return $oldvalue;
-
-        // Determing the new value (opposite the old)
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES[self::$table]}
-                SET $varname=$newvalue
-                WHERE id='$id'";
-        //echo $sql;die;
-        DB_query($sql);
-
-        return $newvalue;
-    }
-
-
-    /**
      * Sets the "enabled" field to the specified value.
      *
      * @param   integer $id         ID number of element to modify
@@ -233,81 +199,10 @@ class Workflow
         DB_query($sql, 1);
         if (!DB_error()) {
             Cache::clear('workflows');
-            COM_errorLog("returning $newvalue");
             return $newvalue;
         } else {
-            COM_errorLog("Workflow::Toggle() SQL error: $sql", 1);
+            COM_errorLog(__CLASS__ . '::' . __FUNCTION__ . "() SQL error: $sql", 1);
             return -1;
-        }
-    }
-
-
-    /**
-     * Reorder all workflow items.
-     */
-    public static function reOrder()
-    {
-        global $_TABLES;
-
-        $sql = "SELECT id, orderby
-                FROM {$_TABLES[self::$table]}
-                ORDER BY orderby ASC;";
-        //echo $sql;die;
-        $result = DB_query($sql);
-
-        $order = 10;
-        $stepNumber = 10;
-        $changed = false;
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
-                $changed = true;
-                $sql = "UPDATE {$_TABLES[self::$table]}
-                    SET orderby = '$order'
-                    WHERE id = '{$A['id']}'";
-                DB_query($sql, 1);
-                if (DB_error()) {
-                    COM_errorLog("Workflow::reOrder() SQL error: $sql", 1);
-                }
-            }
-            $order += $stepNumber;
-        }
-        if ($changed) Cache::clear('workflows');
-    }
-
-
-    /**
-     * Move a workflow up or down the admin list.
-     *
-     * @uses    self::reOrder()
-     * @param   string  $id     Workflow database ID
-     * @param   string  $where  Direction to move (up or down)
-     */
-    public static function moveRow($id, $where)
-    {
-        global $_TABLES;
-
-        $retval = '';
-        $id = DB_escapeString($id);
-
-        switch ($where) {
-        case 'up':
-            $oper = '-';
-            break;
-        case 'down':
-            $oper = '+';
-            break;
-        default:
-            return;
-        }
-        $sql = "UPDATE {$_TABLES[self::$table]}
-                SET orderby = orderby $oper 11
-                WHERE id = '$id'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            self::reOrder();
-        } else {
-            COM_errorLog("Workflow::moveRow() SQL error: $sql", 1);
         }
     }
 

@@ -5,10 +5,10 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net>
- * @copyright   Copyright (c) 2009-2018 Lee Garner
+ * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -1590,13 +1590,18 @@ function SHOP_adminList_Gateway()
         ),
     );
 
-    $defsort_arr = array('field' => 'orderby',
-            'direction' => 'asc');
+    $defsort_arr = array(
+        'field' => 'orderby',
+        'direction' => 'ASC',
+    );
 
-    $display = COM_startBlock('', '',
-                    COM_getBlockTemplate('_admin_block', 'header'));
+    $display = COM_startBlock(
+        '', '',
+        COM_getBlockTemplate('_admin_block', 'header')
+    );
 
-    $query_arr = array('table' => 'shop.gateways',
+    $query_arr = array(
+        'table' => 'shop.gateways',
         'sql' => $sql,
         'query_fields' => array('id', 'description'),
         'default_filter' => '',
@@ -1607,13 +1612,16 @@ function SHOP_adminList_Gateway()
         'form_url' => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
     );
 
-    if (!isset($_REQUEST['query_limit']))
+    if (!isset($_REQUEST['query_limit'])) {
         $_GET['query_limit'] = 20;
+    }
 
-    $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_gwlist',
-            __NAMESPACE__ . '\getAdminField_Gateway',
-            $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', '');
+    $display .= ADMIN_list(
+        $_SHOP_CONF['pi_name'] . '_gwlist',
+        __NAMESPACE__ . '\getAdminField_Gateway',
+        $header_arr, $text_arr, $query_arr, $defsort_arr,
+        '', '', '', ''
+    );
 
     if (!empty($to_install)) {
         $display .= $LANG_SHOP['gw_notinstalled'] . ':<br />';
@@ -1706,19 +1714,11 @@ function SHOP_adminlist_Workflow()
 
     $extra = array(
         'rec_type'  => 'workflow',
-        'max_orderby' => DB_getItem($_TABLES['shop.workflows'], 'MAX(orderby)', '1=1'),
-        'min_order_dn' => 0,
-        'min_order_up' => 10,
     );
     $sql = "SELECT *, 'workflow' AS rec_type
             FROM {$_TABLES['shop.workflows']}";
 
     $header_arr = array(
-        array(
-            'text' => $LANG_SHOP['order'],
-            'field' => 'orderby',
-            'sort' => false,
-        ),
         array(
             'text' => $LANG_SHOP['name'],
             'field' => 'wf_name',
@@ -1732,7 +1732,7 @@ function SHOP_adminlist_Workflow()
     );
 
     $defsort_arr = array(
-        'field' => 'orderby',
+        'field'     => 'id',
         'direction' => 'ASC',
     );
 
@@ -1821,13 +1821,18 @@ function SHOP_adminlist_Sales()
         ),
     );
 
-    $defsort_arr = array('field' => 'start',
-            'direction' => 'ASC');
+    $defsort_arr = array(
+        'field' => 'start',
+        'direction' => 'ASC',
+    );
 
-    $display = COM_startBlock('', '',
-                    COM_getBlockTemplate('_admin_block', 'header'));
+    $display = COM_startBlock(
+        '', '',
+        COM_getBlockTemplate('_admin_block', 'header')
+    );
 
-    $query_arr = array('table' => 'shop.sales',
+    $query_arr = array(
+        'table' => 'shop.sales',
         'sql' => $sql,
         'query_fields' => array(),
         'default_filter' => '',
@@ -1838,8 +1843,9 @@ function SHOP_adminlist_Sales()
         'form_url' => SHOP_ADMIN_URL . '/index.php',
     );
 
-    if (!isset($_REQUEST['query_limit']))
+    if (!isset($_REQUEST['query_limit'])) {
         $_GET['query_limit'] = 20;
+    }
 
     $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
         SHOP_ADMIN_URL . '/index.php?editdiscount=x',
@@ -1866,65 +1872,56 @@ function SHOP_adminlist_OrderStatus()
 
     $extra = array(
         'rec_type'  => 'orderstatus',
-        'max_orderby' => DB_getItem($_TABLES['shop.orderstatus'], 'MAX(orderby)', '1=1'),
-        'min_order_dn' => 10,
-        'min_order_up' => 20,
     );
-    $sql = "SELECT *
-            FROM {$_TABLES['shop.orderstatus']}";
+    $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}";
 
     $header_arr = array(
         array(
-            'text' => $LANG_SHOP['order'],
-            'field' => 'orderby',
-            'sort' => false,
-        ),
-        array(
-            'text' => $LANG_SHOP['name'],
+            'text'  => $LANG_SHOP['name'],
             'field' => 'name',
-            'sort' => false,
+            'sort'  => false,
         ),
         array(
-            'text' => $LANG_SHOP['enabled'],
+            'text'  => $LANG_SHOP['enabled'],
             'field' => 'enabled',
-            'sort' => false,
+            'sort'  => false,
             'align' => 'center',
         ),
         array(
-            'text' => $LANG_SHOP['notify_buyer'],
+            'text'  => $LANG_SHOP['notify_buyer'],
             'field' => 'notify_buyer',
-            'sort' => false,
+            'sort'  => false,
             'align' => 'center',
         ),
         array(
-            'text' => $LANG_SHOP['notify_admin'],
+            'text'  => $LANG_SHOP['notify_admin'],
             'field' => 'notify_admin',
-            'sort' => false,
+            'sort'  => false,
             'align' => 'center',
         ),
     );
 
-    $defsort_arr = array('field' => 'orderby',
-            'direction' => 'ASC');
+    $defsort_arr = array(
+        'field'     => 'id',
+        'direction' => 'ASC',
+    );
 
-    $display = COM_startBlock('', '',
-                    COM_getBlockTemplate('_admin_block', 'header'));
+    $display = COM_startBlock(
+        '', '', COM_getBlockTemplate('_admin_block', 'header')
+    );
 
-    $query_arr = array('table' => 'shop.orderstatus',
+    $query_arr = array(
+        'table' => 'shop.orderstatus',
         'sql' => $sql,
         'query_fields' => array('name'),
-        'default_filter' => '',
+        'default_filter' => 'WHERE id > 1',
     );
 
     $text_arr = array(
         'has_extras' => false,
+        'has_limit' => true,    // required, or default_filter is ignored
         'form_url' => SHOP_ADMIN_URL . '/index.php',
     );
-
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
-    //$display .= ADMIN_createMenu(array(), $LANG_SHOP['admin_hdr_wfstatus']);
 
     $display .= "<h2>{$LANG_SHOP['statuses']}</h2>\n";
     $display .= $LANG_SHOP['admin_hdr_wfstatus'] . "\n";
@@ -2068,30 +2065,6 @@ function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr, $extra)
                 id=\"tog{$fieldname}{$A['id']}\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
                 "\"{$rec_type}\");' />" . LB;
-        break;
-
-    case 'orderby':
-        $min_up = $extra['min_order_up'];
-        $min_dn = $extra['min_order_dn'];
-        $max_dn = $extra['max_orderby'];
-        $url = SHOP_ADMIN_URL .
-            "/index.php?id={$A['id']}&amp;type={$rec_type}&amp;wfmove=";
-        if ($fieldvalue > $min_up) {
-            $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-up" style="width:16px;"></i>',
-                $url . 'up'
-                );
-        } else {
-            $retval .= '<i class="uk-icon uk-icon-dummy" style="width:16px"></i>';
-        }
-        if ($fieldvalue > $min_dn && $fieldvalue < $max_dn) {
-            $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-down" style="width:16px"></i>',
-                $url . 'down'
-            );
-        } else {
-            $retval .= '<i class="uk-icon uk-icon-dummy" style="width:16px"></i>';
-        }
         break;
 
     case 'wf_name':
