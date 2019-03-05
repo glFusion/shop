@@ -1,0 +1,4 @@
+"ID","{$LANG_SHOP['datetime']}","{$LANG_SHOP['txn_id']}","{$LANG_SHOP['ip_addr']}","{$LANG_SHOP['gateway']}"{nl}
+<!-- BEGIN ItemRow -->
+"{ipn_id}","{ipn_date}","{txn_id}","{ip_addr}","{gateway}"{nl}
+<!-- END ItemRow -->

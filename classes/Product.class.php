@@ -2235,6 +2235,31 @@ class Product
         );
     }
 
+
+    /**
+     * Get an array of all products.
+     * Filtering is left to the caller.
+     *
+     * @return  array   Array of product objects
+     */
+    public static function getAll()
+    {
+        global $_TABLES;
+
+        $cache_key = 'getall_products';
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['shop.products']}
+                ORDER BY name ASC";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['id']] = self::getInstance($A);
+            }
+            Cache::set($cache_key, $retval, 'products');
+        }
+        return $retval;
+    }
+
 }   // class Product
 
 ?>

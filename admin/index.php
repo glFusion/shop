@@ -585,7 +585,8 @@ default:
 }
 
 $display = COM_siteHeader();
-$display .= SHOP_adminMenu($view);
+//$display .= SHOP_adminMenu($view);
+$display .= \Shop\Menu::Admin($view);
 if (!empty($msg)) {
     $messages = implode('<br />', $msg);
     /*$display .= COM_startBlock('Message');

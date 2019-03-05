@@ -102,10 +102,10 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
                 // Hide the button and update the new status in our array
                 document.getElementById("shopSetStat_" + jsonObj.order_id).style.visibility = "hidden";
                 SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + jsonObj.message, {timeout: 1000,pos:'top-center'});
             }
             catch(err) {
-                //alert(result.statusMessage);
+                alert(result.message);
             }
         }
     });

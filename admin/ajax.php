@@ -41,7 +41,7 @@ case 'updatestatus':
                 $L['newstatus'] = $newstatus;
             }
         }
-        header('Content-Type: text/xml');
+        header('Content-Type: applicsation/json');
         header("Cache-Control: no-cache, must-revalidate");
         //A date in the past
         header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");

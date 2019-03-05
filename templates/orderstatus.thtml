@@ -10,7 +10,9 @@ SHOP_setStatus("{order_id}", "{oldvalue}");
 </select>
 <input type="hidden" name="oldstatus[{order_id}]" value="{oldvalue}" />
 <span id="shopSetStat_{order_id}" style="visibility:hidden;">
-<input type="submit" class="shopButton small green"
-    onclick='SHOP_updateOrderStatus("{order_id}", SHOP_getStatus("{order_id}"), document.getElementById("statSelect_{order_id}").value, {showlog}, "{site_admin_url}/plugins/shop"); return false;' value="{$LANG_SHOP['update_status']}" />
+<button type="submit" class="uk-button uk-button-success uk-button-mini tooltip"
+    title="{$LANG_SHOP['update_status']}"
+    onclick='SHOP_updateOrderStatus("{order_id}", SHOP_getStatus("{order_id}"), document.getElementById("statSelect_{order_id}").value, {showlog}, "{site_admin_url}/plugins/shop"); return false;'>
+    <i class="uk-icon uk-icon-check"></i></button>
 </span>
 {# end {templatelocation} #}

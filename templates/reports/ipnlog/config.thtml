@@ -1,0 +1,43 @@
+{# begin {templatelocation} #}
+<h2>Payment Listing</h2>
+{instructions}
+<form action="{site_admin_url}/plugins/shop/report.php" method="get" class="uk-form-horizontal">
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['order_date']}:
+    </label>
+    <div class="uk-form-controls">
+      <select name="period">
+        <option value="tm" {tm_sel}>This Month</option>
+        <option value="lm" {lm_sel}>Last Month</option>
+        <option value="tq" {tq_sel}>This Quarter</option>
+        <option value="lq" {lq_sel}>Last Quarter</option>
+        <option value="ty" {ty_sel}>This Year</option>
+        <option value="ly" {ly_sel}>Last Year</option>
+      </select>
+<!--      {$LANG_SHOP['from']}:
+      <input type="text" id="from_date" name="from_date" size="12"
+        data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{from_date}"
+        maxlength="12" />
+      {$LANG_SHOP['to']}:
+      <input type="text" id="to_date" name="to_date" size="12"
+        data-uk-datepicker="{format:'YYYY-MM-DD'}"value="{to_date}"
+        maxlength="12" />-->
+    </div>
+  </div>
+
+  <div class="uk-form-row">
+    <label class="uk-form-label">Output Type</label>
+    <div class="uk-form-controls">
+      <input type="radio" name="out_type" value="html" {html_sel} />&nbsp;HTML
+      &nbsp;&nbsp;&nbsp;
+      <input type="radio" name="out_type" value="csv" {csv_sel} />&nbsp;CSV
+    </div>
+  </div>
+
+  <div class="uk-form-row" align="center">
+    <button class="uk-button uk-button-success" type="submit" name="run" value="{report_key}">{$LANG_ADMIN['submit']}</button>
+    <button class="uk-button uk-button-primary" type="reset" value="{$LANG_ADMIN['reset']}">{$LANG_ADMIN['reset']}</button>
+    <button class="uk-button" type="submit" name="cancel" value="{$LANG_ADMIN['cancel']}">{$LANG_ADMIN['cancel']}</button>
+  </div>
+</form>
+{# end {templatelocation} #}
