@@ -9,7 +9,7 @@
     <label class="uk-form-label">{$LANG_SHOP['order_date']}:
     </label>
     <div class="uk-form-controls">
-      <select name="period" onchange="showhideCustDates(this.selectedOptions[0].value)">
+      <select class="uk-form-select" data-uk-form-select name="period" onchange="showhideCustDates(this.selectedOptions[0].value)">
         {period_options}
       </select>
       <span id="cust_dates" style="display:none;">
