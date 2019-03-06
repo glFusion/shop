@@ -283,9 +283,19 @@ $LANG_SHOP = array (
 'statuses' => 'Order Statuses',
 'reports' => 'Reports',
 'reports_avail' => array(
-    'orderlist' => 'Order Listing',
-    'paymentlist' => 'Payment Listing',
+    'orderlist' => array(
+        'name' => 'Order Listing',
+        'dscp' => 'List all orders for a given time period, optionally filtering by status.',
     ),
+    'ipnlog' => array(
+        'name' => 'Payment Listing',
+        'dscp' => 'List payments received during a time period.',
+    ),
+    'pendingship' => array(
+        'name' => 'Pending Shipments by Item',
+        'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
+    ),
+),
 'my_orders' => 'My Orders',
 'no_products_match' => 'No products match your search parameters',
 'msg_updated' => 'Item has been updated',
@@ -406,10 +416,14 @@ $LANG_SHOP = array (
 'shop_closed'   => 'The Shop plugin is only available to administrators.',
 'last_x_days'   => 'Last %d Days',
 'periods' => array(
+    'at'    => 'All time',
     'tm'    => 'This Month',
     'lm'    => 'Last Month',
+    'tq'    => 'This Quarter',
+    'lq'    => 'Last Quarter',
     'ty'    => 'This Year',
     'ly'    => 'Last Year',
+    'cust'  => 'Custom Dates',
 ),
 'gc'    => 'Gift Card',
 'migrate_pp' => 'Migrate from Paypal',
@@ -417,6 +431,16 @@ $LANG_SHOP = array (
 'dscp_migrate_pp' => 'Migrate data from the Paypal plugin version 0.6.0 or higher, if available, into the Shop plugin.<br /><b>This function empties ALL data from the Shop plugin before migration.</b>',
 'migrate_pp_ok' => 'Paypal data was successfully migrated.',
 'migrate_pp_error' => 'There was an error migrating from Paypal. Check the system log.',
+'orderhist' => 'Purchase History',
+'catlist' => 'Category List',
+'maintenance' => 'Maintenance',
+'attributes' => 'Attribute List',
+'update_cart_currency' => 'Update Cart Currency',
+'customer' => 'Customer',
+'back_to_reports' => 'Back to report selection',
+'config_report' => 'Re-configure this report',
+'sales_amt' => 'Sales Amt',
+'sales' => 'Sales Amt',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
