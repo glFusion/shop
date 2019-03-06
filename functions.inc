@@ -116,9 +116,6 @@ spl_autoload_register(function ($class)
 function USES_shop_functions()
 {   require_once __DIR__ . '/shop_functions.inc.php'; }
 
-/** Import report functions */
-function USES_shop_reports()
-{   require_once __DIR__ . '/reports.inc.php';  }
 
 /**
  * Import a specific report class.
