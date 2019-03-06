@@ -218,7 +218,7 @@ class Report
         ) );
         $period = self::_getSessVar('period');
         $from_date = self::_getSessVar('from_date', '1970-01-01');
-        $to_date = self::_getSessVar('to_date', SHOP_now());
+        $to_date = self::_getSessVar('to_date', SHOP_now()->format('Y-m-d'));
         $gateway = self::_getSessVar('gateway');
         // Get previously-selected statuses from the session var
         $T->set_var(array(
@@ -326,9 +326,11 @@ class Report
      * Given a period designation return the starting and ending date objects.
      *
      * @param   string  $period     Period designator
+     * @param   string  $from   Starting date, only for a custom date range
+     * @param   string  $to     Ending date, only for a custom date range
      * @return  array       Array of (start date, end date) objects
      */
-    public static function getDates($period, $from=NULL, $to=NULL)
+    protected static function getDates($period, $from=NULL, $to=NULL)
     {
         global $_CONF;
 
@@ -365,7 +367,12 @@ class Report
             $d1 = new \Date($year . '-01-01 00:00:00', $_CONF['timezone']);
             $d2 = new \Date($year . '-12-31 23:59:59', $_CONF['timezone']);
             break;
-        case'cust':
+        case 'cust':
+            if ($from < '1970' || $to < '1970') {   // catch invalid dates
+                $dates = self::getDates('ty');
+                $from = $dates['start']->format('Y-m-d');
+                $to = $dates['end']->format('Y-m-d');
+            }
             $d1 = new \Date($from, $_CONF['timezone']);
             $d2 = new \Date($to, $_CONF['timezone']);
             self::_setSessVar('from_date', $from);
