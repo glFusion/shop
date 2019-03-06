@@ -561,7 +561,7 @@ $LANG_confignames['shop'] = array(
     'days_purge_pending' => 'Days before purging unpaid orders',
     'purge_sale_prices' => 'Purge Expired Sale Prices?',
     'catalog_columns' => 'Catalog Columns',
-    'enable_svc_funcs' => 'Enable Service Functions',
+    'enable_svc_funcs' => 'Enable Paypal Service Function Wrappers',
     'shop_enabled'  => 'Enable public access?',
 );
 

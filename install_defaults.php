@@ -19,6 +19,14 @@ if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
 
+// Check if the Paypal plugin is installed and has service functions defined.
+// If so, disable Shop service functions.
+if (function_exists('plugin_getCurrency_paypal')) {
+    $enable_svc_funcs = 0;
+} else {
+    $enable_svc_funcs = 1;
+}
+
 /** @var global config data */
 global $shopConfigData;
 $shopConfigData = array(
@@ -277,7 +285,7 @@ $shopConfigData = array(
     ),
     array(
         'name' => 'enable_svc_funcs',
-        'default_value' => 1,
+        'default_value' => $enable_svc_funcs,
         'type' => 'select',
         'subgroup' => 0,
         'fieldset' => 0,
@@ -288,7 +296,7 @@ $shopConfigData = array(
     ),
     array(
         'name' => 'shop_enabled',
-        'default_value' => 1,
+        'default_value' => 0,
         'type' => 'select',
         'subgroup' => 0,
         'fieldset' => 0,

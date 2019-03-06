@@ -275,6 +275,7 @@ function plugin_postinstall_shop()
             if (is_array($_PP_CONF)) {
                 $c = config::get_instance('shop');
                 foreach ($_PP_CONF as $key=>$val) {
+                    if ($key == 'enable_svc_funcs') continue;
                     $c->set($key, $val, 'shop');
                 }
             }
