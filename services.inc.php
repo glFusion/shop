@@ -349,6 +349,7 @@ if (!function_exists('service_genButton_paypal')) {
     function plugin_getCurrency_paypal()
     {
         return plugin_getCurrency_shop();
-    }}
+    }
+}
 
 ?>

@@ -262,8 +262,7 @@ function plugin_postinstall_shop()
         COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
-    // If the Paypal plugin is installed and enabled,
-    // migrate database data from it.
+    // If the Paypal plugin is installed, migrate database data from it.
     // Otherwise install the sample data.
     $have_data = false;
     if (array_key_exists('paypal', $_PLUGIN_INFO)) {
@@ -295,12 +294,13 @@ function plugin_postinstall_shop()
     }
 
     // Set the shop Admin ID
-    $gid = (int)DB_getItem($_TABLES['groups'], 'grp_id',
-            "grp_name='{$_SHOP_CONF['pi_name']} Admin'");
+    $gid = (int)DB_getItem(
+        $_TABLES['groups'],
+        'grp_id',
+        "grp_name='{$_SHOP_CONF['pi_name']} Admin'");
     if ($gid < 1)
         $gid = 1;        // default to Root if shop group not found
-    DB_query("INSERT INTO {$_TABLES['vars']}
-                SET name='shop_gid', value=$gid");
+    DB_query("INSERT INTO {$_TABLES['vars']} SET name='shop_gid', value=$gid");
 }
 
 ?>
