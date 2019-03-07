@@ -44,7 +44,7 @@ class pendingship extends \Shop\Report
         global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $retval = '';
-        $this->uses_dates = false;
+        $this->filter_dates = false;
         $T = $this->getTemplate('config');
         $item_id = self::_getSessVar('item_id');
         $items = \Shop\Product::getAll();

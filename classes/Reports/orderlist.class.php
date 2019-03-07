@@ -99,11 +99,16 @@ class orderlist extends \Shop\Report
             $status_sql = '';
         }
 
+        $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
+        $uid = SHOP_getVar($_GET, 'uid', 'integer');
+        if ($uid > 0) {
+            $where .= " AND uid = $uid";
+        }
         $query_arr = array(
             'table' => 'shop.orders',
             'sql' => $sql,
             'query_fields' => array(),
-            'default_filter' => "WHERE $status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')",
+            'default_filter' => "WHERE $where",
             'group_by' => 'ord.order_id',
         );
 

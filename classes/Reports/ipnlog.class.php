@@ -26,7 +26,7 @@ class ipnlog extends \Shop\Report
     protected function getReportConfig()
     {
         $retval = '';
-        $this->uses_status = false;
+        $this->filter_status = false;
         $T = $this->getTemplate('config');
         $gws = \Shop\Gateway::getAll();
         $T->set_block('config', 'gw_opts', 'opt');

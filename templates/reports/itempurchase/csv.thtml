@@ -1,0 +1,4 @@
+"{$LANG_SHOP['product']}","{$LANG_SHOP['datetime']}","{$LANG_SHOP['quantity']}","{$LANG_SHOP['order_number']}","{$LANG_SHOP['customer']}","{$LANG01[22]}"{nl}
+<!-- BEGIN ItemRow -->
+"{item_name}","{order_date}","{qty}","{order_id}","{customer}","{uid}"{nl}
+<!-- END ItemRow -->

@@ -4,7 +4,7 @@
 <form action="{site_admin_url}/plugins/shop/report.php" method="get"
     class="uk-form uk-form-horizontal">
 
-{!if uses_dates}
+{!if filter_dates}
   <div class="uk-form-row">
     <label class="uk-form-label">{$LANG_SHOP['order_date']}:
     </label>
@@ -26,9 +26,32 @@
   </div>
 {!endif}
 
+{!if filter_item}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['product']}:</label>
+    <div class="uk-form-controls">
+      <select name="item_id">
+      {item_select}
+      </select>
+    </div>
+  </div>
+{!endif}
+
+{!if filter_uid}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG01[21]}:</label>
+    <div class="uk-form-controls">
+      <select name="uid">
+      <option value="0">{$LANG_SHOP['all']}</option>
+      {user_select}
+      </select>
+    </div>
+  </div>
+{!endif}
+
   {report_configs}
 
-{!if uses_status}
+{!if filter_status}
   <div class="uk-form-row">
     <label class="uk-form-label">Status:</label>
     <div class="uk-form-controls">

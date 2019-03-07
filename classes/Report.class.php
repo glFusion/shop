@@ -56,12 +56,22 @@ class Report
     /**
      * Indicate whether the config uses date ranges.
      * @var boolean */
-    protected $uses_dates = true;
+    protected $filter_dates = true;
 
     /**
      * Indicate whether the config uses order statuses.
      * @var boolean */
-    protected $uses_status = true;
+    protected $filter_status = true;
+
+    /**
+     * Indicate whether the report can filter on user ID.
+     * @var boolean */
+    protected $filter_uid = true;
+
+    /**
+     * Indicate whether the report can filter on user ID.
+     * @var boolean */
+    protected $filter_item = false;
 
 
     /**
@@ -164,6 +174,16 @@ class Report
 
 
     /**
+     * Set the item ID, if used.
+     *
+     * @param   string|integer  $item_id    Item ID for filtering
+     */
+    protected function setItem($item_id)
+    {
+        self::_setSessVar('item_id', $item_id);
+    }
+
+    /**
      * Set the report type. HTML and CSV supported.
      *
      * @param   string  $type   Report output type
@@ -210,7 +230,7 @@ class Report
      */
     public function Configure()
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_TABLES;
 
         $T = new \Template(SHOP_PI_PATH . '/templates/reports');
         $T->set_file(array(
@@ -220,6 +240,7 @@ class Report
         $from_date = self::_getSessVar('from_date', '1970-01-01');
         $to_date = self::_getSessVar('to_date', SHOP_now()->format('Y-m-d'));
         $gateway = self::_getSessVar('gateway');
+
         // Get previously-selected statuses from the session var
         $T->set_var(array(
             'title' => $LANG_SHOP['reports_avail'][$this->key]['name'],
@@ -229,12 +250,28 @@ class Report
             'period_options' => self::getPeriodSelection($period),
             'report_key'    => $this->key,
             'period'    => $period,
-            'uses_dates'    => $this->uses_dates,
-            'uses_status'   => $this->uses_status,
+            'filter_dates'    => $this->filter_dates,
+            'filter_status'   => $this->filter_status,
+            'filter_uid'      => $this->filter_uid,
+            'filter_item'   => $this->filter_item,
             'report_configs' => $this->getReportConfig(),
         ) );
 
-        if ($this->uses_status) {
+        if ($this->filter_uid) {
+            $uid = self::_getSessVar('uid');
+            $T->set_var(array(
+                'user_select' =>  COM_optionList($_TABLES['users'], 'uid,username', $uid),
+            ) );
+        }
+
+        if ($this->filter_item) {
+            $item_id = self::_getSessVar('item_id');
+            $T->set_var(array(
+                'item_select' => COM_optionList($_TABLES['shop.products'], 'id,name', $item_id),
+            ) );
+        }
+
+        if ($this->filter_status) {
             $T->set_block('report', 'statusOpts', 'statOpt');
             foreach ($this->statuses as $key => $data) {
                 $T->set_var(array(
@@ -500,6 +537,7 @@ class Report
         return $this->statuses;
     }
 
+
     /**
      * Get an individual field for the history screen.
      * @access  public so ADMIN_list() can access it.
@@ -508,9 +546,10 @@ class Report
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra verbatim values
      * @return  string              HTML for field display in the table
      */
-    public static function getReportField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getReportField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
@@ -530,7 +569,10 @@ class Report
         case 'order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
+                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue,
+                array(
+                    'target' => '_blank',
+                )
             );
             $retval .= '&nbsp;&nbsp;' . COM_createLink(
                 '<i class="uk-icon-mini uk-icon-print"></i>',
@@ -599,6 +641,15 @@ class Report
             } else {
                 $fieldvalue = $A['billto_name'];
             }
+            $retval = str_replace('"', '&quot;', $fieldvalue);
+            if (isset($extra['uid_link'])) {
+                $retval = COM_createLink(
+                    $retval,
+                    $extra['uid_link']
+                );
+            }
+            break;
+
         default:
             $retval = str_replace('"', '&quot;', $fieldvalue);
             break;
