@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -110,6 +110,13 @@ class itempurchase extends \Shop\Report
             'has_paging' => true,
         );
 
+        parse_str($_SERVER['QUERY_STRING'], $params);
+        $params['run'] = 'orderlist';
+        unset($params['uid']);
+        $q_str = http_build_query($params);
+        if ($this->isAdmin) {
+            $this->extra['uid_link'] = SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid='
+        }
         if (!isset($_REQUEST['query_limit'])) {
             $_GET['query_limit'] = 20;
         }
@@ -121,7 +128,7 @@ class itempurchase extends \Shop\Report
                 \ADMIN_list(
                     'shop_rep_itemhistory',
                     array('\Shop\Report', 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr
+                    $header_arr, $text_arr, $query_arr, $defsort_arr, '', $this->extra
                 )
             );
             break;

@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.5.8
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -54,6 +54,15 @@ class Report
     protected $statuses = array();
 
     /**
+     * Extra values to pass into getReportField() verbatim.
+     * @var array */
+    protected $extra = array();
+
+    /**
+     * Indicate if this is an administrator report or regular user
+     * @var boolean */
+    protected $isAdmin = false;
+    /**
      * Indicate whether the config uses date ranges.
      * @var boolean */
     protected $filter_dates = true;
@@ -80,6 +89,7 @@ class Report
     protected function __construct()
     {
         $this->key = (new \ReflectionClass($this))->getShortName();
+        $this->extra['isAdmin'] = false;
         $type = self::_getSessVar('output_type');
         if ($type) {
             $this->setType($type);
@@ -182,6 +192,20 @@ class Report
     {
         self::_setSessVar('item_id', $item_id);
     }
+
+    /**
+     * Set the user ID for the report. Can be overridden by administrators.
+     *
+     * @param   integer $uid    User ID
+     */
+    public function setUid($uid)
+    {
+        if (!$this->isAdmin) {
+            $uid = (int)$_USER['uid'];
+        }
+        self::_setSessVar('uid', $uid);
+    }
+
 
     /**
      * Set the report type. HTML and CSV supported.
@@ -539,6 +563,18 @@ class Report
 
 
     /**
+     * Set the admin status, used to determine return URLs
+     *
+     * @param   boolean $isAdmin    True for admin access, False for user
+     */
+    public function setAdmin($isAdmin)
+    {
+        $this->isAdmin = $isAdmin ? true : false;
+        $this->extra['isAdmin'] = $this->isAdmin;
+    }
+
+
+    /**
      * Get an individual field for the history screen.
      * @access  public so ADMIN_list() can access it.
      *
@@ -583,6 +619,7 @@ class Report
                     'target' => '_new',
                 )
             );
+            if ($extra['isAdmin']) {
             $retval .= '&nbsp;&nbsp;' . COM_createLink(
                 '<i class="uk-icon-mini uk-icon-list"></i>',
                 COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
@@ -592,6 +629,7 @@ class Report
                     'target' => '_new',
                 )
             );
+            }
             break;
 
         case 'ipn_id':
@@ -621,7 +659,7 @@ class Report
             break;
 
         case 'status':
-            if (is_array($LANG_SHOP['orderstatus'])) {
+            if ($extra['isAdmin']) {
                 $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
             } else {
                 $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
@@ -629,6 +667,32 @@ class Report
             break;
 
         case 'sales_amt':
+            if (!$extra['isAdmin']) {
+                $total = (float)$fieldvalue;
+                $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
+                $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
+                    ': </td><td style=&quot;text-align:right&quot;>' .
+                    $Cur->Format($fieldvalue) . '</td></tr>' . LB;
+                    foreach (array('tax', 'shipping', 'handling') as $fld) {
+                        if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
+                            $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
+                                ': </td><td style=&quot;text-align:right&quot;>' .
+                                $Cur->FormatValue($A[$fld]) . '</td></tr>' . LB;
+                        $total += (float)$A[$fld];
+                    }
+                }
+                if ($total > $fieldvalue) {
+                    $tip .= '<tr><td>' . $LANG_SHOP['total'] .
+                        ': </td><td style=&quot;text-align:right&quot;>' .
+                        $Cur->Format($total) . '</td></tr>' . LB;
+                }
+                $tip .= '</table>' . LB;
+                $retval = '<span class="tooltip" title="' . $tip . '">' . $Cur->FormatValue($fieldvalue) . '</span>';
+            } else {
+                $retval = $Cur->formatValue($fieldvalue);
+            }
+            break;
+
         case 'total':
         case 'shipping':
         case 'tax':
@@ -642,10 +706,10 @@ class Report
                 $fieldvalue = $A['billto_name'];
             }
             $retval = str_replace('"', '&quot;', $fieldvalue);
-            if (isset($extra['uid_link'])) {
+            if (isset($extra['uid_link']) && $A['uid'] > 1) {
                 $retval = COM_createLink(
                     $retval,
-                    $extra['uid_link']
+                    $extra['uid_link'] . $A['uid']
                 );
             }
             break;

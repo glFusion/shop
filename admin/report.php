@@ -66,6 +66,7 @@ switch ($view) {
 case 'configure':
     $R = \Shop\Report::getInstance($actionval);
     if ($R !== NULL) {
+        $R->setAdmin(true);
         if ($R->hasForm()) {
             $content .= $R->Configure();
         } else {
@@ -77,6 +78,7 @@ case 'configure':
 case 'run':
     $R = \Shop\Report::getInstance($actionval);
     if ($R !== NULL) {
+        $R->setAdmin(true);
         $content .= $R->Render();
     }
     break;

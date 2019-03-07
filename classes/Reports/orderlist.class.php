@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -25,7 +25,7 @@ class orderlist extends \Shop\Report
      */
     public function Render()
     {
-        global $_TABLES, $_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
         $this->setType($_GET['out_type']);
         self::_setSessVar('orderstatus', $_GET['orderstatus']);
@@ -35,6 +35,15 @@ class orderlist extends \Shop\Report
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
+        if ($this->isAdmin) {
+            $cust_hdr = array(
+                'text'  => $LANG_SHOP['customer'],
+                'field' => 'customer',
+                'sort'  => true,
+            );
+        } else {
+            $cust_hdr = array();
+        }
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['order_number'],
@@ -47,11 +56,10 @@ class orderlist extends \Shop\Report
                 'sort'  => true,
                 'align' => 'center',
             ),
-            array(
-                'text'  => $LANG_SHOP['customer'],
-                'field' => 'customer',
-                'sort'  => true,
-            ),
+        );
+        if ($this->isAdmin) {
+            $header_arr = array_merge($header_arr, array(
+            $cust_hdr,
             array(
                 'text'  => $LANG_SHOP['sales'],
                 'field' => 'sales_amt',
@@ -81,11 +89,31 @@ class orderlist extends \Shop\Report
                 'field' => 'status',
                 'sort'  => true,
             ),
+        )
         );
+        } else {
+            $header_arr = array_merge(
+                $header_arr,
+                array(
+                array(
+                    'text'  => $LANG_SHOP['total'] .
+                        '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                        $LANG_SHOP_HELP['orderlist_total'] . '"></i>',
+                'field' => 'sales_amt',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
+                'text'  => $LANG_SHOP['status'],
+                'field' => 'status',
+                'sort'  => true,
+            ),
+        ) );
+        }
 
         $defsort_arr = array(
             'field' => 'order_date',
-            'direction' => 'ASC',
+            'direction' => 'DESC',
         );
 
         $sql = "SELECT ord.*, sum(itm.price * itm.quantity) as sales_amt
@@ -100,25 +128,41 @@ class orderlist extends \Shop\Report
         }
 
         $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
-        $uid = SHOP_getVar($_GET, 'uid', 'integer');
+        if ($this->isAdmin) {
+            $uid = SHOP_getVar($_GET, 'uid', 'integer');
+        } else {
+            $uid = $_USER['uid'];
+        }
         if ($uid > 0) {
             $where .= " AND uid = $uid";
         }
         $query_arr = array(
             'table' => 'shop.orders',
             'sql' => $sql,
-            'query_fields' => array(),
+            'query_fields' => array(
+                'billto_name', 'billto_company', 'billto_address1',
+                'billto_address2','billto_city', 'billto_state',
+                'billto_country', 'billto_zip',
+                'shipto_name', 'shipto_company', 'shipto_address1',
+                'shipto_address2','shipto_city', 'shipto_state',
+                'shipto_country', 'shipto_zip',
+                'phone', 'buyer_email', 'ord.order_id',
+            ),
             'default_filter' => "WHERE $where",
             'group_by' => 'ord.order_id',
         );
-
         $text_arr = array(
             'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&period=' . $_GET['period'],
+            'form_url' => $_SERVER['REQUEST_URI'],
             'has_limit' => true,
             'has_paging' => true,
+            'has_search' => true,
         );
+        if ($this->isAdmin) {
+            $extra = array(
+                'uid_link' => $_CONF['site_url'] . '/users.php?mode=profile&uid=',
+            );
+        }
 
         $total_sales = 0;
         $total_tax = 0;
@@ -148,7 +192,7 @@ class orderlist extends \Shop\Report
                 \ADMIN_list(
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr
+                    $header_arr, $text_arr, $query_arr, $defsort_arr, '', $extra
                 )
             );
             break;

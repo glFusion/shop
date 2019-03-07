@@ -87,7 +87,8 @@ case 'history':
 default:
     SHOP_setUrl($_SERVER['request_uri']);
     $content .= \Shop\Menu::User($mode);
-    $content .= \Shop\listOrders();
+    $R = \Shop\Report::getInstance('orderlist');
+    $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];
     $page_title = $LANG_SHOP['purchase_history'];
     break;

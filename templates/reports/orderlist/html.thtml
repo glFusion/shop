@@ -7,38 +7,7 @@
 <a href="{site_url}/admin/plugins/shop/report.php">Back to reports</a><br />
 <a href="{site_url}/admin/plugins/shop/report.php?configure=orderlist">Re-configure this report</a><br />
 </div>
+<div style="clear:both;">
 {output}
-{!if 0}
-<table style="width:100%">
-  <tr>
-    <th>Order Number</th>
-    <th>Date</th>
-    <th>Customer</th>
-    <th class="alignright">Sales Amount</th>
-    <th class="alignright">Tax</th>
-    <th class="alignright">Shipping</th>
-    <th class="alignright">Total</th>
-  </tr>
-<!-- BEGIN ItemRow -->
-  <tr>
-    <td><a href="{site_url}/admin/plugins/shop/index.php?order={order_id}" target="_blank">{order_id}</a></td>
-    <td>{order_date}</td>
-    <td>{customer}</td>
-    <td class="alignright">{sales_amt}</td>
-    <td class="alignright">{tax}</td>
-    <td class="alignright">{shipping}</td>
-    <td class="alignright">{total}</td>
-  </tr>
-<!-- END ItemRow -->
-  <tr>
-    <td><b>Totals</b></td>
-    <td>&nbsp;</td>
-    <td>&nbsp;</td>
-    <td class="alignright">{total_sales}</td>
-    <td class="alignright">{total_tax}</td>
-    <td class="alignright">{total_shipping}</td>
-    <td class="alignright">{total_total}</td>
-  </tr>
-</table>
-{!endif}
+</div>
 {# begin {templatelocation} #}

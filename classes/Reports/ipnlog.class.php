@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
