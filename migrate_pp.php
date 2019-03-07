@@ -44,27 +44,31 @@ function SHOP_migrate_pp()
         return false;
     }
 
-    // Include the Paypal SQL updates to execute those done since version 0.6.0,    // if not already at 0.6.1. Have to include all the 0.6.1 update SQL here.
+    // Include the Paypal SQL updates to execute those done since version 0.6.0,
+    // if not already at 0.6.1. Have to include all the 0.6.1 update SQL here.
     if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
         $PP_UPGRADE = array(
-            "ALTER TABLE {$_TABLES['paypal.prod_attr']} CHANGE orderby orderby int(3)",
+            "ALTER TABLE {$_TABLES['paypal.prod_attr']} CHANGE orderby orderby int(3) NOT NULL DEFAULT '0'",
             "ALTER TABLE {$_TABLES['paypal.orders']} ADD currency varchar(5) NOT NULL DEFAULT 'USD'",
             "ALTER TABLE {$_TABLES['paypal.orders']} ADD order_seq int(11) UNSIGNED",
             "ALTER TABLE {$_TABLES['paypal.orders']} ADD UNIQUE (order_seq)",
             "SET @i:=0",
             "UPDATE {$_TABLES['paypal.orders']} SET order_seq = @i:=@i+1
                 WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC",
-        );
-        if (_SHOPtableHasColumn('paypal.orders', 'order_date_old')) {
             // This may have been left over from the 0.6.0 upgrade
-            $PP_UPGRADE[] = "ALTER TABLE {$_TABLES['paypal.orders']} DROP order_date_old";
-        }
+            "ALTER TABLE {$_TABLES['paypal.orders']} DROP order_date_old";
+        );
         foreach ($PP_UPGRADE as $sql) {
+            // Ignore errors since we can't be sure which of these have already been done.
             DB_query($sql, 1);
+            if (DB_error()) {
+                COM_errorLog("Non-fatal error runing $sql");
+            }
         }
     }
 
     // Perform the migration
+    // Clear out the Shop tables and insert data from Paypal
     $tables = array(
         'address', 'buttons', 'categories', 'coupon_log', 'coupons',
         'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus',
@@ -81,8 +85,6 @@ function SHOP_migrate_pp()
     // This version renames the "purchases" table to "orderitems"
     $shop = $_TABLES['shop.orderitems'];
     $pp = $_TABLES['paypal.purchases'];
-
-    // Clear out the Shop tables and insert data from Paypal
     $sql[] = "TRUNCATE $shop; INSERT INTO $shop (SELECT * FROM $pp)";
 
     // Execute the SQL to import Paypal. Quit at the first error.

@@ -128,7 +128,7 @@ $_SQL = array(
   `item_id` int(11) unsigned DEFAULT NULL,
   `attr_name` varchar(64) DEFAULT NULL,
   `attr_value` varchar(64) DEFAULT NULL,
-  `orderby` int(3) unsigned DEFAULT NULL,
+  `orderby` int(3) NOT NULL DEFAULT '0',
   `attr_price` decimal(9,4) DEFAULT NULL,
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`attr_id`),
