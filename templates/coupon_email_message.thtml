@@ -3,7 +3,7 @@
 <p>{$LANG_SHOP['from']}: {sender_name}</p>
 {!endif}
 <p>
-{$LANG_SHOP_EMAIL['coupon_id']}: <a href="{site_url}/shop/index.php?redeem=x&gc_code={gc_code}">{gc_code}</a>
+{$LANG_SHOP_EMAIL['coupon_id']}: <a href="{submit_url}">{gc_code}</a>
 </p>
 {!if expires}
 <p>

@@ -45,13 +45,12 @@ $view = '';
         'savebillto', 'saveshipto',
         'emptycart', 'delcartitem',
         'addcartitem', 'addcartitem_x', 'checkoutcart',
-        'processorder', 'thanks', 'do_apply_gc', 'action',
-        'redeem',
+        'processorder', 'thanks', 'action',
         // 'setshipper',
         // Views
         'order', 'view', 'detail', 'printorder', 'orderhist', 'packinglist',
         'couponlog',
-        'cart', 'pidetail', 'apply_gc', 'viewcart',
+        'cart', 'pidetail', 'viewcart',
     );
     $action = 'productlist';    // default view
     foreach($expected as $provided) {
@@ -77,11 +76,13 @@ $content = '';
 
 switch ($action) {
 case 'updatecart':
+    echo "depreacated";die;
     \Shop\Cart::getInstance()->Update($_POST);
     $view = 'cart';
     break;
 
 case 'checkout':
+    echo "depreacated";die;
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
@@ -125,6 +126,7 @@ case 'checkout':
 
 case 'savebillto':
 case 'saveshipto':
+    echo "deprecated";die;
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
     $status = \Shop\UserInfo::isValidAddress($_POST);
     if ($status != '') {
@@ -154,6 +156,7 @@ case 'saveshipto':
 
 case 'addcartitem':
 case 'addcartitem_x':   // using the image submit button, such as Shop's
+    echo "depreacated";die;
     $view = 'productlist';
     if (isset($_POST['_unique']) && $_POST['_unique'] &&
             \Shop\Cart::getInstance()->Contains($_POST['item_number']) !== false) {
@@ -181,11 +184,13 @@ case 'addcartitem_x':   // using the image submit button, such as Shop's
     break;
 
 case 'delcartitem':
+    echo "depreacated";die;
     \Shop\Cart::getInstance()->Remove($_GET['id']);
     $view = 'cart';
     break;
 
 case 'emptycart':
+    echo "depreacated";die;
     \Shop\Cart::getInstance()->Clear();
     COM_setMsg($LANG_SHOP['cart_empty']);
     echo COM_refresh(SHOP_URL . '/index.php');
@@ -212,47 +217,6 @@ case 'thanks':
     $view = 'productlist';
     break;
 
-case 'redeem':
-    if (COM_isAnonUser()) {
-        SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
-        COM_setMsg($LANG_SHOP['gc_need_acct']);
-        COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
-        exit;
-    }
-    // Using REQUEST here since this could be from a link in an email of from
-    // the apply_gc form
-    $code = SHOP_getVar($_REQUEST, 'gc_code');
-    $uid = $_USER['uid'];
-    list($status, $msg) = \Shop\Coupon::Redeem($code, $uid);
-    if ($status > 0) {
-        $persist = true;
-        $type = 'error';
-    } else {
-        $persist = false;
-        $type = 'info';
-    }
-    // Redirect back to the provided view, or to the default page
-    if (isset($_REQUEST['refresh'])) {
-        COM_setMsg($msg, $type, $persist);
-        COM_refresh(SHOP_URL . '/index.php?' . $_REQUEST['refresh']);
-    } else {
-        $content .= COM_showMessageText($msg, '', $persist, $type);
-    }
-    break;
-
-/*case 'setshipper':
-    $s_id = (int)$_POST['shipper_id'];
-    if ($s_id > 0) {
-        $order = \Shop\Cart::getInstance($_POST['order_id']);
-        $info = $order->getItemShipping();
-        $shippers = \Shop\Shipper::getShippers($info['units']);
-        $order->setField('shipping', $shippers[$s_id]->best_rate);
-    }
-    $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
-    $content = \Shop\Cart::getInstance()->getView($next_step);
-    $view = 'none';
-    break;
- */
 case 'action':      // catch all the "?action=" urls
     switch ($actionval) {
     case 'thanks':
@@ -276,6 +240,7 @@ case 'view':            // "?view=" url passed in
     break;
 
 case 'processorder':
+    echo "depreacated";die;
     // Process the order, similar to what an IPN would normally do.
     // This is for internal, manual processes like C.O.D. or Prepayment orders
     $gw_name = isset($_POST['gateway']) ? $_POST['gateway'] : 'check';
@@ -299,24 +264,6 @@ default:
 }
 
 switch ($view) {
-case 'couponlog':
-    if (COM_isAnonUser()) COM_404();
-    $content .= \Shop\SHOP_userMenu($view);
-    $content .= \Shop\CouponLog();
-    $menu_opt = $LANG_SHOP['gc_activity'];
-    $page_title = $LANG_SHOP['gc_activity'];
-    break;
-
-case 'orderhist':
-case 'history':
-    if (COM_isAnonUser()) COM_404();
-    SHOP_setUrl($_SERVER['request_uri']);
-    $content .= \Shop\SHOP_userMenu($view);
-    $content .= \Shop\listOrders();
-    $menu_opt = $LANG_SHOP['purchase_history'];
-    $page_title = $LANG_SHOP['purchase_history'];
-    break;
-
 case 'billto':
 case 'shipto':
     // Editing the previously-submitted billing or shipping info.
@@ -329,6 +276,7 @@ case 'shipto':
     break;
 
 case 'order':
+    echo "deprecated";die;
     // View a completed order record
     $order = \Shop\Order::getInstance($actionval);
     if ($order->canView()) {
@@ -340,6 +288,7 @@ case 'order':
 
 case 'packinglist':
 case 'printorder':
+    echo "deprecated";die;
     // Display a printed order or packing list and exit.
     // This is expected to be shown in a _blank browser window/tab.
     $order = \Shop\Order::getInstance($actionval);
@@ -352,6 +301,7 @@ case 'printorder':
     break;
 
 case 'vieworder':
+    echo "deprecated";die;
     if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
         \Shop\Cart::setSession('prevpage', $view);
         $content .= \Shop\Cart::getInstance()->View($view);
@@ -383,6 +333,7 @@ case 'pidetail':
 
 case 'detail':
     // deprecated, should be displayed via detail.php
+    echo "deprecated";die;
     COM_errorLog("Called detail from index.php, deprecated");
     COM_404();
     $P = new \Shop\Product($id);
@@ -424,17 +375,6 @@ default:
     $content .= \Shop\ProductList($cat_id);
     $menu_opt = $LANG_SHOP['product_list'];
     $page_title = $LANG_SHOP['main_title'];
-    break;
-
-case 'apply_gc':
-    $C = \Shop\Currency::getInstance();
-    $code = SHOP_getVar($_GET, 'code');
-    $T = SHOP_getTemplate('apply_gc', 'tpl');
-    $T->set_var(array(
-        'gc_bal' => $C->format(\Shop\Coupon::getUserBalance($_USER['uid'])),
-        'code' => $code,
-    ) );
-    $content .= $T->finish($T->parse('output', 'tpl'));
     break;
 
 case 'none':

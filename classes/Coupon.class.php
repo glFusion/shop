@@ -331,6 +331,9 @@ class Coupon extends Product
                 'gc_code'   => $gc_code,
                 'sender_name' => $sender,
                 'expires'   => $exp,
+                'submit_url' => COM_buildUrl(
+                    SHOP_URL . '/coupon.php?mode=redeem&id=' . $gc_code
+                ),
             ) );
             $T->parse('output', 'message');
             $msg_text = $T->finish($T->get_var('output'));
@@ -357,10 +360,15 @@ class Coupon extends Product
         $code = SHOP_getVar($item->extras['special'], 'gc_code', 'string');
         $s = '';
         if (!empty($code)) {
-            $s = sprintf($LANG_SHOP['apply_gc_email'],
-                SHOP_URL . '/index.php?apply_gc=x&code=' . $code,
-                SHOP_URL . '/index.php?apply_gc&code=' . $code,
-                SHOP_URL . '/index.php?apply_gc&code=' . $code);
+            $url = COM_buildUrl(
+                SHOP_URL . '/account.php?mode=apply_gc&id=' . $code
+            );
+            $s = sprintf(
+                $LANG_SHOP['apply_gc_email'],
+                $url,
+                $url,
+                $url
+            );
         }
         return $s;
     }

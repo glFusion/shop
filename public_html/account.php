@@ -33,22 +33,15 @@ $actionval = '';
 $view = '';
 
 // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
-COM_setArgNames(array('mode', 'id', 'token'));
-
-if (isset($_GET['mode'])) {
-    $mode = COM_applyFilter($_GET['mode']);
-} else {
-    $mode = COM_getArgument('mode');
-}
-if (isset($_GET['id'])) {
-    $id = COM_sanitizeID($_GET['id']);
-} else {
-    $id = COM_applyFilter(COM_getArgument('id'));
-}
-if (isset($_GET['token'])) {
-    $token = COM_sanitizeID($_GET['token']);
-} else {
-    $token = COM_applyFilter(COM_getArgument('token'));
+COM_setArgNames(array('mode', 'id'));
+foreach (array('mode', 'id') as $varname) {
+    if (isset($_POST[$varname])) {
+        $$varname = COM_applyFilter($_POST[$varname]);
+    } elseif (isset($_GET[$varname])) {
+        $$varname = COM_applyFilter($_GET[$varname]);
+    } else {
+        $$varname = COM_getArgument($varname);
+    }
 }
 if (empty($mode)) {
     $mode = 'orderhist';
@@ -57,35 +50,43 @@ $content = '';
 
 switch ($mode) {
 case 'couponlog':
-    $content .= \Shop\SHOP_userMenu($mode);
+    $content .= \Shop\Menu::User($mode);
     $content .= \Shop\CouponLog();
     $menu_opt = $LANG_SHOP['gc_activity'];
     $page_title = $LANG_SHOP['gc_activity'];
     break;
 
-case 'cart':
-    echo "DEPRECATED";die;
-    SHOP_setUrl($_SERVER['request_uri']);
-    if (!empty($id)) {
-        \Shop\Cart::setFinal($id, false);
-        COM_refresh(SHOP_URL. '/index.php?view=cart');
-    }
-    $menu_opt = $LANG_SHOP['viewcart'];
-    $Cart = \Shop\Cart::getInstance();
-    if ($Cart->hasItems() && $Cart->canView()) {
-        $content .= $Cart->getView(0);
-    } else {
-        COM_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+case 'redeem':
+    if (COM_isAnonUser()) {
+        SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
+        COM_setMsg($LANG_SHOP['gc_need_acct']);
+        COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
         exit;
     }
+    // Using REQUEST here since this could be from a link in an email or from
+    // the apply_gc form
+    $code = SHOP_getVar($_POST, 'code');
+    $uid = $_USER['uid'];
+    list($status, $msg) = \Shop\Coupon::Redeem($code, $uid);
+    if ($status > 0) {
+        $persist = true;
+        $type = 'error';
+    } else {
+        $persist = false;
+        $type = 'info';
+    }
+    // Redirect back to the provided view, or to the default page
+    COM_setMsg($msg, $type, $persist);
+    COM_refresh(COM_buildUrl(
+        SHOP_URL . '/account.php?mode=couponlog'
+    ) );
     break;
 
 case 'orderhist':
 case 'history':
 default:
     SHOP_setUrl($_SERVER['request_uri']);
-    $content .= \Shop\SHOP_userMenu($mode);
+    $content .= \Shop\Menu::User($mode);
     $content .= \Shop\listOrders();
     $menu_opt = $LANG_SHOP['purchase_history'];
     $page_title = $LANG_SHOP['purchase_history'];
