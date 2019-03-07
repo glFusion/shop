@@ -5,6 +5,47 @@ namespace Shop;
 class Menu
 {
     /**
+     * Create the user menu.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function User($view='')
+    {
+        global $_CONF, $LANG_SHOP, $_SHOP_CONF;
+
+        USES_lib_admin();
+
+        $hdr_txt = SHOP_getVar($LANG_SHOP, 'user_hdr_' . $view);
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_URL . '/index.php',
+                'text' => $LANG_SHOP['back_to_catalog'],
+            ),
+        );
+
+        $active = $view == 'orderhist' ? true : false;
+        $menu_arr[] = array(
+            'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
+            'text' => $LANG_SHOP['purchase_history'],
+            'active' => $active,
+        );
+
+        // Show the Gift Cards menu item only if enabled.
+        if ($_SHOP_CONF['gc_enabled']) {
+            $active = $view == 'couponlog' ? true : false;
+            $menu_arr[] = array(
+                'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
+                'text' => $LANG_SHOP['gc_activity'],
+                'active' => $active,
+            );
+        }
+
+        return \ADMIN_createMenu($menu_arr, $hdr_txt);
+    }
+
+
+    /**
      * Create the administrator menu.
      *
      * @param   string  $view   View being shown, so set the help text
@@ -21,14 +62,6 @@ class Menu
             $hdr_txt = '';
         }
 
-        /*$menu_arr = array();
-        foreach ($LANG_SHOP['adminmenus'] as $key) {
-            $menu_arr[] = array(
-                'url' => SHOP_ADMIN_URL . '/index.php?' . $key,
-                'text' => $LANG_SHOP[$key],
-                'active' => $view == $key ? true : false,
-            );
-        }*/
         $menu_arr = array(
             array(
                 'url' => SHOP_ADMIN_URL . '/index.php',
@@ -55,16 +88,6 @@ class Menu
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
             ),
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?orderhist=x',
-                'text' => $LANG_SHOP['purchase_history'],
-                'active' => $view == 'orderhist' ? true : false,
-            ),
-            array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?ipnlog=x',
-                'text' => $LANG_SHOP['ipnlog'],
-                'active' => $view == 'ipnlog' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
                 'text' => $LANG_SHOP['gateways'],
@@ -80,14 +103,12 @@ class Menu
                 'text' => $LANG_SHOP['other_func'],
                 'active' => $view == 'other' ? true : false,
             ),
-        );
-        //if (isset($_SHOP_CONF['reports_enabled'])) { // TODO: Remove for release
-            $menu_arr[] = array(
+            array(
                 'url'  => SHOP_ADMIN_URL . '/report.php',
                 'text' => $LANG_SHOP['reports'],
                 'active' => $view == 'reports' ? true : false,
-            );
-        //}
+            ),
+        );
         if ($_SHOP_CONF['gc_enabled']) {
             // Show the Coupons menu option only if enabled
             $menu_arr[] = array(
@@ -115,7 +136,7 @@ class Menu
             $T->set_var('todo', '<ul>' . $todo_list . '</ul>');
         }
         $retval = $T->parse('', 'title');
-        $retval .= ADMIN_createMenu(
+        $retval .= \ADMIN_createMenu(
             $menu_arr,
             $hdr_txt,
             plugin_geticon_shop()
@@ -144,6 +165,17 @@ class Menu
         }
 
         return $todo;
+    }
+
+
+    public static function PageTitle($page_title = '')
+    {
+        $T = SHOP_getTemplate('shop_title', 'title');
+        $T->set_var(array(
+            'title' => $page_title,
+            'is_admin' => plugin_ismoderator_shop(),
+        ) );
+        return $T->parse('', 'title');
     }
 
 }
