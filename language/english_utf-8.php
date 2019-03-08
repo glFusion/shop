@@ -299,6 +299,10 @@ $LANG_SHOP = array (
         'name' => 'Order Listing',
         'dscp' => 'List all orders for a given time period, optionally filtering by status.',
     ),
+    'itempurchase' => array(
+        'name' => 'Item Purchase History',
+        'dscp' => 'List the purchases made for a single item.',
+    ),
     'ipnlog' => array(
         'name' => 'Payment Listing',
         'dscp' => 'List payments received during a time period.',
@@ -446,6 +450,7 @@ $LANG_SHOP = array (
 'back_to_reports' => 'Back to report selection',
 'config_report' => 'Re-configure this report',
 'sales_amt' => 'Sales Amt',
+'period' => 'Period',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

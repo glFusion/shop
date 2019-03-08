@@ -283,6 +283,10 @@ $LANG_SHOP = array (
         'name' => 'Order Listing',
         'dscp' => 'List all orders for a given time period, optionally filtering by status.',
     ),
+    'itempurchase' => array(
+        'name' => 'Item Purchase History',
+        'dscp' => 'List the purchases made for a single item.',
+    ),
     'ipnlog' => array(
         'name' => 'Payment Listing',
         'dscp' => 'List payments received during a time period.',
