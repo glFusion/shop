@@ -19,19 +19,27 @@ from your gateway provider.
 This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
 
 ## Considerations if you have the Paypal Plugin installed
-  - If you have Paypal version 0.6.1 or later installed, data from that plugin is automatically transferred into the Shop plugin.
-  - If you have an earlier version installed, you *must* either disable the Paypal plugin or update it to v0.6.1+. There will be function name conflicts if you don't do this and Shop cannot be installed.
+The Shop plugin includes wrapper functions to match the Paypal functions used
+by external plugins, e.g. Subscription and Evlist. Since these function names
+are the same they cannot be enabled while the Paypal plugin is enabled.
+
+The wrapper functions are disabled by default during the installation of the
+Shop plugin if the Paypal plugin is detected. After disabling the Paypal plugin
+you should visit the Configuration area for the Shop plugin and enable them.
+
+  - If you have Paypal version 0.6.1 or later installed, data from that plugin is automatically transferred into the Shop plugin.a
+  - If you have Paypal version 0.6.0 installed, you can migrate data by clicking
+the `Migrate from Paypal` button under the `Maintenance` menu of Shop.
+This option is only shown if there are no products or categories already created
+in Shop.
+    - The Paypal plugin does not have to be enabled for this migration to work.
+    - This process will update the Paypal schema to 0.6.1 before migrating.
+There should be no effect on the operation of the Paypal plugin.
+However, you may have difficulty upgrading Paypal later. The recommended
+approach is to update to Paypal v0.6.1 before migrating.
   - The Shop plugin is initially visible only to Administrators. Before opening the store publicly you should disable the Paypal plugin. A message is displayed on the Shop pages as a reminder.
   - You will need to manually change any autotags or other explicit links to the Paypal plugin.
   - You may wish to enable rewrite rules on your server to redirect `/paypal/` to `/shop/` for search engines and external links.
-
-Shop and Paypal (0.6.1+) both contain wrapper functions to support the `service_XXX_paypal()` functions, and will not load those functions if they're already defined. If both plugins are enabled there is no way to know which version of the function will be loaded so you should disable Paypal as soon as possible.
-
-If you have the Paypal plugin version 0.6.0 and choose to disable it during installation, you can still migrate data from it into the Shop plugin.
-Open the Shop administration area and click on the `Maintenance` menu option. If the following conditions are met you can migrate data from the Paypal plugin:
-  - There have been no orders entered in the Shop plugin.
-  - There have been no products added to the catalog.
-Note that the Paypal tables will be updated to version 0.6.1 which may make it more difficult to update it later. The recommended approach is to update to Paypal 0.6.1 before installing Shop.
 
 ## Installation
 Installation is accomplished by using the glFusion automated plugin installer.
