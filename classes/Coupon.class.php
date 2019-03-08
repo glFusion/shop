@@ -357,11 +357,12 @@ class Coupon extends Product
     public function EmailExtra($item)
     {
         global $LANG_SHOP;
+
         $code = SHOP_getVar($item->extras['special'], 'gc_code', 'string');
         $s = '';
         if (!empty($code)) {
             $url = COM_buildUrl(
-                SHOP_URL . '/account.php?mode=apply_gc&id=' . $code
+                SHOP_URL . '/coupon.php?mode=redeem&id=' . $code
             );
             $s = sprintf(
                 $LANG_SHOP['apply_gc_email'],
