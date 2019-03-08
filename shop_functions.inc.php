@@ -4,7 +4,7 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
- * @copyright   Copyright (c) 2009-2018 Lee Garner
+ * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
  * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -12,202 +12,6 @@
  * @filesource
  */
 namespace Shop;
-
-/**
- * Order History View.
- * Displays the purchase history for the current user.  Admins
- * can view any user's histor, or all users
- *
- * @param   boolean $admin  True if called for admin access, False otherwise
- * @param   integer $uid    User ID to view, current user by default
- * @return  string          HTML for order list
- */
-function listOrders($admin = false, $uid = 0)
-{
-    global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_SHOP_HELP;
-
-    if (!$admin) {
-        $uid = $_USER['uid'];
-    }
-    $uid = (int)$uid;
-
-    USES_lib_admin();
-
-    $start_ts = 0;
-    $end_ts = SHOP_now()->toUnix();
-    $period = 'x';
-    if (isset($_REQUEST['period']) && !empty($_REQUEST['period'])) {
-        $period = $_REQUEST['period'];
-        switch ($period) {
-        case 'tm':
-            $d1 = new \Date('first day of this month', $_CONF['timezone']);
-            $start_ts = $d1->toUnix();
-            break;
-        case 'lm':
-            $d1 = new \Date('first day of last month', $_CONF['timezone']);
-            $d2 = new \Date('last day of last month', $_CONF['timezone']);
-            $start_ts = $d1->toUnix();
-            $end_ts = $d2->toUnix();
-            break;
-        case '30':
-        case '60':
-        case '90':
-            $days = (int)substr($_REQUEST['period'], 1);
-            $d1 = new \Date('-' . $days . ' days', $_CONF['timezone']);
-            $start_ts = $d1->toUnix();
-            break;
-        case 'ty':
-            $d1 = new \Date(SHOP_now()->format('Y-01-01', $_CONF['timezone']));
-            $start_ts = $d1->toUnix();
-            break;
-        case 'ly':
-            $year = SHOP_now()->format('Y') - 1;
-            $d1 = new \Date($year . '-01-01 00:00:00', $_CONF['timezone']);
-            $d2 = new \Date($year . '-12-31 23:59:59', $_CONF['timezone']);
-            $start_ts = $d1->toUnix();
-            $end_ts = $d2->toUnix();
-            break;
-       }
-
-    }
-
-    if (isset($_REQUEST['filt_status']) && !empty($_REQUEST['filt_status'])) {
-        $filt_status = DB_escapeString($_REQUEST['filt_status']);
-        $where = " WHERE ord.status = '$filt_status'";
-    } else {
-        $filt_status = '';
-        $where = " WHERE ord.status != 'cart'";
-    }
-    if ($uid > 0) {
-        $where .= " AND ord.uid = '" . (int)$uid . "'";
-    }
-    $where .= " AND ord.order_date >= $start_ts AND ord.order_date <= $end_ts ";
-    COM_errorLog($where);
-
-    $isAdmin = $admin == true ? 1 : 0;
-
-    $sql = "SELECT ord.*,
-            SUM(itm.quantity * itm.price) as ord_total,
-            u.username, $isAdmin as isAdmin
-        FROM {$_TABLES['shop.orders']} AS ord
-        LEFT JOIN {$_TABLES['users']} AS u
-            ON ord.uid = u.uid
-        LEFT JOIN {$_TABLES['shop.orderitems']} AS itm
-            ON ord.order_id = itm.order_id";
-
-    $base_url = $admin ? SHOP_ADMIN_URL : SHOP_URL;
-    $header_arr = array(
-        array(
-            'text' => $LANG_SHOP['purch_date'],
-            'field' => 'order_date',
-            'sort' => true,
-        ),
-        array(
-            'text' => $LANG_SHOP['order_number'],
-            'field' => 'order_id',
-            'sort' => true,
-        ),
-        array(
-            'text' => $LANG_SHOP['total'] .
-                '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                $LANG_SHOP_HELP['orderlist_total'] . '"></i>',
-            'field' => 'ord_total',
-            'sort' => false,
-            'align' => 'right',
-        ),
-        array(
-            'text' => $LANG_SHOP['status'],
-            'field' => 'status',
-            'sort' => true,
-        ),
-    );
-    if ($admin) {
-        $header_arr[] = array(
-            'text' => $LANG_SHOP['username'],
-            'field' => 'username',
-            'sort' => true,
-        );
-    }
-
-    $defsort_arr = array(
-        'field' => 'ord.order_date',
-        'direction' => 'DESC',
-    );
-
-    $opt_frm = 'Period: <select name="period"><option value="x">' . $LANG_SHOP['all'] . '</option>' . LB;
-    foreach ($LANG_SHOP['periods'] as $key=>$str) {
-        $sel = $key == $period ? 'selected="selected"' : '';
-        $opt_frm .= '<option value="' . $key . '"' . $sel . '>' . $str . '</option>' . LB;
-    }
-    foreach (array(30, 60, 90) as $days) {
-        $sel = $days == $period ? 'selected="selected"' : '';
-        $opt_frm .= '<option value="' . $days. '">' . sprintf($LANG_SHOP['last_x_days'], $days) . '</option>' . LB;
-    }
-    $opt_frm .= '</select>' . LB;
-
-    if ($admin) {
-        $options = array(
-            'chkdelete' => false,
-            'chkselect' => true,
-            'chkfield' => 'order_id',
-            'chkname' => 'upd_orders',
-            'chkactions' => '<input name="updateorderstatus" type="image" src="'
-                . SHOP_URL . '/images/update.png'
-                . '" style="vertical-align:text-bottom;" title="' . $LANG_SHOP['update_status']
-                . '" class="tooltip" />&nbsp;' . $LANG_SHOP['update_status'],
-        );
-    } else {
-        $options = '';
-    }
-
-    $query_arr = array(
-        'table' => 'shop.orders',
-        'sql' => $sql,
-        'query_fields' => array(
-            'billto_name', 'billto_company', 'billto_address1',
-            'billto_address2','billto_city', 'billto_state',
-            'billto_country', 'billto_zip',
-            'shipto_name', 'shipto_company', 'shipto_address1',
-            'shipto_address2','shipto_city', 'shipto_state',
-            'shipto_country', 'shipto_zip',
-            'phone', 'buyer_email', 'ord.order_id',
-        ),
-        'default_filter' => $where,
-        'group_by' => 'ord.order_id',
-    );
-
-    $text_arr = array(
-        //'has_extras' => $admin ? true : false,
-        'form_url' => $base_url . '/index.php?orderhist=x&filt_status=' . $filt_status . '&period=' . $period,
-        'has_limit' => true,
-        'has_paging' => true,
-        'has_search' => true,
-    );
-
-    $filter = $opt_frm . "{$LANG_SHOP['status']}: <select name=\"filt_status\">" . LB .
-        '<option value=""';
-    if ($filt_status == '') $filter .= ' selected="selected"';
-    $filter .= '>All Statuses</option>' . LB;
-    foreach (OrderStatus::getAll() as $stat) {
-        $sel = $filt_status == $stat->getName() ? 'selected="selected"' : '';
-        $filter .= '<option value="' . $stat->getName() . '" ' . $sel . '>' .
-            SHOP_getVar($LANG_SHOP['orderstatus'], $stat->getName(), 'string', $stat->getName()) .
-            '</option>' . LB;
-    }
-    $filter .= '</select>' . LB;
-
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
-    $display = COM_startBlock('', '',
-        COM_getBlockTemplate('_admin_block', 'header'));
-    $display .= \ADMIN_list('shop_orderlog',
-        __NAMESPACE__ . '\getPurchaseHistoryField',
-        $header_arr, $text_arr, $query_arr, $defsort_arr, $filter);
-    $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-    return $display;
-}
-
 
 /**
  * Gift Card activity list
@@ -264,15 +68,22 @@ function CouponLog($uid = 0)
         'has_paging' => true,
     );
 
-    if (!isset($_REQUEST['query_limit']))
+    if (!isset($_REQUEST['query_limit'])) {
         $_GET['query_limit'] = 20;
+    }
 
     $display = COM_startBlock('', '',
         COM_getBlockTemplate('_admin_block', 'header'));
+
     $gc_bal = Coupon::getUserBalance();
     $display .= $LANG_SHOP['gc_bal'] . ': ' . Currency::getInstance()->Format($gc_bal);
-    $display .= \ADMIN_list('shop_couponlog', __NAMESPACE__ . '\getCouponLogField',
-            $header_arr, $text_arr, $query_arr, $defsort_arr);
+    $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
+    $display .= '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a>';
+    $display .= \ADMIN_list(
+        'shop_couponlog',
+        __NAMESPACE__ . '\getCouponLogField',
+        $header_arr, $text_arr, $query_arr, $defsort_arr
+    );
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
     return $display;
 }
@@ -328,179 +139,6 @@ function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
     case 'amount':
         if ($A['msg'] == 'gc_applied') $fieldvalue *= -1;
         $retval = Currency::getInstance()->format($fieldvalue);
-        break;
-    }
-    return $retval;
-}
-
-
-/**
- * Get an individual field for the history screen.
- *
- * @param   string  $fieldname  Name of field (from the array, not the db)
- * @param   mixed   $fieldvalue Value of the field
- * @param   array   $A          Array of all fields from the database
- * @param   array   $icon_arr   System icon array (not used)
- * @return  string              HTML for field display in the table
- */
-function getPurchaseHistoryField($fieldname, $fieldvalue, $A, $icon_arr)
-{
-    global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
-
-    static $dt = NULL;
-    static $Cur = NULL;
-    $retval = '';
-
-    if ($dt === NULL) {
-        // Instantiate a date object once
-        $dt = new \Date('now', $_USER['tzid']);
-    }
-    if ($Cur === NULL) {
-        $Cur = Currency::getInstance();
-    }
-
-    switch($fieldname) {
-    case 'order_date':
-        $dt->setTimestamp($fieldvalue);
-        $retval = '<span class="tooltip" title="' .
-                $dt->format($_SHOP_CONF['datetime_fmt'], false) . '">' .
-                $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
-        break;
-
-    case 'name':
-        list($item_id, $item_opts) = SHOP_explode_opts($A['product_id']);
-        if (is_numeric($item_id)) {
-            // One of our catalog items, so link to it
-            $retval = COM_createLink(
-                $fieldvalue,
-                SHOP_URL . '/index.php?detail=x&amp;id=' . $item_id);
-        } else {
-            // Probably came from a plugin, just show the product name
-            $retval = htmlspecialchars($A['product_id'], ENT_QUOTES, COM_getEncodingt());
-        }
-        break;
-
-    case 'username':
-        if ($A['isAdmin']) {
-            $url = SHOP_ADMIN_URL . '/index.php?orderhist=x&uid=' . $A['uid'];
-        } else {
-            $url = $_CONF['site_url'] . '/users.php?mode=profile&uid=' .$A['uid'];
-        }
-        $retval = COM_createLink(
-            $fieldvalue,
-            $url,
-            array(
-                'title' => COM_getDisplayName($A['uid']),
-                'class' => 'tooltip',
-            )
-        );
-        break;
-
-    case 'quantity':
-        $retval = '<div class="alignright">' . $fieldvalue . "</div>";
-        break;
-
-    case 'txn_id':
-        $base_url = $A['isAdmin'] ? SHOP_ADMIN_URL : SHOP_URL;
-        // Admins get a link to the transaction log, regular users just
-        // get the ID to check against their Shop account.
-        if ($A['isAdmin'] == 1) {
-            $retval = COM_createLink($fieldvalue,
-                $base_url . '/index.php?ipnlog=x&amp;op=single&amp;txn_id=' .
-                $fieldvalue);
-        } else {
-            $retval = $fieldvalue;
-        }
-        break;
-
-    case 'prod_type':
-        // Return the plain-language product type description
-        //$retval = $LANG_SHOP['prod_types'][$fieldvalue];
-        $retval = $LANG_SHOP['prod_types'][$A['prod_type']];
-        //if ($fieldvalue == SHOP_PROD_DOWNLOAD && $A['exptime'] > time() ) {
-        if ($A['file'] != '' && $A['exptime'] > time() ) {
-            $retval = COM_createLink($retval,
-                    SHOP_URL . "/download.php?id={$A['product_id']}");
-        }
-        break;
-
-    case 'short_description':
-        // If this is a plugin item, there should be a description recorded
-        // in the purchase file.  If not, just take it from the product
-        // table.
-        if (!empty($A['description'])) {
-            $retval = $A['description'];
-        } else {
-            $retval = $fieldvalue;
-        }
-        break;
-
-    case 'status':
-        if ($A['isAdmin'] && is_array($LANG_SHOP['orderstatus'])) {
-            $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
-        } else {
-            $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
-        }
-        break;
-
-    case 'order_id':
-        if ($A['isAdmin']) {
-            $url = SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue;
-        } else {
-            $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
-        }
-        $retval = COM_createLink(
-            $fieldvalue,
-            $url,
-            array(
-                'class' => 'tooltip',
-                'title' => $LANG_SHOP['vieworder'],
-            )
-        );
-        $retval .= '&nbsp;&nbsp;' . COM_createLink(
-            '<i class="uk-icon-mini uk-icon-print"></i>',
-            COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $fieldvalue),
-            array(
-                'class' => 'tooltip',
-                'title' => $LANG_SHOP['print'],
-                'target' => '_new',
-            )
-        );
-        if ($A['isAdmin']) {
-            $retval .= '&nbsp;&nbsp;' . COM_createLink(
-                '<i class="uk-icon-mini uk-icon-list"></i>',
-                COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
-                array(
-                    'class' => 'tooltip',
-                    'title' => $LANG_SHOP['packinglist'],
-                    'target' => '_new',
-                )
-            );
-        }
-        $retval .= '</a>';
-        break;
-
-    case 'ord_total':
-        $total = (float)$fieldvalue;
-        $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
-        $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
-            ': </td><td style=&quot;text-align:right&quot;>' . $Cur->Format($fieldvalue) . '</td></tr>' . LB;
-        foreach (array('tax', 'shipping', 'handling') as $fld) {
-            if (is_numeric($A[$fld]) && $A[$fld] > 0) {
-                $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
-                    ': </td><td style=&quot;text-align:right&quot;>' . $Cur->FormatValue($A[$fld]) . '</td></tr>' . LB;
-                $total += (float)$A[$fld];
-            }
-        }
-        if ($total > $fieldvalue) {
-            $tip .= '<tr><td>' . $LANG_SHOP['total'] .
-                    ': </td><td style=&quot;text-align:right&quot;>' . $Cur->Format($total) . '</td></tr>' . LB;
-        }
-        $tip .= '</table>' . LB;
-        $retval = '<span class="tooltip" title="' . $tip . '">' . $Cur->FormatValue($fieldvalue) . '</span>';
-        break;
-    default:
-        $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
         break;
     }
     return $retval;
@@ -1076,46 +714,6 @@ function SHOP_errMsg($msg = array(), $title = '')
     }
     $retval .= "/span>\n";
     return $retval;
-}
-
-
-/**
- * Create the user menu.
- *
- * @param   string  $view   View being shown, so set the help text
- * @return  string      Administrator menu
- */
-function SHOP_userMenu($view='')
-{
-    global $_CONF, $LANG_SHOP, $_SHOP_CONF;
-
-    USES_lib_admin();
-
-    $hdr_txt = SHOP_getVar($LANG_SHOP, 'user_hdr_' . $view);
-    $menu_arr = array(
-        array(
-            'url'  => SHOP_URL . '/index.php',
-            'text' => $LANG_SHOP['back_to_catalog'],
-        ),
-    );
-
-    $active = $view == 'orderhist' ? true : false;
-    $menu_arr[] = array(
-        'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
-        'text' => $LANG_SHOP['purchase_history'],
-        'active' => $active,
-    );
-
-    if ($_SHOP_CONF['gc_enabled']) {
-        $active = $view == 'couponlog' ? true : false;
-        $menu_arr[] = array(
-            'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
-            'text' => $LANG_SHOP['gc_activity'],
-            'active' => $active,
-        );
-    }
-
-    return \ADMIN_createMenu($menu_arr, $hdr_txt);
 }
 
 
