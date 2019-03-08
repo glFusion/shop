@@ -376,7 +376,7 @@ class Report
         global $LANG_SHOP;
 
         foreach ($LANG_SHOP['periods'] as $key=>$text) {
-            $sel = $key == $period ? 'selected="selected"' : '';
+            $sel = $key === $period ? 'selected="selected"' : '';
             $retval .= "<option value=\"$key\" $sel>$text</option>" . LB;
         }
         return $retval;
