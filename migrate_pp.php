@@ -56,7 +56,7 @@ function SHOP_migrate_pp()
             "UPDATE {$_TABLES['paypal.orders']} SET order_seq = @i:=@i+1
                 WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC",
             // This may have been left over from the 0.6.0 upgrade
-            "ALTER TABLE {$_TABLES['paypal.orders']} DROP order_date_old";
+            "ALTER TABLE {$_TABLES['paypal.orders']} DROP order_date_old",
         );
         foreach ($PP_UPGRADE as $sql) {
             // Ignore errors since we can't be sure which of these have already been done.
