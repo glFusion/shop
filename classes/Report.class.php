@@ -248,9 +248,11 @@ class Report
 
     /**
      * Get the report configuration form.
+     * Includes common elements such as dates and user ID filter, and reports
+     * can include their own config elements by providing a getReportConfig()
+     * function.
      *
-     * @param   string|null $base   Base template name
-     * @return  object      Template object
+     * @return  string  HTML for the report configuration form
      */
     public function Configure()
     {
