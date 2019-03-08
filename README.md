@@ -27,7 +27,7 @@ The wrapper functions are disabled by default during the installation of the
 Shop plugin if the Paypal plugin is detected. After disabling the Paypal plugin
 you should visit the Configuration area for the Shop plugin and enable them.
 
-  - If you have Paypal version 0.6.1 or later installed, data from that plugin is automatically transferred into the Shop plugin.a
+  - If you have Paypal version 0.6.1 or later installed, data from that plugin is automatically transferred into the Shop plugin.
   - If you have Paypal version 0.6.0 installed, you can migrate data by clicking
 the `Migrate from Paypal` button under the `Maintenance` menu of Shop.
 This option is only shown if there are no products or categories already created
