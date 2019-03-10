@@ -54,7 +54,7 @@ $expected = array(
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'catlist',
     'attributes', 'editattr', 'other', 'productlist', 'gwadmin', 'gwedit',
-    'wfadmin', 'order', 'itemhist', 'reports', 'coupons', 'sendcards_form',
+    'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editdiscount', 'editshipping', 'shipping',
 );
 foreach($expected as $provided) {
@@ -419,10 +419,6 @@ case 'orderhist':
 
 case 'coupons':
     $content .= SHOP_couponlist();
-    break;
-
-case 'itemhist':
-    $content .= SHOP_itemhist($actionval);
     break;
 
 case 'order':
