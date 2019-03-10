@@ -114,7 +114,7 @@
         <tr>
           <td>
 {!if is_admin}
-            <a href="{site_admin_url}/plugins/shop/index.php?itemhist={item_id}" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">
+            <a href="{site_admin_url}/plugins/shop/report.php?period=at&item_id={item_id}&run=itempurchase" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">
 {!endif}
               {item_dscp}
 {!if is_admin}
