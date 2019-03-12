@@ -1,17 +1,17 @@
 <?php
 /**
-*   Installation functions for the Shop plugin.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @author     Mark Evans <mark@glfusion.org>
-*   @copyright  Copyright (c) 2009 Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2009 Mark Evans <mark@glfusion.org>
-*   @package    shop
-*   @version    0.4.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Installation functions for the Shop plugin.
+ *
+ * @author     Lee Garner <lee@leegarner.com>
+ * @author     Mark Evans <mark@glfusion.org>
+ * @copyright  Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2009 Mark Evans <mark@glfusion.org>
+ * @package    shop
+ * @version    0.7.0
+ * @license    http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 /** Import core glFusion functions */
 require_once '../../../lib-common.php';

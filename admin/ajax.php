@@ -1,15 +1,15 @@
 <?php
 /**
-*   Common admistrative AJAX functions.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2009-2017 Lee Garner <lee@leegarner.com>
-*   @package    shop
-*   @version    0.5.10
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Common admistrative AJAX functions.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 /** Include required glFusion common functions */
 require_once '../../../lib-common.php';
@@ -161,7 +161,7 @@ case 'toggle':
         'type'  => $_POST['type'],
         'component' => $_POST['component'],
         'newval'    => $newval,
-        'statusMessage' => $newval != $_POST['oldval'] ? 
+        'statusMessage' => $newval != $_POST['oldval'] ?
                 $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
     );
 
@@ -170,7 +170,7 @@ case 'toggle':
     //A date in the past
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
     echo json_encode($retval);
-    break; 
+    break;
 }
 
 ?>
