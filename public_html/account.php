@@ -51,7 +51,14 @@ $content = '';
 switch ($mode) {
 case 'couponlog':
     $content .= \Shop\Menu::User($mode);
-    $content .= \Shop\CouponLog();
+    $content .= '<p>';
+    $gc_bal = \Shop\Coupon::getUserBalance();
+    $content .= $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal);
+    $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
+    $content .= '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a></p>';
+    $R = \Shop\Report::getInstance('coupons');
+    $R->setUid();
+    $content .= $R->Render();
     $menu_opt = $LANG_SHOP['gc_activity'];
     $page_title = $LANG_SHOP['gc_activity'];
     break;
@@ -88,6 +95,9 @@ default:
     SHOP_setUrl($_SERVER['request_uri']);
     $content .= \Shop\Menu::User($mode);
     $R = \Shop\Report::getInstance('orderlist');
+    $R->setAdmin(false);
+    $R->setParams($_POST);
+    $R->setAllowedStatuses(array('paid','processing','closed','refunded'));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];
     $page_title = $LANG_SHOP['purchase_history'];
