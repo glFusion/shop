@@ -79,6 +79,7 @@ case 'run':
     $R = \Shop\Report::getInstance($actionval);
     if ($R !== NULL) {
         $R->setAdmin(true);
+        $R->setParams($_GET);
         $content .= $R->Render();
     }
     break;
