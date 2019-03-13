@@ -298,6 +298,11 @@ $LANG_SHOP = array (
     'pendingship' => array(
         'name' => 'Pending Shipments by Item',
         'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
+        'title' => 'Pending Shipments for Item %s',
+    ),
+    'coupons' => array(
+        'name' => 'Coupon Activity',
+        'dscp' => 'List coupon purchases and application against orders.',
     ),
 ),
 'my_orders' => 'My Orders',
@@ -444,7 +449,12 @@ $LANG_SHOP = array (
 'back_to_reports' => 'Back to report selection',
 'config_report' => 'Re-configure this report',
 'sales_amt' => 'Sales Amt',
-'sales' => 'Sales Amt',
+'period' => 'Period',
+'value' => 'Value',
+'no_data' => 'No data returned from query.',
+'date_range' => 'Date Range',
+'back_to_reports' => 'Back to report selection',
+'config_report' => 'Re-configure this report',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
