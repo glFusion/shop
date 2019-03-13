@@ -55,7 +55,7 @@ $expected = array(
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'catlist',
     'attributes', 'editattr', 'other', 'productlist', 'gwadmin', 'gwedit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
-    'sales', 'editdiscount', 'editshipping', 'shipping',
+    'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -427,15 +427,40 @@ case 'order':
     $content .= $order->View('adminview');
     break;
 
+case 'ipndetail':
+    $val = NULL;
+    foreach (array('id', 'txn_id') as $key) {
+        if (isset($_GET[$key])) {
+            $val = $_GET[$key];
+            break;
+        }
+    }
+    if ($val !== NULL) {
+        $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
+        break;
+    }
+    break;
+
 case 'ipnlog':
+    echo "IPNLOG DEPRECATED";die;
     $op = isset($_REQUEST['op']) ? $_REQUEST['op'] : 'all';
     $log_id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
     $txn_id = isset($_REQUEST['txn_id']) ?
                     COM_applyFilter($_REQUEST['txn_id']) : '';
     switch ($op) {
     case 'single':
-        $content .= \Shop\ipnlogSingle($log_id, $txn_id);
-        break;
+        $val = NULL;
+        foreach (array('id', 'txn_id') as $key) {
+            if (isset($_REQUEST['id'])) {
+                $val = $_REQUEST['id'];
+                break;
+            }
+        }
+        if ($val !== NULL) {
+            $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
+            break;
+        }
+        // If $val was not found, default to the ipn log list
     default:
         $content .= SHOP_adminlist_IPNLog();
         break;
@@ -539,7 +564,6 @@ case 'sendcards_form':
     $T->parse('output', 'cards');
     $content = $T->finish($T->get_var('output'));
     break;
-
 
 case 'gwadmin':
     $content .= SHOP_adminList_Gateway();
@@ -686,9 +710,6 @@ function SHOP_adminlist_Product($cat_id=0)
         COM_optionList($_TABLES['shop.categories'], 'cat_id, cat_name',
                 $cat_id, 1) .
         "</select>" . LB;
-
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
 
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_productlist',
             __NAMESPACE__ . '\getAdminField_Product',
@@ -842,9 +863,10 @@ function SHOP_adminTodo()
 /**
  * Displays the list of ipn history from the log stored in the database
  *
+ * @deprecated
  * @return string HTML string containing the contents of the ipnlog
  */
-function SHOP_adminlist_IPNLog()
+function XSHOP_adminlist_IPNLog()
 {
     global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
@@ -882,9 +904,6 @@ function SHOP_adminlist_IPNLog()
         'form_url' => SHOP_ADMIN_URL . '/index.php?ipnlog=x',
     );
 
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_ipnlog',
             __NAMESPACE__ . '\getAdminField_IPNLog',
             $header_arr, $text_arr, $query_arr, $defsort_arr,
@@ -898,13 +917,14 @@ function SHOP_adminlist_IPNLog()
 /**
  * Get an individual field for the IPN Log screen.
  *
+ * @deprecated
  * @param   string  $fieldname  Name of field (from the array, not the db)
  * @param   mixed   $fieldvalue Value of the field
  * @param   array   $A          Array of all fields from the database
  * @param   array   $icon_arr   System icon array (not used)
  * @return  string              HTML for field display in the table
  */
-function getAdminField_IPNLog($fieldname, $fieldvalue, $A, $icon_arr)
+function XgetAdminField_IPNLog($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_TABLES;
 
@@ -1006,9 +1026,6 @@ function SHOP_adminlist_Category()
         'has_extras' => true,
         'form_url' => SHOP_ADMIN_URL . '/index.php?catlist=x',
     );
-
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
 
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_catlist',
             __NAMESPACE__ . '\getAdminField_Category',
@@ -1204,9 +1221,6 @@ function SHOP_adminlist_Attributes()
 
     $options = array('chkdelete' => true, 'chkfield' => 'attr_id');
 
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_attrlist',
             __NAMESPACE__ . '\getAdminField_Attribute',
             $header_arr, $text_arr, $query_arr, $defsort_arr,
@@ -1281,9 +1295,6 @@ function SHOP_adminlist_Shippers()
 
     $options = array('chkdelete' => true, 'chkfield' => 'id');
     $filter = '';
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
     $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
     $display .= COM_createLink($LANG_SHOP['new_ship_method'],
         SHOP_ADMIN_URL . '/index.php?editshipping=0',
@@ -1498,10 +1509,6 @@ function SHOP_adminList_Gateway()
         'form_url' => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
     );
 
-    if (!isset($_REQUEST['query_limit'])) {
-        $_GET['query_limit'] = 20;
-    }
-
     $display .= ADMIN_list(
         $_SHOP_CONF['pi_name'] . '_gwlist',
         __NAMESPACE__ . '\getAdminField_Gateway',
@@ -1637,9 +1644,6 @@ function SHOP_adminlist_Workflow()
         'form_url' => SHOP_ADMIN_URL . '/index.php',
     );
 
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
-
     $display .= "<h2>{$LANG_SHOP['workflows']}</h2>\n";
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_workflowlist',
             __NAMESPACE__ . '\getAdminField_Workflow',
@@ -1728,10 +1732,6 @@ function SHOP_adminlist_Sales()
         'has_extras' => false,
         'form_url' => SHOP_ADMIN_URL . '/index.php',
     );
-
-    if (!isset($_REQUEST['query_limit'])) {
-        $_GET['query_limit'] = 20;
-    }
 
     $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
         SHOP_ADMIN_URL . '/index.php?editdiscount=x',
@@ -2043,9 +2043,6 @@ function SHOP_couponlist()
         'has_extras' => false,
         'form_url' => SHOP_ADMIN_URL . '/index.php?coupons=x',
     );
-
-    if (!isset($_REQUEST['query_limit']))
-        $_GET['query_limit'] = 20;
 
     $display = COM_startBlock('', '',
                     COM_getBlockTemplate('_admin_block', 'header'));
