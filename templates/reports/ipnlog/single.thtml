@@ -11,8 +11,16 @@
 </table>
 
 <hr />
+{!if ipn_data}
 <b>{$LANG_SHOP['ipn_data']}:</b>
-<p>
- {raw}
-</p>
+<table>
+    <tr>
+    <th class="admin-list-headerfield">{$LANG_SHOP['name']}</th>
+    <th class="admin-list-headerfield">{$LANG_SHOP['value']}</th>
+    </tr>
+<!-- BEGIN rawBlock -->
+    <tr><td>{name}</td><td>{value}</td></tr>
+<!-- END rawBlock -->
+</table>
+{!endif}
 {# end {templatelocation} #}

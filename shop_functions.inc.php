@@ -20,7 +20,7 @@ namespace Shop;
  * @param   integer $uid    Optional user ID to view a single user
  * @return  string      HTML for activity listing
  */
-function CouponLog($uid = 0)
+function XCouponLog($uid = 0)
 {
     global $_TABLES, $_USER, $LANG_SHOP;
 
@@ -68,10 +68,6 @@ function CouponLog($uid = 0)
         'has_paging' => true,
     );
 
-    if (!isset($_REQUEST['query_limit'])) {
-        $_GET['query_limit'] = 20;
-    }
-
     $display = COM_startBlock('', '',
         COM_getBlockTemplate('_admin_block', 'header'));
 
@@ -98,7 +94,7 @@ function CouponLog($uid = 0)
  * @param   array   $icon_arr   System icon array (not used)
  * @return  string              HTML for field display in the table
  */
-function getCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
+function XgetCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
@@ -616,7 +612,7 @@ function ProductList($cat_id = 0)
  * @param  string  $txn_id Transaction ID from Shop
  * @return string          HTML of the ipnlog row specified by $id
  */
-function ipnlogSingle($id, $txn_id)
+function XXipnlogSingle($id, $txn_id)
 {
     global $_TABLES, $_CONF, $LANG_SHOP;
 
@@ -631,13 +627,12 @@ function ipnlogSingle($id, $txn_id)
 
     // Allow all serialized data to be available to the template
     $ipn = @unserialize($A['ipn_data']);
-
-    // Create ipnlog template
-    $T = SHOP_getTemplate('ipnlog_detail', 'ipnlog');
-
     $gw = Gateway::getInstance($A['gateway']);
-    if ($gw !== NULL) {
+    if ($gw !== NULL && $ipn !== NULL) {
         $vals = $gw->ipnlogVars($ipn);
+
+        // Create ipnlog template
+        $T = SHOP_getTemplate('ipnlog_detail', 'ipnlog');
 
         // Display the specified ipnlog row
         $Dt = new \Date($A['ts'], $_CONF['timezone']);
@@ -662,25 +657,20 @@ function ipnlogSingle($id, $txn_id)
                 $T->parse('Data', 'DataBlock', true);
             }
         }
-    }
-    /*if ($A['verified']) {
-        $T->set_var('verified', 'true');
-    } else {
-        $T->set_var('verified', 'false');
-    }*/
-
-    if ($ipn) {
-        $ipn_data = "<table><th class=\"admin-list-headerfield\">Name<th class=\"admin-list-headerfield\">Value\n";
-        foreach ($ipn as $name => $value) {
-            //$ipnlog->set_var($name, $value);
-            $ipn_data .= "<tr><td>$name</td><td>$value</td></tr>\n";
+        if ($ipn) {
+            $T->set_block('ipnlog', 'rawBlock', 'Raw');
+            $T->set_var('ipn_data', true);
+            foreach ($ipn as $name => $value) {
+                $T->set_var(array(
+                    'name'  => $name,
+                    'value' => $value,
+                ) );
+                $T->parse('Raw', 'rawBlock', true);
+            }
         }
-        $ipn_data .= "</table>\n";
-    } else {
-        $ipn_data = "Error decoding IPN transaction data";
+        $retval = $T->parse('output', 'ipnlog');
     }
-    $T->set_var('raw', $ipn_data);
-    return $T->parse('output', 'ipnlog');
+    return $retval;
 }
 
 

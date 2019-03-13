@@ -3,9 +3,9 @@
  * Class to manage reports.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.5.8
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -13,11 +13,20 @@
 namespace Shop;
 
 /**
- * Class for reports.
+ * Select and run reports.
  * @package shop
  */
 class Report
 {
+    /** Report icon for the selection page.
+     * Intended to be overridden by child classes.
+     * @var string */
+    protected $icon = 'undefined';
+
+    /** Report icon class, e.g. "uk-text-success".
+     * @var string */
+    protected $icon_cls = '';
+
     /** Property fields accessed via `__set()` and `__get()`.
     * @var array */
     protected $properties;
@@ -30,6 +39,10 @@ class Report
      * Most reports do have a form.
      * @var boolean */
     protected $hasForm = true;
+
+    /** Period designator from the selection form.
+     * @var string */
+    protected $period;
 
     /** Starting date.
      * @var object */
@@ -82,6 +95,15 @@ class Report
      * @var boolean */
     protected $filter_item = false;
 
+    /** Indicate whether the report supports multiplt output types
+     * @var boolean */
+    protected $sel_output = true;
+
+    /**
+     * User ID, used if filter_uid is true.
+     * @var integer */
+    protected $uid;
+
 
     /**
      * Initializes the report.
@@ -90,11 +112,41 @@ class Report
     {
         $this->key = (new \ReflectionClass($this))->getShortName();
         $this->extra['isAdmin'] = false;
-        $type = self::_getSessVar('output_type');
+        $type = self::_getSessVar('out_type');
         if ($type) {
             $this->setType($type);
         }
+        if ($this->filter_dates) {
+            $this->setStartDate('1970-01-01');
+            $this->setEndDate('2037-12-31');
+        }
         $this->setStatuses($status_sess);
+        if (is_array($_GET)) {
+            $this->setParams($_GET);
+        }
+    }
+
+
+    /**
+     * Set parameters in object and session vars.
+     *
+     * @param   array   $get    Array of parameters, typically $_GET
+     */
+    public function setParams($get)
+    {
+        if ($get === NULL) {
+            return;
+        }
+
+        $this->setType(SHOP_getVar($get, 'out_type'));
+        self::_setSessVar('orderstatus', SHOP_getVar($get, 'orderstatus', 'array'));
+        $this->setUid(SHOP_getVar($get, 'uid', 'integer'));
+        $period = SHOP_getVar($get, 'period');
+        $from = SHOP_getVar($get, 'from_date');
+        $to = SHOP_getVar($get, 'to');
+        $dates = $this->getDates($period, $from, $to);
+        $this->startDate = $dates['start'];
+        $this->endDate = $dates['end'];
     }
 
 
@@ -110,7 +162,6 @@ class Report
     /**
      * Get the list of available reports for selection.
      *
-     * @todo    Better formatting, use a template
      * @return  string  HTML for report listing
      */
     public static function getList()
@@ -121,10 +172,13 @@ class Report
         $T->set_file('list', 'list.thtml');
         $T->set_block('list', 'reportList', 'rlist');
         foreach ($LANG_SHOP['reports_avail'] as $key=>$data) {
+            $info = self::getInstance($key)->getInfo();
             $T->set_var(array(
                 'rpt_key'   => $key,
-                'rpt_dscp'  => $data['dscp'],
-                'rpt_name'  => $data['name'],
+                'icon'      => $info['icon']['name'],
+                'icon_cls'  => $info['icon']['cls'],
+                'rpt_dscp'  => $info['dscp'],
+                'rpt_name'  => $info['name'],
             ) );
             $T->parse('rlist', 'reportList', true);
         }
@@ -198,12 +252,15 @@ class Report
      *
      * @param   integer $uid    User ID
      */
-    public function setUid($uid)
+    public function setUid($uid = 0)
     {
+        global $_USER;
+
         if (!$this->isAdmin) {
             $uid = (int)$_USER['uid'];
         }
-        self::_setSessVar('uid', $uid);
+        $this->uid = (int)$uid;
+        self::_setSessVar('uid', $this->uid);
     }
 
 
@@ -223,7 +280,7 @@ class Report
             $this->type = 'html';
             break;
         }
-        self::_setSessVar('output_type', $this->type);
+        self::_setSessVar('out_type', $this->type);
     }
 
 
@@ -256,7 +313,7 @@ class Report
      */
     public function Configure()
     {
-        global $LANG_SHOP, $_TABLES;
+        global $LANG_SHOP, $_TABLES, $_CONF;
 
         $T = new \Template(SHOP_PI_PATH . '/templates/reports');
         $T->set_file(array(
@@ -264,7 +321,7 @@ class Report
         ) );
         $period = self::_getSessVar('period');
         $from_date = self::_getSessVar('from_date', '1970-01-01');
-        $to_date = self::_getSessVar('to_date', SHOP_now()->format('Y-m-d'));
+        $to_date = self::_getSessVar('to_date', $_CONF['_now']->format('Y-m-d', true));
         $gateway = self::_getSessVar('gateway');
 
         // Get previously-selected statuses from the session var
@@ -275,11 +332,12 @@ class Report
             $this->type . '_sel' => 'checked="checked"',
             'period_options' => self::getPeriodSelection($period),
             'report_key'    => $this->key,
-            'period'    => $period,
-            'filter_dates'    => $this->filter_dates,
-            'filter_status'   => $this->filter_status,
-            'filter_uid'      => $this->filter_uid,
+            'period'        => $period,
+            'filter_dates'  => $this->filter_dates,
+            'filter_status' => $this->filter_status,
+            'filter_uid'    => $this->filter_uid,
             'filter_item'   => $this->filter_item,
+            'sel_output'    => $this->sel_output,
             'report_configs' => $this->getReportConfig(),
         ) );
 
@@ -336,10 +394,33 @@ class Report
      */
     protected function getTemplate($base=NULL)
     {
+        global $LANG_SHOP;
+
         if ($base === NULL) $base = $this->getType();
-        $T = new \Template(SHOP_PI_PATH . '/templates/reports/' . $this->key);
-        $T->set_file(array(
-            'report'    => $base . '.thtml',
+        switch ($base) {
+        case 'html':
+            $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+            $T->set_file(array(
+                'report'    => $base . '.thtml',
+            ) );
+            break;
+        case 'csv':
+        case 'config':
+        default:
+            $T = new \Template(SHOP_PI_PATH . '/templates/reports/' . $this->key);
+            $T->set_file(array(
+                'report'    => $base . '.thtml',
+            ) );
+            break;
+        }
+        $T->set_var(array(
+            'report_key'    => $this->key,
+            'report_title'  => $LANG_SHOP['reports_avail'][$this->key]['name'],
+            'filter_dates'  => $this->filter_dates,
+            'filter_status' => $this->filter_status,
+            'filter_uid'    => $this->filter_uid,
+            'filter_item'   => $this->filter_item,
+            'is_admin_report' => $this->isAdmin,
         ) );
         return $T;
     }
@@ -393,11 +474,13 @@ class Report
      * @param   string  $to     Ending date, only for a custom date range
      * @return  array       Array of (start date, end date) objects
      */
-    protected static function getDates($period, $from=NULL, $to=NULL)
+    protected function getDates($period, $from=NULL, $to=NULL)
     {
         global $_CONF;
 
-        $d2 = SHOP_now();
+        $t1 = '00:00:00';
+        $t2 = '23:59:59';
+        $d2 = clone $_CONF['_now'];
         switch ($period) {
         case 'tm':
             $d1 = new \Date('first day of this month', $_CONF['timezone']);
@@ -413,40 +496,41 @@ class Report
             $d1 = new \Date('-' . $days . ' days', $_CONF['timezone']);
             break;
         case 'lq':
-            $tm = SHOP_now()->format('m');
+            $tm = $_CONF['_now']->format('m', true);
             $lq = (int)(($tm + 2)/ 3) - 1;
             list($d1, $d2) = self::_getQtrDates($lq);
             break;
         case 'tq':
-            $tm = SHOP_now()->format('m');
+            $tm = $_CONF['_now']->format('m', true);
             $tq = (int)(($tm + 2)/ 3);
             list($d1, $d2) = self::_getQtrDates($tq);
             break;
         case 'ty':
-            $d1 = new \Date(SHOP_now()->format('Y-01-01', $_CONF['timezone']));
+            $d1 = new \Date($_CONF['_now']->format('Y-01-01' . $t1, $_CONF['timezone']));
             break;
         case 'ly':
-            $year = SHOP_now()->format('Y') - 1;
-            $d1 = new \Date($year . '-01-01 00:00:00', $_CONF['timezone']);
-            $d2 = new \Date($year . '-12-31 23:59:59', $_CONF['timezone']);
+            $year = $_CONF['_now']->format('Y', true) - 1;
+            $d1 = new \Date($year . '-01-01 ' . $t1, $_CONF['timezone']);
+            $d2 = new \Date($year . '-12-31 ' . $t2, $_CONF['timezone']);
             break;
         case 'cust':
             if ($from < '1970' || $to < '1970') {   // catch invalid dates
-                $dates = self::getDates('ty');
-                $from = $dates['start']->format('Y-m-d');
-                $to = $dates['end']->format('Y-m-d');
+                $dates = $this->getDates('ty');
+                $from = $dates['start']->format('Y-m-d ' . $t1);
+                $to = $dates['end']->format('Y-m-d ' . $t2);
             }
             $d1 = new \Date($from, $_CONF['timezone']);
             $d2 = new \Date($to, $_CONF['timezone']);
-            self::_setSessVar('from_date', $from);
-            self::_setSessVar('to_date', $to);
+            self::_setSessVar('from_date', $d1->format('Y-m-d'));
+            self::_setSessVar('to_date', $d2->format('Y-m-d'));
             break;
         default:
             // All time, use default end
-            $d1 = new \Date('1970-01-01', $_CONF['timezone']);
+            $d1 = new \Date('1970-01-01 ' . $t1, $_CONF['timezone']);
             break;
         }
         self::_setSessVar('period', $period);
+        $this->period = $period;
         return array(
             'start' => $d1,
             'end'   => $d2,
@@ -462,6 +546,8 @@ class Report
      */
     private static function _getQtrDates($qtr)
     {
+        global $_CONF;
+
         $qtrs = array(
             1 => array('01', '03'),
             2 => array('04', '06'),
@@ -469,7 +555,7 @@ class Report
             4 => array('10', '12'),
         );
 
-        $year = SHOP_now()->format('Y');
+        $year = $_CONF['_now']->format('Y', true);
         if ($qtr == 0) {
             $year--;
             $qtr = 4;
@@ -477,11 +563,11 @@ class Report
         // Get the last day of the last month in the quarter
         $ld = cal_days_in_month(CAL_GREGORIAN, $qtrs[$qtr][1], $year);
         $d1 = new \Date(
-            sprintf('%d-%02d-01', $year, $qtrs[$qtr][0]),
+            sprintf('%d-%02d-01 ' . $t1, $year, $qtrs[$qtr][0]),
             $_CONF['timezone']
         );
         $d2 = new \Date(
-            sprintf('%d-%02d-%02d', $year, $qtrs[$qtr][1], $ld).
+            sprintf('%d-%02d-%02d 23:59:59', $year, $qtrs[$qtr][1], $ld).
             $_CONF['timezone']
         );
         return array($d1, $d2);
@@ -536,6 +622,23 @@ class Report
     }
 
 
+    /**
+     * Sets the array of allowed statuses.
+     * Called by child classes that want to restrict the order status options.
+     */
+    public function setAllowedStatuses($allowed = array())
+    {
+        $this->allowed_statuses = $allowed;
+        self::_setSessVar('orderstatus', $this->allowed_statuses);
+    }
+
+
+    /**
+     * Set the order statuses into an object variable.
+     * Includes the checkbox status.
+     *
+     * @return  array   Array of (status_key, checked)
+     */
     protected function setStatuses()
     {
         global $LANG_SHOP;
@@ -552,9 +655,13 @@ class Report
             $chk = 'checked="checked"';
             // If there is a session var but it doesn't contain this status,
             // then it was unchecked.
-            if (is_array($status_sess) && !in_array($key, $status_sess)) {
-                $chk = '';
-            }
+            if (is_array($status_sess)) {
+               if (!in_array($key, $status_sess)) {
+                   $chk = '';
+               }
+            } elseif ($key == 'pending') {
+               $chk = '';
+           }
             $this->statuses[$key] = array(
                 'dscp'  => SHOP_getVar($LANG_SHOP['orderstatus'], $key, 'string', $key),
                 'chk'   => $chk,
@@ -578,8 +685,11 @@ class Report
 
     /**
      * Get an individual field for the history screen.
-     * @access  public so ADMIN_list() can access it.
+     * Reports may provide a protected static fieldFunc() function to handle
+     * report-specific fields. Those functions shoule *not* include a default
+     * handler but should return NULL for unhandled fields.
      *
+     * @access  public so ADMIN_list() can access it.
      * @param   string  $fieldname  Name of field (from the array, not the db)
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
@@ -595,6 +705,17 @@ class Report
         static $Cur = NULL;
         $retval = '';
 
+        // Calls a class-specific field function, if defined.
+        // Use the result if one is returned, otherwise fall through to the
+        // default field functions.
+        if (isset($extra['class'])) {
+            $cls = $extra['class'];
+            $retval = $cls::fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra);
+            if ($retval !== NULL) {
+                return $retval;
+            }
+        }
+ 
         if ($dt === NULL) {
             // Instantiate a date object once
             $dt = new \Date('now', $_USER['tzid']);
@@ -605,44 +726,18 @@ class Report
 
         switch($fieldname) {
         case 'order_id':
+            if ($extra['isAdmin']) {
+                $url = SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue;
+            } else {
+                $url = SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue;
+            }
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue,
+                $url,
                 array(
                     'target' => '_blank',
                 )
             );
-            $retval .= '&nbsp;&nbsp;' . COM_createLink(
-                '<i class="uk-icon-mini uk-icon-print"></i>',
-                COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $fieldvalue),
-                array(
-                    'class' => 'tooltip',
-                    'title' => $LANG_SHOP['print'],
-                    'target' => '_new',
-                )
-            );
-            if ($extra['isAdmin']) {
-            $retval .= '&nbsp;&nbsp;' . COM_createLink(
-                '<i class="uk-icon-mini uk-icon-list"></i>',
-                COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $fieldvalue),
-                array(
-                    'class' => 'tooltip',
-                    'title' => $LANG_SHOP['packinglist'],
-                    'target' => '_new',
-                )
-            );
-            }
-            break;
-
-        case 'ipn_id':
-            $retval = COM_createLink(
-                $A['id'],
-                SHOP_ADMIN_URL . '/index.php?ipnlog=x&amp;op=single&amp;id=' . $A['id']
-            );
-            break;
-
-        case 'verified':
-            $retval = $fieldvalue > 0 ? 'True' : 'False';
             break;
 
         case 'order_date':
@@ -661,6 +756,7 @@ class Report
             break;
 
         case 'status':
+            // Show the order status. Admins can update the status, Users can view only.
             if ($extra['isAdmin']) {
                 $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
             } else {
@@ -716,9 +812,109 @@ class Report
             }
             break;
 
+        case 'uid':
+            $retval = COM_getDisplayName($fieldvalue) . ' (' . $fieldvalue . ')';
+            break;
+
         default:
             $retval = str_replace('"', '&quot;', $fieldvalue);
             break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Safety function in case the child class doesn't have this.
+     * If a class name is in the $extra array, this may be called and
+     * just returns NULL to use the default field function above.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra verbatim values
+     * @return  NULL        Null to force the use of the above field function
+     */
+    protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
+    {
+        return NULL;
+    }
+
+
+    /**
+     * Sets a generic parameter into an object variable of the same name.
+     * Also saves the variable in the session for later use.
+     *
+     * @param   string  $key    Name of parameter
+     * @param   mixed   $value  Value of parameter
+     */
+    protected function setParam($key, $value)
+    {
+        $this->$key = $value;
+        self::_setSessVar($key, $value);
+    }
+
+
+    /**
+     * Get a new query string based on the current one, replacing some values.
+     * Null values in the supplied array are removed from the string while
+     * others are added or replaced.
+     *
+     * @param   array   $p  Array of (key->value) replacement parameters
+     * @return  string  Revised query string.
+     */
+    protected static function getQueryString($p = array())
+    {
+        parse_str($_SERVER['QUERY_STRING'], $params);
+        foreach ($p as $key=>$val) {
+            if ($val === NULL && isset($params[$key])) {
+                unset($params[$key]);
+            } else {
+                $params[$key] = $val;
+            }
+        }
+        $q_str = http_build_query($params);
+        return $q_str;
+    }
+
+
+    /**
+     * Get report info into an array.
+     *
+     * @return  array   Array of (name, description, icon info)
+     */
+    protected function getInfo()
+    {
+        global $LANG_SHOP;
+
+        $key = $this->key;
+        $retval = array(
+            'name'  => $LANG_SHOP['reports_avail'][$key]['name'],
+            'dscp'  => $LANG_SHOP['reports_avail'][$key]['dscp'],
+            'icon'  => array(
+                'name'  => $this->icon,
+                'cls'   => $this->icon_cls,
+            ),
+        );
+        return $retval;
+    }
+
+
+    /**
+     * Get the report title when rendering HTML.
+     * Allows reports to use a different language string as the title.
+     *
+     * @return  string  Report title.
+     */
+    protected function getTitle()
+    {
+        global $LANG_SHOP;
+
+        if (array_key_exists('title', $LANG_SHOP['reports_avail'][$this->key])) {
+            $retval = $LANG_SHOP['reports_avail'][$this->key]['title'];
+        } else {
+            $retval = $LANG_SHOP['reports_avail'][$this->key]['name'];
         }
         return $retval;
     }
