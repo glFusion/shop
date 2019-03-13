@@ -4,7 +4,7 @@
  * For a selected item, list all the pending fulfillments.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
  * @license     http://opensource.org/licenses/gpl-2.0.php 
@@ -19,6 +19,8 @@ namespace Shop\Reports;
  */
 class pendingship extends \Shop\Report
 {
+    protected $icon = 'truck';
+
     /**
      * Constructor. Override the allowed statuses.
      */
@@ -30,7 +32,12 @@ class pendingship extends \Shop\Report
             'paid',
             'processing',
         );
+        $this->filter_dates = false;
+        $this->filter_uid = false;
         parent::__construct();
+        if (isset($_GET['item_id'])) {
+            $this->setParam('item_id', $_GET['item_id']);
+        }
     }
 
 
@@ -44,7 +51,6 @@ class pendingship extends \Shop\Report
         global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $retval = '';
-        $this->filter_dates = false;
         $T = $this->getTemplate('config');
         $item_id = self::_getSessVar('item_id');
         $items = \Shop\Product::getAll();
@@ -75,11 +81,6 @@ class pendingship extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->setType($_GET['out_type']);
-        self::_setSessVar('item_id', $_GET['item_id']);
-        self::_setSessVar('orderstatus', $_GET['orderstatus']);
-        $this->setStatuses($_GET['orderstatuses']);
-        $T = $this->getTemplate();
         $nonshipped = array();
         foreach ($this->statuses as $key=>$info) {
             if (!empty($info['chk'])) {
@@ -87,7 +88,10 @@ class pendingship extends \Shop\Report
             }
         }
         $nonshipped = "'" . implode("','", $nonshipped) . "'";
-        $Item = \Shop\Product::getInstance($_GET['item_id']);
+        $Item = \Shop\Product::getInstance($this->item_id);
+        if ($Item->isNew) {
+            return $LANG_SHOP['no_data'];
+        }
 
         $header_arr = array(
             array(
@@ -144,20 +148,22 @@ class pendingship extends \Shop\Report
             'has_paging' => true,
         );
 
+        $T = $this->getTemplate();
         switch ($this->type) {
         case 'html':
             $T->set_var(array(
+                'report_title' => sprintf($this->getTitle(), $Item->name),
                 'output'    => \ADMIN_list(
                     'shop_rep_pendingship',
                     array('\Shop\Report', 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr
+                    $header_arr, $text_arr, $query_arr, $defsort_arr, '', $this->extra
                 ),
             ) );
             break;
         case 'csv':
             // Create the report manually, this only uses the query parts
             $res = DB_query($sql . ' ' . $query_arr['default_filter']);
-            $order_date = SHOP_now();   // Create an object to be updated later
+            $order_date = clone $_CONF['_now'];   // Create an object to be updated later
             $qty_sum = 0;
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {

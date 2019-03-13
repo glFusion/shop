@@ -3,7 +3,7 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -18,12 +18,16 @@ namespace Shop\Reports;
  */
 class itempurchase extends \Shop\Report
 {
+    protected $icon = 'shopping-basket';
+
     /**
      * Constructor.
      */
     public function __construct()
     {
         $this->filter_item = true;
+        $this->filter_uid = false;
+        $this->filter_status = false;
         parent::__construct();
     }
 
@@ -33,17 +37,14 @@ class itempurchase extends \Shop\Report
      *
      * @return  string  HTML for report
      */
-    public function Render()
+    public function Render($param_var = NULL)
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->setType($_GET['out_type']);
-        $this->setItem($_GET['item_id']);
-        $dates = parent::getDates($_GET['period'], $_GET['from_date'], $_GET['to_date']);
-        $item_id = SHOP_getVar($_GET, 'item_id');
-        self::_setSessVar('item_id', $item_id);
-        $this->startDate = $dates['start'];
-        $this->endDate = $dates['end'];
+        $this->setParams($param_var);
+        $this->setParam('item_id', $param_var['item_id']);
+        $item_id = $param_var['item_id'];
+
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
@@ -89,10 +90,8 @@ class itempurchase extends \Shop\Report
         );
 
         $where = " WHERE purch.product_id = '$item_id' AND (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
-        $uid = SHOP_getVar($_GET, 'uid', 'integer');
-        self::_setSessVar('uid', $uid);
-        if ($uid > 0) {
-            $where .= " AND uid = $uid";
+        if ($this->uid > 0) {
+            $where .= " AND uid = {$this->uid}";
         }
 
         $query_arr = array(
@@ -105,20 +104,14 @@ class itempurchase extends \Shop\Report
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&period=' . $_GET['period'] . '&item_id=' . $item_id,
+                '&period=' . $this->period . '&item_id=' . $item_id,
             'has_limit' => true,
             'has_paging' => true,
         );
 
-        parse_str($_SERVER['QUERY_STRING'], $params);
-        $params['run'] = 'orderlist';
-        unset($params['uid']);
-        $q_str = http_build_query($params);
+        $q_str = $this->getQueryString(array('run' => 'orderlist'));
         if ($this->isAdmin) {
-            $this->extra['uid_link'] = SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid='
-        }
-        if (!isset($_REQUEST['query_limit'])) {
-            $_GET['query_limit'] = 20;
+            $this->extra['uid_link'] = SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid=';
         }
 
         switch ($this->type) {
@@ -136,7 +129,7 @@ class itempurchase extends \Shop\Report
             $sql .= ' ' . $query_arr['default_filter'];
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
-            $order_date = SHOP_now();   // Create an object to be updated later
+            $order_date = clone $_CONF['_now'];   // Create an object to be updated later
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
@@ -176,6 +169,6 @@ class itempurchase extends \Shop\Report
         return $this->getOutput($report);
     }
 
-}   // class orderlist
+}
 
 ?>

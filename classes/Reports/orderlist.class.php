@@ -3,7 +3,7 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2016 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.8
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -18,6 +18,8 @@ namespace Shop\Reports;
  */
 class orderlist extends \Shop\Report
 {
+    protected $icon = 'list';
+
     /**
      * Create and render the report contents.
      *
@@ -27,11 +29,6 @@ class orderlist extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
-        $this->setType($_GET['out_type']);
-        self::_setSessVar('orderstatus', $_GET['orderstatus']);
-        $dates = parent::getDates($_GET['period'], $_GET['from_date'], $_GET['to_date']);
-        $this->startDate = $dates['start'];
-        $this->endDate = $dates['end'];
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
@@ -49,6 +46,11 @@ class orderlist extends \Shop\Report
                 'text'  => $LANG_SHOP['order_number'],
                 'field' => 'order_id',
                 'sort'  => true,
+            ),
+            array(
+                'text'  => '',
+                'field' => 'action',
+                'sort'  => false,
             ),
             array(
                 'text'  => $LANG_SHOP['order_date'],
@@ -120,21 +122,18 @@ class orderlist extends \Shop\Report
             FROM {$_TABLES['shop.orders']} ord
             LEFT JOIN {$_TABLES['shop.orderitems']} itm
                 ON itm.order_id = ord.order_id";
-        if (!empty($_GET['orderstatus'])) {
-            $status_sql = "'" . implode("','", $_GET['orderstatus']) . "'";
+
+        $orderstatus = self::_getSessVar('orderstatus');
+        if (!empty($orderstatus)) {
+            $status_sql = "'" . implode("','", $orderstatus) . "'";
             $status_sql = " ord.status in ($status_sql) AND ";
         } else {
             $status_sql = '';
         }
 
         $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
-        if ($this->isAdmin) {
-            $uid = SHOP_getVar($_GET, 'uid', 'integer');
-        } else {
-            $uid = $_USER['uid'];
-        }
-        if ($uid > 0) {
-            $where .= " AND uid = $uid";
+        if ($this->uid > 0) {
+            $where .= " AND uid = {$this->uid}";
         }
         $query_arr = array(
             'table' => 'shop.orders',
@@ -159,20 +158,19 @@ class orderlist extends \Shop\Report
             'has_search' => true,
         );
         if ($this->isAdmin) {
-            $extra = array(
-                'uid_link' => $_CONF['site_url'] . '/users.php?mode=profile&uid=',
-            );
+            $this->extra['uid_link'] = $_CONF['site_url'] . '/users.php?mode=profile&uid=';
         }
 
         $total_sales = 0;
         $total_tax = 0;
         $total_shipping = 0;
         $total_total = 0;
-        $order_date = SHOP_now();   // Create an object to be updated later
+        $order_date = clone $_CONF['_now'];   // Create an object to be updated later
         $Cur = \Shop\Currency::getInstance($A['currency']);
 
         switch ($this->type) {
         case 'html':
+            $this->extra['class'] = __CLASS__;
             // Get the totals, have to use a separate query for this.
             $s = "SELECT SM(itm.quantity * itm.price) as total_sales,
                 SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
@@ -187,12 +185,13 @@ class orderlist extends \Shop\Report
                 $total_shipping = $A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
+            $filter = '<select name="period">' . $this->getPeriodSelection($this->period) . '</select>';
             $T->set_var(
                 'output',
                 \ADMIN_list(
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr, '', $extra
+                    $header_arr, $text_arr, $query_arr, $defsort_arr, $filter, $this->extra
                 )
             );
             break;
@@ -240,7 +239,56 @@ class orderlist extends \Shop\Report
         ) );
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
-        return $this->getOutput($report);
+        $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
+        $display = '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a>';
+        return $display .  $this->getOutput($report);
+    }
+
+
+    /**
+     * Get the display value for a field specific to this report.
+     * This function takes over the "default" handler in Report::getReportField().
+     * @access  protected as it is only called from Report::getReportField().
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra verbatim values
+     * @return  string              HTML for field display in the table
+     */
+    protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
+    {
+        global $LANG_SHOP;
+
+        $retval = NULL;
+        switch ($fieldname) {
+        case 'action':
+            $retval = '<span style="white-space:nowrap" class="nowrap">';
+            $retval .= COM_createLink(
+                '<i class="uk-icon-mini uk-icon-print"></i>',
+                COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $A['order_id']),
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['print'],
+                    'target' => '_new',
+                )
+            );
+            if ($extra['isAdmin']) {
+                $retval .= '&nbsp;' . COM_createLink(
+                    '<i class="uk-icon-mini uk-icon-list"></i>',
+                    COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $A['order_id']),
+                    array(
+                        'class' => 'tooltip',
+                        'title' => $LANG_SHOP['packinglist'],
+                        'target' => '_new',
+                    )
+                );
+            }
+            $retval .= '</span>';
+            break;
+        }
+        return $retval;
     }
 
 }   // class orderlist
