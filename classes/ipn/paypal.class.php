@@ -4,9 +4,9 @@
  * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2016 Lee Garner
+ * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
- * @version     v0.5.7
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
