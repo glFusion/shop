@@ -1,0 +1,16 @@
+{# begin {templatelocation} #}
+{!if is_admin_report}
+<div style="float:left;">
+<h1>{report_title}</h1>
+{!if filter_dates}
+<h2>{$LANG_SHOP['from']} {startDate} {$LANG_SHOP['to']} {endDate}</h2>
+{!endif}
+</div>
+<div style="float:right">
+<a href="{site_url}/admin/plugins/shop/report.php">Back to reports</a><br />
+<a href="{site_url}/admin/plugins/shop/report.php?configure={report_key}">Re-configure this report</a><br />
+</div>
+{!endif}
+<div style="clear:both;"></div>
+{output}
+{# begin {templatelocation} #}
