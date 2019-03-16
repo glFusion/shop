@@ -776,7 +776,7 @@ class IPN
     protected function verifyGC()
     {
         $retval = true;
-        if (array_key_exists($this->credits['gc'])) {
+        if (array_key_exists('gc', $this->credits)) {
             $by_gc = (float)$this->credits['gc'];
             if ($by_gc > 0) {
                 if (!Coupon::verifyBalance($by_gc, $this->uid)) {
