@@ -151,13 +151,13 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
     // Only show if no topic is requested
     if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
         USES_shop_functions();
-        $display = \Shop\siteHeader();
+        $display = \Shop\Menu::siteHeader();
         $T = new Template(__DIR__ . '/templates');
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var('title', $LANG_SHOP['main_title']);
         $display .= $T->parse('', 'title');
         $display .= \Shop\ProductList();
-        $display .= \Shop\siteFooter();
+        $display .= \Shop\Menu::siteFooter();
     }
     return $display;
 }
@@ -2311,6 +2311,39 @@ function SHOP_getUrl($def_url = '')
 // Enable the service functions if so configured.
 if ($_SHOP_CONF['enable_svc_funcs']) {
     require_once __DIR__ . '/services.inc.php';
+}
+
+
+/**
+ * Display an error message.
+ * Uses glFusion's typography to display an "alert" type message.
+ * The provided message may be a single message string or array of strings.
+ * An array will be formatted as an unnumbered list.
+ *
+ * @param   array|string    $msg    Single message string or array
+ * @param   string          $title  Optional title string, shown above list
+ * @return  string          Complete error message
+ */
+function SHOP_errMsg($msg = array(), $title = '')
+{
+    if (empty($msg)) return '';
+
+    $retval = '<span class="alert shopErrorMsg">' . "\n";
+    if (!empty($title)) {
+        $retval .= "<p>$title</p>\n";
+    }
+
+    if (is_array($msg)) {
+        $retval .= '<ul>';
+        foreach ($msg as $m) {
+            $retval .= '<li>' . $m . '</li>' . LB;
+        }
+        $retval .= '<ul>' . LB;
+    } else {
+        $retval .= $msg;
+    }
+    $retval .= "/span>\n";
+    return $retval;
 }
 
 ?>

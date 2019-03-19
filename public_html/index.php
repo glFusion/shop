@@ -29,49 +29,41 @@ if (
     exit;
 }
 
-// Import plugin-specific functions
-USES_shop_functions();
-
 $action = '';
 $actionval = '';
 $view = '';
-
-/*if (!empty($action)) {
-    $id = COM_sanitizeID(COM_getArgument('id'));
-} else {*/
-    $expected = array(
-        // Actions
-        'updatecart', 'checkout', 'searchcat',
-        'savebillto', 'saveshipto',
-        'emptycart', 'delcartitem',
-        'addcartitem', 'addcartitem_x', 'checkoutcart',
-        'processorder', 'thanks', 'action',
-        // 'setshipper',
-        // Views
-        'order', 'view', 'detail', 'printorder', 'orderhist', 'packinglist',
-        'couponlog',
-        'cart', 'pidetail', 'viewcart',
-    );
-    $action = 'productlist';    // default view
-    foreach($expected as $provided) {
-        if (isset($_POST[$provided])) {
-            $action = $provided;
-            $actionval = $_POST[$provided];
-            break;
-        } elseif (isset($_GET[$provided])) {
-            $action = $provided;
-            $actionval = $_GET[$provided];
-            break;
-        }
+$expected = array(
+    // Actions
+    'updatecart', 'checkout', 'searchcat',
+    'savebillto', 'saveshipto',
+    'emptycart', 'delcartitem',
+    'addcartitem', 'addcartitem_x', 'checkoutcart',
+    'processorder', 'thanks', 'action',
+    // 'setshipper',
+    // Views
+    'order', 'view', 'detail', 'printorder', 'orderhist', 'packinglist',
+    'couponlog',
+    'cart', 'pidetail', 'viewcart',
+);
+$action = 'productlist';    // default view
+foreach($expected as $provided) {
+    if (isset($_POST[$provided])) {
+        $action = $provided;
+        $actionval = $_POST[$provided];
+        break;
+    } elseif (isset($_GET[$provided])) {
+        $action = $provided;
+        $actionval = $_GET[$provided];
+        break;
     }
-    if (isset($_POST['id'])) {
-        $id = $_POST['id'];
-    } elseif (isset($_GET['id'])) {
-        $id = $_GET['id'];
-    } else {
-        $id = '';
-    }
-//}
+}
+if (isset($_POST['id'])) {
+    $id = $_POST['id'];
+} elseif (isset($_GET['id'])) {
+    $id = $_GET['id'];
+} else {
+    $id = '';
+}
 $content = '';
 
 switch ($action) {
@@ -370,6 +362,7 @@ case 'checkoutcart':
 
 case 'productlist':
 default:
+    USES_shop_functions();
     SHOP_setUrl($_SERVER['request_uri']);
     $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
     $content .= \Shop\ProductList($cat_id);
@@ -382,7 +375,7 @@ case 'none':
     break;
 }
 
-$display = \Shop\siteHeader();
+$display = \Shop\Menu::siteHeader();
 $T = SHOP_getTemplate('shop_title', 'title');
 $T->set_var(array(
     'title' => isset($page_title) ? $page_title : '',
@@ -390,7 +383,7 @@ $T->set_var(array(
 ) );
 $display .= $T->parse('', 'title');
 $display .= $content;
-$display .= \Shop\siteFooter();
+$display .= \Shop\Menu::siteFooter();
 echo $display;
 
 ?>

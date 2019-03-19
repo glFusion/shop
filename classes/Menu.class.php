@@ -178,6 +178,66 @@ class Menu
         return $T->parse('', 'title');
     }
 
+
+    /**
+     * Display the site header, with or without blocks according to configuration.
+     *
+     * @param   string  $title  Title to put in header
+     * @param   string  $meta   Optional header code
+     * @return  string          HTML for site header, from COM_siteHeader()
+     */
+    public static function siteHeader($title='', $meta='')
+    {
+        global $_SHOP_CONF, $LANG_SHOP;
+
+        $retval = '';
+
+        switch($_SHOP_CONF['displayblocks']) {
+        case 2:     // right only
+        case 0:     // none
+            $retval .= COM_siteHeader('none', $title, $meta);
+            break;
+
+        case 1:     // left only
+        case 3:     // both
+        default :
+            $retval .= COM_siteHeader('menu', $title, $meta);
+            break;
+        }
+
+        if (!$_SHOP_CONF['shop_enabled']) {
+            $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Display the site footer, with or without blocks as configured.
+     *
+     * @return  string      HTML for site footer, from COM_siteFooter()
+     */
+    public static function siteFooter()
+    {
+        global $_SHOP_CONF;
+
+        $retval = '';
+
+        switch($_SHOP_CONF['displayblocks']) {
+        case 2 : // right only
+        case 3 : // left and right
+            $retval .= COM_siteFooter();
+            break;
+
+        case 0: // none
+        case 1: // left only
+        default :
+            $retval .= COM_siteFooter();
+            break;
+        }
+        return $retval;
+    }
+
 }
 
 ?>

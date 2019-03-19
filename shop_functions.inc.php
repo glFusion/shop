@@ -14,134 +14,6 @@
 namespace Shop;
 
 /**
- * Gift Card activity list
- * Allow users to view gift card redemption and application
- *
- * @param   integer $uid    Optional user ID to view a single user
- * @return  string      HTML for activity listing
- */
-function XCouponLog($uid = 0)
-{
-    global $_TABLES, $_USER, $LANG_SHOP;
-
-    if ($uid == 0) $uid = $_USER['uid'];
-    $uid = (int)$uid;
-
-    USES_lib_admin();
-
-    $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}";
-    $header_arr = array(
-        array(
-            'text' => $LANG_SHOP['datetime'],
-            'field' => 'ts',
-            'sort' => true,
-        ),
-        array(
-            'text' => $LANG_SHOP['description'],
-            'field' => 'msg',
-            'sort' => false,
-        ),
-        array(
-            'text' => $LANG_SHOP['amount'],
-            'field' => 'amount',
-            'sort' => false,
-            'align' => 'right',
-        ),
-    );
-
-    $defsort_arr = array(
-        'field' => 'ts',
-        'direction' => 'DESC',
-    );
-
-    $query_arr = array(
-        'table' => 'shop.coupon_log',
-        'sql' => $sql,
-        'query_fields' => array(),
-        'default_filter' => 'WHERE uid = ' . $uid,
-    );
-
-    $text_arr = array(
-        'has_extras' => false,
-        'form_url' => SHOP_URL . '/index.php?couponlog=x',
-        'has_limit' => true,
-        'has_paging' => true,
-    );
-
-    $display = COM_startBlock('', '',
-        COM_getBlockTemplate('_admin_block', 'header'));
-
-    $gc_bal = Coupon::getUserBalance();
-    $display .= $LANG_SHOP['gc_bal'] . ': ' . Currency::getInstance()->Format($gc_bal);
-    $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
-    $display .= '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a>';
-    $display .= \ADMIN_list(
-        'shop_couponlog',
-        __NAMESPACE__ . '\getCouponLogField',
-        $header_arr, $text_arr, $query_arr, $defsort_arr
-    );
-    $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-    return $display;
-}
-
-
-/**
- * Get an individual field for the gift cart activity screen.
- *
- * @param   string  $fieldname  Name of field (from the array, not the db)
- * @param   mixed   $fieldvalue Value of the field
- * @param   array   $A          Array of all fields from the database
- * @param   array   $icon_arr   System icon array (not used)
- * @return  string              HTML for field display in the table
- */
-function XgetCouponLogField($fieldname, $fieldvalue, $A, $icon_arr)
-{
-    global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
-
-    static $dt = NULL;
-    $retval = '';
-
-    if ($dt === NULL) {
-        // Instantiate a date object once
-        $dt = new \Date('now', $_USER['tzid']);
-    }
-
-    switch($fieldname) {
-    case 'ts':
-        $dt->setTimestamp($fieldvalue);
-        $retval = '<span class="tooltip" title="' .
-                $dt->format($_SHOP_CONF['datetime_fmt'], false) . '">' .
-                $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
-        break;
-
-    case 'msg':
-        switch ($fieldvalue) {
-        case 'gc_redeemed':
-            // Redeemed and added to account
-            $retval = sprintf($LANG_SHOP['msg_gc_redeemed'], $A['code']);
-            break;
-        case 'gc_applied':
-            // Applied as payment against an order
-            $order = COM_createLink($A['order_id'],
-                    SHOP_URL . '/index.php?order=' . $A['order_id']);
-            $retval = sprintf($LANG_SHOP['msg_gc_applied'], $order);
-            //$line['amount'] *= -1;
-            break;
-        default:
-            $retval = $fieldvalue;
-            break;
-        }
-        break;
-    case 'amount':
-        if ($A['msg'] == 'gc_applied') $fieldvalue *= -1;
-        $retval = Currency::getInstance()->format($fieldvalue);
-        break;
-    }
-    return $retval;
-}
-
-
-/**
  * Diaplay the product catalog items.
  *
  * @param   integer $cat_id     Optional category ID to limit display
@@ -308,7 +180,7 @@ function ProductList($cat_id = 0)
 
     // Get products from database. "c.enabled is null" is to allow products
     // with no category defined
-    $today = SHOP_now()->format('Y-m-d', true);
+    $today = $_CONF['_now']->format('Y-m-d', true);
     $sql = " FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id
@@ -353,7 +225,7 @@ function ProductList($cat_id = 0)
     }
 
     // If applicable, handle pagination of query
-    $prod_per_page = SHOP_getVar($_SHOP_CONF, 'prod_per_page', 'integer');
+    $prod_per_page = SHOP_getVar($_SHOP_CONF, 'prod_per_page', 'integer', 20);
     if ($prod_per_page > 0) {
         // Make sure page requested is reasonable, if not, fix it
         if (!isset($_REQUEST['page']) || $_REQUEST['page'] <= 0) {
@@ -371,7 +243,6 @@ function ProductList($cat_id = 0)
     }
 
     // Re-execute query with the limit clause in place
-    //$res = DB_query('SELECT DISTINCT p.id ' . $sql);
     $sql_key = md5($sql);
     $cache_key = Cache::makeKey('prod_list_' . $sql_key);
     $Products = Cache::get($cache_key);
@@ -390,10 +261,6 @@ function ProductList($cat_id = 0)
         'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
         'start'   => 'product_list_start',
         'end'     => 'product_list_end',
-        //'product' => 'list/' . $_SHOP_CONF['list_tpl_ver'] .'/product_list_item',
-        //    'product' => 'product_list',
-        //'buy'     => 'buttons/btn_buy_now',
-        //'cart'    => 'buttons/btn_add_cart',
         'download'  => 'buttons/btn_download',
         'login_req' => 'buttons/btn_login_req',
         'btn_details' => 'buttons/btn_details',
@@ -602,169 +469,6 @@ function ProductList($cat_id = 0)
 
     $display .= $T->parse('', 'end');
     return $display;
-}
-
-
-/**
- * Display a single row from the IPN log.
- *
- * @param  integer $id     Log Entry ID
- * @param  string  $txn_id Transaction ID from Shop
- * @return string          HTML of the ipnlog row specified by $id
- */
-function XXipnlogSingle($id, $txn_id)
-{
-    global $_TABLES, $_CONF, $LANG_SHOP;
-
-    $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']} ";
-    $sql .= $id > 0 ? "WHERE id = $id" : "WHERE txn_id = '$txn_id'";
-
-    $res = DB_query($sql);
-    $A = DB_fetchArray($res, false);
-    if (empty($A)) {
-        return "Nothing Found";
-    }
-
-    // Allow all serialized data to be available to the template
-    $ipn = @unserialize($A['ipn_data']);
-    $gw = Gateway::getInstance($A['gateway']);
-    if ($gw !== NULL && $ipn !== NULL) {
-        $vals = $gw->ipnlogVars($ipn);
-
-        // Create ipnlog template
-        $T = SHOP_getTemplate('ipnlog_detail', 'ipnlog');
-
-        // Display the specified ipnlog row
-        $Dt = new \Date($A['ts'], $_CONF['timezone']);
-        $T->set_var(array(
-            'id'        => $A['id'],
-            'ip_addr'   => $A['ip_addr'],
-            'time'      => SHOP_dateTooltip($Dt),
-            'txn_id'    => $A['txn_id'],
-            'gateway'   => $A['gateway'],
-            //'pmt_gross' => $vals['pmt_gross'],
-            //'verified'  => $vals['verified'],
-            //'pmt_status' => $vals['pmt_status'],
-        ) );
-
-        if (!empty($vals)) {
-            $T->set_block('ipnlog', 'DataBlock', 'Data');
-            foreach ($vals as $key=>$value) {
-                $T->set_var(array(
-                    'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
-                    'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
-                ) );
-                $T->parse('Data', 'DataBlock', true);
-            }
-        }
-        if ($ipn) {
-            $T->set_block('ipnlog', 'rawBlock', 'Raw');
-            $T->set_var('ipn_data', true);
-            foreach ($ipn as $name => $value) {
-                $T->set_var(array(
-                    'name'  => $name,
-                    'value' => $value,
-                ) );
-                $T->parse('Raw', 'rawBlock', true);
-            }
-        }
-        $retval = $T->parse('output', 'ipnlog');
-    }
-    return $retval;
-}
-
-
-/**
- * Display an error message.
- * Uses glFusion's typography to display an "alert" type message.
- * The provided message may be a single message string or array of strings.
- * An array will be formatted as an unnumbered list.
- *
- * @param   array|string    $msg    Single message string or array
- * @param   string          $title  Optional title string, shown above list
- * @return  string          Complete error message
- */
-function SHOP_errMsg($msg = array(), $title = '')
-{
-    if (empty($msg)) return '';
-
-    $retval = '<span class="alert shopErrorMsg">' . "\n";
-    if (!empty($title)) {
-        $retval .= "<p>$title</p>\n";
-    }
-
-    if (is_array($msg)) {
-        $retval .= '<ul>';
-        foreach ($msg as $m) {
-            $retval .= '<li>' . $m . '</li>' . LB;
-        }
-        $retval .= '<ul>' . LB;
-    } else {
-        $retval .= $msg;
-    }
-    $retval .= "/span>\n";
-    return $retval;
-}
-
-
-/**
- * Display the site header, with or without blocks according to configuration.
- *
- * @param   string  $title  Title to put in header
- * @param   string  $meta   Optional header code
- * @return  string          HTML for site header, from COM_siteHeader()
- */
-function siteHeader($title='', $meta='')
-{
-    global $_SHOP_CONF, $LANG_SHOP;
-
-    $retval = '';
-
-    switch($_SHOP_CONF['displayblocks']) {
-    case 2:     // right only
-    case 0:     // none
-        $retval .= COM_siteHeader('none', $title, $meta);
-        break;
-
-    case 1:     // left only
-    case 3:     // both
-    default :
-        $retval .= COM_siteHeader('menu', $title, $meta);
-        break;
-    }
-
-    if (!$_SHOP_CONF['shop_enabled']) {
-        $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
-    }
-    return $retval;
-}
-
-
-/**
- * Display the site footer, with or without blocks as configured.
- *
- * @return  string      HTML for site footer, from COM_siteFooter()
- */
-function siteFooter()
-{
-    global $_SHOP_CONF;
-
-    $retval = '';
-
-    switch($_SHOP_CONF['displayblocks']) {
-    case 2 : // right only
-    case 3 : // left and right
-        $retval .= COM_siteFooter();
-        break;
-
-    case 0: // none
-    case 1: // left only
-    default :
-        $retval .= COM_siteFooter();
-        break;
-    }
-
-    return $retval;
 }
 
 ?>

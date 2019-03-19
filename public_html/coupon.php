@@ -64,8 +64,7 @@ default:
     break;
 }
 
-USES_shop_functions();
-$display = \Shop\siteHeader();
+$display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::PageTitle($LANG_SHOP['apply_gc']);
 $display .= \Shop\Menu::User();
 $T = new \Template(SHOP_PI_PATH . '/templates');
@@ -76,7 +75,7 @@ $T->set_var(array(
 ) );
 $display .= $T->parse('', 'title');
 $display .= $content;
-$display .= \Shop\siteFooter();
+$display .= \Shop\Menu::siteFooter();
 echo $display;
 
 ?>

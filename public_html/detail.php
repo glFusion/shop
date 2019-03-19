@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2011 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     0.5.0
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -25,9 +25,6 @@ if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
 /* Ensure sufficient privs to read this page */
 shop_access_check();
 
-// Import plugin-specific functions
-USES_shop_functions();
-
 COM_setArgNames(array('id'));
 if (isset($_GET['id'])) {
     $id = COM_sanitizeID($_GET['id']);
@@ -35,7 +32,7 @@ if (isset($_GET['id'])) {
     $id = COM_applyFilter(COM_getArgument('id'));
 }
 
-$display = \Shop\siteHeader();
+$display = \Shop\Menu::siteHeader();
 $T = SHOP_getTemplate('shop_title', 'title');
 $display .= $T->parse('', 'title');
 if (!empty($msg)) {
@@ -73,7 +70,7 @@ if (empty($breadcrumbs)) {
 
 $display .= $breadcrumbs;
 $display .= $content;
-$display .= \Shop\siteFooter();
+$display .= \Shop\Menu::siteFooter();
 echo $display;
 
 ?>

@@ -25,9 +25,6 @@ if (
     exit;
 }
 
-// Import plugin-specific functions
-USES_shop_functions();
-
 $action = '';
 $actionval = '';
 $view = '';
@@ -104,7 +101,7 @@ default:
     break;
 }
 
-$display = \Shop\siteHeader();
+$display = \Shop\Menu::siteHeader();
 $T = SHOP_getTemplate('shop_title', 'title');
 $T->set_var(array(
     'title' => isset($page_title) ? $page_title : '',
@@ -112,7 +109,7 @@ $T->set_var(array(
 ) );
 $display .= $T->parse('', 'title');
 $display .= $content;
-$display .= \Shop\siteFooter();
+$display .= \Shop\Menu::siteFooter();
 echo $display;
 
 ?>
