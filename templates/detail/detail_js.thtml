@@ -12,7 +12,7 @@ function SHOPupdateImage(disp_img, lg_img)
 }
 </script>
 {!if have_attributes}
-<script type="text/javascript" language="JavaScript">
+<script type="text/javascript">
 var emsg = "";
 function isValidField(obj)
 {

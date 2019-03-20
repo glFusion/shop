@@ -35,13 +35,13 @@
       <div class="shopPrice sale">{sale_name}</div>
       <div>
         <span class="shopPrice sale">{price_prefix}</span>
-        <span class="shopPrice sale" id="price" name="price">{init_price}</span>
+        <span class="shopPrice sale" id="price">{init_price}</span>
         <span class="shopPrice sale">{price_postfix}</span>
       </div>
 {!else}
       <div>
       <span class="shopPrice normal">{price_prefix}</span>
-      <span class="shopPrice normal" id="price" name="price">{init_price}</span>
+      <span class="shopPrice normal" id="price">{init_price}</span>
       <span class="shopPrice normal">{price_postfix}</span>
       </div>
 {!endif}
