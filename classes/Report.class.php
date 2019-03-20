@@ -6,6 +6,7 @@
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -111,19 +112,12 @@ class Report
     protected function __construct()
     {
         $this->key = (new \ReflectionClass($this))->getShortName();
-        $this->extra['isAdmin'] = false;
-        $type = self::_getSessVar('out_type');
-        if ($type) {
-            $this->setType($type);
-        }
+        $this->setAdmin(false);
         if ($this->filter_dates) {
             $this->setStartDate('1970-01-01');
             $this->setEndDate('2037-12-31');
         }
-        $this->setStatuses($status_sess);
-        if (is_array($_GET)) {
-            $this->setParams($_GET);
-        }
+        $this->setStatuses();
     }
 
 
@@ -138,7 +132,7 @@ class Report
             return;
         }
 
-        $this->setType(SHOP_getVar($get, 'out_type'));
+        $this->setType(SHOP_getVar($get, 'out_type', 'string', $this->type));
         self::_setSessVar('orderstatus', SHOP_getVar($get, 'orderstatus', 'array'));
         $this->setUid(SHOP_getVar($get, 'uid', 'integer'));
         $period = SHOP_getVar($get, 'period');
@@ -679,7 +673,7 @@ class Report
     public function setAdmin($isAdmin)
     {
         $this->isAdmin = $isAdmin ? true : false;
-        $this->extra['isAdmin'] = $this->isAdmin;
+        $this->setExtra('isAdmin', $this->isAdmin);
     }
 
 
@@ -715,7 +709,7 @@ class Report
                 return $retval;
             }
         }
- 
+
         if ($dt === NULL) {
             // Instantiate a date object once
             $dt = new \Date('now', $_USER['tzid']);
@@ -917,6 +911,19 @@ class Report
             $retval = $LANG_SHOP['reports_avail'][$this->key]['name'];
         }
         return $retval;
+    }
+
+
+    /**
+     * Set a value into the "extra" variable for getReportField() to use.
+     *
+     * @access  public  To allow setting from anywhere
+     * @param   string  $key    Array key
+     * @param   mixed   $val    Value to set
+     */
+    public function setExtra($key, $val)
+    {
+        $this->extra[$key] = $val;
     }
 
 }   // class Report

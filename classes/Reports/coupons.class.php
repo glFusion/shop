@@ -1,11 +1,12 @@
 <?php
 /**
- * Coupon Activiry Report
+ * Coupon Activity Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     0.5.8
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -19,7 +20,7 @@ namespace Shop\Reports;
 class coupons extends \Shop\Report
 {
     protected $code;
-    protected $icon = 'minus-square-o';
+    protected $icon = 'gift';
     static $component = 'shop_rep_coupons';
 
     /**
@@ -56,7 +57,7 @@ class coupons extends \Shop\Report
             // in the form_url.
             $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('q'=>''));
             //$url = $_SERVER['REQUEST_URI'];
-            $this->extra['uid_link'] = $_CONF['site_url'] . '/users.php?mode=profile&uid=';
+            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
             $cust_hdr = array(
                 array(
                     'text'  => $LANG_SHOP['customer'],
@@ -125,7 +126,7 @@ class coupons extends \Shop\Report
             'has_paging' => true,
             'has_search' => $this->isAdmin ? true : false,
         );
-        $this->extra['class'] = __CLASS__;
+        $this->setExtra('class', __CLASS__);
 
         $Cur = \Shop\Currency::getInstance();
         $T = $this->getTemplate();
@@ -136,7 +137,8 @@ class coupons extends \Shop\Report
                 \ADMIN_list(
                     self::$component,
                     array(__CLASS__, 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr, '', $this->extra
+                    $header_arr, $text_arr, $query_arr, $defsort_arr,
+                    '', $this->extra
                 )
             );
             break;

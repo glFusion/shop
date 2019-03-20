@@ -37,14 +37,11 @@ class itempurchase extends \Shop\Report
      *
      * @return  string  HTML for report
      */
-    public function Render($param_var = NULL)
+    public function Render()
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->setParams($param_var);
-        $this->setParam('item_id', $param_var['item_id']);
-        $item_id = $param_var['item_id'];
-
+        $item_id = SHOP_getVar($_GET, 'item_id', 'integer');
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();

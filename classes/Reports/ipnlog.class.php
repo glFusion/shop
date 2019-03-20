@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     0.5.8
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -128,7 +129,7 @@ class ipnlog extends \Shop\Report
         switch ($this->type) {
         case 'html':
             $T = $this->getTemplate();
-            $this->extra['class'] = __CLASS__;
+            $this->setExtra('class', __CLASS__);
             $T->set_var(array(
                 'output' => \ADMIN_list(
                     $_SHOP_CONF['pi_name'] . '_ipnlog',
@@ -287,10 +288,6 @@ class ipnlog extends \Shop\Report
 
         case 'verified':
             $retval = $fieldvalue > 0 ? 'True' : 'False';
-            break;
-
-        default:
-            $retval = $fieldvalue;
             break;
         }
         return $retval;

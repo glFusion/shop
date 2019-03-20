@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     0.5.8
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -158,7 +159,7 @@ class orderlist extends \Shop\Report
             'has_search' => true,
         );
         if ($this->isAdmin) {
-            $this->extra['uid_link'] = $_CONF['site_url'] . '/users.php?mode=profile&uid=';
+            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
         }
 
         $total_sales = 0;
@@ -170,7 +171,7 @@ class orderlist extends \Shop\Report
 
         switch ($this->type) {
         case 'html':
-            $this->extra['class'] = __CLASS__;
+            $this->setExtra('class', __CLASS__);
             // Get the totals, have to use a separate query for this.
             $s = "SELECT SM(itm.quantity * itm.price) as total_sales,
                 SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
@@ -191,11 +192,13 @@ class orderlist extends \Shop\Report
                 \ADMIN_list(
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
-                    $header_arr, $text_arr, $query_arr, $defsort_arr, $filter, $this->extra
+                    $header_arr, $text_arr, $query_arr, $defsort_arr,
+                    $filter, $this->extra
                 )
             );
             break;
         case 'csv':
+            // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
             $sql .= ' GROUP BY ' . $query_arr['group_by'];
             $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
@@ -239,9 +242,7 @@ class orderlist extends \Shop\Report
         ) );
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
-        $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
-        $display = '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a>';
-        return $display .  $this->getOutput($report);
+        return $this->getOutput($report);
     }
 
 
