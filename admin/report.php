@@ -79,7 +79,8 @@ case 'run':
     $R = \Shop\Report::getInstance($actionval);
     if ($R !== NULL) {
         $R->setAdmin(true);
-        $R->setParams($_GET);
+        // Params usually from GET but could be POSTed time period
+        $R->setParams($_REQUEST);
         $content .= $R->Render();
     }
     break;
