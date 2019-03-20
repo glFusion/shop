@@ -524,7 +524,6 @@ $LANG_confignames['shop'] = array(
     'displayblocks'  => 'Display glFusion Blocks',
     'debug_ipn'     => 'Debug IPN Messages?',
     'debug'         => 'Program Debug?',
-    'purch_email_admin' => 'Notify administrators of purchases?',
     'def_enabled'   => 'Product Enabled?',
     'def_featured'  => 'Product Featured?',
     'def_taxable'   => 'Product is Taxable?',
