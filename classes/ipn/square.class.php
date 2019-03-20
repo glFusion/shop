@@ -38,7 +38,7 @@ class square extends \Shop\IPN
     */
     function __construct($A=array())
     {
-        global $_USER;
+        global $_USER, $_CONF;
 
         $this->gw_id = 'square';
         parent::__construct($A);
@@ -60,7 +60,7 @@ class square extends \Shop\IPN
 
         $this->payer_email = $this->Order->buyer_email;
         $this->payer_name = $_USER['fullname'];
-        $this->pmt_date = SHOP_now()->toMySQL(true);
+        $this->pmt_date = $_CONF['_now']->toMySQL(true);
         $this->gw_name = $this->gw->Name();;
         $this->status = $status;
         $this->currency = $C->code;
@@ -95,7 +95,7 @@ class square extends \Shop\IPN
                 'item_id'   => $item->product_id,
                 'quantity'  => $item->quantity,
                 'price'     => $item->price,
-                'item_name' => $item->description,
+                'item_name' => $item->getShortDscp(),
                 'shipping'  => $item->shipping,
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
