@@ -413,12 +413,13 @@ class Coupon extends Product
         $uid = (int)$uid;
         if ($uid < 2) return array();   // Can't get anonymous coupons here
 
-        $cache_key = 'coupons_' . $uid;
+        $all = $all ? 1 : 0;
+        $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
         $coupons = Cache::get($cache_key);
-        $coupons = null;
         $today = date('Y-m-d');
         if (!$coupons) {
+            // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
                 WHERE redeemer = '$uid'";
@@ -432,7 +433,7 @@ class Coupon extends Product
             }
             $updatecache = true;
         } else {
-            // Check the expiration dates in case any expired while in cache
+            // Check the cached expiration dates in case any expired.
             foreach ($coupons as $idx=>$coupon) {
                 if ($coupon['expires'] < $today) {
                     unset($coupons[$idx]);
@@ -610,6 +611,41 @@ class Coupon extends Product
     public function cartCanAccumulate()
     {
         return false;
+    }
+
+
+    /**
+     * Expire one or more coupons.
+     * If $code is empty, then all coupons with a balance > 0 that have
+     * expired are updated.
+     *
+     * @param   string  $code   Optional code to expire one coupon
+     */
+    public static function Expire($code='')
+    {
+        global $_TABLES, $_CONF;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.coupons']} ";
+        if ($code == '') {
+            $today = $_CONF['_now']->format('Y-m-d', true);
+            $sql .= "WHERE balance > 0 AND expires < '$today'";
+        } else {
+            $code = DB_escapeString($code);
+            $sql .= "WHERE balance > 0 AND code =  '$code'";
+        }
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $c = DB_escapeString($A['code']);
+            $sql1 = "UPDATE {$_TABLES['shop.coupons']}
+                SET balance = 0
+                WHERE code = '$c';";
+            DB_query($sql1);
+            self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
+        }
+        if (count($A) > 0) {
+            // If there were any updates, clear the coupon cache
+            Cache::clear('coupons');
+        }
     }
 
 }

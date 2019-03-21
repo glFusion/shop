@@ -196,11 +196,17 @@ class coupons extends \Shop\Report
     {
         global $LANG_SHOP;
 
+        static $Cur = NULL;
+        if ($Cur === NULL) {
+            $Cur = \Shop\Currency::getInstance();
+        }
+
         $retval = NULL;
         switch ($fieldname) {
         case 'msg':
             switch ($fieldvalue) {
             case 'gc_redeemed':
+            case 'gc_expired':
                 $var = $extra['isAdmin'] ? '' : $A['code'];
                 break;
             case 'gc_applied':
@@ -212,6 +218,18 @@ class coupons extends \Shop\Report
                 $var
             );
             break;
+
+        case 'amount':
+            switch ($A['msg']) {
+            case 'gc_redeemed':
+                break;
+            default:
+                $fieldvalue *= -1;
+                break;
+            }
+            $retval = $Cur->formatValue($fieldvalue);
+            break;
+
         case 'code':
             if ($extra['isAdmin']) {
                 $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('q'=>$fieldvalue));

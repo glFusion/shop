@@ -1591,6 +1591,11 @@ function plugin_runScheduledTask_shop()
     if ($_SHOP_CONF['purge_sale_prices']) {
         \Shop\Sales::Clean();
     }
+
+    // Handle any expired coupons
+    if ($_SHOP_CONF['gc_enabled']) {
+        \Shop\Coupon::Expire();
+    }
 }
 
 

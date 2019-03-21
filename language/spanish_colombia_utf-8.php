@@ -379,6 +379,7 @@ $LANG_SHOP = array (
 'gift_cards' => 'Gift Cards',
 'msg_gc_applied' => 'Applied to order %s',
 'msg_gc_redeemed' => 'Claimed gift card %s',
+'msg_gc_expired' => 'Expired gift card %s',
 'gc_activity' => 'Gift Card Activity',
 'user_hdr_orderhist' => 'View all of your previous orders. Click on an order number to view the complete order.',
 'user_hdr_couponlog' => 'This is a list of all transactions related to Gift Cards.',
