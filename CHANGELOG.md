@@ -12,3 +12,4 @@ Release TBD
   * Remove masking of gift card numbers for display
   * Order Workflows and Statuses can no longer be re-ordered.
   * Add order, payment and pending shipment reports.
+  * Enable language localization for order status notifications.

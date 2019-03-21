@@ -818,7 +818,7 @@ class Order
 
 
     /**
-     * Send an email to the buyer.
+     * Send an email to the administrator and/or buyer.
      *
      * @param   string  $status     Order status (pending, paid, etc.)
      * @param   string  $gw_msg     Optional gateway message to include with email
@@ -827,23 +827,83 @@ class Order
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        // Check if any notification is to be sent for this status update, to
-        // save effort. If either the buyer or admin gets notified then
-        // proceed to construct the messages.
+        // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
         $notify_admin = OrderStatus::getInstance($status)->notifyAdmin();
-        if (!$notify_buyer && !$notify_admin) {
-            SHOP_debug("Not sending any notification for status $status");
-            return;
+
+        if ($notify_buyer) {
+            $save_language = $LANG_SHOP;    // save the site language
+            $save_userlang = $_CONF['language'];
+            $LANG_SHOP = self::loadLanguage($this->_getLangName(true));
+            $_CONF['language'] = $this->_getLangName(true);
+            // Set up templates, using language-specific ones if available.
+            // Fall back to English if no others available.
+            $U = UserInfo::getInstance($this->uid);
+            $T = new \Template(array(
+                SHOP_PI_PATH . '/templates/notify/' . $this->_getLangName(),
+                SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
+                SHOP_PI_PATH . '/templates/notify/english',
+                SHOP_PI_PATH . '/templates/notify', // catch templates using language strings
+            ) );
+            $T->set_file(array(
+                'msg'       => 'msg_buyer.thtml',
+                'msg_body'  => 'order_detail.thtml',
+            ) );
+
+            $text = $this->_prepareNotification($T);
+
+            SHOP_debug("Sending email to " . $this->uid . ' at ' . $this->buyer_email);
+            if ($this->buyer_email != '') {
+                COM_emailNotification(array(
+                    'to' => array($this->buyer_email),
+                    'from' => $_CONF['site_mail'],
+                    'htmlmessage' => $text,
+                    'subject' => $LANG_SHOP['subj_email_user'],
+                ) );
+            }
+            $LANG_SHOP = $save_language;    // Restore the default language
         }
 
-        // setup templates
-        $T = SHOP_getTemplate(array(
-            'subject' => 'purchase_email_subject',
-            'msg_admin' => 'purchase_email_admin',
-            'msg_user' => 'purchase_email_user',
-            'msg_body' => 'purchase_email_body',
-        ) );
+        if ($notify_admin) {
+            // Set up templates, using language-specific ones if available.
+            // Fall back to English if no others available.
+            // This uses the site default language.
+            $U = UserInfo::getInstance($this->uid);
+            $T = new \Template(array(
+                SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
+                SHOP_PI_PATH . '/templates/notify/english',
+                SHOP_PI_PATH . '/templates/notify', // catch templates using language strings
+            ) );
+            $T->set_file(array(
+                'msg'       => 'msg_admin.thtml',
+                'msg_body'  => 'order_detail.thtml',
+            ) );
+
+            $text = $this->_prepareNotification($T);
+
+            $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
+                $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
+            SHOP_debug("Sending email to admin at $email_addr");
+            COM_emailNotification(array(
+                'to' => array($email_addr),
+                'from' => $_CONF['noreply_mail'],
+                'htmlmessage' => $text,
+                'subject' => $LANG_SHOP['subj_email_admin'],
+            ) );
+        }
+
+    }
+
+
+    /**
+     * This function actually creates the text for notification emails.
+     *
+     * @param   object  &$T     Template object
+     * @return  string      Text for email body
+     */
+    private function _prepareNotification(&$T)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // Add all the items to the message
         $total = (float)0;      // Track total purchase value
@@ -886,6 +946,7 @@ class Order
                 'name'  => $item_descr,
                 'options_text' => $options_text,
             ) );
+            //), '', false, false);
             $T->parse('List', 'ItemList', true);
             $x = $P->EmailExtra($item);
             if ($x != '') $email_extras[] = $x;
@@ -927,6 +988,7 @@ class Order
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_url'         => $this->buildUrl('view'),
         ) );
+        //), '', false, false);
 
         $this->_setAddressTemplate($T);
 
@@ -937,6 +999,7 @@ class Order
                 'by_gc'     => $Cur->FormatValue($this->by_gc),
                 'net_total' => $Cur->Format($total_amount - $this->by_gc),
             ) );
+            //), '', false, false);
         }
 
         // Show the remaining gift card balance, if any.
@@ -946,11 +1009,18 @@ class Order
                 'gc_bal_fmt' => $Cur->Format($gc_bal),
                 'gc_bal_num' => $gc_bal,
             ) );
+            //), '', false, false);
         }
 
         // parse templates for subject/text
-        $T->set_var('purchase_details',
-                        $T->parse('detail', 'msg_body'));
+        $T->set_var(
+            'purchase_details',
+            $T->parse('detail', 'msg_body') //,
+            //'', false, false
+        );
+        $text = $T->parse('text', 'msg');
+        return $text;
+
         $user_text  = $T->parse('user_out', 'msg_user');
         $admin_text = $T->parse('admin_out', 'msg_admin');
 
@@ -980,7 +1050,7 @@ class Order
             ) );
         }
 
-    }   // Notify()
+    }
 
 
     /**
@@ -1602,6 +1672,90 @@ class Order
             ) > 0 ||
             DB_count($_TABLES['shop.ipnlog']) > 0
         );
+    }
+
+
+    /**
+     * Get the base language name from the full string contained in the user record.
+     * For example, "spanish_columbia_utf-8" returns "spanish" if $fullname is
+     * false, or the full string if $fullname is true.
+     * Supplies the language name for notification template selection and
+     * for loading a $LANG_SHOP array.
+     *
+     * @return  string  Language name for the buyer.
+     */
+    private function _getLangName($fullname = false)
+    {
+        global $_TABLES, $_CONF;
+
+        $lang_str = NULL;
+        if ($lang_str !== NULL) {
+            return $lang_str;       // already found the language
+        }
+
+        if ($this->uid == 1) {
+            $lang_str = $_CONF['language'];
+        } else {
+            $lang_str = DB_getItem($_TABLES['users'], 'language',
+                "uid = {$this->uid}"
+            );
+        }
+        if ($lang_str == '') $lang_str = $_CONF['language'];    // fallback
+        if (!$fullname) {
+            $lang = explode('_', $lang_str);
+            return $lang[0];
+        } else {
+            return $lang_str;
+        }
+    }
+
+
+    /**
+     * Loads the requested language array to send email in the recipient's language.
+     * If $requested is an array, the first valid language file is loaded.
+     * If not, the $requested language file is loaded.
+     * If $requested doesn't refer to a vailid language, then $_CONF['language']
+     * is assumed.
+     *
+     * After loading the base language file, the same filename is loaded from
+     * language/custom, if available. The admin can override language strings
+     * by creating a language file in that directory.
+     *
+     * @param   mixed   $requested  A single or array of language strings
+     * @return  array       $LANG_SHOP, the global language array for the plugin
+     */
+    public static function loadLanguage($requested)
+    {
+        global $_CONF;
+
+        // Add the requested language, which may be an array or
+        // a single item.
+        if (is_array($requested)) {
+            $languages = $requested;
+        } else {
+            // If no language requested, load the site/user default
+            $languages = array($requested);
+        }
+
+        // Add the site language as a failsafe
+        $languages[] = $_CONF['language'];
+
+        // Final failsafe, include "english.php" which is known to exist
+        $languages[] = 'english';
+
+        // Search the array for desired language files, in order.
+        $langpath = SHOP_PI_PATH . '/language';
+        foreach ($languages as $language) {
+            if (file_exists("$langpath/$language.php")) {
+                include "$langpath/$language.php";
+                // Include admin-supplied overrides, if any.
+                if (file_exists("$langpath/custom/$language.php")) {
+                    include "$langpath/custom/$language.php";
+                }
+                break;
+            }
+        }
+        return $LANG_SHOP;
     }
 
 }

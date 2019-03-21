@@ -1,0 +1,38 @@
+<p>Thank you for your purchase from {site_name}. Details of your purchase follow:</p> 
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+You can download your purchased files from the following links:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Special Instructions: {order_instr}</p>
+{!endif}
+<p>Order Status: {status}</p>
+{!if pending}
+<p>
+Your payment is pending.  Once your payment is received, you will receive
+another email message confirming your payment.
+</p>
+{!endif}
+<p>You may view your order at {order_url}</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p>{gw_msg}</p>
+{!endif}
+{!if gc_bal_num}
+<p>
+You have a remaining gift card balance of {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Thanks,<br />
+{site_name}<br />
+{site_url}
+</p>
