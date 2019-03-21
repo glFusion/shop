@@ -1,10 +1,9 @@
 <?php
 /**
  * Class to handle coupon operations.
- * Based on https://github.com/joashp/simple-php-coupon-code-generator
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
  * @since       v0.6.0
@@ -48,6 +47,7 @@ class Coupon extends Product
      * Generate a single coupon code based on options given.
      * Mask, if used, is "XXXX-XXXX" where "X" indicates a character and any
      * other character is passed through.
+     * Based on https://github.com/joashp/simple-php-coupon-code-generator.
      *
      * @author      Joash Pereira
      * @author      Alex Rabinovich
@@ -606,7 +606,7 @@ class Coupon extends Product
     /**
      * Determine if like items can be accumulated in the cart as a single item.
      *
-     * @return  boolean     True if items can be accumulated, False if not
+     * @return  boolean     False, Gift cards are never accumulated.
      */
     public function cartCanAccumulate()
     {
