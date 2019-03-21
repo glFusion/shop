@@ -24,7 +24,7 @@ if (!plugin_ismoderator_shop()) {
 switch ($_POST['action']) {
 case 'updatestatus':
     if (!empty($_POST['order_id']) &&
-            !empty($_POST['newstatus'])) {
+        !empty($_POST['newstatus'])) {
         $newstatus = $_POST['newstatus'];
         $order_id = $_POST['order_id'];
         $showlog = $_POST['showlog'] == 1 ? 1 : 0;

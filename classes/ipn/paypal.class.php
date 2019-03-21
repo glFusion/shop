@@ -119,9 +119,9 @@ class paypal extends \Shop\IPN
      */
     private function Verify()
     {
-        if ($this->gw->getConfig('test_mode')) {
+        /*if ($this->gw->getConfig('test_mode')) {
             return true;
-        }
+        }*/
 
         // Default verification to false
         $verified = false;
@@ -205,8 +205,10 @@ class paypal extends \Shop\IPN
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);
-            $this->handleFailure(SHOP_FAILURE_VERIFY,
-                            "($logId) Verification failed");
+            $this->handleFailure(
+                SHOP_FAILURE_VERIFY,
+                "($logId) Verification failed"
+            );
             return false;
         } else {
             $logId = $this->Log(true);
