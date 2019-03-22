@@ -52,8 +52,8 @@ $expected = array(
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
     'migrate_pp',
     // Views to display
-    'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'catlist',
-    'attributes', 'editattr', 'other', 'productlist', 'gwadmin', 'gwedit',
+    'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
+    'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
 );
@@ -70,7 +70,7 @@ foreach($expected as $provided) {
 }
 
 $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
-$view = 'productlist';
+$view = 'products';
 
 switch ($action) {
 case 'dup_product':
@@ -97,7 +97,7 @@ case 'deletecatimage':
         $view = 'editcat';
         $_REQUEST['id'] = $id;
     } else {
-        $view = 'catlist';
+        $view = 'categories';
     }
     break;
 
@@ -110,7 +110,7 @@ case 'deletecat':
     } else {
         $C->Delete();
     }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?catlist');
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
     break;
 
 case 'delete_img':
@@ -133,7 +133,7 @@ case 'savecat':
         $content .= COM_showMessageText($C->PrintErrors());
         $view = 'editcat';
     } else {
-        $view = 'catlist';
+        $view = 'categories';
     }
     break;
 
@@ -487,7 +487,7 @@ case 'editcat':
     $content .= $C->showForm();
     break;
 
-case 'catlist':
+case 'categories':
     $content .= SHOP_adminlist_Category();
     break;
 
@@ -598,7 +598,7 @@ case 'editshipping':
     break;
 
 default:
-    $view = 'productlist';
+    $view = 'products';
     $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
     $content .= SHOP_adminlist_Product($cat_id);
     break;
@@ -981,34 +981,60 @@ function SHOP_adminlist_Category()
             ON cat.parent_id = parent.cat_id";
 
     $header_arr = array(
-        array('text' => 'ID',
-                'field' => 'cat_id', 'sort' => true),
-        array('text' => $LANG_ADMIN['edit'],
-                'field' => 'edit', 'sort' => false,
-                'align' => 'center'),
-        array('text' => $LANG_SHOP['enabled'],
-                'field' => 'enabled', 'sort' => false,
-                'align' => 'center'),
-        array('text' => $LANG_SHOP['category'],
-                'field' => 'cat_name', 'sort' => true),
-        array('text' => $LANG_SHOP['description'],
-                'field' => 'description', 'sort' => false),
-        array('text' => $LANG_SHOP['parent_cat'],
-                'field' => 'pcat', 'sort' => true),
-        array('text' => $LANG_SHOP['visible_to'],
-                'field' => 'grp_access', 'sort' => false),
-        array('text' => $LANG_ADMIN['delete'] .
-                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP_HELP['hlp_cat_delete'] . '"></i>',
-                'field' => 'delete', 'sort' => false,
-                'align' => 'center'),
+        array(
+            'text'  => 'ID',
+            'field' => 'cat_id',
+            'sort'  => true,
+        ),
+        array(
+            'text'  => $LANG_ADMIN['edit'],
+            'field' => 'edit',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_SHOP['enabled'],
+            'field' => 'enabled',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_SHOP['category'],
+            'field' => 'cat_name',
+            'sort'  => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['description'],
+            'field' => 'description',
+            'sort'  => false,
+        ),
+        array(
+            'text'  => $LANG_SHOP['parent_cat'],
+            'field' => 'pcat',
+            'sort'  => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['visible_to'],
+            'field' => 'grp_access',
+            'sort'  => false,
+        ),
+        array(
+            'text'  => $LANG_ADMIN['delete'] .
+                '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                $LANG_SHOP_HELP['hlp_cat_delete'] . '"></i>',
+            'field' => 'delete', 'sort' => false,
+            'align' => 'center',
+        ),
     );
 
-    $defsort_arr = array('field' => 'cat_id',
-            'direction' => 'asc');
+    $defsort_arr = array(
+        'field' => 'cat_id',
+        'direction' => 'asc',
+    );
 
     $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-    $display .= COM_createLink($LANG_SHOP['new_category'],
+    $display .= COM_createLink(
+        $LANG_SHOP['new_category'],
         SHOP_ADMIN_URL . '/index.php?editcat=x',
         array(
             'class' => 'uk-button uk-button-success',
@@ -1016,7 +1042,8 @@ function SHOP_adminlist_Category()
         )
     );
 
-    $query_arr = array('table' => 'shop.categories',
+    $query_arr = array(
+        'table' => 'shop.categories',
         'sql' => $sql,
         'query_fields' => array('cat.cat_name', 'cat.description'),
         'default_filter' => 'WHERE 1=1',
@@ -1024,13 +1051,15 @@ function SHOP_adminlist_Category()
 
     $text_arr = array(
         'has_extras' => true,
-        'form_url' => SHOP_ADMIN_URL . '/index.php?catlist=x',
+        'form_url' => SHOP_ADMIN_URL . '/index.php?categories=x',
     );
 
-    $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_catlist',
-            __NAMESPACE__ . '\getAdminField_Category',
-            $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', '');
+    $display .= ADMIN_list(
+        $_SHOP_CONF['pi_name'] . '_catlist',
+        __NAMESPACE__ . '\getAdminField_Category',
+        $header_arr, $text_arr, $query_arr, $defsort_arr,
+        '', '', '', ''
+    );
 
     $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
     return $display;

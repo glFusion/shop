@@ -65,17 +65,17 @@ class Menu
         $menu_arr = array(
             array(
                 'url' => SHOP_ADMIN_URL . '/index.php',
-                'text' => $LANG_SHOP['product_list'],
-                'active' => $view == 'productlist' ? true : false,
+                'text' => $LANG_SHOP['products'],
+                'active' => $view == 'products' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?catlist=x',
-                'text' => $LANG_SHOP['category_list'],
-                'active' => $view == 'catlist' ? true : false,
+                'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
+                'text' => $LANG_SHOP['categories'],
+                'active' => $view == 'categories' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?attributes=x',
-                'text' => $LANG_SHOP['attr_list'],
+                'text' => $LANG_SHOP['attributes'],
                 'active' => $view == 'attributes' ? true : false,
             ),
             array(

@@ -83,7 +83,7 @@
       <button type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_SHOP['deletecat']}"
             onclick="return confirm('{$LANG_SHOP['q_del_item']}');" />{$LANG_SHOP['deletecat']}</button>
       {!endif}
-      <button type="submit"  class="uk-button" name="catlist" value="{$LANG_ADMIN['cancel']}" />{$LANG_ADMIN['cancel']}</button>
+      <button type="submit"  class="uk-button" name="categories" value="{$LANG_ADMIN['cancel']}" />{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
 

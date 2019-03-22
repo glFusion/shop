@@ -41,11 +41,12 @@ $expected = array(
     'processorder', 'thanks', 'action',
     // 'setshipper',
     // Views
-    'order', 'view', 'detail', 'printorder', 'orderhist', 'packinglist',
+    'products', 'order', 'view', 'detail', 'printorder',
+    'orderhist', 'packinglist',
     'couponlog',
     'cart', 'pidetail', 'viewcart',
 );
-$action = 'productlist';    // default view
+$action = 'products';    // default view
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
         $action = $provided;
@@ -149,7 +150,7 @@ case 'saveshipto':
 case 'addcartitem':
 case 'addcartitem_x':   // using the image submit button, such as Shop's
     echo "depreacated";die;
-    $view = 'productlist';
+    $view = 'products';
     if (isset($_POST['_unique']) && $_POST['_unique'] &&
             \Shop\Cart::getInstance()->Contains($_POST['item_number']) !== false) {
         break;
@@ -206,7 +207,7 @@ case 'thanks':
         }
     }
     $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
-    $view = 'productlist';
+    $view = 'products';
     break;
 
 case 'action':      // catch all the "?action=" urls
@@ -222,7 +223,7 @@ case 'action':      // catch all the "?action=" urls
         ) );
         $content .= COM_showMessageText($T->parse('output', 'msg'),
                     $LANG_SHOP['thanks_title'], true);
-        $view = 'productlist';
+        $view = 'products';
         break;
     }
     break;
@@ -247,7 +248,7 @@ case 'processorder':
         $view = 'thanks';
         \Shop\Cart::getInstance()->Clear(false);
     }
-    $view = 'productlist';
+    $view = 'products';
     break;
 
 default:
@@ -323,16 +324,6 @@ case 'pidetail':
     $content .= $output;
     break;
 
-case 'detail':
-    // deprecated, should be displayed via detail.php
-    echo "deprecated";die;
-    COM_errorLog("Called detail from index.php, deprecated");
-    COM_404();
-    $P = new \Shop\Product($id);
-    $content .= $P->Detail();
-    $menu_opt = $LANG_SHOP['product_list'];
-    break;
-
 case 'cart':
 case 'viewcart':
     // If a cart ID is supplied, probably coming from a cancelled purchase.
@@ -360,13 +351,13 @@ case 'checkoutcart':
     $content .= \Shop\Cart::getInstance()->View(5);
     break;
 
-case 'productlist':
+case 'products':
 default:
     USES_shop_functions();
     SHOP_setUrl($_SERVER['request_uri']);
     $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
     $content .= \Shop\ProductList($cat_id);
-    $menu_opt = $LANG_SHOP['product_list'];
+    $menu_opt = $LANG_SHOP['products'];
     $page_title = $LANG_SHOP['main_title'];
     break;
 
