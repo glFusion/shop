@@ -18,7 +18,20 @@ namespace Shop\Reports;
  */
 class itempurchase extends \Shop\Report
 {
+    /** Icon to display on report menu
+     * @var string
+     */
     protected $icon = 'shopping-basket';
+
+    /** Item ID being reported
+     * @var integer
+     */
+    private $item_id;
+
+    /** Item short description for report title
+     * @var string
+     */
+    private $item_dscp;
 
     /**
      * Constructor.
@@ -41,17 +54,17 @@ class itempurchase extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $item_id = SHOP_getVar($_GET, 'item_id', 'integer');
-        $T = $this->getTemplate();
+        $this->item_id = SHOP_getVar($_GET, 'item_id', 'integer');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        if (is_numeric($item_id)) {
-            $Item = new \Shop\Product($item_id);
-            $item_dscp = $Item->short_description;
+        if (is_numeric($this->item_id)) {
+            $Item = new \Shop\Product($this->item_id);
+            $this->item_dscp = $Item->short_description;
         } else {
-            $item_dscp = $item_id;
-            $item_id = DB_escapeString($item_id);
+            $this->item_dscp = $this->item_id;
+            $this->item_id = DB_escapeString($this->item_id);
         }
+        $T = $this->getTemplate();
 
         $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
             ord.billto_name, ord.billto_company
@@ -86,7 +99,9 @@ class itempurchase extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $where = " WHERE purch.product_id = '$item_id' AND (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
+        $where = " WHERE purch.product_id = '{$this->item_id}'
+            AND (ord.order_date >= '$from_date'
+            AND ord.order_date <= '$to_date')";
         if ($this->uid > 0) {
             $where .= " AND uid = {$this->uid}";
         }
@@ -101,7 +116,7 @@ class itempurchase extends \Shop\Report
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&period=' . $this->period . '&item_id=' . $item_id,
+                '&period=' . $this->period . '&item_id=' . $this->item_id,
             'has_limit' => true,
             'has_paging' => true,
         );
@@ -136,7 +151,7 @@ class itempurchase extends \Shop\Report
                 $order_date->setTimestamp($A['order_date']);
                 $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
-                    'item_name'     => $item_dscp,
+                    'item_name'     => $this->item_dscp,
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
@@ -155,8 +170,8 @@ class itempurchase extends \Shop\Report
 
         $T->set_var(array(
             'report_key' => $this->key,
-            'item_id'   => $item_id,
-            'item_dscp' => $item_dscp,
+            'item_id'   => $this->item_id,
+            'item_dscp' => $this->item_dscp,
             'startDate' => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'   => $this->endDate->format($_CONF['shortdate'], true),
             'nl'        => "\n",
@@ -164,6 +179,18 @@ class itempurchase extends \Shop\Report
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
         return $this->getOutput($report);
+    }
+
+
+    /**
+     * Get the report title, default is the report name.
+     * This report appends the item number to the default title.
+     *
+     * @return  string  Report title
+     */
+    protected function getTitle()
+    {
+        return parent::getTitle() . ': ' . $this->item_dscp;
     }
 
 }

@@ -409,7 +409,7 @@ class Report
         }
         $T->set_var(array(
             'report_key'    => $this->key,
-            'report_title'  => $LANG_SHOP['reports_avail'][$this->key]['name'],
+            'report_title'  => $this->getTitle(),
             'filter_dates'  => $this->filter_dates,
             'filter_status' => $this->filter_status,
             'filter_uid'    => $this->filter_uid,
