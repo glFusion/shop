@@ -1016,40 +1016,10 @@ class Order
         $T->set_var(
             'purchase_details',
             $T->parse('detail', 'msg_body') //,
-            //'', false, false
+//            '', false, false
         );
         $text = $T->parse('text', 'msg');
         return $text;
-
-        $user_text  = $T->parse('user_out', 'msg_user');
-        $admin_text = $T->parse('admin_out', 'msg_admin');
-
-        // Send a notification to the buyer, depending on the status
-        if ($notify_buyer) {
-            SHOP_debug("Sending email to " . $this->uid . ' at ' . $this->buyer_email);
-            if ($this->buyer_email != '') {
-                COM_emailNotification(array(
-                    'to' => array($this->buyer_email),
-                    'from' => $_CONF['site_mail'],
-                    'htmlmessage' => $user_text,
-                    'subject' => $LANG_SHOP['subj_email_user'],
-                ) );
-            }
-        }
-
-        // Send a notification to the administrator, depending on the status
-        if ($notify_admin) {
-            $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
-                $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
-            SHOP_debug("Sending email to admin at $email_addr");
-            COM_emailNotification(array(
-                'to' => array($email_addr),
-                'from' => $_CONF['noreply_mail'],
-                'htmlmessage' => $admin_text,
-                'subject' => $LANG_SHOP['subj_email_admin'],
-            ) );
-        }
-
     }
 
 
