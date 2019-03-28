@@ -241,38 +241,37 @@ class Coupon extends Product
         global $_TABLES, $_USER;
 
         if ($uid == 0) $uid = $_USER['uid'];
+        $order_id = '';
+        if (is_object($Order) && !$Order->isNew) {
+            $order_id = DB_escapeString($Order->order_id);
+            $uid = $Order->uid;
+        }
         if ($uid < 2) return 0;
         $coupons = self::getUserCoupons($uid);
         $remain = (float)$amount;
         $applied = 0;
         foreach ($coupons as $coupon) {
             $bal = (float)$coupon['balance'];
+            $code = DB_escapeString($coupon['code']);
             if ($bal > $remain) {
+                // Coupon balance is enough to cover the remaining amount
                 $bal -= $remain;
                 $applied += $remain;
                 $remain = 0;
             } else {
+                // Apply the total balance on this coupon and loop to the next one
                 $remain -= $bal;
                 $applied += $bal;
                 $bal = 0;
             }
-            if ($remain == 0) break;
-        }
-        // Log only the total applied, if any.
-        if ($applied > 0) {
-            $code = DB_escapeString($coupon['code']);
-            $order_id = '';
-            if ($Order !== NULL) {
-                $order_id = DB_escapeString($Order->order_id);
-            }
-            $uid = $Order->uid;
             $sql = "UPDATE {$_TABLES['shop.coupons']}
                     SET balance = $bal
                     WHERE code = '$code';";
             self::writeLog($code, $uid, $applied, 'gc_applied', $order_id);
             DB_query($sql);
+            if ($remain == 0) break;
         }
-        Cache::delete('coupons_' . $uid);
+        Cache::clear('coupons_' . $uid);
         return $remain;     // Return unapplied balance
     }
 
@@ -418,7 +417,7 @@ class Coupon extends Product
         $updatecache = false;       // indicator that cache must be updated
         $coupons = Cache::get($cache_key);
         $today = date('Y-m-d');
-        if (!$coupons) {
+        if ($coupons === NULL) {
             // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
@@ -445,7 +444,12 @@ class Coupon extends Product
         // If coupons were read from the DB, or any cached ones expired,
         // update the cache
         if ($updatecache) {
-            Cache::set($cache_key, $coupons, 'coupons', 3600);
+            Cache::set(
+                $cache_key,
+                $coupons,
+                array('coupons', 'coupons_' . $uid),
+                3600
+            );
         }
         return $coupons;
     }
