@@ -166,12 +166,13 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 /**
  * Upgrade the plugin to the currently-installed version.
  *
+ * @param   boolean $dvlp   True if this is called from dvlpupdate.php
  * @return  boolean     True on success, False on failure
  */
-function plugin_upgrade_shop()
+function plugin_upgrade_shop($dvlp = false)
 {
     require_once __DIR__ . '/upgrade.inc.php';
-    return SHOP_do_upgrade();
+    return SHOP_do_upgrade($dvlp);
 }
 
 

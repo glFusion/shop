@@ -33,7 +33,7 @@ if (function_exists('CACHE_clear')) {
 
 // Force the plugin version to the previous version and do the upgrade
 $_PLUGIN_INFO['shop']['pi_version'] = '0.0.1';
-SHOP_do_upgrade(true);
+plugin_upgrade_shop(true);
 
 // need to clear the template cache so do it here
 if (function_exists('CACHE_clear')) {
