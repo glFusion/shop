@@ -48,9 +48,10 @@ class square extends \Shop\IPN
         $this->pmt_fee = 0;
 
         if (!empty($order_id)) {
-            $this->Order = Cart::getInstance(0, $order_id);
+            //$this->Order = Cart::getInstance(0, $order_id);
+            $this->Order = $this->getOrder(0, $order_id);
         }
-        if (!$this->Order) return NULL;
+        if ($this->Order->isNew) return NULL;
 
         $this->order_id = $this->Order->order_id;
         $this->txn_id = SHOP_getVar($A, 'transactionId');
@@ -203,12 +204,12 @@ class square extends \Shop\IPN
     *       5. Check for valid receiver email address
     *       6. Process IPN
     *
-    *   @uses   BaseIPN::AddItem()
-    *   @uses   BaseIPN::handleFailure()
-    *   @uses   BaseIPN::handlePurchase()
-    *   @uses   BaseIPN::isUniqueTxnId()
-    *   @uses   BaseIPN::isSufficientFunds()
-    *   @uses   BaseIPN::Log()
+    *   @uses   IPN::AddItem()
+    *   @uses   IPN::handleFailure()
+    *   @uses   IPN::handlePurchase()
+    *   @uses   IPN::isUniqueTxnId()
+    *   @uses   IPN::isSufficientFunds()
+    *   @uses   IPN::Log()
     *   @uses   Verify()
     *   @param  array   $in     POST variables of transaction
     *   @return boolean true if processing valid and completed, false otherwise

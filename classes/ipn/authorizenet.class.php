@@ -145,7 +145,7 @@ class authorizenet extends \Shop\IPN
         $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) return false;
         $this->order_id = SHOP_getVar($order, 'invoiceNumber');
-        $this->Order = Cart::getInstance(0, $this->order_id);
+        $this->Order = $this->getOrder(0, $this->order_id);
 
         // Get the custom data from the order since authorize.net doesn't
         // support pass-through user variables
@@ -153,11 +153,11 @@ class authorizenet extends \Shop\IPN
         $this->custom['uid'] = $this->Order->uid;
 
         // Hack to get the gift card amount into the right variable name
-        $by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');
+        /*$by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');
         if ($by_gc > 0) {
             $this->custom['by_gc'] = $by_gc;
             $this->addCredit('gc', $by_gc);
-        }
+        }*/
         $shipping = SHOP_getVar($trans, 'shipping', 'array');
         $this->pmt_shipping = SHOP_getVar($shipping, 'amount', 'float');
         $tax = SHOP_getVar($trans, 'tax', 'array');

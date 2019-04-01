@@ -523,7 +523,7 @@ class square extends \Shop\Gateway
         $defaultApiConfig = new \SquareConnect\Configuration();
         $defaultApiConfig->setAccessToken($this->token);
         $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
- 
+
         $api = new \SquareConnect\Api\TransactionsApi();
         $api->setApiClient($defaultApiClient);
         $resp = $api->retrieveTransaction($this->loc_id, $trans_id);
@@ -537,7 +537,7 @@ class square extends \Shop\Gateway
         $this->_postSaveConfig();
     }
 
-    
+
     /**
      * Square doesn't support a "cancel URL", so don't finalize the cart.
      *

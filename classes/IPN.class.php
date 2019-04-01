@@ -340,7 +340,7 @@ class IPN
         // kill any floating-point errors. Include any discount.
         $total_order = $this->Order->getTotal();
         $msg = $Cur->FormatValue($this->pmt_gross) . ' received plus ' .
-            $Cur->FormatValue($this->getCredit()) .' credit, require ' .
+            $Cur->FormatValue($credit) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
             SHOP_debug("OK: $msg", 'debug_ipn');
@@ -349,7 +349,7 @@ class IPN
             SHOP_debug("Insufficient Funds: $msg", 'debug_ipn');
             return false;
         }
-    }   // isSufficientFunds()
+    }
 
 
     /**
@@ -410,13 +410,12 @@ class IPN
                 return false;
             }
 
-            // Save the order record now that funds have been checked.
-            foreach ($this->Order->getItems() as $item) {
-                $item->getProduct()->handlePurchase($item, $this->Order, $this->pp_data);
-            }
-            $this->Order->Log(sprintf($LANG_SHOP['amt_paid_gw'], $this->pmt_gross, $this->gw->DisplayName()));
+            // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
             $this->Order->by_gc = $by_gc;
+            Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
+
+            // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
                 $this->Order->Log(
                     sprintf(
@@ -425,12 +424,22 @@ class IPN
                         SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
                     )
                 );
-                Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
             }
+
             $this->Order->pmt_method = $this->gw_id;
             $this->Order->pmt_txn_id = $this->txn_id;
             $this->Order->Save();
             $this->Order->updateStatus($this->status, 'IPN: ' . $this->gw->Description());
+
+            // Handle the purchase for each order item
+            foreach ($this->Order->getItems() as $item) {
+                $item->getProduct()->handlePurchase($item, $this->Order, $this->pp_data);
+            }
+            $this->Order->Log(sprintf(
+                $LANG_SHOP['amt_paid_gw'],
+                $this->pmt_gross,
+                $this->gw->DisplayName()
+            ));
         } else {
             COM_errorLog('Error creating order: ' . print_r($status,true));
         }
@@ -464,7 +473,7 @@ class IPN
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->order_id != '') {
                 $this->Order->log_user = $this->gw->Description();
-                $this->Order->updateStatus($this->status);
+                //$this->Order->updateStatus($this->status);
             }
             return 2;
         }
@@ -563,7 +572,7 @@ class IPN
                 'quantity' => $item['quantity'],
                 'txn_type' => $this->custom['transtype'],
                 'txn_id' => $this->txn_id,
-                'status' => 'paid',
+                'status' => 'pending',
                 'token' => md5(time()),
                 'price' => $item['price'],
                 'taxable' => $P->taxable,
@@ -724,11 +733,7 @@ class IPN
      */
     protected function calcTotalCredit()
     {
-        $total = $this->pmt_gross;
-        foreach ($this->credits as $credit) {
-            $total += (float)$credit;
-        }
-        return $total;
+        return $this->pmt_gross + $this->getCredit();
     }
 
 
@@ -754,39 +759,75 @@ class IPN
      */
     protected function getCredit($key=NULL)
     {
+        $retval = 0;
         if ($key === NULL) {
-            $total = 0;
-            foreach ($this->credits as $credit) {
-                $total += (float)$credit;
+            foreach ($this->credits as $key=>$credit) {
+                $retval += (float)$this->verifyCredit($key, $credit);
             }
-            return $total;
         } elseif (array_key_exists($key, $this->credits)) {
-            return (float)$this->credits[$key];
-        } else {
-            return 0;
+            $retval = (float)$this->verifyCredit($key, $credit);
         }
+        return $retval;
     }
 
 
     /**
-     * Get the gift card/coupon amount from the payment info.
+     * Verify a credit amount.
+     * Checks that a requested credit amount is still valid, e.g. has not
+     * expired or otherwise been used.
+     * Currently only applies to Gift Cards.
      *
+     * @param   string  $key    Key name for credit, e.g. "gc" for gift card
      * @return  float   Amount paid by gift card
      */
-    protected function verifyGC()
+    protected function verifyCredit($key)
     {
-        $retval = true;
-        if (array_key_exists('gc', $this->credits)) {
-            $by_gc = (float)$this->credits['gc'];
-            if ($by_gc > 0) {
-                if (!Coupon::verifyBalance($by_gc, $this->uid)) {
+        static $retval = array();
+
+        if (array_key_exists($key, $retval)) {
+            // Already verified this credit amount.
+            return $retval[$key];
+        }
+        if (
+            !array_key_exists($key, $this->credits) ||
+            $this->credits[$key] < .0001
+        ) {
+            // The requested credit isn't available.
+            $retval[$key] = 0;
+        } else {
+            $credit = (float)$this->credits[$key];
+            switch ($key) {
+            case 'gc':
+                if (Coupon::verifyBalance($by_gc, $this->uid)) {
+                    $retval[$key] = $credit;
+                } else {
                     $gc_bal = Coupon::getUserBalance($this->uid);
                     COM_errorLog("Insufficient Gift Card Balance, need $by_gc, have $gc_bal");
-                    $retval = false;
+                    $retval[$key] = 0;
                 }
+                break;
+            default:
+                $retval[$key] = $credit;
+                break;;
             }
         }
-        return $retval;
+        return $retval[$key];
+    }
+
+
+    /**
+     * Get an order object for this payment.
+     * Sets any credits included in the order record.
+     *
+     * @param   integer $uid    User ID, if supplied
+     * @param   string  $order_id   Order ID gleaned from the IPN message
+     * @return  object      Order object
+     */
+    protected function getOrder($uid, $order_id)
+    {
+        $this->Order = Cart::getInstance($uid, $order_id);
+        $this->addCredit('gc', $this->Order->getInfo('apply_gc'));
+        return $this->Order;
     }
 
 }   // class IPN

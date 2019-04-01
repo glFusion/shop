@@ -187,7 +187,7 @@ class Product
                     $cache_key = self::_makeCacheKey($item[0]);
                     //Cache::delete($cache_key);
                     $A = Cache::get($cache_key);
-                    if (!$A) {
+                    if (!is_array($A)) {
                         // If not found in cache
                         $sql = "SELECT * FROM {$_TABLES['shop.products']}
                                 WHERE id = " . (int)$item[0];

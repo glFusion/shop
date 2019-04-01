@@ -119,9 +119,9 @@ class paypal extends \Shop\IPN
      */
     private function Verify()
     {
-        /*if ($this->gw->getConfig('test_mode')) {
+        if ($this->gw->getConfig('test_mode') && isset($this->ipn_data['test_ipn'])) {
             return true;
-        }*/
+        }
 
         // Default verification to false
         $verified = false;
@@ -186,22 +186,21 @@ class paypal extends \Shop\IPN
      * - Check for valid receiver email address
      * - Process IPN
      *
-     * @uses    BaseIPN::AddItem()
-     * @uses    BaseIPN::handleFailure()
-     * @uses    BaseIPN::handlePurchase()
-     * @uses    BaseIPN::isUniqueTxnId()
-     * @uses    BaseIPN::isSufficientFunds()
-     * @uses    BaseIPN::Log()
+     * @uses    IPN::AddItem()
+     * @uses    IPN::handleFailure()
+     * @uses    IPN::handlePurchase()
+     * @uses    IPN::isUniqueTxnId()
+     * @uses    IPN::isSufficientFunds()
+     * @uses    IPN::Log()
      * @uses    Verify()
-     * @uses    isStatusCompleted()
-     * @param   array   $in     POST variables of transaction
      * @return  boolean true if processing valid and completed, false otherwise
      */
     public function Process()
     {
         // If no data has been received, then there's nothing to do.
-        if (empty($this->ipn_data))
+        if (empty($this->ipn_data)) {
             return false;
+        }
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);
@@ -251,7 +250,7 @@ class paypal extends \Shop\IPN
         case 'cart':
             // shopping cart
             // Create a cart and read the info from the cart table.
-            $this->Order = Cart::getInstance($this->uid, $this->order_id);
+            $this->Order = $this->getOrder($this->uid, $this->order_id);
             if ($this->Order->isNew) {
                 $this->handleFailure(NULL, "Order ID {$this->order_id} not found for cart purchases");
                 return false;

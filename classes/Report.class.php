@@ -15,6 +15,9 @@ namespace Shop;
 
 /**
  * Select and run reports.
+ * This base clase includes common configuration items applicable to most reports.
+ * If not used, these elements can be disabled by setting the filter_* values to false.
+ *
  * @package shop
  */
 class Report

@@ -2,6 +2,12 @@
 {!if is_admin}
 <script type="text/javascript" src="{site_url}/shop/js/toggleEnabled.js"></script>
 {!endif}
+{!if icon}
+<div style="float:left;margin-right:10px;">
+<img src="{icon}" />
+</div>
+{!endif}
+<div style="float:left;">
 {!if title}
 <h2 style="float:left">{title}</h2>
 {!endif}
@@ -14,5 +20,6 @@
 {!if todo}
 <div style="clear:both" class="uk-alert uk-alert-danger">{todo}</div>
 {!endif}
+</div>
 <div style="margin-top: 10px;clear:both;"></div>
 {# end {templatelocation} #}

@@ -47,20 +47,20 @@ class OrderItem
     function __construct($item = 0)
     {
         if (is_numeric($item) && $item > 0) {
+            // Got an item ID, read from the DB
             $status = $this->Read($item);
             if (!$status) {
                 $this->id = 0;
             }
         } elseif (is_array($item)) {
+            // Got an item record, just set the variables
             if (!isset($item['product_id']) && isset($item['item_id'])) {
                 // extract the item_id with options into the product ID
                 list($this->product_id) = explode('|', $item['item_id']);
             }
-            $status = $this->setVars($item);
+            $this->setVars($item);
         }
-        if ($status) {
-            $this->product = Product::getInstance($this->product_id);
-        }
+        $this->product = Product::getInstance($this->product_id);
     }
 
 
