@@ -3,7 +3,6 @@
  * Plugin-specific functions for the Shop plugin for glFusion.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @author      Vincent Furia <vinny01@users.sourceforge.net
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
  * @version     v0.7.0
@@ -21,8 +20,7 @@ namespace Shop;
  */
 function ProductList($cat_id = 0)
 {
-    global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS,
-            $_IMAGE_TYPE, $_GROUPS, $LANG13;
+    global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
     $isAdmin = plugin_ismoderator_shop() ? true : false;
     $cat_name = '';
@@ -38,6 +36,8 @@ function ProductList($cat_id = 0)
         echo COM_refresh(SHOP_URL);
         exit;
     }
+
+    // Get the root category and see if the requested category is root.
     $RootCat = Category::getRoot();
     if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
         // A specific subcategory is being viewed
@@ -45,15 +45,19 @@ function ProductList($cat_id = 0)
         foreach ($cats as $cat) {
             // Root category already shown in top header
             if ($cat->cat_id == $RootCat->cat_id) continue;
+            // Don't show a link if the user can't access it.
             if (!$cat->hasAccess()) continue;
             if ($cat->cat_id == $cat_id) {
+                // This is the selected category, don't link to it.
                 $breadcrumbs .= "<li class=\"uk-active\"><span>{$cat->cat_name}</span></li>" . LB;
             } else {
+                // This is not the current category, create a link to it.
                 $breadcrumbs .= "<li>" . COM_createLink($cat->cat_name,
                     SHOP_URL . '/index.php?category=' .
                         (int)$cat->cat_id) . '</li>' . LB;
             }
         }
+        // Not on the root page, don't show plugin categories
         $show_plugins = false;
     } else {
         // Only show plugins on the root category page
@@ -92,57 +96,40 @@ function ProductList($cat_id = 0)
         }
     }
 
-    $cat_cols = SHOP_getVar($_SHOP_CONF, 'cat_columns', 'integer', 0);
-    if ($cat_cols > 0) {
-        // Now get categories from plugins
-        foreach ($_PLUGINS as $pi_name) {
-            $pi_cats = PLG_callFunctionForOnePlugin('plugin_shop_getcategories_' . $pi_name);
-            if (is_array($pi_cats) && !empty($pi_cats)) {
-                foreach ($pi_cats as $data) {
-                    $A[] = $data;
-                }
+    // Now get categories from plugins
+    /*foreach ($_PLUGINS as $pi_name) {
+        $pi_cats = PLG_callFunctionForOnePlugin('plugin_shop_getcategories_' . $pi_name);
+        if (is_array($pi_cats) && !empty($pi_cats)) {
+            foreach ($pi_cats as $data) {
+                $A[] = $data;
             }
         }
+    }*/
 
-        $i = 1;
-        $catrows = count($A);
-        if ($catrows > 0) {
-            $CT = SHOP_getTemplate(array(
-                    'table'    => 'category_table',
-                    'row'      => 'category_row',
-                    'category' => 'category',
-            ) );
-            //$CT->set_var('breadcrumbs', $breadcrumbs);
-            if ($cat_img_url != '') {
-                $CT->set_var('catimg_url', $cat_img_url);
-            }
-
-            $CT->set_var('width', floor (100 / $cat_cols));
-            foreach ($A as $category => $info) {
-                if (isset($info['url'])) {
-                    $url = $info['url'];
-                } else {
-                    $url = SHOP_URL . '/index.php?category=' . urlencode($category);
-                }
-                $CT->set_var(array(
-                    'category_name' => $info['name'],
-                    'category_link' => $url,
-                    //'count'         => $info['count'],
-                ) );
-                $CT->parse('catrow', 'category', true);
-                if ($i % $cat_cols == 0) {
-                    $CT->parse('categories', 'row', true);
-                    $CT->set_var('catrow', '');
-                }
-                $i++;
-            }
-            if ($catrows % $cat_cols != 0) {
-                $CT->parse('categories', 'row', true);
-            }
-            $display .= $CT->parse('', 'table');
-        }
+    $CT = new \Template(__DIR__ . '/templates');
+    $CT->set_file('catlinks', 'category_links.thtml');
+    if ($cat_img_url != '') {
+        $CT->set_var('catimg_url', $cat_img_url);
     }
 
+    $CT->set_block('catlinks', 'CatLinks', 'link');
+    foreach ($A as $category => $info) {
+        if (isset($info['url'])) {
+            $url = $info['url'];
+        } else {
+            $url = SHOP_URL . '/index.php?category=' . urlencode($category);
+        }
+        $CT->set_var(array(
+            'category_name' => $info['name'],
+            'category_link' => $url,
+        ) );
+        $CT->parse('link', 'CatLinks', true);
+    }
+    $display .= $CT->parse('', 'catlinks');
+
+    /*
+     * Create the product sort selector
+     */
     if (isset($_REQUEST['sortby'])) {
         $sortby = $_REQUEST['sortby'];
     } else {
@@ -267,7 +254,7 @@ function ProductList($cat_id = 0)
     ) );
     $T->set_var(array(
         'pi_url'        => SHOP_URL,
-        'user_id'       => $_USER['uid'],
+        //'user_id'       => $_USER['uid'],
         'currency'      => $_SHOP_CONF['currency'],
         'breadcrumbs'   => $breadcrumbs,
         'search_text'   => $search,
@@ -419,14 +406,14 @@ function ProductList($cat_id = 0)
                     $T->clear_var('price');
                 }
 
-                if ( $price > 0 &&
-                        $_USER['uid'] == 1 &&
-                        !$_SHOP_CONF['anon_buy'] ) {
+                if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
                     $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
-                } elseif ( (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
-                            $A['price'] == 0 ) {
-                    // Free items or items purchases and not expired, download.
-                    $buttons .= $T->set_var('', 'download') . '&nbsp;';
+                /*} elseif (
+                    (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
+                    $A['price'] == 0
+                ) {
+                    // Free items or items purchased and not expired, allow download.
+                    $buttons .= $T->set_var('', 'download') . '&nbsp;';*/
                 } elseif (is_array($A['buttons'])) {
                     // Buttons for everyone else
                     $T->set_block('wrapper', 'BtnBlock', 'Btn');
