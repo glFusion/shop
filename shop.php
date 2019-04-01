@@ -51,12 +51,10 @@ $_TABLES['shop.sales']        = $_SHOP_table_prefix . 'sales';
 $_TABLES['shop.shipping']     = $_SHOP_table_prefix . 'shipping';
 
 // Other relatively static values;
-$_SHOP_CONF['image_dir']  = $_CONF['path_html'] . $_SHOP_CONF['pi_name'] .
-                            '/images/products';
+$_SHOP_CONF['image_dir']  = "{$_CONF['path']}data/{$_SHOP_CONF['pi_name']}/images/products";
 $_SHOP_CONF['logfile']    = $_CONF['path'] .
                             "logs/{$_SHOP_CONF['pi_name']}_downloads.log";
-$_SHOP_CONF['catimgpath'] = $_CONF['path_html'] . $_SHOP_CONF['pi_name'] .
-                            '/images/categories';
+$_SHOP_CONF['catimgpath']  = "{$_CONF['path']}data/{$_SHOP_CONF['pi_name']}/images/categories";
 
 /**
 *   Allowed extensions for downloads.

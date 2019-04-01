@@ -237,6 +237,8 @@ function plugin_postinstall_shop()
         $_SHOP_CONF['tmpdir'] . 'keys',
         $_SHOP_CONF['tmpdir'] . 'cache',
         $_SHOP_CONF['download_path'],
+        $_SHOP_CONF['image_dir'],
+        $_SHOP_CONF['catimgpath'],
     );
     foreach ($paths as $path) {
         COM_errorLog("Creating $path", 1);
