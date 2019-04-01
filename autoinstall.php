@@ -273,9 +273,13 @@ function plugin_postinstall_shop()
             // Migrate plugin configuration
             global $_PP_CONF;
             if (is_array($_PP_CONF)) {
-                $c = config::get_instance('shop');
+                $c = config::get_instance();
+                $shop_conf = $c->get_config('shop');
                 foreach ($_PP_CONF as $key=>$val) {
-                    if ($key == 'enable_svc_funcs') continue;
+                    if (
+                        $key == 'enable_svc_funcs' ||
+                        !array_key_exists($key, $shop_conf)
+                    ) continue;
                     $c->set($key, $val, 'shop');
                 }
             }
