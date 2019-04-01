@@ -344,7 +344,7 @@ function plugin_editcomment_shop($cid, $id)
  */
 function plugin_geticon_shop()
 {
-    return SHOP_URL . '/images/shop.png';
+    return SHOP_URL . '/images/shopping_cart2.png';
 }
 
 
