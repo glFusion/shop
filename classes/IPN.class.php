@@ -442,6 +442,7 @@ class IPN
             ));
         } else {
             COM_errorLog('Error creating order: ' . print_r($status,true));
+            return false;
         }
 
         return true;
