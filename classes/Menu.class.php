@@ -124,7 +124,8 @@ class Menu
 
         $T = SHOP_getTemplate('shop_title', 'title');
         $T->set_var(array(
-            'title' => $LANG_SHOP['admin_title'] . ' (Ver. ' . $_SHOP_CONF['pi_version'] . ')',
+            'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
+            'icon'  => plugin_geticon_shop(),
             'is_admin' => true,
         ) );
         $todo_arr = self::AdminTodo();
