@@ -64,7 +64,7 @@ class orderlist extends \Shop\Report
             $header_arr = array_merge($header_arr, array(
             $cust_hdr,
             array(
-                'text'  => $LANG_SHOP['sales'],
+                'text'  => $LANG_SHOP['amount'],
                 'field' => 'sales_amt',
                 'sort'  => true,
                 'align' => 'right',

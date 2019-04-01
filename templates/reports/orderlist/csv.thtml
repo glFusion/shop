@@ -2,3 +2,4 @@
 <!-- BEGIN ItemRow -->
 "{order_id}","{order_date}","{customer}","{sales_amt}","{tax}","{shipping}","{total}"{nl}
 <!-- END ItemRow -->
+"{$LANG_SHOP['total']}","","","{total_sales}","{total_tax}","{total_shipping}","{total_total}"{nl}
