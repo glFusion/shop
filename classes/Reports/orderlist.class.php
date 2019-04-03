@@ -272,7 +272,7 @@ class orderlist extends \Shop\Report
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['print'],
-                    'target' => '_new',
+                    'target' => '_blank',
                 )
             );
             if ($extra['isAdmin']) {
@@ -282,7 +282,7 @@ class orderlist extends \Shop\Report
                     array(
                         'class' => 'tooltip',
                         'title' => $LANG_SHOP['packinglist'],
-                        'target' => '_new',
+                        'target' => '_blank',
                     )
                 );
             }

@@ -146,7 +146,7 @@
   </form>
 {!if tc_link}
   <div class="shopTOCLink">
-    <a href="{tc_link}" target="_new">{$LANG_SHOP['terms_and_cond']}</a>
+    <a href="{tc_link}" target="_blank">{$LANG_SHOP['terms_and_cond']}</a>
   </div>
 {!endif}
 </div>
