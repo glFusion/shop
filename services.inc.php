@@ -323,6 +323,11 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
 {
     global $_TABLES;
 
+    $output = array();
+    if (!$_SHOP_CONF['gc_enabled']) {
+        return PLG_RET_PERMISSION_DENIED;
+    }
+
     $amt = SHOP_getVar($args, 'amount', 'float');
     $uids = SHOP_getVar($args, 'members', 'array');
     $gid = SHOP_getVar($args, 'group_id', 'int');
@@ -343,7 +348,6 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     }
     if ($amt < .01) return PLG_RET_ERROR;
     if (empty($uids)) return PLG_RET_ERROR;
-    $output = array();
     foreach ($uids as $uid) {
         $code = \Shop\Coupon::Purchase($amt, $uid, $exp);
         $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
