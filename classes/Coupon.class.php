@@ -330,9 +330,7 @@ class Coupon extends Product
                 'gc_code'   => $gc_code,
                 'sender_name' => $sender,
                 'expires'   => $exp,
-                'submit_url' => COM_buildUrl(
-                    SHOP_URL . '/coupon.php?mode=redeem&id=' . $gc_code
-                ),
+                'submit_url' => self::redemptionUrl($gc_code),
             ) );
             $T->parse('output', 'message');
             $msg_text = $T->finish($T->get_var('output'));
@@ -360,9 +358,7 @@ class Coupon extends Product
         $code = SHOP_getVar($item->extras['special'], 'gc_code', 'string');
         $s = '';
         if (!empty($code)) {
-            $url = COM_buildUrl(
-                SHOP_URL . '/coupon.php?mode=redeem&id=' . $code
-            );
+            $url = self::redemptionUrl($code);
             $s = sprintf(
                 $LANG_SHOP['apply_gc_email'],
                 $url,
@@ -650,6 +646,23 @@ class Coupon extends Product
             // If there were any updates, clear the coupon cache
             Cache::clear('coupons');
         }
+    }
+
+
+    /**
+     * Get the link to redeem a coupon code.
+     * The link is to the redemption form if no code is provided.
+     *
+     * @param   string  $code   Coupon Code
+     * @return  string      URL to redeem the code
+     */
+    public static function redemptionUrl($code = '')
+    {
+        $url = SHOP_URL . '/coupon.php?mode=redeem';
+        if ($code !== '') {
+            $url .= '&id=' . $code;
+        }
+        return COM_buildUrl($url);
     }
 
 }

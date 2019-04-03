@@ -306,6 +306,61 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
 
 
 /**
+ * Send gift cards to one or more site members.
+ * Args should contain:
+ *   - amount - required
+ *   - members - array of user IDs, and/or
+ *   - group_id - glFusion group ID
+ *   - expires - Expiration date, or number of days
+ *   - notify - True to send notification, False or missing to not
+ *
+ * @param   array   $args   Array of arguments - amount, users, expiration
+ * @param   mixed   &$output    Output data
+ * @param   mixed   &$svc_msg   Service message
+ * @return  integer     Status code
+ */
+function service_sendcards_shop($args, &$output, &$svc_msg)
+{
+    global $_TABLES;
+
+    $amt = SHOP_getVar($args, 'amount', 'float');
+    $uids = SHOP_getVar($args, 'members', 'array');
+    $gid = SHOP_getVar($args, 'group_id', 'int');
+    $exp = SHOP_getVar($args, 'expires', 'string');
+    $notify = SHOP_getVar($args, 'notify', 'boolean');
+    if (is_numeric($exp)) {
+        $exp = (int)$exp;
+        $dt = new \Date('+' . $exp. ' days', $_CONF['timezone']);
+        $exp = $dt->format('Y-m-d', true);
+    }
+    if ($gid > 0) {
+        $sql = "SELECT ug_uid FROM {$_TABLES['group_assignments']}
+                WHERE ug_main_grp_id = $gid AND ug_uid > 1";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $uids[] = $A['ug_uid'];
+        }
+    }
+    if ($amt < .01) return PLG_RET_ERROR;
+    if (empty($uids)) return PLG_RET_ERROR;
+    $output = array();
+    foreach ($uids as $uid) {
+        $code = \Shop\Coupon::Purchase($amt, $uid, $exp);
+        $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+        $output[$uid] = array(
+            'code' => $code,
+            'email' => $email,
+            'link' => \Shop\Coupon::redemptionUrl($code),
+        );
+        if ($notify && !empty($email)) {
+            \Shop\Coupon::Notify($code, $email, $amt, '', $exp);
+        }
+    }
+    return PLG_RET_OK;
+}
+
+
+/**
  * Return a formatted amount according to the configured currency.
  * Accepts an array of "amount" => value, or single value as first argument.
  *
@@ -316,6 +371,7 @@ function plugin_formatAmount_shop($amount)
 {
     return \Shop\Currency::getInstance()->Format((float)$amount);
 }
+
 
 if ($_SHOP_CONF['enable_svc_funcs']) {
     function service_genButton_paypal($args, &$output, &$svc_msg)

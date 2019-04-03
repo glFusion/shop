@@ -18,10 +18,17 @@ require_once '../lib-common.php';
 if (
     !isset($_SHOP_CONF) ||
     !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
-    COM_isAnonUser() ||     // Anonymous has nothing to view on the account page
     !SHOP_access_check()
 ) {
     COM_404();
+    exit;
+}
+// For anonymous, this may be a valid selection coming from an email link.
+// Put up a message indicating that they need to log in.
+if (COM_isAnonUser()) {
+    SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
+    COM_setMsg($LANG_SHOP['gc_need_acct']);
+    COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
     exit;
 }
 
@@ -47,12 +54,24 @@ $content = '';
 
 switch ($mode) {
 case 'couponlog':
+    // If gift cards are disabled, then this is an invalid URL.
+    if (!$_SHOP_CONF['gc_enabled']) {
+        COM_404();
+        exit;
+    }
     $content .= \Shop\Menu::User($mode);
     $content .= '<p>';
     $gc_bal = \Shop\Coupon::getUserBalance();
     $content .= $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal);
-    $url = COM_buildUrl(SHOP_URL . '/coupon.php?mode=redeem');
-    $content .= '&nbsp;&nbsp;<a class="uk-button uk-button-success uk-button-mini" href="' . $url . '">' . $LANG_SHOP['apply_gc'] . '</a></p>';
+    $url = \Shop\Coupon::redemptionUrl();
+    $content .= '&nbsp;&nbsp;' . COM_createLink(
+        $LANG_SHOP['apply_gc'],
+        $url,
+        array(
+            'class' => 'uk-button uk-button-success uk-button-mini',
+        )
+    );
+    $content .= '</p>';
     $R = \Shop\Report::getInstance('coupons');
     $R->setUid();
     $content .= $R->Render();
@@ -61,10 +80,9 @@ case 'couponlog':
     break;
 
 case 'redeem':
-    if (COM_isAnonUser()) {
-        SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
-        COM_setMsg($LANG_SHOP['gc_need_acct']);
-        COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+    // If gift cards are disabled, then this is an invalid URL.
+    if (!$_SHOP_CONF['gc_enabled']) {
+        COM_404();
         exit;
     }
     // Using REQUEST here since this could be from a link in an email or from

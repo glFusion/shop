@@ -1,6 +1,8 @@
-# Shop plugin for glFusion * Changelog
+# Shop plugin for glFusion - Changelog
 
 ## v0.7.0
+First beta version under the new Shop name.
+
 Release TBD
   * Allow the shop to be disabled except for administrators.
   * Properly merge anonymous user cart to user cart upon login.
@@ -13,3 +15,5 @@ Release TBD
   * Order Workflows and Statuses can no longer be re-ordered.
   * Add order, payment and pending shipment reports.
   * Enable language localization for order status notifications.
+  * Move original product and category images under private/data.
+  * Add service function for plugins to send gift cards.
