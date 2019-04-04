@@ -321,10 +321,11 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
  */
 function service_sendcards_shop($args, &$output, &$svc_msg)
 {
-    global $_TABLES;
+    global $_TABLES, $_SHOP_CONF;
 
     $output = array();
-    if (!$_SHOP_CONF['gc_enabled']) {
+
+    if (!$_SHOP_CONF['gc_enabled'] || !$_SHOP_CONF['shop_enabled']) {
         return PLG_RET_PERMISSION_DENIED;
     }
 
