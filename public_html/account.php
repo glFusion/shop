@@ -23,6 +23,7 @@ if (
     COM_404();
     exit;
 }
+
 // For anonymous, this may be a valid selection coming from an email link.
 // Put up a message indicating that they need to log in.
 if (COM_isAnonUser()) {

@@ -3,9 +3,9 @@
  * Sitemap driver for the Shop plugin
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2017-2018 Lee Garner
+ * @copyright   Copyright (c) 2017-2019 Lee Garner
  * @package     shop
- * @version     v0.5.10
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -28,7 +28,8 @@ class sitemap_shop extends sitemap_base
      */
     public function getEntryPoint()
     {
-        return SHOP_URL;
+        global $_SHOP_CONF;
+        return $_SHOP_CONF['shop_enabled'] ? SHOP_URL : '';
     }
 
 
@@ -39,8 +40,8 @@ class sitemap_shop extends sitemap_base
      */
     public function getDisplayName()
     {
-        global $LANG_SHOP;
-        return $LANG_SHOP['main_title'];
+        global $LANG_SHOP, $_SHOP_CONF;
+        return $_SHOP_CONF['shop_enabled'] ? $LANG_SHOP['main_title'] : '';
     }
 
 
@@ -52,9 +53,12 @@ class sitemap_shop extends sitemap_base
      */
     public function getItems($cat_id = 0)
     {
-        global $_TABLES, $_USER;
+        global $_TABLES, $_USER, $_SHOP_CONF;
 
         $entries = array();
+        if (!$_SHOP_CONF['shop_enabled']) {
+            return $entries;
+        }
         $opts = array();
         if ($cat_id > 0) {
             $opts['cat_id'] = $cat_id;
@@ -88,6 +92,10 @@ class sitemap_shop extends sitemap_base
         if (!$base) $base = 0;      // make numeric
         $base = (int)$base;
         $retval = array();
+
+        if (!$_SHOP_CONF['shop_enabled']) {
+            return $retval;
+        }
 
         $sql = "SELECT * FROM {$_TABLES['shop.categories']}
                 WHERE parent_id = $base";

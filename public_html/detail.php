@@ -17,13 +17,14 @@
 require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
-if (!isset($_SHOP_CONF) || !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)) {
+if (
+    !isset($_SHOP_CONF) ||
+    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !SHOP_access_check()
+) {
     COM_404();
     exit;
 }
-
-/* Ensure sufficient privs to read this page */
-shop_access_check();
 
 COM_setArgNames(array('id'));
 if (isset($_GET['id'])) {
@@ -67,7 +68,7 @@ if (empty($breadcrumbs)) {
     }
     $breadcrumbs = COM_createLink($text, $url);
 }
-
+SHOP_setUrl();
 $display .= $breadcrumbs;
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();

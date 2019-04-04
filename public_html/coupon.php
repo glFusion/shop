@@ -17,11 +17,13 @@ require_once '../lib-common.php';
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
     !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS)
+    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !SHOP_access_check()
 ) {
     COM_404();
     exit;
 }
+
 if (COM_isAnonUser()) {
     // Anon users can't apply gift cards to their account.
     echo \Shop\Menu::siteHeader();
