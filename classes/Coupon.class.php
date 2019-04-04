@@ -215,7 +215,7 @@ class Coupon extends Product
                     redeemer = $uid,
                     redeemed = UNIX_TIMESTAMP()
                     WHERE code = '$code'");
-            Cache::delete('coupons_' . $uid);
+            Cache::clear('coupons');
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
                 COM_errorLog("A DB error occurred marking coupon $code as redeemed");
