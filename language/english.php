@@ -16,7 +16,7 @@ global $_SHOP_CONF;
 /** Global array to hold all plugin-specific configuration items. */
 $LANG_SHOP = array (
 'plugin'            => 'Shop',
-'main_title'        => 'Product Catalog',
+'main_title'        => 'Shop',
 'admin_title'       => 'Shop Administration',
 'blocktitle'        => 'Products',
 'cart_blocktitle'   => 'Shopping Cart',
