@@ -1034,8 +1034,6 @@ class Product
             return '';
         }
 
-        $retval = COM_startBlock();
-
         // Set the template dir based on the configured template version
         $T = SHOP_getTemplate('product_detail_attrib', 'product',
                 'detail/' . $_SHOP_CONF['product_tpl_ver']);
@@ -1077,8 +1075,7 @@ class Product
 
         // Retrieve the photos and put into the template
         foreach ($this->Images as $i=>$prow) {
-            if ($prow['filename'] != '' &&
-                file_exists("{$_SHOP_CONF['image_dir']}/{$prow['filename']}")) {
+            if (is_file("{$_SHOP_CONF['image_dir']}/{$prow['filename']}")) {
                 if ($i == 0) {
                     $T->set_var('main_img', SHOP_ImageUrl($prow['filename'], 0, 0));
                     $T->set_var('main_imgfile', $prow['filename']);
@@ -1273,7 +1270,6 @@ class Product
                 SET views = views + 1
                 WHERE id = '$prod_id'");
 
-        $retval .= COM_endBlock();
         //CACHE_create_instance($cacheInstance, $retval, 0);
         $retval = PLG_outputFilter($retval, 'shop');
         return $retval;
