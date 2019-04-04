@@ -95,7 +95,8 @@
       <div class="shopProductThumb v1">
       {!if thumb_url}
         <a href="{img_url}/{img_file}" data-uk-lightbox="{group:'product'}">
-          <img src="{thumb_url}" border="0"
+          <img src="{thumb_url}"
+              style="border:0;"
               alt="{$LANG_SHOP[click_to_enlarge]}"
               title="{$LANG_SHOP[click_to_enlarge]}"
               data-uk-tooltip />

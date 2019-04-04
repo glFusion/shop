@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <form action="{action_url}" method="post">
   <input type="hidden" name="id" value="{id}">
-  <input type="submit" class="shopButton orange" border="0" 
+  <input type="submit" class="shopButton orange"
     name="download" value="{$LANG_SHOP['download']}" />
 </form>
 {# end {templatelocation} #}

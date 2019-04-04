@@ -420,8 +420,8 @@ class authorizenet extends \Shop\Gateway
     public function getLogo()
     {
         global $_CONF;
-        return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" border="0" alt="Authorize.Net Logo" style="width:160px;height:40px" />';
-        //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" border="0" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;"/>';
+        return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" alt="Authorize.Net Logo" style="width:160px;height:40px;border:0;" />';
+        //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;border:0"/>';
     }
 
 

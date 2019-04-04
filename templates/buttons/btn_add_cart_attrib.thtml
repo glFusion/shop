@@ -21,7 +21,7 @@
 {!else}
       <input type="text" name="quantity" size="3" maxlength="5" value="1" />
 {!endif}
-      &nbsp;&nbsp;<button type="submit" class="shopButton orange" border="0"
+      &nbsp;&nbsp;<button type="submit" class="shopButton orange"
         onclick='shopAddToCart("add_cart_{item_number}");return false;'>
         <i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
       </button>

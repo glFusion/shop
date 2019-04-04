@@ -17,6 +17,7 @@
 {!if main_img}
   <div class="main_img uk-hidden-small">
     <img id="disp_img" class="uk-responsive-width uk-responsive-height"
+        alt=""
         src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
   </div>
 {!else}
@@ -114,8 +115,8 @@
     <div class="shopProductThumb v2">
 {!if thumb_url}
       <a href="{img_url}/{img_file}" data-uk-lightbox="{group:'product'}">
-        <img src="{thumb_url}" border="0" alt="{$LANG_SHOP[click_to_enlarge]}" title="{$LANG_SHOP[click_to_enlarge]}"
-            class="tooltip"
+        <img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}" title="{$LANG_SHOP[click_to_enlarge]}"
+            class="tooltip" style="border:0"
             onmouseover="javascript:SHOPupdateImage('{small_imgfile}','{lg_img}');" />
       </a>
 {!endif}
