@@ -66,7 +66,7 @@ case 'couponlog':
     $content .= $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal);
     $url = \Shop\Coupon::redemptionUrl();
     $content .= '&nbsp;&nbsp;' . COM_createLink(
-        $LANG_SHOP['apply_gc'],
+        $LANG_SHOP['add_gc'],
         $url,
         array(
             'class' => 'uk-button uk-button-success uk-button-mini',

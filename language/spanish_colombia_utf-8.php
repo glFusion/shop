@@ -317,6 +317,7 @@ $LANG_SHOP = array (
 'recipient_email' => 'Recipient Email',
 'sender_name' => 'Sender\'s Name',
 'apply_gc' => 'Apply Gift Card',
+'add_gc' => 'Add a Gift Card',
 'item_not_found' => 'Item not found',
 'dscp_root_cat' => 'This is the root category and cannot be deleted.',
 'no_del_item' => 'Product %s has purchase records, can&apos;t delete.',
