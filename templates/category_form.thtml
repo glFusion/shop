@@ -47,7 +47,7 @@
     <div class="uk-form-controls">
       <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
       {!if img_url}
-        <img src="{img_url}" border="0" />
+        <img src="{img_url}" style="border:0;">
         <a href="{action_url}/index.php?deletecatimage=x&cat_id={cat_id}">
             {$LANG_SHOP['delete_image']}
         </a>
