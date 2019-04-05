@@ -442,8 +442,6 @@ $LANG_SHOP = array (
 'maintenance' => 'Maintenance',
 'update_cart_currency' => 'Update Cart Currency',
 'customer' => 'Customer',
-'back_to_reports' => 'Back to report selection',
-'config_report' => 'Re-configure this report',
 'sales_amt' => 'Sales Amt',
 'period' => 'Period',
 'value' => 'Value',
@@ -451,6 +449,7 @@ $LANG_SHOP = array (
 'date_range' => 'Date Range',
 'back_to_reports' => 'Back to report selection',
 'config_report' => 'Re-configure this report',
+'no_exp' => 'No Expiration',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

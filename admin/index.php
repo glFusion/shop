@@ -120,10 +120,13 @@ case 'delete_img':
     break;
 
 case 'saveproduct':
+    $url = SHOP_getUrl(SHOP_ADMIN_URL);
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
         $content .= \Shop\SHOP_errMsg($P->PrintErrors());
         $view = 'editproduct';
+    } else {
+        echo COM_refresh($url);
     }
     break;
 
@@ -328,6 +331,10 @@ case 'sendcards':
     $uids = SHOP_getVar($_POST, 'groupmembers', 'string');
     $gid = SHOP_getVar($_POST, 'group_id', 'int');
     $exp = SHOP_getVar($_POST, 'expires', 'string');
+    $no_exp = SHOP_getVar($_POST, 'no_exp', 'integer', 0);
+    if ($no_exp == 1) {
+        $exp = \Shop\Coupon::MAX_EXP;
+    }
     if (!empty($uids)) {
         $uids = explode('|', $uids);
     } else {
