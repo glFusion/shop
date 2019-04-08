@@ -32,6 +32,7 @@ case 'getAddress':
 
 case 'addcartitem':
     if (!isset($_POST['item_number'])) {
+        COM_errorLog("Ajax addcartitem:: Missing Item Number");
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }

@@ -77,20 +77,21 @@ function service_genButton_shop($args, &$output, &$svc_msg)
         }
         $T = SHOP_getTemplate('btn_add_cart', 'cart', 'buttons');
         $T->set_var(array(
-                'item_name'     => $args['item_name'],
-                'item_number'   => $args['item_number'],
-                'short_description' => $args['short_description'],
-                'amount'        => $args['amount'],
-                'pi_url'        => SHOP_URL,
-                'item_type'     => $args['item_type'],
-                'have_tax'      => isset($args['tax']) ? 'true' : '',
-                'tax'           => isset($args['tax']) ? $args['tax'] : 0,
-                'quantity'      => isset($args['quantity']) ? $args['quantity'] : '',
-                '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',
-                '_unique'       => $unique,
-                'frm_id'        => md5($args['item_name'] . rand()),
-                'btn_cls'       => $btn_cls,
-                'btn_disabled'  => $btn_disabled,
+            'item_name'     => $args['item_name'],
+            'item_number'   => $args['item_number'],
+            'short_description' => $args['short_description'],
+            'amount'        => $args['amount'],
+            'pi_url'        => SHOP_URL,
+            'item_type'     => $args['item_type'],
+            'have_tax'      => isset($args['tax']) ? 'true' : '',
+            'tax'           => isset($args['tax']) ? $args['tax'] : 0,
+            'quantity'      => isset($args['quantity']) ? $args['quantity'] : '',
+            '_ret_url'      => isset($args['_ret_url']) ? $args['_ret_url'] : '',
+            '_unique'       => $unique,
+            'frm_id'        => md5($args['item_name'] . rand()),
+            'btn_cls'       => $btn_cls,
+            'btn_disabled'  => $btn_disabled,
+            'nonce'         => $Cart->makeNonce($args['item_number'] . $args['item_name']),
         ) );
         $output['add_cart'] = $T->parse('', 'cart');
     }
