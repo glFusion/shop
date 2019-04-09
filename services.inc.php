@@ -379,7 +379,10 @@ function plugin_formatAmount_shop($amount)
 }
 
 
-if ($_SHOP_CONF['enable_svc_funcs']) {
+if (
+    $_SHOP_CONF['enable_svc_funcs'] &&
+    !function_exists('service_genButton_paypal')
+) {
     function service_genButton_paypal($args, &$output, &$svc_msg)
     {
         return service_genButton_shop($args, $output, $svc_msg);

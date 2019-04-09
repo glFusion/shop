@@ -2314,11 +2314,6 @@ function SHOP_getUrl($def_url = '')
     return $url;
 }
 
-// Enable the service functions if so configured.
-if ($_SHOP_CONF['enable_svc_funcs']) {
-    require_once __DIR__ . '/services.inc.php';
-}
-
 
 /**
  * Display an error message.
@@ -2351,5 +2346,7 @@ function SHOP_errMsg($msg = array(), $title = '')
     $retval .= "/span>\n";
     return $retval;
 }
+
+require_once __DIR__ . '/services.inc.php';
 
 ?>
