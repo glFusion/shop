@@ -1912,7 +1912,7 @@ function SHOP_timezone()
  * @param   string  $what       Comma-separated list of fields to return
  * @param   integer $uid        User ID
  * @param   array   $options    Not used
- * @return  array           Array of product information
+ * @return  array|NULL          Array of product information, NULL if none found
  */
 function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 {
@@ -1922,6 +1922,17 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     $fields = array('p.id');        // always get item id
     $retval = array();
     $buildingSearchIndex = false;
+
+    // If a user is getting this info, e.g. via a search, and the shop is not
+    // open to the public, then return nothing unless the user is an admin.
+    if ($uid > 0) {
+        if ($_SHOP_CONF['shop_enabled'] || SHOP_access_check('shop.admin')) {
+            $cat_where = SEC_buildAccessSql('AND', 'c.grp_access');
+        } else {
+            return NULL;
+        }
+    }
+
     foreach ($properties as $p) {
         switch ($p) {
         case 'title':
@@ -1978,13 +1989,10 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
         $where = " WHERE (p.id = '" . DB_escapeString($id) . "')";
     }
     $where .= " AND p.enabled = 1 AND c.enabled = 1 AND avail_beg <= '$today' AND avail_end >= '$today' ";
-    if ($uid > 0) {
-        $where .= SEC_buildAccessSql('AND', 'c.grp_access');
-    }
+    $where .= $cat_where;   // set above during check for shop_enabled setting
     if (isset($options['cat_id'])) {
         $where .= ' AND p.cat_id = ' . (int)$options['cat_id'];
     }
-
     $sql .= $where;
     $res = DB_query($sql);
 

@@ -17,3 +17,4 @@ Release TBD
   * Enable language localization for order status notifications.
   * Move original product and category images under private/data.
   * Add service function for plugins to send gift cards.
+  * Return no search results if shop is not publicly enabled.
