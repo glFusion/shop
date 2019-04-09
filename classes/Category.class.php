@@ -642,48 +642,29 @@ class Category
      * @param   integer $id ID of current category
      * @return  string      Location string ready for display
      */
-    public static function Breadcrumbs($id)
+    public static function Breadcrumbs($cat_id)
     {
-        global $_TABLES, $LANG_SHOP;
-
-        $A = array();
-        $location = '';
-
-        $id = (int)$id;
-        if ($id < 1) {
-            return $location;
-        } else {
-            $parent = $id;
-        }
-
-        while (true) {
-            $sql = "SELECT cat_name, cat_id, parent_id, grp_access
-                FROM {$_TABLES['shop.categories']}
-                WHERE cat_id='$parent'";
-
-            $result = DB_query($sql);
-            if (!$result || DB_numRows($result) == 0)
-                break;
-
-            $row = DB_fetchArray($result, false);
-            $parent = (int)$row['parent_id'];
-            if (!SEC_inGroup($row['grp_access'])) {
-                continue;
-            }
-            $A[] = '<li>' . COM_createLink($row['cat_name'],
-                    SHOP_URL . '/index.php?category=' .
-                        (int)$row['cat_id']) . '<li>';
-            if ($parent == 0) {
-                break;
+        $breadcrumbs = '';
+        $RootCat = self::getRoot();
+        if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
+            // A specific subcategory is being viewed
+            $cats = self::getPath($cat_id);
+            foreach ($cats as $cat) {
+                // Root category already shown in top header
+                if ($cat->cat_id == $RootCat->cat_id) continue;
+                // Don't show a link if the user can't access it.
+                if (!$cat->hasAccess()) continue;
+                $breadcrumbs .= "<li>" . COM_createLink(
+                    $cat->cat_name,
+                    SHOP_URL . '/index.php?category=' . (int)$cat->cat_id
+                ) . '</li>' . LB;
             }
         }
-
-        // Always add link to shop home
-        //$A[] = COM_createLink($LANG_SHOP['home'],
-        //        COM_buildURL(SHOP_URL . '/index.php'));
-        $B = array_reverse($A);
-        //$location = implode(' :: ', $B);
-        return $location;
+        if ($breadcrumbs != '') {
+            $breadcrumbs = '<ul class="uk-breadcrumb uk-margin-remove">' .
+                $breadcrumbs . '</ul>';
+        }
+        return $breadcrumbs;
     }
 
 

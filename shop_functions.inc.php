@@ -24,7 +24,6 @@ function ProductList($cat_id = 0)
 
     $isAdmin = plugin_ismoderator_shop() ? true : false;
     $cat_name = '';
-    $breadcrumbs = '';
     $cat_img_url = '';
     $display = '';
     $cat_sql = '';
@@ -40,23 +39,6 @@ function ProductList($cat_id = 0)
     // Get the root category and see if the requested category is root.
     $RootCat = Category::getRoot();
     if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
-        // A specific subcategory is being viewed
-        $cats = Category::getPath($cat_id);
-        foreach ($cats as $cat) {
-            // Root category already shown in top header
-            if ($cat->cat_id == $RootCat->cat_id) continue;
-            // Don't show a link if the user can't access it.
-            if (!$cat->hasAccess()) continue;
-            if ($cat->cat_id == $cat_id) {
-                // This is the selected category, don't link to it.
-                $breadcrumbs .= "<li class=\"uk-active\"><span>{$cat->cat_name}</span></li>" . LB;
-            } else {
-                // This is not the current category, create a link to it.
-                $breadcrumbs .= "<li>" . COM_createLink($cat->cat_name,
-                    SHOP_URL . '/index.php?category=' .
-                        (int)$cat->cat_id) . '</li>' . LB;
-            }
-        }
         // Not on the root page, don't show plugin categories
         $show_plugins = false;
     } else {
@@ -256,7 +238,7 @@ function ProductList($cat_id = 0)
         'pi_url'        => SHOP_URL,
         //'user_id'       => $_USER['uid'],
         'currency'      => $_SHOP_CONF['currency'],
-        'breadcrumbs'   => $breadcrumbs,
+        'breadcrumbs'   => Category::Breadcrumbs($cat_id),
         'search_text'   => $search,
         'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
         'sortby_options' => $sortby_options,
