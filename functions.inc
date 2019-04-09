@@ -186,7 +186,7 @@ function plugin_getmenuitems_shop()
     global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $menuitems = array();
-    if ( $_SHOP_CONF['menuitem'] && SHOP_access_check()) {
+    if ($_SHOP_CONF['menuitem'] && SHOP_access_check()) {
         $a = preg_replace(
             '/\{(.*)\}/i',
             '<i class="uk-icon-${1}"></i>',
@@ -591,7 +591,7 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
 
     if (!array_key_exists($rights, $access)) {
         $acc = true;
-        if (!$_SHOP_CONF['shop_enabled'] && !SEC_inGroup('root')) {
+        if (!$_SHOP_CONF['shop_enabled'] && !SEC_hasRights('shop.admin')) {
             $acc = false;
         }
         // If this plugin or a required plugin isn't available, abort gracefully
