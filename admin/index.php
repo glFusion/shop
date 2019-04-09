@@ -123,7 +123,7 @@ case 'saveproduct':
     $url = SHOP_getUrl(SHOP_ADMIN_URL);
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
-        $content .= \Shop\SHOP_errMsg($P->PrintErrors());
+        $content .= SHOP_errMsg($P->PrintErrors());
         $view = 'editproduct';
     } else {
         echo COM_refresh($url);
