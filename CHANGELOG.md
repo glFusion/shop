@@ -18,3 +18,4 @@ Release TBD
   * Move original product and category images under private/data.
   * Add service function for plugins to send gift cards.
   * Return no search results if shop is not publicly enabled.
+  * Fix quantity discount price if items are added to the cart to meet the qty.

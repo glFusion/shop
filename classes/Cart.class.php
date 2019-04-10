@@ -211,8 +211,11 @@ class Cart extends Order
         }
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
-            $this->Save();
             $new_quantity = $this->items[$have_id]->quantity;
+            if ($P->hasDiscounts()) {
+                $this->items[$have_id]->price = $P->getPrice($options, $new_quantity);
+            }
+            $this->Save();
         } else {
             $price = $P->getPrice($opts, $quantity, array('uid'=>$uid));
             $tmp = array(
