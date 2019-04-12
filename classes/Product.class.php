@@ -1510,12 +1510,12 @@ class Product
     /**
      * Get the discount to apply based on the quantity of this item sold.
      *
-     * @param   integer $qty    Quantity of item sold
+     * @param   integer $quantity   Quantity of item sold
      * @return  float       Percentage discount to apply
      */
-    public function getDiscount()
+    public function getDiscount($quantity)
     {
-        $discount = 0;
+        $retval = 0;
 
         if (is_array($this->qty_discounts)) {
             foreach ($this->qty_discounts as $qty=>$discount) {
@@ -1523,11 +1523,12 @@ class Product
                 if ($quantity < $qty) {     // haven't reached this discount level
                     break;
                 } else {
-                    $discount = (float)$discount;
+                    echo "$qty :: $discount, $quantity<br />\n";
+                    $retval = (float)$discount;
                 }
             }
         }
-        return $discount;
+        return $retval;
     }
 
 
@@ -1554,7 +1555,7 @@ class Product
         }
 
         // Calculate the discount factor if a quantity discount is in play
-        $discount_factor = (100 - $this->getDiscount()) / 100;
+        $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
         // Add attribute prices to base price
         foreach ($options as $key) {
