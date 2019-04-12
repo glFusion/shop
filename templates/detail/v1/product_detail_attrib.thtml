@@ -1,14 +1,16 @@
 {# begin {templatelocation} #}
 {javascript}
+{!if can_edit}
+<div class="floatright">
+  <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}&from={from_url}">
+    <i class="uk-icon uk-icon-pencil uk-icon-small"></i>
+  </a>
+</div>
+{!endif}
 <form id="add_cart_{id}" action="{site_url}/shop/index.php" method="post">
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}
-      {!if can_edit}
-        <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}">
-          <i class="uk-icon uk-icon-edit"></i>
-        </a>
-      {!endif}
       </h1>
       {name}
       <p />

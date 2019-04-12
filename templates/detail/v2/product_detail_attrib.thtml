@@ -1,5 +1,6 @@
 {# begin {templatelocation} #}
 {javascript}
+<div style="clear:both;"></div>
 <div class="shopProductDetail v2" style="width: 50%;" id="shopShortDesc">
   <h1>{short_description}</h1>
   {name}
