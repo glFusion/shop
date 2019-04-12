@@ -9,6 +9,7 @@
       <tr>
         <th class="aligncenter">{$LANG_SHOP['description']}</th>
         <th style="width:10%" class="aligncenter">{$LANG_SHOP['price']}</th>
+        <th>&nbsp;</th>
         <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
         <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
         <th style="width:5%" class="aligncenter"></th>
@@ -25,6 +26,11 @@
           {item_options}
         </td>
         <td class="alignright">{item_price}</td>
+        <td>
+{!if price_tooltip}
+          <i class="uk-icon uk-icon-certificate uk-text-warning tooltip" title="{price_tooltip}"></i>
+{!endif}
+        </td>
         <td class="alignright">
 {!if fixed_q}
           <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
@@ -38,7 +44,7 @@
 {!endif}
         </td>
         <td class="alignright">{item_total}</td>
-        <td class="aligncenter">
+        <td class="aligncenter" style="width:32px;white-space:nowrap;">
           <a href="{del_item_url}"><i
               class="uk-icon uk-icon-trash uk-text-danger tooltip" title="{$LANG_SHOP['delete']}"></i></a>
         </td>

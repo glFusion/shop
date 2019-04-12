@@ -547,8 +547,24 @@ class Order
         $Currency = Currency::getInstance($this->currency);
         $this->no_shipping = 1;   // no shipping unless physical item ordered
         $this->subtotal = 0;
+        $item_qty = array();        // array to track quantity by base item ID
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            if (!isset($item_qty[$item->product_id])) {
+                $total_item_q = $this->getTotalBaseItems($item->product_id);
+                $item_qty[$item->product_id] = array(
+                    'qty'   => $total_item_q,
+                    'discount' => $P->getDiscount($total_item_q),
+                );
+            }
+            if ($item_qty[$item->product_id]['discount'] > 0) {
+                $price_tooltip = sprintf(
+                    $LANG_SHOP['reflects_disc'],
+                    $item_qty[$item->product_id]['discount']
+                );
+            } else {
+                $price_tooltip = '';
+            }
             $item_total = $item->price * $item->quantity;
             $this->subtotal += $item_total;
             if ($item->taxable) {
@@ -572,6 +588,7 @@ class Order
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
+                'price_tooltip' => $price_tooltip,
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -624,6 +641,7 @@ class Order
             'is_invoice'    => $is_invoice,
             'icon_dscp'     => $icon_tooltips,
             'print_url'     => $this->buildUrl('print'),
+            'price_tooltip' => $price_tooltip,
         ) );
         if ($this->isAdmin) {
             $T->set_var(array(
@@ -1728,6 +1746,66 @@ class Order
         return $LANG_SHOP;
     }
 
+
+    /**
+     * Get the total quantity of items with the same base item ID.
+     * Used to calculate prices where discounts apply.
+     * Similar to self::Contains() but this only considers the base item ID
+     * and ignores option selections rather than looking for an exact match.
+     *
+     * @param   mixed   $item_id    Item ID to check
+     * @return  float       Total quantity of items on the order.
+     */
+    public function getTotalBaseItems($item_id)
+    {
+        $qty = 0;
+        // Extract the item ID if options were included in the parameter
+        $x = explode('|', $item_id);
+        $item_id = $x[0];
+        foreach ($this->items as $item) {
+            if ($item->product_id == $item_id) {
+                $qty += $item->quantity;
+            }
+        }
+        return $qty;
+    }
+
+
+    /**
+     * Apply quantity discounts to all like items on the order.
+     * This allows all items of the same product to be considered for the
+     * discount regardless of options chosen.
+     * If the return value is true then the cart/order should be saved. False
+     * is returned if there were no changes.
+     *
+     * @param   mixed   $item_id    Base Item ID
+     * @return  boolean     True if any prices were changed, False if not.
+     */
+    public function applyQtyDiscounts($item_id)
+    {
+        $have_changes = false;
+        $x = explode('|', $item_id);
+        $item_id = $x[0];
+
+        // Get the product item and see if it has any quantity discounts.
+        // If not, just return.
+        $P = Product::getInstance($item_id);
+        if (!$P->hasDiscounts()) {
+            return false;
+        }
+
+        $total_qty = $this->getTotalBaseItems($item_id);
+        foreach ($this->items as $key=>$item) {
+            if ($item->product_id != $item_id) continue;
+
+            $new_price = $P->getPrice($item->options, $total_qty);
+            if ($new_price != $this->items[$key]->price) {
+                $this->items[$key]->price = $new_price;
+                $have_changes = true;
+            }
+        }
+        return $have_changes;
+    }
 }
 
 ?>

@@ -1508,6 +1508,31 @@ class Product
 
 
     /**
+     * Get the discount to apply based on the quantity of this item sold.
+     *
+     * @param   integer $qty    Quantity of item sold
+     * @return  float       Percentage discount to apply
+     */
+    public function getDiscount()
+    {
+        $discount = 0;
+
+        if (is_array($this->qty_discounts)) {
+            foreach ($this->qty_discounts as $qty=>$discount) {
+                $qty = (int)$qty;
+                if ($quantity < $qty) {     // haven't reached this discount level
+                    break;
+                } else {
+                    $discount = (float)$discount;
+                }
+            }
+        }
+        return $discount;
+    }
+
+
+
+    /**
      * Get the unit price of this product, considering the specified options.
      * Quantity discounts are considered, the return value is the effictive
      * price per unit.
@@ -1524,10 +1549,14 @@ class Product
             // If an override price is specified, just return it.
             return round((float)$override['price'], Currency::getInstance()->Decimals());
         } else {
+            // Otherwise start with the effective sale price
             $price = $this->getSalePrice();
         }
 
-        // future: return sale price if on sale, otherwise base price
+        // Calculate the discount factor if a quantity discount is in play
+        $discount_factor = (100 - $this->getDiscount()) / 100;
+
+        // Add attribute prices to base price
         foreach ($options as $key) {
             $parts = explode('|', $key); // in case of "7|Black|1.50" option
             $key = $parts[0];
@@ -1535,18 +1564,8 @@ class Product
                 $price += (float)$this->options[$key]['attr_price'];
             }
         }
-        $discount_factor = 1;
-        if (is_array($this->qty_discounts)) {
-            foreach ($this->qty_discounts as $qty=>$discount) {
-                $qty = (int)$qty;
-                if ($quantity < $qty) {     // haven't reached this discount level
-                    break;
-                } else {
-                    $discount = (float)$discount;
-                    $discount_factor = (100 - $discount) / 100;
-                }
-            }
-        }
+
+        // Discount the price, including attributes
         $price *= $discount_factor;
         $price = round($price, Currency::getInstance()->Decimals());
         return $price;

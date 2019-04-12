@@ -462,6 +462,8 @@ $LANG_SHOP = array (
 'date_range' => 'Date Range',
 'back_to_reports' => 'Back to report selection',
 'no_exp' => 'No Expiration',
+'price_incl_disc' => 'Price reflects any applicable discounts.',
+'reflects_disc' => 'Price reflects a %s%% discount.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
