@@ -183,9 +183,12 @@ class Shipper
             } else {
                 $shipper->best_rate = 1000000;  // crazy high amount to start, then work down
                 foreach ($shipper->rates as $r_id=>$rate) {
-                    $rate = $rate->rate * ceil($units / $rate->units);
-                    if ($shipper->best_rate > $rate) {
-                        $shipper->best_rate = $rate;
+                    // Calculate the shipping cost for this shipper
+                    $ship_cost = $rate->rate * ceil($units / $rate->units);
+                    // If the new cost is lower than the current best rate,
+                    // then we found a new best rate.
+                    if ($shipper->best_rate > $ship_cost) {
+                        $shipper->best_rate = $shop_cost;
                     }
                 }
                 $rates[$s_id] = $shipper;
