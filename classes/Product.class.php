@@ -1523,7 +1523,6 @@ class Product
                 if ($quantity < $qty) {     // haven't reached this discount level
                     break;
                 } else {
-                    echo "$qty :: $discount, $quantity<br />\n";
                     $retval = (float)$discount;
                 }
             }
