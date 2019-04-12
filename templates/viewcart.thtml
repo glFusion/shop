@@ -162,7 +162,7 @@ function updateQty(fld_id, qty, orig_qty)
 {
     fld = document.getElementById(fld_id);
     val = Number(fld.value) + Number(qty);
-    if (val < 1) val = 1;
+    if (val < 0) val = 1;
     fld.value = val;
     // Disable checkout buttons to force cart update after changing qty
     mustUpdateCart();

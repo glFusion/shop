@@ -172,6 +172,7 @@ class Cart extends Order
             return false;
         }
 
+        $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getInstance($item_id);
         $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
@@ -212,10 +213,7 @@ class Cart extends Order
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
-            if ($P->hasDiscounts()) {
-                $this->items[$have_id]->price = $P->getPrice($options, $new_quantity);
-            }
-            $this->Save();
+            $need_save = true;      // Need to save the cart
         } else {
             $price = $P->getPrice($opts, $quantity, array('uid'=>$uid));
             $tmp = array(
@@ -230,6 +228,15 @@ class Cart extends Order
             );
             parent::addItem($tmp);
             $new_quantity = $quantity;
+        }
+        if ($this->applyQtyDiscounts($item_id)) {
+            // If discount pricing was recalculated, save the new item prices
+            $need_save = true;
+        }
+
+        // If an update was done that requires re-saving the cart, do it now
+        if ($need_save) {
+            $this->Save();
         }
         return $new_quantity;
     }
@@ -284,7 +291,19 @@ class Cart extends Order
             // browser window.
             if (array_key_exists($id, $this->items)) {
                 $value = (float)$value;
-                $this->items[$id]->setQuantity($value);
+                if ($value == 0) {
+                    // If zero is entered for qty, delete the item.
+                    // Save the item ID to update any affected qty-based
+                    // discounts.
+                    $item_id = $this->items[$id]->product_id;
+                    $this->Remove($id);
+                    $this->applyQtyDiscounts($item_id);
+                } elseif ($value != $this->items[$id]->quantity) {
+                    // If the quantity changed, set to the new value and apply
+                    // quantity-based pricing.
+                    $this->items[$id]->setQuantity($value);
+                    $this->applyQtyDiscounts($this->items[$id]->product_id);
+                }
             }
         }
         // Now look for a coupon code to redeem against the user's account.
