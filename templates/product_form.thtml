@@ -331,7 +331,7 @@
       </li>
       <li>
         <button class="uk-button tm-admin-save-button-width" type="reset" value="{$LANG_ADMIN['reset']" name="reset" data-uk-tooltip="{pos:'left'}" title="{$LANG_ADMIN['cancel']}"
-           onclick="javascript: document.location.href='{site_admin_url}/plugins/shop/index.php'" />
+           onclick="javascript: document.location.href='{ret_url}'">
           <i class="uk-icon-undo"></i>
         </button>
       </li>
@@ -365,7 +365,10 @@
         value="{$LANG_SHOP['deleteproduct']}"
         onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['deleteproduct']}</button>
     {!endif}
-    <button class="uk-button" type="submit" name="cancel" value="{$LANG_ADMIN['cancel']}">{$LANG_ADMIN['cancel']}</button>
+    <button class="uk-button" type="reset" value="{$LANG_ADMIN['reset']" name="reset" data-uk-tooltip="{pos:'left'}" title="{$LANG_ADMIN['cancel']}"
+        onclick="javascript: document.location.href='{ret_url}'">
+        {$LANG_ADMIN['cancel']}
+    </button>
   </div>
 
 </form>

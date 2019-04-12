@@ -20,3 +20,5 @@ Release TBD
   * Return no search results if shop is not publicly enabled.
   * Fix quantity discount price if items are added to the cart to meet the qty.
   * Indicate that unit prices in the cart include discounts, if applicable.
+  * Allow items to be removed from cart by setting qty to zero.
+  * Return to original page after editing a product.

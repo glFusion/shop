@@ -751,9 +751,20 @@ class Product
         }
         $id = $this->id;
 
-        SEC_setCookie ($_CONF['cookie_name'].'adveditor', SEC_createTokenGeneral('advancededitor'),
-                        time() + 1200, $_CONF['cookie_path'],
-                        $_CONF['cookiedomain'], $_CONF['cookiesecure'],false);
+        SEC_setCookie(
+            $_CONF['cookie_name'].'adveditor',
+            SEC_createTokenGeneral('advancededitor'),
+            time() + 1200, $_CONF['cookie_path'],
+            $_CONF['cookiedomain'],
+            $_CONF['cookiesecure'],
+            false
+        );
+        $from_url = SHOP_getVar($_GET, 'from');
+        if (!empty($from_url)) {
+            SHOP_setUrl($from_url);
+        } else {
+            $from_url = SHOP_ADMIN_URL;
+        }
 
         $T = SHOP_getTemplate('product_form', 'product');
         // Set up the wysiwyg editor, if available
@@ -829,6 +840,7 @@ class Product
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
+            'ret_url'       => $from_url,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1251,6 +1263,7 @@ class Product
             $T->set_var(array(
                 'pi_admin_url'  => SHOP_ADMIN_URL,
                 'can_edit'      => 'true',
+                'from_url'      => COM_getCurrentUrl(),
             ) );
         }
         $JT->set_var(array(
