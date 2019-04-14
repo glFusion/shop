@@ -156,8 +156,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
     case 'ipn':
         $id = isset($args['id']) ? $args['id'] : '';
         if ($id != '') {
-            $url = SHOP_ADMIN_URL .
-                    '/index.php?ipnlog=x&op=single&txn_id=' . $id;
+            $url = \Shop\IPN::getDetailUrl($id);
         }
         break;
     case 'checkout':

@@ -830,6 +830,28 @@ class IPN
         return $this->Order;
     }
 
+
+    /**
+     * Get the URL to a single IPN detail record.
+     *
+     * @param   string|integer $val Key value
+     * @param   string  $key    DB key name, "id" (default) or "txn_id"
+     * @return  string      URL to detail display
+     */
+    public static function getDetailUrl($val, $key='id')
+    {
+        switch ($key) {
+        case 'txn_id':
+        case 'id':
+            break;      // key already valid
+        default:
+            $key = 'id';    // invalid, set to default
+            break;
+        }
+        $url = SHOP_ADMIN_URL . '/index.php?ipndetail=x&' . $key . '=' . $val;
+        return $url;
+     }
+
 }   // class IPN
 
 ?>

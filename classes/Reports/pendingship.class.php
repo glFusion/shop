@@ -101,6 +101,11 @@ class pendingship extends \Shop\Report
                 'sort'  => true,
             ),
             array(
+                'text'  => '',
+                'field' => 'action',
+                'sort'  => false,
+            ),
+            array(
                 'text'  => $LANG_SHOP['order_date'],
                 'field' => 'order_date',
                 'sort'  => true,
@@ -152,6 +157,7 @@ class pendingship extends \Shop\Report
         $T = $this->getTemplate();
         switch ($this->type) {
         case 'html':
+            $this->extra['class'] = __CLASS__;
             $T->set_var(array(
                 'report_title' => sprintf($this->getTitle(), $Item->name),
                 'output'    => \ADMIN_list(
@@ -197,6 +203,53 @@ class pendingship extends \Shop\Report
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
         return $this->getOutput($report);
+    }
+
+
+    /**
+     * Get the display value for a field specific to this report.
+     * This function takes over the "default" handler in Report::getReportField().
+     * @access  protected as it is only called from Report::getReportField().
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra verbatim values
+     * @return  string              HTML for field display in the table
+     */
+    protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
+    {
+        global $LANG_SHOP;
+
+        $retval = NULL;
+        switch ($fieldname) {
+        case 'action':
+            $retval = '<span style="white-space:nowrap" class="nowrap">';
+            $retval .= COM_createLink(
+                '<i class="uk-icon-mini uk-icon-print"></i>',
+                COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $A['order_id']),
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['print'],
+                    'target' => '_blank',
+                )
+            );
+            if ($extra['isAdmin']) {
+                $retval .= '&nbsp;' . COM_createLink(
+                    '<i class="uk-icon-mini uk-icon-list"></i>',
+                    COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $A['order_id']),
+                    array(
+                        'class' => 'tooltip',
+                        'title' => $LANG_SHOP['packinglist'],
+                        'target' => '_blank',
+                    )
+                );
+            }
+            $retval .= '</span>';
+            break;
+        }
+        return $retval;
     }
 
 }

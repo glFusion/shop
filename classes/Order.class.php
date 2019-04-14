@@ -702,6 +702,7 @@ class Order
             $T->set_var(array(
                 'pmt_method' => $pmt_method,
                 'pmt_txn_id' => $this->pmt_txn_id,
+                'ipn_det_url' => IPN::getDetailUrl($this->pmt_txn_id, 'txn_id'),
             ) );
         }
 

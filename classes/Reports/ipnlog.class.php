@@ -177,7 +177,7 @@ class ipnlog extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        switch($id) {
+        switch($key) {
         case 'txn_id':
             $val = DB_escapeString($val);
             break;

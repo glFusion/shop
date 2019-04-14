@@ -231,9 +231,7 @@
     {!if is_admin}
     {!if pmt_txn_id}
     , {$LANG_SHOP['trans_id']}
-    <a href="{pi_admin_url}/index.php?ipnlog=x&amp;op=single&amp;txn_id={pmt_txn_id}">
-    {pmt_txn_id}
-    </a>
+    <a href="{ipn_det_url}">{pmt_txn_id}</a>
     {!endif}
     {!endif}
     </p>
