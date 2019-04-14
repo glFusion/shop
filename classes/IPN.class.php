@@ -820,13 +820,12 @@ class IPN
      * Get an order object for this payment.
      * Sets any credits included in the order record.
      *
-     * @param   integer $uid    User ID, if supplied
      * @param   string  $order_id   Order ID gleaned from the IPN message
      * @return  object      Order object
      */
-    protected function getOrder($uid, $order_id)
+    protected function getOrder($order_id)
     {
-        $this->Order = Cart::getInstance($uid, $order_id);
+        $this->Order = Order::getInstance($order_id);
         $this->addCredit('gc', $this->Order->getInfo('apply_gc'));
         return $this->Order;
     }

@@ -48,8 +48,7 @@ class square extends \Shop\IPN
         $this->pmt_fee = 0;
 
         if (!empty($order_id)) {
-            //$this->Order = Cart::getInstance(0, $order_id);
-            $this->Order = $this->getOrder(0, $order_id);
+            $this->Order = $this->getOrder($order_id);
         }
         if ($this->Order->isNew) return NULL;
 

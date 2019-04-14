@@ -46,8 +46,7 @@ class internal extends \Shop\IPN
 
         $cart_id = SHOP_getVar($A, 'cart_id');
         if (!empty($cart_id)) {
-            //$this->Order = Cart::getInstance(0, $cart_id);
-            $this->Order = $this->getOrder(0, $cart_id);
+            $this->Order = $this->getOrder($cart_id);
         }
         if (!$this->Order) return NULL;
 

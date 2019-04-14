@@ -62,15 +62,11 @@ class authorizenet extends \Shop\IPN
      */
     public function Process()
     {
-        if (!$this->Verify()) {
-            return false;
-        }
-
-        if ('paid' != $this->status) {
-            return false;
-        }
-
-        if (!$this->isUniqueTxnId()) {
+        if (
+            !$this->Verify() ||
+            'paid' != $this->status ||
+            !$this->isUniqueTxnId()
+        ) {
             return false;
         }
 
@@ -145,7 +141,7 @@ class authorizenet extends \Shop\IPN
         $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) return false;
         $this->order_id = SHOP_getVar($order, 'invoiceNumber');
-        $this->Order = $this->getOrder(0, $this->order_id);
+        $this->Order = $this->getOrder($this->order_id);
 
         // Get the custom data from the order since authorize.net doesn't
         // support pass-through user variables
