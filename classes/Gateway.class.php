@@ -1103,6 +1103,7 @@ class Gateway
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'doc_url'       => $doc_url,
             'svc_checkboxes' => $svc_boxes,
+            'gw_instr'      => $this->getInstructions(),
         ) );
 
         // Load the language for this gateway and get all the config fields
@@ -1338,6 +1339,17 @@ class Gateway
     public static function getSelected()
     {
         return SESS_getVar('shop_gateway_sel');
+    }
+
+
+    /**
+     * Get gateway-specific instructions, if any.
+     *
+     * @return  string  Instruction text
+     */
+    protected function getInstructions()
+    {
+        return '';
     }
 
 }   // class Gateway

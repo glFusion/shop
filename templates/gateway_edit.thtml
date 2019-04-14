@@ -1,5 +1,8 @@
 {# begin {templatelocation} #}
 <h2>{gw_description}</h2>
+{!if gw_instr}
+<div class="uk-alert"><span class="uk-text-danger" style="font-weight:bold;">{gw_instr}</span></div>
+{!endif}
 {!if doc_url}
 <a href="#" onclick="popupWindow('{doc_url}', 'Help', 640, 480, 1);return false;" class="toolbar">{$LANG_SHOP['clk_help']}</a>
 {!endif}
@@ -50,6 +53,7 @@
     </div>
   </div>
 </form>
+
 <script type="text/javascript">
 var ConfigDocUrl = '{doc_url}';
 $(document).ready(function() {

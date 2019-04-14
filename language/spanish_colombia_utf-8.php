@@ -477,6 +477,7 @@ $LANG_SHOP_HELP = array(
 'recipient_email' => 'The gift card will be emailed to this address. If left blank, the gift card will be emailed to you.',
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
+'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuraion.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

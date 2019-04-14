@@ -437,6 +437,28 @@ class authorizenet extends \Shop\Gateway
         return $sig;
     }
 
+
+    /**
+     * Get special warnings and instructions for the configuration screen.
+     * This warns that the IPN URL must be whitelisted in the Bad Behavior
+     * plugin.
+     *
+     * @return  string  Message text
+     */
+    protected function getInstructions()
+    {
+        global $LANG_SHOP_HELP, $_CONF;
+
+        return sprintf(
+            $LANG_SHOP_HELP['gw_bb2_instr'],
+            str_replace(
+                $_CONF['site_url'],
+                '',
+                $this->ipn_url
+            )
+        );
+    }
+
 }   // class authorizenet
 
 ?>
