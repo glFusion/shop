@@ -204,7 +204,7 @@ class internal extends \Shop\IPN
             $logId = $this->Log(true);
         }
 
-        $Cart = $this->Order->Cart();
+        $Cart = $this->Order->getItems();
         if (empty($Cart)) {
             COM_errorLog("Shop\\internal_ipn::Process() - Empty Cart for id {$this->Order->cartID()}");
             return false;
