@@ -852,6 +852,19 @@ class IPN
         return $url;
      }
 
+
+    /**
+     * Purge all IPN logs from the database.
+     * No safety check or confirmation is done; that should be done before
+     * calling this function.
+     */
+    public static function Purge()
+    {
+        global $_TABLES;
+
+        DB_query("TRUNCATE {$_TABLES['shop.ipnlog']}");
+    }
+
 }   // class IPN
 
 ?>

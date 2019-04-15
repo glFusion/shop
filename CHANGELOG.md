@@ -23,3 +23,4 @@ Release TBD
   * Allow items to be removed from cart by setting qty to zero.
   * Return to original page after editing a product.
   * Remove payment status from packing list.
+  * Add option to purge all transactions, to purge test data before go-live.

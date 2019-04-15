@@ -665,6 +665,21 @@ class Coupon extends Product
         return COM_buildUrl($url);
     }
 
+
+    /**
+     * Purge all coupons and transactions from the database.
+     * No safety check or confirmation is done; that should be done before
+     * calling this function.
+     */
+    public static function Purge()
+    {
+        global $_TABLES;
+
+        DB_query("TRUNCATE {$_TABLES['shop.coupons']}");
+        DB_query("TRUNCATE {$_TABLES['shop.coupon_log']}");
+    }
+
+
 }
 
 ?>

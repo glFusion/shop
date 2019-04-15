@@ -1807,6 +1807,22 @@ class Order
         }
         return $have_changes;
     }
+
+
+    /**
+     * Purge all orders from the database.
+     * No safety check or confirmation is done; that should be done before
+     * calling this function.
+     */
+    public static function Purge()
+    {
+        global $_TABLES;
+
+        DB_query("TRUNCATE {$_TABLES['shop.orders']}");
+        DB_query("TRUNCATE {$_TABLES['shop.orderitems']}");
+        DB_query("TRUNCATE {$_TABLES['shop.order_log']}");
+    }
+
 }
 
 ?>

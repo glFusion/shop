@@ -50,7 +50,7 @@ $expected = array(
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
-    'migrate_pp',
+    'migrate_pp', 'purge_trans',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
@@ -193,6 +193,16 @@ case 'migrate_pp':
         COM_setMsg($LANG_SHOP['migrate_pp_ok']);
     } else {
         COM_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
+    break;
+
+case 'purge_trans':
+    if (!$_SHOP_CONF['shop_enabled']) {
+        \Shop\Order::Purge();
+        \Shop\IPN::Purge();
+        \Shop\Coupon::Purge();
+        COM_setMsg($LANG_SHOP['trans_purged']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
@@ -538,6 +548,7 @@ case 'other':
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
         'can_migrate_pp' => $can_migrate_pp,
+        'can_purge_trans' => !$_SHOP_CONF['shop_enabled'],
     ) );
     $T->parse('output', 'funcs');
     $content = $T->finish($T->get_var('output'));
