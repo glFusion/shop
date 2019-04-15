@@ -202,6 +202,7 @@ case 'purge_trans':
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
         \Shop\Coupon::Purge();
+        \Shop\Cache::clear();
         COM_setMsg($LANG_SHOP['trans_purged']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
