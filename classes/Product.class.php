@@ -758,13 +758,7 @@ class Product
             $_CONF['cookiedomain'],
             $_CONF['cookiesecure'],
             false
-        );
-        $from_url = SHOP_getVar($_GET, 'from');
-        if (!empty($from_url)) {
-            SHOP_setUrl($from_url);
-        } else {
-            $from_url = SHOP_ADMIN_URL;
-        }
+        ); 
 
         $T = SHOP_getTemplate('product_form', 'product');
         // Set up the wysiwyg editor, if available
@@ -840,7 +834,7 @@ class Product
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
-            'ret_url'       => $from_url,
+            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 

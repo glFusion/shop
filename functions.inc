@@ -2288,12 +2288,12 @@ function SHOP_dateTooltip($Dt)
 /**
  * Set a url in the session to indicate where to return after taking an action.
  *
- * @param   string  $url    URL to save
+ * @param   string  $url    URL to save, current page url by default.
  */
 function SHOP_setUrl($url='')
 {
     if ($url == '') {
-        $url = "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}";
+        $url = COM_getCurrentURL();
     }
     SESS_setVar('shop_ret_url', $url);
 }
@@ -2303,9 +2303,10 @@ function SHOP_setUrl($url='')
  * Get the URL previously set in the session variable.
  *
  * @param   string  $def_url    Default url if one is not set in the session
+ * @param   boolean $keep       True to keep the url in the session var
  * @return  string  URL
  */
-function SHOP_getUrl($def_url = '')
+function SHOP_getUrl($def_url = '', $keep=true)
 {
     $url = SESS_getVar('shop_ret_url');
     if (!$url) {
@@ -2315,7 +2316,7 @@ function SHOP_getUrl($def_url = '')
             // final failsafe
             $url = SHOP_URL;
         }
-    } else {
+    } elseif (!$keep) {
         // This is a one-time use value
         SESS_unSet('shop_ret_url');
     }
@@ -2333,7 +2334,7 @@ function SHOP_getUrl($def_url = '')
  * @param   string          $title  Optional title string, shown above list
  * @return  string          Complete error message
  */
-function SHOP_errMsg($msg = array(), $title = '')
+function SHOP_errMsg($msg, $title = '')
 {
     if (empty($msg)) return '';
 

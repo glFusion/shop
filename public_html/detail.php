@@ -1,13 +1,13 @@
 <?php
 /**
- * Product detail display for the PayPal plugin.
+ * Product detail display for the Shop plugin.
  * This page's only job is to display the product detail.  This is to help
  * with SEO and uses rewritten urls.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2011 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     0.5.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -68,6 +68,7 @@ if (empty($breadcrumbs)) {
     }
     $breadcrumbs = COM_createLink($text, $url);
 }
+
 SHOP_setUrl();
 $display .= $breadcrumbs;
 $display .= $content;

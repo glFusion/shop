@@ -354,7 +354,7 @@ case 'checkoutcart':
 case 'products':
 default:
     USES_shop_functions();
-    SHOP_setUrl($_SERVER['request_uri']);
+    SHOP_setUrl();
     $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
     $content .= \Shop\ProductList($cat_id);
     $menu_opt = $LANG_SHOP['products'];
