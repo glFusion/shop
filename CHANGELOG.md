@@ -22,3 +22,4 @@ Release TBD
   * Indicate that unit prices in the cart include discounts, if applicable.
   * Allow items to be removed from cart by setting qty to zero.
   * Return to original page after editing a product.
+  * Remove payment status from packing list.

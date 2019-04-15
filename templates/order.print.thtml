@@ -162,7 +162,10 @@
 {!endif}
   </div>
   <div style="clear:both;">
+{!if is_invoice}
   <p>{$LANG_SHOP['status']}: {status}</p>
+{!else}
+{!endif}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: {purch_name} ({purch_uid})</p>
   <p>
