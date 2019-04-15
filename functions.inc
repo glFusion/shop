@@ -1441,7 +1441,7 @@ function SHOP_phpblock_product($sql)
  */
 function plugin_itemrated_shop($id, $rating, $votes)
 {
-    return \Shop\Product::getInstance($id)->updateRating($rating, $votes);
+    return \Shop\Product::updateRating($id, $rating, $votes);
 }
 
 
