@@ -161,11 +161,10 @@
     <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
   </div>
-  <div style="clear:both;">
+
 {!if is_invoice}
+  <div style="clear:both;">
   <p>{$LANG_SHOP['status']}: {status}</p>
-{!else}
-{!endif}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: {purch_name} ({purch_uid})</p>
   <p>
@@ -194,11 +193,12 @@
   {!endif}
     </p>
 {!endif}
+{!endif}
   </div>
 {!if is_invoice}
 {!if icon_dscp}
   <div>*&nbsp;{icon_dscp}</div>
 {!endif}
-{!endif}
 </div>
+{!endif}
 {# end {templatelocation} #}
