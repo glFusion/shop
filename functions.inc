@@ -505,11 +505,19 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
 
     $pi_name = $_SHOP_CONF['pi_name'];
     if ($op == 'tagname' ) {
-        return array(
+        $tags = array(
             $pi_name,
             $pi_name . '_cat',
             $pi_name . '_headlines',
         );
+        if (!function_exists('plugin_chkVersion_paypal')) {
+            // Handle legacy paypal plugin tags unless that plugin is also
+            // enabled.
+            $tags[] = 'paypal';
+            $tags[] = 'paypal_cat';
+            $tags[] = 'paypal_headlines';
+        }
+        return $tags;
     } else if ($op == 'parse') {
         // Do nothing if the user can't view the catalog
         if (!SHOP_access_check() || !SHOP_isMinVersion()) return $content;
@@ -523,6 +531,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         }
         switch ($autotag['tag']) {
         case $pi_name:
+        case 'paypal':
             $id = $autotag['parm1'];
             switch ($id) {
             case 'headlines':
@@ -549,6 +558,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             break;
 
         case $pi_name . '_cat':
+        case 'paypal_cat':
             $id = COM_applyFilter($autotag['parm1'], true);
             $Cat = \Shop\Category::getInstance($id);
             if (!$Cat->isNew) {
@@ -563,6 +573,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             }
             break;
         case $pi_name . '_headlines':
+        case 'paypal_headlines':
             $AT = new \Shop\Autotags\headlines;
             $repl = $AT->parse($autotag['parm1'], $opts, $autotag['tagstr']);
             break;
@@ -2192,8 +2203,9 @@ function SHOP_getTaxRate()
  * @param   float   $amount     Taxable amount
  * @return  float               Sales Tax
  */
-function SHOP_getTax($amount)
+function XSHOP_getTax($amount)
 {
+    echo "DEPRECATED";die;
     return round($amount * SHOP_getTaxRate(), 2);
 }
 
