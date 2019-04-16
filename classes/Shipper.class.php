@@ -4,10 +4,9 @@
  * First iteration only allows for a number of "units" per product.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
- * @since       v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -24,13 +23,17 @@ class Shipper
      * @var string */
     static $base_tag = 'shipping';
 
-    /** Property fields.  Accessed via __set() and __get()
+    /** Property fields. Accessed via __set() and __get()
      * @var array */
-    var $properties;
+    private $properties;
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    var $isNew;
+    public $isNew;
+
+    /** Individual rate element.
+     * @var array */
+    public $rates;
 
 
     /**
@@ -260,11 +263,6 @@ class Shipper
             $this->properties[$var] = trim($value);
             break;
 
-        case 'rates':
-            // Floating-point values
-            $this->properties[$var] = $value;
-            break;
-
         case 'min_units':
             if ($value == 0) $value = .0001;
         case 'max_units':
@@ -321,12 +319,13 @@ class Shipper
             $sql1 = "UPDATE {$_TABLES['shop.shipping']}";
             $sql3 = " WHERE id={$this->id}";
         }
-        $rates = $this->rates;  // convert to regular var for usort()
-        usort($rates, array('\Shop\Shipper', '_sortRates'));
+        usort($this->rates, function($a, $b) {
+            return $a['units'] <=> $b['units'];
+        });
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
                 min_units = '{$this->min_units}',
                 max_units = '{$this->max_units}',
-                rates = '" . DB_escapeString(json_encode($rates)) . "'";
+                rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql);
@@ -337,19 +336,6 @@ class Shipper
         } else {
             return false;
         }
-    }
-
-
-    /**
-     * Sort the rate table ascending by the number of units supported.
-     *
-     * @param   array   $a      First rate element
-     * @param   array   $b      Second rate element
-     * @return  float       Difference between first and second elements
-     */
-    private static function _sortRates($a, $b)
-    {
-        return $a['units'] - $b['units'];
     }
 
 
