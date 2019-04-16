@@ -41,19 +41,30 @@
 
     <div class="uk-form-row" id="selvalues">
       <label class="uk-form-label">{$LANG_SHOP['rate_table']}
-        <img src="{layout_url}/images/addchild.png" class="tooltip" title="{$LANG_SHOP['add_rate']}"
-        onclick="javascript:insertRow('rateList');" />
         <span id="rate_table" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
         <table id="rateList">
-        <th>{$LANG_SHOP['description']}</th><th>{$LANG_SHOP['max_ship_units']}</th><th>{$LANG_SHOP['rate']}</th>
         <tbody>
+          <tr>
+            <th>{$LANG_SHOP['description']}</th>
+            <th>{$LANG_SHOP['max_ship_units']}</th>
+            <th>{$LANG_SHOP['rate']}</th>
+            <th>
+              <button class="uk-button uk-button-mini uk-button-success tooltip"
+                title="{$LANG_SHOP['add_rate_tt']}"
+                onclick="javascript:return insertRow();">{$LANG_SHOP['add_rate']}</button>
+            </th>
+          </tr>
 <!-- BEGIN rateTable -->
           <tr>
             <td><input type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
             <td><input type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
             <td><input type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
+            <td><i class="uk-icon uk-icon-trash-o uk-text-danger tooltip"
+                title="{$LANG_SHOP['rem_rate_tt']}"
+                onclick="javascript:return removeRow(this);"></i>
+            </td>
           </tr>
 <!-- END rateTable -->
         </tbody>
@@ -102,29 +113,21 @@ $(document).ready(function() {
         }
     });
 });
-function insertRow(tbl)
+function insertRow()
 {
-    var table = document.getElementById(tbl);
-    var tr = document.createElement("tr");
-    var newDscp = document.createElement("td");
-    var newUnits = document.createElement("td");
-    var newPrice = document.createElement("td");
-
-    /*var tableRef = document.getElementById(tbl).getElementsByTagName('tbody')[0];
-    //var newRow   = tableRef.insertRow(tableRef.rows.length);
-    var newRow   = tableRef.appendRow(tableRef.rows.length);
-    var newDscp  = newRow.insertCell(0);
-    var newUnits = newRow.insertCell(1);
-    var newPrice = newRow.insertCell(2);*/
-
-    tr.appendChild(newDscp);
-    tr.appendChild(newUnits);
-    tr.appendChild(newPrice);
-    table.appendChild(tr);
-
-    newDscp.innerHTML = '<input type="text" name="rateDscp[]" value="" />';
-    newUnits.innerHTML = '<input type="text" name="rateUnits[]" value="" style="text-align:right" />';
-    newPrice.innerHTML = '<input type="text" name="rateRate[]" value="" style="text-align:right" />';
+    $('#rateList').append('<tr>' +
+        '<td><input type="text" name="rateDscp[]" value="" /></td>' +
+        '<td><input type="text" name="rateUnits[]" value="" style="text-align:right" /></td>' +
+        '<td><input type="text" name="rateRate[]" value="" style="text-align:right" /></td>' +
+        '<td><i class="uk-icon uk-icon-trash-o uk-text-danger" onclick="javascript:return removeRow(this);"></i></td>' +
+        '</tr>'
+    );
+    return false;
+}
+function removeRow(elem)
+{
+    $(elem).parent().parent().remove();
+    return false;
 }
 </script>
 {# end {templatelocation} #}

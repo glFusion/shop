@@ -177,7 +177,10 @@ class Shipper
         $shipper = new \stdClass();
         $shipper->best_rate = 0;
         foreach ($shippers as $s_id=>$shipper) {
-            if ($units < $shipper->min_units || ($shipper->max_units > 0 && $units > $shipper->max_units)) {
+            if (
+                $units < $shipper->min_units ||
+                ($shipper->max_units > 0 && $units > $shipper->max_units)
+            ) {
                 // Skip shippers that don't handle this number of units
                 continue;
             } else {
@@ -318,10 +321,12 @@ class Shipper
             $sql1 = "UPDATE {$_TABLES['shop.shipping']}";
             $sql3 = " WHERE id={$this->id}";
         }
+        $rates = $this->rates;  // convert to regular var for usort()
+        usort($rates, array('\Shop\Shipper', '_sortRates'));
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
                 min_units = '{$this->min_units}',
                 max_units = '{$this->max_units}',
-                rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
+                rates = '" . DB_escapeString(json_encode($rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql);
@@ -332,6 +337,19 @@ class Shipper
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * Sort the rate table ascending by the number of units supported.
+     *
+     * @param   array   $a      First rate element
+     * @param   array   $b      Second rate element
+     * @return  float       Difference between first and second elements
+     */
+    private static function _sortRates($a, $b)
+    {
+        return $a['units'] - $b['units'];
     }
 
 

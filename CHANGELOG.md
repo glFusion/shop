@@ -1,9 +1,10 @@
 # Shop plugin for glFusion - Changelog
 
 ## v0.7.0
+Release TBD
+
 First beta version under the new Shop name.
 
-Release TBD
   * Allow the shop to be disabled except for administrators.
   * Properly merge anonymous user cart to user cart upon login.
   * Implement more friendly URLs.
@@ -24,3 +25,4 @@ Release TBD
   * Return to original page after editing a product.
   * Remove payment status from packing list.
   * Add option to purge all transactions, to purge test data before go-live.
+  * Better interface to add and remove shipping rates.
