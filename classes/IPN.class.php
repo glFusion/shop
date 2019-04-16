@@ -2,7 +2,7 @@
 /**
  * Base class for handling IPN messages.
  * Each IPN handler receives its data in a unique way, which it is responsible
- * for putting into this class's pp_data array which holds common, standard
+ * for putting into this class's ipn_data array which holds common, standard
  * data elements.
  *
  * The derived class may implement a "Process" function, or other master
@@ -45,9 +45,8 @@ define('IPN_FAILURE_FUNDS', 5);
  */
 class IPN
 {
-    /** Standard IPN data items required for all IPN types.
+    /** Holder for properties accessed via `__set()` and `__get()`.
      * @var array */
-//    var $pp_data = array();
     private $properties = array();
 
     /**
@@ -433,7 +432,7 @@ class IPN
 
             // Handle the purchase for each order item
             foreach ($this->Order->getItems() as $item) {
-                $item->getProduct()->handlePurchase($item, $this->Order, $this->pp_data);
+                $item->getProduct()->handlePurchase($item, $this->Order, $this->ipn_data);
             }
             $this->Order->Log(sprintf(
                 $LANG_SHOP['amt_paid_gw'],

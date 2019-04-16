@@ -58,6 +58,7 @@ class paypal extends \Shop\IPN
         if (isset($A['invoice'])) {
             $this->order_id = $A['invoice'];
         }
+
         //if (isset($A['parent_txn_id']))
         //    $this->parent_txn_id = $A['parent_txn_id'];
 
@@ -95,6 +96,7 @@ class paypal extends \Shop\IPN
             $this->status = 'refunded';
             break;
         }
+        $this->ipn_data['status'] = $this->status;  // to get into handlePurchase()
 
         switch (SHOP_getVar($A, 'txn_type')) {
         case 'web_accept':
@@ -230,9 +232,8 @@ class paypal extends \Shop\IPN
             if (empty($quantity)) {
                 $quantity = 1;
             }
-
             $this->pmt_net = $this->pmt_gross - $fees_paid;
-            $unit_price = $payment_gross / $quantity;
+            $unit_price = $this->pmt_gross / $quantity;
             $args = array(
                 'item_id'   => $item_number,
                 'quantity'  => $quantity,
