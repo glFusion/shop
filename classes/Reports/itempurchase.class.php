@@ -54,16 +54,12 @@ class itempurchase extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->item_id = SHOP_getVar($_GET, 'item_id', 'integer');
+        $this->item_id = SHOP_getVar($_GET, 'item_id');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        if (is_numeric($this->item_id)) {
-            $Item = new \Shop\Product($this->item_id);
-            $this->item_dscp = $Item->short_description;
-        } else {
-            $this->item_dscp = $this->item_id;
-            $this->item_id = DB_escapeString($this->item_id);
-        }
+        $Item = \Shop\Product::getInstance($this->item_id);
+        $this->item_dscp = $Item->short_description;
+        $this->item_id = DB_escapeString($this->item_id);
         $T = $this->getTemplate();
 
         $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
