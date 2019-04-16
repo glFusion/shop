@@ -3,6 +3,6 @@
     action="{action_url}" method="{method}">
   {gateway_vars}
   <input type="hidden" name="gateway" value="{gw_name}" />
-  <input type="submit" class="paypalButton green" name="processorder" value="{btn_text}" />
+  <input type="submit" class="shopButton green" name="processorder" value="{btn_text}" />
 </form>
 {# end {templatelocation} #}

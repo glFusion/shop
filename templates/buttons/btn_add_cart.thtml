@@ -24,7 +24,7 @@
   {!if _ret_url}
     <input type="hidden" name="_ret_url" value="{_ret_url}" />
   {!endif}
-  <button id="{frm_id}_add_cart_btn" type="button" class="paypalButton {btn_cls}" border="0" {btn_disabled}
+  <button id="{frm_id}_add_cart_btn" type="button" class="shopButton {btn_cls}" border="0" {btn_disabled}
     onclick='shopAddToCart("{frm_id}");return false;' value="{$LANG_SHOP['add_to_cart']}">{$LANG_SHOP['add_to_cart']}</button>
 </form>
 {# end {templatelocation} #}

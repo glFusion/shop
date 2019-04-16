@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <form class="frm_buy_now" action="{action_url}" method="{method}">
   {gateway_vars}
-  <button type="submit" class="paypalButton blue" border="0" name="submit" alt="{btn_text}">
+  <button type="submit" class="shopButton blue" border="0" name="submit" alt="{btn_text}">
     <i class="uk-icon uk-icon-paypal">&nbsp;</i>{btn_text}
   </button>
 </form>
