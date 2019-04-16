@@ -67,10 +67,10 @@ function SHOP_migrate_pp()
         }
     }
 
-    // Perform the migration
+    // Perform the migration. Don't migrate the button cache.
     // Clear out the Shop tables and insert data from Paypal
     $tables = array(
-        'address', 'buttons', 'categories', 'coupon_log', 'coupons',
+        'address', 'categories', 'coupon_log', 'coupons',
         'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus',
         'prod_attr', 'products', 'sales', 'shipping', 'userinfo',
         'workflows', 'currency', 'orders',
