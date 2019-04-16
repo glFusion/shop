@@ -312,7 +312,11 @@ class IPN
     protected function isUniqueTxnId()
     {
         global $_TABLES, $_SHOP_CONF;
-        if ($_SHOP_CONF['sys_test_ipn']) return true;
+
+        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+            // Special config value set only in config.php for IPN testing
+            return true;
+        }
 
         // Count purchases with txn_id, if > 0
         $count = DB_count($_TABLES['shop.ipnlog'], 'txn_id', $this->txn_id);
