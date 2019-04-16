@@ -13,9 +13,10 @@
 {!if not_final}
 {!else}
   <div class="floatright">
-    <a href="{print_url}" target="_blank"
-        title="{$LANG_SHOP['print']}"><i class="uk-icon uk-icon-print tooltip" title="{$LANG_SHOP['print_order']}"></i>
-    </a>
+    {linkPrint}
+{!if is_admin}
+    {linkPackingList}
+{!endif}
   </div>
 {!endif}
 
@@ -100,6 +101,11 @@
     <div class="shopOrderItems">
       <table>
         <tr>
+{!if have_images}
+          <th style="width:120px;"></th>
+{!else}
+          <th></th>
+{!endif}
           <th class="aligncenter">{$LANG_SHOP['description']}</th>
           <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
           <th style="width:10%" class="alignright">{$LANG_SHOP['quantity']}</th>
@@ -112,13 +118,14 @@
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
+          <td>{img_url}</td>
           <td>
 {!if is_admin}
-            <a href="{site_admin_url}/plugins/shop/report.php?period=at&item_id={item_id}&run=itempurchase" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">
-{!endif}
-              {item_dscp}
-{!if is_admin}
-            </a>
+            <a href="{site_admin_url}/plugins/shop/report.php?period=at&item_id={item_id}&run=itempurchase" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">{item_dscp}</a>
+{!elseif detail_url}
+            <a href="{detail_url}">{item_dscp}</a>
+{!else}
+            {item_dscp}
 {!endif}
 {!if is_file}
             &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}"><button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['download']}</button></a>

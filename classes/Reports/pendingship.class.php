@@ -226,25 +226,9 @@ class pendingship extends \Shop\Report
         switch ($fieldname) {
         case 'action':
             $retval = '<span style="white-space:nowrap" class="nowrap">';
-            $retval .= COM_createLink(
-                '<i class="uk-icon-mini uk-icon-print"></i>',
-                COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $A['order_id']),
-                array(
-                    'class' => 'tooltip',
-                    'title' => $LANG_SHOP['print'],
-                    'target' => '_blank',
-                )
-            );
+            $retval .= \Shop\Order::linkPrint($A['order_id']);
             if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . COM_createLink(
-                    '<i class="uk-icon-mini uk-icon-list"></i>',
-                    COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $A['order_id']),
-                    array(
-                        'class' => 'tooltip',
-                        'title' => $LANG_SHOP['packinglist'],
-                        'target' => '_blank',
-                    )
-                );
+                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']);
             }
             $retval .= '</span>';
             break;

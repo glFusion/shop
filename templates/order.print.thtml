@@ -89,7 +89,12 @@
     <div class="shopOrderItems">
       <table>
         <tr>
-          <th class="aligncenter">{$LANG_SHOP['description']}</th>
+{!if have_images}
+          <th style="width:120px;"></th>
+{!else}
+          <th></th>
+{!endif}
+          <th style="text-align:left;">{$LANG_SHOP['description']}</th>
           <th class="alignright">{$LANG_SHOP['quantity']}</th>
 {!if is_invoice}
           <th class="alignright">{$LANG_SHOP['price']}</th>
@@ -98,6 +103,7 @@
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
+          <td>{img_url}</td>
           <td>
             {item_dscp}
 {!if item_options}

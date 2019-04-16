@@ -26,3 +26,5 @@ First beta version under the new Shop name.
   * Remove payment status from packing list.
   * Add option to purge all transactions, to purge test data before go-live.
   * Better interface to add and remove shipping rates.
+  * Fix extracting IPN data from Paypal Buy-Now and Donate functions.
+  * Add item thumbnail image to order.

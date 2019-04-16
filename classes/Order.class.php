@@ -548,8 +548,20 @@ class Order
         $this->no_shipping = 1;   // no shipping unless physical item ordered
         $this->subtotal = 0;
         $item_qty = array();        // array to track quantity by base item ID
+        $have_images = false;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            if ($is_invoice) {
+                $img_filename = $P->getOneImage();
+                if (!empty($img_filename)) {
+                    $img_url = COM_createImage(
+                        SHOP_ImageUrl($P->Images[0]['filename'], 100, 100)
+                    );
+                    $T->set_var('img_url', $img_url);
+                    $have_images = true;
+                }
+            }
+
             if (!isset($item_qty[$item->product_id])) {
                 $total_item_q = $this->getTotalBaseItems($item->product_id);
                 $item_qty[$item->product_id] = array(
@@ -588,6 +600,7 @@ class Order
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
+                'detail_url'    => $P->getLink(),
                 'price_tooltip' => $price_tooltip,
             ) );
             if ($P->isPhysical()) {
@@ -642,6 +655,9 @@ class Order
             'icon_dscp'     => $icon_tooltips,
             'print_url'     => $this->buildUrl('print'),
             'price_tooltip' => $price_tooltip,
+            'have_images'   => $is_invoice ? $have_images : false,
+            'linkPackingList' => self::linkPackingList($this->order_id),
+            'linkPrint'     => self::linkPrint($this->order_id),
         ) );
         if ($this->isAdmin) {
             $T->set_var(array(
@@ -1821,6 +1837,52 @@ class Order
         DB_query("TRUNCATE {$_TABLES['shop.orders']}");
         DB_query("TRUNCATE {$_TABLES['shop.orderitems']}");
         DB_query("TRUNCATE {$_TABLES['shop.order_log']}");
+    }
+
+
+    /**
+     * Create the complete tag to link to the packing list for this order.
+     *
+     * @param   string  $order_id   Order ID
+     * @param   string  $target     Target, defaule = "_blank"
+     * @return  string      Complete tag
+     */
+    public static function linkPackingList($order_id, $target='_blank')
+    {
+        global $LANG_SHOP;
+
+        return COM_createLink(
+            '<i class="uk-icon-mini uk-icon-list"></i>',
+           COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $order_id),
+            array(
+                'class' => 'tooltip',
+                'title' => $LANG_SHOP['packinglist'],
+                'target' => $target,
+            )
+        );
+    }
+
+
+    /**
+     * Create the complete tag to link to the print view of this order.
+     *
+     * @param   string  $order_id   Order ID
+     * @param   string  $target     Target, defaule = "_blank"
+     * @return  string      Complete tag
+     */
+    public static function linkPrint($order_id, $target = '_blank')
+    {
+        global $LANG_SHOP;
+
+        return COM_createLink(
+            '<i class="uk-icon-mini uk-icon-print"></i>',
+            COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $order_id),
+            array(
+                'class' => 'tooltip',
+                'title' => $LANG_SHOP['print'],
+                'target' => $target,
+            )
+        );
     }
 
 }
