@@ -1930,8 +1930,6 @@ class Product
      */
     public function isAvailable($isadmin = false)
     {
-        global $_SHOP_CONF;
-
         if ($isadmin) return true;  // Admin can always view
 
         $today = SHOP_now()->format('Y-m-d', true);
@@ -1951,7 +1949,6 @@ class Product
      */
     public function isTaxable()
     {
-        global $_SHOP_CONF;
         return $this->taxable && SHOP_getTaxRate() > 0;
     }
 
