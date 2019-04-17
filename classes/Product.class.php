@@ -81,7 +81,7 @@ class Product
 
     /** Product image objects.
      * @var array */
-    private $Images = array();
+    private $Images = NULL;
 
     /**
      * Constructor.
@@ -2184,6 +2184,11 @@ class Product
     public function getImages()
     {
         global $_TABLES;
+
+        // If already loaded, just return the images.
+        if ($this->Images !== NULL) {
+            return $this->Images;
+        }
 
         $cache_key = self::_makeCacheKey($this->id, 'img');
         $this->Images = Cache::get($cache_key);
