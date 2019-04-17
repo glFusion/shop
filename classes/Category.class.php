@@ -447,7 +447,7 @@ class Category
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
                 if ($D->discount_type == 'amount') {
-                    $amount = Currency::getInstance()->format($D->amount);
+                    $amount = Currency::getInstance()->Format($D->amount);
                 } else {
                     $amount = $D->amount;
                 }

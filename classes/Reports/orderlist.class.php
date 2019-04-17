@@ -167,7 +167,7 @@ class orderlist extends \Shop\Report
         $total_shipping = 0;
         $total_total = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
-        $Cur = \Shop\Currency::getInstance($A['currency']);
+        $Cur = \Shop\Currency::getInstance();
 
         switch ($this->type) {
         case 'html':
@@ -216,10 +216,10 @@ class orderlist extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => $Cur->formatValue($A['sales_amt']),
-                    'tax'           => $Cur->formatValue($A['tax']),
-                    'shipping'      => $Cur->formatValue($A['shipping']),
-                    'total'         => $Cur->formatValue($order_total),
+                    'sales_amt'     => $Cur->FormatValue($A['sales_amt']),
+                    'tax'           => $Cur->FormatValue($A['tax']),
+                    'shipping'      => $Cur->FormatValue($A['shipping']),
+                    'total'         => $Cur->FormatValue($order_total),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
@@ -234,10 +234,10 @@ class orderlist extends \Shop\Report
         $T->set_var(array(
             'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
-            'total_sales'       => $Cur->formatValue($total_sales),
-            'total_tax'         => $Cur->formatValue($total_tax),
-            'total_shipping'    => $Cur->formatValue($total_shipping),
-            'total_total'       => $Cur->formatValue($total_total),
+            'total_sales'       => $Cur->FormatValue($total_sales),
+            'total_tax'         => $Cur->FormatValue($total_tax),
+            'total_shipping'    => $Cur->FormatValue($total_shipping),
+            'total_total'       => $Cur->FormatValue($total_total),
             'nl'                => "\n",
         ) );
         $T->parse('output', 'report');

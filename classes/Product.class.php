@@ -799,7 +799,7 @@ class Product
             'category'      => $this->cat_id,
             'short_description' => htmlspecialchars($this->short_description, ENT_QUOTES, COM_getEncodingt()),
             'description'   => htmlspecialchars($this->description, ENT_QUOTES, COM_getEncodingt()),
-            'price'         => Currency::getInstance()->formatValue($this->price),
+            'price'         => Currency::getInstance()->FormatValue($this->price),
             'file'          => htmlspecialchars($this->file, ENT_QUOTES, COM_getEncodingt()),
             'expiration'    => $this->expiration,
             'action_url'    => SHOP_ADMIN_URL . '/index.php',
@@ -821,7 +821,7 @@ class Product
             'ship_sel_' . $this->shipping_type => 'selected="selected"',
             'shipping_type' => $this->shipping_type,
             'track_onhand'  => $this->track_onhand,
-            'shipping_amt'  => Currency::getInstance()->formatValue($this->shipping_amt),
+            'shipping_amt'  => Currency::getInstance()->FormatValue($this->shipping_amt),
             'shipping_units'  => $this->shipping_units,
             'sel_comment_' . $this->comments_enabled =>
                                     'selected="selected"',
@@ -1167,7 +1167,7 @@ class Product
         }
 
         if ($this->getShipping()) {
-            $shipping_txt = sprintf($LANG_SHOP['plus_shipping'], Currency::getInstance()->formatValue($this->shipping_amt));
+            $shipping_txt = sprintf($LANG_SHOP['plus_shipping'], Currency::getInstance()->FormatValue($this->shipping_amt));
         } else {
             $shipping_txt = '';
         }

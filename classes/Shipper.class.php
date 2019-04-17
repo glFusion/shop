@@ -385,7 +385,7 @@ class Shipper
             $T->set_var(array(
                 'rate_dscp'     => $R->dscp,
                 'rate_units'    => $R->units,
-                'rate_price'    => Currency::getInstance()->formatValue($R->rate),
+                'rate_price'    => Currency::getInstance()->FormatValue($R->rate),
             ) );
             $T->parse('rt', 'rateTable', true);
         }

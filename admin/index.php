@@ -846,7 +846,7 @@ function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'price':
-        $retval = \Shop\Currency::getInstance()->formatValue($fieldvalue);
+        $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
         break;
 
     default:

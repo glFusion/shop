@@ -58,7 +58,7 @@ default:
         $maxlen = strlen($_SHOP_CONF['gc_mask']);
     }
     $T->set_var(array(
-        'gc_bal' => $C->format(\Shop\Coupon::getUserBalance($_USER['uid'])),
+        'gc_bal' => $C->Format(\Shop\Coupon::getUserBalance($_USER['uid'])),
         'code' => $id,
         'maxlen' => $maxlen,
     ) );

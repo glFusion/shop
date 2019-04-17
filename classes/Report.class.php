@@ -745,7 +745,7 @@ class Report
             $sales = SHOP_getVar($A, 'sales_amt', 'float');
             $tax = SHOP_getVar($A, 'tax', 'float');
             $shipping = SHOP_getVar($A, 'shipping', 'float');
-            $retval = $Cur->formatValue($sales + $tax + $shipping);
+            $retval = Currency::getInstance($A['currency'])->FormatValue($sales + $tax + $shipping);
             break;
 
         case 'status':
@@ -758,6 +758,7 @@ class Report
             break;
 
         case 'sales_amt':
+            $Cur = Currency::getInstance($A['currency']);
             if (!$extra['isAdmin']) {
                 $total = (float)$fieldvalue;
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
@@ -768,7 +769,8 @@ class Report
                         if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
                             $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
-                                $Cur->FormatValue($A[$fld]) . '</td></tr>' . LB;
+                                $Cur->FormatValue($A[$fld]) .
+                                '</td></tr>' . LB;
                         $total += (float)$A[$fld];
                     }
                 }
@@ -780,14 +782,14 @@ class Report
                 $tip .= '</table>' . LB;
                 $retval = '<span class="tooltip" title="' . $tip . '">' . $Cur->FormatValue($fieldvalue) . '</span>';
             } else {
-                $retval = $Cur->formatValue($fieldvalue);
+                $retval = $Cur->FormatValue($fieldvalue);
             }
             break;
 
         case 'total':
         case 'shipping':
         case 'tax':
-            $retval = $Cur->formatValue($fieldvalue);
+            $retval = Currency::getInstance($A['currency'])->FormatValue($fieldvalue);
             break;
 
         case 'customer':

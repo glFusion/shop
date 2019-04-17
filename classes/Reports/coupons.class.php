@@ -158,10 +158,10 @@ class coupons extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $dt->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => $Cur->formatValue($A['sales_amt']),
-                    'tax'           => $Cur->formatValue($A['tax']),
-                    'shipping'      => $Cur->formatValue($A['shipping']),
-                    'total'         => $Cur->formatValue($order_total),
+                    'sales_amt'     => $Cur->FormatValue($A['sales_amt']),
+                    'tax'           => $Cur->FormatValue($A['tax']),
+                    'shipping'      => $Cur->FormatValue($A['shipping']),
+                    'total'         => $Cur->FormatValue($order_total),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
@@ -227,7 +227,7 @@ class coupons extends \Shop\Report
                 $fieldvalue *= -1;
                 break;
             }
-            $retval = $Cur->formatValue($fieldvalue);
+            $retval = $Cur->FormatValue($fieldvalue);
             break;
 
         case 'code':
