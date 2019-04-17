@@ -1100,8 +1100,6 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
 
     $retval = '';
     static $grp_names = array();
-    static $now = NULL;
-    if ($now === NULL) $now = SHOP_now()->format('Y-m-d');
 
     switch($fieldname) {
     case 'edit':
@@ -1127,8 +1125,11 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
     case 'grp_access':
         $fieldvalue = (int)$fieldvalue;
         if (!isset($grp_names[$fieldvalue])) {
-            $grp_names[$fieldvalue] = DB_getItem($_TABLES['groups'], 'grp_name',
-                        "grp_id = $fieldvalue");
+            $grp_names[$fieldvalue] = DB_getItem(
+                $_TABLES['groups'],
+                'grp_name',
+                "grp_id = $fieldvalue"
+            );
         }
         $retval = $grp_names[$fieldvalue];
         break;
