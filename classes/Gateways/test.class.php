@@ -92,10 +92,11 @@ class test extends \Shop\Gateway
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="by_gc" />',
             '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
-            '<input type="hidden" name="custom" value=\'' . @serialize($cust) . '\' />',
+            '<input type="hidden" name="custom" value=\'' . htmlspecialchars(@serialize($cust)) . '\' />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
             '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
+            '<input type="hidden" name="status" value="paid" />',
         );
         if (COM_isAnonUser()) {
             //$T->set_var('need_email', true);
