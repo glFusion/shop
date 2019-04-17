@@ -132,11 +132,17 @@ class PluginProduct extends Product
         SHOP_debug('Shop\\PluginProduct::handlePurchase() pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
-        // If there's a custom field, and it's a string, then it needs to be
-        // unserialzed.
-        if (isset($ipn_data['custom']) && is_string($ipn_data['custom'])) {
-            $ipn_data['custom'] = @unserialize($ipn_data['custom']);
+        // The custom field needs to exist and be an array.
+        if (isset($ipn_data['custom'])) {
+           if (is_string($ipn_data['custom'])) {
+               $ipn_data['custom'] = @unserialize($ipn_data['custom']);
+               // Final check in case serialization failed
+               if (!is_array($ipn_data['custom'])) $ipn_data['custom'] = array();
+           }
+        } else {
+            $ipn_data['custom'] = array();  // should be set, but just in case.
         }
+
         $args = array(
             'item'  => array(
                 'item_id' => $Item->product_id,
