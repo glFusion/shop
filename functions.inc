@@ -1892,11 +1892,7 @@ function SHOP_explode_opts($item, $opt_string = false)
 function SHOP_now()
 {
     global $_CONF;
-    static $dt = NULL;
-    if ($dt === NULL) {
-        $dt = new Date('now', $_CONF['timezone']);
-    }
-    return $dt;
+    return $_CONF['_now'];
 }
 
 
