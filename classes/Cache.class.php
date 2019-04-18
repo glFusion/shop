@@ -136,6 +136,7 @@ class Cache
     {
         self::delete('order_' . $order_id);
         self::delete('items_order_' . $order_id);
+        self::delete('shipping_order_' . $order_id);
     }
 
 }   // class Shop\Cache
