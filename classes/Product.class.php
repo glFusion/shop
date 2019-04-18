@@ -1266,6 +1266,7 @@ class Product
             'id'                => $T->get_var('id'),
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
+            'orig_price_val'    => $this->_orig_price,
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish ($JT->get_var('output')));

@@ -28,3 +28,4 @@ First beta version under the new Shop name.
   * Better interface to add and remove shipping rates.
   * Fix extracting IPN data from Paypal Buy-Now and Donate functions.
   * Add item thumbnail image to order.
+  * Original price wasn't updated if attributes were selected for sale items.

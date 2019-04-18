@@ -33,7 +33,9 @@
 {!endif}
     <div class="shopDetailPrice v2">
 {!if on_sale}
-      <span class="shopPrice was">{orig_price}</span>
+      <span class="shopPrice was">{price_prefix}</span>
+      <span class="shopPrice was" id="price_was">{orig_price}</span>
+      <span class="shopPrice sale">{price_postfix}</span>
       <div class="shopPrice sale">{sale_name}</div>
       <div>
         <span class="shopPrice sale">{price_prefix}</span>

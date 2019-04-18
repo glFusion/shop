@@ -29,12 +29,15 @@ function ProcessForm()
 {
     var rec,i;
     var price, frm;
+    var price_was;  // used if item is on sale
 
     emsg="";
     frm = document.getElementById("add_cart_{id}");
     if (frm === null) return;
 
     price = {price};
+    price_was = {orig_price_val};
+
     options = frm.elements['options[]'];
     if (typeof(options) == "undefined") {
         return;
@@ -54,6 +57,7 @@ function ProcessForm()
             rec = options[i].value.split("|");
             if (typeof(rec[2]) != "undefined") {
                 price += (rec[2]*1);
+                price_was += (rec[2]*1);
             }
         }
     } else {
@@ -61,12 +65,19 @@ function ProcessForm()
         rec = options.value.split("|");
         if (typeof(rec[2]) != "undefined") {
             price += (rec[2]*1);
+            price_was += (rec[2]*1);
         }
     }
 
     price = price.toFixed({cur_decimals});
+    price_was = price_was.toFixed({cur_decimals});
     if (typeof(frm.price) != "undefined") {
         frm.price.value = price;
+    }
+
+    var x = document.getElementById('price_was');
+    if (x != null) {
+        x.innerHTML = price_was;
     }
     document.getElementById('price').innerHTML = price;
     return;

@@ -17,7 +17,7 @@
     <div class="shopDetailPrice v1">
       <b>{$LANG_SHOP['price']}:&nbsp;&nbsp;</b>
 {!if on_sale}
-      <span class="shopPrice was">{orig_price}</span>
+      <span class="shopPrice was">{price_prefix}</span><span class="shopPrice was" id="price_was">{orig_price}</span>
       <span class="shopPrice sale">{price_prefix}</span><span class="shopPrice sale" id="price" name="price">{price}</span><span class="shopPrice sale">{price_postfix}</span>
 {!else}
       <span class="shopPrice normal">{price_prefix}</span><span class="shopPrice normal" id="price" name="price">{init_price}</span><span class="shopPrice normal">{price_postfix}</span>
