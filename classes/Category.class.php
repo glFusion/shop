@@ -644,7 +644,12 @@ class Category
      */
     public static function Breadcrumbs($cat_id)
     {
-        $breadcrumbs = '';
+        global $LANG_SHOP;
+
+        $breadcrumbs = '<li>' . COM_createLink(
+                $LANG_SHOP['home'],
+                SHOP_URL
+            ) . '</li>';
         $RootCat = self::getRoot();
         if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
             // A specific subcategory is being viewed
@@ -657,13 +662,11 @@ class Category
                 $breadcrumbs .= "<li>" . COM_createLink(
                     $cat->cat_name,
                     SHOP_URL . '/index.php?category=' . (int)$cat->cat_id
-                ) . '</li>' . LB;
+                ) . '</li>';
             }
         }
-        if ($breadcrumbs != '') {
-            $breadcrumbs = '<ul class="uk-breadcrumb uk-margin-remove">' .
-                $breadcrumbs . '</ul>';
-        }
+        $breadcrumbs = '<ul class="uk-breadcrumb uk-margin-remove">' .
+            $breadcrumbs . '</ul>';
         return $breadcrumbs;
     }
 
