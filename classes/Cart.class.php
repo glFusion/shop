@@ -809,8 +809,8 @@ class Cart extends Order
     {
         // $step == 0 is just to view the cart. Any step beyond 0 goes
         // into the workflow and displays the first incomplete step..
+        $wf = Workflow::getAll($this);
         if ($step > 0) {
-            $wf = Workflow::getAll($this);
             $wf_name = 'checkout';
             $step = 9;
             foreach ($wf as $w) {
@@ -830,22 +830,26 @@ class Cart extends Order
             // This allows subsequent steps to go directly to the checkout
             // page if all other workflows are complete.
             if ($this->uid > 1) {
+                // Determine the minimum value for a workflow to be "reauired"
+                $wf_required = $this->hasPhysical() ? 1 : 3;
                 $U = UserInfo::getInstance($this->uid);
-                if ($this->billto_id == 0) {
+                if (
+                    $this->billto_id == 0 &&
+                    Workflow::getInstance(2)->enabled >= $wf_required
+                ) {
                     $A = $U->getDefaultAddress('billto');
                     if ($A) {
                         $this->setAddress($A, 'billto');
                     }
                 }
-                if ($this->hasPhysical()) {
-                    if ($this->shipto_id == 0) {
-                        $A = $U->getDefaultAddress('shipto');
-                        if ($A) {
-                            $this->setShipping($A);
-                        }
+                if (
+                    $this->shipto_id == 0 &&
+                    Workflow::getInstance(3)->enabled >= $wf_required
+                ) {
+                    $A = $U->getDefaultAddress('shipto');
+                    if ($A) {
+                        $this->setAddress($A, 'shipto');
                     }
-                } else {
-                    $this->setShipping(NULL);
                 }
             }
             // Fall through to the checkout view
