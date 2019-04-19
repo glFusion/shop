@@ -317,7 +317,7 @@ class Report
             'main'  => 'config.thtml',
         ) );
         $period = self::_getSessVar('period');
-        $from_date = self::_getSessVar('from_date', '1970-01-01');
+        $from_date = self::_getSessVar('from_date', '');
         $to_date = self::_getSessVar('to_date', $_CONF['_now']->format('Y-m-d', true));
         $gateway = self::_getSessVar('gateway');
 
@@ -339,14 +339,14 @@ class Report
         ) );
 
         if ($this->filter_uid) {
-            $uid = self::_getSessVar('uid');
+            $uid = self::_getSessVar('uid', 0, 'int');
             $T->set_var(array(
                 'user_select' =>  COM_optionList($_TABLES['users'], 'uid,username', $uid),
             ) );
         }
 
         if ($this->filter_item) {
-            $item_id = self::_getSessVar('item_id');
+            $item_id = self::_getSessVar('item_id', 0, 'int');
             $T->set_var(array(
                 'item_select' => COM_optionList($_TABLES['shop.products'], 'id,name', $item_id),
             ) );
@@ -588,12 +588,26 @@ class Report
      *
      * @param   string  $opt        Option name
      * @#param  mixed   $default    Default value if session var not set
+     * @param   string  $type       Expected data type, default=string
      * @return  string          Option value
      */
-    protected static function _getSessVar($opt, $default=NULL)
+    protected static function _getSessVar($opt, $default=NULL, $type='string')
     {
         $val = SESS_getVar('shop.report.' . $opt);
-        return $val !== NULL ? $val : $default;
+        switch ($type) {
+        case 'string':
+            if (!is_string($val)) $val = (string)$default;
+            break;
+        case 'integer':
+        case 'int':
+            if (!is_int($val)) $val = (int)$default;
+            break;
+        default:
+            if ($val === NULL) $val = $default;
+            break;
+        }
+        return $val;
+        //return $val !== NULL ? $val : $default;
     }
 
 
