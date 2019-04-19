@@ -129,30 +129,30 @@
 {!if is_invoice}
 {!if subtotal}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['item_total']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['item_total']}</td>
           <td class="alignright">{subtotal}</td>
         </tr>
 {!endif}
 {!if cart_tax}
         <tr>
-          <td colspan="3" class="alignright">{tax_on_items}</td>
+          <td colspan="4" class="alignright">{lang_tax_on_items}</td>
           <td class="alignright">{cart_tax}</td>
         </tr>
 {!endif}
 {!if shipping}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}</td>
           <td class="alignright">{shipping}</td>
         </tr>
 {!endif}
 {!if handling}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['handling']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
           <td class="alignright">{handling}</td>
         </tr>
 {!endif}
         <tr>
-          <td colspan="3" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
+          <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
         </tr>
 {!endif}

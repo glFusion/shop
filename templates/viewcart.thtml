@@ -9,11 +9,14 @@
       <tr>
         <th class="aligncenter">{$LANG_SHOP['description']}</th>
         <th style="width:10%" class="aligncenter">{$LANG_SHOP['price']}</th>
-        <th>&nbsp;</th>
         <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
         <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
         <th style="width:5%" class="aligncenter"></th>
-        <th style="width:5%" class="aligncenter"></th>
+        <th style="width:5%;" class="alignleft">
+{!if icon_dscp}
+            <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
+{!endif}
+        </th>
       </tr>
       <!-- BEGIN ItemRow -->
       <tr>
@@ -26,11 +29,6 @@
           {item_options}
         </td>
         <td class="alignright">{item_price}</td>
-        <td>
-{!if price_tooltip}
-          <i class="uk-icon uk-icon-certificate uk-text-warning tooltip" title="{price_tooltip}"></i>
-{!endif}
-        </td>
         <td class="alignright">
 {!if fixed_q}
           <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
@@ -52,26 +50,27 @@
           <a href="{del_item_url}"><i
               class="uk-icon uk-icon-trash uk-text-danger tooltip" title="{$LANG_SHOP['delete']}"></i></a>
         </td>
+        <td class="alignleft">
 {!if taxable}
-        <td class="aligncenter">
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</i>
-        </td>
-{!else}
-        <td></td>
+          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
+{!if discount_tooltip}
+          <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
+{!endif}
+        </td>
       </tr>
       <!-- END ItemRow -->
 {!if subtotal}
       <tr>
-        <td colspan="2" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
-        <td colspan="2" class="alignright"><b>{subtotal}</b></td>
+        <td colspan="3" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
+        <td colspan="1" class="alignright"><b>{subtotal}</b></td>
         <td></td>
       </tr>
 {!endif}
 {!if cart_tax}
       <tr>
-        <td colspan="2" class="alignright">{tax_on_items}</td>
-        <td colspan="2" class="alignright">{cart_tax}</td>
+        <td colspan="3" class="alignright">{lang_tax_on_items}</td>
+        <td colspan="1" class="alignright">{cart_tax}</td>
         <td></td>
       </tr>
 {!endif}
@@ -82,7 +81,7 @@
       </tr>
 {!elseif shipping}
       <tr>
-        <td colspan="2" class="alignright">{$LANG_SHOP['shipping']}
+        <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
 ({ship_method})
 {!endif}
@@ -93,14 +92,14 @@
 {!endif}
 {!if handling}
       <tr>
-        <td colspan="2" class="alignright">{$LANG_SHOP['handling']}</td>
-        <td colspan="2" class="alignright">{handling}</td>
+        <td colspan="3" class="alignright">{$LANG_SHOP['handling']}</td>
+        <td colspan="1" class="alignright">{handling}</td>
         <td></td>
       </tr>
 {!endif}
       <tr>
-        <td colspan="2" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
-        <td colspan="2" class="alignright"><b>
+        <td colspan="3" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
+        <td colspan="1" class="alignright"><b>
 {!if not_final}
             {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
 {!else}

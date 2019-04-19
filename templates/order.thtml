@@ -110,7 +110,7 @@
           <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
           <th style="width:10%" class="alignright">{$LANG_SHOP['quantity']}</th>
           <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
-          <th style="width:5%;" class="aligncenter">
+          <th style="width:5%;padding-left:10px" class="alignleft">
 {!if icon_dscp}
             <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
 {!endif}
@@ -138,33 +138,36 @@
           <td class="alignright">{item_price}</td>
           <td class="alignright">{item_quantity}</td>
           <td class="alignright">{item_total}</td>
-          <td class="aligncenter">
+          <td style="padding-left:10px;" class="alignleft">
 {!if taxable}
             <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+{!endif}
+{!if discount_tooltip}
+          <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
 {!endif}
           </td>
         </tr>
         <!-- END ItemRow -->
         <tr>
-          <td colspan="5">&nbsp;</td>
+          <td colspan="6">&nbsp;</td>
         </tr>
 {!if subtotal}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['item_total']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['item_total']}</td>
           <td class="alignright">{subtotal}</td>
           <td></td>
         </tr>
 {!endif}
 {!if cart_tax}
         <tr>
-          <td colspan="3" class="alignright">{tax_on_items}</td>
+          <td colspan="4" class="alignright">{lang_tax_on_items}</td>
           <td class="alignright">{cart_tax}</td>
           <td></td>
         </tr>
 {!endif}
 {!if shipping}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}
+          <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
 ({ship_method})
 {!endif}
@@ -175,24 +178,24 @@
 {!endif}
 {!if handling}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['handling']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
           <td class="alignright">{handling}</td>
           <td></td>
         </tr>
 {!endif}
         <tr>
-          <td colspan="3" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
+          <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
           <td></td>
         </tr>
 {!if apply_gc}
         <tr>
-          <td colspan="3" class="alignright">{$LANG_SHOP['apply_gc']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['apply_gc']}</td>
           <td class="alignright">-&nbsp;{apply_gc}</td>
           <td></td>
         </tr>
         <tr>
-          <td colspan="3" class="alignright"><b>{$LANG_SHOP['pmt_total']}</b></td>
+          <td colspan="4" class="alignright"><b>{$LANG_SHOP['pmt_total']}</b></td>
           <td class="alignright"><b>{net_total}</b></td>
           <td></td>
         </tr>
