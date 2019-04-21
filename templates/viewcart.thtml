@@ -7,6 +7,11 @@
 
     <table id="shopViewCartTable" class="shopViewCartTable">
       <tr>
+{!if have_images}
+        <th style="width:120px;"></th>
+{!else}
+        <th></th>
+{!endif}
         <th class="aligncenter">{$LANG_SHOP['description']}</th>
         <th style="width:10%" class="aligncenter">{$LANG_SHOP['price']}</th>
         <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
@@ -20,6 +25,7 @@
       </tr>
       <!-- BEGIN ItemRow -->
       <tr>
+        <td>{img_url}</td>
         <td class="alignleft">
 {!if item_link}
           <a href="{item_link}">{item_dscp}</a>
@@ -116,7 +122,7 @@
     <button style="float:none;" type="submit" class="uk-button uk-button-primary" name="update" id="updatebtn">
       <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
     <button style="float:none;" type="reset" class="uk-button uk-button-danger" name="emptycart"
-      onclick="document.location.href='{pi_url}/index.php?emptycart=x';">
+      onclick="document.location.href='{pi_url}/cart.php?empty=x';">
       <i class="uk-icon uk-icon-trash-o"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
     <div class="uk-width-1-1 uk-margin">
       <div class="uk-width-2-3 uk-margin floatleft">
