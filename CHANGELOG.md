@@ -29,3 +29,5 @@ First beta version under the new Shop name.
   * Fix extracting IPN data from Paypal Buy-Now and Donate functions.
   * Add item thumbnail image to order.
   * Original price wasn't updated if attributes were selected for sale items.
+  * Smarter shipping module with better packing.
+  * Validate that products are still available prior to final checkout.

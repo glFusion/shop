@@ -947,6 +947,41 @@ class Cart extends Order
         return md5($str . $this->order_id);
     }
 
+
+    /**
+     * Validate all the items on an order.
+     * Called just prior to final checkout to ensure that all the items are
+     * available.
+     * Removes any unavailable products.
+     *
+     * @return  array   Array of invalid order item names.
+     */
+    public function Validate()
+    {
+        global $LANG_SHOP;
+
+        $invalid = array();     // Holder for product objects
+        $msg = array();         // Message to be displayed
+        foreach ($this->items as $id=>$Item) {
+            $P = $Item->getProduct();
+            if (!$P->isAvailable()) {
+                if (!isset($invalid['removed'])) {
+                    $invalid['removed'] = array();
+                }
+                $this->Remove($id);
+                $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
+                $invalid['removed'][] = $P;
+            }
+        }
+        if (!empty($msg)) {
+            $msg = '<ul><li>' . implode('</li><li>', $msg) . '</li></ul>';
+            $msg = $LANG_SHOP['msg_cart_invalid'] . $msg;
+            COM_setMsg($msg, 'error');
+        }
+        return $invalid;
+    }
+
+
 }   // class Cart
 
 ?>

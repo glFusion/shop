@@ -31,6 +31,7 @@ $view = '';
 $expected = array(
     // Actions
     'update', 'checkout', 'savebillto', 'saveshipto', 'delete',
+    'empty',
     // Views
     'view',
 );
@@ -51,7 +52,6 @@ if ($action == '') {
     COM_setArgNames(array('action', 'id'));
     $action = COM_getArgument('action');
 }
-
 switch ($action) {
 case 'update':
     \Shop\Cart::getInstance()->Update($_POST);
@@ -59,15 +59,30 @@ case 'update':
     break;
 
 case 'delete':
+    // Delete a single item from the cart
     $id = COM_getArgument('id');
     \Shop\Cart::getInstance()->Remove($id);
     COM_refresh(SHOP_URL . '/cart.php');
+    break;
+
+case 'empty':
+    // Remove all items from the cart
+    \Shop\Cart::getInstance()->Clear();
+    COM_setMsg($LANG_SHOP['cart_empty']);
+    echo COM_refresh(SHOP_URL . '/index.php');
     break;
 
 case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
+
+    // Validate the cart items
+    $invalid = $Cart->Validate();
+    if (!empty($invalid)) {
+        COM_refresh(SHOP_URL . '/cart.php');
+    }
+
     $gateway = SHOP_getVar($_POST, 'gateway');
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
