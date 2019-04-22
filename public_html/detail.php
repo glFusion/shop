@@ -54,7 +54,7 @@ if (!empty($id)) {
 }
 if (empty($content)) {
     COM_setMsg($LANG_SHOP['item_not_found']);
-    COM_refresh(SHOP_getUrl());
+    COM_refresh(SHOP_URL);
 }
 if (empty($breadcrumbs)) {
     // Hack to change the link text depending on the return URL
