@@ -569,11 +569,15 @@ div.shopProductSearch {
     font-style: italic;
 }
 table.shopViewCartTable {
-    width: 80%;
+    width: 100%;
 }
 
 .shopViewCartTable a {
     text-decoration: none;
+}
+table.shopViewCartTable tr {
+    vertical-align:top;
+    margin-bottom:10px;
 }
 
 .shopProductCustomText {
