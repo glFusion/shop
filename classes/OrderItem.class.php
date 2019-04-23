@@ -39,7 +39,7 @@ class OrderItem
 
     /**
      * Constructor.
-     * Initializes the array of orderstatus.
+     * Initializes the order item
      *
      * @param   integer $item   OrderItem record ID
      * @uses    self::Load()
@@ -229,7 +229,7 @@ class OrderItem
         // extras is set by __set so it has to be extracted to get at
         // the sub-elements
         $x = $this->extras;
-        $x['special'][$name] = $value;
+        $x['special'][$name] = strip_tags($value);
         $this->extras = $x;
         if ($save) $this->Save();
     }

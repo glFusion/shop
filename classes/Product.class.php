@@ -1668,8 +1668,8 @@ class Product
             foreach ($item->extras['custom'] as $tid=>$val) {
                 if (array_key_exists($tid, $text_names)) {
                     $opts[] = array(
-                        'opt_name'  => htmlspecialchars($text_names[$tid]),
-                        'opt_value' => htmlspecialchars($val),
+                        'opt_name'  => $text_names[$tid],
+                        'opt_value' => $val,
                     );
                 }
             }
@@ -1681,7 +1681,7 @@ class Product
             foreach ($opts as $opt) {
                 $T->set_var(array(
                     'opt_name'  => $opt['opt_name'],
-                    'opt_value' => $opt['opt_value'],
+                    'opt_value' => strip_tags($opt['opt_value']),
                 ) );
                 $T->parse('ORow', 'ItemOptions', true);
             }
