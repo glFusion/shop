@@ -201,7 +201,7 @@ case 'purge_trans':
     if (!$_SHOP_CONF['shop_enabled']) {
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
-        \Shop\Coupon::Purge();
+        \Shop\Products\Coupon::Purge();
         \Shop\Cache::clear();
         COM_setMsg($LANG_SHOP['trans_purged']);
     }
@@ -344,7 +344,7 @@ case 'sendcards':
     $exp = SHOP_getVar($_POST, 'expires', 'string');
     $no_exp = SHOP_getVar($_POST, 'no_exp', 'integer', 0);
     if ($no_exp == 1) {
-        $exp = \Shop\Coupon::MAX_EXP;
+        $exp = \Shop\Products\Coupon::MAX_EXP;
     }
     if (!empty($uids)) {
         $uids = explode('|', $uids);
@@ -364,10 +364,10 @@ case 'sendcards':
     if (empty($uids)) $errs[] = $LANG_SHOP['err_gc_nousers'];
     if (empty($errs)) {
         foreach ($uids as $uid) {
-            $code = \Shop\Coupon::Purchase($amt, $uid, $exp);
+            $code = \Shop\Products\Coupon::Purchase($amt, $uid, $exp);
             $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
             if (!empty($email)) {
-                \Shop\Coupon::Notify($code, $email, $amt, '', $exp);
+                \Shop\Products\Coupon::Notify($code, $email, $amt, '', '', $exp);
             }
         }
         COM_setMsg(count($uids) . ' coupons sent');
@@ -568,7 +568,7 @@ case 'sendcards_form':
         $dt->add(new DateInterval($period));
         $expires = $dt->format('Y-m-d');
     } else {
-        $expires = \Shop\Coupon::MAX_EXP;
+        $expires = \Shop\Products\Coupon::MAX_EXP;
     }
     $tmp = array();
     while ($A = DB_fetchArray($res, false)) {

@@ -1606,7 +1606,7 @@ function plugin_runScheduledTask_shop()
 
     // Handle any expired coupons
     if ($_SHOP_CONF['gc_enabled']) {
-        \Shop\Coupon::Expire();
+        \Shop\Products\Coupon::Expire();
     }
 }
 
@@ -1767,7 +1767,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
         $U = \Shop\UserInfo::getInstance($uid);
         if ($_SHOP_CONF['gc_enabled']) {
-            $gc_bal = \Shop\Coupon::getUserBalance($uid);
+            $gc_bal = \Shop\Products\Coupon::getUserBalance($uid);
             $LT->set_var('gc_bal', \Shop\Currency::getInstance()->Format($gc_bal));
         }
         if (!empty($U->cart)) {
@@ -1810,7 +1810,7 @@ function plugin_profilesave_shop($uid=0)
 
     $apply_gc = SHOP_getVar($_POST, 'pp_apply_gc', 'string');
     if (!empty($apply_gc)) {
-        \Shop\Coupon::Redeem($apply_gc, $uid);
+        \Shop\Products\Coupon::Redeem($apply_gc, $uid);
     }
 }
 

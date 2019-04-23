@@ -14,7 +14,7 @@
 namespace Shop\Gateways;
 
 use Shop\Cart;
-use Shop\Coupon;
+use Shop\Products\Coupon;
 use Shop\Currency;
 
 /**

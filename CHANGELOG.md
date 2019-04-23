@@ -31,3 +31,5 @@ First beta version under the new Shop name.
   * Original price wasn't updated if attributes were selected for sale items.
   * Smarter shipping module with better packing.
   * Validate that products are still available prior to final checkout.
+  * Allow special fields for products other than simple text input.
+  * Put plugin and coupon products in their own namespace

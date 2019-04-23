@@ -3,7 +3,7 @@
  * Class to interface with plugins for product information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.6.0
  * @since       v0.6.0
@@ -11,13 +11,13 @@
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Shop;
+namespace Shop\Products;
 
 /**
  * Class for a plugin-supplied product.
  * @package shop
  */
-class PluginProduct extends Product
+class Plugin extends \Shop\Product
 {
     /** URL to product detail page, if any.
      * @var string */
@@ -47,7 +47,7 @@ class PluginProduct extends Product
         $item = explode('|', $id);  // separate full item ID from option string
         $item_id = $item[0];
         $this->properties = array();
-        $this->currency = Currency::getInstance();
+        $this->currency = \Shop\Currency::getInstance();
         $this->item_id = $item_id;  // Full item id
         $this->id = $item_id;       // TODO: convert Product class to use item_id
         $item_parts = explode(':', $item_id);   // separate the plugin name and item ID
@@ -129,7 +129,7 @@ class PluginProduct extends Product
      */
     public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
     {
-        SHOP_debug('Shop\\PluginProduct::handlePurchase() pi_info: ' . $this->pi_name);
+        SHOP_debug(__NAMESPACE__ . '\\' . __CLASS__ . 'handlePurchase() pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
         // The custom field needs to exist and be an array.
@@ -267,6 +267,6 @@ class PluginProduct extends Product
         return $text;
     }
 
-}   // class PluginProduct
+}   // class Plugin
 
 ?>

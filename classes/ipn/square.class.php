@@ -5,9 +5,9 @@
 *   an actual payment processor.
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner
+*   @copyright  Copyright (c) 2018-2019 Lee Garner
 *   @package    shop
-*   @version    0.6.0
+*   @version    0.7.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
@@ -159,7 +159,7 @@ class square extends \Shop\IPN
         $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
         $total = SHOP_getVar($info, 'final_total', 'float');
         if ($by_gc < $total) return false;
-        if (!Coupon::verifyBalance($by_gc, $this->uid)) {
+        if (!\Shop\Products\Coupon::verifyBalance($by_gc, $this->uid)) {
             return false;
         }
         $this->status = 'paid';

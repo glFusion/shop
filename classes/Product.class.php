@@ -179,7 +179,7 @@ class Product
         $item = explode('|', $id);
         if (self::isPluginItem($item[0])) {
             // Product provided by another plugin
-            return new PluginProduct($item[0], $mods);
+            return new \Shop\Products\Plugin($item[0], $mods);
         } else {
             if (!array_key_exists($id, $P)) {
                 // Product internal to this plugin
@@ -199,7 +199,7 @@ class Product
                     }
                 }
                 if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
-                    $P[$id] = new Coupon($A);
+                    $P[$id] = new \Shop\Products\Coupon($A);
                 } else {
                     $P[$id] = new self($A);
                 }
@@ -758,7 +758,7 @@ class Product
             $_CONF['cookiedomain'],
             $_CONF['cookiesecure'],
             false
-        ); 
+        );
 
         $T = SHOP_getTemplate('product_form', 'product');
         // Set up the wysiwyg editor, if available
@@ -1165,7 +1165,10 @@ class Product
         }
 
         if ($this->getShipping()) {
-            $shipping_txt = sprintf($LANG_SHOP['plus_shipping'], Currency::getInstance()->FormatValue($this->shipping_amt));
+            $shipping_txt = sprintf(
+                $LANG_SHOP['plus_shipping'],
+                Currency::getInstance()->FormatValue($this->shipping_amt)
+            );
         } else {
             $shipping_txt = '';
         }
@@ -1199,6 +1202,7 @@ class Product
                 'sf_text'   => $fld['text'],
                 'sf_class'  => isset($fld['class']) ? $fld['class'] : '',
                 'sf_help'   => $fld['help'],
+                'sf_type'   => isset($fld['type']) ? $fld['type'] : 'textarea',
             ) );
             $T->parse('SF', 'SpecialFields', true);
         }
@@ -1487,6 +1491,11 @@ class Product
         );
         foreach ($opts as $opt_name=>$opt_data) {
             $this->special_fields[$fld_name][$opt_name] = $opt_data;
+        }
+
+        // If not provided in $opts, set the field type
+        if (!array_key_exists('type', $this->special_fields[$fld_name])) {
+            $this->special_fields[$fld_name]['type'] = 'text';
         }
     }
 

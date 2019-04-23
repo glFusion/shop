@@ -12,13 +12,13 @@
  * @filesource
  *
  */
-namespace Shop;
+namespace Shop\Products;
 
 /**
  * Class for coupons.
  * @package shop
  */
-class Coupon extends Product
+class Coupon extends \Shop\Product
 {
     /** Maximum possible expiration date.
      * Used as a default for purchased coupons.
@@ -32,6 +32,8 @@ class Coupon extends Product
      */
     public function __construct($prod_id = 0)
     {
+        global $LANG_SHOP;
+
         parent::__construct($prod_id);
         $this->prod_type == SHOP_PROD_COUPON;
         $this->taxable = 0; // coupons are not taxable
@@ -40,6 +42,7 @@ class Coupon extends Product
         // Relies on $LANG_SHOP for the text prompts
         $this->addSpecialField('recipient_email');
         $this->addSpecialField('sender_name');
+        $this->addSpecialField('gc_message', $LANG_SHOP['message'], array('type'=>'textarea'));
     }
 
 
@@ -215,14 +218,14 @@ class Coupon extends Product
                     redeemer = $uid,
                     redeemed = UNIX_TIMESTAMP()
                     WHERE code = '$code'");
-            Cache::clear('coupons');
+            \Shop\Cache::clear('coupons');
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
                 COM_errorLog("A DB error occurred marking coupon $code as redeemed");
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
-        return array(0, sprintf($LANG_SHOP['coupon_apply_msg0'], Currency::getInstance()->Format($A['amount'])));
+        return array(0, sprintf($LANG_SHOP['coupon_apply_msg0'], \Shop\Currency::getInstance()->Format($A['amount'])));
     }
 
 
@@ -271,7 +274,7 @@ class Coupon extends Product
             DB_query($sql);
             if ($remain == 0) break;
         }
-        Cache::clear('coupons_' . $uid);
+        \Shop\Cache::clear('coupons_' . $uid);
         return $remain;     // Return unapplied balance
     }
 
@@ -293,6 +296,7 @@ class Coupon extends Product
         $special = SHOP_getVar($Item->extras, 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
         $sender_name = SHOP_getVar($special, 'sender_name', 'string');
+        $msg = SHOP_getVar($special, 'message', 'string');
         $uid = $Item->getOrder()->uid;
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
@@ -301,7 +305,7 @@ class Coupon extends Product
         $Item->addSpecial('gc_code', $gc_code);
 
         parent::handlePurchase($Item, $Order);
-        self::Notify($gc_code, $recip_email, $amount, $sender_name);
+        self::Notify($gc_code, $recip_email, $amount, $sender_name, $msg);
         return $status;
     }
 
@@ -315,32 +319,35 @@ class Coupon extends Product
      * @param   string  $sender     Optional sender, from the custom text field
      * @param   string  $exp        Expiration Date
      */
-    public static function Notify($gc_code, $recip, $amount, $sender='', $exp=self::MAX_EXP)
+    public static function Notify($gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP)
     {
         global $_CONF, $LANG_SHOP_EMAIL;
 
-        if ($recip!= '') {
-            SHOP_debug("Sending Coupon to " . $recip);
-            $T = SHOP_getTemplate('coupon_email_message', 'message');
-            if ($exp != self::MAX_EXP) {
-                $dt = new \Date($exp, $_CONF['timezone']);
-                $exp = $dt->format($_CONF['shortdate']);
-            }
-            $T->set_var(array(
-                'gc_code'   => $gc_code,
-                'sender_name' => $sender,
-                'expires'   => $exp,
-                'submit_url' => self::redemptionUrl($gc_code),
-            ) );
-            $T->parse('output', 'message');
-            $msg_text = $T->finish($T->get_var('output'));
-            COM_emailNotification(array(
-                    'to' => array(array('email'=>$recip, 'name' => $recip)),
-                    'from' => $_CONF['site_mail'],
-                    'htmlmessage' => $msg_text,
-                    'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
-            ) );
+        if ($recip == '') {
+            return;
         }
+
+        SHOP_debug("Sending Coupon to " . $recip);
+        $T = SHOP_getTemplate('coupon_email_message', 'message');
+        if ($exp != self::MAX_EXP) {
+            $dt = new \Date($exp, $_CONF['timezone']);
+            $exp = $dt->format($_CONF['shortdate']);
+        }
+        $T->set_var(array(
+            'gc_code'   => $gc_code,
+            'sender_name' => $sender,
+            'expires'   => $exp,
+            'submit_url' => self::redemptionUrl($gc_code),
+            'message'   => strip_tags($msg),
+        ) );
+        $T->parse('output', 'message');
+        $msg_text = $T->finish($T->get_var('output'));
+        COM_emailNotification(array(
+                'to' => array(array('email'=>$recip, 'name' => $recip)),
+                'from' => $_CONF['site_mail'],
+                'htmlmessage' => $msg_text,
+                'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
+        ) );
     }
 
 
@@ -386,7 +393,7 @@ class Coupon extends Product
         if ($price == 0) {
             return $LANG_SHOP['see_details'];
         } else {
-            return Currency::getInstance()->Format($price);
+            return \Shop\Currency::getInstance()->Format($price);
         }
     }
 
@@ -411,7 +418,7 @@ class Coupon extends Product
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
-        $coupons = Cache::get($cache_key);
+        $coupons = \Shop\Cache::get($cache_key);
         $today = date('Y-m-d');
         if ($coupons === NULL) {
             // cache not found, read all non-expired coupons
@@ -440,7 +447,7 @@ class Coupon extends Product
         // If coupons were read from the DB, or any cached ones expired,
         // update the cache
         if ($updatecache) {
-            Cache::set(
+            \Shop\Cache::set(
                 $cache_key,
                 $coupons,
                 array('coupons', 'coupons_' . $uid),
@@ -644,7 +651,7 @@ class Coupon extends Product
         }
         if (count($A) > 0) {
             // If there were any updates, clear the coupon cache
-            Cache::clear('coupons');
+            \Shop\Cache::clear('coupons');
         }
     }
 

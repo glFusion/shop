@@ -60,7 +60,12 @@
 {!endif} 
         </label>
         <div class="uk-form-controls">
-          <input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
+{!!if {sf_type} == "textarea" !!}
+          <textarea name="extras[special][{sf_name}]" id="{sf_name}"
+            style="width:100%;height:100px;"></textarea>
+{!else}
+           <input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
+{!endif}
         </div>
       </div>
 <!-- END SpecialFields -->

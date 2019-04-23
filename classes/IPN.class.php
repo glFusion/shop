@@ -416,7 +416,7 @@ class IPN
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
             $this->Order->by_gc = $by_gc;
-            Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
+            \Shop\Products\Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
@@ -802,10 +802,10 @@ class IPN
             $credit = (float)$this->credits[$key];
             switch ($key) {
             case 'gc':
-                if (Coupon::verifyBalance($by_gc, $this->uid)) {
+                if (\Shop\Products\Coupon::verifyBalance($by_gc, $this->uid)) {
                     $retval[$key] = $credit;
                 } else {
-                    $gc_bal = Coupon::getUserBalance($this->uid);
+                    $gc_bal = \Shop\Products\Coupon::getUserBalance($this->uid);
                     COM_errorLog("Insufficient Gift Card Balance, need $by_gc, have $gc_bal");
                     $retval[$key] = 0;
                 }

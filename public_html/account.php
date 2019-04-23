@@ -62,9 +62,9 @@ case 'couponlog':
     }
     $content .= \Shop\Menu::User($mode);
     $content .= '<p>';
-    $gc_bal = \Shop\Coupon::getUserBalance();
+    $gc_bal = \Shop\Products\Coupon::getUserBalance();
     $content .= $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal);
-    $url = \Shop\Coupon::redemptionUrl();
+    $url = \Shop\Products\Coupon::redemptionUrl();
     $content .= '&nbsp;&nbsp;' . COM_createLink(
         $LANG_SHOP['add_gc'],
         $url,
@@ -90,7 +90,7 @@ case 'redeem':
     // the apply_gc form
     $code = SHOP_getVar($_POST, 'code');
     $uid = $_USER['uid'];
-    list($status, $msg) = \Shop\Coupon::Redeem($code, $uid);
+    list($status, $msg) = \Shop\Products\Coupon::Redeem($code, $uid);
     if ($status > 0) {
         $persist = true;
         $type = 'error';

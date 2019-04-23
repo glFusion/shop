@@ -333,6 +333,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     $uids = SHOP_getVar($args, 'members', 'array');
     $gid = SHOP_getVar($args, 'group_id', 'int');
     $exp = SHOP_getVar($args, 'expires', 'string');
+    $msg = SHOP_getVar($args, 'message', 'string');
     $notify = SHOP_getVar($args, 'notify', 'boolean');
     if (is_numeric($exp)) {
         $exp = (int)$exp;
@@ -350,15 +351,15 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     if ($amt < .01) return PLG_RET_ERROR;
     if (empty($uids)) return PLG_RET_ERROR;
     foreach ($uids as $uid) {
-        $code = \Shop\Coupon::Purchase($amt, $uid, $exp);
+        $code = \Shop\Products\Coupon::Purchase($amt, $uid, $exp);
         $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
         $output[$uid] = array(
             'code' => $code,
             'email' => $email,
-            'link' => \Shop\Coupon::redemptionUrl($code),
+            'link' => \Shop\Products\Coupon::redemptionUrl($code),
         );
         if ($notify && !empty($email)) {
-            \Shop\Coupon::Notify($code, $email, $amt, '', $exp);
+            \Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp);
         }
     }
     return PLG_RET_OK;

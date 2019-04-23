@@ -117,7 +117,7 @@ class internal extends \Shop\IPN
         case '_coupon':
             // Order total must be zero to use the coupon gateway in full
             if (is_null($by_gc)) {
-                $by_gc = Coupon::getUserBalance($uid);
+                $by_gc = \Shop\Products\Coupon::getUserBalance($uid);
             }
             if ($by_gc < $total) return false;
             // This only handles fully-paid items

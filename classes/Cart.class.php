@@ -310,7 +310,7 @@ class Cart extends Order
         if ($_SHOP_CONF['gc_enabled']) {
             $gc = SHOP_getVar($A, 'gc_code');
             if (!empty($gc)) {
-                if (Coupon::Redeem($gc) == 0) {
+                if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
                 }
             }
@@ -493,7 +493,7 @@ class Cart extends Order
             if ($_SHOP_CONF['gc_enabled']) {
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
-            $gc_bal = $_SHOP_CONF['gc_enabled'] ? Coupon::getUserBalance() : 0;
+            $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
             if (empty($gateways)) return NULL;  // no available gateways
             if (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
                 // Select the previously selected gateway

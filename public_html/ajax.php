@@ -100,7 +100,7 @@ case 'redeem_gc':
     } else {
         $code = SHOP_getVar($_POST, 'gc_code');
         $uid = $_USER['uid'];
-        list($status, $status_msg) = \Shop\Coupon::Redeem($code, $uid);
+        list($status, $status_msg) = \Shop\Products\Coupon::Redeem($code, $uid);
         $gw = \Shop\Gateway::getInstance('_coupon');
         $gw_radio = $gw->checkoutRadio($status == 0 ? true : false);
         $A = array (
