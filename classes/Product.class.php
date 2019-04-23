@@ -883,7 +883,7 @@ class Product
         $i = 0;     // initialize $i in case there are no images
         foreach ($this->Images as $i=>$prow) {
             $T->set_var(array(
-                'img_url'   => SHOP_URL . "/images/products/{$prow['filename']}",
+                'img_url'   => SHOP_ImageUrl($prow['filename'], 800, 600),
                 'thumb_url' => SHOP_ImageUrl($prow['filename']),
                 'seq_no'    => $i,
                 'del_img_url' => SHOP_ADMIN_URL . '/index.php' .
@@ -1041,8 +1041,10 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = SHOP_getTemplate('product_detail_attrib', 'product',
-                'detail/' . $_SHOP_CONF['product_tpl_ver']);
+        $T = SHOP_getTemplate(
+            'product_detail_attrib', 'product',
+            'detail/' . $_SHOP_CONF['product_tpl_ver']
+        );
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
 
@@ -1089,14 +1091,10 @@ class Product
                 $T->set_block('product', 'Thumbnail', 'PBlock');
                 $T->set_var(array(
                     'img_file'      => $prow['filename'],
-                    'disp_img'      => SHOP_ImageUrl($prow['filename'], 0, 0),
-                    'lg_img'        => SHOP_URL.'/images/products/'.$prow['filename'],
-                    'img_url'       => SHOP_URL.'/images/products',
+                    'img_url'       => SHOP_ImageUrl($prow['filename'], 800, 600),
                     'thumb_url'     => SHOP_ImageUrl($prow['filename']),
                     'session_id'    => session_id(),
-                    'small_imgfile' => $prow['filename'],
                 ) );
-
                 $T->parse('PBlock', 'Thumbnail', true);
             }
         }
@@ -1653,11 +1651,13 @@ class Product
 
         // Get text fields defined with the product
         $text_names = explode('|', $this->custom);
-        if (!empty($text_names) &&
-                isset($item->extras['custom']) &&
-                is_array($item->extras['custom'])) {
+        if (
+            !empty($text_names) &&
+            isset($item->extras['custom']) &&
+            is_array($item->extras['custom'])
+        ) {
             foreach ($item->extras['custom'] as $tid=>$val) {
-                if (isset($text_names[$tid])) {
+                if (array_key_exists($tid, $text_names)) {
                     $opts[] = array(
                         'opt_name'  => htmlspecialchars($text_names[$tid]),
                         'opt_value' => htmlspecialchars($val),
@@ -1933,6 +1933,10 @@ class Product
     {
         if ($isadmin) return true;  // Admin can always view
 
+        if (!$this->enabled) {
+            return false;
+        }
+
         $today = SHOP_now()->format('Y-m-d', true);
         if ($today < $this->avail_beg || $today > $this->avail_end) {
             return false;
@@ -1950,7 +1954,7 @@ class Product
      */
     public function isTaxable()
     {
-        return $this->taxable && SHOP_getTaxRate() > 0;
+        return $this->taxable && (SHOP_getTaxRate() > 0);
     }
 
 

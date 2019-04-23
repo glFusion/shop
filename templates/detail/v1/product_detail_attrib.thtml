@@ -95,15 +95,15 @@
     <div class="shopProductThumbWrapper v1">
       <!-- BEGIN Thumbnail -->
       <div class="shopProductThumb v1">
-      {!if thumb_url}
-        <a href="{img_url}/{img_file}" data-uk-lightbox="{group:'product'}">
+ {!if thumb_url}
+        <a href="{img_url}" data-uk-lightbox="{group:'product'}">
           <img src="{thumb_url}"
               style="border:0;"
               alt="{$LANG_SHOP[click_to_enlarge]}"
               title="{$LANG_SHOP[click_to_enlarge]}"
               data-uk-tooltip />
         </a>
-        {!endif}
+ {!endif}
       </div>
       <!-- END Thumbnail -->
     </div>
