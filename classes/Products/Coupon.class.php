@@ -687,6 +687,33 @@ class Coupon extends \Shop\Product
     }
 
 
+    /**
+     * Get the text string and value for special fields.
+     * Used when displaying cart info.
+     * Overrides parent function to exclude the custom message field.
+     *
+     * @param   array   $values     Special field values
+     * @return  array       Array of text=>value
+     */
+    public function getSpecialFields($values = array())
+    {
+        global $LANG_SHOP;
+
+        $retval = array();
+        if (empty($values)) {
+            return $retval;
+        }
+        foreach ($this->special_fields as $fld_name=>$fld) {
+            if ($fld_name == 'gc_message') {
+                continue;
+            }
+            if (array_key_exists($fld_name, $values) && !empty($values[$fld_name])) {
+                $retval[$fld['text']] = $values[$fld_name];
+            }
+        }
+        return $retval;
+    }
+
 }
 
 ?>
