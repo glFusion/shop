@@ -63,7 +63,7 @@ class Report
     /**
      * Allowed order statuses to show in the config form.
      * @var array */
-    protected $allowed_status = array();
+    protected $allowed_statuses = array();
 
     /**
      * Array of status selection info
@@ -136,7 +136,8 @@ class Report
         }
 
         $this->setType(SHOP_getVar($get, 'out_type', 'string', $this->type));
-        self::_setSessVar('orderstatus', SHOP_getVar($get, 'orderstatus', 'array'));
+        $this->allowed_statuses = SHOP_getVar($get, 'orderstatus', 'array');
+        self::_setSessVar('orderstatus', $this->allowed_statuses);
         $this->setUid(SHOP_getVar($get, 'uid', 'integer'));
         $period = SHOP_getVar($get, 'period');
         $from = SHOP_getVar($get, 'from_date');

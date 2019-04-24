@@ -123,13 +123,13 @@ class orderlist extends \Shop\Report
             FROM {$_TABLES['shop.orders']} ord
             LEFT JOIN {$_TABLES['shop.orderitems']} itm
                 ON itm.order_id = ord.order_id";
-
-        $orderstatus = self::_getSessVar('orderstatus');
+        $orderstatus = $this->allowed_statuses;
+        if (empty($orderstatus)) {
+            $orderstatus = self::_getSessVar('orderstatus');
+        }
         if (!empty($orderstatus)) {
             $status_sql = "'" . implode("','", $orderstatus) . "'";
             $status_sql = " ord.status in ($status_sql) AND ";
-        } else {
-            $status_sql = '';
         }
 
         $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
