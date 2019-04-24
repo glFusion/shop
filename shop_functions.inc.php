@@ -154,7 +154,6 @@ function ProductList($cat_id = 0)
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id
             WHERE p.enabled=1
-            AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
             AND (
                 (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
                 OR c.enabled IS NULL
@@ -163,6 +162,7 @@ function ProductList($cat_id = 0)
                 p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
                 ) $cat_sql";
 
+            //AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
     $search = '';
     // Add search query, if any
     if (isset($_REQUEST['query']) && !empty($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
@@ -267,13 +267,13 @@ function ProductList($cat_id = 0)
     $T->set_block('wrapper', 'ProductItems', 'PI');
     foreach ($Products as $P) {
         // Don't display products if the viewer doesn't have access
-        if (!$P->hasAccess()) {
+        if (!$P->isAvailable()) {
             continue;
         }
 
         $prodrows++;
 
-        if ( @in_array($P->id, $ratedIds)) {
+        if ( @in_array($P->id, $SHOP_ratedIds)) {
             $static = true;
             $voted = 1;
         } else {
