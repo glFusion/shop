@@ -19,6 +19,8 @@ namespace Shop;
  */
 class Shipper
 {
+    const MIN_UNITS = .0001;
+
     /** Base tag used for caching.
      * @var string */
     static $base_tag = 'shipping';
@@ -65,7 +67,6 @@ class Shipper
                     'rate'  => 5,
                 ),
             );
-            $this->best_rate = 0;
         }
     }
 
@@ -119,7 +120,7 @@ class Shipper
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateDscp'] as $id=>$txt) {
-                if (!empty($txt) && !empty($A['rateUnits'][$id]) && !empty($A['rateRate'][$id])) {
+                if (!empty($txt)) {
                     $rates[] = array(
                         'dscp' => $txt,
                         'units' => (float)$A['rateUnits'][$id],
@@ -166,35 +167,39 @@ class Shipper
 
 
     /**
-     * Get all the shippers and rates for shippers that can handle X units.
+     * Get all the shippers that can handle a number of units.
      *
      * @param   float   $units      Number of units being shipped
-     * @return  array               Array of shipper objects
+     * @return  array               Array of shipper objects, including rates
      */
-    public static function getShippers($units=0)
+    public static function getShippers($units=0, $ignore_limits=false)
     {
         $rates = array();
         if ($units == 0) return $rates;     // no shipping, return empty
 
         $shippers = self::getAll();
         $shipper = new \stdClass();
-        $shipper->best_rate = 0;
-        foreach ($shippers as $s_id=>$shipper) {
+        foreach ($shippers as $s_id=>&$shipper) {
             if (
-                $units < $shipper->min_units ||
-                ($shipper->max_units > 0 && $units > $shipper->max_units)
+                !$ignore_limits &&
+                (
+                    $units < $shipper->min_units ||
+                    ($shipper->max_units > 0 && $units > $shipper->max_units)
+                )
             ) {
                 // Skip shippers that don't handle this number of units
                 continue;
             } else {
-                $shipper->best_rate = 1000000;  // crazy high amount to start, then work down
+                $shipper->ordershipping = new \stdClass;
+                $shipper->ordershipping->packages = 0;  // not used here
+                $shipper->ordershipping->total_rate = 1000000;
                 foreach ($shipper->rates as $r_id=>$rate) {
                     // Calculate the shipping cost for this shipper
                     $ship_cost = $rate->rate * ceil($units / $rate->units);
                     // If the new cost is lower than the current best rate,
                     // then we found a new best rate.
-                    if ($shipper->best_rate > $ship_cost) {
-                        $shipper->best_rate = $shop_cost;
+                    if ($shipper->ordershipping->total_rate > $ship_cost) {
+                        $shipper->ordershipping->total_rate = $ship_cost;
                     }
                 }
                 $rates[$s_id] = $shipper;
@@ -206,17 +211,25 @@ class Shipper
 
     /**
      * Get the single best shipper for a number of units.
+     * If `$ignore_limits` is false then shippers that cannot handle the
+     * number of units will be ignored. If true, then shippers will be included
+     * even if they cannot ship the number of units.
      *
      * @param   integer $units      Number of units being shipped
+     * @param   boolean $ignore_limits  True to ignore min and max unit limits
      * @return  object      Shipper object for the shipper with the lowest rate
      */
-    public static function getBestRate($units)
+    public static function getBestRate($units, $ignore_limits=false)
     {
-        $shippers = self::getShippers($units);
+        $shippers = self::getShippers($units, $ignore_limits);
         $best = NULL;
         foreach ($shippers as $shipper) {
-            if ($best === NULL || ($shipper->best_rate !== NULL && $shipper->best_rate < $best->best_rate)) {
+            if (
+                $best === NULL ||
+                $shipper->ordershipping->total_rate < $best->ordershipping->total_rate
+            ) {
                 $best = $shipper;
+                $best->ordershipping->total_rate = $shipper->ordershipping->total_rate;
             }
         }
         if ($best === NULL) {
@@ -228,17 +241,195 @@ class Shipper
 
 
     /**
-     * Calculate the best fit for items/packages.
-     * Not currently used.
+     * Get all the shippers that can ship an order sorted by the total charge.
+     * The shipper objects have an additional variable `ordershipping` added
+     * which contains the total charge and the packages required.
+     * If no qualified shippers are found, then only the total charge is
+     * included and the package count is set to zero.
      *
-     * @param   object  $shipper    Shipper to use
-     * @param   float   $units      Total units being shipped
+     * @param   object  $Order  Order being shipped
+     * @return  array       Array of shipper objects, with rates and packages
+     */
+    public static function getShippersForOrder($Order)
+    {
+        $cache_key = 'shipping_order_' . $Order->order_id;
+        $shippers = Cache::get($cache_key);
+        if (is_array($shippers)) {
+            return $shippers;
+        }
+
+        // Get all the order items into a simple array where they can be
+        // ordered by unit count and marked when packed.
+        // This is then passed to calcBestFit() so it doesn't have to be
+        // done multiple times.
+        $total_units = 0;
+        $fixed_shipping = 0;
+        $items = array();
+        foreach ($Order->getItems() as $id=>$Item) {
+            $P = $Item->getProduct();
+            $single_units = $P->shipping_units;
+            $item_units = $single_units * $Item->quantity;
+            $fixed_shipping += $P->getShipping($Item->quantity);
+            $total_units += $item_units;
+            for ($i = 0; $i < $Item->quantity; $i++) {
+                $items[] = array(
+                    'orderitem_id' => $id,
+                    'item_name'     => $Item->description,
+                    'single_units' => $single_units,
+                    'packed'    => false,
+                );
+            }
+        }
+        // Sort items by shipping units, then reverse so larger items are
+        // handled first
+        usort($items, function($a, $b) {
+            return $a['single_units'] <=> $b['single_units'];
+        });
+        $items = array_reverse($items);
+
+        $shippers = self::getShippers($total_units);
+        foreach ($shippers as $id=>&$shipper) {
+            $shipper->calcBestFit($items, $total_units);
+            if ($shipper->ordershipping->total_rate === NULL) {
+                unset($shippers[$id]);
+            }
+            $shipper->ordershipping->total_rate += $fixed_shipping;
+        }
+
+        // Check if at least one qualified shipper was obtainec.
+        // If not, then get the best shipping rate from all shippers, ignoring
+        // the max_units restriction. This is so there will be some shipping
+        // charge shown.
+        $active_shippers = count($shippers);
+        if ($active_shippers > 0) {
+            usort($shippers, function($a, $b) {
+                return $a->ordershipping->total_rate <=> $b->ordershipping->total_rate;
+            });
+        } else {
+            $shipper = self::getBestRate($Order->totalShippingUnits(), true);
+            $shipper->ordershipping->total_rate += $fixed_shipping;
+            if (!$shipper->isNew) {
+                $shippers = array($shipper);
+            } else {
+                // Last resort, create a dummy shipper using the total fixed
+                // shipping charge.
+                $shipper = new self(array(
+                    0, 1, $LANG_SHOP['shipping'], array()
+                ));
+                $shipper->ordershipping = new \stdClass;
+                $shipper->ordershipping->total_rate = $fixed_shipping;
+                $shipper->ordershipping->packages = 0;
+            }
+            $shippers = array($shipper);
+        }
+
+        // Cache the shippers for a short time.
+        // The cache is also cleared whenever a shipper or the order is updated.
+        //Cache::set($cache_key, $shippers, array('orders', self::$base_tag), 30);
+        return $shippers;
+    }
+
+
+    /**
+     * Calculate the best fit for items/packages for this shipper.
+     *
+     * @param   array   $items  Array of items containing basic shipping info
+     * @param   float   $total_units    Total number of shipping units
      * @return  float       Shipping amount
      */
-    public static function calcBestFit($shipper, $units)
+    public function calcBestFit($items, $total_units)
     {
-        //var_dump($shipper->rates);die;
-        return 15;
+        global $_LANG_SHOP;
+
+        $this->ordershipping = new \stdClass;
+        $this->ordershipping->total_rate = NULL;
+        $this->ordershippping->packages = array();
+
+        // Get the package types into an array to track how much space is used
+        // as items are packed.
+        // This should already be in ascending order by the unit count.
+        // Don't bother with larger packages once a package is found that will
+        // accomodate the entire shipment.
+        $types = array();
+        foreach ($this->rates as $type) {
+            $types[] = array(
+                'dscp' => $type->dscp,
+                'max_units' => $type->units,
+                'units_left' => $type->units,
+                'rate' => $type->rate,
+            );
+            if ($type->units >= $total_units) {
+                // If a single package will handle the entire order, then
+                // there's no need to iterate through all the items.
+                $this->ordershipping->packages[] = array(
+                    'type' => $type->dscp,
+                    'items' => array($LANG_SHOP['all']),
+                    'units' => $total_units,
+                    'units_left' => $type->units - $total_units,
+                    'rate' => $type->rate,
+                );
+                $this->ordershipping->total_rate = $type->rate;
+                return;
+            }
+        }
+
+        // Figure out the packages that will be needed. Start with the largest item,
+        $packages = array();
+        $total_rate = 0;
+        $units_left = $total_units;
+        foreach ($items as &$item) {
+            // First check to see if this item can be added to an existing package.
+            foreach ($packages as &$pkg) {
+                //echo "Checking {$pkg['units_left']} against item {$item['single_units']}\n";
+                if ($pkg['units_left'] >= $item['single_units']) {
+                    // can add more of this item to the package.
+                    $pkg['items'][] = $item['item_name'];
+                    $pkg['units'] += $item['single_units'];
+                    $pkg['units_left'] -= $item['single_units'];
+                    $item['packed'] = true;
+                    break;
+                }
+            }
+            unset($pkg);    // clear last value set in the loop
+
+            // Couldn't fit in an existing package, create a new package.
+            // Start with the largest package size, but then check to see if
+            // the next-largest size is sufficient to handle the rest of the
+            // shipment.
+            if (!$item['packed']) {
+                for ($i = count($types)-1; $i >= 0; $i--) {
+                    $type = $types[$i];
+                    if ($i > 0 && $types[$i-1]['max_units'] >= $units_left) {
+                        // get a smaller package if it can handle the rest of the shipment.
+                        //echo "skipping from {$type['dscp']} to {$nexttype['dscp']}\n";
+                        continue;
+                    }
+                    // Check that the item will fit. If not, there's a problem.
+                    if ($item['single_units'] <= $type['max_units']) {
+                        $packages[] = array(
+                            'type' => $type['dscp'],
+                            'items' => array($item['item_name']),
+                            'units' => $item['single_units'],
+                            'units_left' => $type['max_units'] - $item['single_units'],
+                            'rate' => $type['rate'],
+                        );
+                        $item['packed'] = true;
+                        $total_rate += $type['rate'];
+                        //echo "Created new package for " . $item['orderitem_id'] . "\n";
+                        break;
+                    }
+                }
+            }
+            if ($item['packed'] !== true) {
+                COM_errorLog("SHOP: Error packing " . print_r($item,true));
+                break;
+            } else {
+                $units_left -= $item['single_units'];
+            }
+        }
+        $this->ordershipping->total_rate = $total_rate;
+        $this->ordershipping->packages = $packages;
+        return;
     }
 
 
@@ -264,14 +455,17 @@ class Shipper
             break;
 
         case 'min_units':
-            if ($value == 0) $value = .0001;
+            if ($value == 0) $value = self::MIN_UNITS;
         case 'max_units':
-        case 'best_rate':
             $this->properties[$var] = (float)$value;
             break;
 
         case 'enabled':
             $this->properties[$var] = $value == 0 ? 0 : 1;
+            break;
+
+        case 'ordershipping':
+            $this->properties[$var] = $value;
             break;
 
         default:
@@ -332,6 +526,7 @@ class Shipper
         $err = DB_error();
         if ($err == '') {
             Cache::clear(self::$base_tag);
+            Cache::clear('shippers');
             return true;
         } else {
             return false;
@@ -376,7 +571,7 @@ class Shipper
             'action_url'    => SHOP_ADMIN_URL,
             'doc_url'       => SHOP_getDocURL('shipping_form',
                                             $_CONF['language']),
-            'min_units'     => $this->min_units,
+            'min_units'     => $this->min_units == self::MIN_UNITS ? 0 : $this->min_units,
             'max_units'     => $this->max_units,
             'ena_sel'       => $this->enabled ? 'checked="checked"' : '',
         ) );
@@ -426,22 +621,19 @@ class Shipper
     }
 
 
-    /**
-     * Shortcut function to see if there are any enabled shippers.
-     * If the units param is omitted, all enabled shippers are checked,
-     * otherwise only those that can handle the units are checked.
-     *
-     * @param   float   $units      Units being shipped, if any
-     * @return  boolean     True if there is at least one shipper.
-     */
-    public static function haveShippers($units = -1)
+    public function XgetMaxPkgUnits()
     {
-        if ($units < 0) {
-            return count(self::getAll()) > 0 ? true : false;
-        } else {
-            return count(self::gertShippers($units)) > 0 ? true : false;
+        $units = 0;
+        $retval = NULL;
+        foreach ($this->rates as $id=>$pkg) {
+            if ($pkg->units > $units) {
+                $units = $pkg->units;
+                $retval = $pkg;
+            }
         }
+        return $retval;
     }
+
 
 }   // class Shipper
 

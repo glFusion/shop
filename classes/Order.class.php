@@ -31,8 +31,10 @@ class Order
     private $properties = array();
 
     /** Flag to indicate that this order has been finalized.
+     * This is not related to the order status, but only to the current view
+     * in the workflow.
      * @var boolean */
-    private $is_final = false;
+    private $isFinalView = false;
 
     /** Flag to indicate that this is a new record.
      * @var boolean */
@@ -257,7 +259,12 @@ class Order
      */
     public function setBilling($A)
     {
+        global $_TABLES;
+
         $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
+        if ($addr_id == 0) {
+            $addr_id = SHOP_getVar($A, 'id', 'integer', 0);
+        }
         if ($addr_id > 0) {
             // If set, the user has selected an existing address. Read
             // that value and use it's values.
@@ -275,7 +282,19 @@ class Order
             $this->billto_country   = SHOP_getVar($A, 'country');
             $this->billto_zip       = SHOP_getVar($A, 'zip');
         }
-        $this->Save();
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            billto_id   = '{$this->shipto_id}',
+            billto_name = '" . DB_escapeString($this->billto_name) . "',
+            billto_company = '" . DB_escapeString($this->billto_company) . "',
+            billto_address1 = '" . DB_escapeString($this->billto_address1) . "',
+            billto_address2 = '" . DB_escapeString($this->billto_address2) . "',
+            billto_city = '" . DB_escapeString($this->billto_city) . "',
+            billto_state = '" . DB_escapeString($this->billto_state) . "',
+            billto_country = '" . DB_escapeString($this->billto_country) . "',
+            billto_zip = '" . DB_escapeString($this->billto_zip) . "'";
+        DB_query($sql);
+        //Cache::deleteOrder($this->order_id);
+        Cache::delete('order_' . $order_id);
     }
 
 
@@ -286,6 +305,8 @@ class Order
      */
     public function setShipping($A)
     {
+        global $_TABLES;
+
         if ($A === NULL) {
             // Clear out the shipping address
             $this->shipto_id        = 0;
@@ -298,12 +319,14 @@ class Order
             $this->shipto_country   = '';
             $this->shipto_zip       = '';
         } elseif (is_array($A)) {
-             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
+            $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
+            if ($addr_id == 0) {
+                $addr_id = SHOP_getVar($A, 'id', 'integer', 0);
+            }
             if ($addr_id > 0) {
                 // If set, read and use an existing address
                 Cart::setSession('shipping', $addr_id);
             }
-
             if (!empty($A)) {
                 $this->shipto_id        = $addr_id;
                 $this->shipto_name      = SHOP_getVar($A, 'name');
@@ -316,7 +339,19 @@ class Order
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
             }
         }
-        $this->Save();
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            shipto_id   = '{$this->shipto_id}',
+            shipto_name = '" . DB_escapeString($this->shipto_name) . "',
+            shipto_company = '" . DB_escapeString($this->shipto_company) . "',
+            shipto_address1 = '" . DB_escapeString($this->shipto_address1) . "',
+            shipto_address2 = '" . DB_escapeString($this->shipto_address2) . "',
+            shipto_city = '" . DB_escapeString($this->shipto_city) . "',
+            shipto_state = '" . DB_escapeString($this->shipto_state) . "',
+            shipto_country = '" . DB_escapeString($this->shipto_country) . "',
+            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'";
+        DB_query($sql);
+        //Cache::deleteOrder($this->order_id);
+        Cache::delete('order_' . $order_id);
     }
 
 
@@ -502,14 +537,14 @@ class Order
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
-        $this->is_final = false;
+        $this->isFinalView = false;
         $is_invoice = true;    // normal view/printing view
         $icon_tooltips = array();
 
         switch ($view) {
         case 'order':
         case 'adminview';
-            $this->is_final = true;
+            $this->isFinalView = true;
         case 'checkout':
             $tplname = 'order';
             break;
@@ -521,7 +556,7 @@ class Order
             $is_invoice = false;
         case 'print':
         case 'printorder':
-            $this->is_final = true;
+            $this->isFinalView = true;
             $tplname = 'order.print';
             break;
         }
@@ -555,7 +590,7 @@ class Order
                 $img_filename = $P->getOneImage();
                 if (!empty($img_filename)) {
                     $img_url = COM_createImage(
-                        SHOP_ImageUrl($P->Images[0]['filename'], 100, 100)
+                        SHOP_ImageUrl($img_filename, 100, 100)
                     );
                     $T->set_var('img_url', $img_url);
                     $have_images = true;
@@ -570,6 +605,7 @@ class Order
                 );
             }
             if ($item_qty[$item->product_id]['discount'] > 0) {
+                $discount_items ++;
                 $price_tooltip = sprintf(
                     $LANG_SHOP['reflects_disc'],
                     $item_qty[$item->product_id]['discount']
@@ -579,7 +615,7 @@ class Order
             }
             $item_total = $item->price * $item->quantity;
             $this->subtotal += $item_total;
-            if ($item->taxable) {
+            if ($P->taxable) {
                 $this->tax_items++;       // count the taxable items for display
             }
             $T->set_var(array(
@@ -594,6 +630,8 @@ class Order
                 'is_file'       => $item->canDownload() ? true : false,
                 'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
+                'discount_icon' => 'D',
+                'discount_tooltip' => $price_tooltip,
                 'token'         => $item->token,
                 'item_options'  => $P->getOptionDisplay($item),
                 'item_link'     => $P->getLink(),
@@ -610,24 +648,29 @@ class Order
             $T->clear_var('iOpts');
         }
 
+        if ($discount_items > 0) {
+            $icon_tooltips[] = $LANG_SHOP['discount'][0] . ' = Includes discount';
+        }
         if ($this->tax_items > 0) {
             $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
         }
         $this->total = $this->getTotal();     // also calls calcTax()
-
         $icon_tooltips = implode('<br />', $icon_tooltips);
-
         $by_gc = (float)$this->getInfo('apply_gc');
+
+        // Needed to get shipper ID into m_info array if not already there
+        $shipper_select = $this->selectShipper();
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
+            'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
             'total'         => $Currency->Format($this->total),
-            'not_final'     => !$this->is_final,
+            'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number' => $this->order_id,
-            'shipping'      => $this->shipping > 0 ? $Currency->FormatValue($this->shipping) : 0,
+            'shipping'      => $this->getInfo('shipper_id') !== NULL ? $Currency->FormatValue($this->shipping) : 0,
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
             'order_instr'   => htmlspecialchars($this->instructions),
@@ -637,14 +680,13 @@ class Order
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'tax_on_items'  => sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items),
+            'lang_tax_on_items'  => sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items),
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
             'next_step'     => $step + 1,
             'not_anon'      => !COM_isAnonUser(),
             'ship_method'   => $this->getInfo('shipper_name'),
-            'ship_select'   => $this->is_final ? NULL : $this->selectShipper(),
             'total_prefix'  => $Currency->Pre(),
             'total_postfix' => $Currency->Post(),
             'total_num'     => $Currency->FormatValue($this->total),
@@ -659,6 +701,7 @@ class Order
             'linkPackingList' => self::linkPackingList($this->order_id),
             'linkPrint'     => self::linkPrint($this->order_id),
         ) );
+
         if ($this->isAdmin) {
             $T->set_var(array(
                 'is_admin'      => true,
@@ -1038,7 +1081,7 @@ class Order
         }
 
         // Show the remaining gift card balance, if any.
-        $gc_bal = Coupon::getUserBalance($this->uid);
+        $gc_bal = \Shop\Products\Coupon::getUserBalance($this->uid);
         if ($gc_bal > 0) {
             $T->set_var(array(
                 'gc_bal_fmt' => $Cur->Format($gc_bal),
@@ -1157,31 +1200,23 @@ class Order
      */
     public function calcShipping()
     {
-        $units = 0;
-        $fixed = 0;
-        foreach ($this->items as $item) {
-            $P = $item->getProduct();
-            if ($P->isPhysical()) {
-                $fixed += $P->getShipping($item->quantity);
-                $units += $P->shipping_units * $item->quantity;
-            }
-        }
-
-        $shipper_id = $this->getInfo('shipper_id');
-        if ($shipper_id !== NULL) {
-            $shippers = Shipper::getShippers($units);
-            if (isset($shippers[$shipper_id])) {
-                $this->shipping = $shippers[$shipper_id]->best_rate + $fixed;
+        // Only calculate shipping if there are physical items,
+        // otherwise shipping = 0
+        if ($this->hasPhysical()) {
+            $shipper_id = $this->getInfo('shipper_id');
+            $shippers = Shipper::getShippersForOrder($this);
+            if ($shipper_id !== NULL && isset($shippers[$shipper_id])) {
+                // Use the already-selected shipper, if any.
+                // The ship_method var should already be set.
+                $this->shipping = $shippers[$shipper_id]->ordershipping->total_rate;
             } else {
-                $shipper = Shipper::getBestRate($units);
+                // Get the first shipper available, which will be the best rate.
+                $shipper = reset($shippers);
                 $this->ship_method = $shipper->name;
-                $this->shipping = $shipper->best_rate + $fixed;
+                $this->shipping = $shipper->ordershipping->total_rate;
             }
         } else {
-            // Now get the order shipping, if any, based on product units.
-            $shipper = Shipper::getBestRate($units);
-            $this->ship_method = $shipper->name;
-            $this->shipping = $shipper->best_rate + $fixed;
+            $this->shipping = 0;
         }
     }
 
@@ -1229,7 +1264,7 @@ class Order
                 'symbols'   => true,    // include symbols
                 'mask'      => '',
             );
-            $bytes = Coupon::generate($options);
+            $bytes = \Shop\Products\Coupon::generate($options);
         }
         return substr(bin2hex($bytes), 0, $len);
     }
@@ -1246,7 +1281,7 @@ class Order
         foreach ($this->items as $id => $item) {
             $total += ($item->price * $item->quantity);
         }
-        if ($this->is_final) {
+        if ($this->isFinalView) {
             // Already have the amounts calculated, don't do it again
             // every time the order is viewed since rates may change.
             $total += $this->shipping + $this->tax + $this->handling;
@@ -1386,6 +1421,17 @@ class Order
 
 
     /**
+     * Remove an information item from the private info array.
+     *
+     * @param   string  $key    Name of var to remove
+     */
+    public function remInfo($key)
+    {
+        unset($this->m_info[$key]);
+    }
+
+
+    /**
      * Get the gift card amount applied to this cart.
      *
      * @return  float   Gift card amount
@@ -1405,8 +1451,8 @@ class Order
     {
         $amt = (float)$amt;
         if ($amt == -1) {
-            $gc_bal = Coupon::getUserBalance();
-            $amt = min($gc_bal, Coupon::canPayByGC($this));
+            $gc_bal = \Shop\Products\Coupon::getUserBalance();
+            $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
         $this->setInfo('apply_gc', $amt);
     }
@@ -1515,13 +1561,19 @@ class Order
      */
     public function setShipper($shipper_id)
     {
-        $ship_info = $this->getItemShipping();
-        $shippers = \Shop\Shipper::getShippers($ship_info['units']);
-        $shipper = SHOP_getVar($shippers, $shipper_id, 'object', NULL);
-        if ($shipper !== NULL) {
-            $this->setInfo('shipper_name', $shipper->name);
-            $this->setInfo('shipper_id', $shipper->id);
-            $this->shipping = $shipper->best_rate;
+        if ($this->hasPhysical()) {
+            $ship_info = $this->getItemShipping();
+            $shippers = Shipper::getShippersForOrder($this);
+            $shipper = SHOP_getVar($shippers, $shipper_id, 'object', NULL);
+            if ($shipper !== NULL) {
+                $this->setInfo('shipper_name', $shipper->name);
+                $this->setInfo('shipper_id', $shipper->id);
+                $this->shipping = $shipper->ordershipping->total_rate;
+            }
+        } else {
+            $this->remInfo('shipper_name');
+            $this->remInfo('shipper_id');
+            $this->shipping = 0;
         }
     }
 
@@ -1529,7 +1581,7 @@ class Order
     /**
      * Select the shipping method for this order.
      * Displays a list of shippers with the rates for each
-     * @todo    1. Sort by rate
+     * @todo    1. Sort by rate DONE
      *          2. Save shipper selection with the order
      *
      *  @param  integer $step   Current step in workflow
@@ -1537,26 +1589,33 @@ class Order
      */
     public function selectShipper()
     {
-        $T = SHOP_getTemplate('shipping_method', 'form');
-        // Get the total units and fixed per-item shipping charges.
-        $shipping = $this->getItemShipping();
+        if (!$this->hasPhysical()) {
+            $this->remInfo('shipper_id');
+            return '';
+        }
+
         // Get all the shippers and rates for the selection
-        $shippers = Shipper::getShippers($shipping['units']);
+        $shippers = Shipper::getShippersForOrder($this);
         if (empty($shippers)) return '';
 
         // Get the best or previously-selected shipper for the default choice
         $shipper_id = $this->getInfo('shipper_id');
         if ($shipper_id !== NULL && isset($shippers[$shipper_id])) {
+            // Already have a shipper selected
             $best = $shippers[$shipper_id];
         } else {
-            $best = Shipper::getBestRate($shipping['units']);
+            // None already selected, grab the first one. It has the best rate.
+            $best = reset($shippers);
+            $this->setInfo('shipper_id', $best->id);
         }
+
+        $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->id == $best->id ? 'selected="selected"' : '';
-            $s_amt = $shipper->best_rate + $shipping['amount'];
+            $s_amt = $shipper->ordershipping->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($this->subtotal + $s_amt),
@@ -1883,6 +1942,25 @@ class Order
                 'target' => $target,
             )
         );
+    }
+
+
+    /**
+     * Get the total shipping units for this order.
+     * Called from the Shipper class when calculating shipping options.
+     *
+     * @return  float   Total shipping units
+     */
+    public function totalShippingUnits()
+    {
+        $units = 0;
+        foreach ($this->items as $item) {
+            $P = $item->getProduct();
+            if ($P->isPhysical()) {
+                $units += $P->shipping_units * $item->quantity;
+            }
+        }
+        return $units;
     }
 
 }
