@@ -1940,18 +1940,31 @@ class Product
      */
     public function isAvailable($isadmin = false)
     {
-        if ($isadmin) return true;  // Admin can always view
-
+        // If the product is disabled, return false now
         if (!$this->enabled) {
             return false;
         }
 
+        if ($isadmin) return true;  // Admin can always view and order
+
+        // Check the user's permission
+        if (!$this->hasAccess()) {
+            return false;
+        }
+
+        // Check the stock level and whether an out-of-stock item can be sold
+        if ($this->track_onhand == 1 && $this->onhand <= 0 && $this->oversell > 0) {
+            return false;
+        }
+
+        // Check that today is within the product's availability window
         $today = SHOP_now()->format('Y-m-d', true);
         if ($today < $this->avail_beg || $today > $this->avail_end) {
             return false;
-        } else {
-            return true;
         }
+
+        // Finally, no conditions failed, return true
+        return true;
     }
 
 
