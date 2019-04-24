@@ -469,6 +469,8 @@ $LANG_SHOP = array (
 'price_incl_disc' => 'Price reflects any applicable discounts.',
 'reflects_disc' => 'Price reflects a %s%% discount.',
 'change_qty' => 'Change Quantity',
+'msg_cart_invalid' => 'One or more items have been updated or removed from your cart. Please verify and re-submit your cart for checkout.',
+'removed' => 'Removed',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -490,6 +492,7 @@ $LANG_SHOP_HELP = array(
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
 'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuraion.',
+'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
