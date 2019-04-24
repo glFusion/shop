@@ -954,7 +954,7 @@ class Cart extends Order
      * available.
      * Removes any unavailable products.
      *
-     * @return  array   Array of invalid order item names.
+     * @return  array   Array of invalid order item objects.
      */
     public function Validate()
     {

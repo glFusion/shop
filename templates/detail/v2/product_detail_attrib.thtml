@@ -18,7 +18,7 @@
 {!if main_img}
   <div class="main_img uk-hidden-small">
     <img id="disp_img" class="uk-responsive-width uk-responsive-height"
-        alt=""
+        alt="Product Image"
         src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
   </div>
 {!else}

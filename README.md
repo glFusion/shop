@@ -188,7 +188,7 @@ $output = array(
 ```
 
 ### `service_productinfo_piname`
-Gets the basic product information to populate the PluginProduct object
+Gets the basic product information to populate the Plugin Product object
 ```
 $args = array(
     'item_id' => Array of item ID components (item_number, option1, option2, etc.)
