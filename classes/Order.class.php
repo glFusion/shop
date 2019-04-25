@@ -1564,11 +1564,15 @@ class Order
         if ($this->hasPhysical()) {
             $ship_info = $this->getItemShipping();
             $shippers = Shipper::getShippersForOrder($this);
-            $shipper = SHOP_getVar($shippers, $shipper_id, 'object', NULL);
-            if ($shipper !== NULL) {
-                $this->setInfo('shipper_name', $shipper->name);
-                $this->setInfo('shipper_id', $shipper->id);
-                $this->shipping = $shipper->ordershipping->total_rate;
+            // Have to iterate through all the shippers since the array is
+            // ordered by rate, not shipper ID
+            foreach ($shippers as $sh) {
+                if ($sh->id == $shipper_id) {
+                    $this->setInfo('shipper_name', $sh->name);
+                    $this->setInfo('shipper_id', $sh->id);
+                    $this->shipping = $sh->ordershipping->total_rate;
+                    break;
+                }
             }
         } else {
             $this->remInfo('shipper_name');
