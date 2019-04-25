@@ -172,6 +172,14 @@ default:
     }
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
+
+    // Validate the cart items
+    $invalid = $Cart->Validate();
+    if (!empty($invalid)) {
+        // Items have been removed, refresh to update and view the info msg.
+        COM_refresh(SHOP_URL . '/cart.php');
+    }
+
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= $Cart->getView(0);
     } else {
