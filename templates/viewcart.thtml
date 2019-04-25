@@ -25,7 +25,13 @@
       </tr>
       <!-- BEGIN ItemRow -->
       <tr>
-        <td>{img_url}</td>
+        <td>
+{!if item_link}
+            <a href="{item_link}">{img_url}</a>
+{!else}
+            {img_url}
+{!endif}
+        </td>
         <td class="alignleft">
 {!if item_link}
           <a href="{item_link}">{item_dscp}</a>

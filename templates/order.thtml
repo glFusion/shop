@@ -118,7 +118,13 @@
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
-          <td>{img_url}</td>
+          <td>
+{!if detail_url}
+            <a href="{detail_url}">{img_url}</a>
+{!else}
+            {img_url}
+{!endif}
+          </td>
           <td>
 {!if is_admin}
             <a href="{site_admin_url}/plugins/shop/report.php?period=at&item_id={item_id}&run=itempurchase" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">{item_dscp}</a>
