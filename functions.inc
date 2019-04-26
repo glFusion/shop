@@ -1369,15 +1369,6 @@ function SHOP_phpblock_product($sql)
     // By default, return nothing
     $retval = '';
 
-    // Check for a recent cached copy of the block to save DB calls
-    $cache_key = md5($sql);
-    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
-        $retval = \Shop\Cache::get($cache_key);
-        if ($retval !== NULL) {
-            return $retval;
-        }
-    }
-
     // Loop through all valid responses.  There may be more than one
     // item to show
     $res = DB_query($sql, 1);
@@ -1431,11 +1422,6 @@ function SHOP_phpblock_product($sql)
             }
             $retval .= $T->parse('output', 'blk_random');
         }
-    }
-
-    // Write the cache file if used
-    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
-        \Shop\Cache::set($cache_key, $retval, array('products','categories'), $_SHOP_CONF['cache_max_age']);
     }
     return $retval;
 }
