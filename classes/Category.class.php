@@ -319,6 +319,7 @@ class Category
             $sql = "UPDATE {$_TABLES['shop.categories']}
                     SET grp_access = {$this->grp_access}
                     WHERE cat_id IN ($upd_cats)";
+            Cache::clear('categories');
             DB_query($sql);
         }
     }
@@ -362,6 +363,7 @@ class Category
             DB_query("UPDATE {$_TABLES['shop.categories']}
                     SET image=''
                     WHERE cat_id='" . $this->cat_id . "'");
+            Cache::clear('categories');
         }
         $this->image = '';
     }
@@ -521,6 +523,7 @@ class Category
             COM_errorLog("Category::_toggle() SQL error: $sql", 1);
             return $oldvalue;
         } else {
+            Cache::clear('categories');
             return $newvalue;
         }
     }
@@ -608,7 +611,7 @@ class Category
     {
         global $_GROUPS;
 
-        return (in_array($this->grp_access, $_GROUPS)) ? true : false;
+        return ($this->enabled && in_array($this->grp_access, $_GROUPS)) ? true : false;
     }
 
 
@@ -843,6 +846,7 @@ class Category
                 SET lft = '$left', rgt = '$right'
                 WHERE cat_id = '$parent'";
         DB_query($sql1);
+        Cache::clear('categories');
 
         // return the right value of this node + 1
         return $right + 1;
