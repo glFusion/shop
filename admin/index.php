@@ -617,6 +617,7 @@ case 'editshipping':
     break;
 
 default:
+    SHOP_setUrl();
     $view = 'products';
     $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
     $content .= SHOP_adminlist_Product($cat_id);
@@ -653,45 +654,87 @@ function SHOP_adminlist_Product($cat_id=0)
     $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
+                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell,
                 c.cat_id, c.cat_name
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id = c.cat_id";
 
     $header_arr = array(
-        array('text' => 'ID',
-                'field' => 'id', 'sort' => true),
-        array('text' => $LANG_ADMIN['edit'],
-                'field' => 'edit', 'sort' => false,
-                'align' => 'center'),
-        array('text' => $LANG_ADMIN['copy'],
-                'field' => 'copy', 'sort' => false,
-                'align' => 'center'),
-        array('text' => $LANG_SHOP['enabled'],
-                'field' => 'enabled', 'sort' => false,
-                'align' => 'center'),
-        array('text' => $LANG_SHOP['featured'],
-                'field' => 'featured', 'sort' => true,
-                'align' => 'center'),
-        array('text' => $LANG_SHOP['product'],
-                'field' => 'name', 'sort' => true),
-        array('text' => $LANG_SHOP['description'],
-                'field' => 'short_description', 'sort' => true),
-        array('text' => $LANG_SHOP['category'],
-                'field' => 'cat_name', 'sort' => true),
-        array('text' => $LANG_SHOP['price'],
-                'field' => 'price', 'sort' => true, 'align' => 'right'),
-        array('text' => $LANG_SHOP['prod_type'],
-                'field' => 'prod_type', 'sort' => true),
-        array('text' => $LANG_ADMIN['delete'] .
+        array(
+            'text'  => 'ID',
+            'field' => 'id',
+            'sort'  => true,
+        ),
+        array(
+            'text'  => $LANG_ADMIN['edit'],
+            'field' => 'edit',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_ADMIN['copy'],
+            'field' => 'copy',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_SHOP['enabled'],
+            'field' => 'enabled',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_SHOP['featured'],
+            'field' => 'featured',
+            'sort'  => true,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_SHOP['product'],
+            'field' => 'name',
+            'sort'  => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['description'],
+            'field' => 'short_description',
+            'sort' => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['category'],
+            'field' => 'cat_name',
+            'sort' => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['price'],
+            'field' => 'price',
+            'sort'  => true,
+            'align' => 'right',
+        ),
+        array(
+            'text'  => $LANG_SHOP['prod_type'],
+            'field' => 'prod_type',
+            'sort' => true,
+        ),
+        array(
+            'text'  => $LANG_SHOP['status'],
+            'field' => 'availability',
+            'sort'  => false,
+            'align' => 'center',
+        ),
+        array(
+            'text'  => $LANG_ADMIN['delete'] .
                     '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
                     $LANG_SHOP_HELP['hlp_prod_delete'] . '"></i>',
-                'field' => 'delete', 'sort' => false,
-                'align' => 'center'),
+            'field' => 'delete', 'sort' => false,
+            'align' => 'center',
+        ),
     );
 
-    $defsort_arr = array('field' => 'id',
-            'direction' => 'asc');
+    $defsort_arr = array(
+        'field' => 'id',
+        'direction' => 'asc',
+    );
 
     $display .= COM_startBlock('', '',
                     COM_getBlockTemplate('_admin_block', 'header'));
@@ -708,10 +751,15 @@ function SHOP_adminlist_Product($cat_id=0)
     } else {
         $def_filter = 'WHERE 1=1';
     }
-    $query_arr = array('table' => 'shop.products',
-        'sql' => $sql,
-        'query_fields' => array('p.name', 'p.short_description',
-                            'p.description', 'c.cat_name'),
+    $query_arr = array(
+        'table' => 'shop.products',
+        'sql'   => $sql,
+        'query_fields' => array(
+            'p.name',
+            'p.short_description',
+            'p.description',
+            'c.cat_name',
+        ),
         'default_filter' => $def_filter,
     );
 
@@ -726,8 +774,9 @@ function SHOP_adminlist_Product($cat_id=0)
                 '/index.php?view=prodcts&amp;cat_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
         '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-        COM_optionList($_TABLES['shop.categories'], 'cat_id, cat_name',
-                $cat_id, 1) .
+        COM_optionList(
+            $_TABLES['shop.categories'], 'cat_id, cat_name', $cat_id, 1
+        ) .
         "</select>" . LB;
 
     $display .= ADMIN_list($_SHOP_CONF['pi_name'] . '_productlist',
@@ -752,26 +801,33 @@ function SHOP_adminlist_Product($cat_id=0)
 function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
 {
     global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+    static $today = NULL;
 
+    if ($today === NULL) {
+        $today = SHOP_now()->format('Y-m-d');
+    }
     $retval = '';
 
     switch($fieldname) {
     case 'copy':
-        $retval .= COM_createLink('<i class="uk-icon uk-icon-clone tooltip" title="' . $LANG_ADMIN['copy'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
+        $retval .= COM_createLink(
+            '<i class="uk-icon uk-icon-clone tooltip" title="' . $LANG_ADMIN['copy'] . '"></i>',
+            SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
         );
         break;
 
     case 'edit':
-        $retval .= COM_createLink('<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+        $retval .= COM_createLink(
+            '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
             SHOP_ADMIN_URL . "/index.php?editproduct=x&amp;id={$A['id']}"
         );
         break;
 
     case 'delete':
         if (!\Shop\Product::isUsed($A['id'])) {
-            $retval .= COM_createLink('<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
-                    SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
+                SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
                 array(
                     'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['q_del_item'],
@@ -794,6 +850,24 @@ function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
                 id=\"togenabled{$A['id']}\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
                 "\"product\");' />" . LB;
+        break;
+
+    case 'availability':
+        $icon = 'uk-icon-circle';
+        if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
+            $cls = 'uk-text-danger';
+            $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
+        } elseif ($A['track_onhand'] == 1 && $A['onhand'] < 1) {
+            $cls = $A['oversell'] > 0 ? 'uk-text-danger' : 'uk-text-warning';
+            $caption = $LANG_SHOP['out_of_stock'];
+        } else {
+            $cls = 'uk-text-success';
+            $caption = $LANG_SHOP['available'] . '.';
+            if ($A['track_onhand'] == 1) {
+                $caption .= "<br />{$LANG_SHOP['onhand']} = {$A['onhand']}.";
+            }
+        }
+        $retval = "<i class=\"tooltip uk-icon $icon $cls\" title=\"$caption\"></i>";
         break;
 
     case 'featured':
@@ -830,8 +904,10 @@ function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'cat_name':
-        $retval = COM_createLink($fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?cat_id=' . $A['cat_id']);
+        $retval = COM_createLink(
+            $fieldvalue,
+            SHOP_ADMIN_URL . '/index.php?cat_id=' . $A['cat_id']
+        );
         break;
 
     case 'short_description':
@@ -1103,7 +1179,8 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
 
     switch($fieldname) {
     case 'edit':
-        $retval .= COM_createLink('<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_SHOP['edit'] . '"></i>',
+        $retval .= COM_createLink(
+            '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_SHOP['edit'] . '"></i>',
             SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}"
         );
         break;
@@ -1136,7 +1213,8 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'delete':
         if (!\Shop\Category::isUsed($A['cat_id'])) {
-            $retval .= COM_createLink('<i class="uk-icon uk-icon-trash uk-text-danger tooltip"></i>',
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger tooltip"></i>',
                 SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
                 array(
                     'onclick'=>"return confirm('{$LANG_SHOP['q_del_item']}');",
