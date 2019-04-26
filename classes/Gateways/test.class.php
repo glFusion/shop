@@ -241,6 +241,7 @@ class test extends \Shop\Gateway
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
+        $btn_text .= ' (Test)';
         $T = SHOP_getTemplate('btn_' . $btn_type, 'btn', 'buttons/generic');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
