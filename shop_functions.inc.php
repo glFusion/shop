@@ -69,7 +69,7 @@ function ProductList($cat_id = 0)
             'name' => $RootCat->cat_name,
         ),
     );
-    foreach ($tmp as $cat_id=>$C) {
+    foreach ($tmp as $tmp_cat_id=>$C) {
         if ($C->parent_id == $RootCat->cat_id && $C->hasAccess()) {
             $A[$C->cat_id] = array(
                 'name' => $C->cat_name,
@@ -238,7 +238,7 @@ function ProductList($cat_id = 0)
         'pi_url'        => SHOP_URL,
         //'user_id'       => $_USER['uid'],
         'currency'      => $_SHOP_CONF['currency'],
-        'breadcrumbs'   => Category::Breadcrumbs($cat_id),
+        'breadcrumbs'   => $cat_id > 0 ? Category::Breadcrumbs($cat_id) : '',
         'search_text'   => $search,
         'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
         'sortby_options' => $sortby_options,
