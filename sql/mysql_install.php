@@ -183,6 +183,7 @@ $_SQL = array(
   `info` text,
   `currency` varchar(5) NOT NULL DEFAULT 'USD',
   `order_seq` int(11) UNSIGNED,
+  `shipper_id` int(3) UNSIGNED DEFAULT '0',
   PRIMARY KEY (`order_id`),
   KEY (`order_date`),
   UNIQUE (`order_seq`)
@@ -495,4 +496,7 @@ $_SHOP_SAMPLEDATA = array(
         (1,'USPS Priority Flat Rate',0.0001,50.0000,0,'[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
 );
 
+$SHOP_UPGRADE['0.7.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+);
 ?>

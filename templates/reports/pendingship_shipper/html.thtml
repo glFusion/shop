@@ -1,0 +1,12 @@
+{# begin {templatelocation} #}
+<div style="float:left;">
+<h1>Pending Shipments For {item_name}</h1>
+</div>
+<div style="float:right">
+<a href="{site_url}/admin/plugins/shop/report.php">{$LANG_SHOP['back_to_reports']}</a><br />
+<a href="{site_url}/admin/plugins/shop/report.php?configure={report_key}">{$LANG_SHOP['config_report']}</a><br />
+</div>
+<div style="clear:both">
+{output}
+</div>
+{# begin {templatelocation} #}

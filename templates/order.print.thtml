@@ -200,6 +200,9 @@
     </p>
 {!endif}
 {!endif}
+{!if shipper_name}
+    <p>{$LANG_SHOP['ship_by']}: {shipper_name}</p>
+{!endif}
   </div>
 {!if is_invoice}
 {!if icon_dscp}

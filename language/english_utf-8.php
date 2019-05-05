@@ -310,6 +310,11 @@ $LANG_SHOP = array (
         'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
         'title' => 'Pending Shipments for Item %s',
     ),
+    'pendingship_shipper' => array(
+        'name' => 'Pending Shipments by Shipper',
+        'dscp' => 'List pending shipments for a specific shipper. Useful to group upcoming shipments.',
+        'title' => 'Pending Shipments for Shipper %s',
+    ),
     'coupons' => array(
         'name' => 'Coupon Activity',
         'dscp' => 'List coupon purchases and application against orders.',
@@ -471,6 +476,7 @@ $LANG_SHOP = array (
 'change_qty' => 'Change Quantity',
 'msg_cart_invalid' => 'One or more items have been updated or removed from your cart. Please verify and re-submit your cart for checkout.',
 'removed' => 'Removed',
+'ship_by' => 'Ship Via',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -613,9 +619,11 @@ $LANG_configselects['shop'] = array(
     13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
     14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),
     15 => array('Pounds' => 'lbs', 'Kilograms' => 'kgs'),
-    16 => array('Allow Backordering' => 0,
-            'Show in Catalog, Prevent Sales' => 1,
-            'Hide from Catalog' => 2),
+    16 => array(
+        'Allow Backordering' => 0,
+        'Show in Catalog, Prevent Sales' => 1,
+        'Hide from Catalog' => 2,
+    ),
     17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
 );
 
