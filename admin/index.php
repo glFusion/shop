@@ -1232,9 +1232,20 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
         }
         break;
 
+    case 'cat_name':
+        $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+        $retval = COM_createlink(
+            $retval,
+            SHOP_URL . '/index.php?category=' . $A['cat_id'],
+            array(
+                'title' => $LANG_SHOP['storefront'],
+                'class' => 'tooltip',
+            )
+        );
+        break;
+
     default:
         $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
-        break;
     }
 
     return $retval;
