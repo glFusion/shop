@@ -52,7 +52,7 @@ class internal extends \Shop\IPN
 
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
-        if (empty($shipto)) $shipto = $billto;
+        if (empty($shipto) && !empty($billto)) $shipto = $billto;
         if (COM_isAnonUser()) $_USER['email'] = '';
 
         $this->payer_email = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);

@@ -56,7 +56,7 @@ class square extends \Shop\IPN
         $this->txn_id = SHOP_getVar($A, 'transactionId');
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
-        if (empty($shipto)) $shipto = $billto;
+        if (empty($shipto) && !empty($billto)) $shipto = $billto;
 
         $this->payer_email = $this->Order->buyer_email;
         $this->payer_name = $_USER['fullname'];

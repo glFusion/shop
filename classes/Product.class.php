@@ -487,6 +487,12 @@ class Product
             $this->setVars($A);
         }
 
+        if (isset($A['delimg']) && is_array($A['delimg'])) {
+            foreach ($A['delimg'] as $img_id) {
+                self::deleteImage($img_id);
+            }
+        }
+
         // Handle file uploads.  This is done first so we know whether
         // there is a valid filename for a download product
         // No weight or shipping for downloads
@@ -886,10 +892,7 @@ class Product
                 'img_url'   => SHOP_ImageUrl($prow['filename'], 800, 600),
                 'thumb_url' => SHOP_ImageUrl($prow['filename']),
                 'seq_no'    => $i,
-                'del_img_url' => SHOP_ADMIN_URL . '/index.php' .
-                    '?delete_img=x' .
-                    '&img_id=' . $prow['img_id'] .
-                    '&id=' . $this->id,
+                'img_id'    => $prow['img_id'],
             ) );
             $T->parse('PRow', 'PhotoRow', true);
         }

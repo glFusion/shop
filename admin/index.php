@@ -44,7 +44,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = '';
 $expected = array(
     // Actions to perform
-    'deleteproduct', 'deletecatimage', 'deletecat', 'delete_img',
+    'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'saveopt', 'deleteopt', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'attrcopy', 'attrmove',
@@ -111,12 +111,6 @@ case 'deletecat':
         $C->Delete();
     }
     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
-    break;
-
-case 'delete_img':
-    $img_id = (int)$_REQUEST['img_id'];
-    \Shop\Product::deleteImage($img_id);
-    $view = 'editproduct';
     break;
 
 case 'saveproduct':

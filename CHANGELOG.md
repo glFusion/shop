@@ -34,3 +34,4 @@ First beta version under the new Shop name.
   * Allow special fields for products other than simple text input.
   * Put plugin and coupon products in their own namespace.
   * Strip HTML tags from special field data values.
+  * Use a checkbox instead of link for deleting images from products.

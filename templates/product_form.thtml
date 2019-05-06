@@ -82,6 +82,9 @@
       </label>
       <div class="uk-form-controls">
       <table>
+          <tr>
+            <th></th><th>{$LANG_SHOP['delete']}</th>
+          </tr>
           <!-- BEGIN PhotoRow -->
           <tr>
             <td align="left">
@@ -89,8 +92,8 @@
                 <img src="{thumb_url}" />
               </a>
             </td>
-            <td align="left">
-              <a href="{del_img_url}">{$LANG_SHOP['delete_image']}</a><br>
+            <td style="text-align:center;">
+              <input type="checkbox" name="delimg[]" value="{img_id}" />
             </td>
           </tr>
           <!-- END PhotoRow -->

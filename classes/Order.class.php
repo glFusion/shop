@@ -199,7 +199,8 @@ class Order
             $this->order_id = $id;
         }
 
-        $A = Cache::get('order_' . $this->order_id);
+        $cache_key = 'order_' . $this->order_id;
+        $A = Cache::get($cache_key);
         if ($A === NULL) {
             $sql = "SELECT * FROM {$_TABLES['shop.orders']}
                     WHERE order_id='{$this->order_id}'";
@@ -208,12 +209,13 @@ class Order
             if (!$res) return false;    // requested order not found
             $A = DB_fetchArray($res, false);
             if (empty($A)) return false;
-            Cache::set('order_' . $this->order_id, $A, 'orders');
+            Cache::set($cache_key, $A, 'orders');
         }
         if ($this->setVars($A)) $this->isNew = false;
 
         // Now load the items
-        $items = Cache::get('items_order_' . $this->order_id);
+        $cache_key = 'items_order_' . $this->order_id;
+        $items = Cache::get($cache_key);
         if ($items === NULL) {
             $items = array();
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
@@ -224,7 +226,7 @@ class Order
                     $items[$A['id']] = $A;
                 }
             }
-            Cache::set('items_order_' . $this->order_id, $items, array('items','orders'));
+            Cache::set($cache_key, $items, array('items','orders'));
         }
         // Now load the arrays into objects
         foreach ($items as $item) {
@@ -294,8 +296,7 @@ class Order
             billto_country = '" . DB_escapeString($this->billto_country) . "',
             billto_zip = '" . DB_escapeString($this->billto_zip) . "'";
         DB_query($sql);
-        //Cache::deleteOrder($this->order_id);
-        Cache::delete('order_' . $order_id);
+        Cache::delete('order_' . $this->order_id);
     }
 
 
@@ -351,8 +352,7 @@ class Order
             shipto_country = '" . DB_escapeString($this->shipto_country) . "',
             shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'";
         DB_query($sql);
-        //Cache::deleteOrder($this->order_id);
-        Cache::delete('order_' . $order_id);
+        Cache::delete('order_' . $this->order_id);
     }
 
 
@@ -1596,6 +1596,7 @@ class Order
     {
         if (!$this->hasPhysical()) {
             $this->remInfo('shipper_id');
+            $this->remInfo('shipper_name');
             return '';
         }
 
@@ -1604,14 +1605,21 @@ class Order
         if (empty($shippers)) return '';
 
         // Get the best or previously-selected shipper for the default choice
+        $best = NULL;
         $shipper_id = $this->shipper_id;
-        if ($shipper_id !== NULL && isset($shippers[$shipper_id])) {
-            // Already have a shipper selected
-            $best = $shippers[$shipper_id];
-        } else {
+        if ($shipper_id !== NULL) {
+            // Array is 0-indexed so search for the shipper ID, if any.
+            foreach ($shippers as $id=>$shipper) {
+                if ($shipper->id == $shipper_id) {
+                    // Already have a shipper selected
+                    $best = $shippers[$id];
+                    break;
+                }
+            }
+        }
+        if ($best === NULL) {
             // None already selected, grab the first one. It has the best rate.
             $best = reset($shippers);
-            $this->setInfo('shipper_id', $best->id);
         }
 
         $T = SHOP_getTemplate('shipping_method', 'form');
