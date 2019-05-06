@@ -685,52 +685,6 @@ class Product
 
 
     /**
-     * Determines if the current record is valid.
-     * Checks various items that can't be empty or combinations that
-     * don't make sense.
-     * Accumulates all error messages in the Errors array.
-     * As of version 0.5.0, the category is allowed to be empty.
-     *
-     * @deprecated
-     * @return  boolean     True if ok, False when first test fails.
-     */
-    private function XisValidRecord()
-    {
-        global $LANG_SHOP;
-
-        // Check that basic required fields are filled in
-        if ($this->name == '')
-            $this->Errors[] = $LANG_SHOP['err_missing_name'];
-
-        if ($this->short_description == '')
-            $this->Errors[] = $LANG_SHOP['err_missing_desc'];
-
-        if ($this->prod_type == SHOP_PROD_DOWNLOAD) {
-            if ($this->file == '') {
-                // Must have a file for a downloadable product
-                $this->Errors[] = $LANG_SHOP['err_missing_file'];
-            }
-            if ($this->expiration < 1) {
-                // Must have an expiration period for downloads
-                $this->Errors[] = $LANG_SHOP['err_missing_exp'];
-            }
-        } elseif ($this->isPhysical() && $this->price < 0.01) {
-            // Shop won't accept a zero amount, so non-downloadable items
-            // must have a positive price.  Use "Other Virtual" for free items.
-            $this->Errors[] = $LANG_SHOP['err_phys_need_price'];
-        }
-
-        if (!empty($this->Errors)) {
-            SHOP_debug('Errors encountered: ' . print_r($this->Errors,true));
-            return false;
-        } else {
-            SHOP_debug('isValidRecord(): No errors');
-            return true;
-        }
-    }
-
-
-    /**
      * Creates the product edit form.
      *
      * Creates the form for editing a product.  If a product ID is supplied,
@@ -1720,29 +1674,6 @@ class Product
             $retval = '';
         }
         return $retval;
-    }
-
-
-    /**
-     * Get all the attributes for this product that appear in a list.
-     *
-     * @deprecated
-     * @param   array   $options    Array of options
-     * @return  array       Array of a
-     */
-    public function XgetAttributes($options = array())
-    {
-        global $_TABLES;
-
-        $sql = "SELECT attr_name, attr_value
-                FROM {$_TABLES['shop.prod_attr']}
-                WHERE attr_id IN ($options)";
-        $optres = DB_query($sql);
-        $opt_str = '';
-        while ($O = DB_fetchArray($optres, false)) {
-            $opt_str .= ', ' . $O['attr_value'];
-            $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
-        }
     }
 
 

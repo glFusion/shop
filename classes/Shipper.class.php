@@ -640,21 +640,6 @@ class Shipper
         }
     }
 
-
-    public function XgetMaxPkgUnits()
-    {
-        $units = 0;
-        $retval = NULL;
-        foreach ($this->rates as $id=>$pkg) {
-            if ($pkg->units > $units) {
-                $units = $pkg->units;
-                $retval = $pkg;
-            }
-        }
-        return $retval;
-    }
-
-
 }   // class Shipper
 
 ?>

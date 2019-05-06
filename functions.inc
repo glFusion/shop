@@ -617,62 +617,6 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
 
 
 /**
- * Generate a single buy-now button for the first enabled payment gateway.
- * This function is deprecated, but is kept to avoid completely breaking
- * if some plugin that calls this function is still in place.
- *
- * Plugins should call LGLIB_invokeService('shop, 'genButton'...) instead.
- *
- * Provided $vars should include:
- *  'item_number', 'item_name', 'amount', and optionally 'item_type'
- *
- * @deprecated  v0.5.0
- * @uses    Gateway::ExternalButton()
- * @param   string  $btn_type   Type of button (buy_now, add_to_cart, etc.)
- * @param   array   $vars       Associative array of input variables
- * @param   string  $item_type  Optional type indicator (physical, virtual)
- * @return  string          HTML of requested button
- */
-function XX_SHOP_genButton($btn_type, $vars, $item_type=0)
-{
-    global $_CONF, $_SHOP_CONF, $_USER, $LANG_configselects;
-
-    $retval = '';
-
-    // must be an expected type
-    if (!in_array($btn_type,
-        array('buy_now', 'add_cart', 'pay_now', 'subscribe', 'donation'))) {
-        return $retval;
-    }
-
-    if ($btn_type == 'add_cart') {
-        if ($_SHOP_CONF['ena_cart'] == 1) {
-            $tpl_add_cart = 'btn_add_cart.thtml';
-            if ($item_type == 0) $item_type = SHOP_PROD_VIRTUAL;
-            $T = new Template(__DIR__ . '/templates');
-            $T->set_file(array(
-                'cart'  => 'buttons/btn_add_cart.thtml',
-            ) );
-            $T->set_var(array(
-                'item_name'     => $vars['item_name'],
-                'item_number'   => $vars['item_number'],
-                'amount'        => $vars['amount'],
-                'action_url'    => SHOP_URL . '/index.php',
-                'item_type'     => $item_type,
-            ) );
-            $retval = $T->parse('', 'cart');
-        }
-    } else {
-        foreach (\Shop\Gateway::getAll() as $gw) {
-            $retval = $gw->ExternalButton($vars, $btn_type);
-            break;
-        }
-    }
-    return $retval;
-}
-
-
-/**
  * Return the types to list in the search types selection.
  *
  * @return  array   Associative array (typename => title)
@@ -2177,19 +2121,6 @@ function SHOP_getTaxRate()
     global $_SHOP_CONF;
 
     return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
-}
-
-
-/**
- * Get the sales tax for a taxable amount.
- *
- * @param   float   $amount     Taxable amount
- * @return  float               Sales Tax
- */
-function XSHOP_getTax($amount)
-{
-    echo "DEPRECATED";die;
-    return round($amount * SHOP_getTaxRate(), 2);
 }
 
 
