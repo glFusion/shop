@@ -190,7 +190,7 @@ class square extends \Shop\Gateway
             array_push($lineItems, $itm);
         } else {
             $shipping = $cart->shipping;
-            foreach ($cart->Cart() as $Item) {
+            foreach ($cart->getItems() as $Item) {
                 $P = $Item->getProduct();
 
                 $PriceMoney = new \SquareConnect\Model\Money;

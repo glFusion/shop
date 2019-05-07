@@ -961,7 +961,7 @@ function phpblock_shop_cart_contents()
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
     $Cur = \Shop\Currency::getInstance($cart->currency);
-    foreach ($cart->Cart() as $id=>$item) {
+    foreach ($cart->getItems() as $id=>$item) {
         $item_id = $item->product_id;
         if ($item->options != '') $item_id .= '|' . $item->options;
         $P = \Shop\Product::getInstance($item_id);

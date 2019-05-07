@@ -671,7 +671,7 @@ class Gateway
         if (!empty($vals['cart_id'])) {
             $cart = new Cart($vals['cart_id']);
             if (!$cart->hasItems()) return; // shouldn't be empty
-            $items = $cart->Cart();
+            $items = $cart->getItems();
         } else {
             $cart = new Cart();
         }

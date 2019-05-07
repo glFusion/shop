@@ -147,7 +147,7 @@ class authorizenet extends \Shop\Gateway
         global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
         // Make sure we have at least one item
-        if (empty($cart->Cart())) return '';
+        if (empty($cart->getItems())) return '';
         $total_amount = 0;
         $Cur = \Shop\Currency::getInstance();
 
@@ -222,7 +222,7 @@ class authorizenet extends \Shop\Gateway
                     'taxable' => false,
             );
         } else {
-            foreach ($cart->Cart() as $Item) {
+            foreach ($cart->getItems() as $Item) {
                 $P = $Item->getProduct();
                 $json['getHostedPaymentPageRequest']['transactionRequest']['lineItems']['lineItem'][] = array(
                     'itemId'    => substr($P->item_id, 0, 31),

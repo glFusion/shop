@@ -104,17 +104,6 @@ class Cart extends Order
 
 
     /**
-     * Get the cart contents as an array of items.
-     *
-     * @return  array   Current cart contents
-     */
-    public function Cart()
-    {
-        return $this->items;
-    }
-
-
-    /**
      * Merge the saved cart for Anonymous into the current user's cart.
      * Saves the updated cart to the database.
      *
@@ -390,14 +379,17 @@ class Cart extends Order
     {
         global $_TABLES, $_USER;
 
-        if ($this->status != 'cart') return $this->Cart();
-
-        DB_delete($_TABLES['shop.orderitems'], 'order_id', $this->cartID());
-        if ($del_order) {
-            DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
-            self::delAnonCart();
+        // Only clear if this is actually a cart, not a finalized order.
+        if ($this->status == 'cart') {
+            DB_delete($_TABLES['shop.orderitems'], 'order_id', $this->cartID());
+            if ($del_order) {
+                DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
+                self::delAnonCart();
+            }
+            return array();
+        } else {
+            return $this->getItems();
         }
-        return array();
     }
 
 

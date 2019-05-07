@@ -260,7 +260,7 @@ class paypal extends \Shop\IPN
             $this->pmt_shipping = (float)$this->Order->getInfo('shipping');
             $this->pmt_handling = (float)$this->Order->getInfo('handling');
             $fees_paid = 0;
-            $Cart = $this->Order->Cart();
+            $Cart = $this->Order->getItems();
             if (empty($Cart)) {
                 COM_errorLog("Shop\\shop_ipn::Process() - Empty Cart for id {$this->Order->order_id}");
                 return false;
