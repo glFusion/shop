@@ -969,7 +969,6 @@ class Order
                 'subject' => $LANG_SHOP['subj_email_admin'],
             ) );
         }
-
     }
 
 
@@ -1042,7 +1041,7 @@ class Order
             'tax'               => $Cur->FormatValue($this->tax),
             'tax_num'           => $this->tax,
             'shipping'          => $Cur->FormatValue($this->shipping),
-            'shipping_num'      => $this->shipping,
+            'shipper_name'      => $this->getInfo('shipper_name'),
             'handling'          => $Cur->FormatValue($this->handling),
             'handling_num'      => $this->handling,
             'payment_date'      => SHOP_now()->toMySQL(true),

@@ -31,7 +31,7 @@
 
 {!if have_shipto}
     <td width="50%">
-      <b>{lang_shipto}:</b><br />
+      <b>{$LANG_SHOP['ship_to']}:</b><br />
 {!if shipto_name}
       {shipto_name}<br />
 {!endif}
@@ -83,33 +83,51 @@
 </tr>
 <!-- END ItemList -->
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['item_total']}:</td><td align="right">{payment_items}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['item_total']}:</td>
+  <td colspan="2" align="right">{payment_items}</td>
 </tr>
 {!if tax_num}
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['tax']}</td><td align="right">{tax}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['tax']}</td>
+  <td colspan="2" align="right">{tax}</td>
 </tr>
 {!endif}
-{!if shipping_num}
+{!if shipper_name}
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['shipping']}</td><td align="right">{shipping}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['shipping']} ({shipper_name})</td>
+  <td colspan="2" align="right">{shipping}</td>
 </tr>
 {!endif}
 {!if handling_num}
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['handling']}</td><td align="right">{handling}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['handling']}</td>
+  <td colspan="2" align="right">{handling}</td>
 </tr>
 {!endif}
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['total']}:</td><td align="right">{payment_gross}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['total']}:</td>
+  <td colspan="2" align="right">{payment_gross}</td>
 </tr>
 {!if by_gc}
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['paid_by_gc']}:</td><td align="right">-&nbsp;{by_gc}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['paid_by_gc']}:</td>
+  <td colspan="2" align="right">-&nbsp;{by_gc}</td>
 </tr>
 <tr>
-  <td colspan="3" align="right">{$LANG_SHOP['pmt_total']}:</td><td align="right">{net_total}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['pmt_total']}:</td>
+  <td colspan="2" align="right">{net_total}</td>
 </tr>
 {!endif}
 </table>
+{!if order_instr}
+<p>
+    {$LANG_SHOP['order_instr']}:<br />
+    {order_instr}
+</p>
+{!endif}
+{!if pmt_method}
+<p>
+    {$LANG_SHOP['pmt_method']}: {pmt_method}
+</p>
+{!endif}
 <p />
