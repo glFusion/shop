@@ -216,6 +216,14 @@
 {!else}
     <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
+{!if pmt_method}
+    <p id="orderPaymentMethod">
+        <b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
+    </p>
+{!endif}
+    <p>
+        <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
+    </p>
   </div>
   <hr />
   <div style="clear:both;">
@@ -230,11 +238,6 @@
       {gateway_vars}
     </div>
     <div style="clear:both;"></div>
-{!if pmt_method}
-    <p id="orderPaymentMethod">
-        {$LANG_SHOP['pmt_method']}: {pmt_method}<br />
-        {$LANG_SHOP['notify_email']}: {payer_email}
-{!endif} 
   {!else}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
