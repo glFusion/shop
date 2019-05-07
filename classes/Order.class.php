@@ -673,8 +673,8 @@ class Order
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
-            'order_number' => $this->order_id,
-            'shipping'      => $this->shipper_id > 0 ? $Currency->FormatValue($this->shipping) : 0,
+            'order_number'  => $this->order_id,
+            'shipping'      => $this->getInfo('shipper_id') !== NULL ? $Currency->FormatValue($this->shipping) : 0,
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
             'order_instr'   => htmlspecialchars($this->instructions),
@@ -1209,12 +1209,22 @@ class Order
         if ($this->hasPhysical()) {
             $shipper_id = $this->shipper_id;
             $shippers = Shipper::getShippersForOrder($this);
-            if ($shipper_id !== NULL && isset($shippers[$shipper_id])) {
-                // Use the already-selected shipper, if any.
-                // The ship_method var should already be set.
-                $this->shipping = $shippers[$shipper_id]->ordershipping->total_rate;
-            } else {
-                // Get the first shipper available, which will be the best rate.
+            $have_shipper = false;
+            if ($shipper_id !== NULL) {
+                // Array is 0-indexed so search for the shipper ID, if any.
+                foreach ($shippers as $id=>$shipper) {
+                    if ($shipper->id == $shipper_id) {
+                        // Use the already-selected shipper, if any.
+                        // The ship_method var should already be set.
+                        $this->shipping = $shippers[$id]->ordershipping->total_rate;
+                        $have_shipper = true;
+                        break;
+                    }
+                }
+            }
+            if (!$have_shipper) {
+                // If the specified shipper isn't found for some reason,
+                // get the first shipper available, which will be the best rate.
                 $shipper = reset($shippers);
                 $this->ship_method = $shipper->name;
                 $this->shipping = $shipper->ordershipping->total_rate;

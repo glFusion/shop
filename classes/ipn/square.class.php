@@ -90,7 +90,7 @@ class square extends \Shop\IPN
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
 
-        foreach ($this->Order->Cart() as $idx=>$item) {
+        foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
                 'item_id'   => $item->product_id,
                 'quantity'  => $item->quantity,

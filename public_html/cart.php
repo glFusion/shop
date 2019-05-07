@@ -168,7 +168,6 @@ default:
     SHOP_setUrl($_SERVER['request_uri']);
     if (!empty($id)) {
         \Shop\Cart::setFinal($id, false);
-        COM_refresh(SHOP_URL. '/index.php?view=cart');
     }
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();

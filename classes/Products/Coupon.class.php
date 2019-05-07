@@ -565,7 +565,7 @@ class Coupon extends \Shop\Product
     public static function canPayByGC($cart)
     {
         $gc_can_apply = $cart->getTotal();
-        $items = $cart->Cart();
+        $items = $cart->getItems();
         foreach ($items as $item) {
             $P = $item->getProduct();
             if ($P->isNew || $P->prod_type == SHOP_PROD_COUPON) {
