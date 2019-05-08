@@ -403,7 +403,7 @@ default:
     break;
 }
 
-//SHOP_debug('Admin view: ' . $action);
+//SHOP_log('Admin view: ' . $action, SHOP_LOG_DEBUG);
 switch ($view) {
 case 'history':
     $content .= \Shop\history(true);

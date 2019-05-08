@@ -120,7 +120,7 @@ class square extends \Shop\IPN
     {
         // Gets the transaction via the Square API to get the real values.
         $trans = $this->gw->getTransaction($this->txn_id);
-        COM_errorLog(var_export($trans,true));
+        SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
         $status = 'pending';
         if ($trans) {
             // Get through the top-level array var
@@ -149,7 +149,7 @@ class square extends \Shop\IPN
 
 
         if ($this->Cart === NULL) {
-            COM_errorLog("No cart provided");
+            SHOP_log("No cart provided", SHOP_LOG_ERROR);
             return false;
         }
 

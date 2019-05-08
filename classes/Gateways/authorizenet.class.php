@@ -259,8 +259,7 @@ class authorizenet extends \Shop\Gateway
 
         if ($code != 200) {             // Check for a 200 code before anything else
             COM_setMsg("Error checking out");
-            COM_errorLog('Shop Error: ' . __CLASS__ . '/' . __FUNCTION__ .
-                'Bad response from token request: ' . print_r($result,true));
+            SHOP_log('Bad response from token request: ' . print_r($result,true), SHOP_LOG_ERROR);
             return false;
         }
         $bom = pack('H*','EFBBBF');

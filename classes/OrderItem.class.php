@@ -281,7 +281,7 @@ class OrderItem
         }
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        //COM_errorLog($sql);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             Cache::deleteOrder($this->order_id);

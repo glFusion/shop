@@ -342,7 +342,7 @@ class Attribute
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Attribute::_toggle() SQL error: $sql", 1);
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         } else {
             return $newvalue;
@@ -395,14 +395,13 @@ class Attribute
         $stepNumber = 10;   // Increment amount
         $changed = false;   // Assume no changes
         while ($A = DB_fetchArray($result, false)) {
-            COM_errorLog("checking item {$A['attr_id']}");
-            COM_errorLog("Order by is {$A['orderby']}, should be $order");
+            SHOP_log("checking item {$A['attr_id']}", SHOP_LOG_DEBUG);
+            SHOP_log("Order by is {$A['orderby']}, should be $order", SHOP_LOG_DEBUG);
             if ($A['orderby'] != $order) {  // only update incorrect ones
                 $changed = true;
                 $sql = "UPDATE {$_TABLES['shop.prod_attr']}
                     SET orderby = '$order'
                     WHERE attr_id = '{$A['attr_id']}'";
-COM_ErrorLog($sql);
                 DB_query($sql);
             }
             $order += $stepNumber;

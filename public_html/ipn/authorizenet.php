@@ -19,15 +19,15 @@ require_once '../../lib-common.php';
 if (empty($_POST)) {
     // Received a webhook, a single parameter string
     $json = file_get_contents('php://input');
-    SHOP_debug("WEBHOOK: $json", 'debug_ipn');
+    SHOP_log("WEBHOOK: $json", SHOP_LOG_DEBUG);
     $post= json_decode($json,true);
 } elseif (isset($_POST['shop_test_ipn'])) {
     // Received POST, testing only. Must already be complete
     $post = $_POST;
-    SHOP_debug("TEST: " . var_export($post,true), 'debug_ipn');
+    SHOP_log("TEST: " . var_export($post,true), SHOP_LOG_DEBUG);
 } else {
     // Received a Silent URL post. Convert to webhook format.
-    SHOP_debug("Silent URL: " . var_export($_POST,true), 'debug_ipn');
+    SHOP_log("Silent URL: " . var_export($_POST,true), SHOP_LOG_DEBUG);
     switch (SHOP_getVar($_POST, 'x_type')) {
     case 'auth_capture':
         $eventtype = 'net.authorize.payment.authcapture.created';
@@ -52,11 +52,9 @@ if (empty($_POST)) {
     );
 }
 
-if ($_SHOP_CONF['debug_ipn'] == 1) {
-    // Get the complete IPN message prior to any processing
-    COM_errorLog("Recieved IPN:", 1);
-    COM_errorLog(var_export($post, true), 1);
-}
+// Get the complete IPN message prior to any processing
+SHOP_log("Recieved IPN:", SHOP_LOG_DEBUG);
+SHOP_log((var_export($post, true), SHOP_LOG_DEBUG);
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('authorizenet', $post);

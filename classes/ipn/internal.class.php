@@ -105,7 +105,7 @@ class internal extends \Shop\IPN
     private function Verify()
     {
         if ($this->Order === NULL) {
-            COM_errorLog("No cart provided");
+            SHOP_log("No cart provided", SHOP_LOG_ERROR);
             return false;
         }
 
@@ -206,7 +206,7 @@ class internal extends \Shop\IPN
 
         $Cart = $this->Order->getItems();
         if (empty($Cart)) {
-            COM_errorLog("Shop\\internal_ipn::Process() - Empty Cart for id {$this->Order->cartID()}");
+            SHOP_log("Empty Cart for id {$this->Order->cartID()}", SHOP_LOG_ERROR);
             return false;
         }
         $total_shipping = 0;

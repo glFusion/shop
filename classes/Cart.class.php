@@ -691,7 +691,7 @@ class Cart extends Order
             $msg .= " except $save";
         }
         DB_query($sql);
-        SHOP_debug($msg);
+        SHOP_log($msg, SHOP_LOG_DEBUG);
     }
 
 
@@ -764,6 +764,7 @@ class Cart extends Order
 
         $Order = self::getInstance(0, $cart_id);
         if ($Order->isNew) {
+            SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
             // Cart not found, do nothing
             return;
         }
@@ -785,8 +786,10 @@ class Cart extends Order
             // delete all open user carts except this one
             self::deleteUser(0, $cart_id);
         }
+        Cache::delete('order_' . $cart_id);
         // Is it really necessary to log that it changed from a cart to pending?
         //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
+        SHOP_log("Cart $cart_id status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
         return;
     }
 
@@ -896,7 +899,7 @@ class Cart extends Order
     {
         global $_TABLES;
         DB_delete($_TABLES['shop.orders'], 'status', 'cart');
-        SHOP_debug("All carts for all users deleted");
+        SHOP_log("All carts for all users deleted", SHOP_LOG_DEBUG);
     }
 
 
@@ -968,11 +971,10 @@ class Cart extends Order
         if (!empty($msg)) {
             $msg = '<ul><li>' . implode('</li><li>', $msg) . '</li></ul>';
             $msg = $LANG_SHOP['msg_cart_invalid'] . $msg;
-            COM_setMsg($msg, 'error');
+            COM_setMsg($msg, SHOP_LOG_ERROR);
         }
         return $invalid;
     }
-
 
 }   // class Cart
 

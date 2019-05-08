@@ -129,7 +129,7 @@ class Plugin extends \Shop\Product
      */
     public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
     {
-        SHOP_debug(__NAMESPACE__ . '\\' . __CLASS__ . 'handlePurchase() pi_info: ' . $this->pi_name);
+        SHOP_log('pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
         // The custom field needs to exist and be an array.

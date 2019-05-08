@@ -73,7 +73,7 @@ class authorizenet extends \Shop\IPN
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->Log(true);
 
-        SHOP_debug("Received $item_gross gross payment", 'debug_ipn');
+        SHOP_log("Received $item_gross gross payment", SHOP_LOG_DEBUG);
         if ($this->isSufficientFunds()) {
             $this->handlePurchase();
             return true;

@@ -192,7 +192,7 @@ class OrderStatus extends Workflow
         if (!DB_error()) {
             return $newvalue;
         } else {
-            COM_errorLog("OrderStatus::Toggle() SQL error: $sql", 1);
+            SHOP_log("OrderStatus::Toggle() SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         }
     }

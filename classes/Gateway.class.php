@@ -684,15 +684,14 @@ class Gateway
 
         // For each item purchased, record purchase in purchase table
         foreach ($items as $id=>$item) {
-            //COM_errorLog("Processing item: $id");
+            //SHOP_log("Processing item: $id", SHOP_LOG_DEBUG);
             list($item_number, $item_opts) = SHOP_explode_opts($id, true);
 
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                SHOP_debug("handlePurchase for Plugin item " .
-                        $item_number);
+                SHOP_log("Plugin item " . $item_number, SHOP_LOG_DEBUG);
 
                 // Initialize item info array to be used later
                 $A = array();
@@ -700,7 +699,7 @@ class Gateway
                 // Split the item number into component parts.  It could
                 // be just a single string, depending on the plugin's needs.
                 $pi_info = explode(':', $item['item_number']);
-                SHOP_debug('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true));
+                SHOP_log('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true), SHOP_LOG_DEBUG);
 
                 $status = LGLIB_invokeService($pi_info[0], 'productinfo',
                         array($item_number, $item_opts),
@@ -712,7 +711,7 @@ class Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                SHOP_debug("Paymentgw::handlePurchase() Got name " . $items[$id]['name']);
+                SHOP_log("Paymentgw::handlePurchase() Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -727,7 +726,7 @@ class Gateway
                 $prod_types |= SHOP_PROD_VIRTUAL;
 
             } else {
-                SHOP_debug("Shop item " . $item_number);
+                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
                 $P = Product::getInstance($item_number);
                 $A = array(
                     'name' => $P->getName(),
@@ -796,7 +795,7 @@ class Gateway
                         "', INTERVAL {$A['expiration']} DAY)";
             }
             //echo $sql;die;
-            SHOP_debug($sql);
+            SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
 
         }   // foreach item

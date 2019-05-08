@@ -35,3 +35,4 @@ First beta version under the new Shop name.
   * Put plugin and coupon products in their own namespace.
   * Strip HTML tags from special field data values.
   * Use a checkbox instead of link for deleting images from products.
+  * Standardize logging, use glFusion 2.0-compatible log levels.

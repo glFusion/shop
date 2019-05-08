@@ -15,8 +15,8 @@
 require_once '../../lib-common.php';
 
 // Get the complete IPN message prior to any processing
-SHOP_debug("Recieved IPN:", 'debug_ipn');
-SHOP_debug(var_export($_POST, true), 'debug_ipn');
+SHOP_log("Recieved IPN:", SHOP_LOG_DEBUG);
+SHOP_log(var_export($_POST, true), SHOP_LOG_DEBUG);
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('paypal', $_POST);

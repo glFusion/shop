@@ -72,7 +72,7 @@ function SHOP_do_upgrade($dvlp = false)
     \Shop\Cache::clear();
     SHOP_remove_old_files();
     CTL_clearCache();   // clear cache to ensure CSS updates come through
-    COM_errorLog("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", 1);
+    SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);
     // Set a message in the session to replace the "has not been upgraded" message
     COM_setMsg("Shop Plugin has been updated to $current_ver", 'info', 1);
     return true;
@@ -97,22 +97,22 @@ function SHOP_do_upgrade_sql($version, $ignore_error = false)
         return true;
 
     // Execute SQL now to perform the upgrade
-    COM_errorLog("--- Updating Shop to version $version", 1);
+    SHOP_log("--- Updating Shop to version $version", SHOP_LOG_INFO);
     foreach($SHOP_UPGRADE[$version] as $sql) {
-        COM_errorLog("Shop Plugin $version update: Executing SQL => $sql");
+        SHOP_log("Shop Plugin $version update: Executing SQL => $sql", SHOP_LOG_INFO);
         try {
             DB_query($sql, '1');
             if (DB_error()) {
                 // check for error here for glFusion < 2.0.0
-                COM_errorLog('SQL Error during update', 1);
+                SHOP_log('SQL Error during update', SHOP_LOG_INFO);
                 if (!$ignore_error) return false;
             }
         } catch (Exception $e) {
-            COM_errorLog('SQL Error ' . $e->getMessage(), 1);
+            SHOP_log('SQL Error ' . $e->getMessage(), SHOP_LOG_INFO);
             if (!$ignore_error) return false;
         }
     }
-    COM_errorLog("--- Shop plugin SQL update to version $version done", 1);
+    SHOP_log("--- Shop plugin SQL update to version $version done", SHOP_LOG_INFO);
     return true;
 }
 
@@ -138,10 +138,10 @@ function SHOP_do_set_version($ver)
 
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        COM_errorLog("Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version",1);
+        SHOP_log("Error updating the {$_SHOP_CONF['pi_display_name']} Plugin version", SHOP_LOG_INFO);
         return false;
     } else {
-        COM_errorLog("{$_SHOP_CONF['pi_display_name']} version set to $ver");
+        SHOP_log("{$_SHOP_CONF['pi_display_name']} version set to $ver", SHOP_LOG_INFO);
         // Set in-memory config vars to avoid tripping SHOP_isMinVersion();
         $_SHOP_CONF['pi_version'] = $ver;
         $_PLUGIN_INFO[$_SHOP_CONF['pi_name']]['pi_version'] = $ver;

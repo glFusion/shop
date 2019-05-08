@@ -452,7 +452,7 @@ div.ItemOptions {
 }
 
 #orderPaymentMethod {
-    padding-top: 2em;
+    /*padding-top: 2em;*/
 }
 
 #shopOrderLog th {
@@ -673,4 +673,13 @@ li.shopProductListItem.v2 {
 
 #otherfuncs button {
     margin-bottom: 25px;
+}
+
+div.blk_img {
+    max-height: 150px;
+    margin-top: 5px;
+}
+
+div.blk_img img {
+    max-height: 150px;
 }

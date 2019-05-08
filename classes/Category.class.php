@@ -520,7 +520,7 @@ class Category
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Category::_toggle() SQL error: $sql", 1);
+            SHOP_log("Category::_toggle() SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         } else {
             Cache::clear('categories');
