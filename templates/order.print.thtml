@@ -141,7 +141,11 @@
 {!endif}
 {!if shipping}
         <tr>
-          <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}</td>
+          <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
+{!if ship_method}
+({ship_method})
+{!endif}
+          </td>
           <td class="alignright">{shipping}</td>
         </tr>
 {!endif}
@@ -198,6 +202,10 @@
     {!endif}
   {!endif}
     </p>
+{!endif}
+{!else}
+{!if ship_method}
+<p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
 {!endif}
 {!endif}
   </div>
