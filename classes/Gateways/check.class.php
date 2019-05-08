@@ -549,15 +549,14 @@ class check extends \Shop\Gateway
         foreach ($items as $id=>$item) {
             $Order->AddItem($id, $item);
 
-            //COM_errorLog("Processing item: $id");
+            //SHOP_log("Processing item: $id", SHOP_LOG_DEBUG);
             list($item_number, $item_opts) = explode('|', $id);
 
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                SHOP_debug("handlePurchase for Plugin item " .
-                        $item_number);
+                SHOP_log("handlePurchase for Plugin item " . $item_number, SHOP_LOG_DEBUG);
 
                 // Initialize item info array to be used later
                 $A = array();
@@ -572,7 +571,7 @@ class check extends \Shop\Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                SHOP_debug("Got name " . $items[$id]['name']);
+                SHOP_log("Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -590,7 +589,7 @@ class check extends \Shop\Gateway
                 $prod_types |= SHOP_PROD_VIRTUAL;
 
             } else {
-                SHOP_debug("Shop item " . $item_number);
+                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
                 $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
@@ -653,7 +652,7 @@ class check extends \Shop\Gateway
                         options = '" . DB_escapeString($item_opts) . "'";
 
             //echo $sql;die;
-            SHOP_debug($sql);
+            SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
 
         }   // foreach item

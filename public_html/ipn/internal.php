@@ -15,11 +15,9 @@
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
 
-if ($_SHOP_CONF['debug_ipn'] == 1) {
-    // Get the complete IPN message prior to any processing
-    COM_errorLog("Recieved IPN:", 1);
-    COM_errorLog(var_export($_POST, true), 1);
-}
+// Get the complete IPN message prior to any processing
+SHOP_log("Recieved IPN:", SHOP_LOG_DEBUG);
+SHOP_log(var_export($_POST, true), SHOP_LOG_DEBUG);
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('internal', $_POST);

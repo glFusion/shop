@@ -50,7 +50,7 @@ $LANG_SHOP = array (
 'category_list'     => 'Categorías',
 'admin_hdr'         => 'Create, delete and modify products in the catalog.  You may also view purchase histories and the Shop IPN data for each transaction.',
 'admin_hdr_editattr' => 'Create or update a product attribute.',
-'admin_hdr_catlist' => 'Edit product categories, or select "New Category" to create a new one.  A category may be deleted only if it is not associated with any products.',
+'admin_hdr_categories' => 'Edit product categories, or select "New Category" to create a new one.  A category may be deleted only if it is not associated with any products.',
 'admin_hdr_ipnlog'  => 'This is a list of IPN messages that have been received.  Click on either the ID or the Txn ID to view the message detail.',
 'admin_hdr_history' => 'This is a list of all purchases in the database.  Click on a link for more information about that item',
 'admin_hdr_attributes' => 'Attributes can be associated with products.  For instance, you may wish to offer small, medium and large sizes, and charge extra for large.<br /><span class="pluginShopAlertText">Note:  Products with attributes cannot be purchased via "Buy-Now" buttons.  The shopping cart must be enabled.</span>',
@@ -526,8 +526,7 @@ $LANG_confignames['shop'] = array(
     'ena_ratings'   => 'Enable Product Ratings?',
     'anon_can_rate' => 'Anonymous can rate products?',
     'displayblocks'  => 'Display glFusion Blocks',
-    'debug_ipn'     => 'Debug IPN Messages?',
-    'debug'         => 'Program Debug?',
+    'log_level'     => 'Log Level',
     'def_enabled'   => 'Product Enabled?',
     'def_featured'  => 'Product Featured?',
     'def_taxable'   => 'Product is Taxable?',
@@ -612,7 +611,16 @@ $LANG_configselects['shop'] = array(
             'Show in Catalog, Prevent Sales' => 1,
             'Hide from Catalog' => 2),
     17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    18 => array(
+        'DEBUG' => 100,
+        'INFO'  => 200,
+        'NOTICE' => 250,
+        'WARNING' => 300,
+        'ERROR' => 400,
+        'CRITICAL' => 500,
+        'ALERT' => 550,
+        'EMERGENCY' => 600,
+    ),
 );
-
 
 ?>

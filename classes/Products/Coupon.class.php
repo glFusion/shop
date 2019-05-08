@@ -203,12 +203,12 @@ class Coupon extends \Shop\Product
                 WHERE code = '$code'";
         $res = DB_query($sql);
         if (DB_numRows($res) == 0) {
-            COM_errorLog("Attempting to redeem coupon $code, not found in database");
+            SHOP_log("Attempting to redeem coupon $code, not found in database", SHOP_LOG_ERROR);
             return array(3, sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']));;
         } else {
             $A = DB_fetchArray($res, false);
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
-                COM_errorLog("Coupon code $code was already redeemed");
+                SHOP_log("Coupon code $code was already redeemed", SHOP_LOG_ERROR);
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
             }
         }
@@ -221,7 +221,7 @@ class Coupon extends \Shop\Product
             \Shop\Cache::clear('coupons');
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
-                COM_errorLog("A DB error occurred marking coupon $code as redeemed");
+                SHOP_error("A DB error occurred marking coupon $code as redeemed", SHOP_LOG_ERROR);
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
@@ -327,7 +327,7 @@ class Coupon extends \Shop\Product
             return;
         }
 
-        SHOP_debug("Sending Coupon to " . $recip);
+        SHOP_log("Sending Coupon to " . $recip, SHOP_LOG_DEBUG);
         $T = SHOP_getTemplate('coupon_email_message', 'message');
         if ($exp != self::MAX_EXP) {
             $dt = new \Date($exp, $_CONF['timezone']);

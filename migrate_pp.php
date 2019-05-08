@@ -30,7 +30,7 @@ function SHOP_migrate_pp()
         if (is_file($pp_path)) {
             require_once $pp_path;
         } else {
-            COM_errorLog(__FUNCTION__ . ': Could not include ' . $pp_path);
+            SHOP_log('Could not include ' . $pp_path, SHOP_LOG_ERROR);
             return false;
         }
     }
@@ -40,7 +40,7 @@ function SHOP_migrate_pp()
         !isset($_PP_CONF['pi_version']) ||
         !COM_checkVersion($_PP_CONF['pi_version'], '0.6.0')
     ) {
-        COM_errorLog(__FUNCTION__ . ': Paypal version not found or less than 0.6.0');
+        SHOP_log('Paypal version not found or less than 0.6.0', SHOP_LOG_ERROR);
         return false;
     }
 
@@ -62,7 +62,7 @@ function SHOP_migrate_pp()
             // Ignore errors since we can't be sure which of these have already been done.
             DB_query($sql, 1);
             if (DB_error()) {
-                COM_errorLog("Non-fatal error runing $sql");
+                SHOP_log("Non-fatal error runing $sql", SHOP_LOG_WARNING);
             }
         }
     }
@@ -91,7 +91,7 @@ function SHOP_migrate_pp()
     foreach ($sql as $s) {
         DB_query($s, 1);
         if (DB_error()) {
-            COM_errorLog(__FUNCTION__ . ": SQL error: $s");
+            SHOP_log("SQL error: $s", SHOP_LOG_ERROR);
             return false;
         }
     }

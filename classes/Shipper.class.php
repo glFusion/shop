@@ -421,7 +421,7 @@ class Shipper
                 }
             }
             if ($item['packed'] !== true) {
-                COM_errorLog("SHOP: Error packing " . print_r($item,true));
+                SHOP_log("Error packing " . print_r($item,true), SHOP_LOG_ERROR);
                 break;
             } else {
                 $units_left -= $item['single_units'];
@@ -612,7 +612,7 @@ class Shipper
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Shipper::toggleEnabled() SQL error: $sql", 1);
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         } else {
             Cache::clear(self::$base_tag);

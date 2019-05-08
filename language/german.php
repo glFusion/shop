@@ -53,7 +53,7 @@ $LANG_SHOP = array (
 'category_list'     => 'Kategorien',
 'admin_hdr'         => '<ul><li>Erstelle, lösche und ändere hier Deine Produkte aus Deinem Shop.</li><li>Durch anklicken des Produkt-Namen gelangst Du zur Verkaufs-Statistik</li></ul>',
 'admin_hdr_editattr' => '<ul><li>Erstelle oder aktualisiere hier Produk-Optionen wie z.B. Farb-, oder Größen-Optionen.</li></ul>',
-'admin_hdr_catlist' => '<ul><li>Bearbeite Produktkategorien, oder wähle "Neue Kategorie", um eine neue Kategorie zu erstellen.</li><li>Eine Kategorie kann nur gelöscht werden, wenn sie nicht mit Produkten verknüpft ist.</li></ul>',
+'admin_hdr_categories' => '<ul><li>Bearbeite Produktkategorien, oder wähle "Neue Kategorie", um eine neue Kategorie zu erstellen.</li><li>Eine Kategorie kann nur gelöscht werden, wenn sie nicht mit Produkten verknüpft ist.</li></ul>',
 'admin_hdr_ipnlog'  => '<ul><li>Dies ist eine Liste der empfangenen IPN-Protokolle. (IPN=Instant Payment Notification)</li><li>Klicke auf die ID oder die Txn-ID, um weiter Details anzuzeigen.</li></ul>',
 'admin_hdr_history' => '<ul><li>Dies ist eine Liste aller Käufe in der Datenbank.</li><li>Klicke auf einen Link für weitere Informationen zu diesem Kauf</li></ul>',
 'admin_hdr_attributes' => '<ul><li>Produkt-Optionen können mit Produkten verknüpft werden.</li><li>Du kannst z.B. kleine, mittlere und große Größen anbieten, wobei diese unterschiedlich viel kosten.</li><li>Produkte mit Produkt-Optionen können nicht direkt über die Schaltflächen "Jetzt kaufen" erworben werden.</li><li>Der Warenkorb muss aktiviert sein.</li></ul>',
@@ -522,8 +522,7 @@ $LANG_confignames['shop'] = array(
     'ena_ratings'   => 'Bewertungen aktivieren',
     'anon_can_rate' => 'Gäste können bewerten',
     'displayblocks'  => 'Blöcke anzeigen',
-    'debug_ipn'     => 'IPN für Fehlersuche',
-    'debug'         => 'Fehler-Protokoll',
+    'log_level'      => 'Log Level',
     'def_enabled'   => 'Produkt ist verfügbar',
     'def_featured'  => 'Produkt als Aktion',
     'def_taxable'   => 'Produkt ist Steuerpflichtig',
@@ -603,6 +602,16 @@ $LANG_configselects['shop'] = array(
     15 => array('Pfund' => 'lbs', 'Kilogramm' => 'kgs'),
     16 => array('Anzeigen mit Bestellmöglichkeit' => 0, 'Anzeigen ohne Bestellmöglichkeit' => 1, 'Nicht mehr anzeigen' => 2),
     17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    18 => array(
+        'DEBUG' => 100,
+        'INFO'  => 200,
+        'NOTICE' => 250,
+        'WARNING' => 300,
+        'ERROR' => 400,
+        'CRITICAL' => 500,
+        'ALERT' => 550,
+        'EMERGENCY' => 600,
+    ),
 );
 
 ?>

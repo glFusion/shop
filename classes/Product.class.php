@@ -504,7 +504,7 @@ class Product
             } elseif ($filename != '') {
                 $this->file = $filename;
             }
-            SHOP_debug('Uploaded file: ' . $this->file);
+            SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
         }
 
         // For downloadable files, physical product options don't apply
@@ -522,11 +522,11 @@ class Product
 
         // Insert or update the record, as appropriate
         if ($this->id > 0) {
-            SHOP_debug('Preparing to update product id ' . $this->id);
+            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
         } else {
-            SHOP_debug('Preparing to save a new product.');
+            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
             $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
                 dt_add = UTC_TIMESTAMP(), ";
             $sql3 = '';
@@ -571,7 +571,7 @@ class Product
             }
             $status = true;
         } else {
-            COM_errorLog("Shop- SQL error in Product::Save: $sql", 1);
+            SHOP_log("Shop- SQL error in Product::Save: $sql", SHOP_LOG_ERROR);
             $status = false;
         }
 
@@ -594,11 +594,11 @@ class Product
         }
 
         if (empty($this->Errors)) {
-            SHOP_debug('Update of product ' . $this->id . ' succeeded.');
+            SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
-            SHOP_debug('Update of product ' . $this->id . ' failed.');
+            SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
             return false;
         }
     }
@@ -921,7 +921,7 @@ class Product
         // Ignore SQL errors since varname is indeterminate
         DB_query($sql, 1);
         if (DB_error()) {
-            COM_errorLog("Product::_toggle() SQL error: $sql", 1);
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         } else {
             Cache::clear('products');
@@ -1700,7 +1700,7 @@ class Product
             Cache::clear('products');
             DB_query($sql, 1);
             if (DB_error()) {
-                COM_errorLog("Product::handlePurchase() SQL errror: $sql", 1);
+                SHOP_log("SQL errror: $sql", SHOP_LOG_ERROR);
                 $status = 1;
             }
         }
@@ -1798,7 +1798,7 @@ class Product
         $this->name = $this->name . ' - Copy';
         $this->Save();
         if ($this->id < 1) {
-            COM_errorLog("Error duplicating product id $old_id", 1);
+            SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
             return false;
         }
         $new_id = $this->id;
@@ -1816,7 +1816,7 @@ class Product
                         VALUES ('$new_id', '" . DB_escapeString($new_fname) . "')";
                 DB_query($sql);
             } else {
-                COM_errorLog("Error copying file $src_f to $dst_f, continuing", 1);
+                SHOP_log("Error copying file $src_f to $dst_f, continuing", SHOP_LOG_ERROR);
             }
         }
         return true;

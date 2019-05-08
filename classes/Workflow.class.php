@@ -201,7 +201,7 @@ class Workflow
             Cache::clear('workflows');
             return $newvalue;
         } else {
-            COM_errorLog(__CLASS__ . '::' . __FUNCTION__ . "() SQL error: $sql", 1);
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
             return -1;
         }
     }

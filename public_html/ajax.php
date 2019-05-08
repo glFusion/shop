@@ -32,7 +32,7 @@ case 'getAddress':
 
 case 'addcartitem':
     if (!isset($_POST['item_number'])) {
-        COM_errorLog("Ajax addcartitem:: Missing Item Number");
+        SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
@@ -48,7 +48,7 @@ case 'addcartitem':
     $Cart = \Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
-        COM_errorLog("Bad nonce: " . $_POST['nonce'] . " for cart {$Cart->order_id}, should be " . md5($Cart->order_id));
+        SHOP_log("Bad nonce: " . $_POST['nonce'] . " for cart {$Cart->order_id}, should be " . md5($Cart->order_id), SHOP_LOG_ERROR);
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }

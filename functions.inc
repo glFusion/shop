@@ -52,6 +52,16 @@ define('SHOP_COMMENTS_DISABLED',  -1);
 define('SHOP_STATUS_OPEN', 0);
 define('SHOP_STATUS_PAID', 1);
 
+// Log levels to emulate glFusion 2.0+ logging
+define('SHOP_LOG_DEBUG',    100);
+define('SHOP_LOG_INFO',     200);
+define('SHOP_LOG_NOTICE',   250);
+define('SHOP_LOG_WARNING',  300);
+define('SHOP_LOG_ERROR',    400);
+define('SHOP_LOG_CRITICAL', 500);
+define('SHOP_LOG_ALERT',    550);
+define('SHOP_LOG_EMERGEHCY', 600);
+
 // Session variables for TimThumb image url, if used
 SESS_setVar($_SHOP_CONF['pi_name'], array(
     'origpath' => $_SHOP_CONF['image_dir'],
@@ -941,7 +951,7 @@ function phpblock_shop_cart_contents()
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
-        //SHOP_debug("Cart disabled or there is no cart");
+        //SHOP_log("Cart disabled or there is no cart", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -952,7 +962,7 @@ function phpblock_shop_cart_contents()
     }
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) {
-        //SHOP_debug("Cart {$cart->order_id} has no items");
+        //SHOP_log("Cart {$cart->order_id} has no items", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -1317,7 +1327,8 @@ function SHOP_phpblock_product($sql)
     // item to show
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        COM_errorLog("SHOP_phpblock_product() SQL error: $sql", 1);
+        SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+        return '';
     }
     if ($res && DB_numRows($res) > 0) {
 
@@ -1600,22 +1611,54 @@ function SHOP_ImageUrl($imgname, $width=0, $height=0)
  * @param   string  $msg    Text message to display, may be blank.
  * @param   string  $type   Type of message
  */
-function SHOP_debug($msg, $type = 'debug')
+function SHOP_log($msg, $level = SHOP_LOG_ERROR)
 {
     global $_SHOP_CONF;
 
-    switch ($type) {
-    case 'error':
-        // Always log an error message
-        COM_errorLog('SHOP Error: ' . $msg, 1);
-        break;
-    case 'debug':
-    default:
-        // Log a message only if the message type is enabled
-        if (isset($_SHOP_CONF[$type]) && $_SHOP_CONF[$type] == 1) {
-            COM_errorLog('SHOP DEBUG: ' . $msg, 1);
-        }
+    if ($level < $_SHOP_CONF['log_level']) {
+        return;
     }
+
+    $msg1 = 'SHOP ';
+    switch ($level) {
+    case SHOP_LOG_DEBUG:
+        $msg1 .= 'DEBUG';
+        break;
+    case SHOP_LOG_INFO:
+        $msg1 .= 'INFO';
+        break;
+    case SHOP_LOG_NOTICE:
+        $msg1 .= 'NOTICE';
+        break;
+        case SHOP_LOG_ERROR;
+    case SHOP_LOG_WARNING:
+        $msg1 .= 'WARNING';
+        break;
+    case SHOP_LOG_ERROR:
+        $msg1 .= 'ERROR';
+        break;
+    case SHOP_LOG_CRITICAL:
+        $msg1 .= 'CRITICAL';
+        break;
+    case SHOP_LOG_ALERT:
+        $msg1 .= 'ALERT';
+        break;
+    case SHOP_LOG_EMERGENCY:
+        $msg1 .= 'EMERGENCY';
+        break;
+    }
+    $msg1 .= ': ';
+
+    $bk = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    if (isset($bk[1])) {
+        if (isset($bk[1]['class'])) {
+            $msg1 .= $bk[1]['class'] . $bk[1]['type'];
+        }
+        $msg1 .= $bk[1]['function'] . '(): ';
+    } else {
+        $msg1 .= basename($bk[0]['file']) . '(' . $bk[0]['line'] . ') ';
+    }
+    COM_errorLog($msg1 . $msg, 1);
 }
 
 

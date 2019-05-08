@@ -244,7 +244,7 @@ class paypal extends \Shop\IPN
             );
             $this->AddItem($args);
 
-            SHOP_debug("Net Settled: $payment_gross $this->currency", 'debug_ipn');
+            SHOP_log("Net Settled: $payment_gross $this->currency", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
 
@@ -262,7 +262,7 @@ class paypal extends \Shop\IPN
             $fees_paid = 0;
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                COM_errorLog("Shop\\shop_ipn::Process() - Empty Cart for id {$this->Order->order_id}");
+                SHOP_log("Empty Cart for id {$this->Order->order_id}", SHOP_LOG_ERROR);
                 return false;
             }
 
@@ -285,7 +285,7 @@ class paypal extends \Shop\IPN
             }
 
             $payment_gross = SHOP_getVar($this->ipn_data, 'mc_gross', 'float') - $fees_paid;
-            SHOP_debug("Received $payment_gross gross payment", 'debug_ipn');
+            SHOP_log("Received $payment_gross gross payment", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
 

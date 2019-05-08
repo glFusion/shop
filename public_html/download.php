@@ -54,7 +54,7 @@ if (is_array($A) && !empty($A['file'])) {
     if (!file_exists($logfile)) {
         $fp = fopen($logfile, "w+");
         if (!$fp) {
-            COM_errorLog("Failed to create $logfile", 1);
+            SHOP_log("Failed to create $logfile", SHOP_LOG_ERROR);
         } else {
             fwrite($fp, "**** Created Logfile ***\n");
         }
@@ -72,9 +72,11 @@ if (is_array($A) && !empty($A['file'])) {
     // Check for errors
     if ($dwnld->areErrors()) {
         $errs = $dwnld->printErrors(false);
-        COM_errorLog("SHOP-DWNLD: {$_USER['username']} tried to download " .
-                "the file with id {$id} but for some reason could not",1);
-        COM_errorLog("SHOP-DWNLD: $errs",1);
+        SHOP_log("SHOP-DWNLD: {$_USER['username']} tried to download " .
+            "the file with id {$id} but for some reason could not",
+            SHOP_LOG_ERROR
+        );
+        SHOP_log("SHOP-DWNLD: $errs", SHOP_LOG_ERROR);
         echo COM_refresh($_CONF['site_url']);
     }
 
@@ -82,9 +84,9 @@ if (is_array($A) && !empty($A['file'])) {
             "{$_USER['username']} successfully downloaded "
             . "the file with id {$id}.");
 } else {
-    COM_errorLog("SHOP-DWNLD: {$_USER['username']}/{$_USER['uid']} " .
+    SHOP_log("SHOP-DWNLD: {$_USER['username']}/{$_USER['uid']} " .
             "tried to download the file with id {$id} " .
-            "but this is not a downloadable file",1);
+            "but this is not a downloadable file", SHOP_LOG_ERROR);
     echo COM_refresh($_CONF['site_url']. '/index.php?msg=07&plugin=shop');
 }
 

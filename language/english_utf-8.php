@@ -531,8 +531,7 @@ $LANG_confignames['shop'] = array(
     'ena_ratings'   => 'Enable Product Ratings?',
     'anon_can_rate' => 'Anonymous can rate products?',
     'displayblocks'  => 'Display glFusion Blocks',
-    'debug_ipn'     => 'Debug IPN Messages?',
-    'debug'         => 'Program Debug?',
+    'log_level'      => 'Log Level',
     'def_enabled'   => 'Product Enabled?',
     'def_featured'  => 'Product Featured?',
     'def_taxable'   => 'Product is Taxable?',
@@ -613,10 +612,22 @@ $LANG_configselects['shop'] = array(
     13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
     14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),
     15 => array('Pounds' => 'lbs', 'Kilograms' => 'kgs'),
-    16 => array('Allow Backordering' => 0,
-            'Show in Catalog, Prevent Sales' => 1,
-            'Hide from Catalog' => 2),
+    16 => array(
+        'Allow Backordering' => 0,
+        'Show in Catalog, Prevent Sales' => 1,
+        'Hide from Catalog' => 2,
+    ),
     17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    18 => array(
+        'DEBUG' => 100,
+        'INFO'  => 200,
+        'NOTICE' => 250,
+        'WARNING' => 300,
+        'ERROR' => 400,
+        'CRITICAL' => 500,
+        'ALERT' => 550,
+        'EMERGENCY' => 600,
+    ),
 );
 
 ?>

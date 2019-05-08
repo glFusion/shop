@@ -516,7 +516,7 @@ class Order
         }
         $sql = $sql1 . implode(', ', $fields) . $sql2;
         //echo $sql;die;
-        //COM_errorLog("Save: " . $sql);
+        //SHOP_log(("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         Cache::deleteOrder($this->order_id);
         $this->isNew = false;
@@ -818,7 +818,7 @@ class Order
             DB_query($sql);
         }
         //echo $sql;die;
-        //COM_errorLog($sql);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
         if (DB_error()) return false;
         $this->status = $newstatus;     // update in-memory object
         if ($log) {
@@ -930,7 +930,7 @@ class Order
 
             $text = $this->_prepareNotification($T);
 
-            SHOP_debug("Sending email to " . $this->uid . ' at ' . $this->buyer_email);
+            SHOP_log("Sending email to " . $this->uid . ' at ' . $this->buyer_email, SHOP_LOG_DEBUG);
             if ($this->buyer_email != '') {
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
@@ -961,7 +961,7 @@ class Order
 
             $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
                 $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
-            SHOP_debug("Sending email to admin at $email_addr");
+            SHOP_log("Sending email to admin at $email_addr", SHOP_LOG_DEBUG);
             COM_emailNotification(array(
                 'to' => array($email_addr),
                 'from' => $_CONF['noreply_mail'],
@@ -1555,7 +1555,7 @@ class Order
             WHERE order_id = '$order_id'";
         $res = DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Order::setField() error executing SQL: $sql");
+            SHOP_log("error executing SQL: $sql", SHOP_LOG_DEBUG);
             return false;
         } else {
             return true;
