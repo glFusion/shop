@@ -825,13 +825,11 @@ class Order
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         if (DB_error()) return false;
         $this->status = $newstatus;     // update in-memory object
+        $msg = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
         if ($log) {
-            $this->Log(
-                sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus),
-                $log_user
-            );
+            $this->Log($msg, $log_user);
         }
-        $this->Notify($newstatus);
+        $this->Notify($newstatus, $msg);
         return true;
     }
 
@@ -932,7 +930,7 @@ class Order
                 'msg_body'  => 'order_detail.thtml',
             ) );
 
-            $text = $this->_prepareNotification($T);
+            $text = $this->_prepareNotification($T, $gw_msg);
 
             SHOP_log("Sending email to " . $this->uid . ' at ' . $this->buyer_email, SHOP_LOG_DEBUG);
             if ($this->buyer_email != '') {
@@ -961,7 +959,7 @@ class Order
                 'msg_body'  => 'order_detail.thtml',
             ) );
 
-            $text = $this->_prepareNotification($T);
+            $text = $this->_prepareNotification($T, $gw_msg);
 
             $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
                 $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
@@ -982,7 +980,7 @@ class Order
      * @param   object  &$T     Template object
      * @return  string      Text for email body
      */
-    private function _prepareNotification(&$T)
+    private function _prepareNotification(&$T, $gw_msg='')
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 

@@ -63,7 +63,7 @@ class itempurchase extends \Shop\Report
         $T = $this->getTemplate();
 
         $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
-            ord.billto_name, ord.billto_company
+            ord.billto_name, ord.billto_company, ord.status
             FROM {$_TABLES['shop.orderitems']} purch
             LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = purch.order_id";
 
@@ -74,19 +74,25 @@ class itempurchase extends \Shop\Report
                 'sort'  => true,
             ),
             array(
-                'text'  => $LANG_SHOP['quantity'],
-                'field' => 'qty',
-                'sort' => false,
-            ),
-            array(
                 'text'  => $LANG_SHOP['order'],
                 'field' => 'order_id',
-                'sort' => true,
+                'sort'  => true,
             ),
             array(
-                'text' => $LANG_SHOP['name'],
+                'text'  => $LANG_SHOP['status'],
+                'field' => 'status',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_SHOP['name'],
                 'field' => 'customer',
-                'sort' => true,
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['quantity'],
+                'field' => 'qty',
+                'sort'  => false,
+                'align' => 'right',
             ),
         );
 
