@@ -153,7 +153,9 @@ class authorizenet extends \Shop\Gateway
 
         $return_opts = array(
             'url'       => SHOP_URL . '/index.php?' . urlencode('thanks=authorizenet'),
-            'cancelUrl' => SHOP_URL . '/index.php?' . urlencode('view=cart&cid=' . $cart->order_id),
+            'cancelUrl' => COM_buildUrl(
+                SHOP_URL.'/cart.php?mode=cart&id=' . urlencode($cart->CartID())
+            ),
         );
 
         $json = array(
