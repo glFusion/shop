@@ -50,12 +50,16 @@
             </div>
             <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
               {$LANG_SHOP['see_details']}
+{!if can_add_cart}
+            <button id="{item_id}_add_cart_btn" type="button"
+                class="tooltip uk-button uk-button-primary uk-button-mini"
+                title="{$LANG_SHOP['add_to_cart']}"
+                onclick='shopAddToCart("{item_id}", "{nonce}");return false;' value="">
+                {$LANG_SHOP['add_to_cart']}
+            </button>
+{!endif}
             </figcaption>
           </figure>
-{!if can_add_cart}
-            <button id="{item_id}_add_cart_btn" type="button" class="shopButton black" border="0"
-                onclick='shopAddToCart("{item_id}", "{nonce}");return false;' value="{$LANG_SHOP['add_to_cart']}">{$LANG_SHOP['add_to_cart']}</button>
-{!endif}
         </div>
       </a>
     </li>
