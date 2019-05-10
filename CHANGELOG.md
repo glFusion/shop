@@ -36,3 +36,5 @@ First beta version under the new Shop name.
   * Strip HTML tags from special field data values.
   * Use a checkbox instead of link for deleting images from products.
   * Standardize logging, use glFusion 2.0-compatible log levels.
+  * Add shipper name to printed order and packing list.
+  * Enable add-to-cart button on catalog list page, enabled in V3 list.
