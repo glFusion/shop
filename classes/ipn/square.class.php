@@ -78,12 +78,12 @@ class square extends \Shop\IPN
 
         // Set the custom data into an array.  If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
-        if (isset($A['custom'])) {
+        /*if (isset($A['custom'])) {
             $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
             if (!$this->custom) {
                 $this->custom = array('uid' => $A['custom']);
             }
-        }
+        }*/
         $this->custom = array(
             'transtype' => $this->gw->Name(),
             'uid'       => $this->Order->uid,
@@ -121,7 +121,7 @@ class square extends \Shop\IPN
         // Gets the transaction via the Square API to get the real values.
         $trans = $this->gw->getTransaction($this->txn_id);
         SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
-        $status = 'pending';
+        $this->status = 'pending';
         if ($trans) {
             // Get through the top-level array var
             $trans= SHOP_getVar($trans, 'transaction', 'array');
@@ -133,36 +133,18 @@ class square extends \Shop\IPN
             $order_id = SHOP_getVar($trans, 'reference_id');
             if (empty($order_id)) return false;
 
-            $status = 'paid';
+            $this->status = 'paid';
             foreach ($tenders as $tender) {
                 if ($tender['card_details']['status'] == 'CAPTURED') {
                     $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
                     $this->pmt_gross += $C->fromInt($tender['amount_money']['amount']);
                     $this->pmt_fee += $C->fromInt($tender['processing_fee_money']['amount']);
                 } else {
-                    $status = 'pending';
+                    $this->status = 'pending';
                 }
             }
         }
-        $this->status = $status;
-        return true;
-
-
-        if ($this->Cart === NULL) {
-            SHOP_log("No cart provided", SHOP_LOG_ERROR);
-            return false;
-        }
-
-        // Order total must be zero to use the internal gateway
-        $info = $this->Cart->getInfo();
-        var_dump($info);die;
-        $by_gc = SHOP_getVar($info, 'apply_gc', 'float');
-        $total = SHOP_getVar($info, 'final_total', 'float');
-        if ($by_gc < $total) return false;
-        if (!\Shop\Products\Coupon::verifyBalance($by_gc, $this->uid)) {
-            return false;
-        }
-        $this->status = 'paid';
+        $this->ipn_data['status'] = $this->status;  // to get into handlePurchase()
         return true;
     }
 
@@ -216,8 +198,12 @@ class square extends \Shop\IPN
     public function Process()
     {
         // If no data has been received, then there's nothing to do.
-        if (empty($this->ipn_data))
+        if (empty($this->ipn_data)) {
             return false;
+        }
+        // Backward compatibility, get custom data into IPN for plugin
+        // products.
+        $this->ipn_data['custom'] = $this->custom;
 
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the

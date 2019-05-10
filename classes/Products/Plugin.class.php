@@ -5,8 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
- * @since       v0.6.0
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -154,6 +154,8 @@ class Plugin extends \Shop\Product
             'ipn_data'  => $ipn_data,
             'order' => $Order,      // Pass the order object, may be used in the future
         );
+        COM_errorLog("args: " . print_r($args,true));
+        COM_errorLog("ipn: " . print_r($ipn_data,true));
         if ($ipn_data['status'] == 'paid') {
             $status = LGLIB_invokeService($this->pi_name, 'handlePurchase', $args, $output, $svc_msg);
         }
@@ -265,6 +267,19 @@ class Plugin extends \Shop\Product
         LGLIB_invokeService($this->pi_name, 'emailReceiptInfo',
                     $this->pi_info, $text, $svc_msg);
         return $text;
+    }
+
+
+    /**
+     * Determine if a product is available for sale.
+     * For plugin items, just return true for now.
+     *
+     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @return  boolean True if on sale, false if not
+     */
+    public function isAvailable($isadmin = false)
+    {
+        return true;
     }
 
 }   // class Plugin
