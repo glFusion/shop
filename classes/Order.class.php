@@ -1053,6 +1053,7 @@ class Order
             'buyer_uid'         => $this->uid,
             'user_name'         => $user_name,
             'gateway_name'      => $this->pmt_method,
+            'pmt_method'        => $this->pmt_method,
             'pending'           => $this->status == 'pending' ? 'true' : '',
             'gw_msg'            => $gw_msg,
             'status'            => $this->status,
