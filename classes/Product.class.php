@@ -2200,7 +2200,7 @@ class Product
                 SET rating = $rating, votes = $votes
                 WHERE id = $id";
         DB_query($sql);
-        Cache::delete(self::_makeCacheKey($id));
+        Cache::clear('products');
         return DB_error() ? false : true;
     }
 
