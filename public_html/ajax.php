@@ -37,23 +37,22 @@ case 'addcartitem':
         exit;
     }
     $item_number = $_POST['item_number'];     // isset ensured above
-    $item_name = SHOP_getVar($_POST, 'item_name');
-
     $P = \Shop\Product::getInstance($item_number);
     if ($P->isNew) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));;
         exit;
     }
+    $item_name = SHOP_getVar($_POST, 'item_name', 'string', $P->getName());
     $Cart = \Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
-        SHOP_log("Bad nonce: " . $_POST['nonce'] . " for cart {$Cart->order_id}, should be " . md5($Cart->order_id), SHOP_LOG_ERROR);
+        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->order_id}, should be $nonce", SHOP_LOG_ERROR);
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
 
-    $unique = SHOP_getVar($_POST, '_unique', 'integer');
+    $unique = SHOP_getVar($_POST, '_unique', 'integer', $P->isUnique());
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
         break;
@@ -61,8 +60,8 @@ case 'addcartitem':
     $args = array(
         'item_number'   => $item_number,     // isset ensured above
         'item_name'     => $item_name,
-        'short_dscp'    => SHOP_getVar($_POST, 'short_dscp'),
-        'quantity'      => SHOP_getVar($_POST, 'quantity', 'int'),
+        'short_dscp'    => SHOP_getVar($_POST, 'short_dscp', 'string', $P->getDscp()),
+        'quantity'      => SHOP_getVar($_POST, 'quantity', 'int', 1),
         'price'         => $P->getPrice(),
         'options'       => SHOP_getVar($_POST, 'options', 'array'),
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),

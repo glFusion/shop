@@ -2245,6 +2245,18 @@ class Product
         return $retval;
     }
 
+
+    /**
+     * Check if only one of this product may be added to the cart.
+     * Buyers can normally buy any number of a product repeatedly.
+     *
+     * @return  boolean     True if product can be purchased only once
+     */
+    public function isUnique()
+    {
+        return false;
+    }
+
 }   // class Product
 
 ?>

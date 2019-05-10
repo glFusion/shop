@@ -52,6 +52,10 @@
               {$LANG_SHOP['see_details']}
             </figcaption>
           </figure>
+{!if can_add_cart}
+            <button id="{item_id}_add_cart_btn" type="button" class="shopButton black" border="0"
+                onclick='shopAddToCart("{item_id}", "{nonce}");return false;' value="{$LANG_SHOP['add_to_cart']}">{$LANG_SHOP['add_to_cart']}</button>
+{!endif}
         </div>
       </a>
     </li>

@@ -31,6 +31,11 @@ class Plugin extends \Shop\Product
      * @var boolean */
     private $_have_detail_svc = false;
 
+    /** Indicate that only a single unique purchase can be made.
+     * Normally true for plugin products.
+     * @var boolean */
+    private $isUnique = true;
+
     /**
      * Constructor.
      * Creates an object for a plugin product and gets data from the
@@ -71,6 +76,7 @@ class Plugin extends \Shop\Product
         );
         if ($status == PLG_RET_OK) {
             $this->price = SHOP_getVar($A, 'price', 'float', 0);
+            $this->name = SHOP_getVar($A, 'name');
             $this->item_name = SHOP_getVar($A, 'name');
             $this->short_description = SHOP_getVar($A, 'short_description');
             $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
@@ -82,6 +88,9 @@ class Plugin extends \Shop\Product
             $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
             $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
             $this->isNew = false;
+            // Plugins normally can't allow more than one purchase,
+            // so default to "true"
+            $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -92,6 +101,7 @@ class Plugin extends \Shop\Product
             $this->url = '';
             $this->taxable = 0;
             $this->_have_detail_svc = false;
+            $this->isUnique = true;
         }
     }
 
@@ -278,6 +288,18 @@ class Plugin extends \Shop\Product
     public function isAvailable($isadmin = false)
     {
         return true;
+    }
+
+
+    /**
+     * Check if only one of this product may be added to the cart.
+     * Normally this is set for plugin products.
+     *
+     * @return  boolean     True if product can be purchased only once
+     */
+    public function isUnique()
+    {
+        return $this->isUnique;;
     }
 
 }   // class Plugin
