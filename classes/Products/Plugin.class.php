@@ -154,8 +154,6 @@ class Plugin extends \Shop\Product
             'ipn_data'  => $ipn_data,
             'order' => $Order,      // Pass the order object, may be used in the future
         );
-        COM_errorLog("args: " . print_r($args,true));
-        COM_errorLog("ipn: " . print_r($ipn_data,true));
         if ($ipn_data['status'] == 'paid') {
             $status = LGLIB_invokeService($this->pi_name, 'handlePurchase', $args, $output, $svc_msg);
         }
