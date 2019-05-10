@@ -219,6 +219,12 @@
 {!if pmt_method}
     <p id="orderPaymentMethod">
         <b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
+    {!if is_admin}
+    {!if pmt_txn_id}
+    , {$LANG_SHOP['trans_id']}
+    <a href="{ipn_det_url}">{pmt_txn_id}</a>
+    {!endif}
+    {!endif}
     </p>
 {!endif}
     <p>
@@ -245,16 +251,6 @@
 {!else}
   <p>{$LANG_SHOP['status']}: {status}</p>
 {!endif}
-  {!if pmt_method}
-    <p id="orderPaymentMethod">{$LANG_SHOP['pmt_method']}: {pmt_method}
-    {!if is_admin}
-    {!if pmt_txn_id}
-    , {$LANG_SHOP['trans_id']}
-    <a href="{ipn_det_url}">{pmt_txn_id}</a>
-    {!endif}
-    {!endif}
-    </p>
-  {!endif}
   <p>
     <table id="shopOrderLog">
     <tr>
