@@ -83,6 +83,7 @@ class paypal extends \Shop\IPN
                 $this->custom = array('uid' => $A['custom']);
             }
         }
+        $this->ipn_data['custom'] = $this->custom;  // backward compatibility
         $this->uid = SHOP_getVar($this->custom, 'uid', 'integer', 1);
 
         switch ($this->ipn_data['payment_status']) {

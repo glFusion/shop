@@ -28,6 +28,7 @@ function ProductList($cat_id = 0)
     $display = '';
     $cat_sql = '';
     $Cat = Category::getInstance($cat_id);
+    $Cart = Cart::getInstance();
 
     // If a cat ID is requested but doesn't exist or the user can't access
     // it, redirect to the homepage.
@@ -293,8 +294,8 @@ function ProductList($cat_id = 0)
 
         $pic_filename = $P->getOneImage();
         $T->set_var(array(
-            'id'            => $P->id,
-            'name'          => htmlspecialchars($P->name),
+            'item_id'       => $P->id,
+            'name'          => htmlspecialchars($P->getName()),
             'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
             'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
             'encrypted'     => '',
@@ -309,6 +310,8 @@ function ProductList($cat_id = 0)
             'small_pic'     => $pic_filename ? SHOP_ImageUrl($pic_filename) : '',
             'onhand'        => $P->track_onhand ? $P->onhand : '',
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
+            'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
+            'can_add_cart'  => $P->canBuyNow(),
         ) );
 
         if ($isAdmin) {
@@ -374,6 +377,7 @@ function ProductList($cat_id = 0)
                 $price = SHOP_getVar($A, 'price', 'float', 0);
                 $T->set_var(array(
                     'id'        => $A['id'],        // required
+                    'item_id'   => $A['id'],        // required
                     'name'      => $item_name,
                     'short_description' => $item_dscp,
                     'encrypted' => '',
@@ -381,6 +385,8 @@ function ProductList($cat_id = 0)
                     'track_onhand' => '',   // not available for plugins
                     'small_pic' => $img,
                     'on_sale'   => '',
+                    'nonce'     => $Cart->makeNonce($A['id'] . $item_dscp),
+                    'can_add_cart'  => true,
                 ) );
                 if ($price > 0) {
                     $T->set_var('price', $Cur->Format($price));

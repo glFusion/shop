@@ -1,11 +1,19 @@
 /**
 *   Add an item to the shopping cart.
 */
-var shopAddToCart = function(frm_id)
+var shopAddToCart = function(frm_id, nonce)
 {
+    if (typeof(nonce) == "undefined") {
+        // Get the data from form fields
+        data = $("#"+frm_id).serialize();
+    } else {
+        // If a nonce is provided, then frm_id is really an item number
+        // and this is directly adding one of the item to the cart.
+        data = "item_number=" + frm_id + "&nonce=" + nonce;
+    }
+
     var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
     spinner.show();
-    data = $("#"+frm_id).serialize();
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -20,8 +28,11 @@ var shopAddToCart = function(frm_id)
                         divid.innerHTML = result.content;
                         if (result.unique) {
                             var btn_id = frm_id + '_add_cart_btn';
-                            document.getElementById(btn_id).disabled = true;
-                            document.getElementById(btn_id).className = 'shopButton grey';
+                            btn = document.getElementById(btn_id);
+                            if (btn != undefined) {
+                                document.getElementById(btn_id).disabled = true;
+                                document.getElementById(btn_id).className = 'shopButton grey';
+                            }
                         }
                     }
                     $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
@@ -41,6 +52,7 @@ var shopAddToCart = function(frm_id)
     });
     return false;
 };
+
 
 /**
 *   Set the visibility of the cart block so it only appears if there are items
