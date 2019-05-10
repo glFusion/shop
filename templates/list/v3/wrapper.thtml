@@ -60,6 +60,9 @@
 {!endif}
             </figcaption>
           </figure>
+{!if rating_bar}
+          <div class="shopRatingBar list v3">{rating_bar}</div>
+{!endif}
         </div>
       </a>
     </li>

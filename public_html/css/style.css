@@ -248,9 +248,15 @@ div.shopProductListOuter {
   width: 100%;
 }
 
-.shopRatingBar.list.v2 {
+.shopRatingBar.list.v2,
+.shopRatingBar.list.v3 {
   clear:both;
   width: 100%;
+}
+
+div.shopRatingBar.list.v2 span.static,
+div.shopRatingBar.list.v3 span.static {
+    display: none;
 }
 
 .shopRatingBar.detail.v2 {
