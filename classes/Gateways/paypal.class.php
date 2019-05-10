@@ -518,10 +518,11 @@ class paypal extends \Shop\Gateway
         $gateway_vars = '';
 
         // See if the button is in our cache table
-        $btn_key = $P->btn_type . '_' . $P->getPrice();
+        // DEPRECATED - DOES NOT SUPPORT CUSTOM DATA
+        /*$btn_key = $P->btn_type . '_' . $P->getPrice();
         if ($this->config['encrypt']) {
             $gateway_vars = $this->_ReadButton($P, $btn_key);
-        }
+        }*/
         if (empty($gateway_vars)) {
             $vars = array();
             $vars['cmd'] = $btn_info['cmd'];
@@ -609,8 +610,8 @@ class paypal extends \Shop\Gateway
                     $gateway_vars .= '<input type="hidden" name="' . $name .
                         '" value="' . $value . '" />' . "\n";
                 }
-            } else {
-                $this->_SaveButton($P, $btn_key, $gateway_vars);
+            //} else {
+            //    $this->_SaveButton($P, $btn_key, $gateway_vars);
             }
         }
 
