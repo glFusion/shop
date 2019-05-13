@@ -3,9 +3,9 @@
  * Class to handle images.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
@@ -23,15 +23,15 @@ class ProductImage extends \upload
 {
     /** Path to actual image (without filename).
      * @var string */
-    var $pathImage;
+    private $pathImage;
 
     /** ID of the current product.
      * @var string */
-    var $product_id;
+    private $product_id;
 
     /** Array of the names of successfully uploaded files.
      * @var array */
-    var $goodfiles = array();
+    private $goodfiles = array();
 
     /**
      * Constructor.
@@ -39,7 +39,7 @@ class ProductImage extends \upload
      * @param   integer $product_id Product ID number
      * @param   string  $varname    Name of form field
      */
-    function __construct($product_id, $varname='photo')
+    public function __construct($product_id, $varname='photo')
     {
         global $_SHOP_CONF, $_CONF;
 
@@ -55,15 +55,10 @@ class ProductImage extends \upload
         $this->product_id = trim($product_id);
         $this->pathImage = $_SHOP_CONF['image_dir'];
         $this->setAllowedMimeTypes(array(
-                'image/pjpeg' => '.jpg,.jpeg',
-                'image/jpeg'  => '.jpg,.jpeg',
+            'image/pjpeg' => '.jpg,.jpeg',
+            'image/jpeg'  => '.jpg,.jpeg',
         ));
-        $this->setMaxFileSize($_SHOP_CONF['max_image_size']);
-        $this->setMaxDimensions(
-                $_SHOP_CONF['img_max_width'],
-                $_SHOP_CONF['img_max_height']
-        );
-        $this->setAutomaticResize(true);
+        $this->setMaxDimensions(0, 0);
         $this->setFieldName($varname);
 
         $filenames = array();
@@ -102,41 +97,6 @@ class ProductImage extends \upload
             }
         }
  
-    }
-
-
-    /**
-     * Calculate the new dimensions needed to keep the image within
-     * the provided width & height while preserving the aspect ratio.
-     *
-     * @deprecated
-     * @param   string  $srcfile     Source filepath/name
-     * @param   integer $width       New width, in pixels
-     * @param   integer $height      New height, in pixels
-     * @return   array  $newwidth, $newheight
-     */
-    function reDim($srcfile, $width=0, $height=0)
-    {
-        list($s_width, $s_height) = @getimagesize($srcfile);
-
-        // get both sizefactors that would resize one dimension correctly
-        if ($width > 0 && $s_width > $width)
-            $sizefactor_w = (double) ($width / $s_width);
-        else
-            $sizefactor_w = 1;
-
-        if ($height > 0 && $s_height > $height)
-            $sizefactor_h = (double) ($height / $s_height);
-        else
-            $sizefactor_h = 1;
-
-        // Use the smaller factor to stay within the parameters
-        $sizefactor = min($sizefactor_w, $sizefactor_h);
-
-        $newwidth = (int)($s_width * $sizefactor);
-        $newheight = (int)($s_height * $sizefactor);
-
-        return array($newwidth, $newheight);
     }
 
 
