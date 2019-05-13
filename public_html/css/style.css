@@ -228,6 +228,10 @@ div.shopProductListOuter {
     display: block;
 }
 
+.shopProductListItem.v3 div.ItemImage.noimage {
+    height: 30px;
+}
+
 .shopProductListItemUrl2 div.ratingbar,
 .shopRatingBar {
   /*position: relative;*/
@@ -252,6 +256,7 @@ div.shopProductListOuter {
 .shopRatingBar.list.v3 {
   clear:both;
   width: 100%;
+  margin-top: inherit;
 }
 
 div.shopRatingBar.list.v2 span.static,
