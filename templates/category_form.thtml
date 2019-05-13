@@ -45,13 +45,13 @@
       <span id="image" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
       {!if img_url}
         <img src="{img_url}" style="border:0;">
-        <a href="{action_url}/index.php?deletecatimage=x&cat_id={cat_id}">
+        <input type="checkbox" value="1" name="del_catimg">&nbsp;&nbsp;
             {$LANG_SHOP['delete_image']}
-        </a>
+        </a><br /><br />
       {!endif}
+      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
     </div>
   </div>
 

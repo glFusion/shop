@@ -227,27 +227,41 @@ class Category
         // uploaded, we should leave it unchanged.  So we'll first
         // retrieve the existing image filename, if any.
         if (!$this->isNew) {
-            $img_filename = DB_getItem($_TABLES['shop.categories'],
-                        'image', "cat_id='" . $this->cat_id . "'");
+            $img_filename = DB_getItem(
+                $_TABLES['shop.categories'],
+                'image',
+                "cat_id='" . $this->cat_id . "'"
+            );
         } else {
             // New entry, assume no image
             $img_filename = '';
         }
-        if (is_uploaded_file($_FILES['imagefile']['tmp_name'])) {
-            $img_filename =  rand(100,999) .  "_" .
+
+        if (isset($A['del_catimg']) && $A['del_catimg'] == 1) {
+            // Option selected to delete the image
+            $this->deleteImage(true);
+        } else {
+            // A new image is being uploaded, assumes deletion of the original.
+            if (is_uploaded_file($_FILES['imagefile']['tmp_name'])) {
+                $img_filename =  rand(100,999) .  "_" .
                      COM_sanitizeFilename($_FILES['imagefile']['name'], true);
-            $status = IMG_resizeImage($_FILES['imagefile']['tmp_name'],
-                    $_SHOP_CONF['catimgpath']."/$img_filename",
-                    $_SHOP_CONF['max_thumb_size'], $_SHOP_CONF['max_thumb_size'],
-                    '', true);
-            if ($status[0] == false) {
-                $this->AddError('Error Moving Image');
-            } else {
-                // If a new image was uploaded, and this is an existing
-                // category, then delete the old image file, if any.
-                // The DB still has the old filename at this point.
-                if (!$this->isNew) {
-                    $this->deleteImage(false);
+                $status = IMG_resizeImage(
+                    $_FILES['imagefile']['tmp_name'],
+                    $_SHOP_CONF['catimgpath'] . "/$img_filename",
+                    $_SHOP_CONF['max_thumb_size'],
+                    $_SHOP_CONF['max_thumb_size'],
+                    '',
+                    true
+                );
+                if ($status[0] == false) {
+                    $this->AddError('Error Moving Image');
+                } else {
+                    // If a new image was uploaded, and this is an existing
+                    // category, then delete the old image file, if any.
+                    // The DB still has the old filename at this point.
+                    if (!$this->isNew) {
+                        $this->deleteImage(false);
+                    }
                 }
             }
         }
@@ -432,8 +446,7 @@ class Category
         ) );
 
         if ($this->image != '') {
-            $T->set_var('img_url', SHOP_URL . '/images/categories/' .
-                $this->image);
+            $T->set_var('img_url', $this->ImageUrl());
         }
 
         if (!self::isUsed($this->id)) {
@@ -481,8 +494,7 @@ class Category
         // If there's an image for this category, display it and offer
         // a link to delete it
         if ($this->image != '') {
-            $T->set_var('img_url',
-                    SHOP_URL . '/images/categories/' . $this->image);
+            $T->set_var('img_url', $this->ImageUrl());
         }
 
         $retval .= $T->parse('output', 'category');
@@ -611,7 +623,11 @@ class Category
     {
         global $_GROUPS;
 
-        return ($this->enabled && in_array($this->grp_access, $_GROUPS)) ? true : false;
+        if ($this->enabled && in_array($this->grp_access, $_GROUPS)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
@@ -623,15 +639,19 @@ class Category
      */
     public function ImageUrl()
     {
-        global $_CONF, $_SHOP_CONF;
+        global $_SHOP_CONF;
 
-        if ($this->image != '' &&
-                is_file($_CONF['path_html'] . $_SHOP_CONF['pi_name'] .
-                '/images/categories/' . $A['image'])) {
-            $retval = SHOP_URL . '/images/categories/' . $this->image;
+        if (
+            $this->image != '' &&
+            is_file($_SHOP_CONF['catimgpath'] . '/' . $this->image)
+        ) {
+            $retval = LGLIB_ImageUrl(
+                $_SHOP_CONF['catimgpath'] . '/' . $this->image
+            );
         } else {
             $retval = '';
         }
+        return $retval;
     }
 
 
