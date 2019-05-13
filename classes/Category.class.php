@@ -449,7 +449,7 @@ class Category
             $T->set_var('img_url', $this->ImageUrl());
         }
 
-        if (!self::isUsed($this->id)) {
+        if (!self::isUsed($this->cat_id)) {
             $T->set_var('can_delete', 'true');
         }
 
