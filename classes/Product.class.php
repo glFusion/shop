@@ -997,6 +997,9 @@ class Product
             return '';
         }
 
+        // Get the currency object which is used repeatedly
+        $Cur = Currency::getInstance();
+
         // Set the template dir based on the configured template version
         $T = SHOP_getTemplate(
             'product_detail_attrib', 'product',
@@ -1124,27 +1127,27 @@ class Product
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
-                Currency::getInstance()->FormatValue($this->shipping_amt)
+                $Cur->FormatValue($this->shipping_amt)
             );
         } else {
             $shipping_txt = '';
         }
         $T->set_var(array(
             'have_attributes'   => $this->hasAttributes(),
-            //'currency'          => $_SHOP_CONF['currency'],
+            'cur_code'          => $Cur->code,   // USD, etc.
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_desc,
             'description'       => $l_desc,
-            'cur_decimals'      => Currency::getInstance()->Decimals(),
-            'init_price'        => Currency::getInstance()->FormatValue($this->_act_price),
-            'price'             => Currency::getInstance()->FormatValue($this->getPrice()),
-            'orig_price'        => Currency::getInstance()->Format($this->_orig_price),
+            'cur_decimals'      => $Cur->Decimals(),
+            'init_price'        => $Cur->FormatValue($this->_act_price),
+            'price'             => $Cur->FormatValue($this->getPrice()),
+            'orig_price'        => $Cur->FormatValue($this->_orig_price),
             'on_sale'           => $this->isOnSale(),
             'sale_name'         => $this->isOnSale() ? $this->getSale()->name : '',
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
-            'price_prefix'      => Currency::getInstance()->Pre(),
-            'price_postfix'     => Currency::getInstance()->Post(),
+            'price_prefix'      => $Cur->Pre(),
+            'price_postfix'     => $Cur->Post(),
             'onhand'            => $this->track_onhand ? $this->onhand : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
