@@ -86,7 +86,8 @@
 
 <table style="width:100%;padding-bottom:20px;">
   <tr>
-    <th style="width:60%;text-align:left;">{$LANG_SHOP['description']}</th>
+    <th width="15%;"></th>
+    <th style="width:45%;text-align:left;">{$LANG_SHOP['description']}</th>
     <th style="width:10%;text-align:right;">{$LANG_SHOP['quantity']}</th>
 {!if is_invoice}
     <th style="width:10%;text-align:right;">{$LANG_SHOP['price']}</th>
@@ -94,9 +95,11 @@
     <th style="width:10%;">&nbsp;</th>
 {!endif}
   </tr>
+  <tr><td>&nbsp;</td></tr>
 <!-- BEGIN ItemRow -->
   <tr>
-    <td>
+    <td style="vertical-align:top;">{img_url}</td>
+    <td style="vertical-align:top;">
       {item_dscp}
 {!if item_options}
       <br />{item_options}
