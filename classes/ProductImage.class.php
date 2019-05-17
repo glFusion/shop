@@ -63,7 +63,7 @@ class ProductImage extends \upload
 
         $filenames = array();
         for ($i = 0; $i < $this->numFiles(); $i++) {
-            $filenames[] = $this->product_id . '_' . rand(100,999) . '.jpg';
+            $filenames[] = $this->product_id . '_' . uniqid() . '.jpg';
         }
         $this->setFileNames($filenames);
     }
