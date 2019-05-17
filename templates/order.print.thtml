@@ -124,8 +124,8 @@
           </td>
 {!endif}
         </tr>
+        <tr class="shopItemRowSpacer"></tr>
         <!-- END ItemRow -->
-        <tr><td>&nbsp;</td></tr>
 {!if is_invoice}
 {!if subtotal}
         <tr>

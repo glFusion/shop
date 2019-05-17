@@ -694,3 +694,7 @@ div.blk_img {
 div.blk_img img {
     max-height: 150px;
 }
+
+tr.shopItemRowSpacer {
+    height: .5em;
+}

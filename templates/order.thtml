@@ -153,10 +153,8 @@
 {!endif}
           </td>
         </tr>
+        <tr class="shopItemRowSpacer"></tr>
         <!-- END ItemRow -->
-        <tr>
-          <td colspan="6">&nbsp;</td>
-        </tr>
 {!if subtotal}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['item_total']}</td>

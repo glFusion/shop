@@ -119,8 +119,8 @@
 {!endif}
 {!endif}
   </tr>
+  <tr><td></td></tr>
 <!-- END ItemRow -->
-  <tr><td>&nbsp;</td></tr>
 {!if is_invoice}
 {!if subtotal}
   <tr>
