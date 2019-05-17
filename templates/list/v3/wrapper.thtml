@@ -30,9 +30,11 @@
       <a href="{item_url}">
         <div class="shopProductListItem v3">
           <figure class="uk-overlay uk-overlay-hover" style="width:100%">
-            <div class="ItemImage">
 {!if small_pic}
+            <div class="ItemImage">
               <img src="{small_pic}" alt="{name}" />
+{!else}
+            <div class="ItemImage noimage">
 {!endif}
             </div>
             <div class="ItemUrl">
@@ -60,6 +62,9 @@
 {!endif}
             </figcaption>
           </figure>
+{!if rating_bar}
+          <div class="shopRatingBar list v3">{rating_bar}</div>
+{!endif}
         </div>
       </a>
     </li>

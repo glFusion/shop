@@ -45,13 +45,13 @@
       <span id="image" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
       {!if img_url}
-        <img src="{img_url}" style="border:0;">
-        <a href="{action_url}/index.php?deletecatimage=x&cat_id={cat_id}">
+        <img src="{img_url}" style="max-width:140px;max-height:140px;border:0;">
+        <input type="checkbox" value="1" name="del_catimg">&nbsp;&nbsp;
             {$LANG_SHOP['delete_image']}
-        </a>
+        </a><br /><br />
       {!endif}
+      <input type="file" class="uk-button" name="imagefile" id="imagefile" value="{$LANG_SHOP['select_image']}" />
     </div>
   </div>
 
@@ -79,11 +79,13 @@
     <div class="uk-form-controls">
       <button class="uk-button uk-button-success" type="submit" name="savecat" value="{$LANG_SHOP['savecat']}" />{$LANG_SHOP['savecat']}</button>
       <button class="uk-button uk-button-primary" type="reset" name="reset" value="{$LANG_SHOP['clearform']}" />{$LANG_SHOP['clearform']}</button>
-      {!if can_delete}
-      <button type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_SHOP['deletecat']}"
-            onclick="return confirm('{$LANG_SHOP['q_del_item']}');" />{$LANG_SHOP['deletecat']}</button>
-      {!endif}
       <button type="submit"  class="uk-button" name="categories" value="{$LANG_ADMIN['cancel']}" />{$LANG_ADMIN['cancel']}</button>
+{!if can_delete}
+      <div style="display:inline; float:right;">
+        <button style="align:right;" type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_SHOP['deletecat']}"
+            onclick="return confirm('{$LANG_SHOP['q_del_item']}');" />{$LANG_SHOP['deletecat']}</button>
+        </div>
+{!endif}
     </div>
   </div>
 

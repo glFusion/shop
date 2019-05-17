@@ -33,14 +33,14 @@ case 'getAddress':
 case 'addcartitem':
     if (!isset($_POST['item_number'])) {
         SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
-        echo json_encode(array('content' => '', 'statusMessage' => ''));;
+        echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
     $item_number = $_POST['item_number'];     // isset ensured above
     $P = \Shop\Product::getInstance($item_number);
     if ($P->isNew) {
         // Invalid product ID passed
-        echo json_encode(array('content' => '', 'statusMessage' => ''));;
+        echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
     $item_name = SHOP_getVar($_POST, 'item_name', 'string', $P->getName());

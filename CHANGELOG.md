@@ -38,3 +38,5 @@ First beta version under the new Shop name.
   * Standardize logging, use glFusion 2.0-compatible log levels.
   * Add shipper name to printed order and packing list.
   * Enable add-to-cart button on catalog list page, enabled in V3 list.
+  * Deprecate max image size, images are resized before display.
+  * Enable batch printing of PDF orders and packing lists.

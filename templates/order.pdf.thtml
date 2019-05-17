@@ -1,0 +1,206 @@
+{# begin {templatelocation} #}
+<page backtop="7mm" backbottom="7mm" backleft="7mm" backright="7mm">
+  <h1 class="aligncenter">
+{!if is_invoice}
+{$LANG_SHOP['order_summary']}
+{!else}
+{$LANG_SHOP['packinglist']}
+{!endif}
+</h1>
+<p style="text-align:right;">
+    <span style="font-size:24px;">{shop_name}</span>
+    <br />{shop_addr}
+{!if shop_phone}
+    <br />{shop_phone}
+{!endif}
+{!if shop_email}
+    <br />{shop_email}
+{!endif}
+</p>
+
+<table style="width:100%">
+<tr>
+  <td style="width:50%;vertical-align:top;">
+      <b>{$LANG_SHOP['bill_to']}:</b>
+{!if is_invoice}
+{!if have_billto}
+  {!if billto_name}
+      <br />{billto_name}
+  {!endif}
+  {!if billto_company}
+      <br />{billto_company}
+  {!endif}
+  {!if billto_address1}
+      <br />{billto_address1}
+  {!endif}
+  {!if billto_address2}
+      <br />{billto_address2}
+  {!endif}
+  {!if billto_city}
+    <br />{billto_city}
+    {!if billto_state}
+    ,&nbsp;
+    {!endif}
+  {!endif}
+      <br />{billto_state} {billto_zip}
+  {!if billto_country}
+      <br />{billto_country}
+  {!endif}
+{!endif}
+{!endif}
+  </td>
+  <td style="width:50%;vertical-align:top;">
+      <b>{$LANG_SHOP['ship_to']}:</b>
+{!if have_shipto}
+  {!if shipto_name}
+      <br />{shipto_name}
+  {!endif}
+  {!if shipto_company}
+      <br />{shipto_company}
+  {!endif}
+  {!if shipto_address1}
+      <br />{shipto_address1}
+  {!endif}
+  {!if shipto_address2}
+      <br />{shipto_address2}
+  {!endif}
+  {!if shipto_city}
+      <br />{shipto_city}
+    {!if shipto_state}
+      ,&nbsp;
+    {!endif}
+      {shipto_state} {shipto_zip}
+  {!endif}
+  {!if shipto_country}
+      <br />{shipto_country}
+  {!endif}
+{!endif}
+  </td>
+</tr>
+</table>
+
+<p style="margin-top:20px;">
+  {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
+  {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}
+</p>
+
+<table style="width:100%;">
+  <tr>
+    <th style="width:40%;text-align:left;">{$LANG_SHOP['description']}</th>
+    <th style="width:20%;text-align:right;">{$LANG_SHOP['quantity']}</th>
+{!if is_invoice}
+    <th style="width:20%;text-align:right">{$LANG_SHOP['price']}</th>
+    <th style="width:20%;text-align:right">{$LANG_SHOP['total']}</th>
+{!endif}
+  </tr>
+<!-- BEGIN ItemRow -->
+  <tr>
+    <td>
+      {item_dscp}
+{!if item_options}
+      <br />{item_options}
+{!endif}
+<!-- BEGIN ItemOptions -->
+      {option_dscp}
+<!-- END ItemOptions -->
+    </td>
+    <td style="vertical-align:top;text-align:right">{item_quantity}</td>
+{!if is_invoice}
+    <td style="vertical-align:top;text-align:right">{item_price}</td>
+    <td style="vertical-align:top;text-align:right">{item_total}</td>
+{!if XXXX}
+    <td style="vertical-align:top;text-align:center">
+{!if taxable}
+      {tax_icon}*
+{!else}
+      &nbsp;
+{!endif}
+    </td>
+{!endif}
+{!endif}
+  </tr>
+  <tr><td></td></tr>
+<!-- END ItemRow -->
+{!if is_invoice}
+{!if subtotal}
+  <tr>
+    <td colspan="2" style="text-align:right">
+      {$LANG_SHOP['item_total']}
+    </td>
+    <td colspan="2" style="text-align:right">
+      {subtotal}
+    </td>
+  </tr>
+{!endif}
+{!if cart_tax}
+  <tr>
+    <td colspan="2" style="text-align:right">{lang_tax_on_items}</td>
+    <td colspan="2" style="text-align:right">{cart_tax}</td>
+  </tr>
+{!endif}
+{!if shipping}
+  <tr>
+    <td colspan="2" style="text-align:right;">{$LANG_SHOP['shipping']}
+{!if ship_method}
+      ({ship_method})
+{!endif}
+    </td>
+    <td colspan="2" style="text-align:right;">{shipping}</td>
+  </tr>
+{!endif}
+{!if handling}
+  <tr>
+    <td colspan="2" style="text-align:right;">{$LANG_SHOP['handling']}</td>
+    <td colspan="2" style="text-align:right;">{handling}</td>
+  </tr>
+{!endif}
+  <tr>
+    <td colspan="2" style="text-align:right;"><b>{$LANG_SHOP['total']}</b></td>
+    <td colspan="2" style="text-align:right;"><b>{total}</b></td>
+  </tr>
+{!endif}
+</table>
+
+{$LANG_SHOP['order_instr']}:<br />
+{!if order_instr}
+{order_instr}
+{!else}
+{$LANG_SHOP['none']}
+{!endif}
+
+{!if is_invoice}
+<p>{$LANG_SHOP['status']}: {status}</p>
+{!if is_admin}
+<p id="orderPurchaser">{$LANG_SHOP['purchaser']}: {purch_name} ({purch_uid})</p>
+<table style="width:100%;">
+  <tr>
+    <th>{$LANG_SHOP['timestamp']}</th>
+    <th>{$LANG_SHOP['username']}</th>
+    <th>{$LANG_SHOP['message']}</th>
+  </tr>
+<!-- BEGIN LogMessages -->
+  <tr>
+    <td style="width:30%;white-space:nowrap;">{log_ts}</td>
+    <td style="width:30%">{log_username}</td>
+    <td>{log_msg}</td>
+  </tr>
+<!-- END LogMessages -->
+</table>
+{!endif}
+{!if pmt_method}
+<p id="orderPaymentMethod">{$LANG_SHOP['pmt_method']}: {pmt_method}
+{!if is_admin}
+{!if pmt_txn_id}
+  , {$LANG_SHOP['trans_id']}
+  {pmt_txn_id}
+{!endif}
+{!endif}
+</p>
+{!endif}
+{!else}
+{!if ship_method}
+<p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
+{!endif}
+{!endif}
+</page>
+{# end {templatelocation} #}

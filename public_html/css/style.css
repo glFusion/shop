@@ -228,6 +228,10 @@ div.shopProductListOuter {
     display: block;
 }
 
+.shopProductListItem.v3 div.ItemImage.noimage {
+    height: 30px;
+}
+
 .shopProductListItemUrl2 div.ratingbar,
 .shopRatingBar {
   /*position: relative;*/
@@ -248,9 +252,16 @@ div.shopProductListOuter {
   width: 100%;
 }
 
-.shopRatingBar.list.v2 {
+.shopRatingBar.list.v2,
+.shopRatingBar.list.v3 {
   clear:both;
   width: 100%;
+  margin-top: inherit;
+}
+
+div.shopRatingBar.list.v2 span.static,
+div.shopRatingBar.list.v3 span.static {
+    display: none;
 }
 
 .shopRatingBar.detail.v2 {
@@ -682,4 +693,8 @@ div.blk_img {
 
 div.blk_img img {
     max-height: 150px;
+}
+
+tr.shopItemRowSpacer {
+    height: .5em;
 }
