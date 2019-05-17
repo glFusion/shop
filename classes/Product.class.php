@@ -489,7 +489,7 @@ class Product
 
         if (isset($A['delimg']) && is_array($A['delimg'])) {
             foreach ($A['delimg'] as $img_id) {
-                self::deleteImage($img_id);
+                $this->deleteImage($img_id);
             }
         }
 
@@ -575,6 +575,8 @@ class Product
             $status = false;
         }
 
+        // Clear all product caches since this save may affect availablity
+        // and product lists.
         Cache::clear('products');
 
         if ($status) {
@@ -625,7 +627,7 @@ class Product
         }
 
         foreach ($this->Images as $prow) {
-            self::deleteImage($prow['img_id'], $prow['filename']);
+            $this->deleteImage($prow['img_id']);
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
         DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
@@ -654,33 +656,29 @@ class Product
 
 
     /**
-     * Deletes a single image from disk.
-     * Only needs the $img_id value, so this function may be called as a
-     * standalone function.
+     * Deletes a single image from disk for the current product.
      *
      * @param   integer $img_id     DB ID of image to delete
-     * @param   string  $filename   Filename, provided when called from Delete()
      */
-    public static function deleteImage($img_id, $filename='')
+    public function deleteImage($img_id)
     {
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1) return;
-
-        if ($filename == '') {
-            $filename = DB_getItem($_TABLES['shop.images'], 'filename',
-                "img_id=$img_id");
+        if ($img_id < 1 || !array_key_exists($img_id, $this->Images)) {
+            return;
         }
 
-        if (is_file("{$_SHOP_CONF['image_dir']}/{$filename}")) {
-            // Ignore errors due to file permissions, etc.
-            @unlink("{$_SHOP_CONF['image_dir']}/{$filename}");
+        $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename;
+        if (is_file($filespec)) {
+            // Ignore errors due to file permissions, etc. Worst case is
+            // that an image gets left behind on disk
+            @unlink($filespec);
         }
 
         DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
-        // This is broad, but the specific product ID isn't provided here.
-        Cache::clear('products');
+        Cache::delete(self::_makeCacheKey($this->id));
+        Cache::delete(self::_makeCacheKey($this->id, 'img'));
     }
 
 
@@ -699,8 +697,7 @@ class Product
      */
     public function showForm($id = 0)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG24, $LANG_postmodes,
-                $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         $id = (int)$id;
         if ($id > 0) {
@@ -841,11 +838,11 @@ class Product
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize $i in case there are no images
-        foreach ($this->Images as $i=>$prow) {
+        foreach ($this->Images as $id=>$prow) {
             $T->set_var(array(
                 'img_url'   => SHOP_ImageUrl($prow['filename'], 800, 600),
                 'thumb_url' => SHOP_ImageUrl($prow['filename']),
-                'seq_no'    => $i,
+                'seq_no'    => $i++,
                 'img_id'    => $prow['img_id'],
             ) );
             $T->parse('PRow', 'PhotoRow', true);
@@ -988,7 +985,7 @@ class Product
      */
     public function Detail()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
         USES_lib_comments();
 
@@ -1042,7 +1039,8 @@ class Product
         }
 
         // Retrieve the photos and put into the template
-        foreach ($this->Images as $i=>$prow) {
+        $i = 0;
+        foreach ($this->Images as $id=>$prow) {
             if (is_file("{$_SHOP_CONF['image_dir']}/{$prow['filename']}")) {
                 if ($i == 0) {
                     $T->set_var('main_img', SHOP_ImageUrl($prow['filename'], 0, 0));
@@ -1056,6 +1054,7 @@ class Product
                     'session_id'    => session_id(),
                 ) );
                 $T->parse('PBlock', 'Thumbnail', true);
+                $i++;
             }
         }
 
@@ -1231,16 +1230,14 @@ class Product
             'orig_price_val'    => $this->_orig_price,
         ) );
         $JT->parse('output', 'js');
-        $T->set_var('javascript', $JT->finish ($JT->get_var('output')));
-
-        $retval .= $T->parse('output', 'product');
+        $T->set_var('javascript', $JT->finish($JT->get_var('output')));
 
         // Update the hit counter
         DB_query("UPDATE {$_TABLES['shop.products']}
                 SET views = views + 1
                 WHERE id = '$prod_id'");
 
-        //CACHE_create_instance($cacheInstance, $retval, 0);
+        $retval .= $T->parse('output', 'product');
         $retval = PLG_outputFilter($retval, 'shop');
         return $retval;
     }
@@ -2160,7 +2157,7 @@ class Product
                 WHERE product_id='". $this->id . "'";
             $res = DB_query($sql);
             while ($prow = DB_fetchArray($res, false)) {
-                $this->Images[] = $prow;
+                $this->Images[$prow['img_id']] = $prow;
             }
             Cache::set($cache_key, $this->Images, 'products');
         }
@@ -2175,8 +2172,9 @@ class Product
      */
     public function getOneImage()
     {
-        if (isset($this->Images[0]['filename'])) {
-            return $this->Images[0]['filename'];
+        if (is_array($this->Images)) {
+            $img = reset($this->Images);
+            return $img['filename'];
         } else {
             return '';
         }
