@@ -193,7 +193,7 @@ class orderlist extends \Shop\Report
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
-                    $filter, $this->extra
+                    $filter, $this->extra, $this->_getListOptions()
                 )
             );
             break;

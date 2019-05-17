@@ -164,7 +164,7 @@ class pendingship extends \Shop\Report
                     'shop_rep_pendingship',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
-                    '', $this->extra
+                    '', $this->extra, $this->_getListOptions()
                 ),
             ) );
             break;

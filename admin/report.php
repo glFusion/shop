@@ -41,6 +41,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = '';
 $expected = array(
     // Views to display
+    'pdfpl', 'pdforder',
     'configure', 'run', 'report', 'list',
 );
 foreach($expected as $provided) {
@@ -83,6 +84,12 @@ case 'run':
         $R->setParams($_REQUEST);
         $content .= $R->Render();
     }
+    break;
+
+case 'pdfpl':
+case 'pdforder':
+    $orders = SHOP_getVar($_POST, 'orders', 'array');
+    \Shop\Order::printPDF($orders, $view);
     break;
 
 case 'list':

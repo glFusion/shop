@@ -559,6 +559,12 @@ class Order
             $this->isFinalView = true;
             $tplname = 'order.print';
             break;
+        case 'pdfpl':
+            $is_invoice = false;
+        case 'pdforder':
+            $this->isFinalView = true;
+            $tplname = 'order.pdf';
+            break;
         }
         $step = (int)$step;
 
@@ -1983,6 +1989,48 @@ class Order
             }
         }
         return $units;
+    }
+
+
+    /**
+     * Create PDF output of one or more orders.
+     *
+     * @param   array   $ids    Array of order IDs
+     * @param   string  $type   View type, 'pl' or 'order'
+     * @return  boolean     True on success, False on error
+     */
+    public static function printPDF($ids, $type='pdfpl', $isAdmin = false)
+    {
+        USES_lglib_class_html2pdf();
+        try {
+            $html2pdf = new \HTML2PDF('P', 'A4', 'en');
+            //$html2pdf->setModeDebug();
+            $html2pdf->setDefaultFont('Arial');
+        } catch(HTML2PDF_exception $e) {
+            COM_errorLog($e);
+            return false;
+        }
+
+        if (!is_array($ids)) {
+            $ids = array($ids);
+        }
+        foreach ($ids as $ord_id) {
+            $O = self::getInstance($ord_id);
+            $O->setAdmin($isAdmin);
+            if ($O->isNew) {
+                continue;
+            }
+            $content = $O->View($type);
+            try {
+                $html2pdf->writeHTML($content);
+            } catch(HTML2PDF_exception $e) {
+                COM_errorLog($e);
+                return false;
+            }
+        }
+        //echo $content;die;
+        $html2pdf->Output($type . 'list.pdf', 'I');
+        return true;
     }
 
 }

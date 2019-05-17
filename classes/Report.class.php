@@ -942,6 +942,38 @@ class Report
         $this->extra[$key] = $val;
     }
 
+
+
+    /**
+     * Get the list options to handle selection checkboxes.
+     * Default is for order lists to create PDF versions of orders
+     * or packing lists.
+     *
+     * @return  array   Array of options to be given to ADMIN_list()
+     */
+    protected function _getListOptions()
+    {
+        global $LANG_SHOP;
+
+        $prt_pl = '<button type="submit" name="pdfpl" value="x" class="tooltip" ' .
+            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
+            'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
+            '<i name="pdfpl" class="uk-icon uk-icon-reorder"></i>' .
+            '</button>';
+        $prt_ord = '<button type="submit" name="pdforder" value="x" class="tooltip" ' .
+            'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
+            'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
+            '<i name="pdfpl" class="uk-icon uk-icon-file-pdf-o"></i>';
+            '</button>';
+        $options = array(
+            'chkselect' => 'true',
+            'chkname'   => 'orders',
+            'chkfield'  => 'order_id',
+            'chkactions' => $prt_pl . '&nbsp;&nbsp;' . $prt_ord,
+        );
+        return $options;
+    }
+
 }   // class Report
 
 ?>
