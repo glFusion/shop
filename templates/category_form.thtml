@@ -46,7 +46,7 @@
     </label>
     <div class="uk-form-controls">
       {!if img_url}
-        <img src="{img_url}" style="border:0;">
+        <img src="{img_url}" style="max-width:140px;max-height:140px;border:0;">
         <input type="checkbox" value="1" name="del_catimg">&nbsp;&nbsp;
             {$LANG_SHOP['delete_image']}
         </a><br /><br />
