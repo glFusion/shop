@@ -1,13 +1,13 @@
 {# begin {templatelocation} #}
-<page backtop="7mm" backbottom="7mm" backleft="7mm" backright="7mm">
-  <h1 class="aligncenter">
+<page backleft="7mm" backright="7mm">
+  <h1 style="text-align:center;">
 {!if is_invoice}
 {$LANG_SHOP['order_summary']}
 {!else}
 {$LANG_SHOP['packinglist']}
 {!endif}
 </h1>
-<p style="text-align:right;">
+<p style="text-align:right;padding-bottom:30px;">
     <span style="font-size:24px;">{shop_name}</span>
     <br />{shop_addr}
 {!if shop_phone}
@@ -18,7 +18,7 @@
 {!endif}
 </p>
 
-<table style="width:100%">
+<table style="width:100%;padding-bottom:15px;">
 <tr>
   <td style="width:50%;vertical-align:top;">
       <b>{$LANG_SHOP['bill_to']}:</b>
@@ -79,18 +79,19 @@
 </tr>
 </table>
 
-<p style="margin-top:20px;">
+<p style="padding-bottom:15px;">
   {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
   {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}
 </p>
 
-<table style="width:100%;">
+<table style="width:100%;padding-bottom:20px;">
   <tr>
-    <th style="width:40%;text-align:left;">{$LANG_SHOP['description']}</th>
-    <th style="width:20%;text-align:right;">{$LANG_SHOP['quantity']}</th>
+    <th style="width:60%;text-align:left;">{$LANG_SHOP['description']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['quantity']}</th>
 {!if is_invoice}
-    <th style="width:20%;text-align:right">{$LANG_SHOP['price']}</th>
-    <th style="width:20%;text-align:right">{$LANG_SHOP['total']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['price']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['total']}</th>
+    <th style="width:10%;">&nbsp;</th>
 {!endif}
   </tr>
 <!-- BEGIN ItemRow -->
@@ -108,15 +109,13 @@
 {!if is_invoice}
     <td style="vertical-align:top;text-align:right">{item_price}</td>
     <td style="vertical-align:top;text-align:right">{item_total}</td>
-{!if XXXX}
-    <td style="vertical-align:top;text-align:center">
+    <td style="vertical-align:top;text-align:left;padding-left:1em;">
 {!if taxable}
       {tax_icon}*
 {!else}
       &nbsp;
 {!endif}
     </td>
-{!endif}
 {!endif}
   </tr>
   <tr><td></td></tr>
@@ -161,17 +160,19 @@
 {!endif}
 </table>
 
-{$LANG_SHOP['order_instr']}:<br />
+<p>
+<b>{$LANG_SHOP['order_instr']}:</b><br />
 {!if order_instr}
 {order_instr}
 {!else}
 {$LANG_SHOP['none']}
 {!endif}
+</p>
 
 {!if is_invoice}
-<p>{$LANG_SHOP['status']}: {status}</p>
+<p><b>{$LANG_SHOP['status']}:</b> {status}</p>
 {!if is_admin}
-<p id="orderPurchaser">{$LANG_SHOP['purchaser']}: {purch_name} ({purch_uid})</p>
+<p<b>>{$LANG_SHOP['purchaser']}:</b> {purch_name} ({purch_uid})</p>
 <table style="width:100%;">
   <tr>
     <th>{$LANG_SHOP['timestamp']}</th>
@@ -188,7 +189,7 @@
 </table>
 {!endif}
 {!if pmt_method}
-<p id="orderPaymentMethod">{$LANG_SHOP['pmt_method']}: {pmt_method}
+<p><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
 {!if is_admin}
 {!if pmt_txn_id}
   , {$LANG_SHOP['trans_id']}
@@ -202,5 +203,9 @@
 <p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
 {!endif}
 {!endif}
+{!if icon_dscp}
+<p>*&nbsp;{icon_dscp}</p>
+{!endif}
+
 </page>
 {# end {templatelocation} #}
