@@ -1,0 +1,17 @@
+{# begin {templatelocation} #}
+<ul class="uk-breadcrumb uk-margin-remove" style="display:inline">
+<!-- BEGIN cat_bc -->
+  <li>{bc_url}</li>
+<!-- END cat_bc -->
+</ul>
+{!if bc_form}
+&nbsp;/&nbsp;<form method="get" action="{pi_url}/index.php" style="display:inline;">
+  <select name="category" onchange="this.form.submit();">
+    <option value="{root_cat_id">-- {$LANG_SHOP['all']} --</option>
+<!-- BEGIN cat_sel -->
+    <option value="{cat_id}">{cat_dscp}</option>
+<!-- END cat_sel -->
+  </select>
+</form>
+{!endif}
+{# end {templatelocation} #}

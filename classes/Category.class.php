@@ -669,10 +669,15 @@ class Category
     {
         global $LANG_SHOP;
 
-        $breadcrumbs = '<li>' . COM_createLink(
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('cat_bc_tpl', 'cat_bc.thtml');
+        $T->set_var('pi_url', SHOP_URL . '/index.php');
+        $breadcrumbs = array(
+            COM_createLink(
                 $LANG_SHOP['home'],
                 SHOP_URL
-            ) . '</li>';
+            )
+        );
         $RootCat = self::getRoot();
         if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
             // A specific subcategory is being viewed
@@ -682,15 +687,33 @@ class Category
                 if ($cat->cat_id == $RootCat->cat_id) continue;
                 // Don't show a link if the user can't access it.
                 if (!$cat->hasAccess()) continue;
-                $breadcrumbs .= "<li>" . COM_createLink(
+                $breadcrumbs[] = COM_createLink(
                     $cat->cat_name,
                     SHOP_URL . '/index.php?category=' . (int)$cat->cat_id
-                ) . '</li>';
+                );
             }
         }
-        $breadcrumbs = '<ul class="uk-breadcrumb uk-margin-remove">' .
-            $breadcrumbs . '</ul>';
-        return $breadcrumbs;
+        $T->set_block('cat_bc_tpl', 'cat_bc', 'bc');
+        foreach ($breadcrumbs as $bc_url) {
+            $T->set_var('bc_url', $bc_url);
+            $T->parse('bc', 'cat_bc', true);
+        }
+        $children = self::getInstance($cat_id)->getChildren();
+        if (!empty($children)) {
+            $T->set_var('bc_form', true);
+            $T->set_block('cat_bc_tpl', 'cat_sel', 'sel');
+            foreach ($children as $c) {
+                if (!$c->hasAccess()) continue;
+                $T->set_var(array(
+                    'cat_id'    => $c->cat_id,
+                    'cat_dscp'  => $c->cat_name,
+                ) );
+                $T->parse('sel', 'cat_sel', true);
+            }
+        }
+        $T->parse('output', 'cat_bc_tpl');
+        $retval = $T->finish($T->get_var('output'));
+        return $retval;
     }
 
 
@@ -754,10 +777,10 @@ class Category
      * @param   boolean $incl_sub   True to include sub-categories
      * @return  array       Array of category objects
      */
-    public static function getPath($cat_id, $incl_sub = true)
+    public static function getPath($cat_id, $incl_sub = false)
     {
         $key = 'cat_path_' . $cat_id . '_' . (int)$incl_sub;
-        $path = Cache::get($key);
+        //$path = Cache::get($key);
         if (!$path) {
             $cats = self::getTree();    // need the full tree to find parents
             $path = array();
@@ -870,6 +893,33 @@ class Category
 
         // return the right value of this node + 1
         return $right + 1;
+    }
+
+
+    /**
+     * Get the immediate children of a category.
+     *
+     * @param   integer $cat_id     Parent category ID
+     * @return  array       Array of child categories
+     */
+    public function getChildren()
+    {
+        $retval = array();
+
+        // Get the category tree, including the parent.
+        $tree = self::getTree($this->cat_id);
+        // Make sure the parent exists unless root was requested.
+        if (empty($tree)) {
+            return $retval;
+        }
+        // Remove the parent category and return the rest.
+        unset($tree[$this->cat_id]);
+        foreach ($tree as $cat_id=>$C) {
+            if ($C->parent_id == $this->cat_id) {
+                $retval[$cat_id] = $C;
+            }
+        }
+        return $retval;
     }
 
 }   // class Category
