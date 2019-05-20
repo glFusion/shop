@@ -955,15 +955,17 @@ class Report
     {
         global $LANG_SHOP;
 
+        // Print selected packing lists
         $prt_pl = '<button type="submit" name="pdfpl" value="x" class="tooltip" ' .
             'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
             'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
-            '<i name="pdfpl" class="uk-icon uk-icon-reorder"></i>' .
+            '<i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
             '</button>';
+        // Print selected orders
         $prt_ord = '<button type="submit" name="pdforder" value="x" class="tooltip" ' .
             'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
             'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
-            '<i name="pdfpl" class="uk-icon uk-icon-file-pdf-o"></i>';
+            '<i name="pdfpl" class="uk-icon uk-icon-print"></i>';
             '</button>';
         $options = array(
             'chkselect' => 'true',

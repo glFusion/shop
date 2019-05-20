@@ -669,7 +669,7 @@ class Product
             return;
         }
 
-        $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename;
+        $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $this->Images[$img_id]['filename'];
         if (is_file($filespec)) {
             // Ignore errors due to file permissions, etc. Worst case is
             // that an image gets left behind on disk
