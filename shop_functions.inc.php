@@ -54,8 +54,8 @@ function ProductList($cat_id = 0)
         // Get the sql to limit by category
         $tmp = Category::getTree($Cat->cat_id);
         $cats = array();
-        foreach ($tmp as $cat_id=>$info) {
-            $cats[] = $cat_id;
+        foreach ($tmp as $xcat_id=>$info) {
+            $cats[] = $xcat_id;
         }
         if (!empty($cats)) {
             $cat_sql = implode(',', $cats);
@@ -64,12 +64,12 @@ function ProductList($cat_id = 0)
     }
 
     // Display top-level categories
-    $tmp = Category::getTree();
     $A = array(
         $RootCat->cat_id => array(
             'name' => $RootCat->cat_name,
         ),
     );
+    $tmp = $RootCat->getChildren();
     foreach ($tmp as $tmp_cat_id=>$C) {
         if ($C->parent_id == $RootCat->cat_id && $C->hasAccess()) {
             $A[$C->cat_id] = array(
@@ -99,6 +99,8 @@ function ProductList($cat_id = 0)
     foreach ($A as $category => $info) {
         if (isset($info['url'])) {
             $url = $info['url'];
+        } elseif ($category == $RootCat->cat_id) {
+            $url = SHOP_URL;
         } else {
             $url = SHOP_URL . '/index.php?category=' . urlencode($category);
         }
@@ -166,7 +168,11 @@ function ProductList($cat_id = 0)
 
     $search = '';
     // Add search query, if any
-    if (isset($_REQUEST['query']) && !empty($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
+    if (
+        isset($_REQUEST['query']) &&
+        !empty($_REQUEST['query']) &&
+        !isset($_REQUEST['clearsearch'])
+    ) {
         $search = DB_escapeString($_REQUEST['query']);
         $fields = array('p.name', 'c.cat_name', 'p.short_description', 'p.description',
                 'p.keywords');
@@ -235,6 +241,7 @@ function ProductList($cat_id = 0)
         'login_req' => 'buttons/btn_login_req',
         'btn_details' => 'buttons/btn_details',
     ) );
+
     $T->set_var(array(
         'pi_url'        => SHOP_URL,
         //'user_id'       => $_USER['uid'],
@@ -256,6 +263,7 @@ function ProductList($cat_id = 0)
     } else {
         $T->set_var('title', $LANG_SHOP['blocktitle']);
     }
+    $T->set_var('have_sortby', true);
 
     $display .= $T->parse('', 'start');
 
@@ -347,7 +355,12 @@ function ProductList($cat_id = 0)
     // Get products from plugins.
     // For now, this hack shows plugins only on the first page, since
     // they're not included in the page calculation.
-    if ($_SHOP_CONF['show_plugins']&& $page == 1 && $show_plugins && empty($search)) {
+    if (
+        $_SHOP_CONF['show_plugins']&&
+        $page == 1 &&
+        $show_plugins &&
+        empty($search)
+    ) {
         // Get the currency class for formatting prices
         $Cur = Currency::getInstance();
         $T->clear_var('rating_bar');  // no ratings for plugins (yet)

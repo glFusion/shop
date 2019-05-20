@@ -3,7 +3,7 @@
 {!if cat_desc}
 <p>
 {!if cat_img_url}
-  <img src="{cat_img_url}" class="shopCatHeaderImage" />
+  <img src="{cat_img_url}" style="max-width:140px;max-height:140px" class="shopCatHeaderImage" />
 {!endif}
 {cat_desc}
 </p>
@@ -13,10 +13,12 @@
 </div>
 <div>
   <div class="shopProductSort uk-form">
+{!if have_sortby}
   {$LANG_SHOP['sortby']}:&nbsp;
   <select name="sortby" onchange='document.location="{pi_url}/index.php?sortby="+this.value+"";'>
     {sortby_options}
   </select>
+{!endif}
   </div>
   <div class="shopProductSearch">
     <form method="get" class="uk-form" action="{pi_url}/index.php">

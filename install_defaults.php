@@ -273,6 +273,17 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
+        'name' => 'hp_layout',
+        'default_value' => 'product',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 19,
+        'sort' => 215,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
         'name' => 'enable_svc_funcs',
         'default_value' => $enable_svc_funcs,
         'type' => 'select',
