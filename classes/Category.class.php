@@ -64,7 +64,7 @@ class Category
         $this->lft = 0;
         $this->rgt = 0;
         if (is_array($id)) {
-            $this->SetVars($id);
+            $this->SetVars($id, true);
         } elseif ($id > 0) {
             $this->cat_id = $id;
             if (!$this->Read()) {
