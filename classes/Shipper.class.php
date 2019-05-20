@@ -119,10 +119,10 @@ class Shipper
         $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
         if (!$fromDB) {
             $rates = array();
-            foreach ($A['rateDscp'] as $id=>$txt) {
+            foreach ($A['rateRate'] as $id=>$txt) {
                 if (!empty($txt)) {
                     $rates[] = array(
-                        'dscp' => $txt,
+                        'dscp' => $A['rateDscp'][$id],
                         'units' => (float)$A['rateUnits'][$id],
                         'rate' => (float)$A['rateRate'][$id],
                     );
