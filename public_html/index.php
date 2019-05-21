@@ -420,7 +420,7 @@ function SHOP_homepage_category()
         // If this is the root category, and root shouldn't be included,
         // then skip it.
         if (
-            $Cat->cat_id == $RootCat->cat_id &&
+            $Cat->isRoot() &&
             ($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME
         ) {
             continue;

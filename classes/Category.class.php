@@ -665,7 +665,7 @@ class Category
      * @param   integer $id ID of current category
      * @return  string      Location string ready for display
      */
-    public static function Breadcrumbs($cat_id)
+    public function Breadcrumbs()
     {
         global $LANG_SHOP;
 
@@ -678,13 +678,12 @@ class Category
                 SHOP_URL
             )
         );
-        $RootCat = self::getRoot();
-        if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
+        if ($this->cat_id > 0 && !$this->isRoot()) {
             // A specific subcategory is being viewed
-            $cats = self::getPath($cat_id);
+            $cats = $this->getPath();
             foreach ($cats as $cat) {
                 // Root category already shown in top header
-                if ($cat->cat_id == $RootCat->cat_id) continue;
+                if ($cat->isRoot()) continue;
                 // Don't show a link if the user can't access it.
                 if (!$cat->hasAccess()) continue;
                 $breadcrumbs[] = COM_createLink(
@@ -698,7 +697,7 @@ class Category
             $T->set_var('bc_url', $bc_url);
             $T->parse('bc', 'cat_bc', true);
         }
-        $children = self::getInstance($cat_id)->getChildren();
+        $children = $this->getChildren();
         if (!empty($children)) {
             $T->set_var('bc_form', true);
             $T->set_block('cat_bc_tpl', 'cat_sel', 'sel');
@@ -777,18 +776,18 @@ class Category
      * @param   boolean $incl_sub   True to include sub-categories
      * @return  array       Array of category objects
      */
-    public static function getPath($cat_id, $incl_sub = false)
+    public function getPath($incl_sub = false)
     {
-        $key = 'cat_path_' . $cat_id . '_' . (int)$incl_sub;
+        $key = 'cat_path_' . $this->cat_id . '_' . (int)$incl_sub;
         //$path = Cache::get($key);
         if (!$path) {
             $cats = self::getTree();    // need the full tree to find parents
             $path = array();
 
             // if node doesn't exist, return. Don't bother setting cache
-            if (!isset($cats[$cat_id])) return $path;
+            if (!isset($cats[$this->cat_id])) return $path;
 
-            $Cat = $cats[$cat_id];      // save info for the current node
+            $Cat = $cats[$this->cat_id];      // save info for the current node
             foreach ($cats as $id=>$C) {
                 if ($C->lft < $Cat->lft && $C->rgt > $Cat->rgt) {
                     $path[$C->cat_id] = $C;
@@ -797,7 +796,7 @@ class Category
 
             // Now append the node, or the subtree
             if ($incl_sub) {
-                $subtree = self::getTree($cat_id);
+                $subtree = self::getTree($this->cat_id);
                 foreach ($subtree as $id=>$C) {
                     $path[$C->cat_id] = $C;
                 }
@@ -848,6 +847,17 @@ class Category
         $parent = (int)DB_getItem($_TABLES['shop.categories'], 'cat_id',
                 'parent_id = 0');
         return self::getInstance($parent);
+    }
+
+
+    /**
+     * Helper function to check if this is the Root category.
+     *
+     * @return  boolean     True if this category is Root, False if not
+     */
+    public function isRoot()
+    {
+        return $this->parent_id == 0;
     }
 
 
