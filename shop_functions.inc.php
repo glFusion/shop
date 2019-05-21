@@ -252,6 +252,7 @@ function ProductList($cat_id = 0)
         'sortby_options' => $sortby_options,
         'sortby'        => $sortby,
         'table_columns' => $_SHOP_CONF['catalog_columns'],
+        'cat_id'        => $cat_id,
     ) );
 
     if (!empty($cat_name)) {

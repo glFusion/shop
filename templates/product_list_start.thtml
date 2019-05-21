@@ -15,7 +15,7 @@
   <div class="shopProductSort uk-form">
 {!if have_sortby}
   {$LANG_SHOP['sortby']}:&nbsp;
-  <select name="sortby" onchange='document.location="{pi_url}/index.php?sortby="+this.value+"";'>
+  <select name="sortby" onchange='document.location="{pi_url}/index.php?category={cat_id}&sortby="+this.value+"";'>
     {sortby_options}
   </select>
 {!endif}
