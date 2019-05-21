@@ -511,7 +511,6 @@ $LANG_confignames['shop'] = array(
     'prod_per_page' => 'Max. Produkte pro Seite',
     'order'         => 'Standart-Sortierung',
     'menuitem'      => 'Im Hauptmenü eintragen',
-    'max_images'    => 'Max. Anzahl Produktbilder',
     'image_dir'     => 'Pfad zu den Bildern',
     'max_thumb_size' => 'Max. Thumbnail-Größe (px)',
     'max_file_size' => 'Max. Größe für Downloads in MB',

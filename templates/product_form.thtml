@@ -103,13 +103,11 @@
             </td>
           </tr>
           <!-- END PhotoRow -->
-          <!-- BEGIN UploadFld -->
           <tr>
             <td align="left">
-              <input type="file" name="images[]" /><br />
+              <input type="file" name="images[]" multiple />
             </td>
           </tr>
-          <!-- END UploadFld -->
       </table>
       </div>
     </div>
