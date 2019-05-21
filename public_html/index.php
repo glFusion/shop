@@ -404,9 +404,16 @@ function SHOP_homepage_category()
     // otherwise get the whole category tree.
     if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
         $Cats = $RootCat->getChildren();
+        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) == SHOP_HP_CATHOME) {
+            array_unshift($Cats, $RootCat);
+        }
     } else {
         $Cats = \Shop\Category::getTree();
+        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME) {
+            unset($Cats[$RootCat->cat_id]);
+        }
     }
+
     $T = new \Template(SHOP_PI_PATH . '/templates');
     $T = SHOP_getTemplate(array(
         'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
@@ -417,14 +424,6 @@ function SHOP_homepage_category()
 
     $T->set_block('wrapper', 'ProductItems', 'PI');
     foreach ($Cats as $Cat) {
-        // If this is the root category, and root shouldn't be included,
-        // then skip it.
-        if (
-            $Cat->isRoot() &&
-            ($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME
-        ) {
-            continue;
-        }
         $T->set_var(array(
             'item_id'       => $Cat->cat_id,
             'short_description' => htmlspecialchars($Cat->cat_name),
