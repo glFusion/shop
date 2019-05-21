@@ -355,7 +355,7 @@ case 'products':
 default:
     $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
     if (
-        $_SHOP_CONF['hp_layout'] == 'category' &&
+        ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
         $cat_id == 0 &&
         (!isset($_GET['query']) || isset($_GET['clearsearch']))
     ) {
@@ -394,7 +394,7 @@ exit;
  */
 function SHOP_homepage_category()
 {
-    global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
+    global $_SHOP_CONF;
 
     $display = '';
     $cat_sql = '';
@@ -411,7 +411,12 @@ function SHOP_homepage_category()
 
     $T->set_block('wrapper', 'ProductItems', 'PI');
     foreach ($Cats as $Cat) {
-        if ($Cat->cat_id == $RootCat->cat_id) {
+        // If this is the root category, and root shouldn't be included,
+        // then skip it.
+        if (
+            $Cat->cat_id == $RootCat->cat_id &&
+            ($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME
+        ) {
             continue;
         }
         $T->set_var(array(

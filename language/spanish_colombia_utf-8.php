@@ -623,8 +623,9 @@ $LANG_configselects['shop'] = array(
         'EMERGENCY' => 600,
     ),
     19 => array(
-        'Product List' => 'product',
-        'Category List' => 'category',
+        'Product List' => 1,
+        'Category List' => 2,
+        'Category List (incl. Home)' => 6,
     ),
 );
 

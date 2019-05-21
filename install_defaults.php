@@ -274,7 +274,7 @@ $shopConfigData = array(
     ),
     array(
         'name' => 'hp_layout',
-        'default_value' => 'product',
+        'default_value' => 1,
         'type' => 'select',
         'subgroup' => 0,
         'fieldset' => 0,

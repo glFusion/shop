@@ -62,6 +62,11 @@ define('SHOP_LOG_CRITICAL', 500);
 define('SHOP_LOG_ALERT',    550);
 define('SHOP_LOG_EMERGEHCY', 600);
 
+// Homepage layouts
+define('SHOP_HP_PRODUCT',   1);
+define('SHOP_HP_CAT',       2);
+define('SHOP_HP_CATHOME',   6);
+
 // Session variables for TimThumb image url, if used
 SESS_setVar($_SHOP_CONF['pi_name'], array(
     'origpath' => $_SHOP_CONF['image_dir'],
