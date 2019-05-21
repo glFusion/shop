@@ -48,7 +48,7 @@ $breadcrumbs = '';
 if (!empty($id)) {
     $P = \Shop\Product::getInstance($id);
     if ($P->id == $id && $P->hasAccess()) {
-        $breadcrumbs = \Shop\Category::Breadcrumbs($P->cat_id);
+        $breadcrumbs = $P->Cat->Breadcrumbs();
         $content .= $P->Detail();
     }
 }
