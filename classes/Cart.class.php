@@ -256,6 +256,28 @@ class Cart extends Order
 
 
     /**
+     * View the cart.
+     * This is the first step in checkout and checks that the prices are
+     * accurate.
+     *
+     * @param   string  $view   View being presented (not used)
+     * @param   integer $step   Step in the checkout process (not used)
+     * @return  string      HTML for cart view
+     */
+    public function View($view = 'order', $step = 0)
+    {
+        foreach ($this->items as $key=>$Item) {
+            $prod_price = $Item->getProduct()->getPrice($Item->options, $Item->quantity);
+            if ($Item->price != $prod_price) {
+                $Item->price = $prod_price;
+                $Item->Save();
+            }
+        }
+        return parent::View($view, $step);
+    }
+
+
+    /**
      * Update the quantity for all cart items.
      * Called from the View Cart form to update any quantities that have
      * changed.
