@@ -617,6 +617,7 @@ $LANG_configselects['shop'] = array(
         'Product List' => 1,
         'Category List' => 2,
         'Category List (incl. Home)' => 6,
+        'Category List (top-level)' => 10,
     ),
 );
 

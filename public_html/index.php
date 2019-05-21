@@ -400,7 +400,13 @@ function SHOP_homepage_category()
     $cat_sql = '';
 
     $RootCat = \Shop\Category::getRoot();
-    $Cats = \Shop\Category::getTree();
+    // If showing only top-level categories then get the children of Root,
+    // otherwise get the whole category tree.
+    if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
+        $Cats = $RootCat->getChildren();
+    } else {
+        $Cats = \Shop\Category::getTree();
+    }
     $T = new \Template(SHOP_PI_PATH . '/templates');
     $T = SHOP_getTemplate(array(
         'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',

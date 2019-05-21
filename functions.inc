@@ -63,9 +63,10 @@ define('SHOP_LOG_ALERT',    550);
 define('SHOP_LOG_EMERGEHCY', 600);
 
 // Homepage layouts
-define('SHOP_HP_PRODUCT',   1);
-define('SHOP_HP_CAT',       2);
-define('SHOP_HP_CATHOME',   6);
+define('SHOP_HP_PRODUCT',   1);     // Product list (default)
+define('SHOP_HP_CAT',       2);     // Category list, without Home
+define('SHOP_HP_CATHOME',   6);     // Category list, including Home
+define('SHOP_HP_CATTOP',    10);    // Category list, top-level only
 
 // Session variables for TimThumb image url, if used
 SESS_setVar($_SHOP_CONF['pi_name'], array(
