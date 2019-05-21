@@ -173,6 +173,7 @@ function ProductList($cat_id = 0)
         !empty($_REQUEST['query']) &&
         !isset($_REQUEST['clearsearch'])
     ) {
+        $query_str = urlencode($_REQUEST['query']);
         $search = DB_escapeString($_REQUEST['query']);
         $fields = array('p.name', 'c.cat_name', 'p.short_description', 'p.description',
                 'p.keywords');
@@ -252,7 +253,8 @@ function ProductList($cat_id = 0)
         'sortby_options' => $sortby_options,
         'sortby'        => $sortby,
         'table_columns' => $_SHOP_CONF['catalog_columns'],
-        'cat_id'        => $cat_id,
+        'cat_id'        => $cat_id == 0 ? '' : $cat_id,
+        'query'         => $query_str,
     ) );
 
     if (!empty($cat_name)) {
