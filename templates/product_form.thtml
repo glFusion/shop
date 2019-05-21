@@ -21,7 +21,7 @@
         <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
         <div style="float:right;" class="slider_checkbox">
        <label class="uk-form-label" for="enabled" style="width:inherit;">{$LANG_SHOP['enabled']}?
-        <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+        <span id="enabled" class="tooltip_cfg tooltipstered"></span>&nbsp;&nbsp;
       </label>
          <input class="onoff" id="enabled" type="checkbox" name="enabled" value="1" {ena_chk} />
         </div>
