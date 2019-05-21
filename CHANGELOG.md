@@ -40,3 +40,4 @@ First beta version under the new Shop name.
   * Enable add-to-cart button on catalog list page, enabled in V3 list.
   * Deprecate max image size, images are resized before display.
   * Enable batch printing of PDF orders and packing lists.
+  * Add option to show categories on homepage instead of product list.

@@ -570,6 +570,7 @@ $LANG_confignames['shop'] = array(
     'catalog_columns' => 'Catalog Columns',
     'enable_svc_funcs' => 'Enable Service Functions',
     'shop_enabled'  => 'Enable public access?',
+    'hp_layout'     => 'Homepage Layout',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -620,6 +621,11 @@ $LANG_configselects['shop'] = array(
         'CRITICAL' => 500,
         'ALERT' => 550,
         'EMERGENCY' => 600,
+    ),
+    19 => array(
+        'Product List' => 1,
+        'Category List' => 2,
+        'Category List (incl. Home)' => 6,
     ),
 );
 
