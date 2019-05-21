@@ -268,7 +268,9 @@ class Cart extends Order
     {
         foreach ($this->items as $key=>$Item) {
             $prod_price = $Item->getProduct()->getPrice($Item->options, $Item->quantity);
-            if ($Item->price != $prod_price) {
+            if (!$Item->getProduct()->enabled) {
+                $this->Remove($Item->id);
+            } elseif ($Item->price != $prod_price) {
                 $Item->price = $prod_price;
                 $Item->Save();
             }
