@@ -848,12 +848,6 @@ class Product
             $T->parse('PRow', 'PhotoRow', true);
         }
 
-        // add upload fields for unused images
-        $T->set_block('product', 'UploadFld', 'UFLD');
-        for ($j = $i; $j < $_SHOP_CONF['max_images']; $j++) {
-            $T->parse('UFLD', 'UploadFld', true);
-        }
-
         $i = 0;
         foreach ($this->qty_discounts as $qty=>$amt) {
             $T->set_var(array(

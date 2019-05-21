@@ -41,3 +41,4 @@ First beta version under the new Shop name.
   * Deprecate max image size, images are resized before display.
   * Enable batch printing of PDF orders and packing lists.
   * Add option to show categories on homepage instead of product list.
+  * Remove `max_images` config, allow multiple images uploaded from product form.

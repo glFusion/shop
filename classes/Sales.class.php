@@ -228,7 +228,7 @@ class Sales
         // If no product sales was found, look for a category.
         // Traverse the category tree from the current category up to
         // the root and return the first sales object found, if any.
-        $cats = Category::getPath($P->cat_id, false);
+        $cats = Category::getInstance($P->cat_id)->getPath(false);
         $cats = array_reverse($cats);
         foreach ($cats as $cat) {
             $sales = self::getCategory($cat->cat_id);
