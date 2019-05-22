@@ -119,10 +119,12 @@
         <!-- BEGIN ItemRow -->
         <tr>
           <td>
+{!if img_url}
 {!if detail_url}
             <a href="{detail_url}">{img_url}</a>
 {!else}
             {img_url}
+{!endif}
 {!endif}
           </td>
           <td>

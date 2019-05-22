@@ -594,10 +594,9 @@ class Order
             $P = $item->getProduct();
             if ($is_invoice) {
                 $img_filename = $P->getOneImage();
-                if (!empty($img_filename)) {
-                    $img_url = COM_createImage(
-                        SHOP_ImageUrl($img_filename, 100, 100)
-                    );
+                $img_url = SHOP_ImageUrl($img_filename, 100, 100);
+                if (!empty($img_url)) {
+                    $img_url = COM_createImage($img_url);
                     $T->set_var('img_url', $img_url);
                     $have_images = true;
                 }
