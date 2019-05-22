@@ -1375,12 +1375,7 @@ function SHOP_phpblock_product($sql)
                 }
             }
 
-            $img = $P->getOneImage();
-            if ($img != '') {
-                $T->set_var('img_url', SHOP_ImageUrl($img));
-            } else {
-                $T->set_var('img_url', '');
-            }
+            $T->set_var('img_url', $P->ImageUrl()['url']);
             $retval .= $T->parse('output', 'blk_random');
         }
     }
@@ -1587,24 +1582,6 @@ function SHOP_is_plugin_item($item_number)
     } else {
         return false;
     }
-}
-
-
-/**
- * Helper function to get image urls from LGLIB_ImageUrl().
- *
- * @param   string  $imgname    Image name, no path
- * @param   integer $width      Optional width, assume thumbnail
- * @param   integer $height     Optional height, assume thumbnail
- * @return  string      URL to resized image
- */
-function SHOP_ImageUrl($imgname, $width=0, $height=0)
-{
-    global $_SHOP_CONF;
-
-    $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
-    $height = $height == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$height;
-    return LGLIB_ImageUrl($_SHOP_CONF['image_dir'] . '/' . $imgname, $width, $height);
 }
 
 

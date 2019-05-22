@@ -840,8 +840,8 @@ class Product
         $i = 0;     // initialize $i in case there are no images
         foreach ($this->Images as $id=>$prow) {
             $T->set_var(array(
-                'img_url'   => SHOP_ImageUrl($prow['filename'], 800, 600),
-                'thumb_url' => SHOP_ImageUrl($prow['filename']),
+                'img_url'   => $this->ImageUrl($prow['filename'], 800, 600)['url'],
+                'thumb_url' => $this->ImageUrl($prow['filename'])['url'],
                 'seq_no'    => $i++,
                 'img_id'    => $prow['img_id'],
             ) );
@@ -1035,16 +1035,18 @@ class Product
         // Retrieve the photos and put into the template
         $i = 0;
         foreach ($this->Images as $id=>$prow) {
-            if (is_file("{$_SHOP_CONF['image_dir']}/{$prow['filename']}")) {
+            if (self::imageExists($prow['filename'])) {
                 if ($i == 0) {
-                    $T->set_var('main_img', SHOP_ImageUrl($prow['filename'], 0, 0));
-                    $T->set_var('main_imgfile', $prow['filename']);
+                    $T->set_var(array(
+                        'main_img' => $this->ImageUrl($prow['filename'], 0, 0)['url'],
+                        'main_imgfile' => $prow['filename'],
+                    ) );
                 }
                 $T->set_block('product', 'Thumbnail', 'PBlock');
                 $T->set_var(array(
                     'img_file'      => $prow['filename'],
-                    'img_url'       => SHOP_ImageUrl($prow['filename'], 800, 600),
-                    'thumb_url'     => SHOP_ImageUrl($prow['filename']),
+                    'img_url'       => $this->ImageUrl($prow['filename'], 800, 600)['url'],
+                    'thumb_url'     => $this->ImageUrl($prow['filename'])['url'],
                     'session_id'    => session_id(),
                 ) );
                 $T->parse('PBlock', 'Thumbnail', true);
@@ -2250,6 +2252,53 @@ class Product
     public function isUnique()
     {
         return false;
+    }
+
+
+    /**
+     * Check if an image file exists on the filesystem.
+     *
+     * @param   string  $filename   Image filename, no path
+     * @return  boolean     True if image file exists, False if not
+     */
+    public static function imageExists($filename)
+    {
+        global $_SHOP_CONF;
+
+        return is_file($_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename);
+    }
+
+
+    /**
+     * Get the URL to a product image.
+     *
+     * @param   string  $imgname    Image name, no path
+     * @param   integer $width      Optional width, assume thumbnail
+     * @param   integer $height     Optional height, assume thumbnail
+     * @return  array       Array of (url, width, height)
+     */
+    public function ImageUrl($filename = '', $width = 0, $height = 0)
+    {
+        global $_SHOP_CONF;
+
+        // If no filename specified, get the first image name.
+        if ($filename == '') {
+            $filename = $this->getOneImage();
+        }
+        // If the filename is still empty, return nothing.
+        if ($filename == '') {
+            return '';
+        }
+
+        $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
+        $height = $height == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$height;
+        $args = array(
+            'filepath'  => $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename,
+            'width'     => $width,
+            'height'    => $height,
+        );
+        $status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
+        return $output;
     }
 
 }   // class Product

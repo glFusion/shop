@@ -635,23 +635,15 @@ class Category
      * Get the URL to the category image.
      * Returns an empty string if no image defined or found.
      *
-     * @return  string  URL of image
+     * @return  string  URL of image, empty string if file not found
      */
     public function ImageUrl()
     {
         global $_SHOP_CONF;
 
-        if (
-            $this->image != '' &&
-            is_file($_SHOP_CONF['catimgpath'] . '/' . $this->image)
-        ) {
-            $retval = LGLIB_ImageUrl(
-                $_SHOP_CONF['catimgpath'] . '/' . $this->image
-            );
-        } else {
-            $retval = '';
-        }
-        return $retval;
+        return LGLIB_ImageUrl(
+            $_SHOP_CONF['catimgpath'] . DIRECTORY_SEPARATOR . $this->image
+        );
     }
 
 

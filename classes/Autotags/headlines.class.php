@@ -149,13 +149,12 @@ class headlines
 
             foreach ($allItems as $A) {
                 $P = \Shop\Product::getInstance($A['id']);
-                $img = $P->getOneImage();
                 $T->set_var(array(
                     'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),
                     'title'     => $P->short_description,
-                    'thumb_url' => $img != '' ? SHOP_ImageUrl($img) : '',
-                    'large_url' => $img != '' ? SHOP_ImageUrl($img, 1024, 1024) : '',
+                    'thumb_url' => $P->ImageUrl(),
+                    'large_url' => $P->ImageUrl('', 1024, 1024),
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
                 ) );

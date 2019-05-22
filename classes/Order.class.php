@@ -593,10 +593,16 @@ class Order
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
-                $img_filename = $P->getOneImage();
-                $img_url = SHOP_ImageUrl($img_filename, 100, 100);
-                if (!empty($img_url)) {
-                    $img_url = COM_createImage($img_url);
+                $img = $P->ImageUrl('', 100, 100);
+                if (!empty($img)) {
+                    $img_url = COM_createImage(
+                        $img['url'],
+                        '',
+                        array(
+                            'width' => $img['width'],
+                            'height' => $img['height'],
+                        )
+                    );
                     $T->set_var('img_url', $img_url);
                     $have_images = true;
                 }
