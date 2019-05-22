@@ -2287,7 +2287,11 @@ class Product
         }
         // If the filename is still empty, return nothing.
         if ($filename == '') {
-            return '';
+            return array(
+                'url'   => '',
+                'width' => 0,
+                'height' => 0,
+            );;
         }
 
         $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
