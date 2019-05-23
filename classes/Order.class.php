@@ -595,7 +595,7 @@ class Order
             $P = $item->getProduct();
             if ($is_invoice) {
                 $img = $P->ImageUrl('', 100, 100);
-                if (!empty($img)) {
+                if (!empty($img['url'])) {
                     $img_url = COM_createImage(
                         $img['url'],
                         '',
@@ -2027,6 +2027,7 @@ class Order
                 continue;
             }
             $content = $O->View($type);
+            //echo $content;die;
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
@@ -2034,7 +2035,6 @@ class Order
                 return false;
             }
         }
-        //echo $content;die;
         $html2pdf->Output($type . 'list.pdf', 'I');
         return true;
     }
