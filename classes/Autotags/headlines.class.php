@@ -3,9 +3,13 @@
  * Handle the headline autotag for the Shop plugin.
  * Based on the glFusion headline autotag.
  *
+ * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
- * @copyright   Copyright (c) 2018 Lee Garner <lee AT leegarner DOT com>
- * @license     GNU General Public License version 2 or later
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
  */
 namespace Shop\Autotags;
 
@@ -149,13 +153,12 @@ class headlines
 
             foreach ($allItems as $A) {
                 $P = \Shop\Product::getInstance($A['id']);
-                $img = $P->getOneImage();
                 $T->set_var(array(
                     'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),
                     'title'     => $P->short_description,
-                    'thumb_url' => $img != '' ? SHOP_ImageUrl($img) : '',
-                    'large_url' => $img != '' ? SHOP_ImageUrl($img, 1024, 1024) : '',
+                    'thumb_url' => $P->ImageUrl(),
+                    'large_url' => $P->ImageUrl('', 1024, 1024),
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
                 ) );

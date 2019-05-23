@@ -3,9 +3,10 @@
  * Gateway implementation for PayPal.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,7 +15,6 @@ namespace Shop\Gateways;
 
 /**
  * Class for Paypal payment gateway
- * @since   v0.5.0
  * @package shop
  */
 class paypal extends \Shop\Gateway
@@ -369,7 +369,6 @@ class paypal extends \Shop\Gateway
      * are set up correctly.  If an error is encountered, an empty string
      * is returned so the caller can proceed with an un-encrypted button.
      *
-     * @since   v0.4.0
      * @param   array   $fields     Array of data to encrypt into buttons
      * @return  string              Encrypted_value, or empty string on error
      */
@@ -966,7 +965,6 @@ class paypal extends \Shop\Gateway
     /**
      * Get a logo image to show on the order as the payment method.
      *
-     * @since   v0.6.0
      * @return  string      HTML for logo image
      */
     public function getLogo()

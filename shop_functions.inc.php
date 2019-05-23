@@ -122,26 +122,21 @@ function ProductList($cat_id = 0)
     }
     switch ($sortby){
     case 'price_l2h':   // price, low to high
-        $sql_sortby = 'price';
-        $sql_sortdir = 'ASC';
+        $sql_sortby = 'price ASC';
         break;
     case 'price_h2l':   // price, high to low
-        $sql_sortby = 'price';
-        $sql_sortdir = 'DESC';
+        $sql_sortby = 'price DESC';
         break;
     case 'top_rated':
-        $sql_sortby = 'rating';
-        $sql_sortdir = 'DESC';
+        $sql_sortby = 'rating DESC, votes DESC';
         break;
     case 'newest':
-        $sql_sortby = 'dt_add';
-        $sql_sortdir = 'DESC';
+        $sql_sortby = 'dt_add DESC';
         break;
     case 'name':
     default:
         $sortby = 'name';
-        $sql_sortby = 'short_description';
-        $sql_sortdir = 'ASC';
+        $sql_sortby = 'short_description ASC';
         break;
     }
     $sortby_options = '';
@@ -187,7 +182,7 @@ function ProductList($cat_id = 0)
     $pagenav_args = array();
 
     // If applicable, order by
-    $sql .= " ORDER BY $sql_sortby $sql_sortdir";
+    $sql .= " ORDER BY $sql_sortby";
     $sql_key = md5($sql);
     //echo $sql;die;
 
@@ -318,7 +313,7 @@ function ProductList($cat_id = 0)
             'price'         => $P->getDisplayPrice(),
             'orig_price'    => $P->getDisplayPrice($P->price),
             'on_sale'       => $P->isOnSale(),
-            'small_pic'     => $pic_filename ? SHOP_ImageUrl($pic_filename) : '',
+            'small_pic'     => $P->ImageUrl()['url'],
             'onhand'        => $P->track_onhand ? $P->onhand : '',
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             'nonce'         => $Cart->makeNonce($P->id . $P->getName()),

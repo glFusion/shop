@@ -2,12 +2,12 @@
 /**
  * Class to manage Authorize.Net Hosted Accept payments.
  *
- * @author     Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
- * @package    shop
- * @version    v0.6.0
- * @since      v0.6.0
- * @license    http://opensource.org/licenses/gpl-2.0.php 
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012-2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -15,7 +15,6 @@ namespace Shop\Gateways;
 
 /**
  * Class for Authorize.Net Hosted Accept payment gateway.
- * @since   v0.6.0
  * @package shop
  */
 class authorizenet extends \Shop\Gateway
@@ -415,7 +414,6 @@ class authorizenet extends \Shop\Gateway
     /**
      * Get a logo image to show on the order as the payment method.
      *
-     * @since   v0.6.0
      * @return  string      HTML for logo image
      */
     public function getLogo()

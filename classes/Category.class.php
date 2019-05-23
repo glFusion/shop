@@ -3,9 +3,10 @@
  * Class to manage product categories.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -635,23 +636,15 @@ class Category
      * Get the URL to the category image.
      * Returns an empty string if no image defined or found.
      *
-     * @return  string  URL of image
+     * @return  string  URL of image, empty string if file not found
      */
     public function ImageUrl()
     {
         global $_SHOP_CONF;
 
-        if (
-            $this->image != '' &&
-            is_file($_SHOP_CONF['catimgpath'] . '/' . $this->image)
-        ) {
-            $retval = LGLIB_ImageUrl(
-                $_SHOP_CONF['catimgpath'] . '/' . $this->image
-            );
-        } else {
-            $retval = '';
-        }
-        return $retval;
+        return LGLIB_ImageUrl(
+            $_SHOP_CONF['catimgpath'] . DIRECTORY_SEPARATOR . $this->image
+        );
     }
 
 

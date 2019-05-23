@@ -6,6 +6,7 @@
  * @copyright   Copyright (c) 2013-2019 Lee Garner
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
@@ -16,7 +17,6 @@ use \Shop\Cart;
 
 /**
  * Authorize.Net IPN Processor.
- * @since   v0.5.3
  * @package shop
  */
 class authorizenet extends \Shop\IPN

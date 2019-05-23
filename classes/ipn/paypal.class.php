@@ -7,6 +7,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -30,7 +31,6 @@ define('SHOP_FAILURE_FUNDS', 5);
 
 /**
  * Class to deal with IPN transactions from Shop.
- * @since   v0.5.0
  * @package shop
  */
 class paypal extends \Shop\IPN

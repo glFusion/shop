@@ -1,39 +1,39 @@
 <?php
 /**
-*   Gateway implementation for PayPal.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    shop
-*   @version    0.6.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Gateway implementation for PayPal.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Shop\Gateways;
 
 require_once __DIR__ . '/square/connect-php-sdk/autoload.php';
 
 
 /**
-*   Class for Square payment gateway
-*   @since 0.6.0
-*   @package shop
-*/
+ * Class for Square payment gateway.
+ * @package shop
+ */
 class square extends \Shop\Gateway
 {
 
     /** Square location value
-    *   @var string */
+     * @var string */
     private $loc_id;
     private $appid;
     private $token;
     const IPN_URL = SHOP_URL . '/ipn/square.php';
 
     /**
-    *   Constructor.
-    *   Set gateway-specific items and call the parent constructor.
-    */
+     * Constructor.
+     * Set gateway-specific items and call the parent constructor.
+     */
     public function __construct()
     {
         global $_SHOP_CONF, $_USER;
@@ -87,23 +87,23 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get the main gateway url.
-    *   This is used to tell the buyer where they can log in to check their
-    *   purchase.  For PayPal this is the same as the production action URL.
-    *
-    *   @return string      Gateway's home page
-    */
+     * Get the main gateway url.
+     * This is used to tell the buyer where they can log in to check their
+     * purchase.  For PayPal this is the same as the production action URL.
+     *
+     * @return  string      Gateway's home page
+     */
     public function getMainUrl()
     {   return '';    }
 
 
     /**
-    *   Magic "setter" function
-    *
-    *   @see    Gateway::__get()
-    *   @param  string  $key    Name of property to set
-    *   @param  mixed   $value  New value for property
-    */
+     * Magic "setter" function.
+     *
+     * @see     Gateway::__get()
+     * @param   string  $key    Name of property to set
+     * @param   mixed   $value  New value for property
+     */
     public function __set($key, $value)
     {
         switch ($key) {
@@ -147,13 +147,13 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get the form variables for the purchase button.
-    *
-    *   @uses   Gateway::_Supports()
-    *   @uses   _encButton()
-    *   @uses   getActionUrl()
-    *   @return string      HTML for purchase button
-    */
+     * Get the form variables for the purchase button.
+     *
+     * @uses    Gateway::_Supports()
+     * @uses    _encButton()
+     * @uses    getActionUrl()
+     * @return  string      HTML for purchase button
+     */
     public function gatewayVars($cart)
     {
         global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
@@ -283,11 +283,11 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get the command value and template name for the requested button type.
-    *
-    *   @param  string  $btn_type   Type of button being created
-    *   @return array       Array ('cmd'=>command, 'tpl'=>template name
-    */
+     * Get the command value and template name for the requested button type.
+     *
+     * @param   string  $btn_type   Type of button being created
+     * @return  array       Array ('cmd'=>command, 'tpl'=>template name
+     */
     private function gwButtonType($btn_type='')
     {
         switch ($btn_type) {
@@ -306,13 +306,13 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get the values to show in the "Thank You" message when a customer
-    *   returns to our site.
-    *
-    *   @uses   getMainUrl()
-    *   @uses   Gateway::Description()
-    *   @return array       Array of name=>value pairs
-    */
+     * Get the values to show in the "Thank You" message when a customer
+     * returns to our site.
+     *
+     * @uses    getMainUrl()
+     * @uses    Gateway::Description()
+     * @return  array       Array of name=>value pairs
+     */
     public function thanksVars()
     {
         $R = array(
@@ -324,12 +324,12 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Verify that a given email address is one of our business addresses.
-    *   Called during IPN validation.
-    *
-    *   @param  string  $email  Email address to check (receiver_email)
-    *   @return boolean         True if valid, False if not.
-    */
+     * Verify that a given email address is one of our business addresses.
+     * Called during IPN validation.
+     *
+     * @param   string  $email  Email address to check (receiver_email)
+     * @return  boolean         True if valid, False if not.
+     */
     public function isBusinessEmail($email)
     {
         switch ($email) {
@@ -348,10 +348,10 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get all the configuration fields specifiec to this gateway
-    *
-    *   @return array   Array of fields (name=>field_info)
-    */
+     * Get all the configuration fields specifiec to this gateway.
+     *
+     * @return  array   Array of fields (name=>field_info)
+     */
     protected function getConfigFields()
     {
         $fields = array();
@@ -381,12 +381,12 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Prepare to save the configuraiton.
-    *   This copies the new config values into our local variables, then
-    *   calls the parent function to save to the database.
-    *
-    *   @param  array   $A      Array of name=>value pairs (e.g. $_POST)
-    */
+     * Prepare to save the configuraiton.
+     * This copies the new config values into our local variables, then
+     * calls the parent function to save to the database.
+     *
+     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
+     */
     public function SaveConfig($A=NULL)
     {
         if (!is_array($A)) return false;
@@ -414,10 +414,10 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get the custom string properly formatted for the gateway.
-    *
-    *   @return string      Formatted custom string
-    */
+     * Get the custom string properly formatted for the gateway.
+     *
+     * @return  string      Formatted custom string
+     */
     protected function PrepareCustom()
     {
         return str_replace('"', '\'', serialize($this->custom));
@@ -438,11 +438,10 @@ class square extends \Shop\Gateway
 
 
     /**
-    *   Get a logo image to show on the order as the payment method.
-    *
-    *   @since  0.6.0
-    *   @return string      HTML for logo image
-    */
+     * Get a logo image to show on the order as the payment method.
+     *
+     * @return  string      HTML for logo image
+     */
     public function getLogo()
     {
         global $_CONF, $_SHOP_CONF;

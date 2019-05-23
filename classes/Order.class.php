@@ -6,6 +6,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -596,10 +597,15 @@ class Order
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
-                $img_filename = $P->getOneImage();
-                if (!empty($img_filename)) {
+                $img = $P->ImageUrl('', 100, 100);
+                if (!empty($img)) {
                     $img_url = COM_createImage(
-                        SHOP_ImageUrl($img_filename, 100, 100)
+                        $img['url'],
+                        '',
+                        array(
+                            'width' => $img['width'],
+                            'height' => $img['height'],
+                        )
                     );
                     $T->set_var('img_url', $img_url);
                     $have_images = true;

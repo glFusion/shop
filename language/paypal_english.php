@@ -1,15 +1,15 @@
 <?php
 /**
-*   English language strings for the PayPal payment gateway
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2011 Lee Garner <lee@leegarner.com>
-*   @package    shop
-*   @version    0.5.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * English language strings for the PayPal payment gateway.
+ *
+ * @author     Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @package    shop
+ * @version    v0.7.0
+ * @license    http://opensource.org/licenses/gpl-2.0.php 
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 $LANG_SHOP_gateway = array(
 'bus_prod_email' => 'Production Business E-Mail',
