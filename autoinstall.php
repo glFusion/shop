@@ -3,7 +3,7 @@
  * Automatic installation functions for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php

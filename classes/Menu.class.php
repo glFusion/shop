@@ -1,7 +1,22 @@
 <?php
-
+/**
+ * Class to provide admin and user-facing menus.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Shop;
 
+/**
+ * Class to provide admin and user-facing menus.
+ * @package shop
+ */
 class Menu
 {
     /**

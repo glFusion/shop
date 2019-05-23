@@ -3,9 +3,13 @@
  * Handle the headline autotag for the Shop plugin.
  * Based on the glFusion headline autotag.
  *
+ * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
- * @copyright   Copyright (c) 2018 Lee Garner <lee AT leegarner DOT com>
- * @license     GNU General Public License version 2 or later
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
  */
 namespace Shop\Autotags;
 

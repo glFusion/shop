@@ -5,9 +5,10 @@
  * an actual payment processor.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner
+ * @copyright   Copyright (c) 2018-2019 Lee Garner
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -26,7 +27,6 @@ if (!defined ('GVERSION')) {
 /**
  * Class to provide IPN for internal-only transactions, such as zero-balance orders.
  *
- * @since   v0.6.0
  * @package shop
  */
 class internal extends \Shop\IPN

@@ -3,9 +3,9 @@
  * English language file for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2016 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.1
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -275,7 +275,7 @@ $LANG_SHOP = array (
 'order_instr' => 'Special Order Instructions',
 'copy_attributes' => 'Copy all attributes from one product to another product or to all products in a category.<br />' .
     'Existing attributes will not be changed unless the &quot;Delete Existing&quot; box is checked.<br />' .
-    'Both a product and category may be selected.',
+    'Both a target product and target category may be selected.',
 'del_existing' => 'Delete Existing?',
 'copy_from' => 'Copy From',
 'target_prod' => 'Target Product',
@@ -474,6 +474,7 @@ $LANG_SHOP = array (
 'msg_cart_invalid' => 'One or more items have been updated or removed from your cart. Please verify and re-submit your cart for checkout.',
 'removed' => 'Removed',
 'ship_via' => 'Ship Via',
+'copy_product' => 'Duplicate Product',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

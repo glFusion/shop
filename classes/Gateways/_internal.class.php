@@ -1,27 +1,27 @@
 <?php
 /**
-*   Class to manage payment by gift card.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018 Lee Garner <lee@leegarner.com>
-*   @package    shop
-*   @version    0.6.0
-*   @since      0.6.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Class to manage payment by gift card.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Shop\Gateways;
 
 /**
- *  Internal gateway class, just to support zero-balance orders
+ * Internal gateway class, just to support zero-balance orders.
  */
 class _internal extends \Shop\Gateway
 {
     /**
-    *   Constructor.
-    *   Set gateway-specific items and call the parent constructor.
-    */
+     * Constructor.
+     * Set gateway-specific items and call the parent constructor.
+     */
     public function __construct()
     {
         // These are used by the parent constructor, set them first.

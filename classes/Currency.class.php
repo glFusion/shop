@@ -3,9 +3,10 @@
  * Class to handle currency display.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2014-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2014-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.6.0
+ * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -75,7 +76,6 @@ class Currency
     /**
      * Set all the record values into properties.
      *
-     * @since   v0.6.0
      * @param   array   $A      Array of key->value pairs
      */
     public function setVars($A)
@@ -97,7 +97,6 @@ class Currency
     /**
      * Set a property value.
      *
-     * @since   v0.6.0
      * @param   string  $key    Property Name
      * @param   mixed   $value  Property Value
      */
@@ -134,7 +133,6 @@ class Currency
     /**
      * Get a property value
      *
-     * @since   v0.6.0
      * @param   string  $key    Property Name
      * @return  mixed           Property Value, NULL if not set
      */

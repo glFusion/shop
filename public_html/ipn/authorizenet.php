@@ -5,7 +5,7 @@
  * Handles either Silent URL or Webhook notifications.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php

@@ -1,17 +1,18 @@
 <?php
 /**
-*   This file contains the Square IPN class.
-*   It is used with orders that have zero balances and thus don't go through
-*   an actual payment processor.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2018-2019 Lee Garner
-*   @package    shop
-*   @version    0.7.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * This file contains the Square IPN class.
+ * It is used with orders that have zero balances and thus don't go through
+ * an actual payment processor.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2019 Lee Garner
+ * @package     shop
+ * @version     v0.7.0
+ * @since       v0.7.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Shop\ipn;
 
 use \Shop\Cart;
@@ -25,17 +26,15 @@ if (!defined ('GVERSION')) {
  *  Class to provide IPN for internal-only transactions,
  *  such as zero-balance orders.
  *
- *  @since 0.6.0
  *  @package shop
  */
 class square extends \Shop\IPN
 {
     /**
-    *   Constructor.
-    *   Fake payment gateway variables.
-    *
-    *   @param  array   $A      $_POST'd variables from Shop
-    */
+     * Constructor.
+     *
+     * @param   array   $A      $_POST'd variables from Shop
+     */
     function __construct($A=array())
     {
         global $_USER, $_CONF;
@@ -110,12 +109,12 @@ class square extends \Shop\IPN
 
 
     /**
-    *   Verify the transaction.
-    *   This just checks that a valid cart_id was received along with other
-    *   variables.
-    *
-    *   @return boolean         true if successfully validated, false otherwise
-    */
+     * Verify the transaction.
+     * This just checks that a valid cart_id was received along with other
+     * variables.
+     *
+     * @return  boolean         true if successfully validated, false otherwise
+     */
     private function Verify()
     {
         // Gets the transaction via the Square API to get the real values.
@@ -176,25 +175,25 @@ class square extends \Shop\IPN
  */
 
     /**
-    *   Process an incoming IPN transaction
-    *   Do the following:
-    *       1. Verify IPN
-    *       2. Log IPN
-    *       3. Check that transaction is complete
-    *       4. Check that transaction is unique
-    *       5. Check for valid receiver email address
-    *       6. Process IPN
-    *
-    *   @uses   IPN::AddItem()
-    *   @uses   IPN::handleFailure()
-    *   @uses   IPN::handlePurchase()
-    *   @uses   IPN::isUniqueTxnId()
-    *   @uses   IPN::isSufficientFunds()
-    *   @uses   IPN::Log()
-    *   @uses   Verify()
-    *   @param  array   $in     POST variables of transaction
-    *   @return boolean true if processing valid and completed, false otherwise
-    */
+     * Process an incoming IPN transaction.
+     * Do the following:
+     *  - Verify IPN
+     *  - Log IPN
+     *  - Check that transaction is complete
+     *  - Check that transaction is unique
+     *  - Check for valid receiver email address
+     *  - Process IPN
+     *
+     * @uses   IPN::AddItem()
+     * @uses   IPN::handleFailure()
+     * @uses   IPN::handlePurchase()
+     * @uses   IPN::isUniqueTxnId()
+     * @uses   IPN::isSufficientFunds()
+     * @uses   IPN::Log()
+     * @uses   Verify()
+     * @param  array   $in     POST variables of transaction
+     * @return boolean true if processing valid and completed, false otherwise
+     */
     public function Process()
     {
         // If no data has been received, then there's nothing to do.

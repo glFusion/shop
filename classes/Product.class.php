@@ -6,6 +6,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -1930,7 +1931,6 @@ class Product
      * Looks for a colon in the item number, which will indicate a plugin
      * item number formated as "pi_name:item_number:other_opts"
      *
-     * @since   v0.6.0
      * @param   mixed   $item_number    Item Number to check
      * @return  boolean     True if it's a plugin item, false if it's ours
      */
@@ -1971,7 +1971,6 @@ class Product
     /**
      * Helper function to create the cache key.
      *
-     * @since   v0.6.0
      * @param   string  $id     Item ID
      * @param   string  $type   Optional item type
      * @return  string      Cache key
@@ -2001,7 +2000,6 @@ class Product
     /**
      * Get the product name. Allows for an override.
      *
-     * @since   v0.6.0
      * @param   string  $override  Optional name override
      * @return  string              Product Name
      */
@@ -2014,7 +2012,6 @@ class Product
     /**
      * Get the product short description. Allows for an override.
      *
-     * @since   v0.6.0
      * @param   string  $override  Optional description override
      * @return  string              Product sort description
      */
@@ -2027,7 +2024,6 @@ class Product
     /**
      * Get the URL to the item detail page.
      *
-     * @since   v0.6.0
      * @return  string      Item detail URL
      */
     public function getLink()
@@ -2039,7 +2035,6 @@ class Product
     /**
      * Get additional text to add to the buyer's receipt for a product.
      *
-     * @since   v0.6.0
      * @param   object  $orderitem  Line item to check.
      */
     public function EmailExtra($orderitem)

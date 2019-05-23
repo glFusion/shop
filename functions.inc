@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     0.7.0
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -509,7 +509,6 @@ function plugin_user_move_shop($origUID, $destUID)
  * Currently only allows for a single product ID, which will generate
  * a link to that product's detail page.
  *
- * @since   v0.4.0
  * @param   string  $op         Operation to perform (tagname or parse)
  * @param   string  $content    Content in which to replace autotag
  * @param   array   $autotag    Autotag details
@@ -1387,7 +1386,6 @@ function SHOP_phpblock_product($sql)
  * Updates the product table with the new rating and vote count.
  * Requires glFusion 1.1.7 or higher.
  *
- * @since   v0.4.0
  * @param   mixed   $id     Product ID
  * @param   float   $rating Rating Value
  * @param   integer $votes  Number of votes cast
@@ -1403,7 +1401,6 @@ function plugin_itemrated_shop($id, $rating, $votes)
  * Curretly, all logged-in users can rate (even admin).
  * Requires glFusion 1.1.7 or higher.
  *
- * @since   v0.4.0
  * @param   mixed   $item_id    ID of product to be rated
  * @param   integer $uid        User ID of the one doing the rating
  * @return  boolean             True if user is allowed, false if not

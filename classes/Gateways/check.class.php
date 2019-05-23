@@ -3,9 +3,9 @@
  * Class to manage payment by check.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2013 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2013-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.5.2
+ * @version     v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,7 +14,6 @@ namespace Shop\Gateways;
 
 /**
  * Class for check payments.
- * @since   v0.5.1
  * @package shop
  */
 class check extends \Shop\Gateway
