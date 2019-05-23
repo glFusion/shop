@@ -805,7 +805,8 @@ function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
     switch($fieldname) {
     case 'copy':
         $retval .= COM_createLink(
-            '<i class="uk-icon uk-icon-clone tooltip" title="' . $LANG_ADMIN['copy'] . '"></i>',
+            '<i class="uk-icon uk-icon-clone tooltip" title="' .
+            $LANG_SHOP['copy_product'] . '"></i>',
             SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
         );
         break;
