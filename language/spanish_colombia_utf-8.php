@@ -131,6 +131,7 @@ $LANG_SHOP = array (
 'deletecat'         => 'Delete Category',
 'product_id'        => 'Product ID',
 'other_func'        => 'Mantenimiento',
+'del_item'          => 'Delete this item',
 'q_del_item'        => 'Are you sure you want to delete this item?',
 'clearform'         => 'Reiniciar',
 'delivery_info'     => 'Delivery Information',

@@ -821,11 +821,12 @@ function getAdminField_Product($fieldname, $fieldvalue, $A, $icon_arr)
     case 'delete':
         if (!\Shop\Product::isUsed($A['id'])) {
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
                 SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
                 array(
-                    'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                    'title' => $LANG_SHOP['q_del_item'],
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
                 )
             );
         } else {
@@ -1106,12 +1107,12 @@ function getAdminField_Category($fieldname, $fieldvalue, $A, $icon_arr)
     case 'delete':
         if (!\Shop\Category::isUsed($A['cat_id'])) {
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger tooltip"></i>',
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
                 SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
                 array(
-                    'onclick'=>"return confirm('{$LANG_SHOP['q_del_item']}');",
-                    'title' => $LANG_ADMIN['delete'],
-                    'data-uk-tooltip' => '',
+                    'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
                 )
             );
         }
@@ -1388,11 +1389,12 @@ function getAdminField_Attribute($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'delete':
         $retval .= COM_createLink(
-            '<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
+            '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
             SHOP_ADMIN_URL. '/index.php?deleteopt=x&amp;attr_id=' . $A['attr_id'],
             array(
-                'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                'title' => 'Delete this item',
+                'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                'title' => $LANG_SHOP['del_item'],
+                'class' => 'tooltip',
             )
         );
         break;
@@ -1449,11 +1451,12 @@ function getAdminField_Shipper($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'delete':
         $retval .= COM_createLink(
-            '<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
+            '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
             SHOP_ADMIN_URL. '/index.php?delshipping=x&amp;id=' . $A['id'],
             array(
-                'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                'title' => 'Delete this item',
+                'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                'title' => $LANG_SHOP['del_item'],
+                'class' => 'tooltip',
             )
         );
         break;
@@ -1609,10 +1612,12 @@ function getAdminField_Gateway($fieldname, $fieldvalue, $A, $icon_arr)
 
     case 'delete':
         $retval = COM_createLink(
-            '<i class="uk-icon uk-icon-trash uk-text-danger tooltip" title="' . $LANG_ADMIN['delete'] . '"></i>',
+            '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
             SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
             array(
-                'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                'title' => $LANG_SHOP['del_item'],
+                'class' => 'tooltip',
             )
         );
         break;
@@ -1877,11 +1882,14 @@ function getAdminField_Sales($fieldname, $fieldvalue, $A, $icon_arr)
         break;
 
     case 'delete':
-        $retval = COM_createLink('<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
-                SHOP_ADMIN_URL . '/index.php?deldiscount&id=' . $A['id'],
-                array(
-                    'onclick'=>'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                )
+        $retval = COM_createLink(
+            '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+            SHOP_ADMIN_URL . '/index.php?deldiscount&id=' . $A['id'],
+            array(
+                'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                'title' => $LANG_SHOP['del_item'],
+                'class' => 'tooltip',
+            )
         );
         break;
 
