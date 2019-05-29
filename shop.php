@@ -52,7 +52,7 @@ $_TABLES['shop.shipping']     = $_SHOP_table_prefix . 'shipping';
 
 // Other relatively static values;
 $_SHOP_CONF['logfile'] = "{$_CONF['path']}/logs/{$_SHOP_CONF['pi_name']}_downloads.log";
-$_SHOP_CONF['tmpdir'] = "{$_CONF['path']}/data/{$$_SHOP_CONF['pi_name']}/";
+$_SHOP_CONF['tmpdir'] = "{$_CONF['path']}/data/{$_SHOP_CONF['pi_name']}/";
 $_SHOP_CONF['download_path'] = "{$_SHOP_CONF['tmpdir']}files/";
 $_SHOP_CONF['image_dir']  = "{$_SHOP_CONF['tmpdir']}images/products";
 $_SHOP_CONF['catimgpath']  = "{$_SHOP_CONF['tmpdir']}images/categories";
