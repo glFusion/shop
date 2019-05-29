@@ -2297,11 +2297,11 @@ function SHOP_errMsg($msg, $title = '')
         foreach ($msg as $m) {
             $retval .= '<li>' . $m . '</li>' . LB;
         }
-        $retval .= '<ul>' . LB;
+        $retval .= '</ul>' . LB;
     } else {
         $retval .= $msg;
     }
-    $retval .= "/span>\n";
+    $retval .= "</span>\n";
     return $retval;
 }
 
