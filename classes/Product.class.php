@@ -482,7 +482,7 @@ class Product
      */
     public function Save($A = '')
     {
-        global $_TABLES, $_SHOP_CONF;
+        global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
         if (is_array($A)) {
             $this->setVars($A);
@@ -506,6 +506,9 @@ class Product
                 $this->file = $filename;
             }
             SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
+        }
+        if ($this->file == '') {
+            $this->Errors[] = $LANG_SHOP['err_missing_file'];
         }
 
         // For downloadable files, physical product options don't apply
