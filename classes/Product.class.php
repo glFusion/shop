@@ -2329,6 +2329,41 @@ class Product
         return $output;
     }
 
+
+    /**
+     * Check if this product supports product ratings.
+     * Returns false if ratings are globaly disabled.
+     *
+     * @return  boolean     True if ratings are supported, False if not
+     */
+    public function supportsRatings()
+    {
+        global $_SHOP_CONF;
+
+        return ($_SHOP_CONF['ena_ratings'] == 1 && $this->rating_enabled);
+    }
+
+
+    /**
+     * Get the rating bar, if supported.
+     *
+     * @param   boolean $voted      True if the user has already voted
+     * @param   integer $stars      Number of stars
+     * @param   boolean $static     True to show a static rating bar
+     * @param   string  $size       Rating bar size
+     * @return  string      HTML for rating bar
+     */
+    public function ratingBar($voted, $stars, $static, $size='sm')
+    {
+        $retval = RATING_ratingBar(
+            $this->pi_name,
+            $this->id,
+            $this->votes,
+            $this->rating,
+            $voted, $stars, $static, $size);
+        return $retval;
+    }
+
 }   // class Product
 
 ?>
