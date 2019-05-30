@@ -48,7 +48,7 @@
               {price}
 {!endif}
 {!if has_discounts}
-              <span class="shopQtyDiscSmall">{$LANG_SHOP['qty_discounts_avail']}</span>
+              <br /><span class="shopQtyDiscSmall">{$LANG_SHOP['qty_discounts_avail']}</span>
 {!endif}
             </div>
 {!endif}
