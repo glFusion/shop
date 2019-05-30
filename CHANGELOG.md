@@ -42,3 +42,4 @@ First beta version under the new Shop name.
   * Enable batch printing of PDF orders and packing lists.
   * Add option to show categories on homepage instead of product list.
   * Remove `max_images` config, allow multiple images uploaded from product form.
+  * Automatically close paid orders that have only downloadable items.

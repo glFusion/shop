@@ -432,6 +432,11 @@ class IPN
 
             $this->Order->pmt_method = $this->gw_id;
             $this->Order->pmt_txn_id = $this->txn_id;
+            if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
+                // If this paid order has only downloadable items, them mark
+                // it closed since there's no further action needed.
+                $this->status = 'closed';
+            }
             $this->Order->Save();
             $this->Order->updateStatus($this->status, 'IPN: ' . $this->gw->Description());
 

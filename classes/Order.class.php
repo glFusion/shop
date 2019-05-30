@@ -1509,6 +1509,22 @@ class Order
 
 
     /**
+     * Check if this order has only downloadable items.
+     *
+     * @return  boolean     True if download only, False if now.
+     */
+    public function isDownloadOnly()
+    {
+        foreach ($this->items as $id->$item) {
+            if (!$item->getProduct()->isDownload(true)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
      * Check if this order is paid.
      * The status may be one of several values like "shipped", "closed", etc.
      * but should not be "cart" or "pending".
