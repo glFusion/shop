@@ -494,24 +494,31 @@ class Product
             }
         }
 
-        // Handle file uploads.  This is done first so we know whether
-        // there is a valid filename for a download product
-        // No weight or shipping for downloads
-        if (!empty($_FILES['uploadfile']['tmp_name'])) {
-            $F = new File('uploadfile');
-            $filename = $F->uploadFiles();
-            if ($F->areErrors() > 0) {
-                $this->Errors[] = $F->printErrors(true);
-            } elseif ($filename != '') {
-                $this->file = $filename;
+        // Handle file uploads.
+        // This is done first so we know whether there is a valid filename
+        // for a download product.
+        if ($this->isDownload()) {
+            if (!empty($_FILES['uploadfile']['tmp_name'])) {
+                $F = new File('uploadfile');
+                $filename = $F->uploadFiles();
+                if ($F->areErrors() > 0) {
+                    $this->Errors[] = $F->printErrors(true);
+                } elseif ($filename != '') {
+                    $this->file = $filename;
+                }
+                SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
             }
-            SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
-        }
-        if ($this->file == '') {
-            $this->Errors[] = $LANG_SHOP['err_missing_file'];
+            if ($this->file == '') {
+                // Not having a file is an error for downloadable products.
+                $this->Errors[] = $LANG_SHOP['err_missing_file'];
+            }
+        } else {
+            // Make sure file is empy for non-downloads.
+            // May have previously contained a file if the type was changed.
+            $this->file = '';
         }
 
-        // For downloadable files, physical product options don't apply
+        // For downloads and virtual items. physical options don't apply.
         if (!$this->isPhysical()) {
             $this->weight = 0;
             $this->shipping_type = 0;
@@ -2112,6 +2119,25 @@ class Product
             // when out of stock
             return $this->oversell;
         }
+    }
+
+
+    /**
+     * Helper function to check if this item has a downloadable component.
+     * Set $only to true to check if the item is only downloadable, e.g. no
+     * virtual or physical component.
+     *
+     * @param   boolean $only   True to check if only download
+     * @return  boolean     True if this is a physical item, False if not.
+     */
+    public function isDownload($only = false)
+    {
+        if ($only) {
+            $retval = ($this->prod_type == SHOP_PROD_DOWNLOAD);
+        } else {
+            $retval = ($this->prod_type & SHOP_PROD_DOWNLOAD) == SHOP_PROD_DOWNLOAD;
+        }
+        return $retval;
     }
 
 
