@@ -91,6 +91,10 @@ class Plugin extends \Shop\Product
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
             $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
+            $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+            $this->rating_enabled = true;   // TODO
+            $this->votes = SHOP_getVar($A, 'votes', 'integer');
+            $this->rating = SHOP_getVar($A, 'rating', 'float');
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -300,6 +304,11 @@ class Plugin extends \Shop\Product
     public function isUnique()
     {
         return $this->isUnique;;
+    }
+
+    public function ratingBar($voted, $stars, $static, $size='sm')
+    {
+        var_dump($this);die;
     }
 
 }   // class Plugin

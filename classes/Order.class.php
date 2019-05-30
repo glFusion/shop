@@ -641,8 +641,8 @@ class Order
                 'item_price'    => $Currency->FormatValue($item->price),
                 'item_quantity' => (int)$item->quantity,
                 'item_total'    => $Currency->FormatValue($item_total),
-                'is_admin'      => $this->isAdmin ? 'true' : '',
-                'is_file'       => $item->canDownload() ? true : false,
+                'is_admin'      => $this->isAdmin,
+                'is_file'       => $item->canDownload(),
                 'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'discount_icon' => 'D',
@@ -1509,6 +1509,22 @@ class Order
             }
         }
         return false;
+    }
+
+
+    /**
+     * Check if this order has only downloadable items.
+     *
+     * @return  boolean     True if download only, False if now.
+     */
+    public function isDownloadOnly()
+    {
+        foreach ($this->items as $id->$item) {
+            if (!$item->getProduct()->isDownload(true)) {
+                return false;
+            }
+        }
+        return true;
     }
 
 

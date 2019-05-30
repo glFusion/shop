@@ -266,7 +266,7 @@ function ProductList($cat_id = 0)
     $display .= $T->parse('', 'start');
 
     if ($_SHOP_CONF['ena_ratings'] == 1) {
-        $SHOP_ratedIds = RATING_getRatedIds($_SHOP_CONF['pi_name']);
+        $SHOP_ratedIds = SHOP_getRatedIds($_SHOP_CONF['pi_name']);
     }
 
     // Display each product
@@ -280,19 +280,20 @@ function ProductList($cat_id = 0)
 
         $prodrows++;
 
-        if ( @in_array($P->id, $SHOP_ratedIds)) {
+        /*if ( @in_array($P->id, $SHOP_ratedIds)) {
             $static = true;
             $voted = 1;
         } else {
             $static = 0;
             $voted = 0;
-        }
+        }*/
 
-        if ($_SHOP_CONF['ena_ratings'] == 1 && $P->rating_enabled == 1) {
+        if ($P->supportsRatings()) {
             $static = 1;
-            $rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $P->id,
+            $rating_box = $P->ratingBar($voted, 5, $static, 'sm');
+            /*$rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $P->id,
                     $P->votes, $P->rating,
-                    $voted, 5, $static, 'sm');
+                    $voted, 5, $static, 'sm');*/
             $T->set_var('rating_bar', $rating_box);
         } else {
             $T->set_var('rating_bar', '');
@@ -455,6 +456,23 @@ function ProductList($cat_id = 0)
 
     $display .= $T->parse('', 'end');
     return $display;
+}
+
+
+/**
+ * Get all rated product IDs for a plugin.
+ *
+ * @param   string  $pi_name    Plugin name
+ * @return  array       Array or rated item IDs
+ */
+function SHOP_getRatedIds($pi_name)
+{
+    static $retval = array();
+
+    if (!array_key_exists($retval, $pi_name)) {
+        $retval[$pi_name] = RATING_getRatedIds($pi_name);
+    }
+    return $retval[$pi_name];
 }
 
 ?>

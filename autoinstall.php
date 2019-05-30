@@ -257,6 +257,7 @@ function plugin_postinstall_shop()
             COM_errorLog("Failed to create logfile {$_SHOP_CONF['logfile']}", 1);
         } else {
             fwrite($fp, "*** Logfile Created ***\n");
+            fclose($fp);
         }
     }
 
@@ -305,8 +306,9 @@ function plugin_postinstall_shop()
         $_TABLES['groups'],
         'grp_id',
         "grp_name='{$_SHOP_CONF['pi_name']} Admin'");
-    if ($gid < 1)
+    if ($gid < 1) {
         $gid = 1;        // default to Root if shop group not found
+    }
     DB_query("INSERT INTO {$_TABLES['vars']} SET name='shop_gid', value=$gid");
 }
 

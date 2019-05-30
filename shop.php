@@ -51,20 +51,20 @@ $_TABLES['shop.sales']        = $_SHOP_table_prefix . 'sales';
 $_TABLES['shop.shipping']     = $_SHOP_table_prefix . 'shipping';
 
 // Other relatively static values;
-$_SHOP_CONF['image_dir']  = "{$_CONF['path']}data/{$_SHOP_CONF['pi_name']}/images/products";
-$_SHOP_CONF['logfile']    = $_CONF['path'] .
-                            "logs/{$_SHOP_CONF['pi_name']}_downloads.log";
-$_SHOP_CONF['catimgpath']  = "{$_CONF['path']}data/{$_SHOP_CONF['pi_name']}/images/categories";
+$_SHOP_CONF['logfile'] = "{$_CONF['path']}/logs/{$_SHOP_CONF['pi_name']}_downloads.log";
+$_SHOP_CONF['tmpdir'] = "{$_CONF['path']}/data/{$_SHOP_CONF['pi_name']}/";
+$_SHOP_CONF['download_path'] = "{$_SHOP_CONF['tmpdir']}files/";
+$_SHOP_CONF['image_dir']  = "{$_SHOP_CONF['tmpdir']}images/products";
+$_SHOP_CONF['catimgpath']  = "{$_SHOP_CONF['tmpdir']}images/categories";
 
 /**
-*   Allowed extensions for downloads.
-*   Make sure that every downloadable file extension is included in this list.
-*   For security you may want to remove unused file extensions.  Also try
-*   to avoid php and phps.
-*   NOTE: extensions must be defined in
-*       $_CONF['path']/system/classes/downloader.class.php
-*   to be listed here.
-*/
+ * Allowed extensions for downloads.
+ * Make sure that every downloadable file extension is included in this list.
+ * For security you may want to remove unused file extensions.  Also try
+ * to avoid php and phps.
+ * NOTE: extensions must be defined in `$_CONF['path']/system/classes/downloader.class.php`
+ * to be listed here.
+ */
 $_SHOP_CONF['allowedextensions'] = array (
     'tgz'  => 'application/x-gzip-compressed',
     'gz'   => 'application/x-gzip-compressed',
@@ -91,14 +91,11 @@ $_SHOP_CONF['allowedextensions'] = array (
 );
 
 /**
-*   Indicate which buttons will be checked by default for new products.
-*/
+ * Indicate which buttons will be checked by default for new products.
+ */
 $_SHOP_CONF['buttons'] = array(
     'buy_now'   => 1,
     'donation'  => 0,
 );
 
-$_SHOP_CONF['tpl_ver_detail'] = '/v1';
-$_SHOP_CONF['tmpdir'] = $_CONF['path'] . 'data/shop/';
-$_SHOP_CONF['download_path'] = $_SHOP_CONF['tmpdir'] . 'files/';
 ?>

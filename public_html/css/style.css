@@ -612,8 +612,9 @@ table.shopViewCartTable tr {
 }
 
 .shopQtyDiscSmall {
-    font-size: small;
+    font-size: x-small;
     font-style: italic;
+    line-height: 1;
 }
 
 div.shopTOCLink {

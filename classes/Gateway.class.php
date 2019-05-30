@@ -647,10 +647,10 @@ class Gateway
     public function getPaidStatus($types)
     {
         if ($types == SHOP_PROD_DOWNLOAD) {
-            // Only downloadable items
+            // Only downloadable items, nothing to ship, mark as closed.
             $retval = 'closed';
         } else {
-            // Physical and/or Other Virtual items
+            // Physical and/or Other Virtual items, may have other actions.
             $retval = 'paid';
         }
         return $retval;

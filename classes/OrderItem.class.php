@@ -322,14 +322,16 @@ class OrderItem
      */
     public function canDownload()
     {
-        // Check that the order is paid
-        if (!$this->getOrder()->isPaid()) return false;
-
-        // Check if product is not a download, or is expired
-        if ($this->getProduct()->file == '' || $this->expiration < time()) {
+        if (
+            // Check that the order is paid
+            !$this->getOrder()->isPaid() ||
+            // Check if product is not a download
+            $this->getProduct()->file == '' ||
+            // or is expired
+            ( $this->expiration > 0 && $this->expiration < time() )
+        ) {
             return false;
         }
-
         // All conditions passed, return true
         return true;
     }
