@@ -2353,7 +2353,7 @@ class Product
      * @param   string  $size       Rating bar size
      * @return  string      HTML for rating bar
      */
-    public function ratingBar($voted, $stars, $static, $size='sm')
+    public function ratingBar($voted, $units=5, $static=false, $size='sm')
     {
         $retval = RATING_ratingBar(
             $this->pi_name,
