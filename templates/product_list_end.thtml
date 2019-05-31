@@ -1,3 +1,8 @@
 {# begin {templatelocation} #}
-  <div class="aligncenter">{pagination}</div>
+<div class="aligncenter">{pagination}</div>
+{!if no_rows}
+<div class="uk-alert uk-alert-danger">
+  {$LANG_SHOP['no_products_match']}
+</div>
+{!endif}
 {# end {templatelocation} #}

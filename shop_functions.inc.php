@@ -280,20 +280,9 @@ function ProductList($cat_id = 0)
 
         $prodrows++;
 
-        /*if ( @in_array($P->id, $SHOP_ratedIds)) {
-            $static = true;
-            $voted = 1;
-        } else {
-            $static = 0;
-            $voted = 0;
-        }*/
-
         if ($P->supportsRatings()) {
             $static = 1;
-            $rating_box = $P->ratingBar($voted, 5, $static, 'sm');
-            /*$rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $P->id,
-                    $P->votes, $P->rating,
-                    $voted, 5, $static, 'sm');*/
+            $rating_box = $P->ratingBar($voted, 5, true, 'sm');
             $T->set_var('rating_bar', $rating_box);
         } else {
             $T->set_var('rating_bar', '');
@@ -451,7 +440,7 @@ function ProductList($cat_id = 0)
 
     // Display a "not found" message if count == 0
     if ($prodrows == 0) {
-        $display .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['no_products_match'] . '</div>';
+        $T->set_var('no_rows', true);
     }
 
     $display .= $T->parse('', 'end');
