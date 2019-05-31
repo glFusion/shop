@@ -2340,7 +2340,7 @@ class Product
     {
         global $_SHOP_CONF;
 
-        return ($_SHOP_CONF['ena_ratings'] == 1 && $this->rating_enabled);
+        return ($_SHOP_CONF['ena_ratings'] == 1) && $this->rating_enabled;
     }
 
 
@@ -2355,12 +2355,17 @@ class Product
      */
     public function ratingBar($voted, $units=5, $static=false, $size='sm')
     {
-        $retval = RATING_ratingBar(
-            $this->pi_name,
-            $this->id,
-            $this->votes,
-            $this->rating,
-            $voted, $stars, $static, $size);
+        if ($this->supportsRatings()) {
+            $retval = RATING_ratingBar(
+                $this->pi_name,
+                $this->id,
+                $this->votes,
+                $this->rating,
+                $voted, $stars, $static, $size
+            );
+        } else {
+            $retval = '';
+        }
         return $retval;
     }
 

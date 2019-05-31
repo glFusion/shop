@@ -39,14 +39,6 @@ function ProductList($cat_id = 0)
 
     // Get the root category and see if the requested category is root.
     $RootCat = Category::getRoot();
-    if ($cat_id > 0 && $cat_id != $RootCat->cat_id) {
-        // Not on the root page, don't show plugin categories
-        $show_plugins = false;
-    } else {
-        // Only show plugins on the root category page
-        $show_plugins = true;
-    }
-
     $cat_name = $Cat->cat_name;
     $cat_desc = $Cat->description;
     $cat_img_url = $Cat->ImageUrl();
@@ -346,15 +338,19 @@ function ProductList($cat_id = 0)
     if (
         $_SHOP_CONF['show_plugins']&&
         $page == 1 &&
-        $show_plugins &&
+        ( $cat_id == 0 || $cat_id == $RootCat->cat_id ) &&
         empty($search)
     ) {
         // Get the currency class for formatting prices
         $Cur = Currency::getInstance();
-        $T->clear_var('rating_bar');  // no ratings for plugins (yet)
         foreach ($_PLUGINS as $pi_name) {
-            $status = LGLIB_invokeService($pi_name, 'getproducts',
-                    array(), $plugin_data, $svc_msg);
+            $status = LGLIB_invokeService(
+                $pi_name,
+                'getproducts',
+                array(),
+                $plugin_data,
+                $svc_msg
+            );
             if ($status != PLG_RET_OK || empty($plugin_data)) continue;
 
             foreach ($plugin_data as $A) {
@@ -372,22 +368,21 @@ function ProductList($cat_id = 0)
                 } else {
                     $item_url = '';
                 }
-                $item_name = SHOP_getVar($A, 'name', 'string', $A['id']);
-                $item_dscp = SHOP_getVar($A, 'short_description', 'string', $item_name);
-                $img = SHOP_getVar($A, 'image', 'string', '');
-                $price = SHOP_getVar($A, 'price', 'float', 0);
+                $P = \Shop\Product::getInstance($A['id']);
+                $price = $P->getPrice();
                 $T->set_var(array(
-                    'id'        => $A['id'],        // required
-                    'item_id'   => $A['id'],        // required
-                    'name'      => $item_name,
-                    'short_description' => $item_dscp,
+                    'id'        => $P->id,          // required
+                    'item_id'   => $P->item_id,     // required
+                    'name'      => $P->short_description,
+                    'short_description' => $P->short_description,
                     'encrypted' => '',
                     'item_url'  => $item_url,
                     'track_onhand' => '',   // not available for plugins
-                    'small_pic' => $img,
+                    'small_pic' => $P->ImageUrl()['url'],
                     'on_sale'   => '',
                     'nonce'     => $Cart->makeNonce($A['id'] . $item_dscp),
                     'can_add_cart'  => true,
+                    'rating_bar' => $P->ratingBar(true),
                 ) );
                 if ($price > 0) {
                     $T->set_var('price', $Cur->Format($price));

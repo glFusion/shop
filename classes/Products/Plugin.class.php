@@ -69,7 +69,9 @@ class Plugin extends \Shop\Product
         $this->prod_type = SHOP_PROD_PLUGIN;
 
         // Try to call the plugin's function to get product info.
-        $status = LGLIB_invokeService($this->pi_name, 'productinfo',
+        $status = LGLIB_invokeService(
+            $this->pi_name,
+            'productinfo',
             $this->pi_info,
             $A,
             $svc_msg
@@ -92,7 +94,7 @@ class Plugin extends \Shop\Product
             // so default to "true"
             $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
             $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
-            $this->rating_enabled = true;   // TODO
+            //$this->rating_enabled = true;   // TODO testing
             $this->votes = SHOP_getVar($A, 'votes', 'integer');
             $this->rating = SHOP_getVar($A, 'rating', 'float');
          } else {
@@ -169,7 +171,13 @@ class Plugin extends \Shop\Product
             'order' => $Order,      // Pass the order object, may be used in the future
         );
         if ($ipn_data['status'] == 'paid') {
-            $status = LGLIB_invokeService($this->pi_name, 'handlePurchase', $args, $output, $svc_msg);
+            $status = LGLIB_invokeService(
+                $this->pi_name,
+                'handlePurchase',
+                $args,
+                $output,
+                $svc_msg
+            );
         }
         return $status == PLG_RET_OK ? true : false;
     }
@@ -189,8 +197,13 @@ class Plugin extends \Shop\Product
             'item_id'   => explode(':', $this->item_id),
             'ipn_data'  => $pp_data,
         );
-        $status = LGLIB_invokeService($this->pi_name, 'handleRefund',
-                $args, $output, $svc_msg);
+        $status = LGLIB_invokeService(
+            $this->pi_name,
+            'handleRefund',
+            $args,
+            $output,
+            $svc_msg
+        );
         return $status == PLG_RET_OK ? true : false;
     }
 
@@ -225,8 +238,13 @@ class Plugin extends \Shop\Product
             if (isset($override['uid'])) {
                 $this->pi_info['mods']['uid'] = $override['uid'];
             }
-            $status = LGLIB_invokeService($this->pi_name, 'productinfo',
-                    $this->pi_info, $A, $svc_msg);
+            $status = LGLIB_invokeService(
+                $this->pi_name,
+                'productinfo',
+                $this->pi_info,
+                $A,
+                $svc_msg
+            );
             if ($status == PLG_RET_OK && isset($A['price'])) {
                 return $A['price'];
             } else {
@@ -276,8 +294,13 @@ class Plugin extends \Shop\Product
     {
         $text = '';
         // status from the service function isn't used.
-        LGLIB_invokeService($this->pi_name, 'emailReceiptInfo',
-                    $this->pi_info, $text, $svc_msg);
+        LGLIB_invokeService(
+            $this->pi_name,
+            'emailReceiptInfo',
+            $this->pi_info,
+            $text,
+            $svc_msg
+        );
         return $text;
     }
 
@@ -304,11 +327,6 @@ class Plugin extends \Shop\Product
     public function isUnique()
     {
         return $this->isUnique;;
-    }
-
-    public function ratingBar($voted, $stars, $static, $size='sm')
-    {
-        var_dump($this);die;
     }
 
 }   // class Plugin

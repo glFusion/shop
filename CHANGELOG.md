@@ -43,3 +43,4 @@ First beta version under the new Shop name.
   * Add option to show categories on homepage instead of product list.
   * Remove `max_images` config, allow multiple images uploaded from product form.
   * Automatically close paid orders that have only downloadable items.
+  * Enable product ratings for plugin products.
