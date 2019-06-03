@@ -1,5 +1,10 @@
 # Shop plugin for glFusion - Changelog
 
+## v0.7.1
+Release TBD
+
+  * Add pending shipments by shipper report to ship items in batches
+
 ## v0.7.0
 Release 2019-06-02
 

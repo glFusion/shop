@@ -1,13 +1,13 @@
 <?php
 /**
  * Pending Shipments report.
- * For a selected item, list all the pending fulfillments.
+ * For a selected shipper, list all the pending fulfillments.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
- * @since       v0.7.0
+ * @version     v0.7.1
+ * @since       v0.7.1
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
  * @filesource
@@ -160,7 +160,7 @@ class pendingship_shipper extends \Shop\Report
                     'shop_rep_pendingship',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
-                    '', $this->extra
+                    '', $this->extra, $this->_getListOptions()
                 ),
             ) );
             break;

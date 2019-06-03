@@ -314,7 +314,7 @@ $LANG_SHOP = array (
     'pendingship_shipper' => array(
         'name' => 'Pending Shipments by Shipper',
         'dscp' => 'List pending shipments for a specific shipper. Useful to group upcoming shipments.',
-        'title' => 'Pending Shipments for Shipper %s',
+        'title' => 'Pending Shipments via Shipper %s',
     ),
     'coupons' => array(
         'name' => 'Coupon Activity',
