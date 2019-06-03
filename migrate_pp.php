@@ -46,6 +46,7 @@ function SHOP_migrate_pp()
 
     // Include the Paypal SQL updates to execute those done since version 0.6.0,
     // if not already at 0.6.1. Have to include all the 0.6.1 update SQL here.
+    $PP_UPGRADE = array();
     if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
         $PP_UPGRADE = array(
             "ALTER TABLE {$_TABLES['paypal.prod_attr']} CHANGE orderby orderby int(3) NOT NULL DEFAULT '0'",
@@ -58,12 +59,14 @@ function SHOP_migrate_pp()
             // This may have been left over from the 0.6.0 upgrade
             "ALTER TABLE {$_TABLES['paypal.orders']} DROP order_date_old",
         );
-        foreach ($PP_UPGRADE as $sql) {
-            // Ignore errors since we can't be sure which of these have already been done.
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("Non-fatal error runing $sql", SHOP_LOG_WARNING);
-            }
+    }
+    // These are updates to the schema since Shop v0.7.0
+    $PP_UPGRADE[] = "ALTER TABLE {$_TABLES['paypal.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    foreach ($PP_UPGRADE as $sql) {
+        // Ignore errors since we can't be sure which of these have already been done.
+        DB_query($sql, 1);
+        if (DB_error()) {
+            SHOP_log("Non-fatal error runing $sql", SHOP_LOG_WARNING);
         }
     }
 
