@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v0.7.0
-Release TBD
+Release 2019-06-02
 
 First beta version under the new Shop name.
 
