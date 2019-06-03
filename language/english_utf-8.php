@@ -311,6 +311,11 @@ $LANG_SHOP = array (
         'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
         'title' => 'Pending Shipments for Item %s',
     ),
+    'pendingship_shipper' => array(
+        'name' => 'Pending Shipments by Shipper',
+        'dscp' => 'List pending shipments for a specific shipper. Useful to group upcoming shipments.',
+        'title' => 'Pending Shipments for Shipper %s',
+    ),
     'coupons' => array(
         'name' => 'Coupon Activity',
         'dscp' => 'List coupon purchases and application against orders.',

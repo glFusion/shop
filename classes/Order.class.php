@@ -149,6 +149,7 @@ class Order
         case 'uid':
         case 'billto_id':
         case 'shipto_id':
+        case 'shipper_id':
             $this->properties[$name] = (int)$value;
             break;
 
@@ -412,6 +413,7 @@ class Order
             $this->isNew = true;
             Cart::clearSession('order_id');
         }
+        $this->shipper_id = $A['shipper_id'];
     }
 
 
@@ -506,6 +508,7 @@ class Order
                 "info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
                 "tax_rate = '{$this->tax_rate}'",
                 "currency = '{$this->currency}'",
+                "shipper_id = '{$this->shipper_id}'",
         );
         foreach (array('billto', 'shipto') as $type) {
             $fld = $type . '_id';
@@ -677,6 +680,7 @@ class Order
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
+            'shipper_name'  => Shipper::getInstance($this->shipper_id)->name,
             'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
@@ -698,7 +702,7 @@ class Order
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
             'next_step'     => $step + 1,
             'not_anon'      => !COM_isAnonUser(),
-            'ship_method'   => $this->getInfo('shipper_name'),
+            'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
             'total_prefix'  => $Currency->Pre(),
             'total_postfix' => $Currency->Post(),
             'total_num'     => $Currency->FormatValue($this->total),
@@ -1213,7 +1217,7 @@ class Order
         // Only calculate shipping if there are physical items,
         // otherwise shipping = 0
         if ($this->hasPhysical()) {
-            $shipper_id = $this->getInfo('shipper_id');
+            $shipper_id = $this->shipper_id;
             $shippers = Shipper::getShippersForOrder($this);
             $have_shipper = false;
             if ($shipper_id !== NULL) {
@@ -1616,22 +1620,19 @@ class Order
     public function setShipper($shipper_id)
     {
         if ($this->hasPhysical()) {
-            $ship_info = $this->getItemShipping();
             $shippers = Shipper::getShippersForOrder($this);
             // Have to iterate through all the shippers since the array is
             // ordered by rate, not shipper ID
             foreach ($shippers as $sh) {
                 if ($sh->id == $shipper_id) {
-                    $this->setInfo('shipper_name', $sh->name);
-                    $this->setInfo('shipper_id', $sh->id);
                     $this->shipping = $sh->ordershipping->total_rate;
+                    $this->shipper_id = $sh->id;
                     break;
                 }
             }
         } else {
-            $this->remInfo('shipper_name');
-            $this->remInfo('shipper_id');
             $this->shipping = 0;
+            $this->shipper_id = 0;
         }
     }
 
@@ -1659,7 +1660,7 @@ class Order
 
         // Get the best or previously-selected shipper for the default choice
         $best = NULL;
-        $shipper_id = $this->getInfo('shipper_id');
+        $shipper_id = $this->shipper_id;
         if ($shipper_id !== NULL) {
             // Array is 0-indexed so search for the shipper ID, if any.
             foreach ($shippers as $id=>$shipper) {
@@ -1673,8 +1674,6 @@ class Order
         if ($best === NULL) {
             // None already selected, grab the first one. It has the best rate.
             $best = reset($shippers);
-            $this->setInfo('shipper_id', $best->id);
-            $this->setInfo('shipper_name', $best->name);
         }
 
         $T = SHOP_getTemplate('shipping_method', 'form');

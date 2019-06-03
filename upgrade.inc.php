@@ -34,6 +34,36 @@ function SHOP_do_upgrade($dvlp = false)
     }
     $installed_ver = plugin_chkVersion_shop();
 
+    if (!COM_checkVersion($current_ver, '0.7.1')) {
+        $current_ver = '0.7.1';
+        // See if the shipper_id column is already in place. If not then
+        // the shipper info will be moved from the info array to the new column
+        // after it is created.
+        $set_shippers = _SHOPtableHasColumn('shop.orders', 'shipper_id') ? false : true;
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if ($set_shippers) {
+            // Need to copy the shipper_id value from the info section to the
+            // new DB field.
+            $sql = "SELECT order_id, info FROM {$_TABLES['shop.orders']}";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $info = @unserialize($A['info']);
+                if ($info !== false && isset($info['shipper_id'])) {
+                    $shipper_id = (int)$info['shipper_id'];
+                    unset($info['shipper_id']);
+                    unset($info['shipper_name']);
+                    $info = @serialize($info);
+                    $sql = "UPDATE {$_TABLES['shop.orders']} SET
+                            shipper_id = $shipper_id,
+                            info = '" . DB_escapeString($info) . "'
+                        WHERE order_id = '" . DB_escapeString($A['order_id']) ."'";
+                    DB_query($sql);
+                }
+            }
+        }
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     SHOP_update_config();
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;

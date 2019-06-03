@@ -139,6 +139,26 @@ class Shipper
 
 
     /**
+     * Get a single shipper record.
+     * Returns an empty shipper object if the requested ID is not found so
+     * that object operations won't fail.
+     *
+     * @uses    self::getAll()
+     * @param   integer $shipper_id     ID of shipper to retrieve
+     * @return  object      Shipper object, new object if not found.
+     */
+    public static function getInstance($shipper_id)
+    {
+        $shippers = self::GetAll();
+        if (array_key_exists($shipper_id, $shippers)) {
+            return $shippers[$shipper_id];
+        } else {
+            return new self;
+        }
+    }
+
+
+    /**
      * Get all shipping options.
      *
      * @return  array   Array of all DB records
