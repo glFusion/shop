@@ -1591,6 +1591,24 @@ class Order
 
 
     /**
+     * Set the buyer email to the supplied email address.
+     * First checks that the supplied address is a valid one.
+     *
+     * @param   string  $email  Email address
+     * @return  boolean     True on success, False if not a valid address
+     */
+    public function setEmail($email)
+    {
+        if (COM_isEmail($email)) {
+            $this->buyer_email = $email;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
      * Set shipper information in the info array, including the best rate.
      *
      * @param   integer $shipper_id     Shipper record ID

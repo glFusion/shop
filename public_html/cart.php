@@ -76,9 +76,8 @@ case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
-
     // Validate the cart items
-    $invalid = $Cart->Validate();
+    $invalid = $Cart->updateItems();
     if (!empty($invalid)) {
         COM_refresh(SHOP_URL . '/cart.php');
     }
@@ -99,12 +98,26 @@ case 'checkout':
     if (isset($_POST['order_instr'])) {
         $Cart->instructions = $_POST['order_instr'];
     }
-    if (isset($_POST['payer_email'])) {
-        $Cart->buyer_email = $_POST['payer_email'];
+    if (isset($_POST['payer_email']) && !empty($_POST['payer_email'])) {
+        $Cart->setEmail($_POST['payer_email']);
     }
     if (isset($_POST['shipper_id'])) {
         $Cart->setShipper($_POST['shipper_id']);
     }
+
+    // Final check that all items are valid. No return or error message
+    // unless this is the only issue. This is the final step after viewing
+    // the cart so there shouldn't be any changes.
+    $invalid = $Cart->updateItems();
+    if (empty($invalid)) {
+        // Validate that all order fields are filled out. If not, then that is a
+        // valid error and the error messages will be displayed upon return.
+        $errors = $Cart->Validate();
+        if (!empty($errors)) {
+            COM_refresh(SHOP_URL . '/cart.php');
+        }
+    }
+
     if (isset($_POST['quantity'])) {
         // Update the cart quantities if coming from the cart view.
         // This also calls Save() on the cart
@@ -173,7 +186,7 @@ default:
     $Cart = \Shop\Cart::getInstance();
 
     // Validate the cart items
-    $invalid = $Cart->Validate();
+    $invalid = $Cart->updateItems();
     if (!empty($invalid)) {
         // Items have been removed, refresh to update and view the info msg.
         COM_refresh(SHOP_URL . '/cart.php');

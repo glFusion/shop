@@ -470,6 +470,7 @@ $LANG_SHOP = array (
 'removed' => 'Removed',
 'ship_via' => 'Ship Via',
 'copy_product' => 'Duplicate Product',
+'err_missing_email' => 'A valid email address is required.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

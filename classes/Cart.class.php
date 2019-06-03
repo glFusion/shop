@@ -976,7 +976,7 @@ class Cart extends Order
      *
      * @return  array   Array of invalid order item objects.
      */
-    public function Validate()
+    public function updateItems()
     {
         global $LANG_SHOP;
 
@@ -996,9 +996,30 @@ class Cart extends Order
         if (!empty($msg)) {
             $msg = '<ul><li>' . implode('</li><li>', $msg) . '</li></ul>';
             $msg = $LANG_SHOP['msg_cart_invalid'] . $msg;
-            COM_setMsg($msg, SHOP_LOG_ERROR);
+            COM_setMsg($msg, 'info');
         }
         return $invalid;
+    }
+
+
+    /**
+     * Make sure all the required cart fields are valid prior to checkout.
+     *
+     * @return  array   Array of error messages
+     */
+    public function Validate()
+    {
+        global $LANG_SHOP;
+
+        $errors = array();
+        if ($this->buyer_email == '') {
+            $errors[] = $LANG_SHOP['err_missing_email'];
+        }
+        if (!empty($errors)) {
+            $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+        }
+        return $errors;
     }
 
 }   // class Cart
