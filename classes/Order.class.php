@@ -1821,7 +1821,7 @@ class Order
                 'count(*)',
                 "status <> 'cart'"
             ) > 0 ||
-            DB_count($_TABLES['shop.ipnlog']) > 0
+            IPN::Count() > 0
         );
     }
 
