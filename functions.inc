@@ -1600,9 +1600,11 @@ function SHOP_log($msg, $level = SHOP_LOG_ERROR)
     }
 
     $msg1 = 'SHOP ';
+    $show_backtrace = false;
     switch ($level) {
     case SHOP_LOG_DEBUG:
         $msg1 .= 'DEBUG';
+        $show_backtrace = true;
         break;
     case SHOP_LOG_INFO:
         $msg1 .= 'INFO';
@@ -1629,14 +1631,16 @@ function SHOP_log($msg, $level = SHOP_LOG_ERROR)
     }
     $msg1 .= ': ';
 
-    $bk = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-    if (isset($bk[1])) {
-        if (isset($bk[1]['class'])) {
-            $msg1 .= $bk[1]['class'] . $bk[1]['type'];
+    if ($show_backtrace) {
+        $bk = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+        if (isset($bk[1])) {
+            if (isset($bk[1]['class'])) {
+                $msg1 .= $bk[1]['class'] . $bk[1]['type'];
+            }
+            $msg1 .= $bk[1]['function'] . '(): ';
+        } else {
+            $msg1 .= basename($bk[0]['file']) . '(' . $bk[0]['line'] . ') ';
         }
-        $msg1 .= $bk[1]['function'] . '(): ';
-    } else {
-        $msg1 .= basename($bk[0]['file']) . '(' . $bk[0]['line'] . ') ';
     }
     COM_errorLog($msg1 . $msg, 1);
 }
