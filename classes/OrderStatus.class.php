@@ -132,8 +132,7 @@ class OrderStatus extends Workflow
                 'selected' => $key == $selected ?
                                 'selected="selected"' : '',
                 'stat_key' => $key,
-                'stat_descr' => isset($LANG_SHOP['orderstatus'][$key]) ?
-                        $LANG_SHOP['orderstatus'][$key] : $key,
+                'stat_descr' => self::getDscp($key),
             ) );
             $T->parse('Sel', 'StatusSelect', true);
         }
@@ -207,6 +206,19 @@ class OrderStatus extends Workflow
     public function getName()
     {
         return $this->name;
+    }
+
+
+    /**
+     * Get the language string for the description, or the name if not found.
+     *
+     * @return  string      Language-specific description
+     */
+    public static function getDscp($name)
+    {
+        global $LANG_SHOP;
+
+        return SHOP_getVar($LANG_SHOP['orderstatus'], $name, 'string', $name);
     }
 
 }   // class OrderStatus

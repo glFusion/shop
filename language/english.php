@@ -439,6 +439,7 @@ $LANG_SHOP = array (
 'go_back' => 'Go Back',
 'packinglist' => 'Packing List',
 'q_update_currency' => 'Are you sure you want to update the currency code for all outstanding carts?',
+'q_upd_stat_all' => 'Are you sure you want to update the status for all selected orders?',
 'x_carts_updated' => 'Updated %d carts',
 'shop_closed'   => 'The Shop plugin is only available to administrators.',
 'working'   => 'Working',

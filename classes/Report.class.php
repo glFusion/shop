@@ -660,22 +660,22 @@ class Report
         $status_sess = self::_getSessVar('orderstatus');
         foreach ($statuses as $key=>$data) {
             // Check if this is in the allowed statuses array
-            if (!empty($this->allowed_statuses) &&
-                !in_array($key, $this->allowed_statuses)) {
+            if (
+                !empty($this->allowed_statuses) &&
+                !in_array($key, $this->allowed_statuses)
+            ) {
                 continue;
             }
             $chk = 'checked="checked"';
             // If there is a session var but it doesn't contain this status,
             // then it was unchecked.
             if (is_array($status_sess)) {
-               if (!in_array($key, $status_sess)) {
-                   $chk = '';
-               }
-            } elseif ($key == 'pending') {
-               $chk = '';
-           }
+                if (!in_array($key, $status_sess)) {
+                    $chk = '';
+                }
+            }
             $this->statuses[$key] = array(
-                'dscp'  => SHOP_getVar($LANG_SHOP['orderstatus'], $key, 'string', $key),
+                'dscp'  => OrderStatus::getDscp($key),
                 'chk'   => $chk,
             );
         }
@@ -768,7 +768,7 @@ class Report
             if ($extra['isAdmin']) {
                 $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
             } else {
-                $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', 'Unknown');
+                $retval = OrderStatus::getDscp($fieldvalue);
             }
             break;
 
@@ -965,13 +965,26 @@ class Report
         $prt_ord = '<button type="submit" name="pdforder" value="x" class="tooltip" ' .
             'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
             'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
-            '<i name="pdfpl" class="uk-icon uk-icon-print"></i>';
+            '<i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
             '</button>';
+        $statuses = OrderStatus::getAll();
+        $upd_stat = '<select name="newstatus">';
+        $upd_stat .= '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>';
+        foreach ($statuses as $name=>$obj) {
+            $upd_stat .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>';
+        }
+        $upd_stat .= '</select>';
+        $upd_stat .= '<button type="submit" name="updstatus" value="x" class="tooltip" ' .
+            'title="' . $LANG_SHOP['update_status'] . '" ' .
+            'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');">' .
+            '<i name="updstat" class="uk-icon uk-icon-check"></i>' .
+            '</button>';
+
         $options = array(
             'chkselect' => 'true',
             'chkname'   => 'orders',
             'chkfield'  => 'order_id',
-            'chkactions' => $prt_pl . '&nbsp;&nbsp;' . $prt_ord,
+            'chkactions' => $prt_pl . '&nbsp;&nbsp;' . $prt_ord . '&nbsp;&nbsp;' . $upd_stat,
         );
         return $options;
     }

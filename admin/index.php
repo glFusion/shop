@@ -1996,7 +1996,7 @@ function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr, $extra)
         break;
 
     case 'name':
-        $retval = SHOP_getVar($LANG_SHOP['orderstatus'], $fieldvalue, 'string', $fieldvalue);
+        $retval = OrderStatus::getDscp($fieldvalue);
         break;
 
     default:

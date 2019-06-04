@@ -40,6 +40,8 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // and $view we don't tend to conflict with glFusion's $mode.
 $action = '';
 $expected = array(
+    // Actions to perform
+    'updstatus',
     // Views to display
     'pdfpl', 'pdforder',
     'configure', 'run', 'report', 'list',
@@ -58,6 +60,28 @@ foreach($expected as $provided) {
 $view = 'list';
 
 switch ($action) {
+case 'updstatus':
+    $newstatus = SHOP_getVar($_POST, 'newstatus');
+    if ($newstatus == '') {
+        break;
+    }
+    $orders = SHOP_getVar($_POST, 'orders', 'array');
+    $oldstatus = SHOP_getVar($_POST, 'oldstatus', 'array');
+    foreach ($orders as $id=>$order_id) {
+        if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
+            $Order = Shop\Order::getInstance($order_id);
+            if (!$Order->isNew) {
+                $Order->updateStatus($newstatus);
+                SHOP_log("Updated order $order_id from {$oldstatus[$order_id]} to $newstatus", SHOP_LOG_INFO);
+            }
+        }
+    }
+    $actionval = SHOP_getVar($_REQUEST, 'run');
+    if ($actionval != '') {
+        $view = 'run';
+    }
+    break;
+
 default:
     $view = $action;
     break;
