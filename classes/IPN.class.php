@@ -295,7 +295,10 @@ class IPN
                 verified = $verified,
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 gateway = '{$this->gw_id}',
-                ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . '\'';
+                ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
+        if ($this->Order !== NULL) {
+            $sql .= ", 'order_id = '" . DB_escapeString($this->Order->order_id) . "'";
+        }
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {
@@ -871,6 +874,18 @@ class IPN
         global $_TABLES;
 
         DB_query("TRUNCATE {$_TABLES['shop.ipnlog']}");
+    }
+
+
+    /**
+     * Count IPN records. Optionally provide a "where" clause.
+     *
+     * @return  integer     Count of matching records
+     */
+    public static function Count($id='', $value='')
+    {
+        global $_TABLES;
+        return DB_count($_TABLES['shop.ipnlog'], $id, $value);
     }
 
 }   // class IPN

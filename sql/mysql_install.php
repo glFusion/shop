@@ -507,7 +507,8 @@ $SHOP_UPGRADE['0.7.1'] = array(
         ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
-    "ALTER TABLE {$_TABLES['ship.orderitems']} DROP `status`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
 );
 
 ?>
