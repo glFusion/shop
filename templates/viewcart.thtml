@@ -74,26 +74,26 @@
       <!-- END ItemRow -->
 {!if subtotal}
       <tr>
-        <td colspan="3" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
+        <td colspan="4" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
         <td colspan="1" class="alignright"><b>{subtotal}</b></td>
         <td></td>
       </tr>
 {!endif}
 {!if cart_tax}
       <tr>
-        <td colspan="3" class="alignright">{lang_tax_on_items}</td>
+        <td colspan="4" class="alignright">{lang_tax_on_items}</td>
         <td colspan="1" class="alignright">{cart_tax}</td>
         <td></td>
       </tr>
 {!endif}
 {!if ship_select}
       <tr>
-        <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}: {ship_select}</td>
+        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}: {ship_select}</td>
         <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
       </tr>
 {!elseif shipping}
       <tr>
-        <td colspan="3" class="alignright">{$LANG_SHOP['shipping']}
+        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
 ({ship_method})
 {!endif}
@@ -104,13 +104,13 @@
 {!endif}
 {!if handling}
       <tr>
-        <td colspan="3" class="alignright">{$LANG_SHOP['handling']}</td>
+        <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
         <td colspan="1" class="alignright">{handling}</td>
         <td></td>
       </tr>
 {!endif}
       <tr>
-        <td colspan="3" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
+        <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
         <td colspan="1" class="alignright"><b>
 {!if not_final}
             {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}

@@ -319,6 +319,9 @@ $_SQL = array(
   `min_units` int(11) unsigned NOT NULL DEFAULT '0',
   `max_units` int(11) unsigned NOT NULL DEFAULT '0',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `valid_from` int(11) unsigned NOT NULL DEFAULT '0',
+  `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399',
+  `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `rates` text,
   PRIMARY KEY (`id`)
 ) ENGINE=MyIsam",
@@ -497,6 +500,14 @@ $_SHOP_SAMPLEDATA = array(
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
 );
+
 ?>

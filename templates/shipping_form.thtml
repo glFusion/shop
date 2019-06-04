@@ -17,7 +17,16 @@
       <span id="enabled" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="checkbox" name="enabled" {ena_sel} />
+      <input type="checkbox" name="enabled" value="1" {ena_sel} />
+    </div>
+  </div>
+
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['use_fixed']}:
+      <span id="use_fixed" class="tooltip_cfg tooltipstered"></span>
+    </label>
+    <div class="uk-form-controls">
+      <input type="checkbox" name="use_fixed" value="1" {fixed_sel} />
     </div>
   </div>
 
@@ -69,6 +78,35 @@
 <!-- END rateTable -->
         </tbody>
         </table>
+      </div>
+    </div>
+
+
+    <div class="uk-form-row">
+      <label class="uk-form-label">{$LANG_SHOP['start']}:
+        <span id="start" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <input type="text" id="valid_from" name="valid_from" value="{valid_from}" size="12" maxlength="12"
+            data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
+            placeholder="1970-01-01"
+            data-uk-tooltip />
+      <i class="uk-icon uk-icon-trash-o uk-text-danger"
+        onclick='SHOP_resetShipperDates("valid_from");'></i>
+      </div>
+    </div>
+
+    <div class="uk-form-row">
+      <label class="uk-form-label">{$LANG_SHOP['end']}:
+        <span id="end" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <input type="text" id="valid_to" name="valid_to" value="{valid_to}" size="12" maxlength="12"
+            data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
+            placeholder="2037-12-31"
+            data-uk-tooltip />
+      <i class="uk-icon uk-icon-trash-o uk-text-danger"
+        onclick='SHOP_resetShipperDates("valid_to");'></i>
       </div>
     </div>
 
@@ -128,6 +166,11 @@ function removeRow(elem)
 {
     $(elem).parent().parent().remove();
     return false;
+}
+function SHOP_resetShipperDates(type)
+{
+    document.getElementById(type).value = '';
+    document.getElementById(type).value = '';
 }
 </script>
 {# end {templatelocation} #}

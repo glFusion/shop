@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v0.7.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,6 +20,16 @@ namespace Shop;
  */
 class Shipper
 {
+    /** Minimim possible effective date/time.
+     * @const string */
+    const MIN_DATETIME = '1970-01-01 00:00:00';
+
+    /** Maximum possible effective date/time.
+     * @const string */
+    const MAX_DATETIME = '2037-12-31 23:59:59';
+
+    /** Minimum units. Used since zero indicates free.
+     * @const float */
     const MIN_UNITS = .0001;
 
     /** Base tag used for caching.
@@ -54,13 +64,16 @@ class Shipper
             $this->setVars($A);
             $this->isNew = false;
         } elseif (is_numeric($A) && $A > 0) {
-            // single ID passed in, e.g. from admn form
+            // single ID passed in, e.g. from admin form
             if ($this->Read($A)) $this->isNew = false;
         } else {
             // New entry, set defaults
             $this->id = 0;
             $this->enabled = 1;
             $this->name = '';
+            $this->use_fixed = 1;
+            $this->valid_from = self::MIN_DATETIME;
+            $this->valid_to = self::MAX_DATETIME;
             $this->rates = array(
                 (object)array(
                     'dscp'  => 'Rate 1',
@@ -118,6 +131,7 @@ class Shipper
         $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
         $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
+        $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 1);
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -130,11 +144,24 @@ class Shipper
                 }
             }
             $this->rates = $rates;
+            // convert to timestamps
+            if (empty($A['valid_from'])) {
+                $A['valid_from'] = self::MIN_DATETIME;
+            } else {
+                $A['valid_from'] = trim($A['valid_from']) . '00:00:00';
+            }
+            if (empty($A['end'])) {
+                $A['valid_to'] = self::MAX_DATETIME;
+            } else {
+                $A['valid_to'] = trim($A['end']) . ' 23:59:59';
+            }
         } else {
             $rates = json_decode($A['rates']);
             if ($rates === NULL) $rates = array();
             $this->rates = $rates;
         }
+        $this->valid_from = $A['valid_from'];
+        $this->valid_to = $A['valid_to'];
     }
 
 
@@ -149,7 +176,7 @@ class Shipper
      */
     public static function getInstance($shipper_id)
     {
-        $shippers = self::GetAll();
+        $shippers = self::getAll(false);
         if (array_key_exists($shipper_id, $shippers)) {
             return $shippers[$shipper_id];
         } else {
@@ -163,16 +190,21 @@ class Shipper
      *
      * @return  array   Array of all DB records
      */
-    public static function getAll()
+    public static function getAll($valid=true)
     {
         global $_TABLES;
 
-        $cache_key = 'shippers_all';
+        $cache_key = 'shippers_all_' . (int)$valid;
+        $now = time();
         $shippers = Cache::get($cache_key);
         if ($shippers === NULL) {
             $shippers = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.shipping']}
-                WHERE enabled = 1";
+            $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
+            if ($valid) {
+                $sql .= " WHERE enabled = 1
+                    AND valid_from < '$now'
+                    AND valid_to > '$now'";
+            }
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $shippers[$A['id']] = $A;
@@ -314,7 +346,11 @@ class Shipper
             if ($shipper->ordershipping->total_rate === NULL) {
                 unset($shippers[$id]);
             }
-            $shipper->ordershipping->total_rate += $fixed_shipping;
+            if ($shipper->use_fixed) {
+                // Add the product fixed per-item shipping unless the shipper
+                // doesn't use it.
+                $shipper->ordershipping->total_rate += $fixed_shipping;
+            }
         }
 
         // Check if at least one qualified shipper was obtainec.
@@ -482,11 +518,26 @@ class Shipper
             break;
 
         case 'enabled':
+        case 'use_fixed':
             $this->properties[$var] = $value == 0 ? 0 : 1;
             break;
 
         case 'ordershipping':
             $this->properties[$var] = $value;
+            break;
+
+        case 'valid_from':
+            if (empty($value)) {
+                $value = self::MIN_DATETIME;
+            }
+            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
+            break;
+
+        case 'valid_to':
+            if (empty($value)) {
+                $value = self::MAX_DATETIME;
+            }
+            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
             break;
 
         default:
@@ -538,8 +589,12 @@ class Shipper
             return $a['units'] <=> $b['units'];
         });
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
+                enabled = '{$this->enabled}',
                 min_units = '{$this->min_units}',
                 max_units = '{$this->max_units}',
+                valid_from = '{$this->valid_from->toUnix()}',
+                valid_to = '{$this->valid_to->toUnix()}',
+                use_fixed = '{$this->use_fixed}',
                 rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -595,6 +650,9 @@ class Shipper
             'min_units'     => $this->min_units == self::MIN_UNITS ? 0 : $this->min_units,
             'max_units'     => $this->max_units,
             'ena_sel'       => $this->enabled ? 'checked="checked"' : '',
+            'fixed_sel'     => $this->use_fixed ? 'checked="checked"' : '',
+            'valid_from'    => $this->valid_from->format('Y-m-d'),
+            'valid_to'      => $this->valid_to->format('Y-m-d'),
         ) );
         $T->set_block('form', 'rateTable', 'rt');
         foreach ($this->rates as $R) {

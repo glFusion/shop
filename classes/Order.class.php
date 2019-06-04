@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v0.7.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -143,7 +143,7 @@ class Order
      * @param   string  $name   Name of property to set
      * @param   mixed   $value  Value to set
      */
-    function __set($name, $value)
+    public function __set($name, $value)
     {
         switch ($name) {
         case 'uid':
@@ -176,7 +176,7 @@ class Order
      * @param   string  $name   Name of property to retrieve
      * @return  mixed           Value of property
      */
-    function __get($name)
+    public function __get($name)
     {
         if (array_key_exists($name, $this->properties)) {
             return $this->properties[$name];
@@ -362,7 +362,7 @@ class Order
      *
      * @param   array   $A      Array of items
      */
-    function setVars($A)
+    public function setVars($A)
     {
         global $_USER, $_CONF, $_SHOP_CONF;
 
@@ -673,20 +673,20 @@ class Order
         $icon_tooltips = implode('<br />', $icon_tooltips);
         $by_gc = (float)$this->getInfo('apply_gc');
 
-        // Needed to get shipper ID into m_info array if not already there
+        // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
-            'shipper_name'  => Shipper::getInstance($this->shipper_id)->name,
+            'shipper_id'    => $this->shipper_id,
             'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
-            'shipping'      => $this->getInfo('shipper_id') !== NULL ? $Currency->FormatValue($this->shipping) : 0,
+            'shipping'      => $Currency->FormatValue($this->shipping),
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
             'order_instr'   => htmlspecialchars($this->instructions),
@@ -1055,7 +1055,7 @@ class Order
             'tax'               => $Cur->FormatValue($this->tax),
             'tax_num'           => $this->tax,
             'shipping'          => $Cur->FormatValue($this->shipping),
-            'shipper_name'      => $this->getInfo('shipper_name'),
+            'shipper_id'        => $this->shipper_id,
             'handling'          => $Cur->FormatValue($this->handling),
             'handling_num'      => $this->handling,
             'payment_date'      => SHOP_now()->toMySQL(true),
@@ -1649,8 +1649,6 @@ class Order
     public function selectShipper()
     {
         if (!$this->hasPhysical()) {
-            $this->remInfo('shipper_id');
-            $this->remInfo('shipper_name');
             return '';
         }
 

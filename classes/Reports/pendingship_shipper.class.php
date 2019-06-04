@@ -54,7 +54,7 @@ class pendingship_shipper extends \Shop\Report
         $retval = '';
         $T = $this->getTemplate('config');
         $shipper_id = self::_getSessVar('shipper_id');
-        $shippers = \Shop\Shipper::getAll();
+        $shippers = \Shop\Shipper::getAll(false);
         $T->set_block('report', 'shipperSelect', 'shipsel');
         foreach ($shippers as $id => $obj) {
             $T->set_var(array(

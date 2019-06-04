@@ -171,7 +171,7 @@
           <td></td>
         </tr>
 {!endif}
-{!if shipping}
+{!if shipper_id}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
@@ -245,8 +245,8 @@
     </div>
     <div style="clear:both;"></div>
   {!else}
-{!if shipper_name}
-    <p>{$LANG_SHOP['ship_by']}: {shipper_name}</p>
+{!if shipper_id}
+    <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
 {!endif}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
