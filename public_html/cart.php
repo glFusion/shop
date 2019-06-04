@@ -49,7 +49,7 @@ foreach($expected as $provided) {
 if ($action == '') {
     // Not defined in $_POST or $_GET
     // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
-    COM_setArgNames(array('action', 'id'));
+    COM_setArgNames(array('action', 'id', 'token'));
     $action = COM_getArgument('action');
 }
 switch ($action) {
@@ -180,7 +180,12 @@ default:
     $id = COM_getArgument('id');
     SHOP_setUrl($_SERVER['request_uri']);
     if (!empty($id)) {
-        \Shop\Cart::setFinal($id, false);
+        $token = COM_getArgument('token');
+        $Cart = \Shop\Cart::getInstance(0, $id);
+        if ($token == $Cart->token) {
+            \Shop\Cart::setFinal($id, false);
+            $Cart->setToken();
+        }
     }
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();

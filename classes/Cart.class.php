@@ -1022,6 +1022,21 @@ class Cart extends Order
         return $errors;
     }
 
+
+    /**
+     * Get the cancellation URL to pass to payment gateways.
+     * This url will set the status from "pending" back to "cart".
+     *
+     * @return  string      Cancellation URL
+     */
+    public function cancelUrl()
+    {
+        return COM_buildUrl(
+             SHOP_URL . '/cart.php?mode=cart&id=' . urlencode($cart->CartID()) .
+             '&token=' . urlencode($cart->token)
+         );
+    }
+
 }   // class Cart
 
 ?>

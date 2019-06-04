@@ -1295,6 +1295,28 @@ class Order
 
 
     /**
+     * Set a new token on the order.
+     * Used after an action is performed to prevent the same action from
+     * happening again accidentally.
+     */
+    public function setToken()
+    {
+        global $_TABLES;
+
+        $token = self::_createToken();
+        $sql = "UPDATE {$_TABLES['shop.orders']}
+            SET token = '" . DB_escapeString($token) . "'
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
+        DB_query($sql, 1);
+        if (!DB_error()) {
+            $this->token = $token;
+            Cache::clear('orders');
+        }
+        return $this->token;
+    }
+
+
+    /**
      * Get the order total, including tax, shipping and handling.
      *
      * @return  float   Total order amount

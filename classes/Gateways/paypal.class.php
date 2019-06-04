@@ -218,9 +218,7 @@ class paypal extends \Shop\Gateway
         $fields = array(
             'cmd'       => '_cart',
             'upload'    => '1',
-            'cancel_return' => COM_buildUrl(
-                SHOP_URL.'/cart.php?mode=cart&id=' . urlencode($cart->CartID())
-            ),
+            'cancel_return' => $cart->cancelUrl(),
             'return'    => SHOP_URL.'/index.php?thanks=paypal',
             'rm'        => '1',     // simple GET return url
             'paymentaction' => 'sale',
