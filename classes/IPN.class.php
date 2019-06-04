@@ -483,7 +483,6 @@ class IPN
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->order_id != '') {
                 $this->Order->log_user = $this->gw->Description();
-                //$this->Order->updateStatus($this->status);
             }
             return 2;
         }
@@ -649,7 +648,7 @@ class IPN
                 $P->handleRefund($Order, $this->ipn_data);
             }
             // Update the order status to Refunded
-            $Order->updateStatus($LANG_SHOP['orderstatus']['refunded']);
+            $Order->updateStatus('refunded');
         }
     }  // function handleRefund
 
