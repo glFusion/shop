@@ -53,7 +53,7 @@ class pendingship_shipper extends \Shop\Report
 
         $retval = '';
         $T = $this->getTemplate('config');
-        $shipper_id = self::_getSessVar('shipper_id');
+        $shipper_id = self::_getSessVar('shipper_id', 'int');
         $shippers = \Shop\Shipper::getAll(false);
         $T->set_block('report', 'shipperSelect', 'shipsel');
         foreach ($shippers as $id => $obj) {
@@ -89,6 +89,7 @@ class pendingship_shipper extends \Shop\Report
         if ($Shipper->isNew) {
             return $LANG_SHOP['no_data'];
         }
+        self::_setSessVar('shipper_id', $Shipper->id);
 
         $header_arr = array(
             array(

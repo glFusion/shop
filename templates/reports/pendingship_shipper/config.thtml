@@ -4,7 +4,7 @@
     <div class="uk-form-controls">
       <select name="shipper_id">
 <!-- BEGIN shipperSelect -->
-        <option value="{shipper_id}" {shipper_sel}>{shipper_name}</option>
+        <option value="{shipper_id}" {selected}>{shipper_name}</option>
 <!-- END shipperSelect -->
       </select>
     </div>

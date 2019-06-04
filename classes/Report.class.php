@@ -318,8 +318,8 @@ class Report
             'main'  => 'config.thtml',
         ) );
         $period = self::_getSessVar('period');
-        $from_date = self::_getSessVar('from_date', '');
-        $to_date = self::_getSessVar('to_date', $_CONF['_now']->format('Y-m-d', true));
+        $from_date = self::_getSessVar('from_date', 'string', '');
+        $to_date = self::_getSessVar('to_date', 'string', $_CONF['_now']->format('Y-m-d', true));
         $gateway = self::_getSessVar('gateway');
 
         // Get previously-selected statuses from the session var
@@ -340,14 +340,14 @@ class Report
         ) );
 
         if ($this->filter_uid) {
-            $uid = self::_getSessVar('uid', 0, 'int');
+            $uid = self::_getSessVar('uid', 'int', 0);
             $T->set_var(array(
                 'user_select' =>  COM_optionList($_TABLES['users'], 'uid,username', $uid),
             ) );
         }
 
         if ($this->filter_item) {
-            $item_id = self::_getSessVar('item_id', 0, 'int');
+            $item_id = self::_getSessVar('item_id', 'int', 0);
             $T->set_var(array(
                 'item_select' => COM_optionList($_TABLES['shop.products'], 'id,name', $item_id),
             ) );
@@ -592,7 +592,7 @@ class Report
      * @param   string  $type       Expected data type, default=string
      * @return  string          Option value
      */
-    protected static function _getSessVar($opt, $default=NULL, $type='string')
+    protected static function _getSessVar($opt, $type='string', $default=NULL)
     {
         $val = SESS_getVar('shop.report.' . $opt);
         switch ($type) {
