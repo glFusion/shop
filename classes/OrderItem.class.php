@@ -32,7 +32,7 @@ class OrderItem
      * @var array */
     private static $fields = array('id', 'order_id', 'product_id',
             'description', 'quantity', 'txn_id', 'txn_type',
-            'status', 'expiration', 'price', 'token',
+            'expiration', 'price', 'token',
             'options', 'options_text', 'extras', 'taxable', 'paid',
             'shipping', 'handling',
     );
@@ -266,7 +266,6 @@ class OrderItem
                 quantity = '{$this->quantity}',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 txn_type = '" . DB_escapeString($this->txn_type) . "',
-                status = '" . DB_escapeString($this->status) . "',
                 price = '$this->price',
                 taxable = '{$this->taxable}',
                 token = '" . DB_escapeString($this->token) . "',

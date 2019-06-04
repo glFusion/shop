@@ -82,7 +82,6 @@ $_SQL = array(
   `quantity` int(11) NOT NULL DEFAULT '1',
   `txn_id` varchar(128) DEFAULT '',
   `txn_type` varchar(255) DEFAULT '',
-  `status` varchar(255) DEFAULT NULL,
   `expiration` int(11) unsigned NOT NULL DEFAULT '0',
   `price` float(9,4) NOT NULL DEFAULT '0.0000',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
@@ -508,6 +507,7 @@ $SHOP_UPGRADE['0.7.1'] = array(
         ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
+    "ALTER TABLE {$_TABLES['ship.orderitems']} DROP `status`",
 );
 
 ?>
