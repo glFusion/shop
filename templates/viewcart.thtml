@@ -91,14 +91,14 @@
         <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}: {ship_select}</td>
         <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
       </tr>
-{!elseif shipping}
+{!elseif shipper_id}
       <tr>
         <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
 ({ship_method})
 {!endif}
         </td>
-        <td id="shipping_cell" colspan="2" class="alignright">{shipping}</td>
+        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
         <td></td>
       </tr>
 {!endif}
