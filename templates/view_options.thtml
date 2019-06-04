@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
         <!-- BEGIN ItemOptions -->
-    <span class="ItemOptions">
+    <br /><span class="ItemOptions">
         --&nbsp;{opt_name}:&nbsp;{opt_value}
 {!if 0}
           {!if opt_price}
@@ -8,6 +8,5 @@
           {!endif}
 {!endif}
     </span>
-        <br />
         <!-- END ItemOptions -->
 {# end {templatelocation} #}
