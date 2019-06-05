@@ -6,6 +6,8 @@ Release TBD
   * Add pending shipments by shipper report to ship items in batches
   * New option to update multiple order statuses from certain reports
   * Further secure the payment cancellation URL using a token
+  * Fix error creating new carts for anon buyers
+  * Log order numbers with IPN messages
 
 ## v0.7.0
 Release 2019-06-02
