@@ -102,6 +102,11 @@ class ipnlog extends \Shop\Report
                 'field' => 'gateway',
                 'sort'  => true,
             ),
+            array(
+                'text'  => $LANG_SHOP['order_number'],
+                'field' => 'order_id',
+                'sort'  => true,
+            ),
         );
 
         $defsort_arr = array(
