@@ -1545,7 +1545,7 @@ class Order
      */
     public function isDownloadOnly()
     {
-        foreach ($this->items as $id->$item) {
+        foreach ($this->items as $id=>$item) {
             if (!$item->getProduct()->isDownload(true)) {
                 return false;
             }
