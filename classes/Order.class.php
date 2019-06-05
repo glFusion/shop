@@ -111,7 +111,11 @@ class Order
             }
         }
         if ($this->isNew) {
-            $this->order_id = self::_createID();
+            if (empty($id)) {
+                // Only create a new ID if one wasn't supplied.
+                // Carts may supply an ID that needs to be static.
+                $this->order_id = self::_createID();
+            }
             $this->order_date = SHOP_now();
             $this->token = self::_createToken();
             $this->shipping = 0;
