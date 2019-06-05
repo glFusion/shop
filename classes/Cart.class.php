@@ -1032,8 +1032,8 @@ class Cart extends Order
     public function cancelUrl()
     {
         return COM_buildUrl(
-             SHOP_URL . '/cart.php?mode=cart&id=' . urlencode($cart->CartID()) .
-             '&token=' . urlencode($cart->token)
+             SHOP_URL . '/cart.php?mode=cart&id=' . urlencode($this->CartID()) .
+             '&token=' . urlencode($this->token)
          );
     }
 
