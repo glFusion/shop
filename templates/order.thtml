@@ -171,7 +171,7 @@
           <td></td>
         </tr>
 {!endif}
-{!if shipper_id}
+{!!if {shipper_id} > 0 || {shipping} > 0}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
@@ -181,7 +181,7 @@
           <td class="alignright">{shipping}</td>
           <td></td>
         </tr>
-{!endif}
+{!!endif}
 {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
@@ -245,7 +245,7 @@
     </div>
     <div style="clear:both;"></div>
   {!else}
-{!if shipper_id}
+{!if ship_method}
     <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
 {!endif}
 {!if is_admin}

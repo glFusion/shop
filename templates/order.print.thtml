@@ -139,7 +139,7 @@
           <td class="alignright">{cart_tax}</td>
         </tr>
 {!endif}
-{!if shipper_id}
+{!!if {shipper_id} > 0 || {shipping} > 0}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
@@ -148,7 +148,7 @@
           </td>
           <td class="alignright">{shipping}</td>
         </tr>
-{!endif}
+{!!endif}
 {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
