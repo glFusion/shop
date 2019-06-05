@@ -113,6 +113,7 @@ class internal extends \Shop\IPN
         $uid = $this->Order->uid;
         $gateway = SHOP_getVar($info, 'gateway');
         $total = $this->Order->getTotal();
+        $by_gc = SHOP_getVar($info, 'by_gc', 'float', NULL);
         switch ($gateway) {
         case '_coupon':
             // Order total must be zero to use the coupon gateway in full

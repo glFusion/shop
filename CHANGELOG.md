@@ -8,6 +8,8 @@ Release TBD
   * Further secure the payment cancellation URL using a token
   * Fix error creating new carts for anon buyers
   * Log order numbers with IPN messages
+  * Don't log zero payment amounts to order log
+  * Fix setting closed status on download-only orders
 
 ## v0.7.0
 Release 2019-06-02

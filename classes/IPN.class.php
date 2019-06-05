@@ -168,6 +168,7 @@ class IPN
             case 'pending':
             case 'paid':
             case 'refunded':
+            case 'closed':
                 $this->properties[$key] = $val;
                 break;
             default:
