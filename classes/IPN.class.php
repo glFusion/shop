@@ -424,13 +424,15 @@ class IPN
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
-                $this->Order->Log(
-                    sprintf(
-                        $LANG_SHOP['amt_paid_gw'],
-                        $val,
-                        SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
-                    )
-                );
+                if ($val > 0) {
+                    $this->Order->Log(
+                        sprintf(
+                            $LANG_SHOP['amt_paid_gw'],
+                            $val,
+                            SHOP_getVar($LANG_SHOP, $key, 'string', 'Unknown')
+                        )
+                    );
+                }
             }
 
             $this->Order->pmt_method = $this->gw_id;
@@ -447,11 +449,13 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $this->ipn_data);
             }
-            $this->Order->Log(sprintf(
-                $LANG_SHOP['amt_paid_gw'],
-                $this->pmt_gross,
-                $this->gw->DisplayName()
-            ));
+            if ($this->pmt_gross > 0) {
+                $this->Order->Log(sprintf(
+                    $LANG_SHOP['amt_paid_gw'],
+                    $this->pmt_gross,
+                    $this->gw->DisplayName()
+                ));
+            }
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;
