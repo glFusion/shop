@@ -297,7 +297,7 @@ class IPN
                 gateway = '{$this->gw_id}',
                 ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
         if ($this->Order !== NULL) {
-            $sql .= ", 'order_id = '" . DB_escapeString($this->Order->order_id) . "'";
+            $sql .= ", order_id = '" . DB_escapeString($this->Order->order_id) . "'";
         }
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
