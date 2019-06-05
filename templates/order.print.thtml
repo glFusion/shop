@@ -126,8 +126,7 @@
         </tr>
         <tr class="shopItemRowSpacer"></tr>
         <!-- END ItemRow -->
-{!if is_invoice}
-{!if subtotal}
+{!!if {is_invoice} && {subtotal} !!}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['item_total']}</td>
           <td class="alignright">{subtotal}</td>
@@ -139,7 +138,7 @@
           <td class="alignright">{cart_tax}</td>
         </tr>
 {!endif}
-{!!if {shipper_id} > 0 || {shipping} > 0}
+{!!if {shipper_id} > 0 || {shipping} > 0 !!}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
@@ -148,7 +147,7 @@
           </td>
           <td class="alignright">{shipping}</td>
         </tr>
-{!!endif}
+{!endif}
 {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>

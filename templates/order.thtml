@@ -119,12 +119,10 @@
         <!-- BEGIN ItemRow -->
         <tr>
           <td>
-{!if img_url}
-{!if detail_url}
+{!!if {img_url} && {detail_url} !!}
             <a href="{detail_url}">{img_url}</a>
 {!else}
             {img_url}
-{!endif}
 {!endif}
           </td>
           <td>
@@ -171,7 +169,7 @@
           <td></td>
         </tr>
 {!endif}
-{!!if {shipper_id} > 0 || {shipping} > 0}
+{!!if {shipper_id} > 0 || {shipping} > 0 !!}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
 {!if ship_method}
@@ -181,7 +179,7 @@
           <td class="alignright">{shipping}</td>
           <td></td>
         </tr>
-{!!endif}
+{!endif}
 {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
