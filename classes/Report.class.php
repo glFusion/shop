@@ -956,13 +956,15 @@ class Report
         global $LANG_SHOP;
 
         // Print selected packing lists
-        $prt_pl = '<button type="submit" name="pdfpl" value="x" class="tooltip" ' .
+        $prt_pl = '<button type="submit" name="pdfpl" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
             'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
             'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
             '<i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
             '</button>';
         // Print selected orders
-        $prt_ord = '<button type="submit" name="pdforder" value="x" class="tooltip" ' .
+        $prt_ord = '<button type="submit" name="pdforder" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
             'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
             'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
             '<i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
@@ -974,7 +976,8 @@ class Report
             $upd_stat .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>';
         }
         $upd_stat .= '</select>';
-        $upd_stat .= '<button type="submit" name="updstatus" value="x" class="tooltip" ' .
+        $upd_stat .= '<button type="submit" name="updstatus" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
             'title="' . $LANG_SHOP['update_status'] . '" ' .
             'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');">' .
             '<i name="updstat" class="uk-icon uk-icon-check"></i>' .
