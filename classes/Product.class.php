@@ -484,6 +484,8 @@ class Product
     {
         global $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
+        $old_rating_ena = $this->rating_enabled;    // save original setting
+
         if (is_array($A)) {
             $this->setVars($A);
         }
@@ -524,6 +526,12 @@ class Product
             $this->shipping_type = 0;
             $this->shipping_amt = 0;
             $this->shipping_units = 0;
+        }
+
+        // If ratings were enabled but are now disabled, reset the rating
+        // for this product.
+        if ($old_rating_ena && !$this->rating_enabled) {
+            RATING_resetRating($_SHOP_CONF['pi_name'], $this->id);
         }
 
         // Serialize the quantity discount array
