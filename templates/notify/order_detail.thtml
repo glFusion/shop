@@ -92,9 +92,13 @@
   <td colspan="2" align="right">{tax}</td>
 </tr>
 {!endif}
-{!if shipper_id}
+{!!if {shipper_id} > 0 || {shipping} > 0 !!}
 <tr>
-  <td colspan="2" align="right">{$LANG_SHOP['shipping']} ({ship_method})</td>
+  <td colspan="2" align="right">{$LANG_SHOP['shipping']}
+{!if ship_method}
+({ship_method})
+{!endif}
+  </td>
   <td colspan="2" align="right">{shipping}</td>
 </tr>
 {!endif}
