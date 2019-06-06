@@ -97,6 +97,8 @@ class Plugin extends \Shop\Product
             //$this->rating_enabled = true;   // TODO testing
             $this->votes = SHOP_getVar($A, 'votes', 'integer');
             $this->rating = SHOP_getVar($A, 'rating', 'float');
+            // Set enabled flag, assume true unless set
+            $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -108,6 +110,7 @@ class Plugin extends \Shop\Product
             $this->taxable = 0;
             $this->_have_detail_svc = false;
             $this->isUnique = true;
+            $this->enabled = false;
         }
     }
 

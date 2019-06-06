@@ -13,6 +13,7 @@ Release TBD
   * Add shipper option to ignore product per-item shipping.
   * Reset product rating if ratings are later disabled.
   * Incorporate sort option into product search form.
+  * Fix setting enabled flag for plugin products.
 
 ## v0.7.0
 Release 2019-06-02
