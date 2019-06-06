@@ -161,7 +161,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
         break;
     case 'checkout':
     case 'cart':
-        $url = SHOP_URL . '/index.php?view=cart';
+        $url = SHOP_URL . '/cart.php';
         break;
     }
 
@@ -239,8 +239,10 @@ function service_addCartItem_shop($args, &$output, &$svc_msg)
     // If the "unique" flag is present, then only update specific elements
     // included in the "updates" array. If there are no specific updates, then
     // do nothing.
-    if (SHOP_getVar($args, 'unique', 'boolean', false) &&
-        $Cart->Contains($item_number) !== false) {
+    if (
+        SHOP_getVar($args, 'unique', 'boolean', false) &&
+        $Cart->Contains($item_number) !== false
+    ) {
         // If the item exists, don't add it, but check if there's an update
         if (isset($args['update']) && is_array($args['update'])) {
             // Collect the updated field=>value pairs to send to updateItem()
