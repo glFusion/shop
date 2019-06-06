@@ -3,13 +3,16 @@
 ## v0.7.1
 Release TBD
 
-  * Add pending shipments by shipper report to ship items in batches
-  * New option to update multiple order statuses from certain reports
-  * Further secure the payment cancellation URL using a token
-  * Fix error creating new carts for anon buyers
-  * Log order numbers with IPN messages
-  * Don't log zero payment amounts to order log
-  * Fix setting closed status on download-only orders
+  * Add pending shipments by shipper report to ship items in batches.
+  * New option to update multiple order statuses from certain reports.
+  * Further secure the payment cancellation URL using a token.
+  * Fix error creating new carts for anon buyers.
+  * Log order numbers with IPN messages.
+  * Don't log zero payment amounts to order log.
+  * Fix setting closed status on download-only orders.
+  * Add shipper option to ignore product per-item shipping.
+  * Reset product rating if ratings are later disabled.
+  * Incorporate sort option into product search form.
 
 ## v0.7.0
 Release 2019-06-02
