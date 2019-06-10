@@ -606,7 +606,7 @@ class Product
                 $U->uploadFiles();
 
                 if ($U->areErrors() > 0) {
-                    $this->Errors[] = $U->printErrors(false);
+                    $this->Errors = array_merge($this->Errors, $U->_errors);
                 }
             }
 
@@ -620,6 +620,7 @@ class Product
             return true;
         } else {
             SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
+            COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $this->id);
             return false;
         }
     }
@@ -1286,17 +1287,19 @@ class Product
 
 
     /**
-     * Create a formatted display-ready version of the error messages.
-     * Returns the errors as a set of list items to be displayed inside
-     * `<ul></ul>` tags.
+     * Get the array of error messages as an unumbered list.
      *
      * @return  string      Formatted error messages.
      */
     public function PrintErrors()
     {
-        $retval = array();
-        foreach($this->Errors as $key=>$msg) {
-            $retval[] = $msg;
+        $retval = '';
+        if (!empty($this->Errors)) {
+            $retval .= '<ul>';
+            foreach ($this->Errors as $msg) {
+                $retval .= '<li>' . $msg . '</li>';
+            }
+            $retval .= '</ul>';
         }
         return $retval;
     }
@@ -1482,7 +1485,9 @@ class Product
      */
     public function canBuyNow()
     {
-        if ($this->hasAttributes()      // no attributes to select
+        if (
+            !$this->canOrder()          // Can't be ordered, unavailable
+            || $this->hasAttributes()   // no attributes to select
             || $this->hasDiscounts()    // no quantity-based discounts
             || $this->hasCustomFields() // no text fields to fill in
             || $this->hasSpecialFields()    // no special fields to fill in
@@ -1881,6 +1886,24 @@ class Product
 
 
     /**
+     * Check if an item can be ordered.
+     *
+     * @return  boolean     True if the product can be ordered.
+     */
+    public function canOrder()
+    {
+        if (
+            $this->isAvailable() ||
+            $this->oversell == 0
+        ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
      * Determine if a product is available for sale based on dates.
      * Default availability dates are from 1900-01-01 to 9999-12-31.
      *
@@ -1902,7 +1925,7 @@ class Product
         }
 
         // Check the stock level and whether an out-of-stock item can be sold
-        if ($this->track_onhand == 1 && $this->onhand <= 0 && $this->oversell > 0) {
+        if ($this->track_onhand == 1 && $this->onhand <= 0 && $this->oversell > 1) {
             return false;
         }
 

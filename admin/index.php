@@ -117,11 +117,12 @@ case 'saveproduct':
     $url = SHOP_getUrl(SHOP_ADMIN_URL);
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
-        $content .= SHOP_errMsg($P->PrintErrors());
-        $view = 'editproduct';
-    } else {
-        echo COM_refresh($url);
+        $msg = $P->PrintErrors();
+        if ($msg != '') {
+            COM_setMsg($msg, 'error');
+        }
     }
+    echo COM_refresh($url);
     break;
 
 case 'savecat':

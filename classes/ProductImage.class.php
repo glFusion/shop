@@ -94,7 +94,7 @@ class ProductImage extends \upload
                 )";
             $result = DB_query($sql);
             if (!$result) {
-                $this->addError("uploadFiles() : Failed to insert {$filename}");
+                $this->_addError("uploadFiles() : Failed to insert {$filename}");
             }
         }
  
@@ -122,8 +122,6 @@ class ProductImage extends \upload
             $url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
             if (!empty($url)) {
                 $this->goodfiles[] = $filename;
-            } else {
-                $this->_addError(__FUNCTION__ . ': ' . $filename);
             }
         }
         return '';
