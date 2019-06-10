@@ -971,7 +971,7 @@ class Cart extends Order
     /**
      * Validate all the items on an order.
      * Called just prior to final checkout to ensure that all the items are
-     * available.
+     * available for ordering.
      * Removes any unavailable products.
      *
      * @return  array   Array of invalid order item objects.
@@ -984,7 +984,7 @@ class Cart extends Order
         $msg = array();         // Message to be displayed
         foreach ($this->items as $id=>$Item) {
             $P = $Item->getProduct();
-            if (!$P->isAvailable()) {
+            if (!$P->canOrder()) {
                 if (!isset($invalid['removed'])) {
                     $invalid['removed'] = array();
                 }

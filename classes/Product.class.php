@@ -27,6 +27,18 @@ class Product
      * @const string */
     const MAX_DATE = '9999-12-31';
 
+    /** Out-of-stock items can be sold and backordered.
+     * @const integer */
+    const OVERSELL_ALLOW = 0;
+
+    /** Out-of-stock items appear in the catalot but can't be sold.
+     * @const integer */
+    const OVERSELL_DENY = 1;
+
+    /** Out-of-stock items are hidden from the catalog and can't be sold.
+     * @const integer */
+    const OVERSELL_HIDE = 2;
+
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
     protected $properties;
@@ -1004,7 +1016,7 @@ class Product
         USES_lib_comments();
 
         $prod_id = $this->id;
-        if ($prod_id < 1 || !$this->enabled ||!$this->isAvailable()) {
+        if (!$this->canDisplay()) {
             return '';
         }
 
@@ -1887,14 +1899,17 @@ class Product
 
     /**
      * Check if an item can be ordered.
+     * Uses canDisplay() to check access, availability dates, etc., then
+     * rechecks stock status against the product's oversell setting.
      *
+     * @uses    self::canDisplay()
      * @return  boolean     True if the product can be ordered.
      */
     public function canOrder()
     {
         if (
-            $this->isAvailable() ||
-            $this->oversell == 0
+            $this->canDisplay() &&
+            ($this->_isInStock() || $this->oversell == self::OVERSELL_ALLOW)
         ) {
             return true;
         } else {
@@ -1904,28 +1919,45 @@ class Product
 
 
     /**
-     * Determine if a product is available for sale based on dates.
+     * Check if this product can be displayed or purchased due to stock status.
+     *
+     * @param   integer $requested  Requested oversell value to sell item
+     * @return  boolean     True if condition is met, False if not.
+     */
+    private function _isInStock()
+    {
+        // Not tracking stock, or have stock on hand, return true
+        if ($this->track_onhand == 0 || $this->onhand > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Determine if a product can be displayed in the catalog.
      * Default availability dates are from 1900-01-01 to 9999-12-31.
      *
      * @param   boolean $isadmin    True if this is an admin, can view all
      * @return  boolean True if on sale, false if not
      */
-    public function isAvailable($isadmin = false)
+    public function canDisplay($isadmin = false)
     {
         // If the product is disabled, return false now
-        if (!$this->enabled) {
+        if ($this->id < 1 || !$this->enabled) {
             return false;
         }
 
         if ($isadmin) return true;  // Admin can always view and order
 
-        // Check the user's permission
-        if (!$this->hasAccess()) {
+        // Check the user's permission, if not admin
+        if (!$isadmin  && !$this->hasAccess()) {
             return false;
         }
 
-        // Check the stock level and whether an out-of-stock item can be sold
-        if ($this->track_onhand == 1 && $this->onhand <= 0 && $this->oversell > 1) {
+        // If not in stock and oversell set to Hide, return false.
+        if (!$this->_isInStock() && $this->oversell == self::OVERSELL_HIDE) {
             return false;
         }
 

@@ -266,7 +266,7 @@ function ProductList($cat_id = 0)
     $T->set_block('wrapper', 'ProductItems', 'PI');
     foreach ($Products as $P) {
         // Don't display products if the viewer doesn't have access
-        if (!$P->isAvailable()) {
+        if (!$P->canDisplay()) {
             continue;
         }
 

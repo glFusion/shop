@@ -309,13 +309,25 @@ class Plugin extends \Shop\Product
 
 
     /**
-     * Determine if a product is available for sale.
+     * Determine if a product can be shown in the catalog.
      * For plugin items, just return true for now.
      *
      * @param   boolean $isadmin    True if this is an admin, can view all
      * @return  boolean True if on sale, false if not
      */
-    public function isAvailable($isadmin = false)
+    public function canDisplay($isadmin = false)
+    {
+        return true;
+    }
+
+
+    /**
+     * Determine if a product is available to order.
+     * For plugin items, just return true for now.
+     *
+     * @return  boolean True if on sale, false if not
+     */
+    public function canOrder()
     {
         return true;
     }
