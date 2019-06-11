@@ -299,6 +299,7 @@ class Category
                     $this->_propagatePerms($_POST['old_grp']);
                 }*/
                 Cache::clear('categories');
+                Cache::clear('sitemap');
             } else {
                 $this->AddError('Failed to insert or update record');
             }
@@ -335,6 +336,7 @@ class Category
                     SET grp_access = {$this->grp_access}
                     WHERE cat_id IN ($upd_cats)";
             Cache::clear('categories');
+            Cache::clear('sitemap');
             DB_query($sql);
         }
     }
@@ -354,6 +356,7 @@ class Category
         DB_delete($_TABLES['shop.categories'], 'cat_id', $this->cat_id);
         PLG_itemDeleted($this->cat_id, 'shop_category');
         Cache::clear('categories');
+        Cache::clear('sitemap');
         $this->cat_id = 0;
         return true;
     }
@@ -379,6 +382,7 @@ class Category
                     SET image=''
                     WHERE cat_id='" . $this->cat_id . "'");
             Cache::clear('categories');
+            Cache::clear('sitemap');
         }
         $this->image = '';
     }
@@ -537,6 +541,7 @@ class Category
             return $oldvalue;
         } else {
             Cache::clear('categories');
+            Cache::clear('sitemap');
             return $newvalue;
         }
     }
@@ -736,7 +741,7 @@ class Category
 
         $between = '';
         $root_id = (int)$root_id;
-        $p = $prefix == '&nbsp;' ? 'x_' : $prefix . '_';
+        $p = $prefix == '&nbsp;' ? 'nbsp_' : $prefix . '_';
         $cache_key = self::_makeCacheKey('cat_tree_' . $p . (string)$root_id);
         $All = Cache::get($cache_key);
         if (!$All) {        // not found in cache, build the tree
@@ -893,6 +898,7 @@ class Category
                 WHERE cat_id = '$parent'";
         DB_query($sql1);
         Cache::clear('categories');
+        Cache::clear('sitemap');
 
         // return the right value of this node + 1
         return $right + 1;

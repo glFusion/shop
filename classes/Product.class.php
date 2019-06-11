@@ -609,6 +609,7 @@ class Product
         // Clear all product caches since this save may affect availablity
         // and product lists.
         Cache::clear('products');
+        Cache::clear('sitemap');
 
         if ($status) {
             // Handle image uploads.  This is done last because we need
@@ -665,6 +666,7 @@ class Product
         DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
+        Cache::clear('sitemap');
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
         $this->id = 0;
         $this->isNew = true;
@@ -948,6 +950,7 @@ class Product
             return $oldvalue;
         } else {
             Cache::clear('products');
+            Cache::clear('sitemap');
             return $newvalue;
         }
     }
@@ -1730,6 +1733,7 @@ class Product
                     onhand = GREATEST(0, onhand - {$Item->quantity})
                     WHERE id = '{$this->id}'";
             Cache::clear('products');
+            Cache::clear('sitemap');
             DB_query($sql, 1);
             if (DB_error()) {
                 SHOP_log("SQL errror: $sql", SHOP_LOG_ERROR);
@@ -2285,6 +2289,7 @@ class Product
                 WHERE id = $id";
         DB_query($sql);
         Cache::clear('products');
+        Cache::clear('sitemap');
         return DB_error() ? false : true;
     }
 
