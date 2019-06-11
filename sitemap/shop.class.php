@@ -101,17 +101,12 @@ class sitemap_shop extends sitemap_base
         }
         $cats = $Root->getChildren();
         foreach ($cats as $Cat) {
-            if ($Cat->image != '') {
-                $img_url = SHOP_URL . '/images/categories/' . $A['image'];
-            } else {
-                $img_url = '';
-            }
             $retval[] = array(
                 'id'        => $Cat->cat_id,
                 'title'     => $Cat->cat_name,
                 'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
                 'date'      => false,
-                'image_uri' => $img_url,
+                'image_uri' => $Cat->ImageUrl(),
             );
         }
         return $retval;
