@@ -63,12 +63,12 @@ class sitemap_shop extends sitemap_base
         if ($cat_id > 0) {
             $opts['cat_id'] = $cat_id;
         }
-        $items = PLG_getItemInfo('shop', '*', 'id,title,date,url', $_USER['uid'], $opts);
+        $items = PLG_getItemInfo('shop', '*', 'id,introtext,date,url', $_USER['uid'], $opts);
         if (is_array($items)) {
             foreach ($items as $A) {
                 $entries[] = array(
                     'id'    => $A['id'],
-                    'title' => $A['title'],
+                    'title' => $A['introtext'],
                     'uri'   => $A['url'],
                     'date'  => $A['date'],
                     'image_uri' => false,
@@ -87,31 +87,31 @@ class sitemap_shop extends sitemap_base
      */
     public function getChildCategories($base = false)
     {
-        global $_TABLES;
+        global $_SHOP_CONF;
 
-        if (!$base) $base = 0;      // make numeric
-        $base = (int)$base;
         $retval = array();
-
         if (!$_SHOP_CONF['shop_enabled']) {
             return $retval;
         }
 
-        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
-                WHERE parent_id = $base";
-        $res = DB_query($sql, 1);
-        if (DB_error()) {
-            COM_errorLog("Shop getChildCategories error: $sql");
-            return $retval;
+        if ($base === false) {
+            $Root = Shop\Category::getRoot();
+        } else {
+            $Root = Shop\Category::getInstance((int)$base);
         }
-
-        while ($A = DB_fetchArray($res, false)) {
+        $cats = $Root->getChildren();
+        foreach ($cats as $Cat) {
+            if ($Cat->image != '') {
+                $img_url = SHOP_URL . '/images/categories/' . $A['image'];
+            } else {
+                $img_url = '';
+            }
             $retval[] = array(
-                'id'        => $A['cat_id'],
-                'title'     => $A['cat_name'],
+                'id'        => $Cat->cat_id,
+                'title'     => $Cat->cat_name,
                 'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
                 'date'      => false,
-                'image_uri' => SHOP_URL . '/images/categories/' . $A['image'],
+                'image_uri' => $img_url,
             );
         }
         return $retval;
