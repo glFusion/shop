@@ -14,6 +14,8 @@ Release TBD
   * Reset product rating if ratings are later disabled.
   * Incorporate sort option into product search form.
   * Fix setting enabled flag for plugin products.
+  * Return to editing page when adding a product and the image uploads fail.
+  * Fix showing previous item's image on order when next item has no image.
 
 ## v0.7.0
 Release 2019-06-02

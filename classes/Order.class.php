@@ -613,6 +613,8 @@ class Order
                     );
                     $T->set_var('img_url', $img_url);
                     $have_images = true;
+                } else {
+                    $T->clear_var('img_url');
                 }
             }
 
