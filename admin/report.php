@@ -25,7 +25,6 @@ if (
 }
 
 require_once('../../auth.inc.php');
-USES_shop_functions();
 USES_lib_admin();
 
 $content = '';

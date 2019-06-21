@@ -361,9 +361,8 @@ default:
     ) {
         $content .= SHOP_homepage_category();
     } else {
-        USES_shop_functions();
         SHOP_setUrl();
-        $content .= \Shop\ProductList($cat_id);
+        $content .= \Shop\Catalog::Render($cat_id);
         $menu_opt = $LANG_SHOP['products'];
         $page_title = $LANG_SHOP['main_title'];
     }

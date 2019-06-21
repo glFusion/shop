@@ -128,11 +128,6 @@ spl_autoload_register(function ($class)
     }
 });
 
-/** Import plugin-specific functions */
-function USES_shop_functions()
-{   require_once __DIR__ . '/shop_functions.inc.php'; }
-
-
 /**
  * Import a specific report class.
  *
@@ -166,13 +161,12 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 
     // Only show if no topic is requested
     if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
-        USES_shop_functions();
         $display = \Shop\Menu::siteHeader();
         $T = new Template(__DIR__ . '/templates');
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var('title', $LANG_SHOP['main_title']);
         $display .= $T->parse('', 'title');
-        $display .= \Shop\ProductList();
+        $display .= \Shop\Catalog::Render();
         $display .= \Shop\Menu::siteFooter();
     }
     return $display;
@@ -1528,13 +1522,15 @@ function plugin_runScheduledTask_shop()
     $sql = "SELECT id, prod_type FROM {$_TABLES['shop.products']}
             WHERE enabled = 1 AND avail_end < '" . SHOP_now()->format('Y-m-d', true) . "'";
     $res = DB_query($sql);
+    $clear_cache = false;
     while ($A = DB_fetchArray($res, false)) {
         PLG_itemDeleted($A['id'], $A['prod_type']);
+        $clear_cache = true;
         // Toggle to disabled, also clears the product cache
-        \Shop\Product::toggleEnabled(1, $A['id']);
+        //\Shop\Product::toggleEnabled(1, $A['id']);
     }
 
-    // Delete old cached buttons which are keyed by item_id and price.
+// Delete old cached buttons which are keyed by item_id and price.
     // Sale-priced items will get stuck in the DB.
     DB_query("DELETE FROM {$_TABLES['shop.buttons']}
             WHERE last_update < NOW() - INTERVAL 120 DAY");
@@ -1547,6 +1543,10 @@ function plugin_runScheduledTask_shop()
     // Handle any expired coupons
     if ($_SHOP_CONF['gc_enabled']) {
         \Shop\Products\Coupon::Expire();
+    }
+
+    if ($clear_cache) {
+        \Shop\Cache::clear();
     }
 }
 
@@ -1736,12 +1736,6 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         }
         $ord_count = DB_count($_TABLES['shop.orders'], 'uid', $uid);
         $LT->set_var('orders', $ord_count);
-
-        // Only display the template if there's something to show
-        /*if ($ord_count > 0 || $cart || $gc_bal > 0) {
-            USES_shop_functions();
-            //$LT->set_var('order_hist', \Shop\listOrders());
-        }*/
         $LT->parse('output', 'block');
         $retval .= $LT->finish($LT->get_var('output'));
     }
@@ -2309,6 +2303,24 @@ function SHOP_errMsg($msg, $title = '')
     $retval .= "</span>\n";
     return $retval;
 }
+
+
+/**
+ * Get all rated product IDs for a plugin.
+ *
+ * @param   string  $pi_name    Plugin name
+ * @return  array       Array or rated item IDs
+ */
+function SHOP_getRatedIds($pi_name)
+{
+    static $retval = array();
+
+    if (!array_key_exists($retval, $pi_name)) {
+        $retval[$pi_name] = RATING_getRatedIds($pi_name);
+    }
+    return $retval[$pi_name];
+}
+
 
 require_once __DIR__ . '/services.inc.php';
 

@@ -666,8 +666,6 @@ class Gateway
     {
         global $_TABLES, $_CONF, $_SHOP_CONF;
 
-        USES_shop_functions();
-
         if (!empty($vals['cart_id'])) {
             $cart = new Cart($vals['cart_id']);
             if (!$cart->hasItems()) return; // shouldn't be empty
