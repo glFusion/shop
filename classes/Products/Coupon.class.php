@@ -317,6 +317,7 @@ class Coupon extends \Shop\Product
      * @param   string  $recip      Recipient Email, from the custom text field
      * @param   float   $amount     Gift Card Amount
      * @param   string  $sender     Optional sender, from the custom text field
+     * @param   string  $msg        Optional extra message
      * @param   string  $exp        Expiration Date
      */
     public static function Notify($gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP)

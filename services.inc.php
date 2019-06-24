@@ -37,8 +37,8 @@ if (!defined ('GVERSION')) {
  *
  * @uses    Gateway::ExternalButton()
  * @param   array   $args       Array of item information
- * @param   array   &$output    Pointer to output array
- * @param   array   &$svc_msg   Unused
+ * @param   array   $output     Pointer to output array
+ * @param   array   $svc_msg    Unused
  * @return  integer             Status code
  */
 function service_genButton_shop($args, &$output, &$svc_msg)
@@ -385,34 +385,102 @@ if (
     $_SHOP_CONF['enable_svc_funcs'] &&
     !function_exists('service_genButton_paypal')
 ) {
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_genButton_paypal($args, &$output, &$svc_msg)
     {
         return service_genButton_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_getCurrency_paypal($args, &$output, &$svc_msg)
     {
         return service_getCurrency_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_getUrl_paypal($args, &$output, &$svc_msg)
     {
         return service_getUrl_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_addCartItem_paypal($args, &$output, &$svc_msg)
     {
         return service_AddCartItem_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_btnCheckout_paypal($args, &$output, &$svc_msg)
     {
         return service_btnCheckout_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Compatibility function for plugins using "paypal".
+     *
+     * @param   array   $args       Array of arguments
+     * @param   mixed   $output     Holder for function output
+     * @param   mixed   $svc_msg    Unused
+     * @return  integer     Status code from service function
+     */
     function service_formatAmount_paypal($args, &$output, &$svc_msg)
     {
         return service_formatAmount_shop($args, $output, $svc_msg);
     }
+
+    /**
+     * Normal plugin function to get a formatted amount.
+     *
+     * @see     plugin_formatAmount_shop()
+     * @param   array   $amount     Amount to format
+     * @return  string      Formatted amount
+     */
     function plugin_formatAmount_paypal($amount)
     {
         return plugin_formatAmount_shop($amount);
     }
+
+    /**
+     * Compatibility function to get the configured currency.
+     *
+     * @see     plugin_getCurrency_shop()
+     * @return  string      Currency code
+     */
     function plugin_getCurrency_paypal()
     {
         return plugin_getCurrency_shop();

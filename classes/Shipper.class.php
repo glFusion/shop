@@ -188,6 +188,7 @@ class Shipper
     /**
      * Get all shipping options.
      *
+     * @param   boolean $valid  True to get only enabled shippers
      * @return  array   Array of all DB records
      */
     public static function getAll($valid=true)
@@ -223,6 +224,7 @@ class Shipper
      * Get all the shippers that can handle a number of units.
      *
      * @param   float   $units      Number of units being shipped
+     * @param   boolean $ignore_limits  True to ignore unit limit for shippers
      * @return  array               Array of shipper objects, including rates
      */
     public static function getShippers($units=0, $ignore_limits=false)

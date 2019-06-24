@@ -996,6 +996,7 @@ class Order
      * This function actually creates the text for notification emails.
      *
      * @param   object  &$T     Template object
+     * @param   string  $gw_msg Optional gateway message to include
      * @return  string      Text for email body
      */
     private function _prepareNotification(&$T, $gw_msg='')
@@ -1136,6 +1137,7 @@ class Order
     /**
      * Check the user's permission to view this order or cart.
      *
+     * @param   string  $token  Token provided by the user, if any
      * @return  boolean     True if allowed to view, False if denied.
      */
     public function canView($token='')
@@ -1839,6 +1841,7 @@ class Order
      * Supplies the language name for notification template selection and
      * for loading a $LANG_SHOP array.
      *
+     * @param   boolean $fullname   True to return full name of language
      * @return  string  Language name for the buyer.
      */
     private function _getLangName($fullname = false)
@@ -2062,6 +2065,7 @@ class Order
      *
      * @param   array   $ids    Array of order IDs
      * @param   string  $type   View type, 'pl' or 'order'
+     * @param   boolean $isAdmin    True if run by an administrator
      * @return  boolean     True on success, False on error
      */
     public static function printPDF($ids, $type='pdfpl', $isAdmin = false)

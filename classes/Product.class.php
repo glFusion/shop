@@ -2364,7 +2364,7 @@ class Product
     /**
      * Get the URL to a product image.
      *
-     * @param   string  $imgname    Image name, no path
+     * @param   string  $filename   Image filename, no path
      * @param   integer $width      Optional width, assume thumbnail
      * @param   integer $height     Optional height, assume thumbnail
      * @return  array       Array of (url, width, height)
@@ -2416,7 +2416,7 @@ class Product
      * Get the rating bar, if supported.
      *
      * @param   boolean $voted      True if the user has already voted
-     * @param   integer $stars      Number of stars
+     * @param   integer $units      Number of stars
      * @param   boolean $static     True to show a static rating bar
      * @param   string  $size       Rating bar size
      * @return  string      HTML for rating bar

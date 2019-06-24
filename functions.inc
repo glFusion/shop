@@ -1589,7 +1589,7 @@ function SHOP_is_plugin_item($item_number)
  * then the message is logged.
  *
  * @param   string  $msg    Text message to display, may be blank.
- * @param   string  $type   Type of message
+ * @param   integer $level  Logging level
  */
 function SHOP_log($msg, $level = SHOP_LOG_ERROR)
 {

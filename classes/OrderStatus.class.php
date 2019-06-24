@@ -212,6 +212,7 @@ class OrderStatus extends Workflow
     /**
      * Get the language string for the description, or the name if not found.
      *
+     * @param   string  Name of the status
      * @return  string      Language-specific description
      */
     public static function getDscp($name)

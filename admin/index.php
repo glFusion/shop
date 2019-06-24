@@ -1950,6 +1950,7 @@ function getAdminField_Sales($fieldname, $fieldvalue, $A, $icon_arr)
  * @param   mixed   $fieldvalue Value of the field
  * @param   array   $A          Array of all fields from the database
  * @param   array   $icon_arr   System icon array (not used)
+ * @param   mixed   $extra      Extra parameters passed through ADMIN_list()
  * @return  string              HTML for field display in the table
  */
 function getAdminField_Workflow($fieldname, $fieldvalue, $A, $icon_arr, $extra)

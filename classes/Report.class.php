@@ -588,8 +588,8 @@ class Report
      * Get a session variable for a report config option.
      *
      * @param   string  $opt        Option name
-     * @#param  mixed   $default    Default value if session var not set
      * @param   string  $type       Expected data type, default=string
+     * @param   mixed   $default    Default value if session var not set
      * @return  string          Option value
      */
     protected static function _getSessVar($opt, $type='string', $default=NULL)
@@ -613,7 +613,7 @@ class Report
 
 
     /**
-     * Remove or replace quot characters.
+     * Remove or replace quote characters.
      * For HTML, replace with the HTML entity.
      * For CSV, remove completely.
      *
@@ -637,6 +637,8 @@ class Report
     /**
      * Sets the array of allowed statuses.
      * Called by child classes that want to restrict the order status options.
+     *
+     * @param   array   $allowed    Allowed statuses to include in report.
      */
     public function setAllowedStatuses($allowed = array())
     {

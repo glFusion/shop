@@ -238,7 +238,6 @@ class Currency
      * Formats a price for a particular currency.
      *
      * @param   float   $amount A numeric price amount value.
-     * @param   string  $code   The three character code of the currency.
      * @return  array   Array of prefix, number, postfix
      */
     private function _Format($amount)

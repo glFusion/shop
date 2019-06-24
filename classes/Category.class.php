@@ -770,7 +770,6 @@ class Category
     /**
      * Get the full path to a category, optionally including sub-categories.
      *
-     * @param   integer $cat_id     Category ID
      * @param   boolean $incl_sub   True to include sub-categories
      * @return  array       Array of category objects
      */

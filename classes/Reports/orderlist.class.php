@@ -19,6 +19,8 @@ namespace Shop\Reports;
  */
 class orderlist extends \Shop\Report
 {
+    /** Report icon name
+     * @var string */
     protected $icon = 'list';
 
     /**

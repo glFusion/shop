@@ -883,8 +883,10 @@ class IPN
 
 
     /**
-     * Count IPN records. Optionally provide a "where" clause.
+     * Count IPN records. Optionally provide a field name and value.
      *
+     * @param   string  $id     DB field name
+     * @param   mixed   $value  Value of DB field.
      * @return  integer     Count of matching records
      */
     public static function Count($id='', $value='')

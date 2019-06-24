@@ -19,8 +19,10 @@ namespace Shop\Reports;
  */
 class ipnlog extends \Shop\Report
 {
+    /** Icon to use in report selection.
+     * @var string */
     protected $icon = 'money';
-    //protected $icon_cls = 'uk-text-success';
+
 
     /**
      * Constructor. Set overrides for parent class.
@@ -176,6 +178,8 @@ class ipnlog extends \Shop\Report
     /**
      * Display the detail for a single item.
      *
+     * @param   mixed   $val    Value to display
+     * @param   string  $key    Name of variable used in Admin list
      * @return  string      HTML for item detail report
      */
     public function RenderDetail($val, $key='id')

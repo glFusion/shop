@@ -960,6 +960,7 @@ class Cart extends Order
     /**
      * Create a unique key based on some string.
      *
+     * @param   string  $str    Base string
      * @return  string  Nonce string
      */
     public function makeNonce($str='')

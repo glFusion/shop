@@ -19,9 +19,18 @@ namespace Shop\Reports;
  */
 class coupons extends \Shop\Report
 {
+    /** Coupon code to use for report.
+     * @var string */
     protected $code;
+
+    /** Name of icon to use in report selection.
+     * @var string */
     protected $icon = 'gift';
+
+    /** Component name used for admin list.
+     * @var string */
     static $component = 'shop_rep_coupons';
+
 
     /**
      * Constructor. Set report-specific values.

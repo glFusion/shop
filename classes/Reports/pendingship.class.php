@@ -20,7 +20,10 @@ namespace Shop\Reports;
  */
 class pendingship extends \Shop\Report
 {
+    /** Name of icon to use for report selection.
+     * @var string */
     protected $icon = 'truck';
+
 
     /**
      * Constructor. Override the allowed statuses.

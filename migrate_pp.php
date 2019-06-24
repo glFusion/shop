@@ -11,7 +11,9 @@
  * @filesource
  */
 
-/** Include plugin configuration */
+/**
+ * Include plugin configuration
+ */
 require_once __DIR__  . '/shop.php';
 
 /**
@@ -61,7 +63,7 @@ function SHOP_migrate_pp()
         );
     }
     // These are updates to the schema since Shop v0.7.0
-    $PP_UPGRADE[] = "ALTER TABLE {$_TABLES['paypal.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    $PP_UPGRADE[] = "ALTER TABLE {$_TABLES['paypal.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`";
     foreach ($PP_UPGRADE as $sql) {
         // Ignore errors since we can't be sure which of these have already been done.
         DB_query($sql, 1);
