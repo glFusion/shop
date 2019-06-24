@@ -1,6 +1,6 @@
 <?php
 /**
- * Handle redeeming gift codes
+ * Handle redeeming gift codes.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner
@@ -69,13 +69,6 @@ default:
 $display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::PageTitle($LANG_SHOP['apply_gc']);
 $display .= \Shop\Menu::User();
-$T = new \Template(SHOP_PI_PATH . '/templates');
-$T->set_file('title', 'shop_title.thtml');
-$T->set_var(array(
-    'title' => isset($page_title) ? $page_title : '',
-    'is_admin' => plugin_ismoderator_shop(),
-) );
-$display .= $T->parse('', 'title');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;

@@ -53,9 +53,9 @@ class Menu
                 'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
                 'text' => $LANG_SHOP['gc_activity'],
                 'active' => $active,
+                'link_admin' => plugin_ismoderator_shop(),
             );
         }
-
         return \ADMIN_createMenu($menu_arr, $hdr_txt);
     }
 
@@ -140,8 +140,10 @@ class Menu
         $T = SHOP_getTemplate('shop_title', 'title');
         $T->set_var(array(
             'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
+            'link_store' => true,
             'icon'  => plugin_geticon_shop(),
             'is_admin' => true,
+            'link_catalog' => true,
         ) );
         $todo_arr = self::AdminTodo();
         if (!empty($todo_arr)) {
@@ -184,12 +186,24 @@ class Menu
     }
 
 
-    public static function PageTitle($page_title = '')
+    /**
+     * Display only the page title.
+     * Used for pages that do not feature a menu, such as the catalog.
+     *
+     * @param   string  $page_title     Page title text
+     * @param   boolean $link_acct      Add a link to the user's account
+     * @return  string      HTML for page title section
+     */
+    public static function pageTitle($page_title = '', $link_acct=false)
     {
+        global $_USER;
+
         $T = SHOP_getTemplate('shop_title', 'title');
         $T->set_var(array(
             'title' => $page_title,
             'is_admin' => plugin_ismoderator_shop(),
+            'link_admin' => plugin_ismoderator_shop(),
+            'link_account' => $link_acct && $_USER['uid'] > 1,
         ) );
         return $T->parse('', 'title');
     }

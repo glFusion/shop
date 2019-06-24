@@ -17,6 +17,7 @@ Release TBD
   * Return to editing page when adding a product and the image uploads fail.
   * Fix showing previous item's image on order when next item has no image.
   * Clear sitemap cache when changing products or categories.
+  * Add links to admin area and account page from the catalog list.
 
 ## v0.7.0
 Release 2019-06-02

@@ -2,6 +2,23 @@
 {!if is_admin}
 <script type="text/javascript" src="{site_url}/shop/js/toggleEnabled.js"></script>
 {!endif}
+<div style="float:right;">
+{!if link_admin}
+  <a href="{site_admin_url}/plugins/shop/index.php">
+    <button class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</button>
+  </a>
+{!endif}
+{!if link_catalog}
+  <a href="{site_url}/shop/index.php">
+    <button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</button>
+  </a>
+{!endif}
+{!if link_account}
+  <a href="{site_url}/shop/account.php">
+    <button class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</button>
+  </a>
+{!endif}
+</div>
 {!if icon}
 <div style="float:left;margin-right:10px;">
 <img src="{icon}" />

@@ -374,12 +374,7 @@ case 'none':
 }
 
 $display = \Shop\Menu::siteHeader();
-$T = SHOP_getTemplate('shop_title', 'title');
-$T->set_var(array(
-    'title' => isset($page_title) ? $page_title : '',
-    'is_admin' => plugin_ismoderator_shop(),
-) );
-$display .= $T->parse('', 'title');
+$display .= \Shop\Menu::pageTitle(isset($page_title) ? $page_title : '', true);
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
