@@ -1395,7 +1395,7 @@ function plugin_itemrated_shop($id, $rating, $votes)
  * Curretly, all logged-in users can rate (even admin).
  * Requires glFusion 1.1.7 or higher.
  *
- * @param   mixed   $item_id    ID of product to be rated
+ * @param   mixed   $item_id    ID of product to be rate (not used)d
  * @param   integer $uid        User ID of the one doing the rating
  * @return  boolean             True if user is allowed, false if not
  */

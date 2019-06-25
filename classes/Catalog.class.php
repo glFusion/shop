@@ -278,15 +278,6 @@ class Catalog
             }
 
             $prodrows++;
-
-            if ($P->supportsRatings()) {
-                $static = 1;
-                $rating_box = $P->ratingBar($voted, 5, true, 'sm');
-                $T->set_var('rating_bar', $rating_box);
-            } else {
-                $T->set_var('rating_bar', '');
-            }
-
             $pic_filename = $P->getOneImage();
             $T->set_var(array(
                 'item_id'       => $P->id,
@@ -307,6 +298,7 @@ class Catalog
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
                 'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(),
+                'rating_bar'    => $P->ratingBar(true),
             ) );
 
             if ($isAdmin) {

@@ -1183,6 +1183,7 @@ class Product
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
             'stock_msg'         => $this->_OutOfStock(),
+            'rating_bar'        => $this->ratingBar(),
         ) );
         $T->set_block('product', 'SpecialFields', 'SF');
         //var_dump($this->special_fields);die;
@@ -1222,26 +1223,6 @@ class Product
             $T->set_var('usercomments',
                 CMT_userComments($prod_id, $this->short_description, $_SHOP_CONF['pi_name'],
                     '', '', 0, 1, false, false, $mode));
-        }
-
-        if ($this->rating_enabled == 1) {
-            $SHOP_ratedIds = RATING_getRatedIds($_SHOP_CONF['pi_name']);
-            if (in_array($prod_id, $SHOP_ratedIds)) {
-                $static = true;
-                $voted = 1;
-            } elseif (plugin_canuserrate_shop($this->id, $_USER['uid'])) {
-                $static = 0;
-                $voted = 0;
-            } else {
-                $static = 1;
-                $voted = 0;
-            }
-            $rating_box = RATING_ratingBar($_SHOP_CONF['pi_name'], $prod_id,
-                    $this->votes, $this->rating,
-                    $voted, 5, $static, 'sm');
-            $T->set_var('rating_bar', $rating_box);
-        } else {
-            $T->set_var('ratign_bar', '');
         }
 
         if ($this->isAdmin) {
@@ -2284,12 +2265,12 @@ class Product
         $id = (int)$id;
         $rating = number_format($rating, 2, '.', '');
         $votes = (int)$votes;
-        $sql = "UPDATE {$_TABLES['shop.products']}
-                SET rating = $rating, votes = $votes
-                WHERE id = $id";
+        $sql = "UPDATE {$_TABLES['shop.products']} SET
+            rating = $rating,
+            votes = $votes
+            WHERE id = $id";
         DB_query($sql);
         Cache::clear('products');
-        Cache::clear('sitemap');
         return DB_error() ? false : true;
     }
 
@@ -2415,21 +2396,32 @@ class Product
     /**
      * Get the rating bar, if supported.
      *
-     * @param   boolean $voted      True if the user has already voted
-     * @param   integer $units      Number of stars
-     * @param   boolean $static     True to show a static rating bar
-     * @param   string  $size       Rating bar size
+     * @param   boolean $force_static   True to force static display.
      * @return  string      HTML for rating bar
      */
-    public function ratingBar($voted, $units=5, $static=false, $size='sm')
+    public function ratingBar($force_static = false)
     {
+        global $_USER;
+
+        $ratedIds = RATING_getRatedIds($this->pi_name);
+
         if ($this->supportsRatings()) {
+            if (in_array($this->id, $ratedIds)) {
+                $static = 1;
+                $voted = 1;
+            } elseif (!$force_static && plugin_canuserrate_shop($this->id, $_USER['uid'])) {
+                $static = 0;
+                $voted = 0;
+            } else {
+                $static = 1;
+                $voted = 0;
+            }
             $retval = RATING_ratingBar(
                 $this->pi_name,
                 $this->id,
                 $this->votes,
                 $this->rating,
-                $voted, $stars, $static, $size
+                $voted, 5, $static, 'sm'
             );
         } else {
             $retval = '';
