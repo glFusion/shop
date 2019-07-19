@@ -122,6 +122,8 @@ class headlines
             }
         }
 
+        $today = $_CONF['_now']->format('Y-m-d');
+
         // The "c.enabled IS NULL" is to allow products which have
         // no category record, as long as the product is enabled.
         $sql = "SELECT id
@@ -129,8 +131,12 @@ class headlines
             LEFT JOIN {$_TABLES['shop.categories']} c
             ON p.cat_id=c.cat_id
             WHERE
-                p.enabled=1 AND (c.enabled=1 OR c.enabled IS NULL) AND
-                (p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2) $where " .
+                p.enabled=1 AND
+                (c.enabled=1 OR c.enabled IS NULL) AND
+                (p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2) AND
+                p.avail_beg <= '$today' AND
+                p.avail_end >= '$today'
+                $where " .
             SEC_buildAccessSql('AND', 'c.grp_access') . "
             ORDER BY $sortby $orderby
             $limit";
@@ -147,9 +153,9 @@ class headlines
 
         if ($numRows > 0) {
             $T = new \Template(__DIR__ . '/../../templates/autotags');
-            $T->set_file('page',$template);
-            $T->set_var('columns',$cols);
-            $T->set_block('page','headlines','hl');
+            $T->set_file('page', $template);
+            $T->set_var('columns' ,$cols);
+            $T->set_block('page', 'headlines', 'hl');
 
             foreach ($allItems as $A) {
                 $P = \Shop\Product::getInstance($A['id']);
@@ -157,8 +163,8 @@ class headlines
                     'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),
                     'title'     => $P->short_description,
-                    'thumb_url' => $P->ImageUrl(),
-                    'large_url' => $P->ImageUrl('', 1024, 1024),
+                    'thumb_url' => $P->ImageUrl()['url'],
+                    'large_url' => $P->ImageUrl('', 1024, 1024)['url'],
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
                 ) );
