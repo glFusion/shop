@@ -60,7 +60,7 @@ $LANG_SHOP = array (
 'admin_hdr_history' => 'This is a list of all purchases in the database. Click on a link for more information about that item',
 'admin_hdr_attributes' => 'Attributes can be associated with products. For instance, you may wish to offer small, medium and large sizes, and charge extra for large.<br /><span class="shopAlertText">Note: Products with attributes cannot be purchased via "Buy-Now" buttons. The shopping cart must be enabled.</span>',
 'admin_hdr_wfadmin' => 'Enable, Disable, and Re-order the items that must be completed before checkout. Workflow items cannot be deleted. &quot;Confirm Order&quot; is always the last item in the workflow.',
-'admin_hdr_wfstatus' => 'Update order status values. You can edit and order them, and indicate whether the buyer is notified when a status becomes active.',
+'admin_hdr_wfstatus' => 'Update order status values. You can disable unused statuses and indicate whether the buyer and/or administrator is notified when a status becomes active.',
 'username'          => 'User Name',
 'pmt_status'        => 'Payment Status',
 'status'            => 'Status',
@@ -582,7 +582,7 @@ $LANG_confignames['shop'] = array(
     'days_purge_pending' => 'Days before purging unpaid orders',
     'purge_sale_prices' => 'Purge Expired Sale Prices?',
     'catalog_columns' => 'Catalog Columns',
-    'enable_svc_funcs' => 'Enable Paypal Service Function Wrappers',
+    'enable_svc_funcs' => 'Enable Service Function Wrappers',
     'shop_enabled'  => 'Enable public access?',
     'hp_layout'     => 'Homepage Layout',
 );
