@@ -23,6 +23,7 @@ Release TBD
 Release 2019-06-02
 
 First beta version under the new Shop name.
+These are the changes from version 0.6.1 of the Paypal plugin (https://github.com/leegarner-glfusion/paypal).
 
   * Allow the shop to be disabled except for administrators.
   * Properly merge anonymous user cart to user cart upon login.

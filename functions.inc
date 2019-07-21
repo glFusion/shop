@@ -1530,7 +1530,7 @@ function plugin_runScheduledTask_shop()
         //\Shop\Product::toggleEnabled(1, $A['id']);
     }
 
-// Delete old cached buttons which are keyed by item_id and price.
+    // Delete old cached buttons which are keyed by item_id and price.
     // Sale-priced items will get stuck in the DB.
     DB_query("DELETE FROM {$_TABLES['shop.buttons']}
             WHERE last_update < NOW() - INTERVAL 120 DAY");

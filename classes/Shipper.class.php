@@ -566,7 +566,7 @@ class Shipper
 
 
     /**
-     * Save the current or provided values to the database.
+     * Save shipper information to the database.
      *
      * @param   array   $A      Optional array of values from $_POST
      * @return  boolean         True if no errors, False otherwise
