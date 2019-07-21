@@ -2,12 +2,10 @@
 <div class="shopOrderContainer">
 {!if is_admin}
 {!else}
-  <p>
     <div style="display:inline-block;"><a href="{return_url}">{$LANG_SHOP['go_back']}</a></div>
 {!if not_anon}
     <div style="display:inline-block;float:right;"><a href="{account_url}">{$LANG_SHOP['my_account']}</a></div>
 {!endif}
-  </p>
 {!endif}
   <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!if not_final}
