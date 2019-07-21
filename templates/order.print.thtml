@@ -7,6 +7,7 @@
 {!else}
 {$LANG_SHOP['packinglist']}
 {!endif}
+
 </h1>
   <div class="shopOrder">
   <div id="shopShopInfo">
@@ -21,34 +22,34 @@
   <div style="clear:both;"></div>
   <div id="shopAddr">
 {!if is_invoice}
-{!if have_billto}
+  {!if have_billto}
     <div id="shopBilling">
       <b>{$LANG_SHOP['bill_to']}:</b>
       <br />
-  {!if billto_name}
+    {!if billto_name}
       {billto_name}<br />
-  {!endif}
-  {!if billto_company}
-      {billto_company}<br />
-  {!endif}
-  {!if billto_address1}
-      {billto_address1}<br />
-  {!endif}
-  {!if billto_address2}
-      {billto_address2}<br />
-  {!endif}
-  {!if billto_city}
-    {billto_city}
-    {!if billto_state}
-    ,&nbsp;
     {!endif}
-  {!endif}
+    {!if billto_company}
+      {billto_company}<br />
+    {!endif}
+    {!if billto_address1}
+      {billto_address1}<br />
+    {!endif}
+    {!if billto_address2}
+      {billto_address2}<br />
+    {!endif}
+    {!if billto_city}
+      {billto_city}
+      {!if billto_state}
+        ,&nbsp;
+      {!endif}
+    {!endif}
       {billto_state} {billto_zip}<br />
-  {!if billto_country}
+    {!if billto_country}
       {billto_country}
-  {!endif}
+    {!endif}
     </div>
-{!endif}
+  {!endif}
 {!endif}
 
 {!if have_shipto}
@@ -118,9 +119,9 @@
           <td class="alignright">{item_price}</td>
           <td class="alignright">{item_total}</td>
           <td class="aligncenter">
-{!if taxable}
+  {!if taxable}
             {tax_icon}*
-{!endif}
+  {!endif}
           </td>
 {!endif}
         </tr>
@@ -131,29 +132,30 @@
           <td colspan="4" class="alignright">{$LANG_SHOP['item_total']}</td>
           <td class="alignright">{subtotal}</td>
         </tr>
-{!endif}
-{!if cart_tax}
+  {!if cart_tax}
         <tr>
           <td colspan="4" class="alignright">{lang_tax_on_items}</td>
           <td class="alignright">{cart_tax}</td>
         </tr>
-{!endif}
-{!!if {shipper_id} > 0 || {shipping} > 0 !!}
+  {!endif}
+
+  {!!if {shipper_id} > 0 || {shipping} > 0 !!}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
-{!if ship_method}
-({ship_method})
-{!endif}
+    {!if ship_method}
+      ({ship_method})
+    {!endif}
           </td>
           <td class="alignright">{shipping}</td>
         </tr>
-{!endif}
-{!if handling}
+  {!endif}
+
+  {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
           <td class="alignright">{handling}</td>
         </tr>
-{!endif}
+  {!endif}
         <tr>
           <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
@@ -192,6 +194,7 @@
     <!-- END LogMessages -->
     </table>
 {!endif}
+
 {!if pmt_method}
     <p id="orderPaymentMethod">{$LANG_SHOP['pmt_method']}: {pmt_method}
   {!if is_admin}
@@ -202,12 +205,14 @@
   {!endif}
     </p>
 {!endif}
+
 {!else}
 {!if shipper_id}
 <p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
 {!endif}
 {!endif}
   </div>
+
 {!if is_invoice}
 {!if icon_dscp}
   <div>*&nbsp;{icon_dscp}</div>
