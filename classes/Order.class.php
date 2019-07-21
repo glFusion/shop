@@ -721,7 +721,7 @@ class Order
             'price_tooltip' => $price_tooltip,
             'have_images'   => $is_invoice ? $have_images : false,
             'linkPackingList' => self::linkPackingList($this->order_id),
-            'linkPrint'     => self::linkPrint($this->order_id),
+            'linkPrint'     => self::linkPrint($this->order_id, $this->token),
         ) );
 
         if ($this->isAdmin) {
@@ -2025,13 +2025,15 @@ class Order
      * @param   string  $target     Target, defaule = "_blank"
      * @return  string      Complete tag
      */
-    public static function linkPrint($order_id, $target = '_blank')
+    public static function linkPrint($order_id, $token='', $target = '_blank')
     {
         global $LANG_SHOP;
 
+        $url = SHOP_URL . '/order.php?mode=print&id=' . $order_id;
+        if ($token != '') $url .= '&token=' . $token;
         return COM_createLink(
             '<i class="uk-icon-mini uk-icon-print"></i>',
-            COM_buildUrl(SHOP_URL . '/order.php?mode=print&id=' . $order_id),
+            COM_buildUrl($url),
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['print'],

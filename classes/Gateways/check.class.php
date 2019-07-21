@@ -508,6 +508,7 @@ class check extends \Shop\Gateway
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('remit', 'remit_form.thtml');
         $T->set_var(array(
+            'order_url' => $Order->buildUrl('print'),
             'order_id'  => $Order->order_id,
             'token'     => $Order->token,
         ) );
@@ -681,6 +682,7 @@ class check extends \Shop\Gateway
     {
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="' . $this->gw_name . '" />',
+            '<input type="hidden" name="gateway" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
         );
         return implode("\n", $gatewayVars);
