@@ -233,12 +233,11 @@ case 'view':            // "?view=" url passed in
     break;
 
 case 'processorder':
-    echo "depreacated";die;
     // Process the order, similar to what an IPN would normally do.
     // This is for internal, manual processes like C.O.D. or Prepayment orders
-    $gw_name = isset($_POST['gateway']) ? $_POST['gateway'] : 'check';
+    $gw_name = SHOP_getVar($_POST, 'gateway', 'string', 'check');
     $gw = \Shop\Gateway::getInstance($gw_name);
-    if ($gw !== NULL) {
+    if ($gw !== NULL && $gw->allowNoIPN()) {
         $output = $gw->handlePurchase($_POST);
         if (!empty($output)) {
             $content .= $output;

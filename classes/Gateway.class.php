@@ -1349,6 +1349,17 @@ class Gateway
         return '';
     }
 
+
+    /**
+     * Check if this gateway allows an order to be processed without an IPN msg.
+     *
+     * @return  boolean     True if no IPN required, default = false
+     */
+    public function allowNoIPN()
+    {
+        return false;
+    }
+
 }   // class Gateway
 
 ?>

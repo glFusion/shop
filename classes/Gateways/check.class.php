@@ -688,6 +688,18 @@ class check extends \Shop\Gateway
         return implode("\n", $gatewayVars);
     }
 
+
+    /**
+     * Check if this gateway allows an order to be processed without an IPN msg.
+     * The Check gateway does allow this as it just presents a remittance form.
+     *
+     * @return  boolean     True
+     */
+    public function allowNoIPN()
+    {
+        return true;
+    }
+
 }   // class check
 
 ?>
