@@ -18,6 +18,7 @@ Release TBD
   * Fix showing previous item's image on order when next item has no image.
   * Clear sitemap cache when changing products or categories.
   * Add links to admin area and account page from the catalog list.
+  * Make IPN URL override global to all gateways.
 
 ## v0.7.0
 Release 2019-06-02

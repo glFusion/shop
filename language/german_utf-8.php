@@ -494,7 +494,7 @@ $LANG_SHOP_HELP = array(
 'recipient_email' => 'The gift card will be emailed to this address. If left blank, the gift card will be emailed to you.',
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
-'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuraion.',
+'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuration.',
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 );
 
@@ -576,6 +576,7 @@ $LANG_confignames['shop'] = array(
     'enable_svc_funcs' => 'Enable Service Functions',
     'shop_enabled'  => 'Enable public access?',
     'hp_layout'     => 'Homepage Layout',
+    'ipn_url'       => 'IPN URL Override',
 );
 
 /** Language strings for the subgroup names in the config section */

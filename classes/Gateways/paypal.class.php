@@ -68,7 +68,6 @@ class paypal extends \Shop\Gateway
             'pub_key'           => '',
             'prod_url'          => 'https://www.paypal.com',
             'sandbox_url'       => 'https://www.sandbox.paypal.com',
-            'ipn_url'           => '',
         );
 
         // This gateway can service all button type by default
@@ -102,11 +101,6 @@ class paypal extends \Shop\Gateway
         // Set defaults, just to make sure something is set
         $this->cert_id = $this->config['pp_cert_id'];
         $this->receiver_email = $this->config['bus_prod_email'];
-
-        // Override the default IPN URL if an override is provided
-        if (!empty($this->config['ipn_url'])) {
-            $this->ipn_url = $this->config['ipn_url'];
-        }
     }
 
 

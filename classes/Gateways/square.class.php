@@ -28,7 +28,6 @@ class square extends \Shop\Gateway
     private $loc_id;
     private $appid;
     private $token;
-    const IPN_URL = SHOP_URL . '/ipn/square.php';
 
     /**
      * Constructor.
@@ -254,7 +253,7 @@ class square extends \Shop\Gateway
         $checkout->setPrePopulateBuyerEmail($cart->getInfo('payer_email'));
         $checkout->setIdempotencyKey(uniqid()); //uniqid() generates a random string.
         $checkout->setOrder($order); //this is the order we created in the previous step
-        $checkout->setRedirectUrl(self::IPN_URL . '?thanks=square');
+        $checkout->setRedirectUrl($this->ipn_url . '?thanks=square');
 
         $url = '';
         $gatewayVars = array();

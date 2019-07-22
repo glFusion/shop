@@ -305,6 +305,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'ipn_url',
+        'default_value' => '',
+        'type' => 'text',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,
+        'sort' => 240,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array(
         'name' => 'fs_paths',               // Paths fieldset

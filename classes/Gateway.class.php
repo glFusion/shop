@@ -139,7 +139,17 @@ class Gateway
         $this->properties = array();
         $this->items = array();
         $this->custom = array();
-        $this->ipn_url = SHOP_URL . '/ipn/' . $this->gw_name . '.php';
+        if (empty($_SHOP_CONF['ipn_url'])) {
+            // Use the default IPN url
+            $this->ipn_url = SHOP_URL . '/ipn/' . $this->gw_name . '.php';
+        } else {
+            // Override the default IPN url and append the gateway IPN filename
+            $url = $_SHOP_CONF['ipn_url'];
+            if (substr($url, -1) != '/') {
+                $url .= '/';
+            }
+            $this->ipn_url =  $url . $this->gw_name . '.php';
+        }
         $this->currency_code = empty($_SHOP_CONF['currency']) ? 'USD' :
             $_SHOP_CONF['currency'];
 
@@ -1274,7 +1284,7 @@ class Gateway
 
     /**
      * Get the form method to use with the final checkout button.
-     * Return POST by default
+     * Return POST by default.
      *
      * @return  string  Form method
      */
@@ -1286,6 +1296,7 @@ class Gateway
 
     /**
      * Run additional functions after saving the configuration.
+     * Default: Do nothing.
      */
     protected function _postConfigSave()
     {

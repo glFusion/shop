@@ -20,7 +20,6 @@ $LANG_SHOP_gateway = array(
     'prod_appid' => 'Production  App ID',
     'prod_token' => 'Production Access Token',
     'test_mode'     => 'Testing (Sandbox) Mode?',
-    'ipn_url'       => 'IPN URL Override',
 );
 
 ?>
