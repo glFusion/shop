@@ -1431,7 +1431,7 @@ function plugin_user_login_shop($uid)
     if (empty($anon_cart)) return;             // save a step if there's no anon cart
     $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
     $user_cart->Merge($anon_cart);
-    $user_cart->Validate();
+    $user_cart->Validate(true);
 }
 
 

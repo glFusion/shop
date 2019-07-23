@@ -1006,15 +1006,18 @@ class Cart extends Order
     /**
      * Make sure all the required cart fields are valid prior to checkout.
      *
+     * @param   boolean $login  True if logging in, to suppress some checks
      * @return  array   Array of error messages
      */
-    public function Validate()
+    public function Validate($login=false)
     {
         global $LANG_SHOP;
 
         $errors = array();
-        if ($this->buyer_email == '') {
-            $errors[] = $LANG_SHOP['err_missing_email'];
+        if (!$login) {
+           if ($this->buyer_email == '') {
+               $errors[] = $LANG_SHOP['err_missing_email'];
+           }
         }
         if (!empty($errors)) {
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
