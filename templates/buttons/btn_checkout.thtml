@@ -1,6 +1,12 @@
 {# begin {templatelocation} #}
 <form style="display:inline;" class="frm_checkout" name="frm_checkout"
-    action="{action}" method="{method}">
+    action="{action}"
+{!if metho}
+    method="{method}"
+{!else}
+    method="post"
+{!endif}
+>
   {gateway_vars}
 {!if button_url}
   {button_url}

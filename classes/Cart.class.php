@@ -444,10 +444,11 @@ class Cart extends Order
                 '<input type="hidden" name="custom" value=\'' . @serialize($this->custom_info) . '\' />',
             );
             $T->set_var(array(
-                'action'        => SHOP_URL . '/ipn/internal_ipn.php',
+                'action'        => SHOP_URL . '/ipn/internal.php',
                 'gateway_vars'  => implode("\n", $gateway_vars),
                 'cart_id'       => $this->m_cart_id,
                 'uid'           => $_USER['uid'],
+                'method'        => 'post',
             ) );
             $T->parse('checkout_btn', 'checkout');
             return $T->finish($T->get_var('checkout_btn'));
