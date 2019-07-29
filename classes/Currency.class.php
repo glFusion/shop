@@ -46,52 +46,10 @@ class Currency
     }
 
 
-    /**
-     * Get an instance of a currency.
-     * Caches in a static variable for quick repeated retrivals,
-     * and also caches using glFusion caching if available.
-     *
-     * @param   string  $code   Currency Code
-     * @return  array           Array of information
-     */
-    public static function getInstance($code = NULL)
+    public function __toString()
     {
-        global $_SHOP_CONF;
-        static $currencies = array();
-
-        if (empty($code)) $code = $_SHOP_CONF['currency'];
-
-        if (!isset($currencies[$code])) {
-            $key = 'currency_' . $code;
-            $currencies[$code] = Cache::get($key);
-            if (!$currencies[$code]) {
-                $currencies[$code] = new self($code);
-                Cache::set($key, $currencies[$code]);
-            }
-        }
-        return $currencies[$code];
+        return $this->code;
     }
-
-
-    /**
-     * Set all the record values into properties.
-     *
-     * @param   array   $A      Array of key->value pairs
-     */
-    public function setVars($A)
-    {
-        $fields = array(
-            'code', 'symbol', 'name', 'numeric_code',
-            'symbol_placement', 'symbol_spacer',
-            'code_placement', 'decimals',
-            'rounding_step', 'thousands_sep', 'decimal_sep',
-            'major_unit', 'minor_unit',
-            'conversion_rate', 'conversion_ts',
-        );
-        foreach ($fields as $field) {
-            $this->$field = $A[$field];
-        }
-     }
 
 
     /**
@@ -143,6 +101,54 @@ class Currency
         } else {
             return NULL;
         }
+    }
+
+
+    /**
+     * Set all the record values into properties.
+     *
+     * @param   array   $A      Array of key->value pairs
+     */
+    public function setVars($A)
+    {
+        $fields = array(
+            'code', 'symbol', 'name', 'numeric_code',
+            'symbol_placement', 'symbol_spacer',
+            'code_placement', 'decimals',
+            'rounding_step', 'thousands_sep', 'decimal_sep',
+            'major_unit', 'minor_unit',
+            'conversion_rate', 'conversion_ts',
+        );
+        foreach ($fields as $field) {
+            $this->$field = $A[$field];
+        }
+    }
+
+
+    /**
+     * Get an instance of a currency.
+     * Caches in a static variable for quick repeated retrivals,
+     * and also caches using glFusion caching if available.
+     *
+     * @param   string  $code   Currency Code
+     * @return  array           Array of information
+     */
+    public static function getInstance($code = NULL)
+    {
+        global $_SHOP_CONF;
+        static $currencies = array();
+
+        if (empty($code)) $code = $_SHOP_CONF['currency'];
+
+        if (!isset($currencies[$code])) {
+            $key = 'currency_' . $code;
+            $currencies[$code] = Cache::get($key);
+            if (!$currencies[$code]) {
+                $currencies[$code] = new self($code);
+                Cache::set($key, $currencies[$code]);
+            }
+        }
+        return $currencies[$code];
     }
 
 
