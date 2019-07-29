@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <form style="display:inline;" class="frm_checkout" name="frm_checkout"
     action="{action}"
-{!if metho}
+{!if method}
     method="{method}"
 {!else}
     method="post"
