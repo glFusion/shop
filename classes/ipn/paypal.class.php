@@ -193,7 +193,6 @@ class paypal extends \Shop\IPN
      * @uses    IPN::handleFailure()
      * @uses    IPN::handlePurchase()
      * @uses    IPN::isUniqueTxnId()
-     * @uses    IPN::isSufficientFunds()
      * @uses    IPN::Log()
      * @uses    Verify()
      * @return  boolean true if processing valid and completed, false otherwise

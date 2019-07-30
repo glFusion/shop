@@ -46,6 +46,11 @@ class Currency
     }
 
 
+    /**
+     * Return the string value of this object.
+     *
+     * @return  string  String value (currency code)
+     */
     public function __toString()
     {
         return $this->code;
