@@ -118,6 +118,10 @@ class Gateway
      * @var string */
     protected $currency_code = 'USD';
 
+    /** Language strings specific to this gateway.
+     * @var array */
+    protected $lang;
+
 
     /**
      * Constructor. Initializes variables.
@@ -639,10 +643,11 @@ class Gateway
         global $LANG_SHOP_gateway;
         if (is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
             include_once SHOP_PI_PATH . '/language/' . $langfile;
-            return $LANG_SHOP_gateway;
+            $this->lang = $LANG_SHOP_gateway;
         } else {
-            return array();
+            $this->lang = array();
         }
+        return $this->lang;
     }
 
 
@@ -1099,8 +1104,12 @@ class Gateway
 
         $T = SHOP_getTemplate('gateway_edit', 'tpl');
         $svc_boxes = $this->getServiceCheckboxes();
-        $doc_url = SHOP_getDocUrl('gwhelp_' . $this->gw_name,
-                $_CONF['language']);
+        $doc_url = SHOP_getDocUrl(
+            'gwhelp_' . $this->gw_name,
+            $_CONF['language']
+        );
+        // Load the language for this gateway and get all the config fields
+        $this->LoadLanguage();
         $T->set_var(array(
             'gw_description' => $this->gw_desc,
             'gw_id'         => $this->gw_name,
@@ -1112,13 +1121,11 @@ class Gateway
             'gw_instr'      => $this->getInstructions(),
         ), false, false);
 
-        // Load the language for this gateway and get all the config fields
-        $LANG = $this->LoadLanguage();
-        $fields = $this->getConfigFields($LANG);
+        $fields = $this->getConfigFields();
         $T->set_block('tpl', 'ItemRow', 'IRow');
         foreach ($fields as $name=>$field) {
             $T->set_var(array(
-                'param_name'    => isset($LANG[$name]) ? $LANG[$name] : $name,
+                'param_name'    => isset($this->lang[$name]) ? $this->lang[$name] : $name,
                 'field_name'    => $name,
                 'param_field'   => $field['param_field'],
                 'other_label'   => isset($field['other_label']) ? $field['other_label'] : '',
