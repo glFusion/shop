@@ -1099,7 +1099,6 @@ class Gateway
 
         $T = SHOP_getTemplate('gateway_edit', 'tpl');
         $svc_boxes = $this->getServiceCheckboxes();
-
         $doc_url = SHOP_getDocUrl('gwhelp_' . $this->gw_name,
                 $_CONF['language']);
         $T->set_var(array(
@@ -1111,7 +1110,7 @@ class Gateway
             'doc_url'       => $doc_url,
             'svc_checkboxes' => $svc_boxes,
             'gw_instr'      => $this->getInstructions(),
-        ) );
+        ), false, false);
 
         // Load the language for this gateway and get all the config fields
         $LANG = $this->LoadLanguage();
