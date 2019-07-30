@@ -480,7 +480,8 @@ class Shipper
                 }
             }
             if ($item['packed'] !== true) {
-                SHOP_log("Error packing " . print_r($item,true), SHOP_LOG_ERROR);
+                // This shipper cannot handle this item
+                //SHOP_log(__NAMESPACE__ . '\\' . __CLASS__ . "::Error packing " . print_r($item,true), SHOP_LOG_ERROR);
                 break;
             } else {
                 $units_left -= $item['single_units'];
