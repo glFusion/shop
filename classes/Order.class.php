@@ -2022,6 +2022,7 @@ class Order
      * Create the complete tag to link to the print view of this order.
      *
      * @param   string  $order_id   Order ID
+     * @param   string  $token      Access token
      * @param   string  $target     Target, defaule = "_blank"
      * @return  string      Complete tag
      */
