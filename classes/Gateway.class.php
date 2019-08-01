@@ -1377,6 +1377,26 @@ class Gateway
         return false;
     }
 
+
+    /**
+     * Create a warning message about whitelisting the IPN in Bad Behavior.
+     * Common message applies to several gateways.
+     *
+     * @return  string      Warning message
+     */
+    protected function adminWarnBB()
+    {
+        global $LANG_SHOP_HELP, $_CONF;
+
+        return sprintf($LANG_SHOP_HELP['gw_bb2_instr'],
+            str_replace(
+                $_CONF['site_url'],
+                '',
+                $this->ipn_url
+            )
+        );
+    }
+
 }   // class Gateway
 
 ?>

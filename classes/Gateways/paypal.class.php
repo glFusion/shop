@@ -974,16 +974,7 @@ class paypal extends \Shop\Gateway
      */
     protected function getInstructions()
     {
-        global $LANG_SHOP_HELP, $_CONF;
-
-        return sprintf(
-            $LANG_SHOP_HELP['gw_bb2_instr'],
-            str_replace(
-                $_CONF['site_url'],
-                '',
-                $this->ipn_url
-            )
-        );
+        return $this->adminWarnBB();
     }
 
 }   // class paypal
