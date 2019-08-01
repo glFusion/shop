@@ -144,16 +144,16 @@ class Shipper
                 }
             }
             $this->rates = $rates;
-            // convert to timestamps
+            // convert to full date/time strings
             if (empty($A['valid_from'])) {
                 $A['valid_from'] = self::MIN_DATETIME;
             } else {
                 $A['valid_from'] = trim($A['valid_from']) . '00:00:00';
             }
-            if (empty($A['end'])) {
+            if (empty($A['valid_to'])) {
                 $A['valid_to'] = self::MAX_DATETIME;
             } else {
-                $A['valid_to'] = trim($A['end']) . ' 23:59:59';
+                $A['valid_to'] = trim($A['valid_to']) . ' 23:59:59';
             }
         } else {
             $rates = json_decode($A['rates']);
@@ -654,8 +654,8 @@ class Shipper
             'max_units'     => $this->max_units,
             'ena_sel'       => $this->enabled ? 'checked="checked"' : '',
             'fixed_sel'     => $this->use_fixed ? 'checked="checked"' : '',
-            'valid_from'    => $this->valid_from->format('Y-m-d'),
-            'valid_to'      => $this->valid_to->format('Y-m-d'),
+            'valid_from'    => $this->valid_from->format('Y-m-d', true),
+            'valid_to'      => $this->valid_to->format('Y-m-d', true),
         ) );
         $T->set_block('form', 'rateTable', 'rt');
         foreach ($this->rates as $R) {
