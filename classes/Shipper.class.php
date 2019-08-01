@@ -126,6 +126,8 @@ class Shipper
      */
     public function setVars($A, $fromDB=true)
     {
+        global $LANG_SHOP;
+
         $this->id = SHOP_getVar($A, 'id', 'integer');
         $this->name = SHOP_getVar($A, 'name');
         $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
@@ -135,16 +137,20 @@ class Shipper
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
-                if (!empty($txt)) {
-                    $rates[] = array(
-                        'dscp' => $A['rateDscp'][$id],
-                        'units' => (float)$A['rateUnits'][$id],
-                        'rate' => (float)$A['rateRate'][$id],
-                    );
+                if (empty($A['rateDscp'][$id])) {
+                    $A['rateDscp'][$id] = $LANG_SHOP['shipping_type'];;
                 }
+                if (empty($A['rateUnits'][$id])) {
+                    $A['rateUnits'][$id] = $this->max_units;
+                }
+                $rates[] = array(
+                    'dscp' => $A['rateDscp'][$id],
+                    'units' => (float)$A['rateUnits'][$id],
+                    'rate' => (float)$A['rateRate'][$id],
+                );
             }
             $this->rates = $rates;
-            // convert to full date/time strings
+            // convert valid dates to full date/time strings
             if (empty($A['valid_from'])) {
                 $A['valid_from'] = self::MIN_DATETIME;
             } else {
@@ -481,7 +487,7 @@ class Shipper
             }
             if ($item['packed'] !== true) {
                 // This shipper cannot handle this item
-                //SHOP_log(__NAMESPACE__ . '\\' . __CLASS__ . "::Error packing " . print_r($item,true), SHOP_LOG_ERROR);
+                SHOP_log(__NAMESPACE__ . '\\' . __CLASS__ . "::Error packing " . print_r($item,true), SHOP_LOG_ERROR);
                 break;
             } else {
                 $units_left -= $item['single_units'];
