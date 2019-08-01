@@ -21,6 +21,7 @@ Release TBD
   * Make IPN URL override global to all gateways.
   * Fix `valid_to` date entry for shippers.
   * Fix empty shipping rates not being saved, e.g. free shipping.
+  * Add option to excluded per-item fixed shipping from a shipping calculation.
 
 ## v0.7.0
 Release 2019-06-02
