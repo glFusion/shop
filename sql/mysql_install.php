@@ -499,14 +499,10 @@ $_SHOP_SAMPLEDATA = array(
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
-    "ALTER TABLE {$_TABLES['shop.shipping']}
-        ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
-    "ALTER TABLE {$_TABLES['shop.shipping']}
-        ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
-    "ALTER TABLE {$_TABLES['shop.shipping']}
-        ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
 );
