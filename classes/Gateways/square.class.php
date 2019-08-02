@@ -1,19 +1,17 @@
 <?php
 /**
- * Gateway implementation for PayPal.
+ * Gateway implementation for Square (squareup.com).
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Gateways;
-
-require_once __DIR__ . '/square/connect-php-sdk/autoload.php';
 
 
 /**
@@ -23,11 +21,18 @@ require_once __DIR__ . '/square/connect-php-sdk/autoload.php';
 class square extends \Shop\Gateway
 {
 
-    /** Square location value
+    /** Square location value.
      * @var string */
     private $loc_id;
+
+    /** Square App ID.
+     * @var string */
     private $appid;
+
+    /** Square Token.
+     * @var string */
     private $token;
+
 
     /**
      * Constructor.
@@ -36,6 +41,9 @@ class square extends \Shop\Gateway
     public function __construct()
     {
         global $_SHOP_CONF, $_USER;
+
+        // Import the Square API
+        require_once SHOP_PI_PATH . '/vendor/autoload.php';
 
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
@@ -189,26 +197,31 @@ class square extends \Shop\Gateway
             array_push($lineItems, $itm);
         } else {
             $shipping = $cart->shipping;
+            $tax = $cart->tax;
+            $idx = -1;
             foreach ($cart->getItems() as $Item) {
+                $idx++;
                 $P = $Item->getProduct();
 
                 $PriceMoney = new \SquareConnect\Model\Money;
                 $PriceMoney->setCurrency($this->currency_code);
                 $Item->Price = $P->getPrice($Item->options);
                 $PriceMoney->setAmount($Cur->toInt($Item->price));
-                $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+                $itm = new \SquareConnect\Model\OrderLineItem;
 
                 $opts = $P->getOptionDesc($Item->options);
                 $dscp = $Item->description;
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
                 }
+                $itm->setUid($idx);
                 $itm->setName($dscp);
                 $itm->setQuantity((string)$Item->quantity);
                 $itm->setBasePriceMoney($PriceMoney);
 
                 // Add tax, if applicable
-                if ($Item->taxable) {
+                /*if ($Item->taxable) {
                     $TaxMoney = new \SquareConnect\Model\Money;
                     $TaxMoney->setCurrency($this->currency_code);
                     $taxObj = new \SquareConnect\Model\OrderLineItemTax(
@@ -222,7 +235,8 @@ class square extends \Shop\Gateway
                     $TaxMoney->setAmount($tax);
                     $taxObj->setAppliedMoney($TaxMoney);
                     $itm->setTaxes(array($taxObj));
-                }
+                    $itm->setTotalTaxMoney($tax);
+                }*/
                 $shipping += $Item->shipping;
 
                 //Puts our line item object in an array called lineItems.
@@ -230,14 +244,32 @@ class square extends \Shop\Gateway
             }
         }
 
+        if ($cart->tax > 0) {
+            $TaxMoney = new \SquareConnect\Model\Money;
+            $TaxMoney->setCurrency($this->currency_code);
+            $TaxMoney->setAmount($Cur->toInt($cart->tax));
+            $itm = new \SquareConnect\Model\OrderLineItem;
+            $itm->setName($LANG_SHOP['tax']);
+            $itm->setUid('__tax');
+            $itm->setQuantity('1');
+            $itm->setBasePriceMoney($TaxMoney);
+            array_push($lineItems, $itm);
+        }
+
         if ($shipping > 0) {
             $ShipMoney = new \SquareConnect\Model\Money;
             $ShipMoney->setCurrency($this->currency_code);
             $ShipMoney->setAmount($Cur->toInt($shipping));
-            $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+            //$itm = new \SquareConnect\Model\OrderServiceCharge;
+            $itm = new \SquareConnect\Model\OrderLineItem;
             $itm->setName($LANG_SHOP['shipping']);
+            $itm->setUid('__shipping');
             $itm->setQuantity('1');
             $itm->setBasePriceMoney($ShipMoney);
+            //$itm->setAmountMoney($ShipMoney);
+            //$itm->setTotalMoney($ShipMoney);
+            //$itm->setCalculationPhase(TOTAL_PHASE);
+//            var_dump($itm);die;
             array_push($lineItems, $itm);
         }
 

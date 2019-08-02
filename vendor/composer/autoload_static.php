@@ -10,6 +10,7 @@ class ComposerStaticInit1daadd8f3ca124198bd053981fb36135
         'S' => 
         array (
             'Stripe\\' => 7,
+            'SquareConnect\\' => 14,
         ),
     );
 
@@ -17,6 +18,10 @@ class ComposerStaticInit1daadd8f3ca124198bd053981fb36135
         'Stripe\\' => 
         array (
             0 => __DIR__ . '/..' . '/stripe/stripe-php/lib',
+        ),
+        'SquareConnect\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/square/connect/lib',
         ),
     );
 

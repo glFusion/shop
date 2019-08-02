@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
+    'SquareConnect\\' => array($vendorDir . '/square/connect/lib'),
 );

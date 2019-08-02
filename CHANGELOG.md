@@ -3,6 +3,9 @@
 ## v1.0.0
 Release TBD
 
+  * Install square SDK from composer
+  * Use a OrderLineItem for tax with Square so it shows on the order form.
+
 ## v0.7.1
 Release 2019-08-02
 
@@ -24,7 +27,6 @@ Release 2019-08-02
   * Make IPN URL override global to all gateways.
   * Fix `valid_to` date entry for shippers.
   * Fix empty shipping rates not being saved, e.g. free shipping.
-  * Add option to excluded per-item fixed shipping from a shipping calculation.
   * Add stripe.com payment gateway.
 
 ## v0.7.0
