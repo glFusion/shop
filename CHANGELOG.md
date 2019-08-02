@@ -22,6 +22,7 @@ Release TBD
   * Fix `valid_to` date entry for shippers.
   * Fix empty shipping rates not being saved, e.g. free shipping.
   * Add option to excluded per-item fixed shipping from a shipping calculation.
+  * Add stripe.com payment gateway.
 
 ## v0.7.0
 Release 2019-06-02
