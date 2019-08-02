@@ -42,32 +42,6 @@ class test extends \Shop\Gateway
     }
 
 
-    /*
-     * Get the checkout selection for applying a gift card balance.
-     * If the GC balance exceeds the order value, create a radio button
-     * just like any other gateway to use the balance as payment in full.
-     * If the GC balance is less than the order amount, use a checkbox
-     * to give the buyer the option of applying it as partial payment.
-     *
-     * @param   boolean $selected   Indicate if this should be the selected option
-     * @return  string      HTML for the radio button or checkbox
-     */
-    public function checkoutRadio($selected = false)
-    {
-        global $LANG_SHOP;
-
-        // Get the order total from the cart, and the user's balance
-        // to decide what kind of button to show.
-        $cart = Cart::getInstance();
-        $total = $cart->getTotal();
-
-        $sel = $selected ? 'checked="checked" ' : '';
-        $radio = '<input required type="radio" name="gateway" value="' .
-                $this->gw_name . '" ' . $sel . '/>&nbsp;' . $this->gw_desc;
-        return $radio;
-    }
-
-
     /**
      *  Get the form variables for this checkout button.
      *  Used if the entire order is being paid by the gift card balance.

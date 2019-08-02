@@ -1229,7 +1229,9 @@ class Gateway
     {
         $sel = $selected ? 'checked="checked" ' : '';
         $radio = '<input required type="radio" name="gateway" value="' .
-                $this->gw_name . '" ' . $sel . '/>&nbsp;' . $this->getLogo();
+            $this->gw_name . '" id="' . $this->gw_name . '" ' . $sel . '/>';
+        $radio .= '<label for="' . $this->gw_name . '">&nbsp;' . $this->getLogo() .
+            '</label>';
         return $radio;
     }
 
