@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2014-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -385,7 +385,7 @@ class Currency
      */
     public function toInt($amount)
     {
-        return (int)($amount * (10 ** $this->decimals));
+        return round($amount * (10 ** $this->decimals), 0);
     }
 
 
@@ -398,7 +398,7 @@ class Currency
      */
     public function fromInt($intval)
     {
-        return (float)($intval / (10 ** $this->decimals));
+        return round($intval / (10 ** $this->decimals), $this->decimals);
     }
 
 }
