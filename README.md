@@ -5,6 +5,7 @@ and virtual products. The following payment gateways are supported:
 - PayPal
 - Authorize.Net
 - Square
+- Stripe
 
 This plugin is a replacement for the Paypal plugin and reflects the additional functionality and payment options that are included.
 
