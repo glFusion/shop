@@ -1103,6 +1103,7 @@ function phpblock_shop_categories()
                 ON p.cat_id = c.cat_id
             WHERE c.cat_id > 0
             AND c.enabled = 1
+            AND p.enabled = 1
             AND c.parent_id IN ($parents) " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " GROUP BY c.cat_id
@@ -1124,22 +1125,26 @@ function phpblock_shop_categories()
     $T = new Template(__DIR__ . '/templates');
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
 
-    foreach ($Cats as $A) {
-        $cnt = (int)$A['cnt'];
-        if ($A['parent_id'] > 0) {
-            // Doesn't render right if the home category counts all subcats
-            $cnt += SHOP_child_cat_product_count($A);
+    if (!empty($Cats)) {
+        foreach ($Cats as $A) {
+            $cnt = (int)$A['cnt'];
+            if ($A['parent_id'] > 0) {
+                // Doesn't render right if the home category counts all subcats
+                $cnt += SHOP_child_cat_product_count($A);
+            }
+            if ($cnt == 0) continue;
+            $T->set_block('blk_category', 'row', 'ItemRow');
+            $T->set_var(array(
+                'category'  => $A['cat_name'],
+                'count'     => $cnt,
+                'url'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
+            ) );
+            $T->parse('ItemRow', 'row', true);
         }
-        if ($cnt == 0) continue;
-        $T->set_block('blk_category', 'row', 'ItemRow');
-        $T->set_var(array(
-            'category'  => $A['cat_name'],
-            'count'     => $cnt,
-            'url'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
-        ) );
-        $T->parse('ItemRow', 'row', true);
+        return $T->parse('output', 'blk_category');
+    } else {
+        return '';
     }
-    return $T->parse('output', 'blk_category');
 }
 
 
