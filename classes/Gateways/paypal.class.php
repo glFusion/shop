@@ -390,8 +390,9 @@ class paypal extends \Shop\Gateway
         // Create a temporary file to begin storing our data.  If this fails,
         // then return.
         $dataFile = tempnam($_SHOP_CONF['tmpdir'].'cache/', 'data');
-        if (!is_writable($dataFile))
+        if (!is_writable($dataFile)) {
             return '';
+        }
 
         $plainText = '';
         $signedText = array();
@@ -425,19 +426,24 @@ class paypal extends \Shop\Gateway
         //  Create the form data by separating each value set by a new line
         //  Make sure that required fields are available.  We assume that the
         //  item_number, item_name and amount are in.
-        if (!isset($fields['business']))
+        if (!isset($fields['business'])) {
             $fields['business'] = $this->receiver_email;
-        if (!isset($fields['currency_code']))
+        }
+        if (!isset($fields['currency_code'])) {
             $fields['currency_code'] = $this->currency_code;
+        }
         foreach($fields as $key => $value) {
             $plainText .= "\n{$key}={$value}";
         }
 
         //  First create a file for storing the plain text values
         $fh = fopen($dataFile . '_plain.txt', 'wb');
-        if ($fh) fwrite($fh, $plainText);
-        else return '';
-        @fclose($fh);
+        if ($fh) {
+            fwrite($fh, $plainText);
+            @fclose($fh);
+        } else {
+            return '';
+        }
 
         // Now sign the plaintext values into the signed file
         if (!openssl_pkcs7_sign($dataFile . '_plain.txt',
@@ -524,7 +530,7 @@ class paypal extends \Shop\Gateway
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
             $vars['return'] = SHOP_URL . '/index.php?thanks=paypal';
-            $vars['cancel_return'] = SHOP_URL;
+            $vars['cancel_return'] = $P->getCancelUrl();
             $vars['amount'] = $P->getPrice();
 
             // Get the allowed buy-now quantity. If not defined, set

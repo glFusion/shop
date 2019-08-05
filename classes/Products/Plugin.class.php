@@ -99,6 +99,7 @@ class Plugin extends \Shop\Product
             $this->rating = SHOP_getVar($A, 'rating', 'float');
             // Set enabled flag, assume true unless set
             $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
+            $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
          } else {
             // probably an invalid product ID
             $this->price = 0;

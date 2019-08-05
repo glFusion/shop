@@ -111,6 +111,7 @@ class Product
         $this->isNew = true;
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
+        $this->cancel_url = SHOP_URL . '/index.php';
 
         if (is_array($id)) {
             $this->setVars($id, true);
@@ -280,6 +281,7 @@ class Product
         case 'btn_type':
         case 'item_id':
         case 'btn_text':
+        case 'cancel_url':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -2427,6 +2429,18 @@ class Product
             $retval = '';
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the cancel URL for buy-now buttons when the payment is cancelled.
+     * Cart always uses cart.php.
+     *
+     * @return  string      URL to pass to the gateway for cancelling payment
+     */
+    public function getCancelUrl()
+    {
+        return ($this->cancel_url) ? $this->cancel_url : SHOP_URL . '/index.php';
     }
 
 }   // class Product
