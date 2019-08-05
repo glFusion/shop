@@ -481,6 +481,184 @@ class Sales
         return max($price, 0);
     }
 
+
+    /**
+     * Sale Pricing Admin List View.
+     *
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.sales']}";
+
+        $header_arr = array(
+            array(
+                'text' => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'align' => 'center',
+            ),
+            array(
+                'text' => $LANG_SHOP['item_type'],
+                'field' => 'item_type',
+                'sort' => false,
+            ),
+            array(
+                'text' => $LANG_SHOP['name'],
+                'field' => 'name',
+                'sort' => false,
+            ),
+            array(
+                'text' => $LANG_SHOP['product'],
+                'field' => 'item_id',
+                'sort' => false,
+            ),
+            array(
+                'text' => $LANG_SHOP['amount'] . '/' . $LANG_SHOP['percent'],
+                'field' => 'amount',
+                'sort' => false,
+                'align' => 'center',
+            ),
+            array(
+                'text' => $LANG_SHOP['start'],
+                'field' => 'start',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['end'],
+                'field' => 'end',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'start',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.sales',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php',
+        );
+
+        $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
+            SHOP_ADMIN_URL . '/index.php?editdiscount=x',
+            array('class' => 'uk-button uk-button-success')
+        ) . '</div>';
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_discountlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the Sales admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        static $Cur = NULL;
+        static $Dt = NULL;
+        if ($Cur === NULL) $Cur = Currency::getInstance();
+        if ($Dt === NULL) $Dt = new \Date('now', $_CONF['timezone']);
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval = COM_createLink('<i class="uk-icon uk-icon-edit"></i>',
+                SHOP_ADMIN_URL . '/index.php?editdiscount&id=' . $A['id']
+            );
+            break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                SHOP_ADMIN_URL . '/index.php?deldiscount&id=' . $A['id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        case 'end':
+        case 'start':
+            $Dt->setTimestamp((int)$fieldvalue);
+            $retval = $Dt->format('Y-m-d', true);
+            break;
+
+        case 'item_id':
+            switch ($A['item_type']) {
+            case 'product':
+                $P = \Shop\Product::getInstance($fieldvalue);
+                if ($P) {
+                    $retval = $P->short_description;
+                } else {
+                    $retval = 'Unknown';
+                }
+                break;
+            case 'category':
+                if ($fieldvalue == 0) {     // root category
+                    $retval = $LANG_SHOP['home'];
+                } else {
+                    $C = \Shop\Category::getInstance($fieldvalue);
+                    $retval = $C->cat_name;
+                }
+                break;
+            default;
+                $retval = '';
+                break;
+            }
+            break;
+
+        case 'amount':
+            switch ($A['discount_type']) {
+            case 'amount':
+                $retval = $Cur->format($fieldvalue);
+                break;
+            case 'percent':
+                $retval = $fieldvalue . ' %';
+                break;
+            }
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
 }   // class Sales
 
 ?>

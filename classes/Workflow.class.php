@@ -243,6 +243,114 @@ class Workflow
         return $view;
     }
 
-}   // class Workflow
+
+    /**
+     * Display the admin list for order workflows.
+     *
+     * @param   mixed   $item_id    Numeric or string item ID
+     * @return  string      Display HTML
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
+
+        $extra = array(
+        'rec_type'  => 'workflow',
+        );
+        $sql = "SELECT *, 'workflow' AS rec_type
+            FROM {$_TABLES['shop.workflows']}";
+
+        $header_arr = array(
+            array(
+                'text' => $LANG_SHOP['name'],
+                'field' => 'wf_name',
+                'sort' => false,
+            ),
+            array(
+                'text' => $LANG_SHOP['enabled'],
+                'field' => 'wf_enabled',
+                'sort' => false,
+            ),
+        );
+
+        $defsort_arr = array(
+            'field'     => 'id',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.workflows',
+            'sql' => $sql,
+            'query_fields' => array('wf_name'),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php',
+        );
+
+        $display .= "<h2>{$LANG_SHOP['workflows']}</h2>\n";
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_workflowlist',
+            array(__CLASS__ , 'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', $extra, '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the workflow listing.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        $retval = '';
+        $rec_type = $extra['rec_type'];
+
+        switch($fieldname) {
+        case 'wf_enabled':
+            $fieldvalue = $A['enabled'];
+            if ($A['can_disable'] == 1) {
+                $retval = "<select id=\"sel{$fieldname}{$A['id']}\" name=\"{$fieldname}_sel\" " .
+                    "onchange='SHOPupdateSel(this,\"{$A['id']}\",\"enabled\", \"workflow\");'>" . LB;
+                foreach ($LANG_SHOP['wf_statuses'] as $val=>$str) {
+                    $sel = $fieldvalue == $val ? 'selected="selected"' : '';
+                    $retval .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
+                }
+                $retval .= '</select>' . LB;
+            } else {
+                $retval = $LANG_SHOP['required'];
+            }
+            break;
+
+        case 'wf_name':
+            $retval = $LANG_SHOP[$fieldvalue];
+            break;
+
+       default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+
+        return $retval;
+    }
+
+}
 
 ?>

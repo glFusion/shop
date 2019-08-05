@@ -708,6 +708,134 @@ class Shipper
         }
     }
 
+
+    /**
+     * Displays the admin list of shippers.
+     *
+     * @return  string  HTML string containing the contents of the ipnlog
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
+
+        $header_arr = array(
+            array(
+                'text'  => 'ID',
+                'field' => 'id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['name'],
+                'field' => 'name',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'name',
+            'direction' => 'ASC',
+        );
+
+        $query_arr = array(
+            'table' => 'shop.shipping',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            //'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?shipping=x',
+        );
+
+        $options = array('chkdelete' => true, 'chkfield' => 'id');
+        $filter = '';
+        $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $display .= COM_createLink(
+            $LANG_SHOP['new_ship_method'],
+            SHOP_ADMIN_URL . '/index.php?editshipping=0',
+            array('class' => 'uk-button uk-button-success')
+        );
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_shiplist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            $filter, '', $options, ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the shipping profiles.
+     *
+     * @param  string  $fieldname  Name of field (from the array, not the db)
+     * @param  mixed   $fieldvalue Value of the field
+     * @param  array   $A          Array of all fields from the database
+     * @param  array   $icon_arr   System icon array (not used)
+     * @return string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?editshipping={$A['id']}"
+            );
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                id=\"togenabled{$A['id']}\"
+                onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
+                "\"shipping\");' />" . LB;
+            break;
+
+        case 'delete':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                SHOP_ADMIN_URL. '/index.php?delshipping=x&amp;id=' . $A['id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
 }   // class Shipper
 
 ?>

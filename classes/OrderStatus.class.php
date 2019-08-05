@@ -222,6 +222,127 @@ class OrderStatus extends Workflow
         return SHOP_getVar($LANG_SHOP['orderstatus'], $name, 'string', $name);
     }
 
-}   // class OrderStatus
+
+    /**
+     * Display the admin list order statuses.
+     *
+     * @return  string      Display HTML
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
+
+        $extra = array(
+            'rec_type'  => 'orderstatus',
+        );
+        $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}";
+
+        $header_arr = array(
+            array(
+                'text'  => $LANG_SHOP['name'],
+                'field' => 'name',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['notify_buyer'],
+                'field' => 'notify_buyer',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['notify_admin'],
+                'field' => 'notify_admin',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field'     => 'id',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '', COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.orderstatus',
+            'sql' => $sql,
+            'query_fields' => array('name'),
+            'default_filter' => 'WHERE id > 1',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'has_limit' => true,    // required, or default_filter is ignored
+            'form_url' => SHOP_ADMIN_URL . '/index.php',
+        );
+
+        $display .= "<h2>{$LANG_SHOP['statuses']}</h2>\n";
+        $display .= $LANG_SHOP['admin_hdr_wfstatus'] . "\n";
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_statuslist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', $extra, '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the order status listing.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        $retval = '';
+        $rec_type = $extra['rec_type'];
+
+        switch($fieldname) {
+        case 'enabled':
+        case 'notify_buyer':
+        case 'notify_admin':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"{$fieldname}_check\"
+                id=\"tog{$fieldname}{$A['id']}\"
+                onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
+                "\"{$rec_type}\");' />" . LB;
+            break;
+
+        case 'name':
+            $retval = \Shop\OrderStatus::getDscp($fieldvalue);
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+
+        return $retval;
+    }
+
+}
 
 ?>

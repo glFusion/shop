@@ -930,6 +930,201 @@ class Category
         return $retval;
     }
 
-}   // class Category
+
+    /**
+     * Category Admin List View.
+     *
+     * @param   integer $cat_id     Optional category ID to limit listing
+     * @return  string      HTML for the category list.
+     */
+    public static function adminList($cat_id=0)
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+
+        $display = '';
+        $sql = "SELECT
+                cat.cat_id, cat.cat_name, cat.description, cat.enabled,
+                cat.grp_access, parent.cat_name as pcat
+            FROM {$_TABLES['shop.categories']} cat
+            LEFT JOIN {$_TABLES['shop.categories']} parent
+            ON cat.parent_id = parent.cat_id";
+
+        $header_arr = array(
+            array(
+                'text'  => 'ID',
+                'field' => 'cat_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['category'],
+                'field' => 'cat_name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['description'],
+                'field' => 'description',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_SHOP['parent_cat'],
+                'field' => 'pcat',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['visible_to'],
+                'field' => 'grp_access',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'] .
+                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                    $LANG_SHOP_HELP['hlp_cat_delete'] . '"></i>',
+                'field' => 'delete', 'sort' => false,
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'cat_id',
+            'direction' => 'asc',
+        );
+
+        $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $display .= COM_createLink(
+            $LANG_SHOP['new_category'],
+            SHOP_ADMIN_URL . '/index.php?editcat=x',
+            array(
+                'class' => 'uk-button uk-button-success',
+                'style' => 'float:left',
+            )
+        );
+
+        $query_arr = array(
+            'table' => 'shop.categories',
+            'sql' => $sql,
+            'query_fields' => array('cat.cat_name', 'cat.description'),
+            'default_filter' => 'WHERE 1=1',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?categories=x',
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_catlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+
+    /**
+     * Get an individual field for the category list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_TABLES, $LANG_ADMIN;
+
+        $retval = '';
+        static $grp_names = array();
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_SHOP['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}"
+            );
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                id=\"togenabled{$A['cat_id']}\"
+                onclick='SHOP_toggle(this,\"{$A['cat_id']}\",\"enabled\",".
+                "\"category\");' />" . LB;
+            break;
+
+        case 'grp_access':
+            $fieldvalue = (int)$fieldvalue;
+            if (!isset($grp_names[$fieldvalue])) {
+                $grp_names[$fieldvalue] = DB_getItem(
+                    $_TABLES['groups'],
+                    'grp_name',
+                    "grp_id = $fieldvalue"
+                );
+            }
+            $retval = $grp_names[$fieldvalue];
+            break;
+
+        case 'delete':
+            if (!\Shop\Category::isUsed($A['cat_id'])) {
+                $retval .= COM_createLink(
+                    '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                    SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
+                    array(
+                        'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
+                        'title' => $LANG_SHOP['del_item'],
+                        'class' => 'tooltip',
+                    )
+                );
+            }
+            break;
+
+        case 'description':
+            $retval = strip_tags($fieldvalue);
+            if (utf8_strlen($retval) > 80) {
+                $retval = substr($retval, 0, 80 ) . '...';
+            }
+            break;
+
+        case 'cat_name':
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            $retval = COM_createlink(
+                $retval,
+                SHOP_URL . '/index.php?category=' . $A['cat_id'],
+                array(
+                    'title' => $LANG_SHOP['storefront'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
+}
 
 ?>

@@ -1399,6 +1399,166 @@ class Gateway
         );
     }
 
+
+    /**
+     * Payment Gateway Admin View.
+     *
+     * @return  string      HTML for the gateway listing
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
+            $LANG32;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
+        $to_install = \Shop\Gateway::getUninstalled();
+
+        $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['orderby'],
+                'field' => 'orderby',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => 'ID',
+                'field' => 'id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['description'],
+                'field' => 'description',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort'  => 'false',
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'orderby',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.gateways',
+            'sql' => $sql,
+            'query_fields' => array('id', 'description'),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_gwlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+
+        if (!empty($to_install)) {
+            $display .= $LANG_SHOP['gw_notinstalled'] . ':<br />';
+            foreach ($to_install as $name=>$gw) {
+                $display .= $gw->Description() . '&nbsp;&nbsp;<a href="' .
+                    SHOP_ADMIN_URL. '/index.php?gwinstall=x&gwname=' .
+                    urlencode($name) . '">' . $LANG32[22] . '</a><br />' . LB;
+            }
+        }
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the options admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
+            );
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                id=\"togenabled{$A['id']}\"
+                onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
+                "\"gateway\");' />" . LB;
+            break;
+
+        case 'orderby':
+            $retval = COM_createLink(
+                '<i class="uk-icon uk-icon-arrow-up"></i>',
+                SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
+            ) .
+            COM_createLink(
+                '<i class="uk-icon uk-icon-arrow-down"></i>',
+                SHOP_ADMIN_URL . '/index.php?gwmove=down&id=' . $A['id']
+            );
+            break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
 }   // class Gateway
 
 ?>

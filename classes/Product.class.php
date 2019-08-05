@@ -2443,6 +2443,304 @@ class Product
         return ($this->cancel_url) ? $this->cancel_url : SHOP_URL . '/index.php';
     }
 
-}   // class Product
+
+    /**
+     * Product Admin List View.
+     *
+     * @param   integer $cat_id     Optional category ID to limit listing
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList($cat_id=0)
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+
+        $display = '';
+        $sql = "SELECT
+                p.id, p.name, p.short_description, p.description, p.price,
+                p.prod_type, p.enabled, p.featured,
+                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell,
+                c.cat_id, c.cat_name
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.categories']} c
+                ON p.cat_id = c.cat_id";
+
+        $header_arr = array(
+            array(
+                'text'  => 'ID',
+                'field' => 'id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['copy'],
+                'field' => 'copy',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['featured'],
+                'field' => 'featured',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['product'],
+                'field' => 'name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['description'],
+                'field' => 'short_description',
+                'sort' => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['category'],
+                'field' => 'cat_name',
+                'sort' => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['price'],
+                'field' => 'price',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
+                'text'  => $LANG_SHOP['prod_type'],
+                'field' => 'prod_type',
+                'sort' => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['status'],
+                'field' => 'availability',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'] .
+                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                    $LANG_SHOP_HELP['hlp_prod_delete'] . '"></i>',
+                'field' => 'delete', 'sort' => false,
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'id',
+            'direction' => 'asc',
+        );
+
+        $display .= COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+        $display .= COM_createLink($LANG_SHOP['new_product'],
+            SHOP_ADMIN_URL . '/index.php?editproduct=x',
+            array(
+                'class' => 'uk-button uk-button-success',
+                'style' => 'float:left',
+            )
+        );
+
+        if ($cat_id > 0) {
+            $def_filter = "WHERE c.cat_id='$cat_id'";
+        } else {
+            $def_filter = 'WHERE 1=1';
+        }
+        $query_arr = array(
+            'table' => 'shop.products',
+            'sql'   => $sql,
+            'query_fields' => array(
+                'p.name',
+                'p.short_description',
+                'p.description',
+                'c.cat_name',
+            ),
+            'default_filter' => $def_filter,
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php',
+        );
+        $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+        $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
+            onchange="javascript: document.location.href=\'' .
+                SHOP_ADMIN_URL .
+                '/index.php?view=prodcts&amp;cat_id=\'+' .
+                'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.categories'], 'cat_id, cat_name', $cat_id, 1
+            ) .
+            "</select>" . LB;
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_productlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            $filter, '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the history screen.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        static $today = NULL;
+
+        if ($today === NULL) {
+            $today = SHOP_now()->format('Y-m-d');
+        }
+        $retval = '';
+
+        switch($fieldname) {
+        case 'copy':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-clone tooltip" title="' .
+                $LANG_SHOP['copy_product'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
+            );
+            break;
+
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?editproduct=x&amp;id={$A['id']}"
+            );
+            break;
+
+        case 'delete':
+            if (!\Shop\Product::isUsed($A['id'])) {
+                $retval .= COM_createLink(
+                    '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                    SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
+                    array(
+                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                        'title' => $LANG_SHOP['del_item'],
+                        'class' => 'tooltip',
+                    )
+                );
+            } else {
+                $retval = '';
+            }
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                    id=\"togenabled{$A['id']}\"
+                    onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
+                    "\"product\");' />" . LB;
+            break;
+
+        case 'availability':
+            $icon = 'uk-icon-circle';
+            if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
+                $cls = 'uk-text-danger';
+                $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
+            } elseif ($A['track_onhand'] == 1 && $A['onhand'] < 1) {
+                $cls = $A['oversell'] > 0 ? 'uk-text-danger' : 'uk-text-warning';
+                $caption = $LANG_SHOP['out_of_stock'];
+            } else {
+                $cls = 'uk-text-success';
+                $caption = $LANG_SHOP['available'] . '.';
+                if ($A['track_onhand'] == 1) {
+                    $caption .= "<br />{$LANG_SHOP['onhand']} = {$A['onhand']}.";
+                }
+            }
+            $retval = "<i class=\"tooltip uk-icon $icon $cls\" title=\"$caption\"></i>";
+            break;
+
+        case 'featured':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                id=\"togfeatured{$A['id']}\"
+                onclick='SHOP_toggle(this,\"{$A['id']}\",\"featured\",".
+                "\"product\");' />" . LB;
+            break;
+
+        case 'name':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/report.php?run=itempurchase&item_id=' . $A['id'],
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['item_history'],
+                )
+             );
+            break;
+
+        case 'prod_type':
+            if (isset($LANG_SHOP['prod_types'][$A['prod_type']])) {
+                $retval = $LANG_SHOP['prod_types'][$A['prod_type']];
+            } else {
+                $retval = '';
+            }
+            break;
+
+        case 'cat_name':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?cat_id=' . $A['cat_id']
+            );
+            break;
+
+        case 'short_description':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_URL . '/detail.php?id=' . $A['id'],
+                array(
+                    'class' => 'tooltip',
+                    'title' => $LANG_SHOP['see_details'],
+                )
+            );
+            break;
+
+        case 'price':
+            $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
+}
 
 ?>

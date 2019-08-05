@@ -445,6 +445,208 @@ class Attribute
         }
     }
 
-}   // class Attribute
+
+    /**
+     * Category Admin List View.
+     *
+     * @param   integer $cat_id     Optional attribute ID to limit listing
+     * @return  string      HTML for the attribute list.
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+
+        $sql = "SELECT a.*, p.name AS prod_name
+            FROM {$_TABLES['shop.prod_attr']} a
+            LEFT JOIN {$_TABLES['shop.products']} p
+            ON a.item_id = p.id
+            WHERE 1=1 ";
+
+        if (isset($_POST['product_id']) && $_POST['product_id'] != '0') {
+            $sel_prod_id = (int)$_POST['product_id'];
+            $sql .= "AND p.id = '$sel_prod_id' ";
+        } else {
+            $sel_prod_id = '';
+        }
+
+        $header_arr = array(
+            array(
+                'text' => 'ID',
+                'field' => 'attr_id',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['edit'],
+                'field' => 'edit',
+                'sort' => false,
+                'align' => 'center',
+            ),
+            array(
+                'text' => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort' => false,
+                'align' => 'center',
+            ),
+            array(
+                'text' => $LANG_SHOP['product'],
+                'field' => 'prod_name',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['attr_name'],
+                'field' => 'attr_name',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['attr_value'],
+                'field' => 'attr_value',
+                'sort' => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['orderby'],
+                'field' => 'orderby',
+                'align' => 'center',
+                'sort'  => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['attr_price'],
+                'field' => 'attr_price',
+                'align' => 'right',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort' => 'false',
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'prod_name,attr_name,orderby',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $display .= COM_createLink($LANG_SHOP['new_attr'],
+            SHOP_ADMIN_URL . '/index.php?editattr=0',
+            array(
+                'style' => 'float:left;',
+                'class' => 'uk-button uk-button-success',
+            )
+        );
+        $product_selection = COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id);
+        $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
+            onchange=\"this.form.submit();\">
+            <option value=\"0\">-- Any --</option>\n" .
+            $product_selection .
+            "</select>&nbsp;\n";
+
+        $query_arr = array('table' => 'shop.prod_attr',
+            'sql' => $sql,
+            'query_fields' => array('p.name', 'attr_name', 'attr_value'),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?attributes=x',
+        );
+
+        $options = array('chkdelete' => true, 'chkfield' => 'attr_id');
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_attrlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            $filter, '', $options, ''
+        );
+
+        // Create the "copy attributes" form at the bottom
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('copy_attr_form', 'copy_attributes_form.thtml');
+        $T->set_var(array(
+            'src_product'       => $product_selection,
+            'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
+            'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
+        ) );
+        $display .= $T->parse('output', 'copy_attr_form');
+
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the attribute list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?editattr=x&amp;attr_id={$A['attr_id']}"
+            );
+            break;
+
+        case 'orderby':
+            $retval = COM_createLink(
+                '<i class="uk-icon uk-icon-arrow-up"></i>',
+                SHOP_ADMIN_URL . '/index.php?attrmove=up&id=' . $A['attr_id']
+            ) .
+            COM_createLink('<i class="uk-icon uk-icon-arrow-down"></i>',
+                SHOP_ADMIN_URL . '/index.php?attrmove=down&id=' . $A['attr_id']
+            );
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                id=\"togenabled{$A['attr_id']}\"
+                onclick='SHOP_toggle(this,\"{$A['attr_id']}\",\"enabled\",".
+                "\"attribute\");' />" . LB;
+            break;
+
+        case 'delete':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                SHOP_ADMIN_URL. '/index.php?deleteopt=x&amp;attr_id=' . $A['attr_id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        case 'attr_price':
+            $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+
+        return $retval;
+    }
+
+}
 
 ?>

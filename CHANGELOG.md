@@ -5,6 +5,8 @@ Release TBD
 
   * Install square SDK from composer
   * Use a OrderLineItem for tax with Square so it shows on the order form.
+  * Allow products to set the `cancel_return` value in Buy Now buttons.
+  * Move admin list functions into the respective classes.
 
 ## v0.7.1
 Release 2019-08-02

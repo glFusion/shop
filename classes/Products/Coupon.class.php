@@ -715,6 +715,158 @@ class Coupon extends \Shop\Product
         return $retval;
     }
 
+
+    /**
+     * Display the purchase history for coupons.
+     *
+     * @param   mixed   $item_id    Numeric or string item ID
+     * @return  string      Display HTML
+     */
+    public static function adminList()
+    {
+        global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
+
+        USES_lib_admin();
+        $filt_sql = '';
+        if (isset($_GET['filter']) && isset($_GET['value'])) {
+            switch ($_GET['filter']) {
+            case 'buyer':
+            case 'redeemer':
+                $filt_sql = "WHERE `{$_GET['filter']}` = '" . DB_escapeString($_GET['value']) . "'";
+                break;
+            }
+        }
+        $sql = "SELECT * FROM {$_TABLES['shop.coupons']} $filt_sql";
+
+        $header_arr = array(
+            array(
+                'text' => $LANG_SHOP['code'],
+                'field' => 'code',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['purch_date'],
+                'field' => 'purchased',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['amount'],
+                'field' => 'amount',
+                'sort' => false,
+                'align' => 'right',
+            ),
+            array(
+                'text' => $LANG_SHOP['balance'],
+                'field' => 'balance',
+                'sort' => false,
+                'align' => 'right',
+            ),
+            array(
+               'text' => $LANG_SHOP['buyer'],
+                'field' => 'buyer',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['redeemer'],
+                'field' => 'redeemer',
+                'sort' => true,
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'purchased',
+            'direction' => 'DESC',
+        );
+
+        $query_arr = array(
+            'table' => 'shop.coupons',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?coupons=x',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+        $display .= '<h2>' . $LANG_SHOP['couponlist'] . '</h2>';
+        $display .= '<div>' . COM_createLink(
+
+            $LANG_SHOP['send_giftcards'],
+            SHOP_ADMIN_URL . '/index.php?sendcards_form=x',
+            array('class' => 'uk-button uk-button-primary')
+        ) .
+        '</div>';
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_couponlist',
+            array(__CLASS__, 'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the coupon listing.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        $retval = '';
+        static $username = array();
+        static $Cur = NULL;
+        static $Dt = NULL;
+        if ($Dt === NULL) $Dt = new \Date('now', $_CONF['timezone']);
+        if ($Cur === NULL) $Cur = \Shop\Currency::getInstance();
+
+        switch($fieldname) {
+        case 'buyer':
+        case 'redeemer':
+            if (!isset($username[$fieldvalue])) {
+                $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
+            }
+            $retval = COM_createLink($username[$fieldvalue],
+                SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
+                array(
+                    'title' => 'Click to filter by ' . $fieldname,
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        case 'amount':
+        case 'balance':
+            $retval = $Cur->FormatValue($fieldvalue);
+            break;
+
+        case 'purchased':
+        case 'redeemed':
+            $Dt->setTimestamp((int)$fieldvalue);
+            $retval = SHOP_dateTooltip($Dt);
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+
+        return $retval;
+    }
+
 }
 
 ?>
