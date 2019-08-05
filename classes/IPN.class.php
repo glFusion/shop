@@ -15,7 +15,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -160,6 +160,7 @@ class IPN
         case 'gw_name':         // Name of gateway used for payment
         case 'currency':        // Currenc code of payment
         case 'order_id':        // Internal order ID
+        case 'parent_txn_id':   // Parent txn ID for adjustments
             $this->properties[$key] = trim($val);
             break;
 
@@ -619,19 +620,21 @@ class IPN
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        return true;
-
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
         if ($this->order_id !== NULL) {
             $order_id = $this->order_id;
-        } else {
-            $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
-                "pmt_txn_id = '" . DB_escapeString($this->parent_txn_id)
-                . "'");
+        } elseif ($this->parent_txn_id != '') {
+            $order_id = DB_getItem(
+                $_TABLES['shop.orders'],
+                'order_id',
+                "pmt_txn_id = '" . DB_escapeString($this->parent_txn_id) . "'"
+            );
         }
 
-        $Order = Order::getInstance($order_id);
+        if (is_string($order_id)) {
+            $Order = Order::getInstance($order_id);
+        }
         if ($Order->order_id == '') {
             return false;
         }
@@ -640,8 +643,8 @@ class IPN
         $refund_amt = abs((float)$this->pmt_gross);
 
         $item_total = 0;
-        foreach ($Order->items as $key => $data) {
-            $item_total += $data['quantity'] * $data['price'];
+        foreach ($Order->getItems() as $key => $Item) {
+            $item_total += $Item->quantity * $Item->price;
         }
         $item_total += $Order->miscCharges();
 
@@ -658,7 +661,9 @@ class IPN
             // Update the order status to Refunded
             $Order->updateStatus('refunded');
         }
-    }  // function handleRefund
+        $msg = sprintf($LANG_SHOP['refunded_x'], Currency::getInstance($this->currency)->Format($refund_amt));
+        $Order->Log($msg);
+    }
 
 
     /**

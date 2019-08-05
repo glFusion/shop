@@ -484,6 +484,7 @@ $LANG_SHOP = array (
 'copy_product' => 'Duplicate Product',
 'err_missing_email' => 'A valid email address is required.',
 'use_fixed' => 'Include per-item fixed shipping',
+'refunded_x' => 'Refunded %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

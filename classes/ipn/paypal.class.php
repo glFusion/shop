@@ -58,9 +58,7 @@ class paypal extends \Shop\IPN
         if (isset($A['invoice'])) {
             $this->order_id = $A['invoice'];
         }
-
-        //if (isset($A['parent_txn_id']))
-        //    $this->parent_txn_id = $A['parent_txn_id'];
+        $this->parent_txn_id = SHOP_getVar($A, 'parent_txn_id');
 
         // Check a couple of vars to see if a shipping address was supplied
         if (isset($A['address_street']) || isset($A['address_city'])) {

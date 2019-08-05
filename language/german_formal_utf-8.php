@@ -6,7 +6,7 @@
  * @translated  Siegfried Gutschi <sigi AT modellbaukalender DOT info> (Dez 2016)
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -478,6 +478,7 @@ $LANG_SHOP = array (
 'copy_product' => 'Duplicate Product',
 'err_missing_email' => 'A valid email address is required.',
 'use_fixed' => 'Include per-item fixed shipping',
+'refunded_x' => 'Refunded %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
