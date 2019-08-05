@@ -7,6 +7,8 @@ Release TBD
   * Use a OrderLineItem for tax with Square so it shows on the order form.
   * Allow products to set the `cancel_return` value in Buy Now buttons.
   * Move admin list functions into the respective classes.
+  * Add Stripe payment gateway.
+  * Fix authorize.net setting paid status.
 
 ## v0.7.1
 Release 2019-08-02

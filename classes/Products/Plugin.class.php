@@ -157,7 +157,9 @@ class Plugin extends \Shop\Product
            if (is_string($ipn_data['custom'])) {
                $ipn_data['custom'] = @unserialize($ipn_data['custom']);
                // Final check in case serialization failed
-               if (!is_array($ipn_data['custom'])) $ipn_data['custom'] = array();
+               if (!is_array($ipn_data['custom'])) {
+                   $ipn_data['custom'] = array();
+               }
            }
         } else {
             $ipn_data['custom'] = array();  // should be set, but just in case.

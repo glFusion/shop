@@ -48,6 +48,7 @@ class authorizenet extends \Shop\IPN
             $this->status = 'pending';
             break;
         }
+        $this->ipn_data['status'] = $this->status;
     }
 
 
