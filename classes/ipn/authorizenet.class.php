@@ -148,6 +148,7 @@ class authorizenet extends \Shop\IPN
         // support pass-through user variables
         $this->custom = $this->Order->getInfo();
         $this->custom['uid'] = $this->Order->uid;
+        $this->ipn_data['custom'] = $this->custom;
 
         // Hack to get the gift card amount into the right variable name
         /*$by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');

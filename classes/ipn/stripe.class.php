@@ -206,7 +206,7 @@ class stripe extends \Shop\IPN
         }
         // Backward compatibility, get custom data into IPN for plugin
         // products.
-        //$this->ipn_data['custom'] = $this->custom;
+        $this->ipn_data['custom'] = $this->custom;
 
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the
