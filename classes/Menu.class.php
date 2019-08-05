@@ -70,6 +70,7 @@ class Menu
     {
         global $_CONF, $LANG_ADMIN, $LANG_SHOP, $_SHOP_CONF;
 
+        USES_lib_admin();
         if (isset($LANG_SHOP['admin_hdr_' . $view]) &&
             !empty($LANG_SHOP['admin_hdr_' . $view])) {
             $hdr_txt = $LANG_SHOP['admin_hdr_' . $view];
