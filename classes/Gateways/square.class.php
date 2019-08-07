@@ -159,6 +159,7 @@ class square extends \Shop\Gateway
      * @uses    Gateway::_Supports()
      * @uses    _encButton()
      * @uses    getActionUrl()
+     * @param   object  $cart   Shopping cart object
      * @return  string      HTML for purchase button
      */
     public function gatewayVars($cart)
@@ -538,10 +539,10 @@ class square extends \Shop\Gateway
 
 
     /**
-     * Verify a transaction.
-     * Gets parameters from $_GET values in the redirect_url
+     * Get the transaction data using the ID supplied in the IPN.
      *
-     * @return  boolean True if transaction is good, False if not
+     * @param   string  $trans_id   Transaction ID from IPN
+     * @return  array   Array of transaction data.
      */
     public function getTransaction($trans_id)
     {
@@ -559,12 +560,6 @@ class square extends \Shop\Gateway
         $resp = $api->retrieveTransaction($this->loc_id, $trans_id);
         $resp = json_decode($resp,true);
         return $resp;
-    }
-
-
-    public function runPostSave()
-    {
-        $this->_postSaveConfig();
     }
 
 

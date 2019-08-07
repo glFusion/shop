@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -1251,7 +1251,7 @@ class Gateway
 
     /**
      * Stub function to get the HTML for a checkout button.
-     * Each child class must supply this.
+     * Each child class must supply this if it supports checkout.
      *
      * @return  string  HTML for checkout button
      */
@@ -1360,6 +1360,7 @@ class Gateway
 
     /**
      * Get gateway-specific instructions, if any.
+     * Gateways can override this and call adminWarnBB().
      *
      * @return  string  Instruction text
      */
@@ -1384,13 +1385,15 @@ class Gateway
      * Create a warning message about whitelisting the IPN in Bad Behavior.
      * Common message applies to several gateways.
      *
+     * @see     getInstructions()
      * @return  string      Warning message
      */
     protected function adminWarnBB()
     {
         global $LANG_SHOP_HELP, $_CONF;
 
-        return sprintf($LANG_SHOP_HELP['gw_bb2_instr'],
+        return sprintf(
+            $LANG_SHOP_HELP['gw_bb2_instr'],
             str_replace(
                 $_CONF['site_url'],
                 '',
