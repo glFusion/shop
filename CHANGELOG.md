@@ -9,6 +9,7 @@ Release TBD
   * Move admin list functions into the respective classes.
   * Add Stripe payment gateway.
   * Fix authorize.net setting paid status.
+  * Fix shipping selection not correctly updating total on cart view.
   * Allow use of SKU as product ID in URLs.
   * Move catalog-related admin options under one menu to shorten the admin menu.
 

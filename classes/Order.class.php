@@ -1707,13 +1707,15 @@ class Order
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
+        // Save the base charge (order total - current shipping charge).
+        $base_chg = $this->subtotal + $this->handling + $this->tax;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->id == $best->id ? 'selected="selected"' : '';
             $s_amt = $shipper->ordershipping->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
-                'total'     => (string)Currency::getInstance()->FormatValue($this->subtotal + $s_amt),
+                'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
             $ship_rates[$shipper->id] = $rate;
             $T->set_var(array(
