@@ -9,6 +9,7 @@ Release TBD
   * Move admin list functions into the respective classes.
   * Add Stripe payment gateway.
   * Fix authorize.net setting paid status.
+  * Fix shipping selection not correctly updating total on cart view.
 
 ## v0.7.1
 Release 2019-08-02
