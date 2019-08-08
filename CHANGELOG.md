@@ -9,6 +9,8 @@ Release TBD
   * Move admin list functions into the respective classes.
   * Add Stripe payment gateway.
   * Fix authorize.net setting paid status.
+  * Allow use of SKU as product ID in URLs.
+  * Move catalog-related admin options under one menu to shorten the admin menu.
 
 ## v0.7.1
 Release 2019-08-02

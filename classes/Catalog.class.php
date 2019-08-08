@@ -285,7 +285,7 @@ class Catalog
                 'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => COM_buildUrl(SHOP_URL . '/detail.php?id='. $P->id),
+                'item_url'      => $P->getLink(),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->track_onhand ? 'true' : '',
                 'qty_onhand'    => $P->onhand,

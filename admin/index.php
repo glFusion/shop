@@ -49,10 +49,11 @@ $expected = array(
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
-    'migrate_pp', 'purge_trans',
+    'migrate_pp', 'purge_trans', 'delag', 'agmove',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
+    'attr_grp', 'editag',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
 );
@@ -243,6 +244,15 @@ case 'gwsave':
         $status = $gw->SaveConfig($_POST);
     }
     $view = 'gwadmin';
+    break;
+
+case 'agmove':
+    $ag_id = SHOP_getVar($_GET, 'id', 'integer');
+    if ($ag_id > 0) {
+        $AG = new \Shop\AttributeGroup($ag_id);
+        $AG->moveRow($actionval);
+    }
+    $view = 'attr_grp';
     break;
 
 case 'attrmove':
@@ -500,14 +510,19 @@ case 'editcat':
     break;
 
 case 'categories':
+    $content .= Shop\Menu::adminAttribs($view);
     $content .= Shop\Category::adminList();
+    $view = 'products';
     break;
 
 case 'sales':
+    $content .= Shop\Menu::adminAttribs($view);
     $content .= Shop\Sales::adminList();
+    $view = 'products';   // cheating, to get the active menu set
     break;
 
 case 'attributes':
+    $content .= Shop\Menu::adminAttribs('attributes');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
         // Delete some checked attributes
         foreach ($_POST['delitem'] as $attr_id) {
@@ -515,6 +530,19 @@ case 'attributes':
         }
     }
     $content .= Shop\Attribute::adminList();
+    $view = 'products';
+    break;
+
+case 'attr_grp':
+    $content .= Shop\Menu::adminAttribs('attr_grp');
+    if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
+        // Delete some checked attributes
+        foreach ($_POST['delitem'] as $ag_id) {
+            \Shop\AttributeGroup::Delete($ag_id);
+        }
+    }
+    $content .= Shop\AttributeGroup::adminList();
+    $view = 'products';   // cheating, to get the active menu set
     break;
 
 case 'shipping':
@@ -525,6 +553,12 @@ case 'editattr':
     $attr_id = SHOP_getVar($_GET, 'attr_id');
     $Attr = new \Shop\Attribute($attr_id);
     $content .= $Attr->Edit();
+    break;
+
+case 'editag':
+    $ag_id = SHOP_getVar($_GET, 'ag_id');
+    $AG = new \Shop\AttributeGroup($ag_id);
+    $content .= $AG->Edit();
     break;
 
 case 'editdiscount':
@@ -614,6 +648,7 @@ default:
     SHOP_setUrl();
     $view = 'products';
     $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+    $content .= Shop\Menu::adminAttribs($view);
     $content .= Shop\Product::adminList($cat_id);
     break;
 }

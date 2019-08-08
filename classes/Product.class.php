@@ -175,7 +175,7 @@ class Product
      */
     public static function getInstance($A, $mods=array())
     {
-        global $_TABLES;
+        global $_SHOP_CONF, $_TABLES;
         static $P = array();    // cache for internal products
 
         if (is_array($A)) {
@@ -203,12 +203,19 @@ class Product
                     $A = Cache::get($cache_key);
                     if (!is_array($A)) {
                         // If not found in cache
+                        if ($_SHOP_CONF['sku_url']) {
+                            $key = 'name';
+                            $id = DB_escapeString($item[0]);
+                        } else {
+                            $key = 'id';
+                            $id = (int)$item[0];
+                        }
                         $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                                WHERE id = " . (int)$item[0];
+                                WHERE $key = '$id'";
                         $res = DB_query($sql);
                         $A = DB_fetchArray($res, false);
                         if (isset($A['id'])) {
-                            Cache::set($cache_key, $A, array('products', $A['id']));
+                            Cache::set($cache_key, $A, array('products'));
                         }
                     }
                 }
@@ -275,7 +282,6 @@ class Product
         case 'dt_add':
         case 'description':
         case 'short_description':
-        case 'name':
         case 'file':
         case 'keywords':
         case 'btn_type':
@@ -284,6 +290,11 @@ class Product
         case 'cancel_url':
             // String values
             $this->properties[$var] = trim($value);
+            break;
+
+        case 'name':
+        case 'old_sku':
+            $this->properties[$var] = trim(preg_replace("/[^A-Za-z0-9 ]/", '', $value));
             break;
 
         case 'enabled':
@@ -361,6 +372,7 @@ class Product
         $this->enabled = isset($row['enabled']) ? $row['enabled'] : 0;
         $this->featured = isset($row['featured']) ? $row['featured'] : 0;
         $this->name = $row['name'];
+        $this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->cat_id = $row['cat_id'];
         $this->short_description = $row['short_description'];
         $this->price = $row['price'];
@@ -469,9 +481,11 @@ class Product
         $cache_key = self::_makeCacheKey($this->id, 'attr');
         $this->options = Cache::get($cache_key);
         if ($this->options === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.prod_attr']}
-                    WHERE item_id = '{$this->id}' AND enabled = 1
-                    ORDER BY attr_name, orderby ASC";
+            $sql = "SELECT at.* FROM {$_TABLES['shop.prod_attr']} at
+                LEFT JOIN {$_TABLES['shop.attr_grp']} ag
+                    ON ag.ag_id = at.ag_id
+                WHERE at.item_id = '{$this->id}' AND at.enabled = 1
+                ORDER BY ag.ag_orderby, at.orderby ASC";
             $result = DB_query($sql);
             $this->options = array();
             while ($A = DB_fetchArray($result, false)) {
@@ -502,6 +516,11 @@ class Product
 
         if (is_array($A)) {
             $this->setVars($A);
+        }
+
+        $errs = $this->_Validate();
+        if (!empty($errs)) {
+            $this->Errors = $errs;
         }
 
         if (isset($A['delimg']) && is_array($A['delimg'])) {
@@ -630,10 +649,13 @@ class Product
         }
 
         if (empty($this->Errors)) {
+            COM_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
             SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
             COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $this->id);
             return false;
@@ -775,8 +797,6 @@ class Product
 
         // Add the current product ID to the form if it's an existing product.
         if ($id > 0) {
-            $T->set_var('id', '<input type="hidden" name="id" value="' .
-                        $this->id .'" />');
             $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->name);
 
         } else {
@@ -788,6 +808,7 @@ class Product
         $T->set_var(array(
             //'post_options'  => $post_options,
             'product_id'    => $this->id,
+            'old_sku'       => $this->name,
             'name'          => htmlspecialchars($this->name, ENT_QUOTES, COM_getEncodingt()),
             'category'      => $this->cat_id,
             'short_description' => htmlspecialchars($this->short_description, ENT_QUOTES, COM_getEncodingt()),
@@ -1037,14 +1058,14 @@ class Product
         $JT->set_file('js', 'detail_js.thtml');
 
         $name = $this->name;
-        $l_desc = PLG_replaceTags($this->description);
-        $s_desc = PLG_replaceTags($this->short_description);
+        $l_dscp = PLG_replaceTags($this->description);
+        $s_dscp = PLG_replaceTags($this->short_description);
 
         // Highlight the query terms if coming from a search
         if (isset($_REQUEST['query']) && !empty($_REQUEST['query'])) {
             $name   = COM_highlightQuery($name, $_REQUEST['query']);
-            $l_desc = COM_highlightQuery($l_desc, $_REQUEST['query']);
-            $s_desc = COM_highlightQuery($s_desc, $_REQUEST['query']);
+            $l_dscp = COM_highlightQuery($l_dscp, $_REQUEST['query']);
+            $s_dscp = COM_highlightQuery($s_dscp, $_REQUEST['query']);
         }
 
         $this->_act_price = $this->getSalePrice();
@@ -1126,13 +1147,14 @@ class Product
                 if ($type == 'select') {
                     if ($init_price_adj === NULL) $init_price_adj = $Attr['attr_price'];
                     if ($Attr['attr_price'] != 0) {
-                        $attr_str = sprintf(" ( %+.2f )", $Attr['attr_price']);
+                        $attr_str = sprintf(" ( %+0.2f )", $Attr['attr_price']);
                     } else {
                         $attr_str = '';
                     }
+                    $val = htmlspecialchars($Attr['attr_value']);
                     $attributes .= '<option value="' . $id . '|' .
-                        $Attr['attr_value'] . '|' . $Attr['attr_price'] . '">' .
-                        $Attr['attr_value'] . $attr_str .
+                        $val . '|' . $Attr['attr_price'] . '">' .
+                        $val . $attr_str .
                         '</option>' . LB;
                 /*} else {
                     $attributes .= "<input type=\"hidden\" name=\"on{$i}\"
@@ -1169,8 +1191,8 @@ class Product
             'cur_code'          => $Cur->code,   // USD, etc.
             'id'                => $prod_id,
             'name'              => $name,
-            'short_description' => $s_desc,
-            'description'       => $l_desc,
+            'short_description' => $s_dscp,
+            'description'       => $l_dscp,
             'cur_decimals'      => $Cur->Decimals(),
             'init_price'        => $Cur->FormatValue($this->_act_price),
             'price'             => $Cur->FormatValue($this->getPrice()),
@@ -2088,7 +2110,10 @@ class Product
      */
     public function getLink()
     {
-        return COM_buildUrl(SHOP_URL . '/detail.php?id=' . $this->id);
+        global $_SHOP_CONF;
+
+        $id = $_SHOP_CONF['sku_url'] ? $this->name : $this->id;
+        return COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
     }
 
 
@@ -2536,7 +2561,7 @@ class Product
         );
 
         $defsort_arr = array(
-            'field' => 'id',
+            'field' => 'name',
             'direction' => 'asc',
         );
 
@@ -2741,6 +2766,48 @@ class Product
         return $retval;
     }
 
+
+    /**
+     * Verify that the product ID matches the specified value.
+     * Used to ensure that the correct product was retrieved.
+     *
+     * @param   integer|string  $id     Expected product ID or name
+     * @return  boolean     True if product matches.
+     */
+    public function verifyID($id)
+    {
+        global $_SHOP_CONF;
+
+        if ($_SHOP_CONF['sku_url']) {
+            return $this->name == $id;
+        } else {
+            return $this->id == $id;
+        }
+    }
+
+
+    /**
+     * Validate the form fields and return an array of errors.
+     *
+     * return   array   Array of error messages, empty if all is valid
+     */
+    private function _Validate()
+    {
+        global $_TABLES;
+
+        $errors = array();
+        $name = DB_escapeString($this->name);
+        $sku_err = (int)DB_getItem(
+            $_TABLES['shop.products'],
+            'count(*)',
+            "name = '$name' AND id <> {$this->id}"
+        );
+
+        if ($sku_err > 0) {
+            $errors[] = 'SKU is not unique';
+        }
+        return $errors;
+    }
 }
 
 ?>

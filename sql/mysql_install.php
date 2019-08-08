@@ -123,7 +123,8 @@ $_SQL = array(
 ) ENGINE=MyISAM",
 
 'shop.prod_attr' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
-  `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+    `ag_id` int(11) unsigned NOT NULL,
   `item_id` int(11) unsigned DEFAULT NULL,
   `attr_name` varchar(64) DEFAULT NULL,
   `attr_value` varchar(64) DEFAULT NULL,
@@ -506,5 +507,19 @@ $SHOP_UPGRADE['0.7.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
 );
+$SHOP_UPGRADE['1.0.0'] = array(
+    "CREATE TABLE `{$_TABLES['attr_grp']}` (
+        `ag_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `ag_name` varchar(11) NOT NULL,
+        `ag_orderby` tinyint(2) NOT NULL DEFAULT 0,
+        PRIMARY KEY (`ag_id`),
+        KEY `orderby` (`ag_orderby`,`ag_name`)
+    )",
+    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
+    "INSET INTO {$_TABLES['shop.attr_grp']} (ag_name) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']})",
+    "UPDATE {$_TABLES['shop.prod_attr']} SET ag_id = (SELECT ag_id FROM {$_TABLES['shop.attr_grp']} WHERE `ag_name` = `attr_name`)",
+);
+
+$_SQL['attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
 
 ?>

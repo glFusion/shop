@@ -316,6 +316,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'sku_url',
+        'default_value' => false,
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 2,
+        'sort' => 250,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array(
         'name' => 'fs_paths',               // Paths fieldset

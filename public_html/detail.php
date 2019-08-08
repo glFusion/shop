@@ -47,7 +47,7 @@ $content = '';
 $breadcrumbs = '';
 if (!empty($id)) {
     $P = \Shop\Product::getInstance($id);
-    if ($P->id == $id && $P->hasAccess()) {
+    if ($P->verifyID($id) && $P->hasAccess()) {
         $breadcrumbs = $P->Cat->Breadcrumbs();
         $content .= $P->Detail();
     }

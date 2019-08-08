@@ -1703,6 +1703,26 @@ function plugin_configmanager_select_currency_shop()
 }
 
 
+function plugin_configmanager_sku_url_shop_validate($val)
+{
+    global $_TABLES, $LANG_SHOP_HELP;
+
+    if ($val) {
+        $all_skus = DB_count($_TABLES['shop.products']);
+        $uniq_skus = (int)DB_getItem(
+            $_TABLES['shop.products'],
+            'count(DISTINCT name)',
+            '1=1'
+        );
+        if ($uniq_skus < $all_skus) {
+            COM_setMsg($LANG_SHOP_HELP['err_sku_nonuniq'], 'error');
+            return 0;
+        }
+    }
+    return $val;
+}
+
+
 /**
  * Display variables related to the shop in Account Settings.
  *

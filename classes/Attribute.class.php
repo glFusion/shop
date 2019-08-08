@@ -81,6 +81,7 @@ class Attribute
 
         case 'attr_value':
         case 'attr_name':
+        case 'sku':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -133,6 +134,7 @@ class Attribute
         $this->attr_price = $row['attr_price'];
         $this->enabled = $row['enabled'];
         $this->orderby = $row['orderby'];
+        $this->sku = $row['sku'];
     }
 
 
@@ -308,9 +310,11 @@ class Attribute
             'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
-                        $_TABLES['shop.prod_attr'],
-                        'DISTINCT attr_name,attr_name',
-                        $this->attr_name, 1),
+                        $_TABLES['shop.attr_grp'],
+                        'ag_id,ag_name',
+                        $this->ag_id,
+                        0
+                    ),
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );

@@ -81,29 +81,29 @@ class Menu
         $menu_arr = array(
             array(
                 'url' => SHOP_ADMIN_URL . '/index.php',
-                'text' => $LANG_SHOP['products'],
+                'text' => $LANG_SHOP['catalog'],
                 'active' => $view == 'products' ? true : false,
             ),
-            array(
+            /*array(
                 'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
                 'text' => $LANG_SHOP['categories'],
                 'active' => $view == 'categories' ? true : false,
-            ),
-            array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?attributes=x',
+            ),*/
+            /*array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?attr_grp=x',
                 'text' => $LANG_SHOP['attributes'],
                 'active' => $view == 'attributes' ? true : false,
-            ),
+            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
                 'text' => $LANG_SHOP['shipping'],
                 'active' => $view == 'shipping' ? true : false,
             ),
-            array(
+            /*array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
-            ),
+            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
                 'text' => $LANG_SHOP['gateways'],
@@ -162,6 +162,62 @@ class Menu
         );
         return $retval;
     }
+
+
+    /**
+     * Create the administrator menu.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminAttribs($view='')
+    {
+        global $LANG_SHOP;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?products=x',
+                'text' => $LANG_SHOP['products'],
+                'active' => $view == 'products' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
+                'text' => $LANG_SHOP['categories'],
+                'active' => $view == 'categories' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?attr_grp=x',
+                'text' => $LANG_SHOP['attr_grp'],
+                'active' => $view == 'attr_grp' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?attributes=x',
+                'text' => $LANG_SHOP['attributes'],
+                'active' => $view == 'attributes' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
+                'text' => $LANG_SHOP['sale_prices'],
+                'active' => $view == 'sales' ? true : false,
+            ),
+        );
+        $retval = '<ul class="uk-subnav uk-subnav-pill">' . LB;
+        foreach ($menu_arr as $mnu) {
+            if ($mnu['active']) {
+                $cls = 'class="uk-active"';
+                $url = '#!';
+            } else {
+                $cls = '';
+                $url = $mnu['url'];
+            }
+            $retval .= '<li ' . $cls . '>' .
+                COM_createLink($mnu['text'], $url) .
+                '</li>' . LB;
+        }
+        $retval .= '</ul>' . LB;
+        return $retval;
+    }
+
 
 
     /**
