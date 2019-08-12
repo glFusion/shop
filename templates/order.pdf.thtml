@@ -101,6 +101,9 @@
     <td style="vertical-align:top;">{img_url}</td>
     <td style="vertical-align:top;">
       {item_dscp}
+{!if sku}
+      <br />{sku}
+{!endif}
 {!if item_options}
       <br />{item_options}
 {!endif}

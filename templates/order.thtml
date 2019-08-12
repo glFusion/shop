@@ -137,6 +137,9 @@
 {!if is_file}
             &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}"><button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['download']}</button></a>
 {!endif}
+{!if sku}
+        <br />{sku}
+{!endif}
         {item_options}
         <!-- BEGIN ItemOptions -->
             <div class="ItemOptions">{option_dscp}</div>

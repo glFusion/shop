@@ -95,7 +95,6 @@
 {!else}
           <th></th>
 {!endif}
-          <th style="text-align:left;">SKU</th>
           <th style="text-align:left;">{$LANG_SHOP['description']}</th>
           <th class="alignright">{$LANG_SHOP['quantity']}</th>
 {!if is_invoice}
@@ -106,9 +105,11 @@
         <!-- BEGIN ItemRow -->
         <tr>
           <td>{img_url}</td>
-          <td>{sku}</td>
           <td>
             {item_dscp}
+{!if sku}
+            <br />{sku}
+{!endif}
 {!if item_options}
             {item_options}
 {!endif}
