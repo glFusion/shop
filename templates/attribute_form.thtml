@@ -20,11 +20,9 @@
       <span id="attr_name" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <select name="attr_name_sel" id="attr_name_sel">
+    <select name="ag_id" id="attr_name_sel">
       {option_group_select}
     </select>
-    &nbsp;&nbsp;Or create:
-    <input type="text" name="attr_name" value="" size="32" maxlength="32" />
     </div>
   </div>
 
@@ -43,6 +41,15 @@
     </label>
     <div class="uk-form-controls">
     <input type="text" id="attr_price" name="attr_price" value="{attr_price}" size="32" maxlength="32" />
+    </div>
+  </div>
+
+  <div class="uk-form-row">
+    <label class="uk-form-label">SKU:
+      <span id="sku" class="tooltip_cfg tooltipstered"></span>
+    </label>
+    <div class="uk-form-controls">
+    <input type="text" name="sku" value="{sku}" size="6" maxlength="6" />
     </div>
   </div>
 

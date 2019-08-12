@@ -75,6 +75,7 @@ class Attribute
         case 'attr_id':
         case 'item_id':
         case 'orderby':
+        case 'ag_id':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
@@ -129,6 +130,7 @@ class Attribute
         if (!is_array($row)) return;
         $this->attr_id = $row['attr_id'];
         $this->item_id = $row['item_id'];
+        $this->ag_id = $row['ag_id'];
         $this->attr_name = $row['attr_name'];
         $this->attr_value = $row['attr_value'];
         $this->attr_price = $row['attr_price'];
@@ -210,12 +212,14 @@ class Attribute
 
         $sql2 = " SET item_id='{$this->item_id}',
                 attr_name='" . DB_escapeString($this->attr_name) . "',
+                ag_id = {$this->ag_id},
                 attr_value='" . DB_escapeString($this->attr_value) . "',
+                sku = '" . DB_escapeString($this->sku) . "',
                 orderby='{$this->orderby}',
                 attr_price='" . number_format($this->attr_price, 2, '.', '') . "',
                 enabled='{$this->enabled}'";
         $sql = $sql1 . $sql2 . $sql3;
-
+        //echo $sql;die;
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {
@@ -261,9 +265,11 @@ class Attribute
     public function isValidRecord()
     {
         // Check that basic required fields are filled in
-        if ($this->item_id == 0 ||
-            $this->attr_name == '' ||
-            $this->attr_value == '') {
+        if (
+            $this->item_id == 0 ||
+            $this->ag_id == 0 ||
+            $this->attr_value == ''
+        ) {
             return false;
         }
         return true;
@@ -315,10 +321,10 @@ class Attribute
                         $this->ag_id,
                         0
                     ),
+            'sku'           => $this->sku,
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
-
         $retval .= $T->parse('output', 'attrform');
         $retval .= COM_endBlock();
         return $retval;
@@ -460,10 +466,12 @@ class Attribute
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT a.*, p.name AS prod_name
-            FROM {$_TABLES['shop.prod_attr']} a
+        $sql = "SELECT ag.ag_name, at.*, p.name AS prod_name
+            FROM {$_TABLES['shop.prod_attr']} at
+            LEFT JOIN {$_TABLES['shop.attr_grp']} ag
+            ON at.ag_id = ag.ag_id
             LEFT JOIN {$_TABLES['shop.products']} p
-            ON a.item_id = p.id
+            ON at.item_id = p.id
             WHERE 1=1 ";
 
         if (isset($_POST['product_id']) && $_POST['product_id'] != '0') {
@@ -498,13 +506,19 @@ class Attribute
             ),
             array(
                 'text' => $LANG_SHOP['attr_name'],
-                'field' => 'attr_name',
+                'field' => 'ag_name',
                 'sort' => true,
             ),
             array(
                 'text' => $LANG_SHOP['attr_value'],
                 'field' => 'attr_value',
                 'sort' => true,
+            ),
+            array(
+                'text'  => 'SKU',
+                'field' => 'sku',
+                'align' => 'center',
+                'sort'  => true,
             ),
             array(
                 'text'  => $LANG_SHOP['orderby'],

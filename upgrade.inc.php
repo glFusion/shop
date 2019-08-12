@@ -64,6 +64,18 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.0.0')) {
+        $current_ver = '1.0.0';
+        if (!DB_checkTableExists('shop.attr_grp')) {
+            // Initial populate of the new attribute group table
+            $SQL_UPGRADE['1.0.0'][] = "SET @i:=0";
+            $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name, ag_orderby) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
+            $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET ag_id = (SELECT ag_id FROM {$_TABLES['shop.attr_grp']} WHERE `ag_name` = `attr_name`)";
+        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     SHOP_update_config();
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;

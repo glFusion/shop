@@ -594,7 +594,7 @@ $LANG_confignames['shop'] = array(
     'shop_enabled'  => 'Enable public access?',
     'hp_layout'     => 'Homepage Layout',
     'ipn_url'       => 'IPN URL Override',
-    'sku_url'       => 'Use SKU as Product ID?',
+    'use_sku'       => 'Use SKU as Product ID?',
 );
 
 /** Language strings for the subgroup names in the config section */

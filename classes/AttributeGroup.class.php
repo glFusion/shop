@@ -135,7 +135,7 @@ class AttributeGroup
     /**
      * Sets all variables to the matching values from $row.
      *
-     * @param   array $row Array of values, from DB or $_POST
+     * @param   array $A    Array of values, from DB or $_POST
      */
     public function setVars($A)
     {
@@ -192,9 +192,6 @@ class AttributeGroup
 
         if (is_array($A)) {
             // Put this field at the end of the line by default
-            if (empty($A['ag_orderby']))
-                $A['ag_orderby'] = 65535;
-
             $this->setVars($A);
         }
 
@@ -205,10 +202,10 @@ class AttributeGroup
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.attr_grp']} SET";
+            $sql1 = "INSERT INTO {$_TABLES['shop.attr_grp']} SET ";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.attr_grp']} SET";
+            $sql1 = "UPDATE {$_TABLES['shop.attr_grp']} SET ";
             $sql3 = " WHERE ag_id={$this->ag_id}";
         }
 

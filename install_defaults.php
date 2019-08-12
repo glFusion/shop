@@ -317,7 +317,7 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'sku_url',
+        'name' => 'use_sku',
         'default_value' => false,
         'type' => 'select',
         'subgroup' => 0,
