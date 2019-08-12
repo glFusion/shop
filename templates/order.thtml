@@ -9,6 +9,9 @@
 {!endif}
   <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!if not_final}
+    <div class="shopOrderButtons">
+      {gateway_vars}
+    </div>
 {!else}
   <div class="floatright">
     {linkPrint}
