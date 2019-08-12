@@ -151,7 +151,8 @@
         <div class="gwRadiosOuter">
           <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
           <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
-          <br /><input class="shopGatewayRadios" type="text" name="payer_email" size="40" value="{payer_email}"/>
+          <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
+            name="payer_email" size="40" value="{payer_email}"/>
           <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
         </div>
       </div>
@@ -171,7 +172,13 @@
   </div>
 {!endif}
 </div>
+<div height="200px"></div>
 <script>
+{!if focus_element}
+$('#{focus_element}').addClass("shopErr");
+$('#{focus_element}').focus();
+{!endif}
+
 // Update an item's quantity field.
 function updateQty(fld_id, qty, orig_qty)
 {

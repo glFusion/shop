@@ -699,3 +699,8 @@ div.blk_img img {
 tr.shopItemRowSpacer {
     height: .5em;
 }
+
+input.shopErr {
+    border-radius: 5px;
+    border:#FF0000 1px solid;
+}
