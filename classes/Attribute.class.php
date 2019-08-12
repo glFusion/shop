@@ -48,6 +48,7 @@ class Attribute
         if ($id < 1) {
             // New entry, set defaults
             $this->attr_id = 0;
+            $this->ag_id = 0;
             $this->attr_name = 0;
             $this->attr_value = '';
             $this->attr_price = 0;
@@ -182,9 +183,13 @@ class Attribute
         global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
-            // Put this field at the end of the line by default
-            if (empty($A['orderby']))
+            if (empty($A['orderby'])) {
+                // Put this field at the end of the line by default.
                 $A['orderby'] = 65535;
+            } else {
+                // Bump the number from the "position after" value.
+                $A['orderby'] += 5;
+            }
 
             $this->setVars($A);
         }
@@ -301,16 +306,25 @@ class Attribute
         if ($id > 0) {
             $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->attr_value);
             $T->set_var('attr_id', $id);
+            $init_item_id = $this->item_id;
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
+            $this->ag_id = AttributeGroup::getFirst()->ag_id;
             $T->set_var('attr_id', '');
+            $init_item_id = Product::getFirst();
         }
-
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL('attribute_form',
-                                            $_CONF['language']),
+            'doc_url'       => SHOP_getDocURL(
+                'attribute_form',
+                $_CONF['language']
+            ),
+            'item_id'       => $this->item_id,
+            'init_item_id'  => $init_item_id,
+            'item_name'     => Product::getInstance($this->item_id)->name,
+            'ag_id'         => $this->ag_id,
+            'ag_name'       => AttributeGroup::getInstance($this->ag_id)->ag_name,
             'attr_value'    => $this->attr_value,
             'attr_price'    => $this->attr_price,
             'product_select' => COM_optionList($_TABLES['shop.products'],
@@ -321,6 +335,7 @@ class Attribute
                         $this->ag_id,
                         0
                     ),
+            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->ag_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
@@ -662,6 +677,34 @@ class Attribute
             break;
         }
 
+        return $retval;
+    }
+
+
+    /**
+     * Create the selection list for the `orderby` value.
+     * Used here and from admin/ajax.php.
+     *
+     * @param   integer $item_id    Current product ID
+     * @param   integer $ag_id      Current Attribute Group ID
+     * @param   integer $sel        Currently-selection option
+     * @return  string      Option elements for a selection list
+     */
+    public static function getOrderbyOpts($item_id=0, $ag_id=0, $sel=0)
+    {
+        global $_TABLES, $LANG_SHOP;
+
+        $item_id = (int)$item_id;
+        $ag_id = (int)$ag_id;
+        $sel = (int)$sel;
+        $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
+        $retval .= COM_optionList(
+            $_TABLES['shop.prod_attr'],
+            'orderby,attr_value',
+            $sel - 10,
+            0,
+            "ag_id = '$ag_id' AND item_id = '$item_id' AND orderby <> '$sel'"
+        );
         return $retval;
     }
 

@@ -9,9 +9,13 @@
       <span id="item_id" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <select name="item_id" id="item_id">
+{!if item_id}
+      {item_name}
+{!else}
+    <select name="item_id" id="item_id" onchange="updateItemID(this.value);">
       {product_select}
     </select>
+{!endif}
     </div>
   </div>
 
@@ -20,9 +24,13 @@
       <span id="attr_name" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <select name="ag_id" id="attr_name_sel">
+{!if attr_id}
+      {ag_name}
+{!else}
+    <select name="ag_id" id="attr_name_sel" onchange="updateAG(this.value);">
       {option_group_select}
     </select>
+{!endif}
     </div>
   </div>
 
@@ -58,7 +66,10 @@
       <span id="orderby" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <input type="text" name="orderby" id="orderby" value="{orderby}" size="6" maxlength="6" />
+    <!--<input type="text" name="orderby" id="orderby" value="{orderby}" size="6" maxlength="6" />-->
+      <select name="orderby" id="orderby_sel">
+        {orderby_opts}
+      </select>
     </div>
   </div>
 
@@ -109,6 +120,51 @@ $(document).ready(function() {
         }
     });
 });
-</script>
 
+var item_id = {init_item_id};
+var ag_id = {ag_id};
+/**
+ * Update the selected Item ID.
+ */
+function updateItemID(new_id)
+{
+    item_id = new_id;
+    updateOrderbyOpts()
+}
+
+/**
+ * Update the attribute group selected.
+ */
+function updateAG(new_id)
+{
+    ag_id = new_id;
+    updateOrderbyOpts()
+}
+
+/**
+ * Update the `orderby` selection list when the product or attribute group are changed.
+ */
+function updateOrderbyOpts()
+{
+    var dataS = {
+        "action": "attr_orderby_opts",
+        "item_id": item_id,
+        "ag_id": ag_id,
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "text",
+        url: site_admin_url  + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                document.getElementById("orderby_sel").innerHTML = result;
+            } catch(err) {
+            }
+        }
+    });
+    return status;
+}
+</script>
 {# end {templatelocation} #}

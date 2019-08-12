@@ -117,7 +117,6 @@ class AttributeGroup
 
         $cache_key = 'shop_attr_grp_all';
         $retval = Cache::get($cache_key);
-        var_dump($retval);die;
         if ($retval === NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.attr_grp']}
@@ -129,6 +128,17 @@ class AttributeGroup
             Cache::set($cache_key, $retval, 'attributes');
         }
         return $retval;
+    }
+
+
+    public static function getInstance($ag_id)
+    {
+        $grps = self::getAll();
+        if (array_key_exists($ag_id, $grps)) {
+            return $grps[$ag_id];
+        } else {
+            return new self;
+        }
     }
 
 
@@ -293,8 +303,7 @@ class AttributeGroup
             'ag_id'         => $id,
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL('attribute_form',
-                                            $_CONF['language']),
+            'doc_url'       => SHOP_getDocURL('attr_grp_form', $_CONF['language']),
             'ag_name'       => $this->ag_name,
             //'ag_orderby'    => $this->ag_orderby,
             'orderby_opts'  => COM_optionList($_TABLES['shop.attr_grp'], 'ag_orderby,ag_name', $orderby_sel, 0),
@@ -520,6 +529,24 @@ class AttributeGroup
     {
         Cache::clear('products');
         Cache::clear('attributes');
+    }
+
+
+    /**
+     * Get the first AttributeGroup object in the DB.
+     * Used to determine the first element in selection lists.
+     *
+     * @uses    self::getAll()
+     * @return  object      AttibuteGroup object.
+     */
+    public static function getFirst()
+    {
+        global $_TABLES;
+
+        $grps = self::getAll();
+        reset($grps);
+        $retval = array_pop($grps);
+        return $retval;
     }
 
 }

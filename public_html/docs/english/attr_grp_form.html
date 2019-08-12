@@ -26,47 +26,17 @@
     </nav>
 
     <div class="uk-container uk-container-center uk-margin-bottom">
-      <h1>Shop Product Attributes</h1>
+      <h1>Shop Attribute Groups</h1>
 
-      <h2>Attribute settings</h2>
-
-      <dl id="desc_item_id">
-        <dt>Product Name/SKU</dt>
-        <dd>Select the product to which this attribute will apply. The product must exist before you can apply attributes to it.</dd>
-      </dl>
-
-      <dl id="desc_attr_name">
+     <dl id="desc_ag_name">
         <dt>Attribute Name</dt>
-        <dd>This is the name of the attribute: Size, Color, Capacity, etc. See &quot;Attribute Groups&quot; to set up the group names.</dd>
-      </dl>
-
-      <dl id="desc_attr_value">
-        <dt>Attribute Value</dt>
-        <dd>The "Attribute Value" is the display value of the attribute. For example, if the Attribute Name is "Color", an Attribute Value might be "Blue." If there is a price for the attribute you might want to include it, e.g. "Blue (+2.00).""</dd>
-      </dl>
-
-      <dl id="desc_attr_price">
-        <dt>Attribute Price</dt>
-        <dd>Enter the <i>incremental</i> price for this specific attribute. This is the extra charge that will be applied to the product if this attribute is selected.<p />
-        This value may be negative if a discount is given for this attribute. The price is not displayed.
-        </dd>
+        <dd>This is the name of the attribute group: Size, Color, Capacity, etc. Names are global but the actual attribute values will be assigned per-product.</dd>
       </dl>
 
       <dl id="desc_orderby">
-        <dt>Order</dt>
-        <dd>The Order value indicates the order in which this Attribute Value will be displayed in the selection list. Values are automatically sequenced by multiples of 10 (10, 20, 30, etc.), so to insert a new value between two existing ones you could enter something like "25".<p />
-The attribute with the lowest order value is displayed first in the selection list, and becomes the default. You might want to make sure that an attribute with a zero price is the default.
+        <dt>Position After</dt>
+        <dd>Select the existing attribute group after which this one should be displayed. This affects the appearrance on the product detail form and also how SKUs are created.
         </dd>
-      </dl>
-
-      <dl id="desc_sku">
-        <dt>SKU</dt>
-        <dd>Enter an optional SKU code for this attribute value. This should be a short, consistent indicator such as &quot;BK&quot; for &quot;Black&quot; or &quot;S&quot; for &quot;Small&quot;. If present, this value will be included when the overall product SKU is created.</dd>
-      </dl>
-
-      <dl id="desc_enabled">
-        <dt>Enabled?</dt>
-        <dd>Check this box if this attribute value is enabled. You might want to disable a value if it is temporarily out of stock, for example.</dd>
       </dl>
 
     </div>

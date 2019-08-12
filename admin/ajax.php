@@ -22,6 +22,14 @@ if (!plugin_ismoderator_shop()) {
 }
 
 switch ($_POST['action']) {
+case 'attr_orderby_opts':
+    $ag_id = SHOP_getVar($_POST, 'ag_id', 'integer', 0);
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
+    $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
+    $retval = Shop\Attribute::getOrderbyOpts($item_id, $ag_id, $selected);
+    echo $retval;
+    exit;
+
 case 'updatestatus':
     if (!empty($_POST['order_id']) &&
         !empty($_POST['newstatus'])) {

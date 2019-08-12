@@ -2917,6 +2917,22 @@ class Product
         }
         return $errors;
     }
+
+
+    /**
+     * Get the ID of the first product in the database.
+     * Used to set the first item in selection lists.
+     * Relies on the primary key on the `id` field.
+     *
+     * @return  integer     Product ID
+     */
+    public static function getFirst()
+    {
+        global $_TABLES;
+
+        return (int)DB_getItem($_TABLES['shop.products'], 'id');
+    }
+
 }
 
 ?>
