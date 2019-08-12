@@ -367,7 +367,7 @@ class Catalog
                     } else {
                         $item_url = '';
                     }
-                    $P = \Shop\Product::getInstance($A['id']);
+                    $P = \Shop\Product::getByID($A['id']);
                     $price = $P->getPrice();
                     $T->set_var(array(
                         'id'        => $P->id,          // required

@@ -92,7 +92,7 @@ class pendingship extends \Shop\Report
             }
         }
         $nonshipped = "'" . implode("','", $nonshipped) . "'";
-        $Item = \Shop\Product::getInstance($this->item_id);
+        $Item = \Shop\Product::getByID($this->item_id);
         if ($Item->isNew) {
             return $LANG_SHOP['no_data'];
         }

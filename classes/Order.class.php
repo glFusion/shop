@@ -655,6 +655,7 @@ class Order
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->token,
                 'item_options'  => $P->getOptionDisplay($item),
+                'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink(),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
@@ -751,6 +752,11 @@ class Order
         $payer_email = $this->buyer_email;
         if ($payer_email == '' && !COM_isAnonUser()) {
             $payer_email = $_USER['email'];
+        }
+        $focus_fld = SESS_getVar('shop_focus_field');
+        if ($focus_fld) {
+            $T->set_var('focus_element', $focus_fld);
+            SESS_unSet('shop_focus_field');
         }
         $T->set_var('payer_email', $payer_email);
 
@@ -1963,7 +1969,7 @@ class Order
 
         // Get the product item and see if it has any quantity discounts.
         // If not, just return.
-        $P = Product::getInstance($item_id);
+        $P = Product::getByID($item_id);
         if (!$P->hasDiscounts()) {
             return false;
         }

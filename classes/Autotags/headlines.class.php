@@ -158,7 +158,7 @@ class headlines
             $T->set_block('page', 'headlines', 'hl');
 
             foreach ($allItems as $A) {
-                $P = \Shop\Product::getInstance($A['id']);
+                $P = \Shop\Product::getByID($A['id']);
                 $T->set_var(array(
                     'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),

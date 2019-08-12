@@ -49,7 +49,7 @@ $expected = array(
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
-    'migrate_pp', 'purge_trans', 'delag', 'agmove',
+    'migrate_pp', 'purge_trans', 'delag', 'agmove', 'agsave',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
@@ -80,7 +80,7 @@ case 'dup_product':
     break;
 
 case 'deleteproduct':
-    $P = \Shop\Product::getInstance($_REQUEST['id']);
+    $P = \Shop\Product::getByID($_REQUEST['id']);
     if (!\Shop\Product::isUsed($_REQUEST['id'])) {
         $P->Delete();
     } else {
@@ -133,6 +133,14 @@ case 'savecat':
     } else {
         $view = 'categories';
     }
+    break;
+
+case 'agsave':
+    $AG = new \Shop\AttributeGroup($_POST['ag_id']);
+    if (!$AG->Save($_POST)) {
+        $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?attr_grp=x');
     break;
 
 case 'saveopt':
@@ -558,6 +566,7 @@ case 'editattr':
 case 'editag':
     $ag_id = SHOP_getVar($_GET, 'ag_id');
     $AG = new \Shop\AttributeGroup($ag_id);
+    $content .= Shop\Menu::adminAttribs($view);
     $content .= $AG->Edit();
     break;
 

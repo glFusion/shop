@@ -161,13 +161,13 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 
     // Only show if no topic is requested
     if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
-        $display = \Shop\Menu::siteHeader();
+        $display = Shop\Menu::siteHeader();
         $T = new Template(__DIR__ . '/templates');
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var('title', $LANG_SHOP['main_title']);
         $display .= $T->parse('', 'title');
-        $display .= \Shop\Catalog::Render();
-        $display .= \Shop\Menu::siteFooter();
+        $display .= Shop\Catalog::Render();
+        $display .= Shop\Menu::siteFooter();
     }
     return $display;
 }
@@ -280,7 +280,7 @@ function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $v
     if (!plugin_commentsupport_shop())
         return $retval;
 
-    $P = new \Shop\Product($id);
+    $P = new Shop\Product($id);
     if ($P->isNew)
         return $retval;
 
@@ -430,7 +430,7 @@ function plugin_getuseroption_shop()
             );
         }
         // View cart option is available to anonymous users
-        if (\Shop\Cart::getCart() && \Shop\Cart::getInstance()->hasItems()) {
+        if (Shop\Cart::getCart() && Shop\Cart::getInstance()->hasItems()) {
             $retval[] = array(
                 $LANG_SHOP['viewcart'],
                 COM_buildUrl(SHOP_URL . '/cart.php'),
@@ -470,8 +470,8 @@ function plugin_user_delete_shop($uid)
             SET uid = 1
             WHERE uid = '$uid'";
 
-    \Shop\UserInfo::deleteUser($uid);
-    \Shop\Cart::deleteUser($uid);
+    Shop\UserInfo::deleteUser($uid);
+    Shop\Cart::deleteUser($uid);
 }
 
 
@@ -544,12 +544,12 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $id = $autotag['parm1'];
             switch ($id) {
             case 'headlines':
-                $AT = new \Shop\Autotags\headlines;
+                $AT = new Shop\Autotags\headlines;
                 $repl = $AT->parse($autotag['parm1'], $opts, $autotag['tagstr']);
                 break;
             default:
                 // Default tag [shop:prod_id]is a product link
-                $P  = \Shop\Product::getInstance($id);
+                $P  = Shop\Product::getByID($id);
                 if (!$P->isNew) {
                     $url = $P->getLink();
                     //$url = COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
@@ -569,7 +569,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         case $pi_name . '_cat':
         case 'paypal_cat':
             $id = COM_applyFilter($autotag['parm1'], true);
-            $Cat = \Shop\Category::getInstance($id);
+            $Cat = Shop\Category::getInstance($id);
             if (!$Cat->isNew) {
                 $url = SHOP_URL.'/index.php?category='.$id;
                 if (empty($autotag['parm2'])) {
@@ -583,7 +583,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             break;
         case $pi_name . '_headlines':
         case 'paypal_headlines':
-            $AT = new \Shop\Autotags\headlines;
+            $AT = new Shop\Autotags\headlines;
             $repl = $AT->parse($autotag['parm1'], $opts, $autotag['tagstr']);
             break;
         }
@@ -762,7 +762,7 @@ function plugin_getconfigelementhelp_shop($option, $doclang='english')
  * Returns the URL to the file, or to the directory if no file requested.
  *
  * @see    plugin_getconfigelementhelp_shop()
- * @see    \Shop\Product::showForm()
+ * @see    Shop\Product::showForm()
  * @param  string  $file       HTML file
  * @param  string  $doclang    Documentation language
  * @return string              URL to document directory or file
@@ -844,7 +844,7 @@ function plugin_autouninstall_shop()
             'shop_gid',
         ),
     );
-    \Shop\Cache::clear();  // clear everything from cache
+    Shop\Cache::clear();  // clear everything from cache
     return $out;
 }
 
@@ -949,14 +949,14 @@ function phpblock_shop_cart_contents()
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     // If the cart is not enabled, or there is no cart, return
-    if ($_SHOP_CONF['ena_cart'] == 0 || !\Shop\Cart::getCart()) {
+    if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
         //SHOP_log("Cart disabled or there is no cart", SHOP_LOG_DEBUG);
         return '';
     }
 
-    $cart = \Shop\Cart::getInstance();
+    $cart = Shop\Cart::getInstance();
     if (!$cart->canView()) {
-        \Shop\Cart::delAnonCart();
+        Shop\Cart::delAnonCart();
         return '';
     }
     // If the cart is empty, the block isn't shown
@@ -969,11 +969,11 @@ function phpblock_shop_cart_contents()
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
-    $Cur = \Shop\Currency::getInstance($cart->currency);
+    $Cur = Shop\Currency::getInstance($cart->currency);
     foreach ($cart->getItems() as $id=>$item) {
         $item_id = $item->product_id;
         if ($item->options != '') $item_id .= '|' . $item->options;
-        $P = \Shop\Product::getInstance($item_id);
+        $P = Shop\Product::getByID($item_id);
 
         $item_total = (float)$item->price * $item->quantity;
         $T->set_var(array(
@@ -1012,13 +1012,13 @@ function phpblock_shop_search()
     $T->set_file('search', 'blk_search.thtml');
 
     $cache_key = 'cat_options_cat_id_cat_name';
-    $category_options = \Shop\Cache::get($cache_key);
+    $category_options = Shop\Cache::get($cache_key);
     if ($category_options === NULL) {
         $category_options = COM_optionList($_TABLES['shop.categories'],
             'cat_id, cat_name', '', 1, SEC_buildAccessSql(''));
         // Configured cache age is not used since the cache will be
         // cleared when categories are changed.
-        \Shop\Cache::set($cache_key, $category_options, 'categories');
+        Shop\Cache::set($cache_key, $category_options, 'categories');
     }
     $T->set_var(array(
         'category_options'  => $category_options,
@@ -1096,7 +1096,7 @@ function phpblock_shop_categories()
 
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
-    $parents = '0, ' . \Shop\Category::getRoot()->cat_id;
+    $parents = '0, ' . Shop\Category::getRoot()->cat_id;
     $sql = "SELECT c.*, count(p.id) AS cnt
             FROM {$_TABLES['shop.categories']} c
             LEFT JOIN {$_TABLES['shop.products']} p
@@ -1110,7 +1110,7 @@ function phpblock_shop_categories()
             ORDER BY c.cat_name";
     //echo $sql;die;
     $cache_key = md5($sql);
-    $Cats = \Shop\Cache::get($cache_key);
+    $Cats = Shop\Cache::get($cache_key);
     //var_dump($Cats);die;
     if ($Cats === NULL) {
         $Cats = array();
@@ -1120,7 +1120,7 @@ function phpblock_shop_categories()
                 $Cats[] = $A;
             }
         }
-        \Shop\Cache::set($cache_key, $Cats, array('categories','products'));
+        Shop\Cache::set($cache_key, $Cats, array('categories','products'));
     }
     $T = new Template(__DIR__ . '/templates');
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
@@ -1342,14 +1342,14 @@ function SHOP_phpblock_product($sql)
             'btn_details' => 'buttons/btn_details.thtml',
         ));
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
-            $P = \Shop\Product::getInstance($A['id']);
+            $P = Shop\Product::getByID($A['id']);
             $T->set_var(array(
                 'name'      => $P->name,
                 'item_url'  => COM_buildUrl(SHOP_URL . '/detail.php?id=' .
                                 $A['id']),
                 'descrip'   => $P->short_description,
                 'price'     => $P->price > 0 ?
-                                \Shop\Currency::getInstance()->Format($P->price) : '',
+                                Shop\Currency::getInstance()->Format($P->price) : '',
                 'currency'  => $_SHOP_CONF['currency'],
                 'rec_num'   => $i,      // to separate items by <hr/>
                 'id'        => $A['id'],
@@ -1391,7 +1391,7 @@ function SHOP_phpblock_product($sql)
  */
 function plugin_itemrated_shop($id, $rating, $votes)
 {
-    return \Shop\Product::updateRating($id, $rating, $votes);
+    return Shop\Product::updateRating($id, $rating, $votes);
 }
 
 
@@ -1432,9 +1432,9 @@ function plugin_user_login_shop($uid)
 
     if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
 
-    $anon_cart = \Shop\Cart::getAnonCartID();  // get the anonymous cart ID
+    $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
     if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+    $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
     $user_cart->Merge($anon_cart);
     $user_cart->Validate(true);
 }
@@ -1449,8 +1449,8 @@ function NOOP_plugin_user_logout_shop($uid)
 {
 /*    global $_SHOP_CONF;
 
-    $C = \Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-    \Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
+    $C = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+    Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
 */
 }
 
@@ -1504,7 +1504,7 @@ function plugin_runScheduledTask_shop()
 
     if (!empty($orders)) {
         foreach ($orders as $order_id) {
-            \Shop\Order::Delete($order_id);
+            Shop\Order::Delete($order_id);
         }
     }
 
@@ -1532,7 +1532,7 @@ function plugin_runScheduledTask_shop()
         PLG_itemDeleted($A['id'], $A['prod_type']);
         $clear_cache = true;
         // Toggle to disabled, also clears the product cache
-        //\Shop\Product::toggleEnabled(1, $A['id']);
+        //Shop\Product::toggleEnabled(1, $A['id']);
     }
 
     // Delete old cached buttons which are keyed by item_id and price.
@@ -1542,16 +1542,16 @@ function plugin_runScheduledTask_shop()
 
     // Clean up the sale price table if so configured.
     if ($_SHOP_CONF['purge_sale_prices']) {
-        \Shop\Sales::Clean();
+        Shop\Sales::Clean();
     }
 
     // Handle any expired coupons
     if ($_SHOP_CONF['gc_enabled']) {
-        \Shop\Products\Coupon::Expire();
+        Shop\Products\Coupon::Expire();
     }
 
     if ($clear_cache) {
-        \Shop\Cache::clear();
+        Shop\Cache::clear();
     }
 }
 
@@ -1695,7 +1695,7 @@ function plugin_configmanager_select_list_tpl_ver_shop()
 function plugin_configmanager_select_currency_shop()
 {
     $A = array();
-    $tmp = \Shop\Currency::getAll();
+    $tmp = Shop\Currency::getAll();
     foreach ($tmp as $code => $data) {
         $A["{$code} - {$data->name}"] = $code;
     }
@@ -1703,10 +1703,17 @@ function plugin_configmanager_select_currency_shop()
 }
 
 
-function plugin_configmanager_sku_url_shop_validate($val)
+/**
+ * If `use_sku` is enabled in the config, check that there are no dups.
+ *
+ * @param   integer $val    Value of new setting
+ * @return  intege  $val    New value if OK, `0` if there are dup SKUs
+ */
+function plugin_configmanager_use_sku_shop_validate($val)
 {
     global $_TABLES, $LANG_SHOP_HELP;
 
+    // Only check for duplicates if use_sku is being enabled.
     if ($val) {
         $all_skus = DB_count($_TABLES['shop.products']);
         $uniq_skus = (int)DB_getItem(
@@ -1719,6 +1726,9 @@ function plugin_configmanager_sku_url_shop_validate($val)
             return 0;
         }
     }
+    // We only get here if the value is changed, so go ahead and clear all
+    // caches.
+    Shop\Cache::clear();
     return $val;
 }
 
@@ -1748,10 +1758,10 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
             'block' => 'profileblock.thtml',
         ));
         $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
-        $U = \Shop\UserInfo::getInstance($uid);
+        $U = Shop\UserInfo::getInstance($uid);
         if ($_SHOP_CONF['gc_enabled']) {
-            $gc_bal = \Shop\Products\Coupon::getUserBalance($uid);
-            $LT->set_var('gc_bal', \Shop\Currency::getInstance()->Format($gc_bal));
+            $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
+            $LT->set_var('gc_bal', Shop\Currency::getInstance()->Format($gc_bal));
         }
         if (!empty($U->cart)) {
             $cart = true;
@@ -1787,7 +1797,7 @@ function plugin_profilesave_shop($uid=0)
 
     $apply_gc = SHOP_getVar($_POST, 'pp_apply_gc', 'string');
     if (!empty($apply_gc)) {
-        \Shop\Products\Coupon::Redeem($apply_gc, $uid);
+        Shop\Products\Coupon::Redeem($apply_gc, $uid);
     }
 }
 
@@ -2070,9 +2080,9 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
-    $U = \Shop\UserInfo::getInstance($uid);
+    $U = Shop\UserInfo::getInstance($uid);
     foreach ($U->addresses as $addr) {
-        foreach (\Shop\UserInfo::Fields() as $fld) {
+        foreach (Shop\UserInfo::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));
                 $retval .= '<'.$fld.'>'.$d.'</'.$fld.">\n";

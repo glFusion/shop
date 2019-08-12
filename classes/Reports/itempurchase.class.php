@@ -42,6 +42,7 @@ class itempurchase extends \Shop\Report
         $this->filter_item = true;
         $this->filter_uid = false;
         $this->filter_status = false;
+        // This report doesn't show carts
         parent::__construct();
     }
 
@@ -58,7 +59,7 @@ class itempurchase extends \Shop\Report
         $this->item_id = SHOP_getVar($_GET, 'item_id');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        $Item = \Shop\Product::getInstance($this->item_id);
+        $Item = \Shop\Product::getByID($this->item_id);
         $this->item_dscp = $Item->short_description;
         $this->item_id = DB_escapeString($this->item_id);
         $T = $this->getTemplate();
@@ -102,7 +103,8 @@ class itempurchase extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $where = " WHERE purch.product_id = '{$this->item_id}'
+        $where = " WHERE ord.status <> 'cart'
+            AND purch.product_id = '{$this->item_id}'
             AND (ord.order_date >= '$from_date'
             AND ord.order_date <= '$to_date')";
         if ($this->uid > 0) {

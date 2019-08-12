@@ -259,7 +259,7 @@ class paypal extends \Shop\Gateway
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
-                $P = \Shop\Product::getInstance($item->product_id, $custom_arr);
+                $P = \Shop\Product::getByID($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
                 //$options = explode(',', $item->options);

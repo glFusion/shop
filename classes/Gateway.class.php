@@ -740,7 +740,7 @@ class Gateway
 
             } else {
                 SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
-                $P = Product::getInstance($item_number);
+                $P = Product::getByID($item_number);
                 $A = array(
                     'name' => $P->getName(),
                     'short_description' => $P->getDscp(),

@@ -164,7 +164,7 @@ class Cart extends Order
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
-        $P = Product::getInstance($item_id);
+        $P = Product::getByID($item_id);
         $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
         $override   = isset($args['override']) ? $args['price'] : NULL;
         $extras     = SHOP_getVar($args, 'extras', 'array');
@@ -180,14 +180,12 @@ class Cart extends Order
         // the item_id.
         // Options are formatted as "id|dscp|price"
         $opts = array();
-        $skus = array($P->name);
         $opt_str = '';          // CSV option numbers
         if (is_array($options) && !empty($options)) {
             foreach($options as $optname=>$option) {
                 $opt_tmp = explode('|', $option);
                 $opts[] = $opt_tmp[0];
                 $Attr = new Attribute($opt_tmp[0]);
-                $skus[] = $Attr->sku;
             }
             $opt_str = implode(',', $opts);
             // Add the option numbers to the item ID to create a new ID
@@ -195,8 +193,6 @@ class Cart extends Order
         } else {
             $options = array();
         }
-
-        $sku = implode('-', $skus);
 
         // Look for identical items, including options (to catch
         // attributes). If found, just update the quantity.
@@ -346,7 +342,6 @@ class Cart extends Order
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
-
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this->m_cart;
     }
@@ -1021,9 +1016,10 @@ class Cart extends Order
 
         $errors = array();
         if (!$login) {
-           if ($this->buyer_email == '') {
-               $errors[] = $LANG_SHOP['err_missing_email'];
-           }
+            if ($this->buyer_email == '') {
+                SESS_setVar('shop_focus_field', 'payer_email');
+                $errors['payer_email'] = $LANG_SHOP['err_missing_email'];
+            }
         }
         if (!empty($errors)) {
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';

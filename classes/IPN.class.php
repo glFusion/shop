@@ -235,7 +235,7 @@ class IPN
 
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
-        $P = Product::getInstance($tmp[0], $this->custom);
+        $P = Product::getByID($tmp[0], $this->custom);
         if ($P->isNew) {
             SHOP_log("Product {$args['item_id']} not found in catalog", SHOP_LOG_ERROR);
             return;      // no product found to add
@@ -304,7 +304,7 @@ class IPN
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log("Shop\IPN::Log() SQL error: $sql", SHOP_LOG_ERROR);        
+            SHOP_log("Shop\IPN::Log() SQL error: $sql", SHOP_LOG_ERROR);
         }
         return DB_insertId();
     }
@@ -376,7 +376,7 @@ class IPN
 
         // For each item purchased, create an order item
         foreach ($this->items as $id=>$item) {
-            $P = Product::getInstance($item['item_number']);
+            $P = Product::getByID($item['item_number']);
             if ($P->isNew) {
                 $this->Error("Item {$item['item_number']} not found - txn " .
                         $this->txn_id);
@@ -560,7 +560,7 @@ class IPN
             //$tmp = explode('|', $item['item_number']);
             //list($item_number,$options) =
             //if (is_numeric($item_number)) {
-            $P = Product::getInstance($item['item_id'], $this->custom);
+            $P = Product::getByID($item['item_id'], $this->custom);
             $item['short_description'] = $P->short_description;
             if (!empty($options)) {
                 // options is expected as CSV
@@ -653,7 +653,7 @@ class IPN
             // actions.  None for catalog items (since there's no inventory,
             // but plugin items may need to do something.
             foreach ($Order->items as $key=>$data) {
-                $P = Product::getInstance($data['product_id'], $this->custom);
+                $P = Product::getByID($data['product_id'], $this->custom);
                 // Don't care about the status, really.  May not even be
                 // a plugin function to handle refunds
                 $P->handleRefund($Order, $this->ipn_data);

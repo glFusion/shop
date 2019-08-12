@@ -30,11 +30,12 @@ class OrderItem
 
     /** Fields for an OrderItem record.
      * @var array */
-    private static $fields = array('id', 'order_id', 'product_id',
-            'description', 'quantity', 'txn_id', 'txn_type',
-            'expiration', 'price', 'token',
-            'options', 'options_text', 'extras', 'taxable', 'paid',
-            'shipping', 'handling',
+    private static $fields = array(
+        'id', 'order_id', 'product_id',
+        'description', 'quantity', 'txn_id', 'txn_type',
+        'expiration', 'price', 'token',
+        'options', 'options_text', 'extras', 'taxable', 'paid',
+        'shipping', 'handling',
     );
 
     /**
@@ -60,7 +61,7 @@ class OrderItem
             }
             $this->setVars($item);
         }
-        $this->product = Product::getInstance($this->product_id);
+        $this->product = Product::getByID($this->product_id);
     }
 
 

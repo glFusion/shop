@@ -20,13 +20,13 @@ $action = SHOP_getVar($_GET, 'action');
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
-    $U = \Shop\UserInfo::getInstance($uid);
+    $U = Shop\UserInfo::getInstance($uid);
     $U->deleteAddress($_GET['id']);
     break;
 
 case 'getAddress':
     if ($uid < 2) break;
-    $A = \Shop\UserInfo::getInstance($uid)->getAddress($_GET['id']);
+    $A = Shop\UserInfo::getInstance($uid)->getAddress($_GET['id']);
     //$res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
     //$A = DB_fetchArray($res, false);
     break;
@@ -38,14 +38,14 @@ case 'addcartitem':
         exit;
     }
     $item_number = $_POST['item_number'];     // isset ensured above
-    $P = \Shop\Product::getInstance($item_number);
+    $P = Shop\Product::getByID($item_number);
     if ($P->isNew) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
     $item_name = SHOP_getVar($_POST, 'item_name', 'string', $P->getName());
-    $Cart = \Shop\Cart::getInstance();
+    $Cart = Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
         SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->order_id}, should be $nonce", SHOP_LOG_ERROR);
@@ -82,7 +82,7 @@ case 'addcartitem':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $status = \Shop\Cart::setFinal($cart_id);
+    $status = Shop\Cart::setFinal($cart_id);
     $A = array(
         'status' => $status,
     );
@@ -100,8 +100,8 @@ case 'redeem_gc':
     } else {
         $code = SHOP_getVar($_POST, 'gc_code');
         $uid = $_USER['uid'];
-        list($status, $status_msg) = \Shop\Products\Coupon::Redeem($code, $uid);
-        $gw = \Shop\Gateway::getInstance('_coupon');
+        list($status, $status_msg) = Shop\Products\Coupon::Redeem($code, $uid);
+        $gw = Shop\Gateway::getInstance('_coupon');
         $gw_radio = $gw->checkoutRadio($status == 0 ? true : false);
         $A = array (
             'statusMessage' => $status_msg,

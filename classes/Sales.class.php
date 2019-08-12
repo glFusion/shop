@@ -620,7 +620,7 @@ class Sales
         case 'item_id':
             switch ($A['item_type']) {
             case 'product':
-                $P = \Shop\Product::getInstance($fieldvalue);
+                $P = Product::getByID($fieldvalue);
                 if ($P) {
                     $retval = $P->short_description;
                 } else {
@@ -631,7 +631,7 @@ class Sales
                 if ($fieldvalue == 0) {     // root category
                     $retval = $LANG_SHOP['home'];
                 } else {
-                    $C = \Shop\Category::getInstance($fieldvalue);
+                    $C = Category::getInstance($fieldvalue);
                     $retval = $C->cat_name;
                 }
                 break;

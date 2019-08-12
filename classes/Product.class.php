@@ -178,9 +178,10 @@ class Product
         global $_SHOP_CONF, $_TABLES;
         static $P = array();    // cache for internal products
 
-        if (is_array($A)) {
+        if (is_array($A) && isset($A['id'])) {
             // A complete product record
-            $id = isset($A['id']) ? $A['id'] : NULL;
+            return self::_getInstance($A);
+            //$id = isset($A['id']) ? $A['id'] : NULL;
         } else {
             // A single product ID
             $id = $A;
@@ -197,13 +198,19 @@ class Product
         } else {
             if (!array_key_exists($id, $P)) {
                 // Product internal to this plugin
-                if (!is_array($A)) {
+                if ($_SHOP_CONF['use_sku']) {
+                    $P[$id] = self::getBySKU($item[0]);
+                } else {
+                    $P[$id] = self::getByID($item[0]);
+                }
+
+                /*if (!is_array($A)) {
                     $cache_key = self::_makeCacheKey($item[0]);
                     //Cache::delete($cache_key);
                     $A = Cache::get($cache_key);
                     if (!is_array($A)) {
                         // If not found in cache
-                        if ($_SHOP_CONF['sku_url']) {
+                        if ($_SHOP_CONF['use_sku']) {
                             $key = 'name';
                             $id = DB_escapeString($item[0]);
                         } else {
@@ -218,18 +225,93 @@ class Product
                             Cache::set($cache_key, $A, array('products'));
                         }
                     }
-                }
-                if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
+                }*/
+                //$P[$id] = self::_getInstance($A);
+                /*if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
                     $P[$id] = new \Shop\Products\Coupon($A);
                 } else {
                     $P[$id] = new self($A);
                 }
                 if ($P[$id]->hasAccess()) {
                     $P[$id]->loadAttributes();
-                }
+                }*/
             }
             return $P[$id];
         }
+    }
+
+
+    /**
+     * Instantiate an objec from a DB record array.
+     *
+     * @param   array   $A  DB record
+     * @return  object      Product object
+     */
+    private static function _getInstance($A)
+    {
+        if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
+            $P = new \Shop\Products\Coupon($A);
+        } else {
+            $P = new self($A);
+        }
+        if ($P->hasAccess()) {
+            $P->loadAttributes();
+        }
+        return $P;
+    }
+
+
+    /**
+     * Get an item by its SKU.
+     *
+     * @param   string  $id SKU to locate
+     * @return  object      Product object
+     */
+    public static function getBySKU($id)
+    {
+        global $_TABLES;
+
+        $parts = explode('-', $id);
+        $item_id = DB_escapeString($parts[0]);
+        $cache_key = self::_makeCacheKey($item_id);
+        $A = Cache::get($cache_key);
+        if (!is_array($A)) {
+            $sql = "SELECT * FROM {$_TABLES['shop.products']}
+                    WHERE name = '$item_id'";
+            $res = DB_query($sql);
+            $A = DB_fetchArray($res, false);
+            if (isset($A['id'])) {
+                Cache::set($cache_key, $A, array('products'));
+            }
+        }
+        return self::_getInstance($A);
+    }
+
+
+    /**
+     * Get a product by the database ID
+     *
+     * @param   integer $id     Item ID
+     * @return  object      Product object
+     */
+    public static function getByID($id)
+    {
+        global $_TABLES;
+
+        $parts = explode('|', $id);
+        $id = (int)$parts[0];
+        $cache_key = self::_makeCacheKey($id);
+        $A = Cache::get($cache_key);
+        if (!is_array($A)) {
+            $sql = "SELECT * FROM {$_TABLES['shop.products']}
+                    WHERE id  = '$id'";
+            $res = DB_query($sql);
+            $A = DB_fetchArray($res, false);
+            if (isset($A['id'])) {
+                Cache::set($cache_key, $A, array('products'));
+            }
+        }
+        return self::_getInstance($A);
     }
 
 
@@ -481,7 +563,8 @@ class Product
         $cache_key = self::_makeCacheKey($this->id, 'attr');
         $this->options = Cache::get($cache_key);
         if ($this->options === NULL) {
-            $sql = "SELECT at.* FROM {$_TABLES['shop.prod_attr']} at
+            $sql = "SELECT ag.ag_name, at.*
+                FROM {$_TABLES['shop.prod_attr']} at
                 LEFT JOIN {$_TABLES['shop.attr_grp']} ag
                     ON ag.ag_id = at.ag_id
                 WHERE at.item_id = '{$this->id}' AND at.enabled = 1
@@ -490,9 +573,10 @@ class Product
             $this->options = array();
             while ($A = DB_fetchArray($result, false)) {
                 $this->options[$A['attr_id']] = array(
-                    'attr_name' => $A['attr_name'],
+                    'attr_name' => $A['ag_name'],
                     'attr_value' => $A['attr_value'],
                     'attr_price' => $A['attr_price'],
+                    'sku'       => $A['sku'],
                 );
             }
             Cache::set($cache_key, $this->options, array('products', $this->id));
@@ -1616,6 +1700,31 @@ class Product
 
 
     /**
+     * Create and return a SKU for this product and the selected options.
+     *
+     * @param   object  $item   OrderItem object
+     * @return  string      SKU string containing selected options.
+     */
+    public function getSKU($item)
+    {
+        $sku = array($this->name);
+
+        // Get attributes selected from the available options
+        // Use item_options since the class var doesn't work with empty()
+        $item_options = $item->options;
+        if (!empty($item_options)) {
+            $options = explode(',', $item_options);
+            foreach ($this->options as $attr_id=>$attr) {
+                if (in_array($attr_id, $options) && !empty($attr['sku'])) {
+                    $sku[] = $attr['sku'];
+                }
+            }
+        }
+        return implode('-', $sku);
+    }
+
+
+    /**
      * Get the options display to be shown in the cart and on the order.
      * Returns a string like so:
      *      -- option1: option1_value
@@ -2059,7 +2168,6 @@ class Product
      */
     private static function _makeCacheKey($id, $type='')
     {
-        $id = (int)$id;
         if ($type != '') $type .= '_';
         return 'product_' . $type . $id;
     }
@@ -2112,7 +2220,7 @@ class Product
     {
         global $_SHOP_CONF;
 
-        $id = $_SHOP_CONF['sku_url'] ? $this->name : $this->id;
+        $id = $_SHOP_CONF['use_sku'] ? $this->name : $this->id;
         return COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
     }
 
@@ -2745,9 +2853,10 @@ class Product
             break;
 
         case 'short_description':
+            $id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_URL . '/detail.php?id=' . $A['id'],
+                SHOP_URL . '/detail.php?id=' . $id,
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
@@ -2778,7 +2887,7 @@ class Product
     {
         global $_SHOP_CONF;
 
-        if ($_SHOP_CONF['sku_url']) {
+        if ($_SHOP_CONF['use_sku']) {
             return $this->name == $id;
         } else {
             return $this->id == $id;

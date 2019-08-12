@@ -45,17 +45,17 @@ function service_genButton_shop($args, &$output, &$svc_msg)
 {
     global $_CONF, $_SHOP_CONF;
 
-    $Cart = \Shop\Cart::getInstance();
+    $Cart = Shop\Cart::getInstance();
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : '';
     $output = array();
 
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
-        foreach (\Shop\Gateway::getall() as $gw) {
+        foreach (Shop\Gateway::getall() as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
                 //$output[] = $gw->ExternalButton($args, $btn_type);
-                $P = \Shop\Product::getInstance($args['item_number']);
+                $P = Shop\Product::getByID($args['item_number']);
                 $output[] = $gw->ProductButton($P);
             }
         }
@@ -156,7 +156,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
     case 'ipn':
         $id = isset($args['id']) ? $args['id'] : '';
         if ($id != '') {
-            $url = \Shop\IPN::getDetailUrl($id);
+            $url = Shop\IPN::getDetailUrl($id);
         }
         break;
     case 'checkout':
@@ -192,7 +192,7 @@ function service_addCartItem_shop($args, &$output, &$svc_msg)
         return PLG_RET_ERROR;
     }
 
-    $Cart = \Shop\Cart::getInstance();
+    $Cart = Shop\Cart::getInstance();
     $price = 0;
     foreach (array('amount', 'price') as $s) {
         if (isset($args[$s])) {
@@ -302,7 +302,7 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
         $amount = (float)$args;
         $symbol = true;
     }
-    $output = \Shop\Currency::getInstance()->Format($amount, $symbol);
+    $output = Shop\Currency::getInstance()->Format($amount, $symbol);
     return PLG_RET_OK;
 }
 
@@ -353,15 +353,15 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     if ($amt < .01) return PLG_RET_ERROR;
     if (empty($uids)) return PLG_RET_ERROR;
     foreach ($uids as $uid) {
-        $code = \Shop\Products\Coupon::Purchase($amt, $uid, $exp);
+        $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
         $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
         $output[$uid] = array(
             'code' => $code,
             'email' => $email,
-            'link' => \Shop\Products\Coupon::redemptionUrl($code),
+            'link' => Shop\Products\Coupon::redemptionUrl($code),
         );
         if ($notify && !empty($email)) {
-            \Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp);
+            Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp);
         }
     }
     return PLG_RET_OK;
@@ -377,7 +377,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
  */
 function plugin_formatAmount_shop($amount)
 {
-    return \Shop\Currency::getInstance()->Format((float)$amount);
+    return Shop\Currency::getInstance()->Format((float)$amount);
 }
 
 
