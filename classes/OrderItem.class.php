@@ -24,6 +24,10 @@ class OrderItem
      * @var array */
     private $properties = array();
 
+    /** Array of options for this item
+     * @var array */
+    public $options = array();
+
     /** Product object.
      * @var object */
     private $product = NULL;
@@ -34,7 +38,8 @@ class OrderItem
         'id', 'order_id', 'product_id',
         'description', 'quantity', 'txn_id', 'txn_type',
         'expiration', 'price', 'token',
-        'options', 'options_text', 'extras', 'taxable', 'paid',
+        //'options',
+        'options_text', 'extras', 'taxable', 'paid',
         'shipping', 'handling',
     );
 
@@ -42,26 +47,51 @@ class OrderItem
      * Constructor.
      * Initializes the order item
      *
-     * @param   integer $item   OrderItem record ID
+     * @param   integer $oi_id  OrderItem record ID
      * @uses    self::Load()
      */
-    function __construct($item = 0)
+    function __construct($oi_id = 0)
     {
-        if (is_numeric($item) && $item > 0) {
+        if (is_numeric($oi_id) && $oi_id > 0) {
             // Got an item ID, read from the DB
-            $status = $this->Read($item);
+            $status = $this->Read($oi_id);
             if (!$status) {
                 $this->id = 0;
+            } else {
+                $this->options = $this->getOptions();
             }
-        } elseif (is_array($item)) {
+        } elseif (is_array($oi_id)) {
             // Got an item record, just set the variables
-            if (!isset($item['product_id']) && isset($item['item_id'])) {
+            if (!isset($oi_id['product_id']) && isset($oi_id['item_id'])) {
                 // extract the item_id with options into the product ID
-                list($this->product_id) = explode('|', $item['item_id']);
+                list($this->product_id) = explode('|', $oi_id['item_id']);
+            } else {
+                $this->product_id = $oi_id['product_id'];
             }
-            $this->setVars($item);
+            if (isset($oi_id['options'])) {
+                COM_errorLog("HERE: " . print_r($oi_id['options'],true));
+                $this->options = $this->setOptions($oi_id['options']);
+            } else {
+                $this->options = array();
+            }
+            $extras = json_decode($oi_id['extras'], true);
+            if (
+                isset($extras['custom']) && 
+                !empty($extras['custom'])
+            ) {
+                $cust = $extras['custom'];
+                $P = Product::getByID($this->product_id);
+                foreach ($P->getCustom() as $id=>$name) {
+                    if (isset($cust[$id]) && !empty($cust[$id])) {
+                        $this->addOptionTextNew($name, $cust[$id]);
+                    }
+                }
+            }
+            $this->setVars($oi_id);
         }
+
         $this->product = Product::getByID($this->product_id);
+        COM_errorLog("item final: " . print_r($this->options,true));
     }
 
 
@@ -83,6 +113,7 @@ class OrderItem
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
+            $this->options = OrderItemOption::getOptionsForItem($rec_id);
             return $this->setVars(DB_fetchArray($res, false));
         } else {
             return false;
@@ -199,6 +230,18 @@ class OrderItem
     }
 
 
+    public function addOptionTextNew($name, $value)
+    {
+        $OIO = new OrderItemOption;
+        $OIO->oio_id = $this->id;
+        $OIO->ag_id = 0;
+        $OIO->attr_id = 0;
+        $OIO->attr_name = $name;
+        $OIO->attr_value = $value;
+        $this->options[] = $OIO;
+    }
+
+
     /**
      * Add an option text item to the order item.
      * This allows products to add additional information when purchased,
@@ -270,9 +313,9 @@ class OrderItem
                 price = '$this->price',
                 taxable = '{$this->taxable}',
                 token = '" . DB_escapeString($this->token) . "',
-                options = '" . DB_escapeString($this->options) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
                 extras = '" . DB_escapeString(json_encode($this->extras)) . "'";
+                //options = '" . DB_escapeString($this->options) . "',
                 //shipping = {$shipping},
                 //handling = {$handling},
             // add an expiration date if appropriate
@@ -281,13 +324,14 @@ class OrderItem
         }
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             Cache::deleteOrder($this->order_id);
             if ($this->id == 0) {
                 $this->id = DB_insertID();
             }
+            return $this->saveOptions();
             return true;
         } else {
             return false;
@@ -398,6 +442,99 @@ class OrderItem
             return false;
         }
         return true;
+    }
+
+
+    public function setOptions($opts = NULL)
+    {
+        $this->options = array();
+        if (is_string($opts)) {
+            $opts = explode(',', $opts);
+        }
+        if (is_array($opts)) {
+            foreach ($opts as $opt_id) {
+                $Attr = new Attribute($opt_id);
+                $OIO = new OrderItemOption;
+                $OIO->oio_id = $this->id;
+                $OIO->ag_id = $Attr->ag_id;
+                $OIO->attr_id = $opt_id;
+                $OIO->attr_name = $Attr->attr_name;
+                $OIO->attr_value = $Attr->attr_value;
+                $this->options[] = $OIO;
+            }
+        }
+    }
+
+
+    public function saveOptions()
+    {
+        COM_errorLog('here: ' . print_r($this->options,true));
+        foreach ($this->options as $Opt) {
+            $Opt->oi_id = $this->id;
+            COM_errorLog(print_r($Opt,true));
+        }
+    }
+
+
+    public function getOptions()
+    {
+        return OrderItemOption::getOptionsForItem($this->id);
+    }
+
+
+    /**
+     * Get the options display to be shown in the cart and on the order.
+     * Returns a string like so:
+     *      -- option1: option1_value
+     *      -- option2: optoin2_value
+     *
+     * @param  object  $item   Specific OrderItem object from the cart
+     * @return string      Option display
+     */
+    public function getOptionDisplay()
+    {
+        $retval = '';
+        $opts = array();
+
+        // Get attributes selected from the available options
+        // Use item_options since the class var doesn't work with empty()
+        $item_options = $item->options;
+        if (!empty($item_options)) {
+            $options = explode(',', $item_options);
+            foreach ($options as $option) {
+                $opts[] = array(
+                    'opt_name'  => $this->options[$option]['attr_name'],
+                    'opt_value' => $this->options[$option]['attr_value'],
+                );
+            }
+        }
+
+        // Get special fields submitted with the purchase
+        if (is_array($item->extras)) {
+            if (isset($item->extras['special']) && is_array($item->extras['special'])) {
+                $sp_flds = $this->getSpecialFields($item->extras['special']);
+                foreach ($sp_flds as $txt=>$val) {
+                    $opts[] = array(
+                        'opt_name'  => $txt,
+                        'opt_value' => $val,
+                    );
+                }
+            }
+        }
+
+        // Get text fields defined with the product
+        $text_names = explode('|', $this->custom);
+        if (
+            !empty($text_names) &&
+            isset($item->extras['custom']) &&
+            is_array($item->extras['custom'])
+        ) {
+            foreach ($item->extras['custom'] as $tid=>$val) {
+                if (array_key_exists($tid, $text_names)) {
+                    $opts[] = array();
+                }
+            }
+        }
     }
 
 }

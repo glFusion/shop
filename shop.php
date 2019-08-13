@@ -50,6 +50,7 @@ $_TABLES['shop.coupon_log']   = $_SHOP_table_prefix . 'coupon_log';
 $_TABLES['shop.sales']        = $_SHOP_table_prefix . 'sales';
 $_TABLES['shop.shipping']     = $_SHOP_table_prefix . 'shipping';
 $_TABLES['shop.attr_grp']     = $_SHOP_table_prefix . 'attr_groups';
+$_TABLES['shop.oi_opts']      = $_SHOP_table_prefix . 'orderitem_options';
 
 // Other relatively static values;
 $_SHOP_CONF['logfile'] = "{$_CONF['path']}/logs/{$_SHOP_CONF['pi_name']}_downloads.log";

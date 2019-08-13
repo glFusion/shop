@@ -1653,11 +1653,20 @@ class Product
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
         // Add attribute prices to base price
-        foreach ($options as $key) {
+        /*foreach ($options as $key) {
             $parts = explode('|', $key); // in case of "7|Black|1.50" option
             $key = $parts[0];
             if (isset($this->options[$key])) {
                 $price += (float)$this->options[$key]['attr_price'];
+            }
+        }*/
+
+        foreach ($options as $Opt) {
+            if ($Opt->attr_id > 0) {
+                $key = $Opt->att_id;
+                if (isset($this->options[$key])) {
+                    $price += (float)$this->options[$key]['attr_price'];
+                }
             }
         }
 
@@ -1907,13 +1916,15 @@ class Product
      * @param   integer $key    Array key into the $custom fields
      * @return  string      Custom field name, or "undefined"
      */
-    public function getCustom($key)
+    public function getCustom($key=NULL)
     {
         static $custom = NULL;
         if ($custom === NULL) {
             $custom = explode('|', $this->custom);
         }
-        if (isset($custom[$key])) {
+        if ($key === NULL) {
+            return $custom;
+        } elseif (isset($custom[$key])) {
             return $custom[$key];
         } else {
             return 'Undefined';

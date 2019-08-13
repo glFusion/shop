@@ -255,8 +255,11 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
         $item = new OrderItem($args);
+        COM_errorLog("item: " . print_r($item->options,true));
+        $item->Save();
         $this->items[] = $item;
-        $this->Save();
+        $this->calcTotalCharges();
+        //$this->Save();
     }
 
 
@@ -655,6 +658,7 @@ class Order
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->token,
                 'item_options'  => $P->getOptionDisplay($item),
+                //'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink(),
                 'pi_url'        => SHOP_URL,

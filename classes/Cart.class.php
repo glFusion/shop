@@ -153,6 +153,7 @@ class Cart extends Order
     public function addItem($args)
     {
         global $_SHOP_CONF, $_USER;
+        COM_errorLog("cart additem args: " . print_r($args,true));
 
         if (
             !isset($args['item_number'])
@@ -180,14 +181,14 @@ class Cart extends Order
         // the item_id.
         // Options are formatted as "id|dscp|price"
         $opts = array();
-        $opt_str = '';          // CSV option numbers
+        //$opt_str = '';          // CSV option numbers
         if (is_array($options) && !empty($options)) {
             foreach($options as $optname=>$option) {
                 $opt_tmp = explode('|', $option);
                 $opts[] = $opt_tmp[0];
-                $Attr = new Attribute($opt_tmp[0]);
+        //        $Attr = new Attribute($opt_tmp[0]);
             }
-            $opt_str = implode(',', $opts);
+         //   $opt_str = implode(',', $opts);
             // Add the option numbers to the item ID to create a new ID
             $item_id .= '|' . $opt_str;
         } else {

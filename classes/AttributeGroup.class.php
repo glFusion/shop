@@ -428,12 +428,12 @@ class AttributeGroup
                 'align' => 'center',
                 'sort'  => true,
             ),
-            array(
+            /*array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
-            ),
+            ),*/
         );
 
         $defsort_arr = array(

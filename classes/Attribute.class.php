@@ -547,12 +547,12 @@ class Attribute
                 'align' => 'right',
                 'sort' => true,
             ),
-            array(
+            /*array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
-            ),
+            ),*/
         );
 
         $defsort_arr = array(
