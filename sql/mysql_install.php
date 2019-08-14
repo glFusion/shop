@@ -515,9 +515,22 @@ $SHOP_UPGRADE['1.0.0'] = array(
         PRIMARY KEY (`ag_id`),
         KEY `orderby` (`ag_orderby`,`ag_name`)
     )",
+    "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
+      `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `order_id` varchar(40) NOT NULL,
+      `oi_id` int(11) unsigned NOT NULL,
+      `ag_id` int(11) unsigned NOT NULL,
+      `attr_id` int(11) unsigned NOT NULL,
+      `oio_name` varchar(40) DEFAULT NULL,
+      `oio_value` varchar(40) DEFAULT NULL,
+      `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      PRIMARY KEY (`oio_id`),
+      UNIQUE KEY `key1` (`order_id`,`oi_id`,`ag_id`,`attr_id`,`oio_name`)
+    )",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
 );
 
-$_SQL['attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
+$_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
+$_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
 
 ?>

@@ -68,11 +68,48 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = '1.0.0';
         if (!DB_checkTableExists('shop.attr_grp')) {
             // Initial populate of the new attribute group table
-            $SQL_UPGRADE['1.0.0'][] = "SET @i:=0";
             $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name, ag_orderby) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
             $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET ag_id = (SELECT ag_id FROM {$_TABLES['shop.attr_grp']} WHERE `ag_name` = `attr_name`)";
         }
+        $populate_oi_opts = !DB_checkTableExists('shop.oi_opts');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        // Synchronize the options and custom fields from the orderitem into the
+        // new ordeitem_options table. This should only be done once when the
+        // oi_opts table is created. Any time after this update the required
+        // source fields may be removed.
+        if ($populate_oi_opts) {
+            $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                // Transfer the option info from numbered options.
+                if (!empty($A['options'])) {
+                    $opt_ids = explode(',', $A['options']);
+                    $Item = new Shop\OrderItem($A);
+                    foreach ($opt_ids as $opt_id) {
+                        $OIO = new Shop\OrderItemOption();
+                        $OIO->oi_id = $A['id'];
+                        $OIO->setAttr($opt_id);
+                        $OIO->Save();
+                    }
+                }
+                // Now transfer custom text fields defined in the product.
+                $extras = json_decode($A['extras'], true);
+                if (isset($extras['custom']) && !empty($extras['custom'])) {
+                    $values = $extras['custom'];
+                    $P = Shop\Product::getByID($A['product_id']);
+                    $names = explode('|', $P->custom);
+                    foreach($names as $id=>$name) {
+                        if (!empty($values[$id])) {
+                            $OIO = new Shop\OrderItemOption();
+                            $OIO->oi_id = $A['id'];
+                            $OIO->setAttr(0, $name, $values[$id]);
+                            $OIO->Save();
+                        }
+                    }
+                }
+            }
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
