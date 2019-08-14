@@ -10,6 +10,7 @@
     </label>
     <div class="uk-form-controls">
 {!if item_id}
+      <input type="hidden" name="item_id" value="{item_id}" />
       {item_name}
 {!else}
     <select name="item_id" id="item_id" onchange="updateItemID(this.value);">
@@ -25,6 +26,7 @@
     </label>
     <div class="uk-form-controls">
 {!if attr_id}
+      <input type="hidden" name="ag_id" value="{ag_id}" />
       {ag_name}
 {!else}
     <select name="ag_id" id="attr_name_sel" onchange="updateAG(this.value);">

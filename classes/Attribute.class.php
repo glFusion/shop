@@ -190,7 +190,6 @@ class Attribute
                 // Bump the number from the "position after" value.
                 $A['orderby'] += 5;
             }
-
             $this->setVars($A);
         }
 
@@ -322,7 +321,7 @@ class Attribute
             ),
             'item_id'       => $this->item_id,
             'init_item_id'  => $init_item_id,
-            'item_name'     => Product::getInstance($this->item_id)->name,
+            'item_name'     => Product::getByID($this->item_id)->name,
             'ag_id'         => $this->ag_id,
             'ag_name'       => AttributeGroup::getInstance($this->ag_id)->ag_name,
             'attr_value'    => $this->attr_value,
@@ -409,12 +408,12 @@ class Attribute
     {
         global $_TABLES;
 
-        $attr_name = DB_escapeString($this->attr_name);
         $sql = "SELECT attr_id, orderby
                 FROM {$_TABLES['shop.prod_attr']}
                 WHERE item_id = '{$this->item_id}'
-                AND attr_name = '$attr_name'
+                AND ag_id= '{$this->ag_id}'
                 ORDER BY orderby ASC;";
+        //echo $sql;die;
         $result = DB_query($sql);
 
         $order = 10;        // First orderby value
