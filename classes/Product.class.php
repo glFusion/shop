@@ -1772,7 +1772,7 @@ class Product
             is_array($item->extras['custom'])
         ) {
             foreach ($item->extras['custom'] as $tid=>$val) {
-                if (array_key_exists($tid, $text_names)) {
+                if (array_key_exists($tid, $text_names) && !empty($val)) {
                     $opts[] = array(
                         'opt_name'  => $text_names[$tid],
                         'opt_value' => $val,
