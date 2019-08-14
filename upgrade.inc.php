@@ -73,6 +73,16 @@ function SHOP_do_upgrade($dvlp = false)
             $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET ag_id = (SELECT ag_id FROM {$_TABLES['shop.attr_grp']} WHERE `ag_name` = `attr_name`)";
         }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        // Update the order item to contain all option names and values
+        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            if (!empty($A['options'])) {
+                $Item = new Shop\OrderItem($A);
+                $Item->Save();
+            }
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 

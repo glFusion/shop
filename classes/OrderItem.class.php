@@ -200,6 +200,41 @@ class OrderItem
 
 
     /**
+     * Set the options text based on selected standard options.
+     *
+     * @return  aray    Array of option desciptions
+     */
+    public function getOptionsText()
+    {
+        $retval = array();
+
+        // Add selected options
+        $opts = $this->options;
+        if (is_string($opts)) {
+            $opts = explode(',', $opts);
+        }
+        foreach ($opts as $opt_id) {
+            if (isset($this->product->options[$opt_id])) {
+                $retval[] = $this->product->options[$opt_id]['attr_name'] . ': ' .
+                    $this->product->options[$opt_id]['attr_value'];
+            }
+        }
+
+        // Add custom text strings
+        $cust = explode('|', $this->product->custom);
+        foreach ($cust as $id=>$str) {
+            if (
+                isset($this->extras['custom'][$id]) &&
+                !empty($this->extras['custom'][$id])
+            ) {
+                $retval[] = $str . ': ' . $this->extras['custom'][$id];
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Add an option text item to the order item.
      * This allows products to add additional information when purchased,
      * beyond the standard options selected.
@@ -253,6 +288,7 @@ class OrderItem
         //$shipping = $this->product->getShipping($this->quantity);
         $shipping = 0;
         $handling = $this->product->getHandling($this->quantity);
+        $this->options_text = $this->getOptionsText();
 
         if ($this->id > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
