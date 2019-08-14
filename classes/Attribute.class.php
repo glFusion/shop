@@ -569,11 +569,10 @@ class Attribute
                 'class' => 'uk-button uk-button-success',
             )
         );
-        $product_selection = COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id);
         $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
             onchange=\"this.form.submit();\">
-            <option value=\"0\">-- Any --</option>\n" .
-            $product_selection .
+            <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
+            COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id) .
             "</select>&nbsp;\n";
 
         if ($sel_prod_id > 0) {
@@ -581,7 +580,8 @@ class Attribute
         } else {
             $def_filter = '';
         }
-        $query_arr = array('table' => 'shop.prod_attr',
+        $query_arr = array(
+            'table' => 'shop.prod_attr',
             'sql' => $sql,
             'query_fields' => array('p.name', 'attr_name', 'attr_value'),
             'default_filter' => $def_filter,
