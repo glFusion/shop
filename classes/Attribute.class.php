@@ -485,14 +485,16 @@ class Attribute
             LEFT JOIN {$_TABLES['shop.attr_grp']} ag
             ON at.ag_id = ag.ag_id
             LEFT JOIN {$_TABLES['shop.products']} p
-            ON at.item_id = p.id
-            WHERE 1=1 ";
+            ON at.item_id = p.id";
+//            WHERE 1=1 ";
 
-        if (isset($_POST['product_id']) && $_POST['product_id'] != '0') {
+        if (isset($_POST['product_id'])) {
             $sel_prod_id = (int)$_POST['product_id'];
-            $sql .= "AND p.id = '$sel_prod_id' ";
+            SESS_setVar('shop.attr_prod_id', $sel_prod_id);
+        } elseif (SESS_isSet('shop.attr_prod_id')) {
+            $sel_prod_id = (int)SESS_getVar('shop.attr_prod_id');
         } else {
-            $sel_prod_id = '';
+            $sel_prod_id = 0;
         }
 
         $header_arr = array(
@@ -574,10 +576,15 @@ class Attribute
             $product_selection .
             "</select>&nbsp;\n";
 
+        if ($sel_prod_id > 0) {
+            $def_filter = "WHERE item_id = '$sel_prod_id'";
+        } else {
+            $def_filter = '';
+        }
         $query_arr = array('table' => 'shop.prod_attr',
             'sql' => $sql,
             'query_fields' => array('p.name', 'attr_name', 'attr_value'),
-            'default_filter' => '',
+            'default_filter' => $def_filter,
         );
 
         $text_arr = array(
