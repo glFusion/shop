@@ -33,14 +33,15 @@ class OrderItemOption
     private static $fields = array(
         'oio_id', 'order_id', 'oi_id',
         'ag_id', 'attr_id',
-        'attr_name', 'attr_value',
+        'oio_name', 'oio_value',
+        'oio_price',
     );
 
     /**
      * Constructor.
      * Initializes the order item
      *
-     * @param   integer $item   OrderItem record ID
+     * @param   integer $item   OrderItemObject record ID or array
      * @uses    self::Load()
      */
     function __construct($item = 0)
@@ -119,8 +120,10 @@ class OrderItemOption
         case 'attr_id':
             $this->properties[$key] = (int)$value;
             break;
+        case 'oio_price':
+            $this->properties[$key] = (float)$value;
+            break;
         default:
-            //COM_errorLog($key . ' is ' . print_r($value,true));
             $this->properties[$key] = trim($value);
             break;
         }
@@ -183,7 +186,7 @@ class OrderItemOption
      * @param   string  $text   Text to add
      * @param   boolean $save   True to immediately save the item
      */
-    public static function AddAttrib($oi_id, $attr_id)
+    public static function XXXAddAttrib($oi_id, $attr_id)
     {
         global $_TABLES;
 
@@ -199,27 +202,7 @@ class OrderItemOption
 
 
     /**
-     * Add a special text element to an order item.
-     * This allows products to add additional information when purchased,
-     * beyond the items entered at purchase.
-     *
-     * @param   string  $name   Name of element
-     * @param   string  $value  Value of element
-     * @param   boolean $save   True to immediately save the item
-     */
-    public function addSpecial($name, $value, $save=true)
-    {
-        // extras is set by __set so it has to be extracted to get at
-        // the sub-elements
-        $x = $this->extras;
-        $x['special'][$name] = strip_tags($value);
-        $this->extras = $x;
-        if ($save) $this->Save();
-    }
-
-
-    /**
-     * Save an order item to the database.
+     * Save an order item to the database. Only new records can be added.
      *
      * @return  boolean     True on success, False on DB error
      */
@@ -227,27 +210,17 @@ class OrderItemOption
     {
         global $_TABLES;
 
-        if ($this->oio_id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.oi_opts']} ";
-            $sql3 = " WHERE oio_id = '{$this->oio_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.oi_opts']} ";
-            $sql3 = '';
-        }
-        /*'oio_id', 'order_id', 'orderitem_id',
-        'ag_id', 'attr_id',
-        'attr_name', 'attr_value',*/
-
-        $sql2 = "SET 
-                oi_id = '" . DB_escapeString($this->oi_id) . "',
-                ag_id = '{$this->ag_id}',
-                attr_id = '{$this->attr_id}',
-                attr_name = '" . DB_escapeString($this->attr_name) . "',
-                attr_value = '" . DB_escapeString($this->attr_value) . "'";
-        $sql = $sql1 . $sql2 . $sql3;
+        $sql = "INSERT INTO {$_TABLES['shop.oi_opts']} SET
+            order_id = '" . DB_escapeString($this->order_id) . "',
+            oi_id = '{$this->oi_id}',
+            ag_id = '{$this->ag_id}',
+            attr_id = '{$this->attr_id}',
+            oio_name = '" . DB_escapeString($this->oio_name) . "',
+            oio_value = '" . DB_escapeString($this->oio_value) . "',
+            oio_price = '{$this->oio_price}'";
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        DB_query($sql, 1);  // ignore dup key issues.
         if (!DB_error()) {
             Cache::deleteOrder($this->order_id);
             if ($this->oio_id == 0) {
@@ -260,6 +233,14 @@ class OrderItemOption
     }
 
 
+    /**
+     * Set the Option attributes from the attibute table.
+     * Allows for a standad option, or for a custom name/value pair.
+     *
+     * @param   integer $attr_id    Option ID, zero to user name/value
+     * @param   string  $name       Name of custom field
+     * @param   string  $value      Value of custom field
+     */
     public function setAttr($attr_id, $name='', $value='')
     {
         if ($attr_id > 0) {
@@ -268,14 +249,16 @@ class OrderItemOption
                 $AG = new AttributeGroup($Attr->ag_id);
                 $this->attr_id = $Attr->attr_id;
                 $this->ag_id = $Attr->ag_id;
-                $this->attr_name = $AG->ag_name;
-                $this->attr_value = $Attr->attr_value;
+                $this->oio_name = $AG->ag_name;
+                $this->oio_value = $Attr->attr_value;
+                $this->oio_price = $Attr->attr_price;
             }
         } elseif ($name != '' && $value != '') {
             $this->attr_id = 0;
             $this->ag_id = 0;
-            $this->attr_name = $name;
-            $this->attr_value = $value;
+            $this->oio_name = $name;
+            $this->oio_value = $value;
+            $this->oio_price = 0;
         }
     }
 
