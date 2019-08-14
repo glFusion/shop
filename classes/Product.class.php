@@ -1199,6 +1199,7 @@ class Product
         // Get the product options, if any, and set them into the form
         $cbrk = '';
         $init_price_adj = NULL;
+        $json_opts = array();
         $this->_orig_price = $this->price;
         $T->set_block('product', 'AttrSelect', 'attrSel');
         if (is_array($this->options)) {
@@ -1228,6 +1229,7 @@ class Product
                     $attributes = '';
                 }
 
+                $json_opts[$id] = $Attr['attr_price'];
                 if ($type == 'select') {
                     if ($init_price_adj === NULL) $init_price_adj = $Attr['attr_price'];
                     if ($Attr['attr_price'] != 0) {
@@ -1236,8 +1238,11 @@ class Product
                         $attr_str = '';
                     }
                     $val = htmlspecialchars($Attr['attr_value']);
-                    $attributes .= '<option value="' . $id . '|' .
+                    /*$attributes .= '<option value="' . $id . '|' .
                         $val . '|' . $Attr['attr_price'] . '">' .
+                        $val . $attr_str .
+                        '</option>' . LB;*/
+                    $attributes .= '<option value="' . $id . '">' .
                         $val . $attr_str .
                         '</option>' . LB;
                 /*} else {
@@ -1348,6 +1353,7 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
+            'opt_prices'        => json_encode($json_opts),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));

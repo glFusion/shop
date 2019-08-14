@@ -254,9 +254,7 @@ class Order
         if (!is_array($args)) return;
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
-        COM_errorLog("AGS: " . print_r($args,true));
         $item = new OrderItem($args);
-        COM_errorLog("item_options: " . print_r($item->options,true));
         $item->Save();
         $this->items[] = $item;
         $this->calcTotalCharges();
@@ -457,6 +455,7 @@ class Order
 
         // Checks passed, delete the order and items
         $sql = "START TRANSACTION;
+            DELETE FROM {$_TABLES['shop.oi_opts']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
             COMMIT;";
