@@ -202,7 +202,6 @@ class Cart extends Order
         } else {
             $have_id = false;
         }
-        COM_errorLog('have_id: ' . print_r($have_id,true));
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
@@ -215,7 +214,7 @@ class Cart extends Order
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
                 'price'     => sprintf("%.2f", $price),
-                'options'   => $opt_str,
+                'options'   => $options,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );
