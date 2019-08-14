@@ -59,7 +59,7 @@ class OrderItemOption
             }
             $this->setVars($item);
         }
-        $this->product = Product::getByID($this->product_id);
+        //$this->product = Product::getByID($this->product_id);
     }
 
 
@@ -246,7 +246,7 @@ class OrderItemOption
                 attr_value = '" . DB_escapeString($this->attr_value) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             Cache::deleteOrder($this->order_id);
@@ -257,6 +257,35 @@ class OrderItemOption
         } else {
             return false;
         }
+    }
+
+
+    public function setAttr($attr_id, $name='', $value='')
+    {
+        if ($attr_id > 0) {
+            $Attr = new Attribute($attr_id);
+            if ($Attr->attr_id > 0) {
+                $AG = new AttributeGroup($Attr->ag_id);
+                $this->attr_id = $Attr->attr_id;
+                $this->ag_id = $Attr->ag_id;
+                $this->attr_name = $AG->ag_name;
+                $this->attr_value = $Attr->attr_value;
+            }
+        } elseif ($name != '' && $value != '') {
+            $this->attr_id = 0;
+            $this->ag_id = 0;
+            $this->attr_name = $name;
+            $this->attr_value = $value;
+        }
+    }
+
+
+
+    public static function deleteItem($oi_id)
+    {
+        global $_TABLES;
+
+        DB_delete($_TABLES['shop.oi_opts'], 'oi_id', (int)$oi_id);
     }
 
 }

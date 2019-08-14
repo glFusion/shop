@@ -254,8 +254,9 @@ class Order
         if (!is_array($args)) return;
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
+        COM_errorLog("AGS: " . print_r($args,true));
         $item = new OrderItem($args);
-        COM_errorLog("item: " . print_r($item->options,true));
+        COM_errorLog("item_options: " . print_r($item->options,true));
         $item->Save();
         $this->items[] = $item;
         $this->calcTotalCharges();
@@ -657,8 +658,8 @@ class Order
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->token,
-                'item_options'  => $P->getOptionDisplay($item),
-                //'item_options'  => $item->getOptionDisplay(),
+                //'item_options'  => $P->getOptionDisplay($item),
+                'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink(),
                 'pi_url'        => SHOP_URL,
@@ -1403,6 +1404,8 @@ class Order
      */
     public function Contains($item_id, $extras=array())
     {
+        return false;
+
         $id_parts = SHOP_explode_opts($item_id, true);
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(

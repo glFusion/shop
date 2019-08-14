@@ -188,7 +188,7 @@ class Cart extends Order
                 $opts[] = $opt_tmp[0];
         //        $Attr = new Attribute($opt_tmp[0]);
             }
-         //   $opt_str = implode(',', $opts);
+            $opt_str = implode(',', $opts);
             // Add the option numbers to the item ID to create a new ID
             $item_id .= '|' . $opt_str;
         } else {
@@ -202,6 +202,7 @@ class Cart extends Order
         } else {
             $have_id = false;
         }
+        COM_errorLog('have_id: ' . print_r($have_id,true));
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
@@ -388,6 +389,7 @@ class Cart extends Order
 
         if (isset($this->items[$id])) {
             DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
+            OrderItemOption::deleteItem($id);
             unset($this->items[$id]);
             $this->Save();
         }

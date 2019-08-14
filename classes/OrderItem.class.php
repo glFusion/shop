@@ -68,12 +68,6 @@ class OrderItem
             } else {
                 $this->product_id = $oi_id['product_id'];
             }
-            if (isset($oi_id['options'])) {
-                COM_errorLog("HERE: " . print_r($oi_id['options'],true));
-                $this->options = $this->setOptions($oi_id['options']);
-            } else {
-                $this->options = array();
-            }
             $extras = json_decode($oi_id['extras'], true);
             if (
                 isset($extras['custom']) && 
@@ -83,11 +77,19 @@ class OrderItem
                 $P = Product::getByID($this->product_id);
                 foreach ($P->getCustom() as $id=>$name) {
                     if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $this->addOptionTextNew($name, $cust[$id]);
+                        $this->addOptionTextNew($name, $cust[$id], $id);
                     }
                 }
             }
             $this->setVars($oi_id);
+        }
+        if ($oi_id['id'] == 0) {
+           if (isset($oi_id['options'])) {
+//                COM_errorLog("HERE: " . print_r($oi_id,true));die;
+               $this->options = $this->setOptions($oi_id['options']);
+           }
+        } else {
+            $this->options = $this->getOptions();
         }
 
         $this->product = Product::getByID($this->product_id);
@@ -230,15 +232,17 @@ class OrderItem
     }
 
 
-    public function addOptionTextNew($name, $value)
+    public function addOptionTextNew($name, $value, $idx)
     {
         $OIO = new OrderItemOption;
         $OIO->oio_id = $this->id;
         $OIO->ag_id = 0;
-        $OIO->attr_id = 0;
+        $OIO->attr_id = $idx;
         $OIO->attr_name = $name;
         $OIO->attr_value = $value;
         $this->options[] = $OIO;
+        COM_errorLog("new option aray: " . print_r($this->options,true));
+        
     }
 
 
@@ -327,6 +331,7 @@ class OrderItem
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
+            COM_errorLog("item saved");
             Cache::deleteOrder($this->order_id);
             if ($this->id == 0) {
                 $this->id = DB_insertID();
@@ -447,22 +452,23 @@ class OrderItem
 
     public function setOptions($opts = NULL)
     {
-        $this->options = array();
         if (is_string($opts)) {
             $opts = explode(',', $opts);
         }
         if (is_array($opts)) {
             foreach ($opts as $opt_id) {
-                $Attr = new Attribute($opt_id);
+                //$Attr = new Attribute($opt_id);
                 $OIO = new OrderItemOption;
+                $OIO->setAttr($opt_id);
                 $OIO->oio_id = $this->id;
-                $OIO->ag_id = $Attr->ag_id;
+                /*$OIO->ag_id = $Attr->ag_id;
                 $OIO->attr_id = $opt_id;
                 $OIO->attr_name = $Attr->attr_name;
-                $OIO->attr_value = $Attr->attr_value;
+                $OIO->attr_value = $Attr->attr_value;*/
                 $this->options[] = $OIO;
             }
         }
+        return $this->options;
     }
 
 
@@ -471,7 +477,8 @@ class OrderItem
         COM_errorLog('here: ' . print_r($this->options,true));
         foreach ($this->options as $Opt) {
             $Opt->oi_id = $this->id;
-            COM_errorLog(print_r($Opt,true));
+            COM_errorLog('SAVING: ' . print_r($Opt,true));
+            $Opt->Save();
         }
     }
 
@@ -494,47 +501,20 @@ class OrderItem
     public function getOptionDisplay()
     {
         $retval = '';
-        $opts = array();
 
-        // Get attributes selected from the available options
-        // Use item_options since the class var doesn't work with empty()
-        $item_options = $item->options;
-        if (!empty($item_options)) {
-            $options = explode(',', $item_options);
-            foreach ($options as $option) {
-                $opts[] = array(
-                    'opt_name'  => $this->options[$option]['attr_name'],
-                    'opt_value' => $this->options[$option]['attr_value'],
-                );
+        if (!empty($this->options)) {
+            $T = SHOP_getTemplate('view_options', 'options');
+            $T->set_block('options', 'ItemOptions', 'ORow');
+            foreach ($this->options as $Opt) {
+                $T->set_var(array(
+                    'opt_name'  => $Opt->attr_name,
+                    'opt_value' => strip_tags($Opt->attr_value),
+                ) );
+                $T->parse('ORow', 'ItemOptions', true);
             }
+            $retval .= $T->parse('output', 'options');
         }
-
-        // Get special fields submitted with the purchase
-        if (is_array($item->extras)) {
-            if (isset($item->extras['special']) && is_array($item->extras['special'])) {
-                $sp_flds = $this->getSpecialFields($item->extras['special']);
-                foreach ($sp_flds as $txt=>$val) {
-                    $opts[] = array(
-                        'opt_name'  => $txt,
-                        'opt_value' => $val,
-                    );
-                }
-            }
-        }
-
-        // Get text fields defined with the product
-        $text_names = explode('|', $this->custom);
-        if (
-            !empty($text_names) &&
-            isset($item->extras['custom']) &&
-            is_array($item->extras['custom'])
-        ) {
-            foreach ($item->extras['custom'] as $tid=>$val) {
-                if (array_key_exists($tid, $text_names)) {
-                    $opts[] = array();
-                }
-            }
-        }
+        return $retval;
     }
 
 }
