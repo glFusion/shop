@@ -1199,6 +1199,7 @@ class Product
         // Get the product options, if any, and set them into the form
         $cbrk = '';
         $init_price_adj = NULL;
+        $json_opts = array();
         $this->_orig_price = $this->price;
         $T->set_block('product', 'AttrSelect', 'attrSel');
         if (is_array($this->options)) {
@@ -1228,6 +1229,7 @@ class Product
                     $attributes = '';
                 }
 
+                $json_opts[$id] = $Attr['attr_price'];
                 if ($type == 'select') {
                     if ($init_price_adj === NULL) $init_price_adj = $Attr['attr_price'];
                     if ($Attr['attr_price'] != 0) {
@@ -1236,8 +1238,11 @@ class Product
                         $attr_str = '';
                     }
                     $val = htmlspecialchars($Attr['attr_value']);
-                    $attributes .= '<option value="' . $id . '|' .
+                    /*$attributes .= '<option value="' . $id . '|' .
                         $val . '|' . $Attr['attr_price'] . '">' .
+                        $val . $attr_str .
+                        '</option>' . LB;*/
+                    $attributes .= '<option value="' . $id . '">' .
                         $val . $attr_str .
                         '</option>' . LB;
                 /*} else {
@@ -1348,6 +1353,7 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
+            'opt_prices'        => json_encode($json_opts),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
@@ -1653,11 +1659,20 @@ class Product
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
         // Add attribute prices to base price
-        foreach ($options as $key) {
+        /*foreach ($options as $key) {
             $parts = explode('|', $key); // in case of "7|Black|1.50" option
             $key = $parts[0];
             if (isset($this->options[$key])) {
                 $price += (float)$this->options[$key]['attr_price'];
+            }
+        }*/
+
+        foreach ($options as $Opt) {
+            if ($Opt->attr_id > 0) {
+                $key = $Opt->att_id;
+                if (isset($this->options[$key])) {
+                    $price += (float)$this->options[$key]['attr_price'];
+                }
             }
         }
 
@@ -1907,13 +1922,15 @@ class Product
      * @param   integer $key    Array key into the $custom fields
      * @return  string      Custom field name, or "undefined"
      */
-    public function getCustom($key)
+    public function getCustom($key=NULL)
     {
         static $custom = NULL;
         if ($custom === NULL) {
             $custom = explode('|', $this->custom);
         }
-        if (isset($custom[$key])) {
+        if ($key === NULL) {
+            return $custom;
+        } elseif (isset($custom[$key])) {
             return $custom[$key];
         } else {
             return 'Undefined';

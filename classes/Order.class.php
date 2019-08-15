@@ -255,8 +255,10 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
         $item = new OrderItem($args);
+        $item->Save();
         $this->items[] = $item;
-        $this->Save();
+        $this->calcTotalCharges();
+        //$this->Save();
     }
 
 
@@ -453,6 +455,7 @@ class Order
 
         // Checks passed, delete the order and items
         $sql = "START TRANSACTION;
+            DELETE FROM {$_TABLES['shop.oi_opts']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
             COMMIT;";
@@ -654,7 +657,8 @@ class Order
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->token,
-                'item_options'  => $P->getOptionDisplay($item),
+                //'item_options'  => $P->getOptionDisplay($item),
+                'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink(),
                 'pi_url'        => SHOP_URL,
@@ -1399,6 +1403,8 @@ class Order
      */
     public function Contains($item_id, $extras=array())
     {
+        return false;
+
         $id_parts = SHOP_explode_opts($item_id, true);
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
