@@ -160,44 +160,25 @@ class OrderItemOption
     /**
      * Get the options associated with an order item.
      *
-     * @param   integer $oi_id      OrderItem ID
+     * @param   object  $Item   OrderItem
      * @return  array       Array of OrderItemOption objects
      */
-    public static function getOptionsForItem($oi_id)
+    public static function getOptionsForItem($Item)
     {
         global $_TABLES;
 
-        $retval = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-            WHERE oi_id = $oi_id";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[] = new self($A);
+        $cache_key = "oio_item_{$Item->order_id}";
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
+                WHERE oi_id = {$Item->id}";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[] = new self($A);
+            }
+            Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
         }
         return $retval;
-    }
-
-
-    /**
-     * Add an option item to the order item.
-     * This allows products to add additional information when purchased,
-     * beyond the standard options selected.
-     *
-     * @param   string  $text   Text to add
-     * @param   boolean $save   True to immediately save the item
-     */
-    public static function XXXAddAttrib($oi_id, $attr_id)
-    {
-        global $_TABLES;
-
-        $OI = new OrderItem($oi_id);
-        if ($OI->id == 0) {
-            return false;
-        }
-        $Attr = new Attribute($attr_id);
-        if ($Attr->attr_id == 0) {
-            return false;
-        }
     }
 
 

@@ -521,7 +521,7 @@ class OrderItem
      */
     public function getOptions()
     {
-        return OrderItemOption::getOptionsForItem($this->id);
+        return OrderItemOption::getOptionsForItem($this);
     }
 
 
