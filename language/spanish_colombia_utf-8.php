@@ -479,6 +479,13 @@ $LANG_SHOP = array (
 'err_missing_email' => 'A valid email address is required.',
 'use_fixed' => 'Include per-item fixed shipping',
 'refunded_x' => 'Refunded %s',
+'catalog' => 'Catalog',
+'new_ag' => 'New Attribute Group',
+'attr_grp' => 'Attribute Groups',
+'err_dup_sku' => 'The SKU must be unique across all products.',
+'first' => 'First',
+'last' => 'Last',
+'pos_after' => 'Position After',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -501,6 +508,7 @@ $LANG_SHOP_HELP = array(
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
 'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuration.',
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
+'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -582,6 +590,7 @@ $LANG_confignames['shop'] = array(
     'shop_enabled'  => 'Enable public access?',
     'hp_layout'     => 'Homepage Layout',
     'ipn_url'       => 'IPN URL Override',
+    'use_sku'       => 'Use SKU as Product ID?',
 );
 
 /** Language strings for the subgroup names in the config section */
