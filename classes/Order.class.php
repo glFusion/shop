@@ -1405,8 +1405,6 @@ class Order
      */
     public function Contains($item_id, $extras=array())
     {
-        return false;
-
         $id_parts = SHOP_explode_opts($item_id, true);
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
