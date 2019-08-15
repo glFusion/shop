@@ -252,6 +252,8 @@ class Order
     public function addItem($args)
     {
         if (!is_array($args)) return;
+        $item_id = explode('|', $args['item_id']);  // TODO: DEPRECATE
+        $args['product_id'] = $item_id[0];
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
         $item = new OrderItem($args);
