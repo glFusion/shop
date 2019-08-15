@@ -182,6 +182,7 @@ $LANG_SHOP = array (
 'err_missing_file'  => 'Missing file for downloadable product',
 'err_missing_exp'   => 'Missing expiration period for downloadable product',
 'err_phys_need_price' => 'Non-downloadable items must have a positive price value',
+'err_dup_sku'       => 'The SKU must be unique across all products.',
 'missing_fields'    => 'Missing Fields',
 'no_javascript'     => 'Javascript is required for this site to function properly. Your cart may not be updated accurately, and your order may be delayed unless you enable Javascript in your browser.',
 'clk_help'      => 'Click for Help',

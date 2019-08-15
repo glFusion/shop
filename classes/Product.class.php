@@ -2902,18 +2902,18 @@ class Product
      */
     private function _Validate()
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $errors = array();
-        $name = DB_escapeString($this->name);
+        $sku = DB_escapeString($this->name);
         $sku_err = (int)DB_getItem(
             $_TABLES['shop.products'],
             'count(*)',
-            "name = '$name' AND id <> {$this->id}"
+            "name = '$sku' AND id <> {$this->id}"
         );
 
         if ($sku_err > 0) {
-            $errors[] = 'SKU is not unique';
+            $errors[] = $LANG_SHOP['err_dup_sku'];
         }
         return $errors;
     }
