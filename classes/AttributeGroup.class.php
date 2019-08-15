@@ -131,6 +131,12 @@ class AttributeGroup
     }
 
 
+    /**
+     * Get an instance of a specific attribute group.
+     *
+     * @param   integer $ag_id  AttributeGroup record ID
+     * @return  object      AttributeGroup object
+     */
     public static function getInstance($ag_id)
     {
         $grps = self::getAll();
