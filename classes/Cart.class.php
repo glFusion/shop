@@ -153,7 +153,6 @@ class Cart extends Order
     public function addItem($args)
     {
         global $_SHOP_CONF, $_USER;
-        COM_errorLog("cart additem args: " . print_r($args,true));
 
         if (
             !isset($args['item_number'])
@@ -387,8 +386,7 @@ class Cart extends Order
         global $_TABLES;
 
         if (isset($this->items[$id])) {
-            DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
-            OrderItemOption::deleteItem($id);
+            OrderItem::Delete($id);
             unset($this->items[$id]);
             $this->Save();
         }
