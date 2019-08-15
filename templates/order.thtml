@@ -120,8 +120,8 @@
         <!-- BEGIN ItemRow -->
         <tr>
           <td>
-{!!if {img_url} && {detail_url} !!}
-            <a href="{detail_url}">{img_url}</a>
+{!!if {img_url} && {item_link} !!}
+            <a href="{item_link}">{img_url}</a>
 {!else}
             {img_url}
 {!endif}
@@ -129,8 +129,8 @@
           <td>
 {!if is_admin}
             <a href="{site_admin_url}/plugins/shop/report.php?period=at&item_id={item_id}&run=itempurchase" class="tooltip" title="{$LANG_SHOP['orderhist_item']}">{item_dscp}</a>
-{!elseif detail_url}
-            <a href="{detail_url}">{item_dscp}</a>
+{!elseif item_link}
+            <a href="{item_link}">{item_dscp}</a>
 {!else}
             {item_dscp}
 {!endif}

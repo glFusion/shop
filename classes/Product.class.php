@@ -573,6 +573,7 @@ class Product
             $this->options = array();
             while ($A = DB_fetchArray($result, false)) {
                 $this->options[$A['attr_id']] = array(
+                    'ag_id'     => $A['ag_id'],
                     'attr_name' => $A['ag_name'],
                     'attr_value' => $A['attr_value'],
                     'attr_price' => $A['attr_price'],
@@ -1119,7 +1120,7 @@ class Product
      *
      * @return  string      HTML for the product page.
      */
-    public function Detail()
+    public function Detail($oi_id=0)
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
@@ -1132,6 +1133,10 @@ class Product
 
         // Get the currency object which is used repeatedly
         $Cur = Currency::getInstance();
+
+        // Get the related OrderItem object, if any.
+        // Used when displaying the product detail from an orde or cart view.
+        $OI = new OrderItem($oi_id);
 
         // Set the template dir based on the configured template version
         $T = SHOP_getTemplate(
@@ -1166,9 +1171,11 @@ class Product
             $T->set_block('product', 'CustAttrib', 'cAttr');
             $text_field_names = explode('|', $this->custom);
             foreach ($text_field_names as $id=>$text_field_name) {
+                $val = $OI->getOptionByAG(0, $text_field_name)->oio_value;
                 $T->set_var(array(
                     'fld_id'    => "cust_text_fld_$id",
                     'fld_name'  => htmlspecialchars($text_field_name),
+                    'fld_val'   => htmlspecialchars($val),
                 ) );
                 $T->parse('cAttr', 'CustAttrib', true);
             }
@@ -1204,12 +1211,11 @@ class Product
         $T->set_block('product', 'AttrSelect', 'attrSel');
         if (is_array($this->options)) {
             foreach ($this->options as $id=>$Attr) {
-                /*if ($Attr['attr_value'] === '') {
-                    $type = 'text';
-                } else {
-                    $type = 'select';
-                }*/
                 $type = 'select';
+                $sel = $OI->getOptionByAG($Attr['ag_id']);
+                if ($sel !== false) {
+                    $sel = $sel->attr_id;
+                }
                 if ($Attr['attr_name'] != $cbrk) {
                     // Adjust the price for cases where all attributes have prices
                     if ($init_price_adj !== NULL) {
@@ -1242,7 +1248,8 @@ class Product
                         $val . '|' . $Attr['attr_price'] . '">' .
                         $val . $attr_str .
                         '</option>' . LB;*/
-                    $attributes .= '<option value="' . $id . '">' .
+                    $selected = $id == $sel ? 'selected="selected"' : '';
+                    $attributes .= '<option value="' . $id . '"' . $selected . '>' .
                         $val . $attr_str .
                         '</option>' . LB;
                 /*} else {
@@ -2231,14 +2238,19 @@ class Product
     /**
      * Get the URL to the item detail page.
      *
+     * @param   integer $oi_id  Orde Item ID
      * @return  string      Item detail URL
      */
-    public function getLink()
+    public function getLink($oi_id=0)
     {
         global $_SHOP_CONF;
 
         $id = $_SHOP_CONF['use_sku'] ? $this->name : $this->id;
-        return COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
+        $url = SHOP_URL . '/detail.php?id=' . $id;
+        if ($oi_id > 0) {
+            $url .= '&oi_id=' . (int)$oi_id;
+        }
+        return COM_buildUrl($url);
     }
 
 

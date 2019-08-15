@@ -662,11 +662,10 @@ class Order
                 //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
-                'item_link'     => $P->getLink(),
+                'item_link'     => $P->getLink($item->id),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
-                'detail_url'    => $P->getLink(),
                 'price_tooltip' => $price_tooltip,
             ) );
             if ($P->isPhysical()) {

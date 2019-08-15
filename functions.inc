@@ -984,7 +984,7 @@ function phpblock_shop_cart_contents()
             'quantity'      => $item->quantity,
             'item_total'    => $Cur->FormatValue($item_total),
 //            'pi_url'        => SHOP_URL,
-            'item_link'     => $P->getLink(),
+            'item_link'     => $P->getLink($item->id),
         ) );
         $T->parse('cRow', 'CartRow', true);
         $total += $item_total;

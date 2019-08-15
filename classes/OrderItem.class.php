@@ -108,8 +108,9 @@ class OrderItem
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
-            $this->options = OrderItemOption::getOptionsForItem($rec_id);
-            return $this->setVars(DB_fetchArray($res, false));
+            $this->setVars(DB_fetchArray($res, false));
+            $this->options = OrderItemOption::getOptionsForItem($this);
+            return true;
         } else {
             return false;
         }
@@ -196,6 +197,32 @@ class OrderItem
     public function getOrder()
     {
         return Order::getInstance($this->order_id);
+    }
+
+
+    public function getOptionByAG($ag_id, $name='')
+    {
+        if ($this->id < 1) {
+            // This could be an empty object if the detail view is not from
+            // an order view.
+            return new OrderItemOption;
+        }
+        if ($ag_id > 0) {     // getting a standard option selection
+            $key = 'ag_id';
+            $val = $ag_id;
+        } elseif ($name != '') {
+            $key = 'oio_name';
+            $val = $name;
+        } else {
+            echo "er";die;
+            return new OrderItemOption;
+        }
+        foreach($this->options as $Opt) {
+            if ($Opt->$key == $val) {
+                return $Opt;
+            }
+        }
+        return new OrderItemOption;
     }
 
 
