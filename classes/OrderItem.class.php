@@ -464,13 +464,12 @@ class OrderItem
         if ($this->product_id != $Item2->product_id) {
             return false;
         }
-        if ($this->options != $Item2->options) {
-            return false;
-        }
-        if ($this->extras != $Item2->extras) {
-            return false;
-        }
-        return true;
+        $opts_to_check = array(
+            'ag_id', 'attr_id',
+            'oio_name', 'oio_value',
+            'oio_price',
+        );
+        return OrderItemOption::MatchAll($this->options, $Item2->options);
     }
 
 
@@ -551,6 +550,19 @@ class OrderItem
             $retval .= $T->parse('output', 'options');
         }
         return $retval;
+    }
+
+
+    /**
+     * Delete an order item and related options from the database.
+     *
+     * @see     Cart::Remove()
+     * @param   integer $id     Order item record ID
+     */
+    public static function Delete($id)
+    {
+        DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
+        OrderItemOption::deleteItem($id);
     }
 
 }

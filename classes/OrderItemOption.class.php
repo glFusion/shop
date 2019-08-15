@@ -167,7 +167,7 @@ class OrderItemOption
     {
         global $_TABLES;
 
-        $cache_key = "oio_item_{$Item->order_id}";
+        $cache_key = "oio_item_{$Item->id}";
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
@@ -244,13 +244,64 @@ class OrderItemOption
     }
 
 
-
+    /**
+     * Delete all options related to a specified OrderItem.
+     *
+     * @param   integer $oi_id      OrderItem record ID
+     */
     public static function deleteItem($oi_id)
     {
         global $_TABLES;
 
         DB_delete($_TABLES['shop.oi_opts'], 'oi_id', (int)$oi_id);
     }
+
+
+    /**
+     * Check if this option object matches the supplied object.
+     *
+     * @param   object  $Opt2   Second option to check
+     * @return  boolean     True if the objects match, False if not.
+     */
+    public function Matches($Opt2)
+    {
+        $flds_to_check = array(
+            'ag_id', 'attr_id',
+            'oio_name', 'oio_value',
+            'oio_price',
+        );
+        foreach ($flds_to_check as $fldname) {
+            if ($this->$fldname != $Opt2->$fldname) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * Check whether all the option objects match.
+     *
+     * @uses    self::Matches()
+     * @param   array   $arr1   Array of OrderItemOption objects
+     * @param   array   $arr2   Array of OrderItemOption objects
+     * @return  boolean     True if all objects match
+     */
+    public static function MatchAll($arr1, $arr2)
+    {
+        // Different number of options, can't match
+        if (count($arr1) != count($arr2)) {
+            return false;
+        }
+        foreach ($arr1 as $idx=>$Opt1) {
+            $Opt2 = $arr2[$idx];
+            if (!$Opt1->Matches($Opt2)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 }
 
