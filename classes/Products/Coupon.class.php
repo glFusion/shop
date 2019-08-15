@@ -301,7 +301,7 @@ class Coupon extends \Shop\Product
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial
-        $Item->addOptionText($LANG_SHOP['code'] . ': ' . $gc_code, false);
+        $Item->addOptionText($LANG_SHOP['code'], $gc_code);
         $Item->addSpecial('gc_code', $gc_code);
 
         parent::handlePurchase($Item, $Order);

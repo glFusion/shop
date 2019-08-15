@@ -62,38 +62,31 @@ class OrderItem
             }
         } elseif (is_array($oi_id)) {
             // Got an item record, just set the variables
-            if (!isset($oi_id['product_id']) && isset($oi_id['item_id'])) {
-                // extract the item_id with options into the product ID
-                list($this->product_id) = explode('|', $oi_id['item_id']);
+            $this->setVars($oi_id);
+            if ($this->id == 0) {
+                // New item, add options from the supplied arguments.
+                if (isset($oi_id['options'])) {
+                    $this->options = $this->setOptions($oi_id['options']);
+                }
             } else {
-                $this->product_id = $oi_id['product_id'];
+                // Existing orderitem record, get the existing options
+                $this->options = $this->getOptions();
             }
             $extras = json_decode($oi_id['extras'], true);
             if (
-                isset($extras['custom']) && 
-                !empty($extras['custom'])
+                isset($oi_id['extras']['custom']) && 
+                !empty($oi_id['extras']['custom'])
             ) {
-                $cust = $extras['custom'];
+                $cust = $oi_id['extras']['custom'];
                 $P = Product::getByID($this->product_id);
                 foreach ($P->getCustom() as $id=>$name) {
                     if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $this->addOptionTextNew($name, $cust[$id], $id);
+                        $this->addOptionText($name, $cust[$id]);
                     }
                 }
             }
-            $this->setVars($oi_id);
         }
-        if ($oi_id['id'] == 0) {
-           if (isset($oi_id['options'])) {
-//                COM_errorLog("HERE: " . print_r($oi_id,true));die;
-               $this->options = $this->setOptions($oi_id['options']);
-           }
-        } else {
-            $this->options = $this->getOptions();
-        }
-
         $this->product = Product::getByID($this->product_id);
-        COM_errorLog("item final: " . print_r($this->options,true));
     }
 
 
@@ -213,7 +206,11 @@ class OrderItem
      */
     public function getProduct()
     {
-        return $this->product;
+        static $P = NULL;
+        if ($P === NULL) {
+            $P = Product::getByID($this->product_id);
+        }
+        return $P;
     }
 
 
@@ -232,34 +229,28 @@ class OrderItem
     }
 
 
-    public function addOptionTextNew($name, $value, $idx)
-    {
-        $OIO = new OrderItemOption;
-        $OIO->oio_id = $this->id;
-        $OIO->ag_id = 0;
-        $OIO->attr_id = $idx;
-        $OIO->attr_name = $name;
-        $OIO->attr_value = $value;
-        $this->options[] = $OIO;
-        COM_errorLog("new option aray: " . print_r($this->options,true));
-        
-    }
-
-
     /**
      * Add an option text item to the order item.
      * This allows products to add additional information when purchased,
      * beyond the standard options selected.
+     * Updates $this->options only, and saves the option if the current
+     * item has already been saved.
      *
-     * @param   string  $text   Text to add
-     * @param   boolean $save   True to immediately save the item
+     * @param   string  $name   Name of option
+     * @param   string  $value  Value of option
      */
-    public function addOptionText($text, $save=true)
+    public function addOptionText($name, $value)
     {
-        $opts = $this->options_text;
-        $opts[] = $text;
-        $this->options_text = $opts;
-        if ($save) $this->Save();
+        $OIO = new OrderItemOption;
+        $OIO->oi_id = $this->id;
+        $OIO->order_id = $this->order_id;
+        $OIO->setAttr(0, $name, $value);
+        $this->options[] = $OIO;
+        // Update the Options table now if this is an existing item,
+        // othewise it might not get saved.
+        if ($this->oi_id > 0) {
+            $OIO->Save();
+        }
     }
 
 
@@ -331,12 +322,11 @@ class OrderItem
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
-            COM_errorLog("item saved");
             Cache::deleteOrder($this->order_id);
             if ($this->id == 0) {
                 $this->id = DB_insertID();
+                return $this->saveOptions();
             }
-            return $this->saveOptions();
             return true;
         } else {
             return false;
@@ -356,10 +346,8 @@ class OrderItem
     {
         if ($newqty > 0) {
             $this->quantity = (float)$newqty;
-            $product = $this->getProduct();
-            $price = $product->getPrice($this->options, $newqty);
-            $this->handling = $product->getHandling($newqty);
-            //$this->shipping = $product->getShipping($newqty);
+            $price = $this->product->getPrice($this->options, $newqty);
+            $this->handling = $this->product->getHandling($newqty);
             $this->price = $price;
         }
         return $this;
@@ -375,7 +363,7 @@ class OrderItem
             // Check that the order is paid
             !$this->getOrder()->isPaid() ||
             // Check if product is not a download
-            $this->getProduct()->file == '' ||
+            $this->product->file == '' ||
             // or is expired
             ( $this->expiration > 0 && $this->expiration < time() )
         ) {
@@ -450,21 +438,24 @@ class OrderItem
     }
 
 
-    public function setOptions($opts = NULL)
+    /**
+     * Set the provided array of options into the private va.
+     *
+     * @param   array   $opts   Array of option IDs
+     * @return  array       Contents of $this->options
+     */
+    public function setOptions($opts)
     {
         if (is_string($opts)) {
+            // deprecate
             $opts = explode(',', $opts);
         }
         if (is_array($opts)) {
             foreach ($opts as $opt_id) {
-                //$Attr = new Attribute($opt_id);
                 $OIO = new OrderItemOption;
                 $OIO->setAttr($opt_id);
                 $OIO->oio_id = $this->id;
-                /*$OIO->ag_id = $Attr->ag_id;
-                $OIO->attr_id = $opt_id;
-                $OIO->attr_name = $Attr->attr_name;
-                $OIO->attr_value = $Attr->attr_value;*/
+                $OIO->order_id = $this->order_id;
                 $this->options[] = $OIO;
             }
         }
@@ -472,17 +463,26 @@ class OrderItem
     }
 
 
+    /**
+     * Save all the options to the database.
+     *
+     * @retun   boolean     True on success, False on failure
+     */
     public function saveOptions()
     {
-        COM_errorLog('here: ' . print_r($this->options,true));
         foreach ($this->options as $Opt) {
             $Opt->oi_id = $this->id;
-            COM_errorLog('SAVING: ' . print_r($Opt,true));
             $Opt->Save();
         }
+        return true;
     }
 
 
+    /**
+     * Get the options from the database for this order item.
+     *
+     * @return  aray    Array of option objects
+     */
     public function getOptions()
     {
         return OrderItemOption::getOptionsForItem($this->id);
@@ -507,8 +507,8 @@ class OrderItem
             $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->options as $Opt) {
                 $T->set_var(array(
-                    'opt_name'  => $Opt->attr_name,
-                    'opt_value' => strip_tags($Opt->attr_value),
+                    'opt_name'  => $Opt->oio_name,
+                    'opt_value' => strip_tags($Opt->oio_value),
                 ) );
                 $T->parse('ORow', 'ItemOptions', true);
             }
