@@ -11,7 +11,10 @@ Release TBD
   * Fix authorize.net setting paid status.
   * Fix shipping selection not correctly updating total on cart view.
   * Allow use of SKU as product ID in URLs.
+  * Item options can now have SKU values.
+  * Implement Option Groups to control option ordering on product form.
   * Move catalog-related admin options under one menu to shorten the admin menu.
+  * Links to products from orders and carts now include selected options.
 
 ## v0.7.1
 Release 2019-08-02
