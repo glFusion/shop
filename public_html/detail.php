@@ -26,11 +26,16 @@ if (
     exit;
 }
 
-COM_setArgNames(array('id'));
+COM_setArgNames(array('id', 'oi_id'));
 if (isset($_GET['id'])) {
     $id = COM_sanitizeID($_GET['id']);
 } else {
     $id = COM_applyFilter(COM_getArgument('id'));
+}
+if (isset($_GET['oi_id'])) {
+    $oi_id = (int)$_GET['oi_id'];
+} else {
+    $oi_id = (int)COM_getArgument('oi_id');
 }
 
 $display = \Shop\Menu::siteHeader();
@@ -49,7 +54,7 @@ if (!empty($id)) {
     $P = \Shop\Product::getInstance($id);
     if ($P->verifyID($id) && $P->hasAccess()) {
         $breadcrumbs = $P->Cat->Breadcrumbs();
-        $content .= $P->Detail();
+        $content .= $P->Detail($oi_id);
     }
 }
 if (empty($content)) {

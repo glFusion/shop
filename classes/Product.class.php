@@ -563,18 +563,18 @@ class Product
         $cache_key = self::_makeCacheKey($this->id, 'attr');
         $this->options = Cache::get($cache_key);
         if ($this->options === NULL) {
-            $sql = "SELECT ag.ag_name, at.*
+            $sql = "SELECT og.og_name, at.*
                 FROM {$_TABLES['shop.prod_attr']} at
-                LEFT JOIN {$_TABLES['shop.attr_grp']} ag
-                    ON ag.ag_id = at.ag_id
+                LEFT JOIN {$_TABLES['shop.opt_grp']} og
+                    ON og.og_id = at.og_id
                 WHERE at.item_id = '{$this->id}' AND at.enabled = 1
-                ORDER BY ag.ag_orderby, at.orderby ASC";
+                ORDER BY og.og_orderby, at.orderby ASC";
             $result = DB_query($sql);
             $this->options = array();
             while ($A = DB_fetchArray($result, false)) {
                 $this->options[$A['attr_id']] = array(
-                    'ag_id'     => $A['ag_id'],
-                    'attr_name' => $A['ag_name'],
+                    'og_id'     => $A['og_id'],
+                    'attr_name' => $A['og_name'],
                     'attr_value' => $A['attr_value'],
                     'attr_price' => $A['attr_price'],
                     'sku'       => $A['sku'],
@@ -1136,7 +1136,16 @@ class Product
 
         // Get the related OrderItem object, if any.
         // Used when displaying the product detail from an orde or cart view.
-        $OI = new OrderItem($oi_id);
+        // If none requested or the current user can't view the order, then
+        // create an empty object for later use.
+        if ($oi_id > 0) {
+            $OI = new OrderItem($oi_id);
+            if (!$OI->canView()) {
+                $OI = new OrderItem;
+            }
+        } else {
+            $OI = new OrderItem;
+        }
 
         // Set the template dir based on the configured template version
         $T = SHOP_getTemplate(
@@ -1171,7 +1180,7 @@ class Product
             $T->set_block('product', 'CustAttrib', 'cAttr');
             $text_field_names = explode('|', $this->custom);
             foreach ($text_field_names as $id=>$text_field_name) {
-                $val = $OI->getOptionByAG(0, $text_field_name)->oio_value;
+                $val = $OI->getOptionByOG(0, $text_field_name)->oio_value;
                 $T->set_var(array(
                     'fld_id'    => "cust_text_fld_$id",
                     'fld_name'  => htmlspecialchars($text_field_name),
@@ -1212,7 +1221,7 @@ class Product
         if (is_array($this->options)) {
             foreach ($this->options as $id=>$Attr) {
                 $type = 'select';
-                $sel = $OI->getOptionByAG($Attr['ag_id']);
+                $sel = $OI->getOptionByOG($Attr['og_id']);
                 if ($sel !== false) {
                     $sel = $sel->attr_id;
                 }
@@ -1735,10 +1744,12 @@ class Product
         // Use item_options since the class var doesn't work with empty()
         $item_options = $item->options;
         if (!empty($item_options)) {
-            $options = explode(',', $item_options);
-            foreach ($this->options as $attr_id=>$attr) {
-                if (in_array($attr_id, $options) && !empty($attr['sku'])) {
-                    $sku[] = $attr['sku'];
+            foreach ($item->options as $attr_id=>$OIO) {
+                if (
+                    array_key_exists($OIO->attr_id, $this->options) &&
+                    !empty($this->options[$OIO->attr_id]['sku'])
+                ) {
+                    $sku[] = $this->options[$OIO->attr_id]['sku'];
                 }
             }
         }
