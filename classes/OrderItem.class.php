@@ -200,6 +200,13 @@ class OrderItem
     }
 
 
+    /**
+     * Get the OrderItemOption object for a specific option by ID.
+     *
+     * @param   integer $og_id  Option group ID
+     * @param   string  $name   Option name, for custom text fields
+     * @return  object      OrderItemOption object
+     */
     public function getOptionByOG($og_id, $name='')
     {
         if ($this->id < 1) {

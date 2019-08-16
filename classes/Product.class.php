@@ -1118,6 +1118,7 @@ class Product
     /**
      * Display the detail page for the product.
      *
+     * @param   integer $oi_id  OrderItem ID when linked from an order view
      * @return  string      HTML for the product page.
      */
     public function Detail($oi_id=0)
