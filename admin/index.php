@@ -49,11 +49,11 @@ $expected = array(
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
-    'migrate_pp', 'purge_trans', 'delag', 'agmove', 'agsave',
+    'migrate_pp', 'purge_trans', 'og_del', 'og_move', 'og_save',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
-    'attr_grp', 'editag',
+    'options', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
+    'opt_grp', 'og_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
 );
@@ -135,12 +135,12 @@ case 'savecat':
     }
     break;
 
-case 'agsave':
-    $AG = new \Shop\AttributeGroup($_POST['ag_id']);
-    if (!$AG->Save($_POST)) {
+case 'og_save':
+    $OG = new \Shop\OptionGroup($_POST['og_id']);
+    if (!$OG->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?attr_grp=x');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
     break;
 
 case 'saveopt':
@@ -150,7 +150,7 @@ case 'saveopt':
     }
     if (isset($_POST['attr_id']) && !empty($_POST['attr_id'])) {
         // Updating an existing option, return to the list
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?attributes=x');
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     } else {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editattr=x&item_id=' . $_POST['item_id']);
     }
@@ -160,7 +160,7 @@ case 'deleteopt':
     // attr_id could be via $_GET or $_POST
     $Attr = new \Shop\Attribute($_REQUEST['attr_id']);
     $Attr->Delete();
-    $view = 'attributes';
+    $view = 'options';
     break;
 
 case 'resetbuttons':
@@ -254,13 +254,13 @@ case 'gwsave':
     $view = 'gwadmin';
     break;
 
-case 'agmove':
-    $ag_id = SHOP_getVar($_GET, 'id', 'integer');
-    if ($ag_id > 0) {
-        $AG = new \Shop\AttributeGroup($ag_id);
-        $AG->moveRow($actionval);
+case 'og_move':
+    $og_id = SHOP_getVar($_GET, 'id', 'integer');
+    if ($og_id > 0) {
+        $OG = new \Shop\OptionGroup($og_id);
+        $OG->moveRow($actionval);
     }
-    $view = 'attr_grp';
+    $view = 'opt_grp';
     break;
 
 case 'attrmove':
@@ -269,7 +269,7 @@ case 'attrmove':
         $Attr = new \Shop\Attribute($attr_id);
         $Attr->moveRow($actionval);
     }
-    $view = 'attributes';
+    $view = 'options';
     break;
 
 case 'gwmove':
@@ -290,7 +290,7 @@ case 'wfmove':
     break;
 
 case 'attrcopy':
-    // Copy attributes from a product to another product or category
+    // Copy options from a product to another product or category
     $src_prod = (int)$_POST['src_prod'];
     $dest_prod = (int)$_POST['dest_prod'];
     $dest_cat = (int)$_POST['dest_cat'];
@@ -300,7 +300,7 @@ case 'attrcopy':
     // Nothing to do if no source product selected
     if ($src_prod < 1) break;
 
-    // Copy product attributes to all products in a category.
+    // Copy product options to all products in a category.
     // Ignore the source product, which may or may not be in the category.
     if ($dest_cat > 0) {
         // Get all products in the category
@@ -336,7 +336,7 @@ case 'attrcopy':
         DB_query($sql);
     }
     \Shop\Cache::clear();
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?attributes=x');
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     break;
 
 case 'runreport':
@@ -518,21 +518,21 @@ case 'editcat':
     break;
 
 case 'categories':
-    $content .= Shop\Menu::adminAttribs($view);
+    $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Category::adminList();
     $view = 'products';
     break;
 
 case 'sales':
-    $content .= Shop\Menu::adminAttribs($view);
+    $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Sales::adminList();
     $view = 'products';   // cheating, to get the active menu set
     break;
 
-case 'attributes':
-    $content .= Shop\Menu::adminAttribs('attributes');
+case 'options':
+    $content .= Shop\Menu::adminCatalog('options');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
-        // Delete some checked attributes
+        // Delete some checked options 
         foreach ($_POST['delitem'] as $attr_id) {
             \Shop\Attribute::Delete($attr_id);
         }
@@ -541,15 +541,15 @@ case 'attributes':
     $view = 'products';
     break;
 
-case 'attr_grp':
-    $content .= Shop\Menu::adminAttribs('attr_grp');
+case 'opt_grp':
+    $content .= Shop\Menu::adminCatalog('opt_grp');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
-        // Delete some checked attributes
-        foreach ($_POST['delitem'] as $ag_id) {
-            \Shop\AttributeGroup::Delete($ag_id);
+        // Delete some checked option groups
+        foreach ($_POST['delitem'] as $og_id) {
+            \Shop\OptionGroup::Delete($og_id);
         }
     }
-    $content .= Shop\AttributeGroup::adminList();
+    $content .= Shop\OptionGroup::adminList();
     $view = 'products';   // cheating, to get the active menu set
     break;
 
@@ -563,11 +563,11 @@ case 'editattr':
     $content .= $Attr->Edit();
     break;
 
-case 'editag':
-    $ag_id = SHOP_getVar($_GET, 'ag_id');
-    $AG = new \Shop\AttributeGroup($ag_id);
-    $content .= Shop\Menu::adminAttribs($view);
-    $content .= $AG->Edit();
+case 'og_edit':
+    $og_id = SHOP_getVar($_GET, 'og_id');
+    $OG = new \Shop\OptionGroup($og_id);
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= $OG->Edit();
     break;
 
 case 'editdiscount':
@@ -657,7 +657,7 @@ default:
     SHOP_setUrl();
     $view = 'products';
     $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
-    $content .= Shop\Menu::adminAttribs($view);
+    $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::adminList($cat_id);
     break;
 }

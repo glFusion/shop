@@ -200,21 +200,20 @@ class OrderItem
     }
 
 
-    public function getOptionByAG($ag_id, $name='')
+    public function getOptionByOG($og_id, $name='')
     {
         if ($this->id < 1) {
             // This could be an empty object if the detail view is not from
             // an order view.
             return new OrderItemOption;
         }
-        if ($ag_id > 0) {     // getting a standard option selection
-            $key = 'ag_id';
-            $val = $ag_id;
+        if ($og_id > 0) {     // getting a standard option selection
+            $key = 'og_id';
+            $val = $og_id;
         } elseif ($name != '') {
             $key = 'oio_name';
             $val = $name;
         } else {
-            echo "er";die;
             return new OrderItemOption;
         }
         foreach($this->options as $Opt) {
@@ -492,7 +491,7 @@ class OrderItem
             return false;
         }
         $opts_to_check = array(
-            'ag_id', 'attr_id',
+            'og_id', 'attr_id',
             'oio_name', 'oio_value',
             'oio_price',
         );
@@ -588,8 +587,27 @@ class OrderItem
      */
     public static function Delete($id)
     {
+        global $_TABLES;
+
         DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
         OrderItemOption::deleteItem($id);
+    }
+
+
+    /**
+     * Check if the current user is allowed to view this order and its items.
+     * Also returns false if this is an empty object.
+     *
+     * @return  boolean     True if view access is granted, False if not
+     */
+    public function canView()
+    {
+        if ($this->id < 1) {
+            return false;
+        } else {
+            //return $this->getOrder()->canView();
+        }
+        return true;
     }
 
 }

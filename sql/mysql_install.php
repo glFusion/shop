@@ -124,7 +124,7 @@ $_SQL = array(
 
 'shop.prod_attr' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
     `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `ag_id` int(11) unsigned NOT NULL,
+    `og_id` int(11) unsigned NOT NULL,
   `item_id` int(11) unsigned DEFAULT NULL,
   `attr_name` varchar(64) DEFAULT NULL,
   `attr_value` varchar(64) DEFAULT NULL,
@@ -508,26 +508,26 @@ $SHOP_UPGRADE['0.7.1'] = array(
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
 );
 $SHOP_UPGRADE['1.0.0'] = array(
-    "CREATE TABLE `{$_TABLES['shop.attr_grp']}` (
-        `ag_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-        `ag_name` varchar(11) NOT NULL,
-        `ag_orderby` tinyint(2) NOT NULL DEFAULT 0,
-        PRIMARY KEY (`ag_id`),
-        KEY `orderby` (`ag_orderby`,`ag_name`)
+    "CREATE TABLE `{$_TABLES['shop.opt_grp']}` (
+        `og_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+        `og_name` varchar(11) NOT NULL,
+        `og_orderby` tinyint(2) NOT NULL DEFAULT 0,
+        PRIMARY KEY (`og_id`),
+        KEY `orderby` (`og_orderby`,`og_name`)
     )",
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `order_id` varchar(40) NOT NULL,
       `oi_id` int(11) unsigned NOT NULL,
-      `ag_id` int(11) unsigned NOT NULL,
+      `og_id` int(11) unsigned NOT NULL,
       `attr_id` int(11) unsigned NOT NULL,
       `oio_name` varchar(40) DEFAULT NULL,
       `oio_value` varchar(40) DEFAULT NULL,
       `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`oio_id`),
-      UNIQUE KEY `key1` (`order_id`,`oi_id`,`ag_id`,`attr_id`,`oio_name`)
+      UNIQUE KEY `key1` (`order_id`,`oi_id`,`og_id`,`attr_id`,`oio_name`)
     )",
-    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `og_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];

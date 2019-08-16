@@ -32,7 +32,7 @@ class OrderItemOption
      * @var array */
     private static $fields = array(
         'oio_id', 'order_id', 'oi_id',
-        'ag_id', 'attr_id',
+        'og_id', 'attr_id',
         'oio_name', 'oio_value',
         'oio_price',
     );
@@ -116,7 +116,7 @@ class OrderItemOption
         switch ($key) {
         case 'oio_id':
         case 'oi_id':
-        case 'ag_id':
+        case 'og_id':
         case 'attr_id':
             $this->properties[$key] = (int)$value;
             break;
@@ -167,6 +167,11 @@ class OrderItemOption
     {
         global $_TABLES;
 
+        $retval = array();
+        if ($Item->id < 1) {
+            // Catch bad or empty Item objects
+            return $retval;
+        }
         $cache_key = "oio_item_{$Item->id}";
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
@@ -194,7 +199,7 @@ class OrderItemOption
         $sql = "INSERT INTO {$_TABLES['shop.oi_opts']} SET
             order_id = '" . DB_escapeString($this->order_id) . "',
             oi_id = '{$this->oi_id}',
-            ag_id = '{$this->ag_id}',
+            og_id = '{$this->og_id}',
             attr_id = '{$this->attr_id}',
             oio_name = '" . DB_escapeString($this->oio_name) . "',
             oio_value = '" . DB_escapeString($this->oio_value) . "',
@@ -227,16 +232,16 @@ class OrderItemOption
         if ($attr_id > 0) {
             $Attr = new Attribute($attr_id);
             if ($Attr->attr_id > 0) {
-                $AG = new AttributeGroup($Attr->ag_id);
+                $OG = new OptionGroup($Attr->og_id);
                 $this->attr_id = $Attr->attr_id;
-                $this->ag_id = $Attr->ag_id;
-                $this->oio_name = $AG->ag_name;
+                $this->og_id = $Attr->og_id;
+                $this->oio_name = $OG->og_name;
                 $this->oio_value = $Attr->attr_value;
                 $this->oio_price = $Attr->attr_price;
             }
         } elseif ($name != '' && $value != '') {
             $this->attr_id = 0;
-            $this->ag_id = 0;
+            $this->og_id = 0;
             $this->oio_name = $name;
             $this->oio_value = $value;
             $this->oio_price = 0;
@@ -266,7 +271,7 @@ class OrderItemOption
     public function Matches($Opt2)
     {
         $flds_to_check = array(
-            'ag_id', 'attr_id',
+            'og_id', 'attr_id',
             'oio_name', 'oio_value',
             'oio_price',
         );

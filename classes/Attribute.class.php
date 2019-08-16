@@ -48,7 +48,7 @@ class Attribute
         if ($id < 1) {
             // New entry, set defaults
             $this->attr_id = 0;
-            $this->ag_id = 0;
+            $this->og_id = 0;
             $this->attr_name = 0;
             $this->attr_value = '';
             $this->attr_price = 0;
@@ -76,7 +76,7 @@ class Attribute
         case 'attr_id':
         case 'item_id':
         case 'orderby':
-        case 'ag_id':
+        case 'og_id':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
@@ -131,7 +131,7 @@ class Attribute
         if (!is_array($row)) return;
         $this->attr_id = $row['attr_id'];
         $this->item_id = $row['item_id'];
-        $this->ag_id = $row['ag_id'];
+        $this->og_id = $row['og_id'];
         $this->attr_name = $row['attr_name'];
         $this->attr_value = $row['attr_value'];
         $this->attr_price = $row['attr_price'];
@@ -183,7 +183,7 @@ class Attribute
         global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
-            if (empty($A['orderby'])) {
+            if (!isset($A['orderby'])) {
                 // Put this field at the end of the line by default.
                 $A['orderby'] = 65535;
             } else {
@@ -216,7 +216,7 @@ class Attribute
 
         $sql2 = " SET item_id='{$this->item_id}',
                 attr_name='" . DB_escapeString($this->attr_name) . "',
-                ag_id = {$this->ag_id},
+                og_id = {$this->og_id},
                 attr_value='" . DB_escapeString($this->attr_value) . "',
                 sku = '" . DB_escapeString($this->sku) . "',
                 orderby='{$this->orderby}',
@@ -271,7 +271,7 @@ class Attribute
         // Check that basic required fields are filled in
         if (
             $this->item_id == 0 ||
-            $this->ag_id == 0 ||
+            $this->og_id == 0 ||
             $this->attr_value == ''
         ) {
             return false;
@@ -308,7 +308,7 @@ class Attribute
             $init_item_id = $this->item_id;
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->ag_id = AttributeGroup::getFirst()->ag_id;
+            $this->og_id = OptionGroup::getFirst()->og_id;
             $T->set_var('attr_id', '');
             $init_item_id = Product::getFirst();
         }
@@ -322,19 +322,19 @@ class Attribute
             'item_id'       => $this->item_id,
             'init_item_id'  => $init_item_id,
             'item_name'     => Product::getByID($this->item_id)->name,
-            'ag_id'         => $this->ag_id,
-            'ag_name'       => AttributeGroup::getInstance($this->ag_id)->ag_name,
+            'og_id'         => $this->og_id,
+            'og_name'       => OptionGroup::getInstance($this->og_id)->og_name,
             'attr_value'    => $this->attr_value,
             'attr_price'    => $this->attr_price,
             'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
-                        $_TABLES['shop.attr_grp'],
-                        'ag_id,ag_name',
-                        $this->ag_id,
+                        $_TABLES['shop.opt_grp'],
+                        'og_id,og_name',
+                        $this->og_id,
                         0
                     ),
-            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->ag_id, $this->orderby),
+            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->og_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
@@ -411,7 +411,7 @@ class Attribute
         $sql = "SELECT attr_id, orderby
                 FROM {$_TABLES['shop.prod_attr']}
                 WHERE item_id = '{$this->item_id}'
-                AND ag_id= '{$this->ag_id}'
+                AND og_id= '{$this->og_id}'
                 ORDER BY orderby ASC;";
         //echo $sql;die;
         $result = DB_query($sql);
@@ -480,10 +480,10 @@ class Attribute
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT ag.ag_name, at.*, p.name AS prod_name
+        $sql = "SELECT og.og_name, at.*, p.name AS prod_name
             FROM {$_TABLES['shop.prod_attr']} at
-            LEFT JOIN {$_TABLES['shop.attr_grp']} ag
-            ON at.ag_id = ag.ag_id
+            LEFT JOIN {$_TABLES['shop.opt_grp']} og
+            ON at.og_id = og.og_id
             LEFT JOIN {$_TABLES['shop.products']} p
             ON at.item_id = p.id";
 //            WHERE 1=1 ";
@@ -522,7 +522,7 @@ class Attribute
             ),
             array(
                 'text' => $LANG_SHOP['attr_name'],
-                'field' => 'ag_name',
+                'field' => 'og_name',
                 'sort' => true,
             ),
             array(
@@ -557,7 +557,7 @@ class Attribute
         );
 
         $defsort_arr = array(
-            'field' => 'prod_name,attr_name,orderby',
+            'field' => 'prod_name,og_orderby,orderby',
             'direction' => 'ASC',
         );
 
@@ -692,16 +692,16 @@ class Attribute
      * Used here and from admin/ajax.php.
      *
      * @param   integer $item_id    Current product ID
-     * @param   integer $ag_id      Current Attribute Group ID
+     * @param   integer $og_id      Current Attribute Group ID
      * @param   integer $sel        Currently-selection option
      * @return  string      Option elements for a selection list
      */
-    public static function getOrderbyOpts($item_id=0, $ag_id=0, $sel=0)
+    public static function getOrderbyOpts($item_id=0, $og_id=0, $sel=0)
     {
         global $_TABLES, $LANG_SHOP;
 
         $item_id = (int)$item_id;
-        $ag_id = (int)$ag_id;
+        $og_id = (int)$og_id;
         $sel = (int)$sel;
         $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
         $retval .= COM_optionList(
@@ -709,7 +709,7 @@ class Attribute
             'orderby,attr_value',
             $sel - 10,
             0,
-            "ag_id = '$ag_id' AND item_id = '$item_id' AND orderby <> '$sel'"
+            "og_id = '$og_id' AND item_id = '$item_id' AND orderby <> '$sel'"
         );
         return $retval;
     }

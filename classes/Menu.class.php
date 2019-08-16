@@ -90,9 +90,9 @@ class Menu
                 'active' => $view == 'categories' ? true : false,
             ),*/
             /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?attr_grp=x',
-                'text' => $LANG_SHOP['attributes'],
-                'active' => $view == 'attributes' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
+                'text' => $LANG_SHOP['options'],
+                'active' => $view == 'options' ? true : false,
             ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
@@ -165,12 +165,12 @@ class Menu
 
 
     /**
-     * Create the administrator menu.
+     * Create the administrator sub-menu for the Catalog option
      *
      * @param   string  $view   View being shown, so set the help text
      * @return  string      Administrator menu
      */
-    public static function adminAttribs($view='')
+    public static function adminCatalog($view='')
     {
         global $LANG_SHOP;
 
@@ -186,14 +186,14 @@ class Menu
                 'active' => $view == 'categories' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?attr_grp=x',
-                'text' => $LANG_SHOP['attr_grp'],
-                'active' => $view == 'attr_grp' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
+                'text' => $LANG_SHOP['opt_grps'],
+                'active' => $view == 'opt_grp' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?attributes=x',
-                'text' => $LANG_SHOP['attributes'],
-                'active' => $view == 'attributes' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/index.php?options=x',
+                'text' => $LANG_SHOP['options'],
+                'active' => $view == 'options' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',

@@ -22,11 +22,11 @@ if (!plugin_ismoderator_shop()) {
 }
 
 switch ($_POST['action']) {
-case 'attr_orderby_opts':
-    $ag_id = SHOP_getVar($_POST, 'ag_id', 'integer', 0);
+case 'opt_orderby_opts':
+    $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\Attribute::getOrderbyOpts($item_id, $ag_id, $selected);
+    $retval = Shop\Attribute::getOrderbyOpts($item_id, $og_id, $selected);
     echo $retval;
     exit;
 

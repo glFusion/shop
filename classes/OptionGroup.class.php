@@ -17,7 +17,7 @@ namespace Shop;
  * Class for product attribute groups.
  * @package shop
  */
-class AttributeGroup
+class OptionGroup
 {
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
@@ -50,13 +50,13 @@ class AttributeGroup
             $id = (int)$id;
             if ($id < 1) {
                 // New entry, set defaults
-                $this->ag_id = 0;
-                $this->ag_ag_name = 0;
-                $this->ag_ag_orderby = '';
+                $this->og_id = 0;
+                $this->og_og_name = 0;
+                $this->og_og_orderby = '';
             } else {
-                $this->ag_id = $id;
+                $this->og_id = $id;
                 if (!$this->Read()) {
-                    $this->ag_id = 0;
+                    $this->og_id = 0;
                 }
             }
         }
@@ -72,13 +72,13 @@ class AttributeGroup
     public function __set($key, $value)
     {
         switch ($key) {
-        case 'ag_id':
-        case 'ag_orderby':
+        case 'og_id':
+        case 'og_orderby':
             // Integer values
             $this->properties[$key] = (int)$value;
             break;
 
-        case 'ag_name':
+        case 'og_name':
             // String values
             $this->properties[$key] = trim($value);
             break;
@@ -109,21 +109,21 @@ class AttributeGroup
     /**
      * Get all attribute groups.
      *
-     * @return  array       Array of AttributeGroup objects
+     * @return  array       Array of OptionGroup objects
      */
     public static function getAll()
     {
         global $_TABLES;
 
-        $cache_key = 'shop_attr_grp_all';
+        $cache_key = 'shop_opt_grp_all';
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
             $retval = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.attr_grp']}
-                ORDER BY ag_orderby ASC";
+            $sql = "SELECT * FROM {$_TABLES['shop.opt_grp']}
+                ORDER BY og_orderby ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['ag_id']] = new self($A);
+                $retval[$A['og_id']] = new self($A);
             }
             Cache::set($cache_key, $retval, 'attributes');
         }
@@ -134,14 +134,14 @@ class AttributeGroup
     /**
      * Get an instance of a specific attribute group.
      *
-     * @param   integer $ag_id  AttributeGroup record ID
-     * @return  object      AttributeGroup object
+     * @param   integer $og_id  OptionGroup record ID
+     * @return  object      OptionGroup object
      */
-    public static function getInstance($ag_id)
+    public static function getInstance($og_id)
     {
         $grps = self::getAll();
-        if (array_key_exists($ag_id, $grps)) {
-            return $grps[$ag_id];
+        if (array_key_exists($og_id, $grps)) {
+            return $grps[$og_id];
         } else {
             return new self;
         }
@@ -158,9 +158,9 @@ class AttributeGroup
         if (!is_array($A)) {
             return;
         }
-        $this->ag_id = $A['ag_id'];
-        $this->ag_name = $A['ag_name'];
-        $this->ag_orderby = $A['ag_orderby'];
+        $this->og_id = $A['og_id'];
+        $this->og_name = $A['og_name'];
+        $this->og_orderby = $A['og_orderby'];
     }
 
 
@@ -175,15 +175,15 @@ class AttributeGroup
         global $_TABLES;
 
         $id = (int)$id;
-        if ($id == 0) $id = $this->ag_id;
+        if ($id == 0) $id = $this->og_id;
         if ($id == 0) {
             $this->error = 'Invalid ID in Read()';
             return;
         }
 
         $result = DB_query(
-            "SELECT * FROM {$_TABLES['shop.attr_grp']}
-            WHERE ag_id='$id'"
+            "SELECT * FROM {$_TABLES['shop.opt_grp']}
+            WHERE og_id='$id'"
         );
         if (!$result || DB_numRows($result) != 1) {
             return false;
@@ -218,22 +218,22 @@ class AttributeGroup
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.attr_grp']} SET ";
+            $sql1 = "INSERT INTO {$_TABLES['shop.opt_grp']} SET ";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.attr_grp']} SET ";
-            $sql3 = " WHERE ag_id={$this->ag_id}";
+            $sql1 = "UPDATE {$_TABLES['shop.opt_grp']} SET ";
+            $sql3 = " WHERE og_id={$this->og_id}";
         }
 
-        $sql2 = "ag_name = '" . DB_escapeString($this->ag_name) . "',
-                ag_orderby='{$this->ag_orderby}'";
+        $sql2 = "og_name = '" . DB_escapeString($this->og_name) . "',
+                og_orderby='{$this->og_orderby}'";
         $sql = $sql1 . $sql2 . $sql3;
 
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {
             if ($this->isNew) {
-                $this->ag_id = DB_insertID();
+                $this->og_id = DB_insertID();
             }
             self::reOrder();
             //Cache::delete('prod_attr_' . $this->item_id);
@@ -249,19 +249,19 @@ class AttributeGroup
     /**
      * Delete the current attrribute group record from the database.
      *
-     * @param   integer $ag_id    Attribute ID, empty for current object
+     * @param   integer $og_id    Attribute ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($ag_id)
+    public static function Delete($og_id)
     {
         global $_TABLES;
 
-        if ($ag_id <= 0) {
+        if ($og_id <= 0) {
             return false;
         }
 
-        DB_delete($_TABLES['shop.prod_attr'], 'ag_id', $ag_id);
-        DB_delete($_TABLES['shop.attr_grp'], 'ag_id', $ag_id);
+        DB_delete($_TABLES['shop.prod_attr'], 'og_id', $og_id);
+        DB_delete($_TABLES['shop.opt_grp'], 'og_id', $og_id);
         self::cleaCache();
         return true;
     }
@@ -275,7 +275,7 @@ class AttributeGroup
     public function isValidRecord()
     {
         // Check that basic required fields are filled in
-        if ($this->ag_name == '') {
+        if ($this->og_name == '') {
             return false;
         }
         return true;
@@ -292,27 +292,27 @@ class AttributeGroup
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = SHOP_getTemplate('attr_grp_form', 'form');
-        $id = $this->ag_id;
+        $T = SHOP_getTemplate('opt_grp_form', 'form');
+        $id = $this->og_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->ag_name);
+            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->og_name);
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
         }
 
-        $orderby_sel = $this->ag_orderby - 10;
+        $orderby_sel = $this->og_orderby - 10;
         $T->set_var(array(
-            'ag_id'         => $id,
+            'og_id'         => $id,
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL('attr_grp_form', $_CONF['language']),
-            'ag_name'       => $this->ag_name,
-            //'ag_orderby'    => $this->ag_orderby,
-            'orderby_opts'  => COM_optionList($_TABLES['shop.attr_grp'], 'ag_orderby,ag_name', $orderby_sel, 0),
+            'doc_url'       => SHOP_getDocURL('opt_grp_form', $_CONF['language']),
+            'og_name'       => $this->og_name,
+            //'og_orderby'    => $this->og_orderby,
+            'orderby_opts'  => COM_optionList($_TABLES['shop.opt_grp'], 'og_orderby,og_name', $orderby_sel, 0),
             'orderby_last'  => $this->isNew ? 'selected="selected"' : '',
         ) );
 
@@ -335,28 +335,28 @@ class AttributeGroup
 
 
     /**
-     * Reorder all attribute items with the same product ID and attribute ag_name.
+     * Reorder all attribute items with the same product ID and attribute og_name.
      */
     private function reOrder()
     {
         global $_TABLES;
 
-        $sql = "SELECT ag_id, ag_orderby
-                FROM {$_TABLES['shop.attr_grp']}
-                ORDER BY ag_orderby, ag_name ASC;";
+        $sql = "SELECT og_id, og_orderby
+                FROM {$_TABLES['shop.opt_grp']}
+                ORDER BY og_orderby, og_name ASC;";
         $result = DB_query($sql);
 
-        $order = 10;        // First ag_orderby value
+        $order = 10;        // First og_orderby value
         $stepNumber = 10;   // Increment amount
         $changed = false;   // Assume no changes
         while ($A = DB_fetchArray($result, false)) {
-            SHOP_log("checking item {$A['ag_id']}", SHOP_LOG_DEBUG);
-                SHOP_log("Order by is {$A['ag_orderby']}, should be $order", SHOP_LOG_DEBUG);
-            if ($A['ag_orderby'] != $order) {  // only update incorrect ones
+            SHOP_log("checking item {$A['og_id']}", SHOP_LOG_DEBUG);
+                SHOP_log("Order by is {$A['og_orderby']}, should be $order", SHOP_LOG_DEBUG);
+            if ($A['og_orderby'] != $order) {  // only update incorrect ones
                 $changed = true;
-                $sql = "UPDATE {$_TABLES['shop.attr_grp']}
-                    SET ag_orderby = '$order'
-                    WHERE ag_id = '{$A['ag_id']}'";
+                $sql = "UPDATE {$_TABLES['shop.opt_grp']}
+                    SET og_orderby = '$order'
+                    WHERE og_id = '{$A['og_id']}'";
                 DB_query($sql);
             }
             $order += $stepNumber;
@@ -389,9 +389,9 @@ class AttributeGroup
         }
 
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.attr_grp']}
-                    SET ag_orderby = ag_orderby $oper 11
-                    WHERE ag_id = '{$this->ag_id}'";
+            $sql = "UPDATE {$_TABLES['shop.opt_grp']}
+                    SET og_orderby = og_orderby $oper 11
+                    WHERE og_id = '{$this->og_id}'";
             //echo $sql;die;
             DB_query($sql);
             $this->reOrder();
@@ -409,12 +409,12 @@ class AttributeGroup
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.attr_grp']}";
+        $sql = "SELECT * FROM {$_TABLES['shop.opt_grp']}";
 
         $header_arr = array(
             array(
                 'text' => 'ID',
-                'field' => 'ag_id',
+                'field' => 'og_id',
                 'sort' => true,
             ),
             array(
@@ -425,12 +425,12 @@ class AttributeGroup
             ),
             array(
                 'text' => $LANG_SHOP['name'],
-                'field' => 'ag_name',
+                'field' => 'og_name',
                 'sort' => true,
             ),
             array(
                 'text'  => $LANG_SHOP['orderby'],
-                'field' => 'ag_orderby',
+                'field' => 'og_orderby',
                 'align' => 'center',
                 'sort'  => true,
             ),
@@ -443,7 +443,7 @@ class AttributeGroup
         );
 
         $defsort_arr = array(
-            'field' => 'ag_orderby',
+            'field' => 'og_orderby',
             'direction' => 'ASC',
         );
 
@@ -456,14 +456,14 @@ class AttributeGroup
             )
         );
         $query_arr = array(
-            'table' => 'shop.attr_grp',
+            'table' => 'shop.opt_grp',
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => '',
         );
-        $options = array('chkdelete' => true, 'chkfield' => 'ag_id');
+        $options = array('chkdelete' => true, 'chkfield' => 'og_id');
         $display .= ADMIN_list(
-            $_SHOP_CONF['pi_ag_name'] . '_ag_list',
+            $_SHOP_CONF['pi_name'] . '_og_list',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
@@ -477,40 +477,40 @@ class AttributeGroup
     /**
      * Get an individual field for the attribute list.
      *
-     * @param   string  $fieldag_name  Name of field (from the array, not the db)
+     * @param   string  $fieldog_name  Name of field (from the array, not the db)
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldag_name, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldog_name, $fieldvalue, $A, $icon_arr)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
         $retval = '';
 
-        switch($fieldag_name) {
+        switch($fieldog_name) {
         case 'edit':
             $retval .= COM_createLink(
                 '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?editag=x&amp;ag_id={$A['ag_id']}"
+                SHOP_ADMIN_URL . "/index.php?og_edit=x&amp;og_id={$A['og_id']}"
             );
             break;
 
-        case 'ag_orderby':
+        case 'og_orderby':
             $retval = COM_createLink(
                 '<i class="uk-icon uk-icon-arrow-up"></i>',
-                SHOP_ADMIN_URL . '/index.php?agmove=up&id=' . $A['ag_id']
+                SHOP_ADMIN_URL . '/index.php?agmove=up&id=' . $A['og_id']
             ) .
             COM_createLink('<i class="uk-icon uk-icon-arrow-down"></i>',
-                SHOP_ADMIN_URL . '/index.php?agmove=down&id=' . $A['ag_id']
+                SHOP_ADMIN_URL . '/index.php?og_move=down&id=' . $A['og_id']
             );
             break;
 
         case 'delete':
             $retval .= COM_createLink(
                 '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
-                SHOP_ADMIN_URL. '/index.php?delag=x&amp;ag_id=' . $A['ag_id'],
+                SHOP_ADMIN_URL. '/index.php?og_del=x&amp;og_id=' . $A['og_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
@@ -539,7 +539,7 @@ class AttributeGroup
 
 
     /**
-     * Get the first AttributeGroup object in the DB.
+     * Get the first OptionGroup object in the DB.
      * Used to determine the first element in selection lists.
      *
      * @uses    self::getAll()
