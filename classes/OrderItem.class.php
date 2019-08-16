@@ -605,15 +605,14 @@ class OrderItem
      * Check if the current user is allowed to view this order and its items.
      * Also returns false if this is an empty object.
      *
-     * @param   string  $token  Order token to verify access
      * @return  boolean     True if view access is granted, False if not
      */
-    public function canView($token='')
+    public function canView()
     {
         if ($this->id < 1) {
             return false;
         } else {
-            return $this->getOrder()->canView($token);
+            return $this->getOrder()->canView();
         }
     }
 

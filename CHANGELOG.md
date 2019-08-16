@@ -14,7 +14,7 @@ Release TBD
   * Item options can now have SKU values.
   * Implement Option Groups to control option ordering on product form.
   * Move catalog-related admin options under one menu to shorten the admin menu.
-  * Links to products from orders and carts now include selected options.
+  * Product links from orders include selected options for logged-in users.
 
 ## v0.7.1
 Release 2019-08-02
