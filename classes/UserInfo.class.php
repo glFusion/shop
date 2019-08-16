@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -120,19 +120,21 @@ class UserInfo
             return;
         }
 
-        $res = DB_query("SELECT * FROM {$_TABLES['shop.address']}
-                            WHERE uid=$uid");
-        while ($A = DB_fetchArray($res, false)) {
-            $this->addresses[$A['id']] = $A;
-        }
-        $res = DB_query("SELECT * FROM {$_TABLES['shop.userinfo']}
-                            WHERE uid = $uid");
+        $res = DB_query(
+            "SELECT * FROM {$_TABLES['shop.userinfo']} WHERE uid = $uid"
+        );
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $cart = @unserialize($A['cart']);
             if (!$cart) $cart = array();
             $this->cart = $cart;
             $this->isNew = false;
+            $res = DB_query(
+                "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
+            );
+            while ($A = DB_fetchArray($res, false)) {
+                $this->addresses[$A['id']] = $A;
+            }
         } else {
             $this->cart = array();
             $this->isNew = true;
@@ -158,7 +160,7 @@ class UserInfo
             return array();
         }
 
-        $cache_key = 'address_' . $add_id;
+        $cache_key = 'shop.address_' . $add_id;
         $A = Cache::get($cache_key);
         if ($A === NULL) {
             $sql = "SELECT * FROM {$_TABLES['shop.address']}
@@ -186,13 +188,15 @@ class UserInfo
         if ($type != 'billto') $type = 'shipto';
 
         foreach ($this->addresses as $addr) {
-            if ($addr[$type.'_def'] == 1)
+            if ($addr[$type.'_def'] == 1) {
                 return $addr;
+            }
         }
-        if (isset($this->addresses[0]))
+        if (isset($this->addresses[0])) {
             return $this->addresses[0];
-        else
+        } else {
             return NULL;
+        }
     }
 
 
@@ -208,11 +212,10 @@ class UserInfo
         global $_TABLES, $_USER;
 
         // Don't save invalid addresses, or anonymous
-        if ($_USER['uid'] < 2 || !is_array($A)) return array(-1, '');
-        if ($type != '') {
-            if ($type != 'billto') $type = 'shipto';
-            $type .= '_';
+        if ($_USER['uid'] < 2 || !is_array($A)) {
+            return array(-1, '');
         }
+        $type = $type == 'billto' ? 'billto_' : 'shipto_';
 
         $id = isset($A['addr_id']) && !empty($A['addr_id']) ?
             (int)$A['addr_id'] : 0;
@@ -248,9 +251,11 @@ class UserInfo
 
         // If this is the new default address, turn off the other default
         if ($is_default) {
-            DB_query("UPDATE {$_TABLES['shop.address']}
-                    SET {$type}def = 0
-                    WHERE id <> $id AND {$type}def = 1");
+            DB_query(
+                "UPDATE {$_TABLES['shop.address']}
+                SET {$type}def = 0
+                WHERE id <> $id AND {$type}def = 1"
+            );
         }
         Cache::clear('shopuser_' . $this->uid);
         return array($id, '');
@@ -266,18 +271,12 @@ class UserInfo
     {
         global $_TABLES;
 
-        if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.userinfo']} SET
-                    uid = {$this->uid},";
-            $sql3 = '';
-        } else {
-            $sql1 = "UPDATE {$_TABLES['shop.userinfo']} SET ";
-            $sql3 = " WHERE uid = {$this->uid}";
-        }
         $cart = DB_escapeString(@serialize($this->cart));
-
-        $sql2 = " cart = '$cart'";
-        $sql = $sql1 . $sql2 . $sql3;
+        $sql = "INSERT INTO {$_TABLES['shop.userinfo']} SET
+            uid = {$this->uid},
+            cart = '$cart'
+            ON DUPLICATE KEY UPDATE
+            cart = '$cart'";
         DB_query($sql);
         Cache::clear('shopuser_' . $this->uid);
         return DB_error() ? false : true;
@@ -503,9 +502,9 @@ class UserInfo
 
         if ($uid == 0) $uid = $_USER['uid'];
         $uid = (int)$uid;
-        $key = 'shopuser_' . $uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
+            $key = 'shopuser_' . $uid;  // Both the key and cache tag
             self::$users[$uid] = Cache::get($key);
             if (!self::$users[$uid]) {
                 self::$users[$uid] = new self($uid);
@@ -524,8 +523,16 @@ class UserInfo
      */
     public static function Fields()
     {
-        return array('name', 'company', 'address1', 'address2',
-            'city', 'state', 'country', 'zip');
+        return array(
+            'name',
+            'company',
+            'address1',
+            'address2',
+            'city',
+            'state',
+            'country',
+            'zip',
+        );
     }
 
 }   // class UserInfo
