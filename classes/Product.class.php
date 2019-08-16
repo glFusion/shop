@@ -1121,7 +1121,7 @@ class Product
      * @param   integer $oi_id  OrderItem ID when linked from an order view
      * @return  string      HTML for the product page.
      */
-    public function Detail($oi_id=0)
+    public function Detail($oi_id=0, $token='')
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
@@ -1141,7 +1141,7 @@ class Product
         // create an empty object for later use.
         if ($oi_id > 0) {
             $OI = new OrderItem($oi_id);
-            if (!$OI->canView()) {
+            if (!$OI->canView($token)) {
                 $OI = new OrderItem;
             }
         } else {
@@ -2253,7 +2253,7 @@ class Product
      * @param   integer $oi_id  Orde Item ID
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0)
+    public function getLink($oi_id=0, $token='')
     {
         global $_SHOP_CONF;
 
@@ -2261,6 +2261,9 @@ class Product
         $url = SHOP_URL . '/detail.php?id=' . $id;
         if ($oi_id > 0) {
             $url .= '&oi_id=' . (int)$oi_id;
+        }
+        if ($token != '') {
+            $url .= '&token=' . $token;
         }
         return COM_buildUrl($url);
     }
