@@ -134,6 +134,7 @@ class stripe extends \Shop\IPN
             // Payment verification failed.
             return false;
         }
+        $this->ipn_data['txn'] = $trans;
 
         // Verification succeeded, get payment info.
         $this->status = 'paid';
@@ -185,6 +186,10 @@ class stripe extends \Shop\IPN
      */
     public function Process()
     {
+        // Backward compatibility, get custom data into IPN for plugin
+        // products.
+        $this->ipn_data['custom'] = $this->custom;
+
         if (!$this->Verify()) {
             $logId = $this->Log(false);
             $this->handleFailure(
@@ -204,10 +209,6 @@ class stripe extends \Shop\IPN
         if (empty($this->_payment)) {
             return false;
         }
-        // Backward compatibility, get custom data into IPN for plugin
-        // products.
-        $this->ipn_data['custom'] = $this->custom;
-
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
