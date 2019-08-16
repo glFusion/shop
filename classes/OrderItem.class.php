@@ -605,9 +605,8 @@ class OrderItem
         if ($this->id < 1) {
             return false;
         } else {
-            //return $this->getOrder()->canView();
+            return $this->getOrder()->canView();
         }
-        return true;
     }
 
 }

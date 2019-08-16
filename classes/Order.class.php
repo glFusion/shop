@@ -1155,14 +1155,17 @@ class Order
     {
         global $_USER;
 
-        if ($this->isNew || $this->status == 'cart') {
+        if ($this->isNew) {
             // Record not found in DB, or this is a cart (not an order)
             return false;
-        } elseif ($this->uid > 1 && $_USER['uid'] == $this->uid ||
-            plugin_ismoderator_shop()) {
+        } elseif (
+            ($this->uid > 1 && $_USER['uid'] == $this->uid) ||
+            plugin_ismoderator_shop()
+        ) {
             // Administrator, or logged-in buyer
             return true;
         } elseif ($token !== '' && $token == $this->token) {
+            // Correct token provided via parameter
             return true;
         } elseif (isset($_GET['token']) && $_GET['token'] == $this->token) {
             // Anonymous with the correct token
