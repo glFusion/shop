@@ -66,10 +66,10 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.0.0')) {
         $current_ver = '1.0.0';
-        if (!DB_checkTableExists('shop.attr_grp')) {
+        if (!DB_checkTableExists('shop.opt_grp')) {
             // Initial populate of the new attribute group table
-            $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (og_name, og_orderby) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
-            $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET og_id = (SELECT og_id FROM {$_TABLES['shop.attr_grp']} WHERE `og_name` = `attr_name`)";
+            $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.opt_grp']} (og_name, og_orderby) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
+            $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET og_id = (SELECT og_id FROM {$_TABLES['shop.opt_grp']} WHERE `og_name` = `attr_name`)";
         }
         $populate_oi_opts = !DB_checkTableExists('shop.oi_opts');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
