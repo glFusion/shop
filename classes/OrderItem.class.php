@@ -239,11 +239,7 @@ class OrderItem
      */
     public function getProduct()
     {
-        static $P = NULL;
-        if ($P === NULL) {
-            $P = Product::getByID($this->product_id);
-        }
-        return $P;
+        return Product::getByID($this->product_id);
     }
 
 
