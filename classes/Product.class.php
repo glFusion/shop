@@ -299,19 +299,25 @@ class Product
         global $_TABLES;
 
         $parts = explode('|', $id);
-        $id = (int)$parts[0];
-        $cache_key = self::_makeCacheKey($id);
-        $A = Cache::get($cache_key);
-        if (!is_array($A)) {
-            $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                    WHERE id  = '$id'";
-            $res = DB_query($sql);
-            $A = DB_fetchArray($res, false);
-            if (isset($A['id'])) {
-                Cache::set($cache_key, $A, array('products'));
+        // Have to handle possible plugin items here as well
+        if (self::isPluginItem($parts[0])) {
+            // Product provided by another plugin
+            return self::getInstance($parts[0]);
+        } else {
+            $id = (int)$parts[0];
+            $cache_key = self::_makeCacheKey($id);
+            $A = Cache::get($cache_key);
+            if (!is_array($A)) {
+                $sql = "SELECT * FROM {$_TABLES['shop.products']}
+                        WHERE id  = '$id'";
+                $res = DB_query($sql);
+                $A = DB_fetchArray($res, false);
+                if (isset($A['id'])) {
+                    Cache::set($cache_key, $A, array('products'));
+                }
             }
+            return self::_getInstance($A);
         }
-        return self::_getInstance($A);
     }
 
 
@@ -1683,10 +1689,9 @@ class Product
                 $price += (float)$this->options[$key]['attr_price'];
             }
         }*/
-
         foreach ($options as $Opt) {
             if ($Opt->attr_id > 0) {
-                $key = $Opt->att_id;
+                $key = $Opt->attr_id;
                 if (isset($this->options[$key])) {
                     $price += (float)$this->options[$key]['attr_price'];
                 }
