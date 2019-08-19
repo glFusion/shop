@@ -307,7 +307,6 @@ class OrderItemOption
         return true;
     }
 
-
 }
 
 ?>

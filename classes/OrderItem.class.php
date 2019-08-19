@@ -503,7 +503,7 @@ class OrderItem
 
 
     /**
-     * Set the provided array of options into the private va.
+     * Set the provided array of options into the private var.
      *
      * @param   array   $opts   Array of option IDs
      * @return  array       Contents of $this->options
@@ -511,16 +511,18 @@ class OrderItem
     public function setOptions($opts)
     {
         if (is_string($opts)) {
-            // deprecate
+            // todo: deprecate
             $opts = explode(',', $opts);
         }
         if (is_array($opts)) {
             foreach ($opts as $opt_id) {
-                $OIO = new OrderItemOption;
-                $OIO->setAttr($opt_id);
-                $OIO->oio_id = $this->id;
-                $OIO->order_id = $this->order_id;
-                $this->options[] = $OIO;
+                if ($opt_id > 0) {      // Don't set non-standard options here
+                    $OIO = new OrderItemOption;
+                    $OIO->setAttr($opt_id);
+                    $OIO->oio_id = $this->id;
+                    $OIO->order_id = $this->order_id;
+                    $this->options[] = $OIO;
+                }
             }
         }
         return $this->options;
