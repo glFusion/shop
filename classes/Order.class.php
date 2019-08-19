@@ -1045,7 +1045,7 @@ class Order
             $ext = (float)$item->quantity * (float)$item->price;
             $item_total += $ext;
             $item_descr = $item->getShortDscp();
-            $options_text = $P->getOptionDisplay($item);
+            $options_text = $item->getOptionDisplay();
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
