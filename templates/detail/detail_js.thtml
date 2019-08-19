@@ -58,7 +58,7 @@ function ProcessForm()
         }
     } else {
         // There is a single option, check the value
-        opt_price = opt_prices[options.value];
+        opt_price = opt_prices[options.value] * 1;
         price += opt_price;
         price_was += opt_price;
     }
