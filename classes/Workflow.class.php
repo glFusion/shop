@@ -254,11 +254,7 @@ class Workflow
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
-        $extra = array(
-        'rec_type'  => 'workflow',
-        );
-        $sql = "SELECT *, 'workflow' AS rec_type
-            FROM {$_TABLES['shop.workflows']}";
+        $sql = "SELECT * FROM {$_TABLES['shop.workflows']}";
 
         $header_arr = array(
             array(
@@ -300,7 +296,7 @@ class Workflow
             $_SHOP_CONF['pi_name'] . '_workflowlist',
             array(__CLASS__ , 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', $extra, '', ''
+            '', '', '', ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -321,7 +317,6 @@ class Workflow
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         $retval = '';
-        $rec_type = $extra['rec_type'];
 
         switch($fieldname) {
         case 'wf_enabled':

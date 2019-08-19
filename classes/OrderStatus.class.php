@@ -232,9 +232,6 @@ class OrderStatus extends Workflow
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
-        $extra = array(
-            'rec_type'  => 'orderstatus',
-        );
         $sql = "SELECT * FROM {$_TABLES['shop.orderstatus']}";
 
         $header_arr = array(
@@ -291,7 +288,7 @@ class OrderStatus extends Workflow
             $_SHOP_CONF['pi_name'] . '_statuslist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', $extra, '', ''
+            '', '', '', ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -312,7 +309,6 @@ class OrderStatus extends Workflow
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         $retval = '';
-        $rec_type = $extra['rec_type'];
 
         switch($fieldname) {
         case 'enabled':
@@ -328,7 +324,7 @@ class OrderStatus extends Workflow
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"{$fieldname}_check\"
                 id=\"tog{$fieldname}{$A['id']}\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
-                "\"{$rec_type}\");' />" . LB;
+                "\"orderstatus\");' />" . LB;
             break;
 
         case 'name':
