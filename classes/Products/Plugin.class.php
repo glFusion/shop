@@ -277,13 +277,19 @@ class Plugin extends \Shop\Product
      * Get the URL to the item detail page.
      * If the plugin supplies its own detail service function, then use the Shop
      * detail page. Otherwise the plugin should supply its own url.
+     * The order item ID is supplied so the plugin can instantiate an OrderItem
+     * object and get more information.
      *
+     * @param   integer $oi_id  Order Item ID
      * @return  string      Item detail URL
      */
-    public function getLink()
+    public function getLink($oi_id=0)
     {
         if ($this->_have_detail_svc) {
-            return SHOP_URL . '/index.php?pidetail=' . $this->item_id;
+            $url = SHOP_URL . '/index.php?pidetail=' . $this->item_id;
+            if ($oi_id > 0) {
+                $url .= '&oi_id=' . (int)$oi_id;
+            }
         } else {
             return $this->url;
         }

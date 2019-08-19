@@ -2255,7 +2255,7 @@ class Product
     /**
      * Get the URL to the item detail page.
      *
-     * @param   integer $oi_id  Orde Item ID
+     * @param   integer $oi_id  Order Item ID
      * @return  string      Item detail URL
      */
     public function getLink($oi_id=0)
