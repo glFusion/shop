@@ -149,6 +149,7 @@
 {!endif}
         </div>
         <div class="gwRadiosOuter">
+          <a name="anchor_payer_email"></a>
           <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
           <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
           <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
@@ -177,6 +178,7 @@
 {!if focus_element}
 $('#{focus_element}').addClass("shopErr");
 $('#{focus_element}').focus();
+location.hash = "#anchor_" + focus_element;
 {!endif}
 
 // Update an item's quantity field.
