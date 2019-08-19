@@ -133,7 +133,7 @@ class Shipper
         $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
         $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
-        $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 1);
+        $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 0);
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
