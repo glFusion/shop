@@ -500,17 +500,17 @@ class Sales
                 'align' => 'center',
             ),
             array(
-                'text' => $LANG_SHOP['item_type'],
-                'field' => 'item_type',
-                'sort' => false,
-            ),
-            array(
                 'text' => $LANG_SHOP['name'],
                 'field' => 'name',
                 'sort' => false,
             ),
             array(
-                'text' => $LANG_SHOP['product'],
+                'text' => $LANG_SHOP['item_type'],
+                'field' => 'item_type',
+                'sort' => false,
+            ),
+            array(
+                'text' => $LANG_SHOP['item_name'],
                 'field' => 'item_id',
                 'sort' => false,
             ),

@@ -24,6 +24,7 @@ $LANG_SHOP = array (
 'srchtitle'         => 'Products',
 'products'          => 'Products',
 'category'          => 'Category',
+'item_name'         => 'Item Name',
 'featured_product'  => 'Featured Product',
 'popular_product'   => 'Popular Products',
 'product_categories' => 'Product Categories',
