@@ -299,9 +299,9 @@ class OptionGroup
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->og_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->og_name);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_option']);
+            $retval = COM_startBlock($LANG_SHOP['new_og']);
         }
 
         $orderby_sel = $this->og_orderby - 10;
@@ -448,8 +448,9 @@ class OptionGroup
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink($LANG_SHOP['new_ag'],
-            SHOP_ADMIN_URL . '/index.php?editag=0',
+        $display .= COM_createLink(
+            $LANG_SHOP['new_og'],
+            SHOP_ADMIN_URL . '/index.php?og_edit=0',
             array(
                 'style' => 'float:left;',
                 'class' => 'uk-button uk-button-success',

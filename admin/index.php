@@ -559,7 +559,8 @@ case 'shipping':
 
 case 'editattr':
     $attr_id = SHOP_getVar($_GET, 'attr_id');
-    $Attr = new \Shop\Attribute($attr_id);
+    $content .= Shop\Menu::adminCatalog($view);
+    $Attr = new Shop\Attribute($attr_id);
     $content .= $Attr->Edit();
     break;
 

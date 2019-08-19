@@ -303,7 +303,7 @@ class Attribute
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->attr_value);
+            $retval = COM_startBlock($LANG_SHOP['edit_opt'] . ': ' . $this->attr_value);
             $T->set_var('attr_id', $id);
             $init_item_id = $this->item_id;
         } else {
