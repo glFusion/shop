@@ -458,30 +458,26 @@ class Category
             $T->set_var('can_delete', 'true');
         }
 
-        // Display any time-based sales pricing for this category
-        $Disc = Sales::getCategory($this->cat_id);
-        if (!empty($Disc)) {
-            $DT = SHOP_getTemplate('sales_table', 'stable');
-            $DT->set_var('edit_sale_url',
-                SHOP_ADMIN_URL . '/index.php?sales');
-            $DT->set_block('stable', 'SaleList', 'SL');
-            foreach ($Disc as $D) {
-                if ($D->discount_type == 'amount') {
-                    $amount = Currency::getInstance()->Format($D->amount);
-                } else {
-                    $amount = $D->amount;
-                }
-                $DT->set_var(array(
-                    'sale_start' => $D->start,
-                    'sale_end'  => $D->end,
-                    'sale_type' => $D->discount_type,
-                    'sale_amt'  => $amount,
-                ) );
-                $DT->parse('SL', 'SaleList', true);
+        // Display any sales pricing for this category
+        $DT = SHOP_getTemplate('sales_table', 'stable');
+        $DT->set_var('edit_sale_url', SHOP_ADMIN_URL . '/index.php?sales');
+        $DT->set_block('stable', 'SaleList', 'SL');
+        foreach (Sales::getCategory($this->cat_id) as $D) {
+            if ($D->discount_type == 'amount') {
+                $amount = Currency::getInstance()->Format($D->amount);
+            } else {
+                $amount = $D->amount;
             }
-            $DT->parse('output', 'stable');
-            $T->set_var('sale_prices', $DT->finish($DT->get_var('output')));
+            $DT->set_var(array(
+                'sale_start' => $D->start,
+                'sale_end'  => $D->end,
+                'sale_type' => $D->discount_type,
+                'sale_amt'  => $amount,
+            ) );
+            $DT->parse('SL', 'SaleList', true);
         }
+        $DT->parse('output', 'stable');
+        $T->set_var('sale_prices', $DT->finish($DT->get_var('output')));
 
         /*
         // Might want this later to set default buttons per category
