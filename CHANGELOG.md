@@ -7,7 +7,6 @@ Release TBD
   * Use an OrderLineItem for tax with Square so it shows on the order form.
   * Allow products to set the `cancel_return` value in Buy Now buttons.
   * Move admin list functions into the respective classes.
-  * Add Stripe payment gateway.
   * Fix authorize.net setting paid status.
   * Fix shipping selection not correctly updating total on cart view.
   * Allow use of SKU as product ID in URLs.
@@ -15,6 +14,7 @@ Release TBD
   * Implement Option Groups to control option ordering on product form.
   * Move catalog-related admin options under one menu to shorten the admin menu.
   * Product links from orders include selected options for logged-in users.
+  * Add authorized group to shippers to limit usage to trusted members.
 
 ## v0.7.1
 Release 2019-08-02
