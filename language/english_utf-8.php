@@ -495,6 +495,7 @@ $LANG_SHOP = array (
 'first' => 'First',
 'last' => 'Last',
 'pos_after' => 'Position After',
+'auth_grp' => 'Authorized Group',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

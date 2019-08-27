@@ -323,6 +323,7 @@ $_SQL = array(
   `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399',
   `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `rates` text,
+  `auth_grp` int(3) unsigned NOT NULL DEFAULT '2',
   PRIMARY KEY (`id`)
 ) ENGINE=MyIsam",
 );
@@ -528,6 +529,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       UNIQUE KEY `key1` (`order_id`,`oi_id`,`og_id`,`attr_id`,`oio_name`)
     )",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `og_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];

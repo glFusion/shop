@@ -74,6 +74,7 @@ class Shipper
             $this->use_fixed = 1;
             $this->valid_from = self::MIN_DATETIME;
             $this->valid_to = self::MAX_DATETIME;
+            $this->auth_grp = 2;    // Default = All users
             $this->rates = array(
                 (object)array(
                     'dscp'  => 'Rate 1',
@@ -134,6 +135,7 @@ class Shipper
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
         $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
         $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 0);
+        $this->auth_grp = SHOP_getVar($A, 'auth_grp', 'integer', 2);
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -199,7 +201,7 @@ class Shipper
      */
     public static function getAll($valid=true)
     {
-        global $_TABLES;
+        global $_TABLES, $_GROUPS;
 
         $cache_key = 'shippers_all_' . (int)$valid;
         $now = time();
@@ -220,7 +222,9 @@ class Shipper
         }
         $retval = array();
         foreach ($shippers as $shipper) {
-            $retval[$shipper['id']] = new self($shipper);
+            if (in_array($shipper['auth_grp'], $_GROUPS)) {
+                $retval[$shipper['id']] = new self($shipper);
+            }
         }
         return $retval;
     }
@@ -511,6 +515,7 @@ class Shipper
 
         switch ($var) {
         case 'id':
+        case 'auth_grp':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
@@ -604,6 +609,7 @@ class Shipper
                 valid_from = '{$this->valid_from->toUnix()}',
                 valid_to = '{$this->valid_to->toUnix()}',
                 use_fixed = '{$this->use_fixed}',
+                auth_grp = '{$this->auth_grp}',
                 rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -646,7 +652,7 @@ class Shipper
      */
     public function Edit()
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_TABLES;
 
         $T = SHOP_getTemplate('shipping_form', 'form');
         $retval = '';
@@ -662,6 +668,7 @@ class Shipper
             'fixed_sel'     => $this->use_fixed ? 'checked="checked"' : '',
             'valid_from'    => $this->valid_from->format('Y-m-d', true),
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
+            'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->auth_grp),
         ) );
         $T->set_block('form', 'rateTable', 'rt');
         foreach ($this->rates as $R) {
@@ -718,7 +725,10 @@ class Shipper
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
+        $sql = "SELECT s.*, g.grp_name
+            FROM {$_TABLES['shop.shipping']} s
+            LEFT JOIN {$_TABLES['groups']} g
+                ON g.grp_id = s.auth_grp";
 
         $header_arr = array(
             array(
@@ -741,6 +751,10 @@ class Shipper
             array(
                 'text'  => $LANG_SHOP['name'],
                 'field' => 'name',
+            ),
+            array(
+                'text'  => $LANG_SHOP['auth_grp'],
+                'field' => 'grp_name',
             ),
         );
 
@@ -793,6 +807,7 @@ class Shipper
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
+        static $grp_names = array();
         $retval = '';
 
         switch($fieldname) {
@@ -829,6 +844,13 @@ class Shipper
             );
             break;
 
+/*        case 'grp_name':
+            if (!isset($grp_names[$fieldvalue])) {
+                $grp_names[$fieldvalue] = DB_getItem($_TABLES['groups'], 'grp_name', "grp_id='" . $fieldvalue ."'");
+            }
+            $retval = $grp_names[$fieldvalue];
+            break;
+ */
         default:
             $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
             break;
