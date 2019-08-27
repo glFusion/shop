@@ -506,7 +506,9 @@ div.ItemOptions {
 
 .shopPrice.was {
     color:#666666;
-    text-decoration:line-through;
+    text-decoration: none;
+    background-image: linear-gradient(transparent 7px,#cc1f1f 7px,#cc1f1f 10px,transparent 10px);
+    /*text-decoration:line-through;*/
 }
 
 .shopPrice.list.was.v3 {
@@ -523,6 +525,7 @@ div.ItemOptions {
     font-size: 140%;
 }
 
+.shopPrice.list.sale,
 .shopPrice.sale,
 .shopQtyDisc
 {
