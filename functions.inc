@@ -1910,7 +1910,7 @@ function SHOP_timezone()
  */
 function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 {
-    global $_TABLES, $_CONF, $LANG_SHOP;
+    global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF, $_USER, $_GROUPS;
 
     $properties = explode(',', $what);
     $fields = array('p.id');        // always get item id
@@ -1921,7 +1921,18 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     // open to the public, then return nothing unless the user is an admin.
     if ($uid > 0) {
         if ($_SHOP_CONF['shop_enabled'] || SHOP_access_check('shop.admin')) {
+            // If user is anonymous, this might actually be the admin
+            // regenerating the sitemap. In that case, override $_GROUPS
+            // to create the category access SQL.
+            if ($uid == 1) {
+                $tmp = $_GROUPS;
+                $_GROUPS = SEC_getUserGroups(1);
+            }
             $cat_where = SEC_buildAccessSql('AND', 'c.grp_access');
+            // If anonymous, put $_GROUPS back the way it was.
+            if ($uid == 1) {
+                $_GROUPS = $tmp;
+            }
         } else {
             return NULL;
         }
@@ -1962,6 +1973,9 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
             break;
         case 'perms':
             $fields[] = 'c.grp_access';
+            break;
+        case 'url':
+            $fields[] = 'p.name';
             break;
         }
     }
@@ -2034,8 +2048,12 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 break;
             }
         }
-        $props['url'] = COM_buildUrl($_CONF['site_url'] .
-                    '/shop/detail.php?id=' . urlencode($A['id']));
+
+        $url_id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
+        $props['url'] = COM_buildUrl(
+            $_CONF['site_url'] . '/shop/detail.php?id=' . urlencode($url_id)
+        );
+
         $mapped = array();
         foreach ($props as $key => $value) {
             if ($id == '*') {
@@ -2355,7 +2373,6 @@ function SHOP_getRatedIds($pi_name)
     }
     return $retval[$pi_name];
 }
-
 
 require_once __DIR__ . '/services.inc.php';
 
