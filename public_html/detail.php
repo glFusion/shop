@@ -28,9 +28,9 @@ if (
 
 COM_setArgNames(array('id', 'oi_id'));
 if (isset($_GET['id'])) {
-    $id = COM_sanitizeID($_GET['id']);
+    $id = $_GET['id'];
 } else {
-    $id = COM_applyFilter(COM_getArgument('id'));
+    $id = COM_getArgument('id');
 }
 if (isset($_GET['oi_id'])) {
     $oi_id = (int)$_GET['oi_id'];
