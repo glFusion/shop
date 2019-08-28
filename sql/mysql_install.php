@@ -515,7 +515,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
         `og_orderby` tinyint(2) NOT NULL DEFAULT 0,
         PRIMARY KEY (`og_id`),
         KEY `orderby` (`og_orderby`,`og_name`)
-    )",
+    ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `order_id` varchar(40) NOT NULL,
@@ -527,7 +527,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`oio_id`),
       UNIQUE KEY `key1` (`order_id`,`oi_id`,`og_id`,`attr_id`,`oio_name`)
-    )",
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `og_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
 );

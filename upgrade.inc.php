@@ -139,15 +139,30 @@ function SHOP_do_upgrade($dvlp = false)
  */
 function SHOP_do_upgrade_sql($version, $ignore_error = false)
 {
-    global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE;
+    global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
 
     // If no sql statements passed in, return success
-    if (!is_array($SHOP_UPGRADE[$version]))
+    if (!is_array($SHOP_UPGRADE[$version])) {
         return true;
+    }
+
+    if (
+        $_DB_dbms == 'mysql' &&
+        isset($_VARS['database_engine']) &&
+        $_VARS['database_engine'] == 'InnoDB'
+    ) {
+        $use_innodb = true;
+    } else {
+        $use_innodb = false;
+    }
 
     // Execute SQL now to perform the upgrade
     SHOP_log("--- Updating Shop to version $version", SHOP_LOG_INFO);
     foreach($SHOP_UPGRADE[$version] as $sql) {
+        if ($use_innodb) {
+            $sql = str_replace('MyISAM', 'InnoDB', $sql);
+        }
+
         SHOP_log("Shop Plugin $version update: Executing SQL => $sql", SHOP_LOG_INFO);
         try {
             DB_query($sql, '1');
