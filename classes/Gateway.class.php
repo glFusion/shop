@@ -1453,6 +1453,10 @@ class Gateway
             ),
         );
 
+        $extra = array(
+            'gw_count' => DB_count($_TABLES['shop.gateways']),
+        );
+
         $defsort_arr = array(
             'field' => 'orderby',
             'direction' => 'ASC',
@@ -1479,7 +1483,7 @@ class Gateway
             $_SHOP_CONF['pi_name'] . '_gwlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            '', $extra, '', ''
         );
 
         if (!empty($to_install)) {
@@ -1504,7 +1508,7 @@ class Gateway
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -1533,14 +1537,21 @@ class Gateway
             break;
 
         case 'orderby':
-            $retval = COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-up"></i>',
-                SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
-            ) .
-            COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-down"></i>',
-                SHOP_ADMIN_URL . '/index.php?gwmove=down&id=' . $A['id']
-            );
+            if ($fieldvalue > 10) {
+                $retval = COM_createLink(
+                    '<i class="uk-icon uk-icon-justify uk-icon-arrow-up"></i>',
+                    SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
+                );
+            } else {
+                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+            }
+            if ($fieldvalue < $extra['gw_count'] * 10) {
+                $retval .= COM_createLink('<i class="uk-icon uk-icon-justify uk-icon-arrow-down"></i>',
+                    SHOP_ADMIN_URL . '/index.php?gwmove=down&id=' . $A['id']
+                );
+            } else {
+                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+            }
             break;
 
         case 'delete':
