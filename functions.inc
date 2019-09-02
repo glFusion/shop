@@ -1343,17 +1343,26 @@ function SHOP_phpblock_product($sql)
         ));
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
             $P = Shop\Product::getByID($A['id']);
+            $isOnSale = $P->isOnSale();
+            $price = $P->price;
+            if ($isOnSale) {
+                $price_was = $price;
+                $price = $P->getSalePrice();
+            }
+            $price = $price > 0 ? Shop\Currency::getInstance()->Format($price) : '';
+            $price_was = $price_was > 0 ? Shop\Currency::getInstance()->Format($price_was) : '';
+
             $T->set_var(array(
                 'name'      => $P->name,
-                'item_url'  => COM_buildUrl(SHOP_URL . '/detail.php?id=' .
-                                $A['id']),
+                'item_url'  => $P->getLink(),
                 'descrip'   => $P->short_description,
-                'price'     => $P->price > 0 ?
-                                Shop\Currency::getInstance()->Format($P->price) : '',
+                'price'     => $price,
+                'price_was' => $price_was,
                 'currency'  => $_SHOP_CONF['currency'],
                 'rec_num'   => $i,      // to separate items by <hr/>
                 'id'        => $A['id'],
                 'pi_url'    => SHOP_URL,
+                'on_sale'   => $isOnSale,
             ) );
 
             if (!$P->hasAttributes()) {
