@@ -51,29 +51,40 @@ function ProcessForm()
             if (!isValidField(options[i])) {
                 continue;
             }
-
-            opt_price = opt_prices[options[i].value] * 1;
-            price += opt_price;
-            price_was += opt_price;
+            if (
+                options[i].type == "select-one" ||
+                (options[i].type == "checkbox" && options[i].checked)
+            ) {
+                opt_price = opt_prices[options[i].value] * 1;
+                price += opt_price;
+                price_was += opt_price;
+            }
         }
     } else {
         // There is a single option, check the value
-        opt_price = opt_prices[options.value] * 1;
-        price += opt_price;
-        price_was += opt_price;
+        if (
+            options.type == "select-one" ||
+            (options.type == "checkbox" && options[i].checked)
+        ) {
+            opt_price = opt_prices[options.value] * 1;
+            price += opt_price;
+            price_was += opt_price;
+        }
     }
 
+    // Update the dispayed price on the form
     price = price.toFixed({cur_decimals});
-    price_was = price_was.toFixed({cur_decimals});
     if (typeof(frm.price) != "undefined") {
         frm.price.value = price;
     }
+    document.getElementById('price').innerHTML = price;
 
+    // Update the original pre-sale price, if displayed.
     var x = document.getElementById('price_was');
     if (x != null) {
+        price_was = price_was.toFixed({cur_decimals});
         x.innerHTML = price_was;
     }
-    document.getElementById('price').innerHTML = price;
     return;
 }
 
