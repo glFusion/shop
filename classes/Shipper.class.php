@@ -406,8 +406,6 @@ class Shipper
      */
     public function calcBestFit($items, $total_units)
     {
-        global $_LANG_SHOP;
-
         $this->ordershipping = new \stdClass;
         $this->ordershipping->total_rate = NULL;
         $this->ordershippping->packages = array();
@@ -428,9 +426,13 @@ class Shipper
             if ($type->units >= $total_units) {
                 // If a single package will handle the entire order, then
                 // there's no need to iterate through all the items.
+                $pkg_items = array();
+                foreach ($items as $Item) {
+                    $pkg_items[] = $Item['orderitem_id'];
+                }
                 $this->ordershipping->packages[] = array(
                     'type' => $type->dscp,
-                    'items' => array($LANG_SHOP['all']),
+                    'items' => $pkg_items,
                     'units' => $total_units,
                     'units_left' => $type->units - $total_units,
                     'rate' => $type->rate,
