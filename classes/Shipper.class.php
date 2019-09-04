@@ -222,9 +222,7 @@ class Shipper
         }
         $retval = array();
         foreach ($shippers as $shipper) {
-            if (in_array($shipper['auth_grp'], $_GROUPS)) {
-                $retval[$shipper['id']] = new self($shipper);
-            }
+            $retval[$shipper['id']] = new self($shipper);
         }
         return $retval;
     }
