@@ -444,6 +444,17 @@ div.shopProductListItem.v1 div.ItemButtons {
     float: right;
 }
 
+.shopBlock.price.was {
+    background-image: linear-gradient(transparent 7px,#cc1f1f 7px,#cc1f1f 10px,transparent 10px);
+}
+
+.shopBlock.price {
+}
+
+.shopBlock.price.sale {
+    color: red;
+}
+
 div.ItemOptions {
     font-size: smaller;
     padding-left: 2em;
@@ -507,13 +518,17 @@ div.ItemOptions {
 .shopPrice.was {
     color:#666666;
     text-decoration: none;
-    background-image: linear-gradient(transparent 7px,#cc1f1f 7px,#cc1f1f 10px,transparent 10px);
+    background-image: linear-gradient(transparent 10px,#cc1f1f 7px,#cc1f1f 10px,transparent 14px);
     /*text-decoration:line-through;*/
+}
+
+.shopPrice.list.was {
+    background-image: linear-gradient(transparent 7px,#cc1f1f 7px,#cc1f1f 10px,transparent 10px);
 }
 
 .shopPrice.list.was.v3 {
     color:#999999;
-    text-decoration:line-through;
+    /*text-decoration:line-through;*/
 }
 
 .shopPrice.normal {
