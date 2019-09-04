@@ -201,6 +201,7 @@ class OrderItemOption
             }
             return true;
         } else {
+            SHOP_log($sql);
             return false;
         }
     }

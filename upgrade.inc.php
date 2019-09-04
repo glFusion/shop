@@ -79,6 +79,7 @@ function SHOP_do_upgrade($dvlp = false)
         // oi_opts table is created. Any time after this update the required
         // source fields may be removed.
         if ($populate_oi_opts) {
+            COM_errorLog("Transferring orderitem options to orderitem_options table");
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
