@@ -235,7 +235,7 @@ class paypal extends \Shop\Gateway
             $fields['zip'] = htmlspecialchars($address['zip']);
         }
 
-        $i = 1;
+        $i = 1;     // Item counter for paypal variables
         $total_amount = 0;
         $shipping = 0;
         $weight = 0;
@@ -255,6 +255,7 @@ class paypal extends \Shop\Gateway
         } else {
             $cartItems = $cart->getItems();
             foreach ($cartItems as $cart_item_id=>$item) {
+                $item_count++;
                 $opt_str = '';
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
@@ -262,27 +263,17 @@ class paypal extends \Shop\Gateway
                 $P = \Shop\Product::getByID($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
-                //$options = explode(',', $item->options);
-                //if (is_array($item['options'])) {
-                if ($item->options != '') {
-                    $opts = explode(',', $item->options);
-                    foreach ($opts as $optval) {
-                        $opt_info = $P->getOption($optval);
-                        if ($opt_info) {
-                            $opt_str .= ', ' . $opt_info['value'];
-                            $fields['on'.$oc.'_'.$i] = $opt_info['name'];
-                            $fields['os'.$oc.'_'.$i] = $opt_info['value'];
-                            $oc++;
-                        }
-                    }
-                } else {
-                    $opts = array();
+                foreach ($item->options as $OIO) {
+                    $opt_str .= ', ' . $OIO->oio_value;
+                    $fields['on'.$oc.'_'.$i] = $OIO->oio_name;
+                    $fields['os'.$oc.'_'.$i] = $OIO->oio_value;
+                    $oc++;
                 }
                 $overrides = array(
                     'price' => $item->price,
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($opts, $item->quantity, $overrides);
+                $item_amount = $P->getPrice($item->options, $item->quantity, $overrides);
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
@@ -507,6 +498,7 @@ class paypal extends \Shop\Gateway
         global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
+        if ($P->isPhysical()) return '';    // Not for items that require shipping.
         $btn_type = $P->btn_type;
         if (empty($btn_type)) return '';
 
