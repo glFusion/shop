@@ -31,7 +31,7 @@ class OrderItemOption
     /** Fields for an OrderItemOption record.
      * @var array */
     private static $fields = array(
-        'oio_id', 'order_id', 'oi_id',
+        'oio_id', 'oi_id',
         'ag_id', 'attr_id',
         'oio_name', 'oio_value',
         'oio_price',
@@ -147,17 +147,6 @@ class OrderItemOption
 
 
     /**
-     * Get the order object related to this item.
-     *
-     * @return  object  Order Object
-     */
-    public function getOrder()
-    {
-        return Order::getInstance($this->order_id);
-    }
-
-
-    /**
      * Get the options associated with an order item.
      *
      * @param   object  $Item   OrderItem
@@ -197,7 +186,6 @@ class OrderItemOption
         global $_TABLES;
 
         $sql = "INSERT INTO {$_TABLES['shop.oi_opts']} SET
-            order_id = '" . DB_escapeString($this->order_id) . "',
             oi_id = '{$this->oi_id}',
             ag_id = '{$this->ag_id}',
             attr_id = '{$this->attr_id}',
@@ -208,7 +196,6 @@ class OrderItemOption
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql, 1);  // ignore dup key issues.
         if (!DB_error()) {
-            Cache::deleteOrder($this->order_id);
             if ($this->oio_id == 0) {
                 $this->oio_id = DB_insertID();
             }
