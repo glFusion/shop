@@ -9,9 +9,13 @@
     class="uk-form uk-form-horizontal"
     enctype="multipart/form-data" onsubmit='set_postcontent();'>
   <input type="hidden" name="id" value="{product_id}" />
-  <fieldset>
-    <legend>{$LANG_SHOP['product_info']}</legend>
+  <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
+    <li id="tab-general"><a href="#">{$LANG_SHOP['product_info']}</a></li>
+    <li id="tab-images"><a href="#">{$LANG_SHOP['images']}</a></li>
+    <li id="tab-options"><a href="#">{$LANG_SHOP['options']}</a></li>
+  </ul>
 
+  <div class="uk-panel uk-panel-box uk-margin">
     <div class="uk-form-row">
       <label class="uk-form-label" for="name">{$LANG_SHOP['product']}:
         <span id="name" class="tooltip_cfg tooltipstered"></span>
@@ -27,6 +31,13 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <ul id="product-form" class="uk-switcher uk-margin">
+  <li>
+  <fieldset>
+    <legend>{$LANG_SHOP['product_info']}</legend>
+
 
     <div class="uk-form-row">
       <label class="uk-form-label" for="cat_id">{$LANG_SHOP['category']}:
@@ -79,36 +90,6 @@
       <div class="uk-form-controls">
       <input type="text" id="price" name="price" value="{price}" size="12"
         maxlength="20" />&nbsp;{currency}
-      </div>
-    </div>
-
-    <div class="uk-form-row">
-      <label class="uk-form-label">{$LANG_SHOP['images']}:
-        <span id="images" class="tooltip_cfg tooltipstered"></span>
-      </label>
-      <div class="uk-form-controls">
-      <table>
-          <tr>
-            <th></th><th>{$LANG_SHOP['delete']}</th>
-          </tr>
-          <!-- BEGIN PhotoRow -->
-          <tr>
-            <td align="left">
-              <a href="{img_url}" data-uk-lightbox="{group:'shop'}">
-                <img src="{thumb_url}" />
-              </a>
-            </td>
-            <td style="text-align:center;">
-              <input type="checkbox" name="delimg[]" value="{img_id}" />
-            </td>
-          </tr>
-          <!-- END PhotoRow -->
-          <tr>
-            <td align="left">
-              <input type="file" name="images[]" multiple />
-            </td>
-          </tr>
-      </table>
       </div>
     </div>
 
@@ -319,6 +300,48 @@
             value="{avail_end}" maxlength="12" />
       </div>
     </div>
+ </fieldset>
+  <p>
+  <i class="uk-icon uk-icon-warning uk-text-danger"></i> {$LANG_SHOP['ind_req_fld']}<br />
+  {$LANG_SHOP['del_item_instr']}
+  </p>
+
+  </li>
+
+  <li>
+    <div class="uk-form-row">
+      <label class="uk-form-label">{$LANG_SHOP['images']}:
+        <span id="images" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+      <table>
+          <tr>
+            <th></th><th>{$LANG_SHOP['delete']}</th>
+          </tr>
+          <!-- BEGIN PhotoRow -->
+          <tr>
+            <td align="left">
+              <a href="{img_url}" data-uk-lightbox="{group:'shop'}">
+                <img src="{thumb_url}" />
+              </a>
+            </td>
+            <td style="text-align:center;">
+              <input type="checkbox" name="delimg[]" value="{img_id}" />
+            </td>
+          </tr>
+          <!-- END PhotoRow -->
+          <tr>
+            <td align="left">
+              <input type="file" name="images[]" multiple />
+            </td>
+          </tr>
+      </table>
+      </div>
+    </div>
+  </li>
+
+  <li>{option_list}</li>
+  </ul>
 
   <div class="uk-margin-right-small uk-hidden-small tm-admin-save" data-uk-scrollspy="{cls:'uk-animation-slide-bottom', delay:900}">
     <ul>
@@ -348,12 +371,6 @@
 {!endif}
     </ul>
   </div>
-
- </fieldset>
-  <p>
-  <i class="uk-icon uk-icon-warning uk-text-danger"></i> {$LANG_SHOP['ind_req_fld']}<br />
-  {$LANG_SHOP['del_item_instr']}
-  </p>
 
   <div class="uk-form-row" align="center">
     <button class="uk-button uk-button-success" type="submit" name="saveproduct" value="{$LANG_SHOP['saveproduct']}">{$LANG_SHOP['saveproduct']}</button>
