@@ -11,7 +11,15 @@
 </a>
 <p>{descrip}</p>
 {!if price}
-<p>{$LANG_SHOP['price']}: {price} {currency}</p>
+<p>{$LANG_SHOP['price']}:
+{!if on_sale}
+    <span class="shopBlock price was">{price_was}</span>
+    <span class="shopBlock price sale">{price}</span>
+{!else}
+    {price}
+{!endif}
+<!--&nbsp;{currency}-->
+</p>
 {!endif}
 {button}
 {# end {templatelocation} #}
