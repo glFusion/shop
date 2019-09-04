@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -619,13 +619,18 @@ class Category
     /**
      * Determine if the current user has access to this category.
      *
+     * @param   array|null  $groups     Array of groups, needed for sitemap
      * @return  boolean     True if user has access, False if not
      */
-    public function hasAccess()
-    {
-        global $_GROUPS;
+    public function hasAccess($groups = NULL)
+     {
+         global $_GROUPS;
 
-        if ($this->enabled && in_array($this->grp_access, $_GROUPS)) {
+        if ($groups === NULL) {
+            $groups = $_GROUPS;
+        }
+
+        if ($this->enabled && in_array($this->grp_access, $groups)) {
             return true;
         } else {
             return false;
