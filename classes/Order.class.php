@@ -1349,12 +1349,12 @@ class Order
         foreach ($this->items as $id => $item) {
             $total += ($item->price * $item->quantity);
         }
-        if ($this->isFinalView) {
+        if ($this->status == 'cart') {
+            $total += $this->calcTotalCharges();
+        } else {
             // Already have the amounts calculated, don't do it again
             // every time the order is viewed since rates may change.
             $total += $this->shipping + $this->tax + $this->handling;
-        } else {
-            $total += $this->calcTotalCharges();
         }
         return Currency::getInstance()->RoundVal($total);
     }
