@@ -26,10 +26,10 @@
     </label>
     <div class="uk-form-controls">
 {!if attr_id}
-      <input type="hidden" name="og_id" value="{og_id}" />
+      <input type="hidden" name="ag_id" value="{ag_id}" />
       {og_name}
 {!else}
-    <select name="og_id" id="attr_name_sel" onchange="updateOG(this.value);">
+    <select name="ag_id" id="attr_name_sel" onchange="updateAG(this.value);">
       {option_group_select}
     </select>
 {!endif}
@@ -124,7 +124,7 @@ $(document).ready(function() {
 });
 
 var item_id = {init_item_id};
-var og_id = {og_id};
+var ag_id = {ag_id};
 
 /**
  * Update the selected Item ID.
@@ -138,9 +138,9 @@ function updateItemID(new_id)
 /**
  * Update the attribute group selected.
  */
-function updateOG(new_id)
+function updateAG(new_id)
 {
-    og_id = new_id;
+    ag_id = new_id;
     updateOrderbyOpts()
 }
 
@@ -150,9 +150,9 @@ function updateOG(new_id)
 function updateOrderbyOpts()
 {
     var dataS = {
-        "action": "opt_orderby_opts",
+        "action": "attr_orderby_opts",
         "item_id": item_id,
-        "og_id": og_id,
+        "ag_id": ag_id,
     };
     data = $.param(dataS);
     $.ajax({

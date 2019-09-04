@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -22,11 +23,13 @@ if (!plugin_ismoderator_shop()) {
 }
 
 switch ($_POST['action']) {
-case 'opt_orderby_opts':
-    $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
+case 'attr_orderby_opts':
+    // Get the attrubute "orderby" options when the attribute group or item ID
+    // is changed.
+    $ag_id = SHOP_getVar($_POST, 'ag_id', 'integer', 0);
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\Attribute::getOrderbyOpts($item_id, $og_id, $selected);
+    $retval = Shop\Attribute::getOrderbyOpts($item_id, $ag_id, $selected);
     echo $retval;
     exit;
 
