@@ -650,7 +650,7 @@ class Order
                 'item_id'       => htmlspecialchars($item->product_id),
                 'item_dscp'     => htmlspecialchars($item->description),
                 'item_price'    => $Currency->FormatValue($item->price),
-                'item_quantity' => (int)$item->quantity,
+                'item_quantity' => $item->quantity,
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
