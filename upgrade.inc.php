@@ -68,8 +68,8 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = '1.0.0';
         if (!DB_checkTableExists('shop.opt_grp')) {
             // Initial populate of the new attribute group table
-            $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.opt_grp']} (og_name, og_orderby) (SELECT DISTINCT  attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
-            $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET og_id = (SELECT og_id FROM {$_TABLES['shop.opt_grp']} WHERE `og_name` = `attr_name`)";
+            $SQL_UPGRADE['1.0.0'][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name, ag_orderby) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_attr']}), 3";
+            $SQL_UPGADE['1.0.0'][] = "UPDATE {$_TABLES['shop.prod_attr']} SET ag_id = (SELECT ag_id FROM {$_TABLES['shop.attr_grp']} WHERE `ag_name` = `attr_name`)";
         }
         $populate_oi_opts = !DB_checkTableExists('shop.oi_opts');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
@@ -89,7 +89,7 @@ function SHOP_do_upgrade($dvlp = false)
                     foreach ($opt_ids as $opt_id) {
                         $OIO = new Shop\OrderItemOption();
                         $OIO->oi_id = $A['id'];
-                        $OIO->setAttr($opt_id);
+                        $OIO->setOpt($opt_id);
                         $OIO->Save();
                     }
                 }
@@ -103,7 +103,7 @@ function SHOP_do_upgrade($dvlp = false)
                         if (!empty($values[$id])) {
                             $OIO = new Shop\OrderItemOption();
                             $OIO->oi_id = $A['id'];
-                            $OIO->setAttr(0, $name, $values[$id]);
+                            $OIO->setOpt(0, $name, $values[$id]);
                             $OIO->Save();
                         }
                     }
