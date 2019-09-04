@@ -606,7 +606,7 @@ class Order
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
-                $img = $P->ImageUrl('', 100, 100);
+                $img = $P->ImageUrl('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
                     $img_url = COM_createImage(
                         $img['url'],

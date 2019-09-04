@@ -2523,6 +2523,9 @@ class Product
             );;
         }
 
+        if ($width > 0 && $height == 0) {
+            $height = $width;       // default to square if one size given
+        }
         $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
         $height = $height == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$height;
         $args = array(

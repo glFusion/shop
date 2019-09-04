@@ -58,6 +58,7 @@ $_SHOP_CONF['tmpdir'] = "{$_CONF['path']}/data/{$_SHOP_CONF['pi_name']}/";
 $_SHOP_CONF['download_path'] = "{$_SHOP_CONF['tmpdir']}files/";
 $_SHOP_CONF['image_dir']  = "{$_SHOP_CONF['tmpdir']}images/products";
 $_SHOP_CONF['catimgpath']  = "{$_SHOP_CONF['tmpdir']}images/categories";
+$_SHOP_CONF['order_tn_size'] = 65;
 
 /**
  * Allowed extensions for downloads.
