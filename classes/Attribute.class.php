@@ -33,32 +33,38 @@ class Attribute
 
 
     /**
-     * Constructor.
-     * Reads in the specified class, if $id is set.  If $id is zero,
-     * then a new entry is being created.
+     * Reads in the specified option, if $id is an integer.
+     * If $id is zero, then a new option is being created.
+     * If $id is an array, then it is a complete DB record and the properties
+     * just need to be set.
      *
-     * @param   integer $id Attributeal type ID
+     * @param   integer|array   $id Option record or record ID
      */
     public function __construct($id=0)
     {
         $this->properties = array();
         $this->isNew = true;
 
-        $id = (int)$id;
-        if ($id < 1) {
-            // New entry, set defaults
-            $this->attr_id = 0;
-            $this->og_id = 0;
-            $this->attr_name = 0;
-            $this->attr_value = '';
-            $this->attr_price = 0;
-            $this->item_id = 0;
-            $this->enabled = 1;
-            $this->orderby = 9999;
+        if (is_array($id)) {
+            // Received a full Option record already read from the DB
+            $this->setVars($id);
         } else {
-            $this->attr_id =  $id;
-            if (!$this->Read()) {
+            $id = (int)$id;
+            if ($id < 1) {
+                // New entry, set defaults
                 $this->attr_id = 0;
+                $this->ag_id = 0;
+                $this->attr_name = 0;
+                $this->attr_value = '';
+                $this->attr_price = 0;
+                $this->item_id = 0;
+                $this->enabled = 1;
+                $this->orderby = 9999;
+            } else {
+                $this->attr_id =  $id;
+                if (!$this->Read()) {
+                    $this->attr_id = 0;
+                }
             }
         }
     }
@@ -76,7 +82,7 @@ class Attribute
         case 'attr_id':
         case 'item_id':
         case 'orderby':
-        case 'og_id':
+        case 'ag_id':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
@@ -131,7 +137,7 @@ class Attribute
         if (!is_array($row)) return;
         $this->attr_id = $row['attr_id'];
         $this->item_id = $row['item_id'];
-        $this->og_id = $row['og_id'];
+        $this->ag_id = $row['ag_id'];
         $this->attr_name = $row['attr_name'];
         $this->attr_value = $row['attr_value'];
         $this->attr_price = $row['attr_price'];
@@ -216,7 +222,7 @@ class Attribute
 
         $sql2 = " SET item_id='{$this->item_id}',
                 attr_name='" . DB_escapeString($this->attr_name) . "',
-                og_id = {$this->og_id},
+                ag_id = {$this->ag_id},
                 attr_value='" . DB_escapeString($this->attr_value) . "',
                 sku = '" . DB_escapeString($this->sku) . "',
                 orderby='{$this->orderby}',
@@ -271,7 +277,7 @@ class Attribute
         // Check that basic required fields are filled in
         if (
             $this->item_id == 0 ||
-            $this->og_id == 0 ||
+            $this->ag_id == 0 ||
             $this->attr_value == ''
         ) {
             return false;
@@ -308,7 +314,7 @@ class Attribute
             $init_item_id = $this->item_id;
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->og_id = OptionGroup::getFirst()->og_id;
+            $this->ag_id = AttributeGroup::getFirst()->ag_id;
             $T->set_var('attr_id', '');
             $init_item_id = Product::getFirst();
         }
@@ -322,19 +328,19 @@ class Attribute
             'item_id'       => $this->item_id,
             'init_item_id'  => $init_item_id,
             'item_name'     => Product::getByID($this->item_id)->name,
-            'og_id'         => $this->og_id,
-            'og_name'       => OptionGroup::getInstance($this->og_id)->og_name,
+            'ag_id'         => $this->ag_id,
+            'ag_name'       => AttributeGroup::getInstance($this->ag_id)->ag_name,
             'attr_value'    => $this->attr_value,
             'attr_price'    => $this->attr_price,
             'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
-                        $_TABLES['shop.opt_grp'],
-                        'og_id,og_name',
-                        $this->og_id,
+                        $_TABLES['shop.attr_grp'],
+                        'ag_id,ag_name',
+                        $this->ag_id,
                         0
                     ),
-            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->og_id, $this->orderby),
+            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->ag_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
@@ -411,7 +417,7 @@ class Attribute
         $sql = "SELECT attr_id, orderby
                 FROM {$_TABLES['shop.prod_attr']}
                 WHERE item_id = '{$this->item_id}'
-                AND og_id= '{$this->og_id}'
+                AND ag_id= '{$this->ag_id}'
                 ORDER BY orderby ASC;";
         //echo $sql;die;
         $result = DB_query($sql);
@@ -471,24 +477,26 @@ class Attribute
 
 
     /**
-     * Category Admin List View.
+     * Product Option List View.
      *
-     * @param   integer $cat_id     Optional attribute ID to limit listing
+     * @param   integer $prod_id    Optional product ID to limit listing
      * @return  string      HTML for the attribute list.
      */
-    public static function adminList()
+    public static function adminList($prod_id=0)
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT og.og_name, at.*, p.name AS prod_name
+        $sql = "SELECT ag.ag_name, at.*, p.name AS prod_name
             FROM {$_TABLES['shop.prod_attr']} at
-            LEFT JOIN {$_TABLES['shop.opt_grp']} og
-            ON at.og_id = og.og_id
+            LEFT JOIN {$_TABLES['shop.attr_grp']} ag
+            ON at.ag_id = ag.ag_id
             LEFT JOIN {$_TABLES['shop.products']} p
             ON at.item_id = p.id";
 //            WHERE 1=1 ";
 
-        if (isset($_POST['product_id'])) {
+        if ($prod_id > 0) {
+            $sel_prod_id = (int)$prod_id;
+        } elseif (isset($_POST['product_id'])) {
             $sel_prod_id = (int)$_POST['product_id'];
             SESS_setVar('shop.attr_prod_id', $sel_prod_id);
         } elseif (SESS_isSet('shop.attr_prod_id')) {
@@ -522,7 +530,7 @@ class Attribute
             ),
             array(
                 'text' => $LANG_SHOP['attr_name'],
-                'field' => 'og_name',
+                'field' => 'ag_name',
                 'sort' => true,
             ),
             array(
@@ -557,13 +565,13 @@ class Attribute
         );
 
         $defsort_arr = array(
-            'field' => 'prod_name,og_orderby,orderby',
+            'field' => 'prod_name,ag_orderby,orderby',
             'direction' => 'ASC',
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink($LANG_SHOP['new_attr'],
-            SHOP_ADMIN_URL . '/index.php?editattr=0',
+            SHOP_ADMIN_URL . '/index.php?editattr=0&item_id=' . $sel_prod_id,
             array(
                 'style' => 'float:left;',
                 'class' => 'uk-button uk-button-success',
@@ -692,16 +700,16 @@ class Attribute
      * Used here and from admin/ajax.php.
      *
      * @param   integer $item_id    Current product ID
-     * @param   integer $og_id      Current Attribute Group ID
+     * @param   integer $ag_id      Current Attribute Group ID
      * @param   integer $sel        Currently-selection option
      * @return  string      Option elements for a selection list
      */
-    public static function getOrderbyOpts($item_id=0, $og_id=0, $sel=0)
+    public static function getOrderbyOpts($item_id=0, $ag_id=0, $sel=0)
     {
         global $_TABLES, $LANG_SHOP;
 
         $item_id = (int)$item_id;
-        $og_id = (int)$og_id;
+        $ag_id = (int)$ag_id;
         $sel = (int)$sel;
         $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
         $retval .= COM_optionList(
@@ -709,10 +717,47 @@ class Attribute
             'orderby,attr_value',
             $sel - 10,
             0,
-            "og_id = '$og_id' AND item_id = '$item_id' AND orderby <> '$sel'"
+            "ag_id = '$ag_id' AND item_id = '$item_id' AND orderby <> '$sel'"
         );
         return $retval;
     }
+
+
+    /**
+     * Get all attributes for a product, optionally limited by group.
+     * Attempts to retrieve first from cache, then reads from the DB.
+     *
+     * @param   integer $prod_id    Product ID
+     * @param   integer $ag_id      Optional AttributeGroup ID
+     * @return  array       Array of Option objects
+     */
+    public static function getByProduct($prod_id, $ag_id=0)
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        $ag_id = (int)$ag_id;
+        $cache_key = 'options_' . $prod_id . '_' . $ag_id;
+        $opts = Cache::get($cache_key);
+        if ($opts === NULL) {
+            $opts = array();
+            $sql = "SELECT ag.ag_name, at.*
+                FROM {$_TABLES['shop.prod_attr']} at
+                LEFT JOIN {$_TABLES['shop.attr_grp']} ag
+                    ON ag.ag_id = at.ag_id
+                WHERE at.item_id = '{$prod_id}' AND at.enabled = 1";
+            if ($ag_id > 0) {
+                $sql .= " AND at.ag_id = '$ag_id'";
+            }
+            $sql .= " ORDER BY ag.ag_orderby, at.orderby ASC";
+            $result = DB_query($sql);
+            while ($A = DB_fetchArray($result, false)) {
+                $opts[$A['attr_id']] = new self($A);
+            }
+            Cache::set($cache_key, $opts, array('products', 'attributes', $prod_id));
+        }
+        return $opts;
+     }
 
 }
 

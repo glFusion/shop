@@ -123,9 +123,13 @@ class Cart extends Order
 
         // Merge the items into the user cart
         foreach ($AnonCart->items as $Item) {
+            $opts = array();
+            foreach ($Item->options as $Opt) {
+                $opts[] = $Opt->attr_id;
+            }
             $args = array(
                 'item_number'   => $Item->product_id,
-                'options'       => explode(',', $Item->options),
+                'attributes'    => $opts,
                 'extras'        => $Item->extras,
                 'description'   => $Item->description,
                 'quantity'      => $Item->quantity,
@@ -168,7 +172,7 @@ class Cart extends Order
         $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
         $override   = isset($args['override']) ? $args['price'] : NULL;
         $extras     = SHOP_getVar($args, 'extras', 'array');
-        $options    = SHOP_getVar($args, 'options', 'array');
+        $attributes = SHOP_getVar($args, 'attributes', 'array');
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
@@ -178,17 +182,15 @@ class Cart extends Order
 
         // Extract the attribute IDs from the options array to create
         // the item_id.
-        // Options are formatted as "id|dscp|price"
+        // Options are an array(id1, id2, id3, ...)
         $opts = array();
-        //$opt_str = '';          // CSV option numbers
         if (is_array($options) && !empty($options)) {
-            foreach($options as $optname=>$option) {
-                $opt_tmp = explode('|', $option);
-                $opts[] = $opt_tmp[0];
-        //        $Attr = new Attribute($opt_tmp[0]);
+            foreach($options as $option) {
+                $opts[] = new Attribute($option);
             }
-            $opt_str = implode(',', $opts);
             // Add the option numbers to the item ID to create a new ID
+            // to check whether the product already exists in the cart.
+            $opt_str = implode(',', $options);
             $item_id .= '|' . $opt_str;
         } else {
             $options = array();
@@ -201,6 +203,7 @@ class Cart extends Order
         } else {
             $have_id = false;
         }
+
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
@@ -213,7 +216,7 @@ class Cart extends Order
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
                 'price'     => sprintf("%.2f", $price),
-                'options'   => $options,
+                'attributes' => $options,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );

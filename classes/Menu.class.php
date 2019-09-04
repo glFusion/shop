@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -186,14 +186,14 @@ class Menu
                 'active' => $view == 'categories' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
-                'text' => $LANG_SHOP['opt_grps'],
-                'active' => $view == 'opt_grp' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/index.php?attr_grp=x',
+                'text' => $LANG_SHOP['attr_grps'],
+                'active' => $view == 'attr_grp' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?options=x',
-                'text' => $LANG_SHOP['options'],
-                'active' => $view == 'options' ? true : false,
+                'text' => $LANG_SHOP['attributes'],
+                'active' => $view == 'attributes' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
@@ -217,7 +217,6 @@ class Menu
         $retval .= '</ul>' . LB;
         return $retval;
     }
-
 
 
     /**

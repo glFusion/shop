@@ -66,7 +66,7 @@ class OrderItem
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
                 if (isset($oi_id['options'])) {
-                    $this->options = $this->setOptions($oi_id['options']);
+                    $this->options = $this->setOptions($oi_id['attributes']);
                 }
             } else {
                 // Existing orderitem record, get the existing options
@@ -223,6 +223,8 @@ class OrderItem
         } else {
             return new OrderItemOption;
         }
+        // Now get the actual option object requested.
+        // There's no easy index for this.
         foreach($this->options as $Opt) {
             if ($Opt->$key == $val) {
                 return $Opt;
@@ -308,7 +310,7 @@ class OrderItem
         $OIO = new OrderItemOption;
         $OIO->oi_id = $this->id;
         $OIO->order_id = $this->order_id;
-        $OIO->setAttr(0, $name, $value);
+        $OIO->setOpt(0, $name, $value);
         $this->options[] = $OIO;
         // Update the Options table now if this is an existing item,
         // othewise it might not get saved.
@@ -370,7 +372,7 @@ class OrderItem
                 quantity = '{$this->quantity}',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 txn_type = '" . DB_escapeString($this->txn_type) . "',
-                price = '$this->price',
+                price = '{$this->product->getPrice($this->options, $this->quantity)}',
                 taxable = '{$this->taxable}',
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
@@ -493,11 +495,6 @@ class OrderItem
         if ($this->product_id != $Item2->product_id) {
             return false;
         }
-        $opts_to_check = array(
-            'og_id', 'attr_id',
-            'oio_name', 'oio_value',
-            'oio_price',
-        );
         return OrderItemOption::MatchAll($this->options, $Item2->options);
     }
 
@@ -518,9 +515,8 @@ class OrderItem
             foreach ($opts as $opt_id) {
                 if ($opt_id > 0) {      // Don't set non-standard options here
                     $OIO = new OrderItemOption;
-                    $OIO->setAttr($opt_id);
-                    $OIO->oio_id = $this->id;
-                    $OIO->order_id = $this->order_id;
+                    $OIO->setOpt($opt_id);
+                    $OIO->oi_id = $this->id;
                     $this->options[] = $OIO;
                 }
             }
@@ -612,6 +608,16 @@ class OrderItem
         } else {
             return $this->getOrder()->canView();
         }
+    }
+
+
+    public function getPrice()
+    {
+        $retval = $this->price;
+        foreach ($this->options as $OIO) {
+            $retval += $OIO->oio_price;
+        }
+        return $retval;
     }
 
 }

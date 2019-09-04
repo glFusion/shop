@@ -43,9 +43,13 @@ class Product
      * @var array */
     protected $properties;
 
-    /** Product Attributes.
+    /** Product attributes.
      * @var array */
-    public $options;
+    public $attribs;
+
+    /** Attribute Groups used for this product.
+     * @var array */
+    public $AttributeGroups = array();
 
     /** Indicate whether the current user is an administrator.
      * @var boolean */
@@ -95,6 +99,9 @@ class Product
     /** Product image objects.
      * @var array */
     private $Images = NULL;
+
+    private $sel_attrs = array();
+
 
     /**
      * Constructor.
@@ -181,7 +188,6 @@ class Product
         if (is_array($A) && isset($A['id'])) {
             // A complete product record
             return self::_getInstance($A);
-            //$id = isset($A['id']) ? $A['id'] : NULL;
         } else {
             // A single product ID
             $id = $A;
@@ -203,38 +209,9 @@ class Product
                 } else {
                     $P[$id] = self::getByID($item[0]);
                 }
-
-                /*if (!is_array($A)) {
-                    $cache_key = self::_makeCacheKey($item[0]);
-                    //Cache::delete($cache_key);
-                    $A = Cache::get($cache_key);
-                    if (!is_array($A)) {
-                        // If not found in cache
-                        if ($_SHOP_CONF['use_sku']) {
-                            $key = 'name';
-                            $id = DB_escapeString($item[0]);
-                        } else {
-                            $key = 'id';
-                            $id = (int)$item[0];
-                        }
-                        $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                                WHERE $key = '$id'";
-                        $res = DB_query($sql);
-                        $A = DB_fetchArray($res, false);
-                        if (isset($A['id'])) {
-                            Cache::set($cache_key, $A, array('products'));
-                        }
-                    }
-                }*/
-                //$P[$id] = self::_getInstance($A);
-                /*if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
-                    $P[$id] = new \Shop\Products\Coupon($A);
-                } else {
-                    $P[$id] = new self($A);
+                if (isset($item[1])) {
+                    $P[$id]->setSelectedAttributes($item[1]);
                 }
-                if ($P[$id]->hasAccess()) {
-                    $P[$id]->loadAttributes();
-                }*/
             }
             return $P[$id];
         }
@@ -243,6 +220,7 @@ class Product
 
     /**
      * Instantiate an objec from a DB record array.
+     * Internal products only, called from `getByID()` and `getBySKU()`.
      *
      * @param   array   $A  DB record
      * @return  object      Product object
@@ -564,29 +542,21 @@ class Product
      */
     protected function loadAttributes()
     {
-        global $_TABLES;
-
-        $cache_key = self::_makeCacheKey($this->id, 'attr');
-        $this->options = Cache::get($cache_key);
-        if ($this->options === NULL) {
-            $sql = "SELECT og.og_name, at.*
-                FROM {$_TABLES['shop.prod_attr']} at
-                LEFT JOIN {$_TABLES['shop.opt_grp']} og
-                    ON og.og_id = at.og_id
-                WHERE at.item_id = '{$this->id}' AND at.enabled = 1
-                ORDER BY og.og_orderby, at.orderby ASC";
-            $result = DB_query($sql);
-            $this->options = array();
-            while ($A = DB_fetchArray($result, false)) {
-                $this->options[$A['attr_id']] = array(
-                    'og_id'     => $A['og_id'],
-                    'attr_name' => $A['og_name'],
-                    'attr_value' => $A['attr_value'],
-                    'attr_price' => $A['attr_price'],
-                    'sku'       => $A['sku'],
-                );
+        if (empty($this->AttributeGroups)) {   // Load only once
+            $this->AttributeGroups = AttributeGroup::getByProduct($this->id);
+            foreach ($this->AttributeGroups as $ag_id=>$AG) {
+                $AG->getAttributes($this->id);
+                // TODO: deprecate this array and use group/option objects
+                foreach ($AG->Attribs as $attr_id=>$Attr) {
+                    $this->attribs[$attr_id] = array(
+                        'ag_id'     => $Attr->ag_id,
+                        'attr_name' => $AG->ag_name,
+                        'attr_value' => $Attr->attr_value,
+                        'attr_price' => $Attr->attr_price,
+                        'sku'       => $Attr->sku,
+                    );
+                }
             }
-            Cache::set($cache_key, $this->options, array('products', $this->id));
         }
     }
 
@@ -940,6 +910,7 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
+            'option_list'   => Attribute::adminList($this->id),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1145,20 +1116,25 @@ class Product
         // Used when displaying the product detail from an orde or cart view.
         // If none requested or the current user can't view the order, then
         // create an empty object for later use.
+        // $this->sel_attrs may also be set in getInstance()if an option
+        // string is provided in the item number.
         if ($oi_id > 0) {
             $OI = new OrderItem($oi_id);
-            if (!$OI->canView()) {
-                $OI = new OrderItem;
+            if ($OI->canView()) {
+                $this->sel_attrs = array();
+                foreach ($OI->getOptions() as $OIO) {
+                    if ($OIO->opt_id > 0) {    // not a custom text field
+                        $this->sel_attrs[] = $OIO->opt_id;
+                    }
+                }
             }
         } else {
-            $OI = new OrderItem;
+            $OI = NULL;
         }
-
         // Set the template dir based on the configured template version
-        $T = SHOP_getTemplate(
-            'product_detail_attrib', 'product',
-            'detail/' . $_SHOP_CONF['product_tpl_ver']
-        );
+        $T = new \Template(__DIR__ . '//../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
+        $T->set_file('product', 'product_detail_attrib.thtml');
+        // Set up the template containing common javascript
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
 
@@ -1182,12 +1158,19 @@ class Product
             $T->parse('disc', 'qtyDiscTxt', true);
         }
 
-        // Get custom text input fields
+        // Get custom text input fields.
+        // Pre-filled values come from the OrderItem object, if any.
+        // Otherwise they're blank. Known issue: Anon users have no acess
+        // to the OI object so the fields won't be pre-filled for them.
         if ('' != $this->custom) {
             $T->set_block('product', 'CustAttrib', 'cAttr');
             $text_field_names = explode('|', $this->custom);
             foreach ($text_field_names as $id=>$text_field_name) {
-                $val = $OI->getOptionByOG(0, $text_field_name)->oio_value;
+                if ($OI) {
+                    $val = $OI->getOptionByOG(0, $text_field_name)->oio_value;
+                } else {
+                    $val = '';
+                }
                 $T->set_var(array(
                     'fld_id'    => "cust_text_fld_$id",
                     'fld_name'  => htmlspecialchars($text_field_name),
@@ -1220,74 +1203,64 @@ class Product
         }
 
         // Get the product options, if any, and set them into the form
-        $cbrk = '';
-        $init_price_adj = NULL;
         $json_opts = array();
         $this->_orig_price = $this->price;
-        $T->set_block('product', 'AttrSelect', 'attrSel');
-        if (is_array($this->options)) {
-            foreach ($this->options as $id=>$Attr) {
-                $type = 'select';
-                $sel = $OI->getOptionByOG($Attr['og_id']);
-                if ($sel !== false) {
-                    $sel = $sel->attr_id;
-                }
-                if ($Attr['attr_name'] != $cbrk) {
-                    // Adjust the price for cases where all attributes have prices
-                    if ($init_price_adj !== NULL) {
-                        $this->act_price += $init_price_adj;
-                        $this->_orig_price += $init_price_adj;
-                    }
-                    $init_price_adj = NULL;
-                    if ($cbrk != '') {      // end block if not the first element
-                        $T->set_var(array(
-                            'attr_name' => $cbrk,
-                            'attr_options' => $attributes,
-                            'opt_id' => $id,
-                        ) );
-                        $T->parse('attrSel', 'AttrSelect', true);
-                    }
-                    $cbrk = $Attr['attr_name'];
-                    $attributes = '';
-                }
-
-                $json_opts[$id] = $Attr['attr_price'];
-                if ($type == 'select') {
-                    if ($init_price_adj === NULL) $init_price_adj = $Attr['attr_price'];
-                    if ($Attr['attr_price'] != 0) {
-                        $attr_str = sprintf(" ( %+0.2f )", $Attr['attr_price']);
+        $T->set_block('product', 'AttributeGroup', 'AG');
+        foreach ($this->AttributeGroups as $AG) {
+            // Most options use the option group name as the prompt
+            $display_name = $AG->ag_name;
+            $T->set_block('product', 'Attribute' . $AG->ag_type, 'optSel');
+            switch ($AG->ag_type) {
+            case 'select':
+            case 'radio':
+                foreach ($AG->Attribs as $Attr) {
+                    $json_opts[$Attr->attr_id] = $Attr->attr_price;
+                    if ($Attr->attr_price != 0) {
+                        // Show the incremental price in the selection.
+                        $attr_str = sprintf(" ( %+0.2f )", $Attr->attr_price);
                     } else {
                         $attr_str = '';
                     }
-                    $val = htmlspecialchars($Attr['attr_value']);
-                    /*$attributes .= '<option value="' . $id . '|' .
-                        $val . '|' . $Attr['attr_price'] . '">' .
-                        $val . $attr_str .
-                        '</option>' . LB;*/
-                    $selected = $id == $sel ? 'selected="selected"' : '';
-                    $attributes .= '<option value="' . $id . '"' . $selected . '>' .
-                        $val . $attr_str .
-                        '</option>' . LB;
-                /*} else {
-                    $attributes .= "<input type=\"hidden\" name=\"on{$i}\"
-                        value=\"{$Attr['attr_name']}\">\n";
-                    $attributes .= $Attr['attr_name'] . ':</td>
-                        <td><input class="uk-contrast uk-form" type"text" name="os' . $i. '" value="" size="32" /></td></tr>';
-                */
+                    $selected = in_array($Attr->attr_id, $this->sel_attrs) ? 'selected="selected"' : '';
+                    $T->set_var(array(
+                        'attr_id'   => $Attr->attr_id,
+                        'attr_str'  => htmlspecialchars($Attr->attr_value) . $attr_str,
+                        'selected'  => $selected,
+                    ) );
+                    $T->parse('optSel', 'Attribute' . $AG->ag_type, true);
                 }
-            }
-            if ($cbrk != '') {      // finish off the last selection
-                if ($init_price_adj !== NULL) {
-                    $this->_act_price += $init_price_adj;
-                    $this->_orig_price += $init_price_adj;
+                break;
+            case 'checkbox':
+                foreach ($AG->Attribs as $Attr) {
+                    $json_opts[$Attr->attr_id] = $Attr->attr_price;
+                    if ($Attr->attr_price != 0) {
+                        // Show the incremental price in the selection.
+                        $opt_str = sprintf(" ( %+0.2f )", $Attr->attr_price);
+                    } else {
+                        $opt_str = '';
+                    }
+                    $checked = in_array($Attr->attr_id, $this->sel_attrs) ? 'checked="checked"' : '';
+                    $T->set_var(array(
+                        'attr_id'   => $Attr->attr_id,
+                        'attr_str'  => htmlspecialchars($Attr->attr_value) . $opt_str,
+                        'checked'   => $checked,
+                    ) );
+                    $T->parse('optSel', 'Option' . $AG->ag_type, true);
                 }
-                $T->set_var(array(
-                    'attr_name' => $cbrk,
-                    'attr_options' => $attributes,
-                    'opt_id' => $id,
-                ) );
-                $T->parse('attrSel', 'AttrSelect', true);
+                break;
+
+            case 'text':
+                $display_name = current($AG->Attribs)->attr_value;
+                $T->set_var('var_name', 'text_option_' . $AG->ag_id);
+                break;
             }
+            $T->set_var(array(
+                'ag_id'     => $AG->ag_id,
+                'ag_name'   => $display_name,
+                'ag_type'   => $AG->ag_type,
+            ) );
+            $T->parse('AG', 'AttributeGroup', true);
+            $T->clear_var('optSel');
         }
 
         if ($this->getShipping()) {
@@ -1520,7 +1493,7 @@ class Product
      */
     public function hasAttributes()
     {
-        return empty($this->options) ? false : true;
+        return empty($this->AttributeGroups) ? false : true;
     }
 
 
@@ -1562,7 +1535,9 @@ class Product
 
 
     /**
-     * Add a special field to a product.
+     * Add a special field to a product. This is a field supplied by the
+     * product, not a custom text string defined by the admin in the
+     * product definition. See $this->custom for those fields.
      * The field will not be added if $fld_name already exists for the
      * product.
      * The prompt string may be supplied or, if blank, then $fld_name is used
@@ -1656,20 +1631,22 @@ class Product
     }
 
 
-
     /**
      * Get the unit price of this product, considering the specified options.
      * Quantity discounts are considered, the return value is the effictive
      * price per unit.
      *
-     * @param   array   $options    Array of integer option values
+     * @param   array   $attribs    Array of integer option values
      * @param   integer $quantity   Quantity, used to calculate discounts
      * @param   array   $override   Override elements (price, uid)
      * @return  float       Product price, including option
      */
-    public function getPrice($options = array(), $quantity = 1, $override = array())
+    public function getPrice($attribs = array(), $quantity = 1, $override = array())
     {
-        if (!is_array($options)) $options = explode(',', $options);
+        if (!is_array($attribs)) {
+            $attribs = explode(',', $attribs);
+        }
+
         if ($this->override_price && isset($override['price'])) {
             // If an override price is specified, just return it.
             return round((float)$override['price'], Currency::getInstance()->Decimals());
@@ -1682,19 +1659,19 @@ class Product
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
         // Add attribute prices to base price
-        /*foreach ($options as $key) {
-            $parts = explode('|', $key); // in case of "7|Black|1.50" option
-            $key = $parts[0];
-            if (isset($this->options[$key])) {
-                $price += (float)$this->options[$key]['attr_price'];
-            }
-        }*/
-        foreach ($options as $Opt) {
-            if ($Opt->attr_id > 0) {
-                $key = $Opt->attr_id;
-                if (isset($this->options[$key])) {
-                    $price += (float)$this->options[$key]['attr_price'];
+        foreach ($attribs as $Attr) {
+            $key = 0;
+            // Allow for $attribs to be an array of attribute IDs, or Attribute objects.
+            if (is_object($Attr)) {
+                if ($Attr->opt_id > 0) {
+                    $key = $Attr->opt_id;
                 }
+            } else {
+                $key = $Attr;
+            }
+            $Attribute = $this->getAttribute($key);
+            if ($Attribute !== false) {
+                $price += (float)$Attribute->attr_price;
             }
         }
 
@@ -1750,12 +1727,10 @@ class Product
         // Use item_options since the class var doesn't work with empty()
         $item_options = $item->options;
         if (!empty($item_options)) {
-            foreach ($item->options as $attr_id=>$OIO) {
-                if (
-                    array_key_exists($OIO->attr_id, $this->options) &&
-                    !empty($this->options[$OIO->attr_id]['sku'])
-                ) {
-                    $sku[] = $this->options[$OIO->attr_id]['sku'];
+            foreach ($item_options as $attr_id=>$OIO) {
+                $Attr = $this->getOption($OIO->opt_id);
+                if ($Attr && $Attr->sku != '') {
+                    $sku[] = $Attr->sku;
                 }
             }
         }
@@ -1769,10 +1744,11 @@ class Product
      *      -- option1: option1_value
      *      -- option2: optoin2_value
      *
+     * @deprecated
      * @param  object  $item   Specific OrderItem object from the cart
      * @return string      Option display
      */
-    public function getOptionDisplay($item)
+    public function XXgetOptionDisplay($item)
     {
         $retval = '';
         $opts = array();
@@ -1920,22 +1896,20 @@ class Product
 
 
     /**
-     * Get an option from the `options` property.
+     * Get an option object from the AttributeGroups property.
+     * Returns false if the option key is not found.
      *
      * @param   string  $key    Option name to retrieve
      * @return  mixed       Option value, False if not set
      */
-    public function getOption($key)
+    public function getAttribute($key)
     {
-        if (isset($this->options[$key])) {
-            return array(
-                'name' => $this->options[$key]['attr_name'],
-                'value' => $this->options[$key]['attr_value'],
-                'price' => $this->options[$key]['attr_price'],
-            );
-        } else {
-            return false;
+        foreach ($this->AttributeGroups as $AG) {
+            if (isset($AG->Attribs[$key])) {
+                return $AG->Attribs[$key];
+            }
         }
+        return false;
     }
 
 
@@ -1986,7 +1960,7 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . ' - Copy';
+        $this->name = $this->name . ' - ' . uniqid();
         $this->Save();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
@@ -2068,7 +2042,7 @@ class Product
     {
         if (
             $this->canDisplay() &&
-            ($this->_isInStock() || $this->oversell == self::OVERSELL_ALLOW)
+            ($this->isInStock() || $this->oversell == self::OVERSELL_ALLOW)
         ) {
             return true;
         } else {
@@ -2083,7 +2057,7 @@ class Product
      * @param   integer $requested  Requested oversell value to sell item
      * @return  boolean     True if condition is met, False if not.
      */
-    private function _isInStock()
+    public function isInStock()
     {
         // Not tracking stock, or have stock on hand, return true
         if ($this->track_onhand == 0 || $this->onhand > 0) {
@@ -2116,7 +2090,7 @@ class Product
         }
 
         // If not in stock and oversell set to Hide, return false.
-        if (!$this->_isInStock() && $this->oversell == self::OVERSELL_HIDE) {
+        if (!$this->isInStock() && $this->oversell == self::OVERSELL_HIDE) {
             return false;
         }
 
@@ -2218,13 +2192,14 @@ class Product
      * Determine if the current user has access to view this product.
      * Checks the related category for access.
      *
+     * @param   array|null  $groups     Optional group override to pass to Cat
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess()
+    public function hasAccess($groups = NULL)
     {
         // Make sure the category is set
         if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess();
+        return $this->Cat->hasAccess($groups);
     }
 
 
@@ -2933,10 +2908,11 @@ class Product
     {
         global $_SHOP_CONF;
 
+        $parts = explode('|', $id);
         if ($_SHOP_CONF['use_sku']) {
-            return $this->name == $id;
+            return $this->name == $parts[0];
         } else {
-            return $this->id == $id;
+            return $this->id == $parts[0];
         }
     }
 
@@ -2977,6 +2953,22 @@ class Product
         global $_TABLES;
 
         return (int)DB_getItem($_TABLES['shop.products'], 'id');
+    }
+
+
+    /**
+     * Set the selected options for a cart item.
+     * Used to display the detail page with options selected from the
+     * product link in the cart or order.
+     *
+     * @param   array   $attrs  Array of attribute IDs (id1, id2, id3, ...)
+     */
+    public function setSelectedAttributes($attrs)
+    {
+        if (!is_array($attrs)) {
+            $attrs = explode(',', $attrs);
+        }
+        $this->sel_attrs = $attrs;
     }
 
 }
