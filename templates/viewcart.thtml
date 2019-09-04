@@ -1,5 +1,8 @@
 {# begin {templatelocation} #}
-<a href="{pi_url}/index.php" class="uk-button uk-button-small">{$LANG_SHOP['back_to_catalog']}</a>
+<a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-primary">
+  <i class="uk-icon uk-icon-backward"></i>
+  {$LANG_SHOP['continue_shopping']}
+</a>
 <div style="text-align:center; margin-left:auto;">
   <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
   <form action="{pi_url}/cart.php" method="post" class="shopViewCart" id="shopCartForm">
@@ -162,7 +165,7 @@
 {!if gateway_radios}
         <input type="hidden" name="next_step" value="{next_step}" />
         <button style="float:none;" id="submit" type="submit" class="uk-button uk-button-success" name="checkout">
-          <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']} &gt;&gt;</button>
+          <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
 {!endif}
       </div>
     </div>
