@@ -100,6 +100,9 @@ class Product
      * @var array */
     private $Images = NULL;
 
+    /** Selected attributes.
+     * Using a property to pass between functions.
+     * @var array */
     private $sel_attrs = array();
 
 
@@ -1123,14 +1126,15 @@ class Product
             if ($OI->canView()) {
                 $this->sel_attrs = array();
                 foreach ($OI->getOptions() as $OIO) {
-                    if ($OIO->opt_id > 0) {    // not a custom text field
-                        $this->sel_attrs[] = $OIO->opt_id;
+                    if ($OIO->attr_id > 0) {    // not a custom text field
+                        $this->sel_attrs[] = $OIO->attr_id;
                     }
                 }
             }
         } else {
             $OI = NULL;
         }
+
         // Set the template dir based on the configured template version
         $T = new \Template(__DIR__ . '//../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
         $T->set_file('product', 'product_detail_attrib.thtml');
@@ -1213,6 +1217,16 @@ class Product
             switch ($AG->ag_type) {
             case 'select':
             case 'radio':
+                // First find the selected option
+                $sel_opt = 0;
+                foreach ($AG->Attribs as $Attr) {
+                    if (in_array($Attr->attr_id, $this->sel_attrs)) {
+                        $sel_opt = $Attr->attr_id;
+                    }
+                }
+                if (!$sel_opt) {    // no selected attribute found
+                    $sel_opt = reset($AG->Attribs)->attr_id;
+                }
                 foreach ($AG->Attribs as $Attr) {
                     $json_opts[$Attr->attr_id] = $Attr->attr_price;
                     if ($Attr->attr_price != 0) {
@@ -1221,11 +1235,11 @@ class Product
                     } else {
                         $attr_str = '';
                     }
-                    $selected = in_array($Attr->attr_id, $this->sel_attrs) ? 'selected="selected"' : '';
                     $T->set_var(array(
                         'attr_id'   => $Attr->attr_id,
                         'attr_str'  => htmlspecialchars($Attr->attr_value) . $attr_str,
-                        'selected'  => $selected,
+                        'radio_selected'  => $Attr->attr_id == $sel_opt ? 'checked="checked"' : '',
+                        'select_selected'  => $Attr->attr_id == $sel_opt ? 'selected="selected"' : '',
                     ) );
                     $T->parse('optSel', 'Attribute' . $AG->ag_type, true);
                 }
@@ -1632,6 +1646,20 @@ class Product
 
 
     /**
+     * Get the discounted price for the product, including options.
+     *
+     * @param   integer $qty            Quantity purchased
+     * @param   float   $opts_price     Total price of selected options
+     * @return  float       Net price considering sales and quantity discounts
+     */
+    public function getDiscountedPrice($qty=1, $opts_price=0)
+    {
+        $price = $this->getSale()->calcPrice($this->price + $opts_price);
+        return Currency::getInstance()->RoundVal($price * (1 - ($this->getDiscount($qty) / 100)));
+    }
+
+
+    /**
      * Get the unit price of this product, considering the specified options.
      * Quantity discounts are considered, the return value is the effictive
      * price per unit.
@@ -1728,9 +1756,11 @@ class Product
         $item_options = $item->options;
         if (!empty($item_options)) {
             foreach ($item_options as $attr_id=>$OIO) {
-                $Attr = $this->getOption($OIO->opt_id);
-                if ($Attr && $Attr->sku != '') {
-                    $sku[] = $Attr->sku;
+                if (
+                    isset($this->attribs[$OIO->attr_id]) &&
+                    $this->attribs[$OIO->attr_id]['sku'] != ''
+                ) {
+                    $sku[] = $this->attribs[$OIO->attr_id]['sku'];
                 }
             }
         }
@@ -2008,11 +2038,15 @@ class Product
      * Prices are cached for repeated calls.
      *
      * @see     self::isOnSale()
+     * @param   float   $price  Optional price override
      * @return  float   Sale price, normal price if not on sale
      */
-    public function getSalePrice()
+    public function getSalePrice($price = NULL)
     {
-        return $this->getSale()->calcPrice($this->price);
+        if ($price === NULL) {
+            $price = $this->price;
+        }
+        return $this->getSale()->calcPrice($price);
     }
 
 
