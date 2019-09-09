@@ -40,16 +40,16 @@
 {!!if {ag_type} == "select" !!}
           <select class="uk-form" id="attributes{ag_id}" name="attributes[]" onchange="ProcessForm();">
 <!-- BEGIN Attribugeselect -->
-            <option value="{attr_id}" {selected}>{attr_str}</option>
+            <option value="{attr_id}" {select_selected}>{attr_str}</option>
 <!-- END Attribugeselect -->
           </select>
 {!!elseif {ag_type} == "checkbox" !!}
 <!-- BEGIN Attribugecheckbox -->
-        {attr_str}&nbsp;<input type="checkbox" name="attributes[]" value="{attr_id}" {checked} onclick="ProcessForm();"/><br />
+        <input type="checkbox" name="attributes[]" value="{attr_id}" {checked} onclick="ProcessForm();"/>&nbsp;{attr_str}<br />
 <!-- END Attribugecheckbox -->
 {!!elseif {ag_type} == "radio" !!}
 <!-- BEGIN Attribugeradio -->
-        {attr_str}&nbsp;<input type="radio" name="attributes[]" value="{attr_id}" {selected}><br />
+        <input type="radio" name="attributes[]" value="{attr_id}" {radio_selected}>&nbsp;{attr_str}<br />
 <!-- END Attribugeradio -->
 !!elseif {ag_type == "text" !!}
         <input type="text" name="extras[custom][{ag_id}]" value="{attr_str}" size="40" />

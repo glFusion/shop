@@ -68,7 +68,7 @@
 {!!if {ag_type} == "select" !!}
           <select class="uk-form" id="attributes{ag_id}" name="attributes[]" onchange="ProcessForm();">
 <!-- BEGIN Attributeselect -->
-            <option value="{attr_id}" {selected}>{attr_str}</option>
+            <option value="{attr_id}" {select_selected}>{attr_str}</option>
 <!-- END Attributeselect -->
           </select>
 {!!elseif {ag_type} == "checkbox" !!}
@@ -77,7 +77,7 @@
 <!-- END Attributecheckbox -->
 {!!elseif {ag_type} == "radio" !!}
 <!-- BEGIN Attributeradio -->
-        <input type="radio" name="attributes[]" value="{attr_id}" {selected}>&nbsp;{attr_str}<br />
+        <input type="radio" name="attributes[]" value="{attr_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{attr_str}<br />
 <!-- END Attributeradio -->
 {!endif}
         </div>

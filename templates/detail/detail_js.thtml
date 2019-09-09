@@ -37,7 +37,7 @@ function ProcessForm()
     price = {price};
     price_was = {orig_price_val};
 
-    options = frm.elements['options[]'];
+    options = frm.elements['attributes[]'];
     if (typeof(options) == "undefined") {
         return;
     }
@@ -53,7 +53,8 @@ function ProcessForm()
             }
             if (
                 options[i].type == "select-one" ||
-                (options[i].type == "checkbox" && options[i].checked)
+                (options[i].type == "checkbox" && options[i].checked) ||
+                (options[i].type == "radio" && options[i].checked)
             ) {
                 opt_price = opt_prices[options[i].value] * 1;
                 price += opt_price;
@@ -61,7 +62,8 @@ function ProcessForm()
             }
         }
     } else {
-        // There is a single option, check the value
+        // There is a single option, check the value.
+        // Checkboxes are individual options.
         if (
             options.type == "select-one" ||
             (options.type == "checkbox" && options[i].checked)
