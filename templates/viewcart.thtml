@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-primary">
+<a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-success">
   <i class="uk-icon uk-icon-backward"></i>
   {$LANG_SHOP['continue_shopping']}
 </a>
@@ -16,7 +16,7 @@
         <th></th>
 {!endif}
         <th class="aligncenter">{$LANG_SHOP['description']}</th>
-        <th style="width:10%" class="aligncenter">{$LANG_SHOP['price']}</th>
+        <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
         <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
         <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
         <th style="width:5%" class="aligncenter"></th>
