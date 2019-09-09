@@ -21,11 +21,11 @@ class UserInfo
 {
     /** User ID
     * @var integer */
-    var $uid;
+    public $uid;
 
-    /** Addresses stored for this user
+    /** Addresses stored for this user.
     * @var array */
-    var $addresses = array();
+    public $addresses = array();
 
     /**  Flag to indicate that this is a new record.
      * @var boolean */
@@ -54,7 +54,7 @@ class UserInfo
      *
      * @param   integer     $uid    Optional user ID
      */
-    function __construct($uid=0)
+    public function __construct($uid=0)
     {
         global $_USER;
 
@@ -278,6 +278,7 @@ class UserInfo
             cart = '$cart'
             ON DUPLICATE KEY UPDATE
             cart = '$cart'";
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         Cache::clear('shopuser_' . $this->uid);
         return DB_error() ? false : true;
