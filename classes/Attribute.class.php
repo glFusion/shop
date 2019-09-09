@@ -579,12 +579,6 @@ class Attribute
                 'class' => 'uk-button uk-button-success',
             )
         );
-        $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
-            onchange=\"this.form.submit();\">
-            <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
-            COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id) .
-            "</select>&nbsp;\n";
-
         if ($sel_prod_id > 0) {
             $def_filter = "WHERE item_id = '$sel_prod_id'";
         } else {
@@ -597,12 +591,23 @@ class Attribute
             'default_filter' => $def_filter,
         );
 
+        if ($prod_id == 0) {
+        $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
+            onchange=\"this.form.submit();\">
+            <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
+            COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id) .
+            "</select>&nbsp;\n";
         $text_arr = array(
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/index.php?attributes=x',
         );
-
         $options = array('chkdelete' => true, 'chkfield' => 'attr_id');
+        } else {
+            $text_arr = array();
+            $filter = '';
+            $options = array();
+            $query_arr['sql'] .= " WHERE item_id = '$prod_id'";
+        }
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_attrlist',
             array(__CLASS__,  'getAdminField'),
@@ -611,14 +616,16 @@ class Attribute
         );
 
         // Create the "copy attributes" form at the bottom
-        $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T->set_file('copy_attr_form', 'copy_attributes_form.thtml');
-        $T->set_var(array(
-            'src_product'       => $product_selection,
-            'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
-            'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
-        ) );
-        $display .= $T->parse('output', 'copy_attr_form');
+        if ($prod_id == 0) {
+            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T->set_file('copy_attr_form', 'copy_attributes_form.thtml');
+            $T->set_var(array(
+                'src_product'       => $product_selection,
+                'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
+                'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
+            ) );
+            $display .= $T->parse('output', 'copy_attr_form');
+        }
 
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
