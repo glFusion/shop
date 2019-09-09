@@ -256,9 +256,11 @@ class Order
         $args['product_id'] = $item_id[0];
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
-        $item = new OrderItem($args);
-        $item->Save();
-        $this->items[] = $item;
+        $OI = new OrderItem($args);
+        $OI->setQuantity($args['quantity']);
+        //var_dump($OI->price);die;
+        $OI->Save();
+        $this->items[] = $OI;
         $this->calcTotalCharges();
         //$this->Save();
     }
@@ -623,18 +625,20 @@ class Order
                 }
             }
 
-            if (!isset($item_qty[$item->product_id])) {
+            //$item_discount = $P->getDiscount($item->quantity);
+            /*if (!isset($item_qty[$item->product_id])) {
                 $total_item_q = $this->getTotalBaseItems($item->product_id);
                 $item_qty[$item->product_id] = array(
                     'qty'   => $total_item_q,
                     'discount' => $P->getDiscount($total_item_q),
                 );
-            }
-            if ($item_qty[$item->product_id]['discount'] > 0) {
+            }*/
+            //if ($item_qty[$item->product_id]['discount'] > 0) {
+            if ($item->qty_discount > 0) {
                 $discount_items ++;
                 $price_tooltip = sprintf(
                     $LANG_SHOP['reflects_disc'],
-                    $item_qty[$item->product_id]['discount']
+                    ($item->qty_discount * 100)
                 );
             } else {
                 $price_tooltip = '';
@@ -666,7 +670,6 @@ class Order
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
-                'price_tooltip' => $price_tooltip,
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -724,7 +727,6 @@ class Order
             'is_invoice'    => $is_invoice,
             'icon_dscp'     => $icon_tooltips,
             'print_url'     => $this->buildUrl('print'),
-            'price_tooltip' => $price_tooltip,
             'have_images'   => $is_invoice ? $have_images : false,
             'linkPackingList' => self::linkPackingList($this->order_id),
             'linkPrint'     => self::linkPrint($this->order_id, $this->token),
@@ -1408,14 +1410,14 @@ class Order
     public function Contains($item_id, $extras=array())
     {
         $id_parts = SHOP_explode_opts($item_id, true);
+
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
             'product_id'    => $id_parts[0],
-            'options'       => $id_parts[1],
+            'attributes'    => $id_parts[1],
             'extras'        => $extras,
         );
         $Item2 = new OrderItem($args);
-
         foreach ($this->items as $id=>$Item1) {
             if ($Item1->Matches($Item2)) {
                 return $id;
@@ -1946,16 +1948,20 @@ class Order
      */
     public function getTotalBaseItems($item_id)
     {
-        $qty = 0;
+        static $qty = array();
+
         // Extract the item ID if options were included in the parameter
         $x = explode('|', $item_id);
         $item_id = $x[0];
-        foreach ($this->items as $item) {
-            if ($item->product_id == $item_id) {
-                $qty += $item->quantity;
+        if (!isset($qty[$item_id])) {
+            $qty[$item_id] = 0;
+            foreach ($this->items as $item) {
+                if ($item->product_id == $item_id) {
+                    $qty[$item_id] += $item->quantity;
+                }
             }
         }
-        return $qty;
+        return $qty[$item_id];
     }
 
 
@@ -1983,16 +1989,16 @@ class Order
         }
 
         $total_qty = $this->getTotalBaseItems($item_id);
-        foreach ($this->items as $key=>$item) {
-            if ($item->product_id != $item_id) continue;
-
-            $new_price = $P->getPrice($item->options, $total_qty);
-            if ($new_price != $this->items[$key]->price) {
-                $this->items[$key]->price = $new_price;
-                $have_changes = true;
-            }
+        foreach ($this->items as $key=>$OI) {
+            if ($OI->product_id != $item_id) continue;
+            $qty_discount = $P->getDiscount($total_qty);
+            $new_price = $P->getDiscountedPrice($total_qty, $OI->getOptionsPrice());
+            $OI->setPrice($new_price);
+            $OI->setDiscount($qty_discount);
+            $OI->Save();
         }
-        return $have_changes;
+        Cache::deleteOrder($this->order_id);
+        return true;
     }
 
 
