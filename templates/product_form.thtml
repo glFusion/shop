@@ -340,7 +340,9 @@
     </div>
   </li>
 
+{!if 0}
   <li>{option_list}</li>
+{!endif}
   </ul>
 
   <div class="uk-margin-right-small uk-hidden-small tm-admin-save" data-uk-scrollspy="{cls:'uk-animation-slide-bottom', delay:900}">
