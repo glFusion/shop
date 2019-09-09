@@ -37,7 +37,8 @@ class OrderItem
     private static $fields = array(
         'id', 'order_id', 'product_id',
         'description', 'quantity', 'txn_id', 'txn_type',
-        'expiration', 'price', 'token',
+        'expiration',
+        'base_price', 'price', 'qty_discount', 'token',
         //'options',
         'options_text', 'extras', 'taxable', 'paid',
         'shipping', 'handling',
@@ -50,7 +51,7 @@ class OrderItem
      * @param   integer $oi_id  OrderItem record ID
      * @uses    self::Load()
      */
-    function __construct($oi_id = 0)
+    public function __construct($oi_id = 0)
     {
         if (is_numeric($oi_id) && $oi_id > 0) {
             // Got an item ID, read from the DB
@@ -60,12 +61,14 @@ class OrderItem
             } else {
                 $this->options = $this->getOptions();
             }
-        } elseif (is_array($oi_id)) {
+        } elseif (is_array($oi_id) && isset($oi_id['product_id'])) {
             // Got an item record, just set the variables
             $this->setVars($oi_id);
+            $this->product = $this->getProduct();
+            $this->base_price = $this->product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['options'])) {
+                if (isset($oi_id['attributes'])) {
                     $this->options = $this->setOptions($oi_id['attributes']);
                 }
             } else {
@@ -86,7 +89,6 @@ class OrderItem
                 }
             }
         }
-        $this->product = Product::getByID($this->product_id);
     }
 
 
@@ -101,9 +103,7 @@ class OrderItem
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT *,
-                UNIX_TIMESTAMP(CONVERT_TZ(`expiration`, '+00:00', @@session.time_zone)) AS ux_exp
-                FROM {$_TABLES['shop.orderitems']}
+        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
                 WHERE id = $rec_id";
         //echo $sql;die;
         $res = DB_query($sql);
@@ -131,7 +131,6 @@ class OrderItem
                 $this->$field = $A[$field];
             }
         }
-        $this->ux_exp = SHOP_getVar($A, 'ux_exp');
         return true;
     }
 
@@ -157,11 +156,18 @@ class OrderItem
             }
             $this->properties[$key] = $value;
             break;
+        case 'base_price':
         case 'price':
         case 'paid':
         case 'shipping':
         case 'handling':
             $this->properties[$key] = (float)$value;
+            break;
+        case 'qty_discount':
+            if ($value >= 1) {
+                $value = $value / 100;  // convert to percent
+            }
+            $this->properties[$key] = round($value, 2);
             break;
         case 'taxable':
             $this->properties[$key] = $value == 0 ? 0 : 1;
@@ -212,7 +218,7 @@ class OrderItem
         if ($this->id < 1) {
             // This could be an empty object if the detail view is not from
             // an order view.
-            return new OrderItemOption;
+            return NULL;
         }
         if ($og_id > 0) {     // getting a standard option selection
             $key = 'og_id';
@@ -221,7 +227,7 @@ class OrderItem
             $key = 'oio_name';
             $val = $name;
         } else {
-            return new OrderItemOption;
+            return NULL;
         }
         // Now get the actual option object requested.
         // There's no easy index for this.
@@ -230,7 +236,7 @@ class OrderItem
                 return $Opt;
             }
         }
-        return new OrderItemOption;
+        return NULL;
     }
 
 
@@ -353,6 +359,8 @@ class OrderItem
         if (is_array($A)) {
             $this->setVars($A);
         }
+        COM_errorLog("discount is " . $this->qty_discount);
+
         $purchase_ts = SHOP_now()->toUnix();
         //$shipping = $this->product->getShipping($this->quantity);
         $shipping = 0;
@@ -366,13 +374,16 @@ class OrderItem
             $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
             $sql3 = '';
         }
+
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
                 description = '" . DB_escapeString($this->description) . "',
                 quantity = '{$this->quantity}',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 txn_type = '" . DB_escapeString($this->txn_type) . "',
-                price = '{$this->product->getPrice($this->options, $this->quantity)}',
+                qty_discount = '{$this->qty_discount}',
+                base_price = '{$this->base_price}',
+                price = '{$this->price}',
                 taxable = '{$this->taxable}',
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
@@ -386,7 +397,7 @@ class OrderItem
         }
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             Cache::deleteOrder($this->order_id);
@@ -413,11 +424,32 @@ class OrderItem
     {
         if ($newqty > 0) {
             $this->quantity = (float)$newqty;
-            $price = $this->product->getPrice($this->options, $newqty);
             $this->handling = $this->product->getHandling($newqty);
-            $this->price = $price;
+            $this->price = $this->getItemPrice();
         }
         return $this;
+    }
+
+
+    /**
+     * Public accessor to set the item price.
+     *
+     * @param   float   $newprice   New price to set
+     */
+    public function setPrice($newprice)
+    {
+        $this->price = $newprice;
+    }
+
+
+    /**
+     * Public accessor to set the qty discount.
+     *
+     * @param   float   $disc   Discount to set
+     */
+    public function setDiscount($disc)
+    {
+        $this->qty_discount = $disc;
     }
 
 
@@ -507,18 +539,26 @@ class OrderItem
      */
     public function setOptions($opts)
     {
+        if (empty($opts)) {
+            return $this->options;
+        }
         if (is_string($opts)) {
             // todo: deprecate
-            $opts = explode(',', $opts);
+            $attr_ids = explode(',', $opts);
+            $opts = array();
+            foreach($attr_ids as $attr_id) {
+                $opts[] = new Attribute($attr_id);
+            }
         }
+
         if (is_array($opts)) {
-            foreach ($opts as $opt_id) {
-                if ($opt_id > 0) {      // Don't set non-standard options here
-                    $OIO = new OrderItemOption;
-                    $OIO->setOpt($opt_id);
+            foreach ($opts as $Attr) {
+                //if ($opt_id > 0) {      // Don't set non-standard options here
+                $OIO = new OrderItemOption;
+                    $OIO->setOpt($Attr->attr_id);
                     $OIO->oi_id = $this->id;
                     $this->options[] = $OIO;
-                }
+                //}
             }
         }
         return $this->options;
@@ -611,13 +651,42 @@ class OrderItem
     }
 
 
-    public function getPrice()
+    /**
+     * Get the total list price of options selected for this item.
+     *
+     * @return  float       Total options price
+     */
+    public function getOptionsPrice()
     {
-        $retval = $this->price;
+        $retval = 0;
         foreach ($this->options as $OIO) {
             $retval += $OIO->oio_price;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the total unit price per item from the Product object.
+     * Used when creating order items and updating prices in the cart
+     * based on qty discounts.
+     *
+     * @return  float       Current item price, including discounts and options
+     */
+    public function getItemPrice()
+    {
+        return $this->product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
+    }
+
+
+    /**
+     * Just return the item price property.
+     *
+     * @return  float       Item price, including all options and discounts.
+     */
+    public function getPrice()
+    {
+        return $this->price;
     }
 
 }

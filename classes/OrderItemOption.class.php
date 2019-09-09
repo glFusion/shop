@@ -24,6 +24,10 @@ class OrderItemOption
      */
     private $product = NULL;
 
+    /** Indicate a new or empty option.
+     * @var boolean */
+    private $isEmpty = true;
+
     /** Internal properties accessed via `__set()` and `__get()`.
      * @var array */
     private $properties = array();
@@ -50,7 +54,10 @@ class OrderItemOption
             // Got an item ID, read from the DB
             $status = $this->Read($item);
             if (!$status) {
-                $this->id = 0;
+                $this->isEmpty = true;
+                $this->oi_id = 0;
+            } else {
+                $this->isEmpty = false;
             }
         } elseif (is_array($item)) {
             // Got an item record, just set the variables
@@ -59,6 +66,7 @@ class OrderItemOption
                 list($this->product_id) = explode('|', $item['item_id']);
             }
             $this->setVars($item);
+            $this->isEmpty = false;
         }
         //$this->product = Product::getByID($this->product_id);
     }
@@ -164,6 +172,7 @@ class OrderItemOption
         $cache_key = "oio_item_{$Item->id}";
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
+            $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
                 WHERE oi_id = {$Item->id}";
             $res = DB_query($sql);
