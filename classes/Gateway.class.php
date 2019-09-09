@@ -1506,6 +1506,7 @@ class Gateway
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed in verbatim
      * @return  string              HTML for field display in the table
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
