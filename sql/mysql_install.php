@@ -83,7 +83,9 @@ $_SQL = array(
   `txn_id` varchar(128) DEFAULT '',
   `txn_type` varchar(255) DEFAULT '',
   `expiration` int(11) unsigned NOT NULL DEFAULT '0',
-  `price` float(9,4) NOT NULL DEFAULT '0.0000',
+  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `base_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -530,6 +532,9 @@ $SHOP_UPGRADE['1.0.0'] = array(
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER price",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER base_price",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
