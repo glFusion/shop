@@ -11,10 +11,12 @@ Release TBD
   * Fix shipping selection not correctly updating total on cart view.
   * Allow use of SKU as product ID in URLs.
   * Item options can now have SKU values.
-  * Implement Option Groups to control option ordering on product form.
+  * Implement Attribute Groups to control attribute ordering on product form.
   * Move catalog-related admin options under one menu to shorten the admin menu.
   * Product links from orders include selected options for logged-in users.
   * Add authorized group to shippers to limit usage to trusted members.
+  * Add radio and checkbox-type product options.
+  * No buy-now buttons for physical items that may require shipping.
 
 ## v0.7.1
 Release 2019-08-02
@@ -38,6 +40,7 @@ Release 2019-08-02
   * Fix `valid_to` date entry for shippers.
   * Fix empty shipping rates not being saved, e.g. free shipping.
   * Add stripe.com payment gateway.
+  * Don't check cart email address when logging in
 
 ## v0.7.0
 Release 2019-06-02
