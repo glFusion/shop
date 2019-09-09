@@ -183,17 +183,17 @@ class Cart extends Order
         // Extract the attribute IDs from the options array to create
         // the item_id.
         // Options are an array(id1, id2, id3, ...)
-        $opts = array();
-        if (is_array($options) && !empty($options)) {
-            foreach($options as $option) {
-                $opts[] = new Attribute($option);
+        $attrs = array();
+        if (is_array($attributes) && !empty($attributes)) {
+            foreach($attributes as $attr_id) {
+                $attrs[] = new Attribute($attr_id);
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
-            $opt_str = implode(',', $options);
+            $opt_str = implode(',', $attributes);
             $item_id .= '|' . $opt_str;
         } else {
-            $options = array();
+            $atttrs = array();
         }
 
         // Look for identical items, including options (to catch
@@ -209,14 +209,14 @@ class Cart extends Order
             $new_quantity = $this->items[$have_id]->quantity;
             $need_save = true;      // Need to save the cart
         } else {
-            $price = $P->getPrice($opts, $quantity, array('uid'=>$uid));
+            //$price = $P->getPrice($attrs, $quantity, array('uid'=>$uid));
             $tmp = array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
-                'price'     => sprintf("%.2f", $price),
-                'attributes' => $options,
+                //'price'     => sprintf("%.2f", $price),
+                'attributes' => $attrs,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );
@@ -263,7 +263,9 @@ class Cart extends Order
     /**
      * View the cart.
      * This is the first step in checkout and checks that the prices are
-     * accurate.
+     * accurate. If any are not, possibly due to expired sales or discounts,
+     * then the OrderItem record is updated with the current price before
+     * displaying.
      *
      * @param   string  $view   View being presented (not used)
      * @param   integer $step   Step in the checkout process (not used)
@@ -272,13 +274,14 @@ class Cart extends Order
     public function View($view = 'order', $step = 0)
     {
         foreach ($this->items as $key=>$Item) {
-            $prod_price = $Item->getProduct()->getPrice($Item->options, $Item->quantity);
-            if (!$Item->getProduct()->enabled) {
+            //$prod_price = $Item->getProduct()->getPrice($Item->options, $Item->quantity);
+            //$prod_price = $Item->getItemPrice();
+            if (!$Item->getProduct()->canOrder()) {
                 $this->Remove($Item->id);
-            } elseif ($Item->price != $prod_price) {
+            }/* elseif ($Item->price != $prod_price) {
                 $Item->price = $prod_price;
                 $Item->Save();
-            }
+                }*/
         }
         return parent::View($view, $step);
     }
@@ -303,27 +306,29 @@ class Cart extends Order
             // No items in the cart?
             return;
         }
-        foreach ($items as $id=>$value) {
+        foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
             // cart has been finalized and the user updates it from another
             // browser window.
             if (array_key_exists($id, $this->items)) {
-                $value = (float)$value;
-                if ($value == 0) {
+                $qty = (float)$qty;
+                if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
                     // Save the item ID to update any affected qty-based
                     // discounts.
                     $item_id = $this->items[$id]->product_id;
                     $this->Remove($id);
                     $this->applyQtyDiscounts($item_id);
-                } elseif ($value != $this->items[$id]->quantity) {
+                } else {
+                //} elseif ($qty != $this->items[$id]->quantity) {
                     // If the quantity changed, set to the new value and apply
                     // quantity-based pricing.
-                    $this->items[$id]->setQuantity($value);
-                    $this->applyQtyDiscounts($this->items[$id]->product_id);
+                    $this->items[$id]->setQuantity($qty);
                 }
             }
         }
+        $this->applyQtyDiscounts($this->items[$id]->product_id);
+
         // Now look for a coupon code to redeem against the user's account.
         if ($_SHOP_CONF['gc_enabled']) {
             $gc = SHOP_getVar($A, 'gc_code');
@@ -409,10 +414,16 @@ class Cart extends Order
 
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == 'cart') {
-            DB_delete($_TABLES['shop.orderitems'], 'order_id', $this->cartID());
+            foreach ($this->items as $Item) {
+                OrderItem::Delete($Item->id);
+            }
+            $this->items = array();
             if ($del_order) {
                 DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
                 self::delAnonCart();
+            } else {
+                // Done already if $del_order is set
+                Cache::deleteOrder($this->order_id);
             }
             return array();
         } else {
