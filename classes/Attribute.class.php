@@ -21,15 +21,15 @@ class Attribute
 {
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
-    var $properties;
+    private $properties;
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    var $isNew;
+    private $isNew;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
-    var $Errors = array();
+    private $Errors = array();
 
 
     /**
@@ -376,6 +376,8 @@ class Attribute
             SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
             return $oldvalue;
         } else {
+            Cache::clear('products');
+            Cache::clear('attributes');
             return $newvalue;
         }
     }
