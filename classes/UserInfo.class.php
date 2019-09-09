@@ -244,6 +244,7 @@ class UserInfo
                 {$type}def = '$is_default'";
         $sql = $sql1 . $sql . $sql2;
         //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if ($id == 0) {
             $id = DB_insertID();

@@ -613,6 +613,7 @@ class Shipper
                 rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {

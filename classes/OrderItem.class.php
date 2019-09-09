@@ -359,7 +359,6 @@ class OrderItem
         if (is_array($A)) {
             $this->setVars($A);
         }
-        COM_errorLog("discount is " . $this->qty_discount);
 
         $purchase_ts = SHOP_now()->toUnix();
         //$shipping = $this->product->getShipping($this->quantity);

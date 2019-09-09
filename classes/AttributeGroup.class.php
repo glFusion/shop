@@ -242,7 +242,7 @@ class AttributeGroup
             ag_name = '" . DB_escapeString($this->ag_name) . "',
             ag_orderby='{$this->ag_orderby}'";
         $sql = $sql1 . $sql2 . $sql3;
-
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {

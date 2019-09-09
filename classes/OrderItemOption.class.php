@@ -202,7 +202,7 @@ class OrderItemOption
             oio_value = '" . DB_escapeString($this->oio_value) . "',
             oio_price = '{$this->oio_price}'";
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql, 1);  // ignore dup key issues.
         if (!DB_error()) {
             if ($this->oio_id == 0) {

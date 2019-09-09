@@ -680,14 +680,15 @@ class Product
                 //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        DB_query($sql);
+        DB_query($sql, 1);
         if (!DB_error()) {
             if ($this->isNew) {
                 $this->id = DB_insertID();
             }
+            SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {
-            SHOP_log("Shop- SQL error in Product::Save: $sql", SHOP_LOG_ERROR);
+            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
             $status = false;
         }
 

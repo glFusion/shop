@@ -92,6 +92,7 @@ class ProductImage extends \upload
                     '{$this->product_id}', '".
                     DB_escapeString($filename)."'
                 )";
+            SHOP_log($sql, SHOP_LOG_DEBUG);
             $result = DB_query($sql);
             if (!$result) {
                 $this->_addError("uploadFiles() : Failed to insert {$filename}");

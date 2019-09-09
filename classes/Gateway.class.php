@@ -322,6 +322,7 @@ class Gateway
             ON DUPLICATE KEY UPDATE
                 button = '{$btn_value}'";
         //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
     }
 
@@ -356,6 +357,7 @@ class Gateway
                 enabled = '{$this->enabled}'
                 WHERE id='$id'";
         //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         self::ClearButtonCache();   // delete all buttons for this gateway
         if (DB_error()) {
@@ -392,6 +394,7 @@ class Gateway
                 SET $varname=$newvalue
                 WHERE id='$id'";
         //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql, 1);
         if (DB_error()) {
             return $oldvalue;
