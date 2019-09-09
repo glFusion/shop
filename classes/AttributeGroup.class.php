@@ -504,6 +504,7 @@ class AttributeGroup
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed in verbatim
      * @return  string              HTML for field display in the table
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
@@ -617,6 +618,7 @@ class AttributeGroup
                 LEFT JOIN {$_TABLES['shop.prod_attr']} at
                     ON at.ag_id = ag.ag_id
                 WHERE at.item_id = '$prod_id'
+                AND at.enabled = 1
                 GROUP BY ag.ag_id
                 ORDER by ag.ag_orderby ASC";
             $res = DB_query($sql);
