@@ -88,7 +88,7 @@
 </tr>
 {!if tax_num}
 <tr>
-  <td colspan="2" align="right">{$LANG_SHOP['tax']}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['tax']}:</td>
   <td colspan="2" align="right">{tax}</td>
 </tr>
 {!endif}
@@ -98,13 +98,13 @@
 {!if ship_method}
 ({ship_method})
 {!endif}
-  </td>
+  :</td>
   <td colspan="2" align="right">{shipping}</td>
 </tr>
 {!endif}
 {!if handling_num}
 <tr>
-  <td colspan="2" align="right">{$LANG_SHOP['handling']}</td>
+  <td colspan="2" align="right">{$LANG_SHOP['handling']}:</td>
   <td colspan="2" align="right">{handling}</td>
 </tr>
 {!endif}
