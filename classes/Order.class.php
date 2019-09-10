@@ -463,7 +463,9 @@ class Order
 
         // Checks passed, delete the order and items
         $sql = "START TRANSACTION;
-            DELETE FROM {$_TABLES['shop.oi_opts']} WHERE order_id = '$order_id';
+            DELETE FROM {$_TABLES['shop.oi_opts']} WHERE oi_id IN (
+                SELECT id FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id'
+            );
             DELETE FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id';
             DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
             COMMIT;";
@@ -858,7 +860,10 @@ class Order
         }
         //echo $sql;die;
         //SHOP_log($sql, SHOP_LOG_DEBUG);
-        if (DB_error()) return false;
+        if (DB_error()) {
+            return false;
+        }
+        Cache::deleteOrder($this->order_id);
         $this->status = $newstatus;     // update in-memory object
         $msg = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
         if ($log) {
