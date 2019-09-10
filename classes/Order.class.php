@@ -252,13 +252,17 @@ class Order
     public function addItem($args)
     {
         if (!is_array($args)) return;
-        $item_id = explode('|', $args['item_id']);  // TODO: DEPRECATE
-        $args['product_id'] = $item_id[0];
+
+        // Set the product_id if it is not supplied but the item_id is,
+        // which is formated as "id|opt1,opt2,..."
+        if (!isset($args['product_id'])) {
+            $item_id = explode('|', $args['item_id']);  // TODO: DEPRECATE
+            $args['product_id'] = $item_id[0];
+        }
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = self::_createToken();  // create a unique token
         $OI = new OrderItem($args);
         $OI->setQuantity($args['quantity']);
-        //var_dump($OI->price);die;
         $OI->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
@@ -1222,7 +1226,7 @@ class Order
             foreach ($this->items as $item) {
                 if ($item->getProduct()->taxable) {
                     $tax += Currency::getInstance()->RoundVal($this->tax_rate * $item->quantity * $item->price);
-                    $this->tax_items += 1;
+                    $this->tax_items++;
                 }
             }
             //$this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);

@@ -486,8 +486,11 @@ class IPN
         // See if an order already exists for this transaction.
         // If so, load it and update the status. If not, continue on
         // and create a new order
-        $order_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
-            "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'");
+        $order_id = DB_getItem(
+            $_TABLES['shop.orders'],
+            'order_id',
+            "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'"
+        );
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->order_id != '') {
