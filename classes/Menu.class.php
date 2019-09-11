@@ -191,7 +191,7 @@ class Menu
                 'active' => $view == 'attr_grp' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?options=x',
+                'url'  => SHOP_ADMIN_URL . '/index.php?attributes=x',
                 'text' => $LANG_SHOP['attributes'],
                 'active' => $view == 'attributes' ? true : false,
             ),

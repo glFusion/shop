@@ -52,7 +52,7 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'ag_del', 'ag_move', 'ag_save',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
+    'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
     'attr_grp', 'ag_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
@@ -160,7 +160,7 @@ case 'deleteopt':
     // attr_id could be via $_GET or $_POST
     $Attr = new \Shop\Attribute($_REQUEST['attr_id']);
     $Attr->Delete();
-    $view = 'options';
+    $view = 'attributes';
     break;
 
 case 'resetbuttons':
@@ -269,7 +269,7 @@ case 'attrmove':
         $Attr = new \Shop\Attribute($attr_id);
         $Attr->moveRow($actionval);
     }
-    $view = 'options';
+    $view = 'attributes';
     break;
 
 case 'gwmove':
@@ -529,8 +529,8 @@ case 'sales':
     $view = 'products';   // cheating, to get the active menu set
     break;
 
-case 'options':
-    $content .= Shop\Menu::adminCatalog('options');
+case 'attributes':
+    $content .= Shop\Menu::adminCatalog('attributes');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
         // Delete some checked options 
         foreach ($_POST['delitem'] as $attr_id) {
