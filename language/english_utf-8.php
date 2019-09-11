@@ -277,7 +277,7 @@ $LANG_SHOP = array (
     ),
 'discount' => 'Discount',
 'min_purch' => 'Min. Purchase',
-'qty_discounts' => 'Quantity Discounts',
+'qty_discounts' => 'Discounts',
 'qty_discounts_avail' => 'Quantity Discounts Available',
 'qty_disc_text' => 'Discounts calculated at checkout',
 'order_instr' => 'Special Order Instructions',
@@ -500,6 +500,7 @@ $LANG_SHOP = array (
 'select' => 'Selection',
 'checkbox' => 'Checkboxes',
 'radio' => 'Radio Buttons',
+'allday' => 'All Day',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -523,6 +524,7 @@ $LANG_SHOP_HELP = array(
 'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuration.',
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
+'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -19,13 +19,21 @@ namespace Shop;
  */
 class Sales
 {
-    /** Minimim possible effective date/time.
+    /** Minimum possible date.
      * @const string */
-    const MIN_DATETIME = '1970-01-01 00:00:00';
+    const MIN_DATE = '1970-01-01';
 
-    /** Maximum possible effective date/time.
+    /** Minimum possible time.
      * @const string */
-    const MAX_DATETIME = '2037-12-31 23:59:59';
+    const MIN_TIME = '00:00:00';
+
+    /** Maximum possible date.
+     * @const string */
+    const MAX_DATE = '9999-12-31';
+
+    /** Maximum possible time.
+     * @const string */
+    const MAX_TIME = '23:59:59';
 
     /** Base tag to use in creating cache IDs.
      * @var string */
@@ -33,11 +41,11 @@ class Sales
 
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
-    var $properties;
+    private $properties;
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    var $isNew;
+    public $isNew;
 
 
     /**
@@ -55,7 +63,7 @@ class Sales
             $this->setVars($A);
             $this->isNew = false;
         } elseif (is_numeric($A) && $A > 0) {
-            // single ID passed in, e.g. from admn form
+            // single ID passed in, e.g. from admin form
             if ($this->Read($A)) $this->isNew = false;
         } else {
             // New entry, set defaults
@@ -108,16 +116,26 @@ class Sales
         $this->amount = SHOP_getVar($A, 'amount', 'float');
         $this->name = SHOP_getVar($A, 'name', 'string');
         if (!$fromDB) {
-            // convert to timestamps
+            // If coming from the form, convert individual fields to a datetime.
+            // Use the minimum start date if none provided.
             if (empty($A['start'])) {
-                $A['start'] = self::MIN_DATETIME;
-            } else {
-                $A['start'] = (trim($A['start'] . ' ' . $A['start_time']));
+                $A['start'] = self::MIN_DATE;
             }
-            if (empty($A['end'])) {
-                $A['end'] = self::MAX_DATETIME;
+            // Use the minimum start time if none provided.
+            if (isset($A['start_allday']) || empty($A['start_time'])) {
+                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
             } else {
-                $A['end'] = (trim($A['end'] . ' ' . $A['end_time']));
+                $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
+            }
+            // Use the maximum date if none is provided.
+            if (empty($A['end'])) {
+                $A['end'] = self::MAX_DATE;
+            }
+            // Use tme maximum time if none is provided.
+            if (isset($A['end_allday']) || empty($A['end_time'])) {
+                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+            } else {
+                $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
             if ($this->item_type == 'product') {
                 $this->item_id = $A['item_id'];
@@ -151,11 +169,13 @@ class Sales
         if ($type != 'product') $type = 'category';
         $item_id = (int)$item_id;
 
-        if (!array_key_exists($type, $sales)) $sales[$type] = array();
+        if (!array_key_exists($type, $sales)) {
+            $sales[$type] = array();
+        }
         if (!array_key_exists($item_id, $sales[$type])) {
             $cache_key = self::_makeCacheKey($type . '_' . $item_id);
             $sales[$type][$item_id] = Cache::get($cache_key);
-            if (!$sales[$type][$item_id]) {
+            if ($sales[$type][$item_id] === NULL) {
                 // If not found in cache
                 $sales[$type][$item_id] = array();
                 $sql = "SELECT * FROM {$_TABLES['shop.sales']}
@@ -214,7 +234,9 @@ class Sales
      */
     public static function getEffective($P)
     {
-        $now = Shop_now()->toUnix();
+        global $_CONF;
+
+        $now = $_CONF['_now']->toUnix();
         $sales = self::getProduct($P->id);
         $SaleObj = NULL;
         foreach ($sales as $obj) {
@@ -264,14 +286,14 @@ class Sales
 
         case 'start':
             if (empty($value)) {
-                $value = self::MIN_DATETIME;
+                $value = self::minDateTime();
             }
             $this->properties[$var] = new \Date($value, $_CONF['timezone']);
             break;
 
         case 'end':
             if (empty($value)) {
-                $value = self::MAX_DATETIME;
+                $value = self::maxDateTime();
             }
             $this->properties[$var] = new \Date($value, $_CONF['timezone']);
             break;
@@ -336,8 +358,8 @@ class Sales
         $sql2 = " SET item_type = '" . DB_escapeString($this->item_type) . "',
                 item_id = '{$this->item_id}',
                 name = '" . DB_escapeString($this->name) . "',
-                start = '{$this->start->toUnix()}',
-                end = '{$this->end->toUnix()}',
+                start = '{$this->start->toMySQL(true)}',
+                end = '{$this->end->toMySQL(true)}',
                 discount_type = '" . DB_escapeString($this->discount_type) . "',
                 amount = '{$this->amount}'";
         $sql = $sql1 . $sql2 . $sql3;
@@ -378,9 +400,9 @@ class Sales
      */
     public static function Clean()
     {
-        global $_TABLES;
+        global $_CONF, $_TABLES;
 
-        $now = SHOP_now()->toUnix();
+        $now = $_CONF['_now']->toMySQL(true);
         $sql = "DELETE FROM {$_TABLES['shop.sales']}
                 WHERE end < '$now'";
         DB_query($sql);
@@ -403,14 +425,14 @@ class Sales
             return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
         }
 
-        if ($this->end->toMySQL(true) == self::MAX_DATETIME) {
+        if ($this->end->toMySQL(true) == self::maxDateTime()) {
             $end_dt = '';
             $end_tm = '';
         } else {
             $end_dt = $this->end->format('Y-m-d', true);
             $end_tm = $this->end->format('H:i', true);
         }
-        if ($this->start->toMySQL(true) == self::MIN_DATETIME) {
+        if ($this->start->toMySQL(true) == self::minDateTime()) {
             $st_dt = '';
             $st_tm = '';
         } else {
@@ -437,7 +459,23 @@ class Sales
             'end_date'      => $end_dt,
             'start_time'    => $st_tm,
             'end_time'      => $end_tm,
+            'min_date'      => self::MIN_DATE,
+            'min_time'      => self::MIN_TIME,
+            'max_date'      => self::MAX_DATE,
+            'max_time'      => self::MAX_TIME,
         ) );
+        if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
+            $T->set_var(array(
+                'end_allday_chk' => 'checked="checked"',
+                'end_time_disabled' => 'disabled="disabled"',
+            ) );
+        }
+        if ($this->start->format('H:i:s',true) == self::MIN_TIME) {
+            $T->set_var(array(
+                'st_allday_chk' => 'checked="checked"',
+                'st_time_disabled' => 'disabled="disabled"',
+            ) );
+        }
         $retval .= $T->parse('output', 'form');
         $retval .= COM_endBlock();
         return $retval;
@@ -613,8 +651,11 @@ class Sales
 
         case 'end':
         case 'start':
-            $Dt->setTimestamp((int)$fieldvalue);
-            $retval = $Dt->format('Y-m-d', true);
+            //$Dt->setTimestamp((int)$fieldvalue);
+            $Dt = new \Date($fieldvalue, $_CONF['timezone']);
+            $retval = '<span class="tooltip" title="' .
+                $Dt->format('Y-m-d H:i:s T', true) .
+                '">' . $Dt->format('Y-m-d', true) . '</span>';
             break;
 
         case 'item_id':
@@ -657,6 +698,28 @@ class Sales
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the maximum datetime value allowed.
+     *
+     * @return  string  Maximum datetime value
+     */
+    private static function maxDateTime()
+    {
+        return self::MAX_DATE . ' ' . self::MAX_TIME;
+    }
+
+
+    /**
+     * Get the minimum datetime value allowed.
+     *
+     * @return  string  Minimum datetime value
+     */
+    private static function minDateTime()
+    {
+        return self::MIN_DATE . ' ' . self::MIN_TIME;
     }
 
 }   // class Sales

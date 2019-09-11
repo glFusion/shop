@@ -106,13 +106,16 @@
     <div class="uk-form-controls">
       <input type="text" id="start_dt" name="start" value="{start_date}" size="12" maxlength="12"
             data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-            placeholder="1970-01-01"
+            placeholder="{min_date}"
             data-uk-tooltip />
       <input type="text" id="start_time" name="start_time" value="{start_time}" size="12" maxlength="12"
-            data-uk-timepicker title="{$LANG_SHOP['timepicker']}" placeholder="00:00"
+            data-uk-timepicker title="{$LANG_SHOP['timepicker']}" placeholder="{min_time}"
+            {st_time_disabled}
             data-uk-tooltip />
-      <i class="uk-icon uk-icon-trash-o uk-text-danger"
+      <i class="uk-icon uk-icon-trash-o uk-text-danger tooltip"
+        title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("start");'></i>
+      &nbsp;<input type="checkbox" name="start_allday" value="1" {st_allday_chk} onclick="setAllday(this,'start');"/>&nbsp;{$LANG_SHOP['allday']}
     </div>
   </div>
 
@@ -123,14 +126,17 @@
     <div class="uk-form-controls">
       <input type="text" id="end_dt" name="end" value="{end_date}" size="12" maxlength="12"
             data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-            placeholder="2037-12-31"
+            placeholder="{max_date}"
             data-uk-tooltip />
       <input type="text" id="end_time" name="end_time" value="{end_time}" size="12" maxlength="12"
             data-uk-timepicker title="{$LANG_SHOP['timepicker']}"
-            placeholder="23:59"
+            placeholder="{max_time}"
+            {end_time_disabled}
             data-uk-tooltip />
-      <i class="uk-icon uk-icon-trash-o uk-text-danger"
+      <i class="uk-icon uk-icon-trash-o uk-text-danger tooltip"
+        title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("end");'></i>
+      &nbsp;<input type="checkbox" name="end_allday" value="1" {end_allday_chk} onclick="setAllday(this,'end');"/>&nbsp;{$LANG_SHOP['allday']}
     </div>
   </div>
 
@@ -205,5 +211,12 @@ function SHOP_validateSalesForm()
     }
     return true;
 }
+
+function setAllday(cbox, type)
+{
+    fld = document.getElementById(type + '_time');
+    fld.disabled = cbox.checked;
+}
+
 </script>
 {# end {templatelocation} #}
