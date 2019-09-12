@@ -355,7 +355,7 @@ class IPN
             SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
             return true;
         } else {
-            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_DEBUG);
+            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_ERROR);
             return false;
         }
     }
@@ -790,7 +790,7 @@ class IPN
                 $retval += (float)$this->verifyCredit($key, $credit);
             }
         } elseif (array_key_exists($key, $this->credits)) {
-            $retval = (float)$this->verifyCredit($key, $credit);
+            $retval = (float)$this->verifyCredit($key);
         }
         return $retval;
     }
