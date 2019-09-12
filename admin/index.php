@@ -48,14 +48,14 @@ $expected = array(
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
-    'deldiscount', 'savediscount', 'purgecarts', 'saveshipping', 'updcartcurrency',
+    'delsale', 'savediscount', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'ag_del', 'ag_move', 'ag_save',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
     'attr_grp', 'ag_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
-    'sales', 'editdiscount', 'editshipping', 'shipping', 'ipndetail',
+    'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -217,7 +217,7 @@ case 'purgecarts':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
-case 'saveshipping':
+case 'saveshipper':
     $id = SHOP_getVar($_POST, 'id', 'integer');
     $S = new \Shop\Shipper($id);
     $S->Save($_POST);
@@ -400,7 +400,7 @@ case 'savediscount':
     $D = new \Shop\Sales($_POST['id']);
     if (!$D->Save($_POST)) {
         COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editdiscount&id=' . $D->id);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editsale&id=' . $D->id);
     } else {
         COM_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
@@ -408,7 +408,7 @@ case 'savediscount':
     exit;
     break;
 
-case 'deldiscount':
+case 'delsale':
     $id = SHOP_getVar($_REQUEST, 'id', 'integer', 0);
     if ($id > 0) {
         \Shop\Sales::Delete($id);
@@ -574,7 +574,7 @@ case 'ag_edit':
     $content .= $AG->Edit();
     break;
 
-case 'editdiscount':
+case 'editsale':
     $id = SHOP_getVar($_GET, 'id', 'integer', 0);
     $D = new \Shop\Sales($id);
     $content .= $D->Edit();
@@ -652,7 +652,7 @@ case 'configreport':
     }
     break;
 
-case 'editshipping':
+case 'editshipper':
     $S = new \Shop\Shipper($actionval);
     $content .= $S->Edit();
     break;

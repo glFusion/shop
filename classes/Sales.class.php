@@ -598,7 +598,7 @@ class Sales
         );
 
         $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
-            SHOP_ADMIN_URL . '/index.php?editdiscount=x',
+            SHOP_ADMIN_URL . '/index.php?editsale=x',
             array('class' => 'uk-button uk-button-success')
         ) . '</div>';
         $display .= ADMIN_list(
@@ -633,14 +633,14 @@ class Sales
         switch($fieldname) {
         case 'edit':
             $retval = COM_createLink('<i class="uk-icon uk-icon-edit"></i>',
-                SHOP_ADMIN_URL . '/index.php?editdiscount&id=' . $A['id']
+                SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
             );
             break;
 
         case 'delete':
             $retval = COM_createLink(
                 '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
-                SHOP_ADMIN_URL . '/index.php?deldiscount&id=' . $A['id'],
+                SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],

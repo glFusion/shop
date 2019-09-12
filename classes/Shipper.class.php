@@ -222,7 +222,9 @@ class Shipper
         }
         $retval = array();
         foreach ($shippers as $shipper) {
-            $retval[$shipper['id']] = new self($shipper);
+            if (in_array($shipper['auth_grp'], $_GROUPS)) {
+                $retval[$shipper['id']] = new self($shipper);
+            }
         }
         return $retval;
     }
@@ -781,7 +783,7 @@ class Shipper
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_ship_method'],
-            SHOP_ADMIN_URL . '/index.php?editshipping=0',
+            SHOP_ADMIN_URL . '/index.php?editshipper=0',
             array('class' => 'uk-button uk-button-success')
         );
         $display .= ADMIN_list(
@@ -815,7 +817,7 @@ class Shipper
         case 'edit':
             $retval .= COM_createLink(
                 '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?editshipping={$A['id']}"
+                SHOP_ADMIN_URL . "/index.php?editshipper={$A['id']}"
             );
             break;
 
