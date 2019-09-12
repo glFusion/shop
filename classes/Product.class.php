@@ -1211,6 +1211,7 @@ class Product
         $json_opts = array();
         $this->_orig_price = $this->price;
         $T->set_block('product', 'AttributeGroup', 'AG');
+        $Sale = $this->getSale();   // Get the effective sale pricing.
         foreach ($this->AttributeGroups as $AG) {
             // Most options use the option group name as the prompt
             $display_name = $AG->ag_name;
@@ -1229,10 +1230,11 @@ class Product
                     $sel_opt = reset($AG->Attribs)->attr_id;
                 }
                 foreach ($AG->Attribs as $Attr) {
-                    $json_opts[$Attr->attr_id] = $Attr->attr_price;
-                    if ($Attr->attr_price != 0) {
+                    $attr_price = $Sale->getAttributePrice($Attr->attr_price);
+                    $json_opts[$Attr->attr_id] = $attr_price;
+                    if ($attr_price != 0) {
                         // Show the incremental price in the selection.
-                        $attr_str = sprintf(" ( %+0.2f )", $Attr->attr_price);
+                        $attr_str = sprintf(" ( %+0.2f )", $attr_price);
                     } else {
                         $attr_str = '';
                     }
@@ -1247,10 +1249,11 @@ class Product
                 break;
             case 'checkbox':
                 foreach ($AG->Attribs as $Attr) {
-                    $json_opts[$Attr->attr_id] = $Attr->attr_price;
-                    if ($Attr->attr_price != 0) {
+                    $attr_price = $Sale->getAttributePrice($Attr->attr_price);
+                    $json_opts[$Attr->attr_id] = $attr_price;
+                    if ($attr_price != 0) {
                         // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $Attr->attr_price);
+                        $opt_str = sprintf(" ( %+0.2f )", $attr_price);
                     } else {
                         $opt_str = '';
                     }
