@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
+ * @since       v0.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -155,7 +156,7 @@ $tables = array(
     'products', 'categories', 'orderitems', 'ipnlog', 'orders', 'sales',
     'prod_attr', 'images', 'gateways', 'address', 'userinfo', 'workflows',
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
-    'shipping',
+    'shipping', 'oi_opts', 'attr_grp',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
@@ -173,10 +174,11 @@ foreach ($tables as $table) {
 */
 function plugin_install_shop()
 {
-    global $INSTALL_plugin, $_SHOP_CONF, $_PLUGIN_INFO;
+    global $INSTALL_plugin, $_SHOP_CONF, $_PLUGIN_INFO, $_PLUGINS;
 
-
-    if (array_key_exists('paypal', $_PLUGIN_INFO)) {
+    // If Paypal is enabled, then it must be version 0.6.1 to avoid potential
+    // function name conflicts with the Shop wrapper functions.
+    if (in_array('paypal', $_PLUGINS)) {
         $ver = $_PLUGIN_INFO['paypal']['pi_version'];
         if (!COM_checkVersion($ver, '0.6.1')) {
             $msg = sprintf(
@@ -223,7 +225,8 @@ function plugin_load_configuration_shop()
 /**
  * Plugin-specific post-installation function.
  * - Creates the file download path and working area.
- * - Migrates data from the Paypal plugin, if installed and up to date.
+ * - Migrates configurations from the Paypal plugin, if installed and up to date.
+ * - No longer automatically migrates Paypal data since the currency may not be configured.
  */
 function plugin_postinstall_shop()
 {
@@ -265,34 +268,33 @@ function plugin_postinstall_shop()
         COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
-    // If the Paypal plugin is installed, migrate database data from it.
-    // Otherwise install the sample data.
-    $have_data = false;
-    if (array_key_exists('paypal', $_PLUGIN_INFO)) {
-        $pp_ver = $_PLUGIN_INFO['paypal']['pi_version'];
-        if (COM_checkVersion($pp_ver, '0.6.1')) {   // if at least paypal 0.6.1
-            $have_data = true;
-
-            // Migrate plugin configuration
-            global $_PP_CONF;
-            if (is_array($_PP_CONF)) {
-                $c = config::get_instance();
-                $shop_conf = $c->get_config('shop');
-                foreach ($_PP_CONF as $key=>$val) {
-                    if (
-                        $key == 'enable_svc_funcs' ||
-                        !array_key_exists($key, $shop_conf)
-                    ) continue;
-                    $c->set($key, $val, 'shop');
+    // If the Paypal plugin is installed, migrate configuration data from it.
+    // This does not require the Paypal plugin to be installed.
+    if (
+        array_key_exists('paypal', $_PLUGIN_INFO) &&
+        COM_checkVersion($_PLUGIN_INFO['paypal']['pi_version'], '0.6.0')
+    ) {
+        // Migrate plugin configuration
+        global $_PP_CONF;
+        if (is_array($_PP_CONF)) {
+            $c = config::get_instance();
+            $shop_conf = $c->get_config('shop');
+            foreach ($_PP_CONF as $key=>$val) {
+                if (
+                    $key == 'enable_svc_funcs' ||
+                    !array_key_exists($key, $shop_conf)
+                ) {
+                    // skip config items that should not be migrated.
+                    continue;
                 }
+                $c->set($key, $val, 'shop');
             }
-            include_once __DIR__ . '/migrate_pp.php';
-            SHOP_migrate_pp();
         }
     }
 
-    // If data not loaded from the Paypal plugin, use default sample data
-    if (!$have_data && is_array($_SHOP_SAMPLEDATA)) {
+    // Load the sample data. This can be replaced by Paypal data later.
+    if (is_array($_SHOP_SAMPLEDATA)) {
+        COM_errorLog("Loading sample data");
         foreach ($_SHOP_SAMPLEDATA as $sql) {
             DB_query($sql, 1);
             if (DB_error()) {
@@ -305,7 +307,8 @@ function plugin_postinstall_shop()
     $gid = (int)DB_getItem(
         $_TABLES['groups'],
         'grp_id',
-        "grp_name='{$_SHOP_CONF['pi_name']} Admin'");
+        "grp_name='{$_SHOP_CONF['pi_name']} Admin'"
+    );
     if ($gid < 1) {
         $gid = 1;        // default to Root if shop group not found
     }

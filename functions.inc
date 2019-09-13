@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -812,12 +812,14 @@ function plugin_autouninstall_shop()
             'shop.prod_attr',
             'shop.products',
             'shop.orderitems',
+            'shop.oi_opts',
             'shop.userinfo',
             'shop.workflows',
             'shop.coupons',
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
+            'shop.attr_grp',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

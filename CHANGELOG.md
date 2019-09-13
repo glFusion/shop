@@ -17,6 +17,7 @@ Release TBD
   * Add authorized group to shippers to limit usage to trusted members.
   * Add radio and checkbox-type product options.
   * No buy-now buttons for physical items that may require shipping.
+  * Paypal data is not automatically migrated during installation.
 
 ## v0.7.1
 Release 2019-08-02

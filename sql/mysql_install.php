@@ -71,7 +71,8 @@ $_SQL = array(
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
   KEY `avail_beg` (`avail_beg`),
-  KEY `avail_end` (`avail_end`)
+  KEY `avail_end` (`avail_end`),
+  KEY `name` (`name`)
 ) ENGINE=MyISAM",
 
 'shop.orderitems' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.orderitems']} (
@@ -83,8 +84,8 @@ $_SQL = array(
   `txn_id` varchar(128) DEFAULT '',
   `txn_type` varchar(255) DEFAULT '',
   `expiration` int(11) unsigned NOT NULL DEFAULT '0',
-  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `base_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
@@ -125,14 +126,15 @@ $_SQL = array(
 ) ENGINE=MyISAM",
 
 'shop.prod_attr' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
-    `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `og_id` int(11) unsigned NOT NULL,
+  `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `ag_id` int(11) unsigned NOT NULL DEFAULT '0',
   `item_id` int(11) unsigned DEFAULT NULL,
   `attr_name` varchar(64) DEFAULT NULL,
   `attr_value` varchar(64) DEFAULT NULL,
   `orderby` int(3) NOT NULL DEFAULT '0',
   `attr_price` decimal(9,4) DEFAULT NULL,
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`attr_id`),
   UNIQUE KEY `item_id` (`item_id`,`attr_name`,`attr_value`)
 ) ENGINE=MyISAM",
@@ -304,15 +306,15 @@ $_SQL = array(
 
 'shop.sales' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.sales']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(40),
+  `name` varchar(40) DEFAULT NULL,
   `item_type` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
   `item_id` int(11) unsigned NOT NULL,
-  `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
+  `start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   `end` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
   `discount_type` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
   `amount` decimal(6,4) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `item_type` (`item_type`,`item_id`,`start`,`end`)
+  KEY `item_type` (`item_type`,`item_id`)
 ) ENGINE=MyIsam",
 
 'shop.shipping' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
@@ -512,29 +514,31 @@ $SHOP_UPGRADE['0.7.1'] = array(
 );
 $SHOP_UPGRADE['1.0.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.attr_grp']}` (
-        `ag_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-        `ag_type` varchar(11) NOT NULL DEFAULT 'select',
-        `ag_name` varchar(40) NOT NULL,
-        `ag_orderby` tinyint(2) NOT NULL DEFAULT 0,
-        PRIMARY KEY (`ag_id`),
-        KEY `orderby` (`ag_orderby`,`ag_name`)
+      `ag_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `ag_type` varchar(11) NOT NULL DEFAULT 'select',
+      `ag_name` varchar(40) NOT NULL DEFAULT '',
+      `ag_orderby` tinyint(2) DEFAULT '0',
+      PRIMARY KEY (`ag_id`),
+      KEY `orderby` (`ag_orderby`,`ag_name`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `oi_id` int(11) unsigned NOT NULL,
-      `ag_id` int(11) unsigned NOT NULL,
-      `attr_id` int(11) unsigned NOT NULL,
+      `ag_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `attr_id` int(11) unsigned NOT NULL DEFAULT '0',
       `oio_name` varchar(40) DEFAULT NULL,
       `oio_value` varchar(40) DEFAULT NULL,
       `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`oio_id`),
       UNIQUE KEY `key1` (`oi_id`,`ag_id`,`attr_id`,`oio_name`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD KEY (`name`)",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `sku` varchar(8) DEFAUlt NULL",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER price",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER base_price",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
