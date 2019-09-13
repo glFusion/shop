@@ -722,6 +722,24 @@ class Sales
         return self::MIN_DATE . ' ' . self::MIN_TIME;
     }
 
+
+    /**
+     * Get the sale price for a product attribute.
+     * Only percentage discounts are applied to attributes.
+     * If the sale is amount-based then the original price is returned.
+     *
+     * @param   float   $price  Original price
+     * @return  float       Sale price.
+     */
+    public function getAttributePrice($price)
+    {
+        if ($this->discount_type == 'percent') {
+            $price = $price * (100 - $this->amount) / 100;
+            $price = Currency::getInstance()->RoundVal($price);
+        }
+        return $price;
+    }
+
 }   // class Sales
 
 ?>
