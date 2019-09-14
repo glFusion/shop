@@ -68,23 +68,19 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = '1.0.0';
         if (!DB_checkTableExists('shop.attr_grp')) {
             // Initial populate of the new attribute group table
+            // The table won't exist yet, these statememts get appended
+            // to the upgrade SQL.
             $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_attr']})";
             $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_attr']} AS pa INNER JOIN (SELECT ag_id,ag_name FROM {$_TABLES['shop.attr_grp']}) AS ag ON pa.attr_name=ag.ag_name SET pa.ag_id = ag.ag_id";
         }
 
         if (_SHOPcolumnType('shop.sales', 'start') != 'datetime') {
+            $tz_offset = $_CONF['_now']->format('P', true);
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} ADD st_tmp datetime after `start`";
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} ADD end_tmp datetime after `end`";
-            $res = DB_query("SELECT * FROM {$_TABLES['shop.sales']}");
-            while ($A = DB_fetchArray($res, false)) {
-                $st_tmp = new \Date($A['start'], $_CONF['timezone']);
-                $st_tmp = $st_tmp->toMySQL(false);
-                $end_tmp = new \Date($A['end'], $_CONF['timezone']);
-                $end_tmp = $end_tmp->toMySQL(false);
-                $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.sales']}
-                    SET st_tmp = '{$st_tmp}', end_tmp = '{$end_tmp}'
-                    WHERE id = '{$A['id']}'";
-            }
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.sales']} SET
+                st_tmp = convert_tz(from_unixtime(start), @@session.time_zone, '$tz_offset'),
+                end_tmp = convert_tz(from_unixtime(end), @@session.time_zone, '$tz_offset')";
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} DROP start, DROP end";
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} CHANGE st_tmp start datetime NOT NULL DEFAULT '1970-01-01 00:00:00'";
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} CHANGE end_tmp end datetime NOT NULL DEFAULT '9999-12-31 23:59:59'";
