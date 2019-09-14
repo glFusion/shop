@@ -18,6 +18,7 @@ Release TBD
   * Add radio and checkbox-type product options.
   * No buy-now buttons for physical items that may require shipping.
   * Paypal data is not automatically migrated during installation.
+  * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
 
 ## v0.7.1
 Release 2019-08-02

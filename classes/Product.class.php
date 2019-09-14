@@ -581,6 +581,7 @@ class Product
         if (is_array($A)) {
             $this->setVars($A);
         }
+        $nonce = SHOP_getVar($A, 'nonce');
 
         $errs = $this->_Validate();
         if (!empty($errs)) {
@@ -684,6 +685,9 @@ class Product
         if (!DB_error()) {
             if ($this->isNew) {
                 $this->id = DB_insertID();
+                if (!empty($nonce)) {
+                    ProductImage::setProductID($nonce, $this->id);
+                }
             }
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
@@ -862,7 +866,9 @@ class Product
 
         // Add the current product ID to the form if it's an existing product.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->name);
+            $retval = COM_startBlock(
+                $LANG_SHOP['edit'] . ': ' . $this->short_description
+            );
 
         } else {
             $T->set_var('id', '');
@@ -915,6 +921,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
             'option_list'   => Attribute::adminList($this->id),
+            'nonce'         => ProductImage::makeNonce(),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -960,12 +967,12 @@ class Product
 
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
-        $i = 0;     // initialize $i in case there are no images
+        //$i = 0;     // initialize $i in case there are no images
         foreach ($this->Images as $id=>$prow) {
             $T->set_var(array(
                 'img_url'   => $this->ImageUrl($prow['filename'], 800, 600)['url'],
                 'thumb_url' => $this->ImageUrl($prow['filename'])['url'],
-                'seq_no'    => $i++,
+                //'seq_no'    => $i++,
                 'img_id'    => $prow['img_id'],
             ) );
             $T->parse('PRow', 'PhotoRow', true);
@@ -2546,12 +2553,27 @@ class Product
      */
     public function ImageUrl($filename = '', $width = 0, $height = 0)
     {
-        global $_SHOP_CONF;
-
         // If no filename specified, get the first image name.
         if ($filename == '') {
             $filename = $this->getOneImage();
         }
+
+        return self::getImageUrl($filename, $width, $height);
+    }
+
+
+    /**
+     * Static function to get the main image URL from a filename.
+     *
+     * @param   string  $filename   Image filename
+     * @param   integer $width      Desired display width
+     * @param   integer $height     Desired display height
+     * @return  array       Array of (url, width, height)
+     */
+    public static function getImageUrl($filename, $width=0, $height=0)
+    {
+        global $_SHOP_CONF;
+
         // If the filename is still empty, return nothing.
         if ($filename == '') {
             return array(
@@ -2561,11 +2583,12 @@ class Product
             );;
         }
 
-        if ($width > 0 && $height == 0) {
+        if ($width == 0 && $height == 0) {
+            $width = 800;
+            $height = 600;
+        } elseif ($width > 0 && $height == 0) {
             $height = $width;       // default to square if one size given
         }
-        $width = $width == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$width;
-        $height = $height == 0 ? $_SHOP_CONF['max_thumb_size'] : (int)$height;
         $args = array(
             'filepath'  => $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename,
             'width'     => $width,
@@ -3010,6 +3033,19 @@ class Product
             $attrs = explode(',', $attrs);
         }
         $this->sel_attrs = $attrs;
+    }
+
+
+    /**
+     * Get the image information for a thumbnail image.
+     *
+     * @uses    self::getImageUrl()
+     * @param   string  $filename   Image filename
+     * @return  array       Array of (url, width, height)
+     */
+    public static function getThumbUrl($filename)
+    {
+        return self::getImageUrl($filename, $_CONF['max_thumb_size']);
     }
 
 }

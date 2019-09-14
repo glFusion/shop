@@ -22,7 +22,50 @@ if (!plugin_ismoderator_shop()) {
     exit;
 }
 
-switch ($_POST['action']) {
+if (isset($_POST['action'])) {
+    $action = $_POST['action'];
+} elseif (isset($_GET['action'])) {
+    $action = $_GET['action'];
+} else {
+    $action = '';
+}
+switch ($action) {
+case 'dropupload':
+    // Handle a drag-and-drop image upload
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
+    $nonce = SHOP_getVar($_POST, 'nonce', 'string');
+    $errors = array();
+    $retval = array(
+        'filenames' => array(),
+    );
+
+    // Handle image uploads.  This is done last because we need
+    // the product id to name the images filenames.
+    if (!empty($_FILES['files'])) {
+        $U = new Shop\ProductImage($item_id, 'files');
+        $U->setNonce($nonce);
+        $filenames = $U->uploadFiles();
+        if ($U->areErrors() > 0) {
+            $errors = $U->_errors;
+        } else {
+            // Only one filename here, this to get the image id also
+            foreach ($filenames as $img_id=>$filename) {
+                $retval = array(
+                    'img_url'   => Shop\Product::getImageUrl($filename)['url'],
+                    'thumb_url' => Shop\Product::getThumbUrl($filename)['url'],
+                    'img_id' => $img_id,
+                );
+            }
+        }
+        Shop\Cache::clear('products');
+    }
+    header('Content-Type: applicsation/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
+
 case 'attr_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
@@ -59,6 +102,20 @@ case 'updatestatus':
         echo json_encode($L);
         break;
     }
+    break;
+
+case 'delimage':
+    // Delete a product image from the product edit form.
+    $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
+    $arr = array(
+        'img_id'    => $img_id,
+        'status'    => \Shop\ProductImage::DeleteImage($img_id),
+    );
+    header('Content-Type: applicsation/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
     break;
 
 case 'toggle':

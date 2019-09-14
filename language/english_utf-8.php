@@ -102,6 +102,7 @@ $LANG_SHOP = array (
     'All attempts to access this page are logged.',
 'access_denied'     => 'Access Denied',
 'select_file'       => 'Select File',
+'drop_or_select'    => 'Drop or select a file',
 'or_upload_new'     => 'Or, upload a new file',
 'random_product'    => 'Random Product',
 'featured_product'  => 'Featured Product',
@@ -501,6 +502,7 @@ $LANG_SHOP = array (
 'checkbox' => 'Checkboxes',
 'radio' => 'Radio Buttons',
 'allday' => 'All Day',
+'new_image' => 'Upload New',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

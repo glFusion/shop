@@ -7,7 +7,7 @@
  * @package     shop
  * @version     v0.7.0
  * @since       v0.7.0
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -33,6 +33,9 @@ class ProductImage extends \upload
     /** Array of the names of successfully uploaded files.
      * @var array */
     private $goodfiles = array();
+
+
+    private $_nonce = '';
 
     /**
      * Constructor.
@@ -74,6 +77,8 @@ class ProductImage extends \upload
      * Perform the file upload.
      * Calls the parent function to upload the files, then calls
      * MakeThumbs() to create thumbnails.
+     *
+     * @return  array   Array of filenames
      */
     public function uploadFiles()
     {
@@ -84,21 +89,21 @@ class ProductImage extends \upload
 
         // Seed image cache with thumbnails
         $this->MakeThumbs();
-
+        $filenames = array();
         foreach ($this->goodfiles as $filename) {
-            $sql = "INSERT INTO {$_TABLES['shop.images']}
-                    (product_id, filename)
-                VALUES (
-                    '{$this->product_id}', '".
-                    DB_escapeString($filename)."'
-                )";
+            $sql = "INSERT INTO {$_TABLES['shop.images']} SET
+                product_id = '{$this->product_id}',
+                nonce = '" . DB_escapeString($this->_nonce) . "',
+                filename = '" . DB_escapeString($filename) . "'";
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $result = DB_query($sql);
             if (!$result) {
                 $this->_addError("uploadFiles() : Failed to insert {$filename}");
+            } else {
+                $filenames[DB_insertID()] = $filename;
             }
         }
- 
+        return $filenames;
     }
 
 
@@ -135,7 +140,7 @@ class ProductImage extends \upload
      */
     public function Delete()
     {
-        // If we're deleting from disk also, get the filename and 
+        // If we're deleting from disk also, get the filename and
         // delete it and its thumbnail from disk.
         if ($this->filename == '') {
             return;
@@ -153,6 +158,82 @@ class ProductImage extends \upload
     {
         if (file_exists($imgpath . '/' . $this->filename))
             unlink($imgpath . '/' . $this->filename);
+    }
+
+
+    /**
+     * Delete a product image from disk and the table.
+     * Intended to be called from ajax.php.
+     *
+     * @param   integer $img_id     Image database ID
+     * @return  boolean     True if image is deleted, False if not
+     */
+    public static function DeleteImage($img_id)
+    {
+        global $_TABLES, $_SHOP_CONF;
+
+        $img_id = (int)$img_id;
+        if ($img_id < 1) {
+            return false;
+        }
+        $filename = DB_getItem(
+            $_TABLES['shop.images'],
+            'filename',
+            "img_id = '$img_id'"
+        );
+        if (empty($filename)) {
+            return false;
+        }
+        $img_file = $_SHOP_CONF['image_dir'] . '/' . $filename;
+        if (is_file($img_file)) {
+            @unlink($img_file);
+        }
+        DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
+        Cache::clear('products');
+        return true;
+    }
+
+
+    /**
+     * Set the internal property value for a nonce.
+     *
+     * @param   string  $nonce  Nonce value to set
+     */
+    public function setNonce($nonce)
+    {
+        $this->_nonce = $nonce;
+    }
+
+
+    /**
+     * Create a unique key based on some string.
+     *
+     * @param   string  $str    Base string
+     * @return  string  Nonce string
+     */
+    public static function makeNonce($str='')
+    {
+        return uniqid();
+    }
+
+
+    /**
+     * Update the image record with the product ID.
+     * Used where the ID of a new product is not known until saving
+     * so images are identified by a nonce value.
+     *
+     * @param   string  $nonce      Nonce used to identify images
+     * @param   integer $item_id    New product ID
+     */
+    public static function setProductID($nonce, $item_id)
+    {
+        global $_TABLES;
+
+        $item_id = (int)$item_id;
+        $nonce = DB_escapeString($nonce);
+        DB_query("UPDATE {$_TABLES['shop.images']}
+            SET product_id = '$item_id'
+            WHERE nonce = '$nonce'");
     }
 
 }   // class ProductImage
