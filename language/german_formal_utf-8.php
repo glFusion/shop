@@ -486,6 +486,21 @@ $LANG_SHOP = array (
 'first' => 'First',
 'last' => 'Last',
 'pos_after' => 'Position After',
+'item_name' => 'Item Name',
+'drop_or_select' => 'Drop or select a file',
+'edit_attr' => 'Edit Attribute',
+'new_ag' => 'New Attribute Group',
+'edit_ag' => 'Edit Attribute Group',
+'attributes' => 'Attributes',
+'attr_grps' => 'Attribute Groups',
+'auth_grp' => 'Authorized Group',
+'type' => 'Type',
+'select' => 'Selection',
+'checkbox' => 'Checkboxes',
+'radio' => 'Radio Buttons',
+'allday' => 'All Day',
+'new_image' => 'Upload New',
+'google_taxonomy' => 'Google Taxonomy',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -509,6 +524,7 @@ $LANG_SHOP_HELP = array(
 'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuration.',
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
+'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -591,6 +607,7 @@ $LANG_confignames['shop'] = array(
     'hp_layout'     => 'Homepage Layout',
     'ipn_url'       => 'IPN URL Override',
     'use_sku'       => 'Use SKU as Product ID?',
+    'feed_facebook' => 'Enable Facebook Feed?',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -613,6 +630,7 @@ $LANG_fs['shop'] = array(
     'fs_shop'   => 'Shop-Details',
     'fs_gc'     => 'Gift Card Configuration',
     'fs_gc_format' => 'Gift Card Format',
+    'fs_feeds' => 'Feeds',
 );
 
 /**
