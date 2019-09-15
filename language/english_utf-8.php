@@ -503,6 +503,7 @@ $LANG_SHOP = array (
 'radio' => 'Radio Buttons',
 'allday' => 'All Day',
 'new_image' => 'Upload New',
+'google_taxonomy' => 'Google Taxonomy',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -608,6 +609,7 @@ $LANG_confignames['shop'] = array(
     'hp_layout'     => 'Homepage Layout',
     'ipn_url'       => 'IPN URL Override',
     'use_sku'       => 'Use SKU as Product ID?',
+    'feed_facebook' => 'Enable Facebook Feed?',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -630,6 +632,7 @@ $LANG_fs['shop'] = array(
     'fs_shop'   => 'Shop Details',
     'fs_gc'     => 'Gift Card Configuration',
     'fs_gc_format' => 'Gift Card Format',
+    'fs_feeds'  => 'Feeds',
 );
 
 /**

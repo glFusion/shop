@@ -117,6 +117,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned DEFAULT '1',
   `grp_access` mediumint(8) unsigned NOT NULL DEFAULT '1',
   `image` varchar(255) DEFAULT '',
+  `google_taxonomy` text,
   `lft` smallint(5) unsigned NOT NULL DEFAULT '0',
   `rgt` smallint(5) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`cat_id`),
@@ -539,6 +540,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
+    "ALTER TABLE {$_TABLES['shop.categories']} ADD google_taxonomy text AFTER `image`",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];

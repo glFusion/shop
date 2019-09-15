@@ -585,6 +585,30 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    // Feeds FS
+    array(
+        'name' => 'fs_feeds',
+        'default_value' => 0,
+        'type' => 'fieldset',
+        'subgroup' => 0,
+        'fieldset' => 60,
+        'selection_array' => 0,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'feed_facebook',
+        'default_value' => '0',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 60,
+        'selection_array' => 2,
+        'sort' => 10,
+        'set' => true,
+        'group' => 'shop',
+    ),
+
     // Shop Information SG
     array(
         'name' => 'sg_shop',

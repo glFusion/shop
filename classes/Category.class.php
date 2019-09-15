@@ -64,6 +64,7 @@ class Category
         $this->disp_name = '';
         $this->lft = 0;
         $this->rgt = 0;
+        $this->google_taxonomy = '';
         if (is_array($id)) {
             $this->SetVars($id, true);
         } elseif ($id > 0) {
@@ -98,6 +99,7 @@ class Category
         case 'description':
         case 'image':
         case 'disp_name':   // display name in option list
+        case 'google_taxonomy':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -149,6 +151,7 @@ class Category
         $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['description'];
         $this->lft = isset($row['lft']) ? $row['lft'] : 0;
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
+        $this->google_taxonomy = $row['google_taxonomy'];
         if ($fromDB) {
             $this->image = $row['image'];
         }
@@ -283,7 +286,8 @@ class Category
                 description='" . DB_escapeString($this->description) . "',
                 enabled='{$this->enabled}',
                 grp_access ='{$this->grp_access}',
-                image='" . DB_escapeString($this->image) . "'";
+                image='" . DB_escapeString($this->image) . "',
+                google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "'";
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -449,6 +453,7 @@ class Category
             'old_grp'       => $this->grp_access,
             'group_sel'     => SEC_getGroupDropdown($this->grp_access, 3, 'grp_access'),
             'doc_url'       => SHOP_getDocURL('category_form'),
+            'google_taxonomy' => $this->google_taxonomy,
         ) );
 
         if ($this->image != '') {
@@ -1125,6 +1130,25 @@ class Category
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the google taxonomy for this category.
+     * If none defined, search for one in the parent categories.
+     *
+     * @return  string  Google taxonomy, empty string if none found
+     */
+    public function getGoogleTaxonomy()
+    {
+        $Paths = $this->getPath();
+        $Paths = array_reverse($Paths);
+        foreach ($Paths as $Path) {
+            if ($Path->google_taxonomy != '') {
+                return $Path->google_taxonomy;
+            }
+        }
+        return '';
     }
 
 }
