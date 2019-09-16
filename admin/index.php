@@ -48,7 +48,7 @@ $expected = array(
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'attrcopy', 'attrmove',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
-    'delsale', 'savediscount', 'purgecarts', 'saveshipper', 'updcartcurrency',
+    'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'ag_del', 'ag_move', 'ag_save',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
@@ -191,8 +191,7 @@ case 'updcartcurrency':
     break;
 
 case 'migrate_pp':
-    include_once SHOP_PI_PATH . '/migrate_pp.php';
-    if (SHOP_migrate_pp()) {
+    if (Shop\MigratePP::doMigration()) {
         COM_setMsg($LANG_SHOP['migrate_pp_ok']);
     } else {
         COM_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
@@ -201,6 +200,8 @@ case 'migrate_pp':
     break;
 
 case 'purge_trans':
+    // Purge all transactions. Shop must be disabled.
+    // Intended to purge test data prior to going live.
     if (!$_SHOP_CONF['shop_enabled']) {
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
@@ -396,7 +397,7 @@ case 'purgecache':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
-case 'savediscount':
+case 'savesale':
     $D = new \Shop\Sales($_POST['id']);
     if (!$D->Save($_POST)) {
         COM_setMsg($LANG_SHOP['msg_nochange']);
@@ -582,14 +583,9 @@ case 'editsale':
 
 case 'other':
     $T = SHOP_getTemplate('other_functions', 'funcs');
-    $can_migrate_pp = (
-        is_file($_CONF['path'] . '/plugins/paypal/paypal.php') &&
-        !\Shop\Order::haveOrders() &&
-        !\Shop\Product::haveProducts()
-    );
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
-        'can_migrate_pp' => $can_migrate_pp,
+        'can_migrate_pp' => Shop\MigratePP::canMigrate(),
         'can_purge_trans' => !$_SHOP_CONF['shop_enabled'],
     ) );
     $T->parse('output', 'funcs');
