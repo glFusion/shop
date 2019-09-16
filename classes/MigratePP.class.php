@@ -43,7 +43,7 @@ class MigratePP
         // Clear out the Shop tables and insert data from Paypal
         $tables = array(
             'address', 'categories', 'coupon_log', 'coupons',
-            'gateways', 'images', 'ipnlog', 'order_log', 'orderstatus',
+            'gateways', 'ipnlog', 'order_log', 'orderstatus',
             'products', 'userinfo',
             'workflows', 'currency',
         );
@@ -63,6 +63,9 @@ class MigratePP
             return false;
         }
         if (!self::migrateSales()) {
+            return false;
+        }
+        if (!self::migrateImages()) {
             return false;
         }
         if (!self::migrateAttributes()) {
@@ -305,6 +308,24 @@ class MigratePP
             "INSERT INTO {$_TABLES['shop.shipping']}
                 SELECT *, 0 as valid_from, unix_timestamp('2037-12-31') as valid_to,
                 0 as use_fixed, 2 as auth_grp FROM {$_TABLES['paypal.shipping']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate shipping information. Shop plugin adds several fields.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public function migrateImages()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.images']}",
+            "INSERT INTO {$_TABLES['shop.images']}
+                SELECT *, NULL as nonce
+                FROM {$_TABLES['paypal.shipping']}",
         ) );
     }
 
