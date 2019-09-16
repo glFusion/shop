@@ -669,11 +669,12 @@ function plugin_dopluginsearch_shop(
     $htmlquery = urlencode($query);
 
     $query = trim(DB_escapeString(htmlspecialchars($query), ENT_QUOTES, COM_getEncodingt()));
-
+    // Use the SKU or item ID in the resulting url?
+    $url_id = $_SHOP_CONF['use_sku'] ? 'p.name' : 'p.id';
     $sql = "SELECT
                 p.id, p.name as title, p.description as description,
                 dt_add as date,  views as hits,
-                CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',p.id,'&query=$htmlquery') as url
+                CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON p.cat_id=c.cat_id
@@ -869,6 +870,10 @@ function plugin_enablestatechange_shop($enabled)
     if ($enabled && !in_array('lglib', $_PLUGINS)) {
         // Re-disable the plugin
         DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', $_SHOP_CONF['pi_name']);
+    }
+    if (!$enabled) {
+        // Disable any blocks that rely on this plugin.
+        DB_query("UPDATE {$_TABLES['blocks']} SET enabled = 0 WHERE name LIKE 'phpblock_shop_%'");
     }
 }
 
