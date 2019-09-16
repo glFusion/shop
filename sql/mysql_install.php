@@ -105,6 +105,7 @@ $_SQL = array(
   `img_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(11) unsigned NOT NULL,
   `filename` varchar(255) DEFAULT NULL,
+  `nonce` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`img_id`),
   KEY `idxProd` (`product_id`,`img_id`)
 ) ENGINE=MyISAM",
@@ -541,6 +542,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD google_taxonomy text AFTER `image`",
+    "ALTER TABLE {$_TABLES['shop.images']} ADD `nonce` varchar(20) DEFAULT NULL",
 );
 
 $_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
