@@ -550,13 +550,16 @@ $(function(){
                 bar.css("width", percent+"%").text(percent+"%");
             },
 
+            complete: function(response) {
+                addImage(response.thumb_url, response.img_url, response.img_id);
+            },
+
             allcomplete: function(response) {
                 bar.css("width", "100%").text("100%");
                 setTimeout(function(){
                     progressbar.addClass("uk-hidden");
                 }, 250);
                 $.UIkit.notify("Upload Completed", {timeout: 2000,pos:'top-center'});
-                addImage(response.thumb_url, response.img_url, response.img_id);
             }
         };
 
