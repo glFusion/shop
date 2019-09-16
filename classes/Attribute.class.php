@@ -480,11 +480,15 @@ class Attribute
 
     /**
      * Product Option List View.
+     * Values for `$prod_id`:
+     * - -1 : Default, display a normal attribute admin list
+     * - 0 : Invalid product, return nothing
+     * - >0 : Display only for the product ID, no embedded form
      *
      * @param   integer $prod_id    Optional product ID to limit listing
      * @return  string      HTML for the attribute list.
      */
-    public static function adminList($prod_id=0)
+    public static function adminList($prod_id=-1)
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
@@ -494,9 +498,10 @@ class Attribute
             ON at.ag_id = ag.ag_id
             LEFT JOIN {$_TABLES['shop.products']} p
             ON at.item_id = p.id";
-//            WHERE 1=1 ";
 
-        if ($prod_id > 0) {
+        if ($prod_id == 0) {
+            return '';
+        } elseif ($prod_id > 0) {
             $sel_prod_id = (int)$prod_id;
         } elseif (isset($_POST['product_id'])) {
             $sel_prod_id = (int)$_POST['product_id'];
