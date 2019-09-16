@@ -2426,7 +2426,12 @@ class Product
                 WHERE product_id='". $this->id . "'";
             $res = DB_query($sql);
             while ($prow = DB_fetchArray($res, false)) {
-                $this->Images[$prow['img_id']] = $prow;
+                if (self::imageExists($prow['filename'])) {
+                    $this->Images[$prow['img_id']] = $prow;
+                } else {
+                    // Might as well remove DB records for images that don't exist.
+                    $this->deleteImage($prow['img_id']);
+                }
             }
             Cache::set($cache_key, $this->Images, 'products');
         }
