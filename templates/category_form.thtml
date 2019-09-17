@@ -71,7 +71,7 @@
     <label class="uk-form-label" for="enabled">{$LANG_SHOP['enabled']}?
       <span id="enabled" class="tooltip_cfg tooltipstered"></span>
     </label>
-    <div class="uk-form-controls slider_checkbox">
+    <div class="uk-form-controls">
       <input type="checkbox" class="onoff" name="enabled" id="enabled" value="1" {ena_chk} />
     </div>
   </div>
