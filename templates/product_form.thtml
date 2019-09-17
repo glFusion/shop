@@ -327,22 +327,25 @@
         <span id="qty_discounts" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-      <table>
+      <table id="discountList">
       <tr>
         <th>{$LANG_SHOP['min_purch']}</th><th>{$LANG_SHOP['discount']} %</th>
+        <th>
+            <i class="uk-icon uk-icon-plus-circle uk-text-success" data-uk-tooltip
+                title="{$LANG_SHOP['add_row']}"
+                onclick="javascript:return disc_insertRow();"></i>
+        </th>
       </tr>
+<!-- BEGIN discTable -->
       <tr>
-        <td class="aligncenter"><input type="text" size="5" name="disc_qty[0]" value="{disc_qty0}" /></td>
-        <td class="aligncenter"><input type="text" size="5" name="disc_amt[0]" value="{disc_amt0}" /></td>
+        <td class="aligncenter"><input type="text" style="text-align:right;" name="disc_qty[]" value="{disc_qty}" /></td>
+        <td class="aligncenter"><input type="text" style="text-align:right;" name="disc_amt[]" value="{disc_amt}" /></td>
+        <td><i class="uk-icon uk-icon-remove uk-text-danger"
+            data-uk-tooltip title="{$LANG_SHOP['rem_row']}"
+            onclick="javascript:return disc_removeRow(this);"></i>
+        </td>
       </tr>
-      <tr>
-        <td class="aligncenter"><input type="text" size="5" name="disc_qty[1]" value="{disc_qty1}" /></td>
-        <td class="aligncenter"><input type="text" size="5" name="disc_amt[1]" value="{disc_amt1}" /></td>
-      </tr>
-      <tr>
-        <td class="aligncenter"><input type="text" size="5" name="disc_qty[2]" value="{disc_qty2}" /></td>
-        <td class="aligncenter"><input type="text" size="5" name="disc_amt[2]" value="{disc_amt2}" /></td>
-      </tr>
+<!-- END discTable -->
       </table>
       </div>
     </div>
@@ -594,6 +597,24 @@ function addImage(tn_url, img_url, img_id)
     li.setAttribute('id', 'img_blk_' + img_id);
     li.innerHTML = html;
     ul.appendChild(li);
+}
+
+function disc_insertRow()
+{
+    $('#discountList').append('<tr>' +
+        '<td><input type="text" name="disc_qty[]" value="" /></td>' +
+        '<td><input type="text" name="disc_amt[]" value="" style="text-align:right" /></td>' +
+        '<td><i class="uk-icon uk-icon-remove uk-text-danger" ' +
+        'data-uk-tooltip title="{$LANG_SHOP['rem_row']}" ' +
+        'onclick="javascript:return disc_removeRow(this);"></i></td>' +
+        '</tr>'
+    );
+    return false;
+}
+function disc_removeRow(elem)
+{
+    $(elem).parent().parent().remove();
+    return false;
 }
 
 </script>

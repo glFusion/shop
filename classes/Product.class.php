@@ -978,13 +978,13 @@ class Product
             $T->parse('PRow', 'PhotoRow', true);
         }
 
-        $i = 0;
+        $T->set_block('dtable', 'discTable', 'DT');
         foreach ($this->qty_discounts as $qty=>$amt) {
             $T->set_var(array(
-                'disc_qty' . $i => $qty,
-                'disc_amt' . $i => $amt,
+                'disc_qty' => $qty,
+                'disc_amt' => number_format($amt, 2),
             ) );
-            $i++;
+            $T->parse('DT', 'discTable', true);
         }
 
         $Disc = Sales::getProduct($this->id);
@@ -1000,6 +1000,7 @@ class Product
                     $amount = $D->amount;
                 }
                 $DT->set_var(array(
+                    'sale_name' => htmlspecialchars($D->name),
                     'sale_start' => $D->start,
                     'sale_end'  => $D->end,
                     'sale_type' => $D->discount_type,
@@ -2873,9 +2874,11 @@ class Product
         case 'enabled':
             if ($fieldvalue == '1') {
                 $switch = ' checked="checked"';
+                $icon = "uk-icon-toggle-on uk-text-success";
                 $enabled = 1;
             } else {
                 $switch = '';
+                $icon - "uk-icon-toggle-off";
                 $enabled = 0;
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"

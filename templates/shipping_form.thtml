@@ -60,8 +60,8 @@
             <th>{$LANG_SHOP['max_ship_units']}</th>
             <th>{$LANG_SHOP['rate']}</th>
             <th>
-              <i class="uk-icon uk-icon-plus-circle uk-text-success tooltip"
-                title="{$LANG_SHOP['add_rate_tt']}"
+              <i class="uk-icon uk-icon-plus-circle uk-text-success" data-uk-tooltip
+                title="{$LANG_SHOP['add_row']}"
                 onclick="javascript:return insertRow();"></i>
             </th>
           </tr>
@@ -70,8 +70,8 @@
             <td><input type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
             <td><input type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
             <td><input type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
-            <td><i class="uk-icon uk-icon-remove uk-text-danger tooltip"
-                title="{$LANG_SHOP['rem_rate_tt']}"
+            <td><i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip
+                title="{$LANG_SHOP['rem_row']}"
                 onclick="javascript:return removeRow(this);"></i>
             </td>
           </tr>
@@ -167,7 +167,9 @@ function insertRow()
         '<td><input type="text" name="rateDscp[]" value="" /></td>' +
         '<td><input type="text" name="rateUnits[]" value="" style="text-align:right" /></td>' +
         '<td><input type="text" name="rateRate[]" value="" style="text-align:right" /></td>' +
-        '<td><i class="uk-icon uk-icon-remove uk-text-danger" onclick="javascript:return removeRow(this);"></i></td>' +
+        '<td><i class="uk-icon uk-icon-remove uk-text-danger" ' +
+        'data-uk-tooltip title="{$LANG_SHOP['rem_row']}" ' +
+        'onclick="javascript:return removeRow(this);"></i></td>' +
         '</tr>'
     );
     return false;

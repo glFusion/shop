@@ -7,6 +7,7 @@
     <div class="uk-form-controls">
       <table border="0" width="80%">
       <tr>
+        <th>{$LANG_SHOP['name']}</th>
         <th>{$LANG_SHOP['start']}</th>
         <th>{$LANG_SHOP['end']}</th>
         <th style="text-align:right;">{$LANG_SHOP['amount']}</th>
@@ -14,6 +15,7 @@
       </tr>
       <!-- BEGIN SaleList -->
         <tr>
+          <td>{sale_name}</td>
           <td>{sale_start}</td>
           <td>{sale_end}</td>
           <td style="text-align:right;">{sale_amt}</td>
