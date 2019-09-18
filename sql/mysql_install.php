@@ -67,6 +67,7 @@ $_SQL = array(
   `custom` varchar(255) NOT NULL DEFAULT '',
   `avail_beg` date DEFAULT '1900-01-01',
   `avail_end` date DEFAULT '9999-12-31',
+  `brand` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -535,6 +536,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       UNIQUE KEY `key1` (`oi_id`,`ag_id`,`attr_id`,`oio_name`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY (`name`)",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
     "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `sku` varchar(8) DEFAUlt NULL",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",

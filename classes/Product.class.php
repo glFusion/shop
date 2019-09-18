@@ -357,6 +357,7 @@ class Product
         case 'item_id':
         case 'btn_text':
         case 'cancel_url':
+        case 'brand':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -462,6 +463,7 @@ class Product
         $this->custom = $row['custom'];
         $this->avail_beg = $row['avail_beg'];
         $this->avail_end = $row['avail_end'];
+        $this->brand = $row['brand'];
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -677,6 +679,7 @@ class Product
                 custom='" . DB_escapeString($this->custom) . "',
                 avail_beg='" . DB_escapeString($this->avail_beg) . "',
                 avail_end='" . DB_escapeString($this->avail_end) . "',
+                brand ='" . DB_escapeString($this->brand) . "',
                 buttons= '" . DB_escapeString($this->btn_type) . "'";
                 //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
@@ -922,6 +925,7 @@ class Product
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
             'option_list'   => Attribute::adminList($this->id),
             'nonce'         => ProductImage::makeNonce(),
+            'brand'         => $this->brand,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 

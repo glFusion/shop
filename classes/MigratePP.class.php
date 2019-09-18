@@ -44,7 +44,7 @@ class MigratePP
         $tables = array(
             'address', 'categories', 'coupon_log', 'coupons',
             'gateways', 'ipnlog', 'order_log', 'orderstatus',
-            'products', 'userinfo',
+            'userinfo',
             'workflows', 'currency',
         );
         foreach ($tables as $table) {
@@ -134,6 +134,24 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE $shop_tbl",
             "INSERT INTO $shop_tbl (SELECT * FROM $pp_tbl)",
+        ) );
+    }
+
+
+    /**
+     * Migrate catalog products from Paypal to Shop.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function migrateProducts()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.products']}",
+            "INSERT INTO {$_TABLES['shop.products']}
+                SELECT *, '' as brand
+                FROM {$_TABLES['paypal.products']}",
         ) );
     }
 
