@@ -551,25 +551,28 @@ class Attribute
                 'align' => 'center',
                 'sort'  => true,
             ),
-            array(
+        );
+        if ($prod_id == -1) {
+            $header_arr[] = array(
                 'text'  => $LANG_SHOP['orderby'],
                 'field' => 'orderby',
                 'align' => 'center',
                 'sort'  => true,
-            ),
-            array(
+            );
+        }
+        $header_arr[] = array(
                 'text' => $LANG_SHOP['attr_price'],
                 'field' => 'attr_price',
                 'align' => 'right',
                 'sort' => true,
-            ),
+            );
             /*array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
             ),*/
-        );
+        //);
 
         $defsort_arr = array(
             'field' => 'prod_name,ag_orderby,orderby',
@@ -596,7 +599,7 @@ class Attribute
             'default_filter' => $def_filter,
         );
 
-        if ($prod_id == 0) {
+        if ($prod_id == -1) {
         $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
             onchange=\"this.form.submit();\">
             <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
