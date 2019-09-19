@@ -164,14 +164,13 @@ class OrderItemOption
     {
         global $_TABLES;
 
-        $retval = array();
         if ($Item->id < 1) {
             // Catch bad or empty Item objects
             return $retval;
         }
-        $cache_key = "oio_item_{$Item->id}";
-        $retval = Cache::get($cache_key);
-        if ($retval === NULL) {
+        //$cache_key = "oio_item_{$Item->id}";
+        //$retval = Cache::get($cache_key);
+        //if ($retval === NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
                 WHERE oi_id = {$Item->id}";
@@ -179,8 +178,8 @@ class OrderItemOption
             while ($A = DB_fetchArray($res, false)) {
                 $retval[] = new self($A);
             }
-            Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
-        }
+        //    Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
+        //}
         return $retval;
     }
 

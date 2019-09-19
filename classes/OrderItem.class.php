@@ -399,7 +399,7 @@ class OrderItem
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
-            Cache::deleteOrder($this->order_id);
+            //Cache::deleteOrder($this->order_id);
             if ($this->id == 0) {
                 $this->id = DB_insertID();
                 return $this->saveOptions();

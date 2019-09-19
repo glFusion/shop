@@ -205,8 +205,8 @@ class Order
         }
 
         $cache_key = 'order_' . $this->order_id;
-        $A = Cache::get($cache_key);
-        if ($A === NULL) {
+        //$A = Cache::get($cache_key);
+        //if ($A === NULL) {
             $sql = "SELECT * FROM {$_TABLES['shop.orders']}
                     WHERE order_id='{$this->order_id}'";
             //echo $sql;die;
@@ -214,14 +214,14 @@ class Order
             if (!$res) return false;    // requested order not found
             $A = DB_fetchArray($res, false);
             if (empty($A)) return false;
-            Cache::set($cache_key, $A, 'orders');
-        }
+        //    Cache::set($cache_key, $A, 'orders');
+        //}
         if ($this->setVars($A)) $this->isNew = false;
 
         // Now load the items
-        $cache_key = 'items_order_' . $this->order_id;
-        $items = Cache::get($cache_key);
-        if ($items === NULL) {
+        //$cache_key = 'items_order_' . $this->order_id;
+        //$items = Cache::get($cache_key);
+        //if ($items === NULL) {
             $items = array();
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
                     WHERE order_id = '{$this->order_id}'";
@@ -231,8 +231,8 @@ class Order
                     $items[$A['id']] = $A;
                 }
             }
-            Cache::set($cache_key, $items, array('items','orders'));
-        }
+        //    Cache::set($cache_key, $items, array('items','orders'));
+        //}
         // Now load the arrays into objects
         foreach ($items as $item) {
             $this->items[$item['id']] = new OrderItem($item);
@@ -311,7 +311,7 @@ class Order
             billto_country = '" . DB_escapeString($this->billto_country) . "',
             billto_zip = '" . DB_escapeString($this->billto_zip) . "'";
         DB_query($sql);
-        Cache::delete('order_' . $this->order_id);
+        //Cache::delete('order_' . $this->order_id);
     }
 
 
@@ -367,7 +367,7 @@ class Order
             shipto_country = '" . DB_escapeString($this->shipto_country) . "',
             shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'";
         DB_query($sql);
-        Cache::delete('order_' . $this->order_id);
+        //Cache::delete('order_' . $this->order_id);
     }
 
 
@@ -470,7 +470,7 @@ class Order
             DELETE FROM {$_TABLES['shop.orders']} WHERE order_id = '$order_id';
             COMMIT;";
         DB_query($sql);
-        Cache::deleteOrder($order_id);
+        //Cache::deleteOrder($order_id);
         return DB_error() ? false : true;
     }
 
@@ -539,7 +539,7 @@ class Order
         //echo $sql;die;
         //SHOP_log(("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        Cache::deleteOrder($this->order_id);
+        //Cache::deleteOrder($this->order_id);
         $this->isNew = false;
         return $this->order_id;
     }
@@ -614,7 +614,7 @@ class Order
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
-                $img = $P->ImageUrl('', $_SHOP_CONF['order_tn_size']);
+                $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
                     $img_url = COM_createImage(
                         $img['url'],
@@ -838,7 +838,7 @@ class Order
         $log_user = $this->log_user;
 
         // Clear the order from cache
-        Cache::delete('order_' . $this->order_id);
+        //Cache::delete('order_' . $this->order_id);
 
         // If promoting from a cart status to a real order, add the sequence number.
         if (!$this->isFinal($oldstatus) && $this->isFinal() && $this->order_seq < 1) {
@@ -863,7 +863,7 @@ class Order
         if (DB_error()) {
             return false;
         }
-        Cache::deleteOrder($this->order_id);
+        //Cache::deleteOrder($this->order_id);
         $this->status = $newstatus;     // update in-memory object
         $msg = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
         if ($log) {
@@ -1343,7 +1343,7 @@ class Order
         DB_query($sql, 1);
         if (!DB_error()) {
             $this->token = $token;
-            Cache::clear('orders');
+            //Cache::clear('orders');
         }
         return $this->token;
     }
@@ -2006,7 +2006,7 @@ class Order
             $OI->setDiscount($qty_discount);
             $OI->Save();
         }
-        Cache::deleteOrder($this->order_id);
+        //Cache::deleteOrder($this->order_id);
         return true;
     }
 
