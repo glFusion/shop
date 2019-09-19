@@ -42,7 +42,7 @@ case 'dropupload':
     // Handle image uploads.  This is done last because we need
     // the product id to name the images filenames.
     if (!empty($_FILES['files'])) {
-        $U = new Shop\ProductImage($item_id, 'files');
+        $U = new Shop\Images\Product($item_id, 'files');
         $U->setNonce($nonce);
         $filenames = $U->uploadFiles();
         if ($U->areErrors() > 0) {
@@ -52,7 +52,7 @@ case 'dropupload':
             foreach ($filenames as $img_id=>$filename) {
                 $retval['filenames'][] = array(
                     'img_url'   => Shop\Product::getImageUrl($filename)['url'],
-                    'thumb_url' => Shop\Product::getThumbUrl($filename)['url'],
+                    'thumb_url' => Shop\Product::getThumb($filename)['url'],
                     'img_id' => $img_id,
                 );
             }
@@ -109,7 +109,7 @@ case 'delimage':
     $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
     $arr = array(
         'img_id'    => $img_id,
-        'status'    => \Shop\ProductImage::DeleteImage($img_id),
+        'status'    => \Shop\Images\Product::DeleteImage($img_id),
     );
     header('Content-Type: applicsation/json');
     header("Cache-Control: no-cache, must-revalidate");

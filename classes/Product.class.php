@@ -689,7 +689,7 @@ class Product
             if ($this->isNew) {
                 $this->id = DB_insertID();
                 if (!empty($nonce)) {
-                    ProductImage::setProductID($nonce, $this->id);
+                    Images\Product::setProductID($nonce, $this->id);
                 }
             }
             SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -708,7 +708,7 @@ class Product
             // Handle image uploads.  This is done last because we need
             // the product id to name the images filenames.
             if (!empty($_FILES['images'])) {
-                $U = new ProductImage($this->id, 'images');
+                $U = new Images\Product($this->id, 'images');
                 $U->uploadFiles();
 
                 if ($U->areErrors() > 0) {
@@ -924,7 +924,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
             'option_list'   => Attribute::adminList($this->id),
-            'nonce'         => ProductImage::makeNonce(),
+            'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
@@ -974,8 +974,8 @@ class Product
         //$i = 0;     // initialize $i in case there are no images
         foreach ($this->Images as $id=>$prow) {
             $T->set_var(array(
-                'img_url'   => $this->ImageUrl($prow['filename'], 800, 600)['url'],
-                'thumb_url' => $this->ImageUrl($prow['filename'])['url'],
+                'img_url'   => $this->getImage($prow['filename'])['url'],
+                'thumb_url' => $this->getThumb($prow['filename'])['url'],
                 //'seq_no'    => $i++,
                 'img_id'    => $prow['img_id'],
             ) );
@@ -1203,15 +1203,15 @@ class Product
             if (self::imageExists($prow['filename'])) {
                 if ($i == 0) {
                     $T->set_var(array(
-                        'main_img' => $this->ImageUrl($prow['filename'], 0, 0)['url'],
+                        'main_img' => $this->getImage($prow['filename'])['url'],
                         'main_imgfile' => $prow['filename'],
                     ) );
                 }
                 $T->set_block('product', 'Thumbnail', 'PBlock');
                 $T->set_var(array(
                     'img_file'      => $prow['filename'],
-                    'img_url'       => $this->ImageUrl($prow['filename'], 800, 600)['url'],
-                    'thumb_url'     => $this->ImageUrl($prow['filename'])['url'],
+                    'img_url'       => $this->getImage($prow['filename'])['url'],
+                    'thumb_url'     => $this->getThumb($prow['filename'])['url'],
                     'session_id'    => session_id(),
                 ) );
                 $T->parse('PBlock', 'Thumbnail', true);
@@ -2561,51 +2561,30 @@ class Product
      * @param   integer $height     Optional height, assume thumbnail
      * @return  array       Array of (url, width, height)
      */
-    public function ImageUrl($filename = '', $width = 0, $height = 0)
+    public function getImage($filename = '', $width = 0, $height = 0)
     {
         // If no filename specified, get the first image name.
         if ($filename == '') {
             $filename = $this->getOneImage();
         }
-
-        return self::getImageUrl($filename, $width, $height);
+        return Images\Product::getUrl($filename, $width, $height);
     }
 
 
     /**
-     * Static function to get the main image URL from a filename.
+     * Get the image information for a thumbnail image.
      *
+     * @uses    Images\Product::getUrl()
      * @param   string  $filename   Image filename
-     * @param   integer $width      Desired display width
-     * @param   integer $height     Desired display height
      * @return  array       Array of (url, width, height)
      */
-    public static function getImageUrl($filename, $width=0, $height=0)
+    public function getThumb($filename)
     {
-        global $_SHOP_CONF;
-
-        // If the filename is still empty, return nothing.
+        // If no filename specified, get the first image name.
         if ($filename == '') {
-            return array(
-                'url'   => '',
-                'width' => 0,
-                'height' => 0,
-            );;
+            $filename = $this->getOneImage();
         }
-
-        if ($width == 0 && $height == 0) {
-            $width = 800;
-            $height = 600;
-        } elseif ($width > 0 && $height == 0) {
-            $height = $width;       // default to square if one size given
-        }
-        $args = array(
-            'filepath'  => $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename,
-            'width'     => $width,
-            'height'    => $height,
-        );
-        $status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
-        return $output;
+        return Images\Product::getUrl($filename, $_CONF['max_thumb_size']);
     }
 
 
@@ -3045,19 +3024,6 @@ class Product
             $attrs = explode(',', $attrs);
         }
         $this->sel_attrs = $attrs;
-    }
-
-
-    /**
-     * Get the image information for a thumbnail image.
-     *
-     * @uses    self::getImageUrl()
-     * @param   string  $filename   Image filename
-     * @return  array       Array of (url, width, height)
-     */
-    public static function getThumbUrl($filename)
-    {
-        return self::getImageUrl($filename, $_CONF['max_thumb_size']);
     }
 
 }
