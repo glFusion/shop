@@ -163,8 +163,8 @@ class headlines
                     'url'       => SHOP_URL . '/detail.php?id='. $P->id,
                     'text'      => trim($P->description),
                     'title'     => $P->short_description,
-                    'thumb_url' => $P->ImageUrl()['url'],
-                    'large_url' => $P->ImageUrl('', 1024, 1024)['url'],
+                    'thumb_url' => $P->getThumb()['url'],
+                    'large_url' => $P->getImage('', 1024, 1024)['url'],
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
                 ) );
