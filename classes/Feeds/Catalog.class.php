@@ -26,11 +26,7 @@ class Catalog
      */
     public function __construct($type)
     {
-        if (array_key_exists($type, $this->available)) {
-            $this->type = $type;
-        } else {
-            $this->type = '';
-        }
+        $this->type = $type;
     }
 
 
@@ -111,7 +107,7 @@ class Catalog
                 'sale_price'    => $sale_price,
                 'sale_eff_dt'   => $sale_eff_dt,
                 //'brand'         => self::_fixText($P->getBrand()),
-                'brand'         => 'None',   // TODO: need to enable product Mfg and Brand
+                'brand'         => self::_fixText($P->brand, 'None'),
                 'google_taxonomy' => htmlspecialchars($P->Cat->getGoogleTaxonomy()),
                 'lb'            => "\n",
                 'availability'  => $availability,
@@ -127,9 +123,10 @@ class Catalog
      * Fixes the text for the CSV file.
      *
      * @param   string  $str    Original text string
+     * @param   string  $defaul Optional default if $str is empty
      * @return  string      Sanitized string.
      */
-    private static function _fixText($str)
+    private static function _fixText($str, $default=NULL)
     {
         $search = array(
             '"',
@@ -141,6 +138,9 @@ class Catalog
         );
         $str = strip_tags($str);
         $str = trim(str_replace($search, $replace, $str));
+        if ($str == '' && $default !== NULL) {
+            $str = $default;
+        }
         return $str;
     }
 
