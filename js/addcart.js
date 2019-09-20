@@ -63,6 +63,10 @@ function blk_setvis_shop_cart(newvis)
     if (typeof(blk) != 'undefined' && blk != null) {
         blk.style.display = newvis;
     }
+    btn = document.getElementById("link_cart");
+    if (typeof(btn) != 'undefined' && btn != null) {
+        btn.style.display = newvis == "block" ? "" : "none";
+    }
 }
 
 /**

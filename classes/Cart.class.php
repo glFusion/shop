@@ -564,7 +564,7 @@ class Cart extends Order
      */
     public function hasItems()
     {
-        return empty($this->items) ? false : true;
+        return count($this->items);
     }
 
 

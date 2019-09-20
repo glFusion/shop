@@ -19,23 +19,26 @@
   </a>
 {!endif}
 {!if link_cart}
-  <a href="{site_url}/shop/cart.php">
+  <a
+{!else}
+  <a style="display:none;"
+{!endif}
+  id="link_cart" href="{site_url}/shop/cart.php">
     <button class="uk-button uk-button-success uk-button-mini">
       <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}</button>
   </a>
-{!endif}
 </div>
 {!if icon}
 <div style="float:left;margin-right:10px;">
-<img src="{icon}" />
+    <img src="{icon}" />
 </div>
 {!endif}
 <div style="float:left;">
 {!if title}
-<h2 style="float:left">{title}</h2>
+    <h2 style="float:left">{title}</h2>
 {!endif}
 {!if subtitle}
-<h2 style="float:right">{subtitle}</h2>
+    <h2 style="float:right">{subtitle}</h2>
 {!endif}
 {!if breadcrumbs}
 {breadcrumbs}

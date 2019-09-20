@@ -262,8 +262,13 @@ class Menu
             'is_admin' => plugin_ismoderator_shop(),
             'link_admin' => plugin_ismoderator_shop(),
             'link_account' => ($page != 'account' && $_USER['uid'] > 1),
-            'link_cart' => ($page != 'cart' && Cart::getCart() && Cart::getInstance()->hasItems()),
         ) );
+        if ($page != 'cart' && Cart::getCart()) {
+            $item_count = Cart::getInstance()->hasItems();
+            if ($item_count) {
+                $T->set_var('link_cart', $item_count);
+            }
+        }
         return $T->parse('', 'title');
     }
 
