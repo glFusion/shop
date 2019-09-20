@@ -169,8 +169,10 @@ class Catalog
         ) {
             $query_str = urlencode($_REQUEST['query']);
             $search = DB_escapeString($_REQUEST['query']);
-            $fields = array('p.name', 'c.cat_name', 'p.short_description', 'p.description',
-                    'p.keywords');
+            $fields = array(
+                'p.name', 'c.cat_name', 'p.short_description', 'p.description',
+                'p.keywords',
+            );
             $srches = array();
             foreach ($fields as $fname) {
                 $srches[] = "$fname like '%$search%'";
