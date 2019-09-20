@@ -105,6 +105,14 @@ class Product
      * @var array */
     private $sel_attrs = array();
 
+    /** Query string, if any.
+     * @var string */
+    private $query = '';
+
+    /** OrderItem ID to get previously-ordered options.
+     * @var integer */
+    private $oi_id;
+
 
     /**
      * Constructor.
@@ -1114,7 +1122,7 @@ class Product
      * @param   integer $oi_id  OrderItem ID when linked from an order view
      * @return  string      HTML for the product page.
      */
-    public function Detail($oi_id=0)
+    public function Detail()
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
@@ -1134,8 +1142,8 @@ class Product
         // create an empty object for later use.
         // $this->sel_attrs may also be set in getInstance()if an option
         // string is provided in the item number.
-        if ($oi_id > 0) {
-            $OI = new OrderItem($oi_id);
+        if ($this->oi_id > 0) {
+            $OI = new OrderItem($this->oi_id);
             if ($OI->canView()) {
                 $this->sel_attrs = array();
                 foreach ($OI->getOptions() as $OIO) {
@@ -1160,10 +1168,10 @@ class Product
         $s_dscp = PLG_replaceTags($this->short_description);
 
         // Highlight the query terms if coming from a search
-        if (isset($_REQUEST['query']) && !empty($_REQUEST['query'])) {
-            $name   = COM_highlightQuery($name, $_REQUEST['query']);
-            $l_dscp = COM_highlightQuery($l_dscp, $_REQUEST['query']);
-            $s_dscp = COM_highlightQuery($s_dscp, $_REQUEST['query']);
+        if (!empty($this->query)) {
+            $name   = COM_highlightQuery($name, $this->query);
+            $l_dscp = COM_highlightQuery($l_dscp, $this->query);
+            $s_dscp = COM_highlightQuery($s_dscp, $this->query);
         }
 
         $this->_act_price = $this->getSalePrice();
@@ -2281,16 +2289,20 @@ class Product
      * Get the URL to the item detail page.
      *
      * @param   integer $oi_id  Order Item ID
+     * @param   string  $q      Query string. Should be url-encoded already
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0)
+    public function getLink($oi_id=0, $q='')
     {
         global $_SHOP_CONF;
 
         $id = $_SHOP_CONF['use_sku'] ? $this->name : $this->id;
         $url = SHOP_URL . '/detail.php?id=' . $id;
-        if ($oi_id > 0) {
+        if ($oi_id > 0 || $q != '') {
             $url .= '&oi_id=' . (int)$oi_id;
+            if ($q != '') {
+                $url .= '&query=' . $q;
+            }
         }
         return COM_buildUrl($url);
     }
@@ -2578,13 +2590,13 @@ class Product
      * @param   string  $filename   Image filename
      * @return  array       Array of (url, width, height)
      */
-    public function getThumb($filename)
+    public function getThumb($filename='')
     {
         // If no filename specified, get the first image name.
         if ($filename == '') {
             $filename = $this->getOneImage();
         }
-        return Images\Product::getUrl($filename, $_CONF['max_thumb_size']);
+        return Images\Product::getUrl($filename, 200);
     }
 
 
@@ -3024,6 +3036,28 @@ class Product
             $attrs = explode(',', $attrs);
         }
         $this->sel_attrs = $attrs;
+    }
+
+
+    /**
+     * Set the query string to be highlighted in the Detail view.
+     *
+     * @param   string  $query  Query string
+     */
+    public function setQuery($query)
+    {
+        $this->query = $query;
+    }
+
+
+    /**
+     * Set the OrderItem record ID to get options from a specific order.
+     *
+     * @param   integer $oi_id  OrderItem record ID
+     */
+    public function setOrderItem($oi_id)
+    {
+        $this->oi_id = (int)$oi_id;
     }
 
 }

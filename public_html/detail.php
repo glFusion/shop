@@ -26,7 +26,7 @@ if (
     exit;
 }
 
-COM_setArgNames(array('id', 'oi_id'));
+COM_setArgNames(array('id', 'oi_id', 'query'));
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
 } else {
@@ -37,10 +37,14 @@ if (isset($_GET['oi_id'])) {
 } else {
     $oi_id = (int)COM_getArgument('oi_id');
 }
+if (isset($_GET['query'])) {
+    $query = $_GET['query'];
+} else {
+    $query = COM_getArgument('query');
+}
 
 $display = \Shop\Menu::siteHeader();
-$T = SHOP_getTemplate('shop_title', 'title');
-$display .= $T->parse('', 'title');
+$display .= \Shop\Menu::pageTitle();
 if (!empty($msg)) {
     //msg block
     $display .= COM_startBlock('','','blockheader-message.thtml');
@@ -54,7 +58,9 @@ if (!empty($id)) {
     $P = \Shop\Product::getInstance($id);
     if ($P->verifyID($id) && $P->hasAccess()) {
         $breadcrumbs = $P->Cat->Breadcrumbs();
-        $content .= $P->Detail($oi_id);
+        $P->setQuery($query);
+        $P->setOrderItem($oi_id);
+        $content .= $P->Detail();
     }
 }
 if (empty($content)) {

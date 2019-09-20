@@ -21,6 +21,7 @@ Release TBD
   * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
   * Enable Facebook catalog feeds.
   * Separate ProductImage class into Images\Product.
+  * Pass query string to product detail view for highlighting.
 
 ## v0.7.1
 Release 2019-08-02

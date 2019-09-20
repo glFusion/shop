@@ -281,14 +281,18 @@ class Plugin extends \Shop\Product
      * object and get more information.
      *
      * @param   integer $oi_id  Order Item ID
+     * @param   string  $q      Query string. Should be url-encoded already
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0)
+    public function getLink($oi_id=0, $q='')
     {
         if ($this->_have_detail_svc) {
             $url = SHOP_URL . '/index.php?pidetail=' . $this->item_id;
-            if ($oi_id > 0) {
+            if ($oi_id > 0 || $q != '') {
                 $url .= '&oi_id=' . (int)$oi_id;
+                if ($q != '') {
+                    $url .= '&query=' . $q;
+                }
             }
         } else {
             return $this->url;
