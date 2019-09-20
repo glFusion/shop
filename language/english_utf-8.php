@@ -243,6 +243,7 @@ $LANG_SHOP = array (
 'buyer_email'   => 'Buyer E-Mail',
 'todo_noproducts' => 'There are no products in the catalog.',
 'todo_nogateways' => 'There are no payment gateways enabled.',
+'todo_migrate_pp' => 'You may want to migrate from the Paypal plugin via the Maintenance menu.',
 'orderstatus'   => array(
     'pending'   => 'Pending',
     'paid'      => 'Paid',

@@ -228,7 +228,7 @@ class Menu
      */
     public static function AdminTodo()
     {
-        global $_TABLES, $LANG_SHOP;
+        global $_TABLES, $LANG_SHOP, $_PLUGIN_INFO;
 
         $todo = array();
         if (DB_count($_TABLES['shop.products']) == 0) {
@@ -238,7 +238,9 @@ class Menu
         if (DB_count($_TABLES['shop.gateways'], 'enabled', 1) == 0) {
             $todo[] = $LANG_SHOP['todo_nogateways'];
         }
-
+        if (!empty($todo) && array_key_exists('paypal', $_PLUGIN_INFO)) {
+            $todo[] = $LANG_SHOP['todo_migrate_pp'];
+        }
         return $todo;
     }
 
