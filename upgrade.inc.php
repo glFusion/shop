@@ -259,6 +259,8 @@ function SHOP_remove_old_files()
         __DIR__ => array(
             // 0.7.1
             'shop_functions.inc.php',
+            // 1.0.0
+            'classes/ProductImage.class.php',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
