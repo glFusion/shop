@@ -73,6 +73,8 @@ function SHOP_do_upgrade($dvlp = false)
             $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_attr']})";
             $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_attr']} AS pa INNER JOIN (SELECT ag_id,ag_name FROM {$_TABLES['shop.attr_grp']}) AS ag ON pa.attr_name=ag.ag_name SET pa.ag_id = ag.ag_id";
         }
+        // This has to be done after updating the attribute group above
+        $SHOP_UPGRADE[$current_ver][] = "ALTER {$_TABLES['shop.prod_attr']} DROP attr_name";
 
         if (_SHOPcolumnType('shop.sales', 'start') != 'datetime') {
             $tz_offset = $_CONF['_now']->format('P', true);
