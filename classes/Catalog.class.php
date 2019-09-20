@@ -48,7 +48,7 @@ class Catalog
         $RootCat = Category::getRoot();
         $cat_name = $Cat->cat_name;
         $cat_desc = $Cat->description;
-        $cat_img_url = $Cat->ImageUrl();
+        $cat_img_url = $Cat->getImage()['url'];
         if ($Cat->parent_id > 0) {
             // Get the sql to limit by category
             $tmp = Category::getTree($Cat->cat_id);
@@ -177,6 +177,8 @@ class Catalog
             }
             $srch = ' AND (' . implode(' OR ', $srches) . ')';
             $sql .= $srch;
+        } else {
+            $query_str = '';
         }
         $pagenav_args = array();
 
@@ -285,7 +287,7 @@ class Catalog
                 'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => $P->getLink(),
+                'item_url'      => $P->getLink(0, $query_str),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->track_onhand ? 'true' : '',
                 'qty_onhand'    => $P->onhand,
@@ -293,7 +295,7 @@ class Catalog
                 'price'         => $P->getDisplayPrice(),
                 'orig_price'    => $P->getDisplayPrice($P->price),
                 'on_sale'       => $P->isOnSale(),
-                'small_pic'     => $P->ImageUrl()['url'],
+                'small_pic'     => $P->getImage('', 200)['url'],
                 'onhand'        => $P->track_onhand ? $P->onhand : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
                 'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
@@ -377,7 +379,7 @@ class Catalog
                         'encrypted' => '',
                         'item_url'  => $item_url,
                         'track_onhand' => '',   // not available for plugins
-                        'small_pic' => $P->ImageUrl()['url'],
+                        'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
                         'nonce'     => $Cart->makeNonce($A['id'] . $item_dscp),
                         'can_add_cart'  => true,
