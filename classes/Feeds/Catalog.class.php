@@ -122,8 +122,8 @@ class Catalog
     /**
      * Fixes the text for the CSV file.
      *
-     * @param   string  $str    Original text string
-     * @param   string  $defaul Optional default if $str is empty
+     * @param   string  $str        Original text string
+     * @param   string  $default    Optional default if $str is empty
      * @return  string      Sanitized string.
      */
     private static function _fixText($str, $default=NULL)
