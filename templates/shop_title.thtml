@@ -18,6 +18,12 @@
     <button class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</button>
   </a>
 {!endif}
+{!if link_cart}
+  <a href="{site_url}/shop/cart.php">
+    <button class="uk-button uk-button-success uk-button-mini">
+      <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}</button>
+  </a>
+{!endif}
 </div>
 {!if icon}
 <div style="float:left;margin-right:10px;">

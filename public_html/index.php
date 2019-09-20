@@ -29,6 +29,7 @@ if (
     exit;
 }
 
+$page_title = '';
 $action = '';
 $actionval = '';
 $view = '';
@@ -316,10 +317,7 @@ case 'pidetail':
     if ($status != PLG_RET_OK) {
         $output = $LANG_SHOP['item_not_found'];
     }
-    $T = SHOP_getTemplate('shop_title', 'header');
-    $T->set_var('breadcrumbs', COM_createLink($LANG_SHOP['back_to_catalog'], SHOP_URL . '/index.php'));
-    $T->parse('output', 'header');
-    $content .= $T->finish($T->get_var('output'));
+    $content .= Shop\Menu::pageTitle();
     $content .= $output;
     break;
 
@@ -373,7 +371,7 @@ case 'none':
 }
 
 $display = \Shop\Menu::siteHeader();
-$display .= \Shop\Menu::pageTitle(isset($page_title) ? $page_title : '', true);
+$display .= \Shop\Menu::pageTitle($page_title);
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;

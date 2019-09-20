@@ -108,7 +108,7 @@ case 'checkout':
     // Final check that all items are valid. No return or error message
     // unless this is the only issue. This is the final step after viewing
     // the cart so there shouldn't be any changes.
-    $invalid = $Cart->updateItems();
+    //$invalid = $Cart->updateItems();
     if (empty($invalid)) {
         // Validate that all order fields are filled out. If not, then that is a
         // valid error and the error messages will be displayed upon return.
@@ -208,12 +208,7 @@ default:
 }
 
 $display = \Shop\Menu::siteHeader();
-$T = SHOP_getTemplate('shop_title', 'title');
-$T->set_var(array(
-    'title' => isset($page_title) ? $page_title : '',
-    'is_admin' => plugin_ismoderator_shop(),
-) );
-$display .= $T->parse('', 'title');
+$display .= \Shop\Menu::pageTitle('', 'cart');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;

@@ -138,7 +138,8 @@ class Menu
             'text' => $LANG_ADMIN['admin_home'],
         );
 
-        $T = SHOP_getTemplate('shop_title', 'title');
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
             'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
             'link_store' => true,
@@ -247,19 +248,21 @@ class Menu
      * Used for pages that do not feature a menu, such as the catalog.
      *
      * @param   string  $page_title     Page title text
-     * @param   boolean $link_acct      Add a link to the user's account
+     * @param   string  $page           Page name being displayed
      * @return  string      HTML for page title section
      */
-    public static function pageTitle($page_title = '', $link_acct=false)
+    public static function pageTitle($page_title = '', $page='')
     {
         global $_USER;
 
-        $T = SHOP_getTemplate('shop_title', 'title');
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
             'title' => $page_title,
             'is_admin' => plugin_ismoderator_shop(),
             'link_admin' => plugin_ismoderator_shop(),
-            'link_account' => $link_acct && $_USER['uid'] > 1,
+            'link_account' => ($page != 'account' && $_USER['uid'] > 1),
+            'link_cart' => ($page != 'cart' && Cart::getCart() && Cart::getInstance()->hasItems()),
         ) );
         return $T->parse('', 'title');
     }

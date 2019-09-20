@@ -200,10 +200,16 @@ class Attribute
         }
 
         // Get the option group in from the text field, or selection
-        if (isset($_POST['attr_name']) && !empty($_POST['attr_name'])) {
-            $this->attr_name = $_POST['attr_name'];
-        } else {
-            $this->attr_name = $_POST['attr_name_sel'];
+        if (isset($_POST['ag_name']) && !empty($_POST['ag_name'])) {
+            $AG = AttributeGroup::getByName($_POST['ag_name']);
+            if ($AG) {
+                $this->ag_id = $AG->ag_id;
+            } else {
+                $AG = new AttributeGroup;
+                $AG->ag_name = $_POST['ag_name'];
+                $AG->Save();
+                $this->ag_id = $AG->ag_id;
+            }
         }
 
         // Make sure the necessary fields are filled in

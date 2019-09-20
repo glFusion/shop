@@ -32,6 +32,7 @@
     <select name="ag_id" id="attr_name_sel" onchange="updateAG(this.value);">
       {option_group_select}
     </select>
+    &nbsp; ... or create new: <input type="text" name="ag_name" value="" />
 {!endif}
     </div>
   </div>

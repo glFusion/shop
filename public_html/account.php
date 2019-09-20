@@ -33,6 +33,7 @@ if (COM_isAnonUser()) {
     exit;
 }
 
+$page_title = '';
 $action = '';
 $actionval = '';
 $view = '';
@@ -121,12 +122,7 @@ default:
 }
 
 $display = \Shop\Menu::siteHeader();
-$T = SHOP_getTemplate('shop_title', 'title');
-$T->set_var(array(
-    'title' => isset($page_title) ? $page_title : '',
-    'is_admin' => plugin_ismoderator_shop(),
-) );
-$display .= $T->parse('', 'title');
+$display .= \Shop\Menu::pageTitle($page_title, 'account');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;

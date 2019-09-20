@@ -162,10 +162,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
     // Only show if no topic is requested
     if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
-        $T = new Template(__DIR__ . '/templates');
-        $T->set_file('title', 'shop_title.thtml');
-        $T->set_var('title', $LANG_SHOP['main_title']);
-        $display .= $T->parse('', 'title');
+        $display .= Shop\Menu::pageTitle();
         $display .= Shop\Catalog::Render();
         $display .= Shop\Menu::siteFooter();
     }
@@ -1389,7 +1386,7 @@ function SHOP_phpblock_product($sql)
                 }
             }
 
-            $T->set_var('img_url', $P->ImageUrl()['url']);
+            $T->set_var('img_url', $P->getImage()['url']);
             $retval .= $T->parse('output', 'blk_random');
         }
     }
