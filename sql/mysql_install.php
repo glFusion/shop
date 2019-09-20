@@ -503,8 +503,10 @@ $_SHOP_SAMPLEDATA = array(
 	('YER','YR','Yemeni Rial',886,'hidden',' ','after',0,0.00,',','.','Rial','Fils',1.00000,'2014-01-03 20:54:44'),
 	('ZAR','R','South African Rand',710,'before',' ','hidden',2,0.00,',','.','Rand','Cent',1.00000,'2014-01-03 20:49:55'),
 	('ZMK','ZK','Zambian Kwacha',894,'hidden',' ','after',0,0.00,',','.','Kwacha','Ngwee',1.00000,'2014-01-03 20:54:44');",
-    "INSERT INTO `{$_TABLES['shop.shipping']}` VALUES
-        (1,'USPS Priority Flat Rate',0.0001,50.0000,0,'[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
+        "INSERT INTO `{$_TABLES['shop.shipping']}`
+            (id, name, min_units, max_units, rates)
+        VALUES
+            (0, 'USPS Priority Flat Rate', 0.0001, 50.0000, '[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
