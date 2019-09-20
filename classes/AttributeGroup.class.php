@@ -59,8 +59,9 @@ class AttributeGroup
             if ($id < 1) {
                 // New entry, set defaults
                 $this->ag_id = 0;
-                $this->ag_ag_name = 0;
-                $this->ag_ag_orderby = '';
+                $this->ag_name = 0;
+                $this->ag_type = 'select';
+                $this->ag_orderby = 9999;
             } else {
                 $this->ag_id = $id;
                 if (!$this->Read()) {
@@ -210,6 +211,32 @@ class AttributeGroup
 
 
     /**
+     * Get an attribute group by its name.
+     * Used to allow an attribute group to be created by adding a new name in
+     * the attribute form.
+     *
+     * @param   string  $name   Attribute Group Name
+     * @return  object|null Attribute Group, or NULL if not found
+     */
+    public static function getByName($name)
+    {
+        global $_TABLES;
+
+        $retval = NULL;
+        $sql = "SELECT * FROM {$_TABLES['shop.attr_grp']}
+            WHERE ag_name = '" . DB_escapeString($name) . "'";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            if (!empty($A)) {
+                $retval = new self($A);
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Save the current values to the database.
      *
      * @param   array   $A      Array of values from $_POST
@@ -219,7 +246,7 @@ class AttributeGroup
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (is_array($A)) {
+        if (is_array($A) && !empty($A)) {
             // Put this field at the end of the line by default
             $this->setVars($A);
         }
@@ -276,7 +303,7 @@ class AttributeGroup
 
         DB_delete($_TABLES['shop.prod_attr'], 'ag_id', $ag_id);
         DB_delete($_TABLES['shop.attr_grp'], 'ag_id', $ag_id);
-        self::cleaCache();
+        self::clearCache();
         return true;
     }
 

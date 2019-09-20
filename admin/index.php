@@ -156,10 +156,14 @@ case 'saveopt':
     }
     break;
 
+case 'ag_del':
+    Shop\AttributeGroup::Delete($_REQUEST['ag_id']);
+    $view = 'attr_grp';
+    break;
+
 case 'deleteopt':
     // attr_id could be via $_GET or $_POST
-    $Attr = new \Shop\Attribute($_REQUEST['attr_id']);
-    $Attr->Delete();
+    Shop\Attribute::Delete($_REQUEST['attr_id']);
     $view = 'attributes';
     break;
 
