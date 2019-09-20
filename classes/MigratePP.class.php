@@ -42,7 +42,7 @@ class MigratePP
         // Perform the migration. Don't migrate the button cache.
         // Clear out the Shop tables and insert data from Paypal
         $tables = array(
-            'address', 'categories', 'coupon_log', 'coupons',
+            'address', 'coupon_log', 'coupons',
             'gateways', 'ipnlog', 'order_log', 'orderstatus',
             'userinfo',
             'workflows', 'currency',
@@ -52,6 +52,12 @@ class MigratePP
             if (!self::migrateTable($table)) {
                 return false;
             }
+        }
+        if (!self::migrateCategories()) {
+            return false;
+        }
+        if (!self::migrateProducts()) {
+            return false;
         }
         if (!self::migrateOrders()) {
             return false;
@@ -134,6 +140,24 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE $shop_tbl",
             "INSERT INTO $shop_tbl (SELECT * FROM $pp_tbl)",
+        ) );
+    }
+
+
+    /**
+     * Migrate catalog categories from Paypal to Shop.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function migrateCategories()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.categories']}",
+            "INSERT INTO {$_TABLES['shop.categories']}
+                SELECT *, '' as google_taxonomy
+                FROM {$_TABLES['paypal.categories']}",
         ) );
     }
 
@@ -343,7 +367,7 @@ class MigratePP
             "TRUNCATE {$_TABLES['shop.images']}",
             "INSERT INTO {$_TABLES['shop.images']}
                 SELECT *, NULL as nonce
-                FROM {$_TABLES['paypal.shipping']}",
+                FROM {$_TABLES['paypal.images']}",
         ) );
     }
 
