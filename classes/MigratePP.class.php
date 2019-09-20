@@ -192,19 +192,22 @@ class MigratePP
     {
         global $_TABLES, $_PP_CONF, $_SHOP_CONF;
 
-        $sql = array();
+        $add_flds = ',0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
         // If not at Paypal 0.6.1, add a dummy order sequence value
-        $add_flds = ',0 as shipper_id';
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
             $add_flds .= ",NULL as order_seq, '{$_SHOP_CONF['currency']}' as currency";
         }
-        return self::_dbExecute(array(
+        $sql = array(
             "TRUNCATE {$_TABLES['shop.orders']}",
             "INSERT INTO {$_TABLES['shop.orders']} SELECT * $add_flds FROM {$_TABLES['paypal.orders']}",
-            "SET @i:=0",
-            "UPDATE {$_TABLES['shop.orders']} SET order_seq = @i:=@i+1
-                WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC",
-        ) );
+        );
+        // If not at paypal 0.6.1, then create the order sequence values.
+        if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
+            $sql[] = "SET @i:=0";
+            $sql[] = "UPDATE {$_TABLES['shop.orders']} SET order_seq = @i:=@i+1
+                WHERE status NOT IN ('cart','pending') ORDER BY order_date ASC";
+        }
+        return self::_dbExecute($sql);
     }
 
 
