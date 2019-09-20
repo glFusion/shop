@@ -457,7 +457,7 @@ class Category
         ) );
 
         if ($this->image != '') {
-            $T->set_var('img_url', $this->ImageUrl());
+            $T->set_var('img_url', $this->getImage())['url'];
         }
 
         if (!self::isUsed($this->cat_id)) {
@@ -501,7 +501,7 @@ class Category
         // If there's an image for this category, display it and offer
         // a link to delete it
         if ($this->image != '') {
-            $T->set_var('img_url', $this->ImageUrl());
+            $T->set_var('img_url', $this->getImage()['url']);
         }
 
         $retval .= $T->parse('output', 'category');
@@ -650,13 +650,11 @@ class Category
      *
      * @return  string  URL of image, empty string if file not found
      */
-    public function ImageUrl()
+    public function getImage()
     {
         global $_SHOP_CONF;
 
-        return LGLIB_ImageUrl(
-            $_SHOP_CONF['catimgpath'] . DIRECTORY_SEPARATOR . $this->image
-        );
+        return Images\Category::getUrl($this->image);
     }
 
 

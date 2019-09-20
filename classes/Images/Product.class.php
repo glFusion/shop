@@ -13,8 +13,6 @@
  */
 namespace Shop\Images;
 
-// Import core glFusion upload functions
-//USES_class_upload();
 
 /**
  * Image-handling class.
@@ -22,6 +20,18 @@ namespace Shop\Images;
  */
 class Product extends \Shop\Image
 {
+    /** Key into $_SHOP_CONF where the image path can be found.
+     * @var string */
+    static $pathkey = 'image_dir';
+
+    /** Maximum width, in pixels. Used if no width is given in getImage functions.
+     * @var integer */
+    static $maxwidth = 800;
+
+    /** Maximum height, in pixels. Used if no width is given in getImage functions.
+     * @var integer */
+    static $maxheight = 600;
+
     /**
      * Constructor.
      *
@@ -32,7 +42,7 @@ class Product extends \Shop\Image
     {
         global $_SHOP_CONF;
 
-        $this->pathImage = $_SHOP_CONF['image_dir'];
+        $this->pathImage = $_SHOP_CONF[self::$pathkey];
         parent::__construct($record_id, $varname);
     }
 
@@ -57,7 +67,7 @@ class Product extends \Shop\Image
         foreach ($this->goodfiles as $filename) {
             $sql = "INSERT INTO {$_TABLES['shop.images']} SET
                 product_id = '{$this->record_id}',
-                nonce = '" . DB_escapeString($this->_nonce) . "',
+                nonce = '" . DB_escapeString($this->nonce) . "',
                 filename = '" . DB_escapeString($filename) . "'";
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $result = DB_query($sql);
@@ -99,7 +109,7 @@ class Product extends \Shop\Image
             @unlink($img_file);
         }
         DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
-        Cache::clear('products');
+        \Shop\Cache::clear('products');
         return true;
     }
 
@@ -125,6 +135,6 @@ class Product extends \Shop\Image
         DB_query($sql);
     }
 
-}   // class Shop\Images\Product 
+}
 
 ?>

@@ -51,7 +51,7 @@ case 'dropupload':
             // Only one filename here, this to get the image id also
             foreach ($filenames as $img_id=>$filename) {
                 $retval['filenames'][] = array(
-                    'img_url'   => Shop\Product::getImageUrl($filename)['url'],
+                    'img_url'   => Shop\Product::getImage($filename)['url'],
                     'thumb_url' => Shop\Product::getThumb($filename)['url'],
                     'img_id' => $img_id,
                 );

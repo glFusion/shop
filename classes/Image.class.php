@@ -13,8 +13,6 @@
  */
 namespace Shop;
 
-// Import core glFusion upload functions
-//USES_class_upload();
 
 /**
  * Image-handling class.
@@ -26,7 +24,7 @@ class Image extends \upload
      * @var string */
     protected $pathImage;
 
-    /** ID of the current product.
+    /** ID of the current Category or Product.
      * @var string */
     protected $record_id;
 
@@ -34,41 +32,22 @@ class Image extends \upload
      * @var array */
     protected $goodfiles = array();
 
-    protected $_nonce = '';
+    /** Random nonce value, used to identify images uploaded before the item is created.
+     * @var string */
+    protected $nonce = '';
 
 
     /**
      * Constructor.
+     * Sets various elements from the base `upload` class.
      *
      * @param   integer $record_id Product ID number
      * @param   string  $varname    Name of form field
      */
     public function __construct($record_id, $varname='photo')
     {
-        global $_SHOP_CONF, $_CONF;
-
-        $this->setContinueOnError(true);
-        $this->setLogFile('/tmp/warn.log');
-        $this->setDebug(true);
-        $this->_setAvailableMimeTypes();
-
-        // Before anything else, check the upload directory
-        if (!$this->setPath($this->pathImage)) {
-            return;
-        }
         $this->record_id = trim($record_id);
-        $this->setAllowedMimeTypes(array(
-            'image/pjpeg' => '.jpg,.jpeg',
-            'image/jpeg'  => '.jpg,.jpeg',
-        ));
-        $this->setMaxDimensions(0, 0);
         $this->setFieldName($varname);
-
-        $filenames = array();
-        for ($i = 0; $i < $this->numFiles(); $i++) {
-            $filenames[] =  uniqid($this->record_id . '_' . rand(100,999)) . '.jpg';
-        }
-        $this->setFileNames($filenames);
     }
 
 
@@ -81,6 +60,26 @@ class Image extends \upload
      */
     public function uploadFiles()
     {
+        // Before anything else, check the upload directory
+        if (!$this->setPath($this->pathImage)) {
+            return;
+        }
+        $this->setContinueOnError(true);
+        $this->setLogFile('/tmp/warn.log');
+        $this->setDebug(true);
+        $this->_setAvailableMimeTypes();
+        $this->setAllowedMimeTypes(array(
+            'image/pjpeg' => '.jpg,.jpeg',
+            'image/jpeg'  => '.jpg,.jpeg',
+        ));
+        $this->setMaxDimensions(0, 0);
+
+        $filenames = array();
+        for ($i = 0; $i < $this->numFiles(); $i++) {
+            $filenames[] =  uniqid($this->record_id . '_' . rand(100,999)) . '.jpg';
+        }
+        $this->setFileNames($filenames);
+
         // Perform the actual upload
         parent::uploadFiles();
     }
@@ -148,7 +147,7 @@ class Image extends \upload
      */
     public function setNonce($nonce)
     {
-        $this->_nonce = $nonce;
+        $this->nonce = $nonce;
     }
 
 
@@ -190,7 +189,7 @@ class Image extends \upload
     {
         global $_SHOP_CONF;
 
-        // If the filename is still empty, return nothing.
+        // If the filename is empty, return nothing.
         if ($filename == '') {
             return array(
                 'url'   => '',
@@ -198,17 +197,16 @@ class Image extends \upload
                 'height' => 0,
             );
         }
-
         if ($width == 0 && $height == 0) {
             // Default to a standard display size if no sizes given
-            $width = 800;
-            $height = 600;
+            $width = static::$maxwidth;
+            $height = static::$maxheight;
         } elseif ($width > 0 && $height == 0) {
             // default to square if one size given
             $height = $width;
         }
         $args = array(
-            'filepath'  => $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename,
+            'filepath'  => $_SHOP_CONF[static::$pathkey] . DIRECTORY_SEPARATOR . $filename,
             'width'     => $width,
             'height'    => $height,
         );
@@ -216,6 +214,6 @@ class Image extends \upload
         return $output;
     }
 
-}   // class ProductImage
+}
 
 ?>

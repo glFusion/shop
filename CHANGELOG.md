@@ -20,6 +20,7 @@ Release TBD
   * Paypal data is not automatically migrated during installation.
   * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
   * Enable Facebook catalog feeds.
+  * Separate ProductImage class into Images\Product.
 
 ## v0.7.1
 Release 2019-08-02
