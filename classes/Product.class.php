@@ -1773,22 +1773,19 @@ class Product
      */
     public function getSKU($item)
     {
-        $sku = array($this->name);
+        $sku = $this->name;
 
         // Get attributes selected from the available options
-        // Use item_options since the class var doesn't work with empty()
-        $item_options = $item->options;
-        if (!empty($item_options)) {
-            foreach ($item_options as $attr_id=>$OIO) {
-                if (
-                    isset($this->attribs[$OIO->attr_id]) &&
-                    $this->attribs[$OIO->attr_id]['sku'] != ''
-                ) {
-                    $sku[] = $this->attribs[$OIO->attr_id]['sku'];
-                }
+        // Skip any that don't have a sku value set
+        foreach ($item->options as $attr_id=>$OIO) {
+            if (
+                isset($this->attribs[$OIO->attr_id]) &&
+                $this->attribs[$OIO->attr_id]['sku'] != ''
+            ) {
+                $sku .= '-' . $this->attribs[$OIO->attr_id]['sku'];
             }
         }
-        return implode('-', $sku);
+        return $sku;
     }
 
 
