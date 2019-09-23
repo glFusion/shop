@@ -19,7 +19,7 @@ Release TBD
   * No buy-now buttons for physical items that may require shipping.
   * Paypal data is not automatically migrated during installation.
   * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
-  * Enable Facebook catalog feeds.
+  * Enable Facebook catalog feeds. See https://developers.facebook.com/docs/marketing-api/catalog-feed-setup.
   * Separate ProductImage class into Images\Product.
   * Pass query string to product detail view for highlighting.
   * Add `View Cart` button to shop header when cart has items.
