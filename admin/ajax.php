@@ -69,10 +69,10 @@ case 'dropupload':
 case 'attr_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
-    $ag_id = SHOP_getVar($_POST, 'ag_id', 'integer', 0);
+    $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\Attribute::getOrderbyOpts($item_id, $ag_id, $selected);
+    $retval = Shop\Attribute::getOrderbyOpts($item_id, $og_id, $selected);
     echo $retval;
     exit;
 
@@ -146,10 +146,10 @@ case 'toggle':
         }
         break;
 
-    case 'attribute':
+    case 'option':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Shop\Attribute::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\Option::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
 
          default:

@@ -54,7 +54,7 @@ class Order
      * @var array */
     protected $_addr_fields = array(
         'name', 'company', 'address1', 'address2',
-        'city', 'state', 'country', 'zip',
+        'city', 'state', 'zip', 'country', 
     );
 
     /** OrderItem objects.
@@ -1423,7 +1423,7 @@ class Order
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
             'product_id'    => $id_parts[0],
-            'attributes'    => $id_parts[1],
+            'options'       => $id_parts[1],
             'extras'        => $extras,
         );
         $Item2 = new OrderItem($args);
@@ -1448,7 +1448,8 @@ class Order
         if ($type != 'billto') $type = 'shipto';
         $fields = array();
         foreach ($this->_addr_fields as $name) {
-            $fields[$name] = $type . '_' . $name;
+            $var = $type . '_' . $name;
+            $fields[$name] = $this->$var;
         }
         return $fields;
     }

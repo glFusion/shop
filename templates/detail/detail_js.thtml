@@ -37,7 +37,7 @@ function ProcessForm()
     price = {price};
     price_was = {orig_price_val};
 
-    options = frm.elements['attributes[]'];
+    options = frm.elements['options[]'];
     if (typeof(options) == "undefined") {
         return;
     }
@@ -73,6 +73,7 @@ function ProcessForm()
             price_was += opt_price;
         }
     }
+console.log(price);
 
     // Update the dispayed price on the form
     price = price.toFixed({cur_decimals});

@@ -68,7 +68,10 @@ class OrderItem
             $this->base_price = $this->product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['attributes'])) {
+                if (isset($oi_id['options'])) {
+                    $this->options = $this->setOptions($oi_id['options']);
+                } elseif (isset($oi_id['attributes'])) {
+                    SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
                     $this->options = $this->setOptions($oi_id['attributes']);
                 }
             } else {
@@ -533,7 +536,7 @@ class OrderItem
     /**
      * Set the provided array of options into the private var.
      *
-     * @param   array   $opts   Array of option IDs
+     * @param   array   $opts   Array of ProductOptionValues
      * @return  array       Contents of $this->options
      */
     public function setOptions($opts)
@@ -543,18 +546,18 @@ class OrderItem
         }
         if (is_string($opts)) {
             // todo: deprecate
-            $attr_ids = explode(',', $opts);
+            $opt_ids = explode(',', $opts);
             $opts = array();
-            foreach($attr_ids as $attr_id) {
-                $opts[] = new Attribute($attr_id);
+            foreach($opt_ids as $opt_id) {
+                $opts[] = new ProductOptionValue($opt_id);
             }
         }
 
         if (is_array($opts)) {
-            foreach ($opts as $Attr) {
+            foreach ($opts as $POV) {
                 //if ($opt_id > 0) {      // Don't set non-standard options here
                 $OIO = new OrderItemOption;
-                    $OIO->setOpt($Attr->attr_id);
+                    $OIO->setOpt($POV->getID());
                     $OIO->oi_id = $this->id;
                     $this->options[] = $OIO;
                 //}

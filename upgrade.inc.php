@@ -66,15 +66,17 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.0.0')) {
         $current_ver = '1.0.0';
-        if (!DB_checkTableExists('shop.attr_grp')) {
+        if (!DB_checkTableExists('shop.prod_opt_grps')) {
             // Initial populate of the new attribute group table
             // The table won't exist yet, these statememts get appended
             // to the upgrade SQL.
-            $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_attr']})";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_attr']} AS pa INNER JOIN (SELECT ag_id,ag_name FROM {$_TABLES['shop.attr_grp']}) AS ag ON pa.attr_name=ag.ag_name SET pa.ag_id = ag.ag_id";
+            $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_opt_vals']})";
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.pov_name=pog.pog_name SET pov.pog_id = pog.pog_id";
         }
         // This has to be done after updating the attribute group above
-        $SHOP_UPGRADE[$current_ver][] = "ALTER {$_TABLES['shop.prod_attr']} DROP attr_name";
+        $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name";
+        // Now that the pog_id field has been populated we can add the unique index.
+        $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
 
         if (_SHOPcolumnType('shop.sales', 'start') != 'datetime') {
             $tz_offset = $_CONF['_now']->format('P', true);
@@ -263,6 +265,8 @@ function SHOP_remove_old_files()
             'shop_functions.inc.php',
             // 1.0.0
             'classes/ProductImage.class.php',
+            'classes/Attribute.class.php',
+            'templates/attribute_form.thtml',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(

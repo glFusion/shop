@@ -1093,7 +1093,7 @@ class Category
         case 'delete':
             if (!\Shop\Category::isUsed($A['cat_id'])) {
                 $retval .= COM_createLink(
-                    '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                    '<i class="uk-icon uk-icon-remove uk-text-danger"></i>',
                     SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
                     array(
                         'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",

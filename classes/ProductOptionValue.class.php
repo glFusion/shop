@@ -17,7 +17,7 @@ namespace Shop;
  * Class for product attributes - color, size, etc.
  * @package shop
  */
-class Attribute
+class ProductOptionValue
 {
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
@@ -48,22 +48,22 @@ class Attribute
         if (is_array($id)) {
             // Received a full Option record already read from the DB
             $this->setVars($id);
+            $this->isNew = false;
         } else {
             $id = (int)$id;
             if ($id < 1) {
                 // New entry, set defaults
-                $this->attr_id = 0;
-                $this->og_id = 0;
-                $this->attr_name = 0;
-                $this->attr_value = '';
-                $this->attr_price = 0;
+                $this->pov_id = 0;
+                $this->pog_id = 0;
+                $this->pov_value = '';
+                $this->pov_price = 0;
                 $this->item_id = 0;
                 $this->enabled = 1;
                 $this->orderby = 9999;
             } else {
-                $this->attr_id =  $id;
+                $this->pov_id =  $id;
                 if (!$this->Read()) {
-                    $this->attr_id = 0;
+                    $this->pov_id = 0;
                 }
             }
         }
@@ -79,16 +79,15 @@ class Attribute
     public function __set($var, $value='')
     {
         switch ($var) {
-        case 'attr_id':
+        case 'pov_id':
         case 'item_id':
         case 'orderby':
-        case 'og_id':
+        case 'pog_id':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
 
-        case 'attr_value':
-        case 'attr_name':
+        case 'pov_value':
         case 'sku':
             // String values
             $this->properties[$var] = trim($value);
@@ -99,7 +98,7 @@ class Attribute
             $this->properties[$var] = $value == 1 ? 1 : 0;
             break;
 
-        case 'attr_price':
+        case 'pov_price':
             // Floating-point values
             $this->properties[$var] = (float)$value;
             break;
@@ -135,12 +134,11 @@ class Attribute
     public function setVars($row)
     {
         if (!is_array($row)) return;
-        $this->attr_id = $row['attr_id'];
+        $this->pov_id = $row['pov_id'];
         $this->item_id = $row['item_id'];
-        $this->og_id = $row['og_id'];
-        $this->attr_name = $row['attr_name'];
-        $this->attr_value = $row['attr_value'];
-        $this->attr_price = $row['attr_price'];
+        $this->pog_id = $row['pog_id'];
+        $this->pov_value = $row['pov_value'];
+        $this->pov_price = $row['pov_price'];
         $this->enabled = $row['enabled'];
         $this->orderby = $row['orderby'];
         $this->sku = $row['sku'];
@@ -150,7 +148,7 @@ class Attribute
     /**
      * Read a specific record and populate the local values.
      *
-     * @param   integer $id Attributeal ID.  Current ID is used if zero.
+     * @param   integer $id Option ID.  Current ID is used if zero.
      * @return  boolean     True if a record was read, False on failure
      */
     public function Read($id = 0)
@@ -158,15 +156,15 @@ class Attribute
         global $_TABLES;
 
         $id = (int)$id;
-        if ($id == 0) $id = $this->attr_id;
+        if ($id == 0) $id = $this->pov_id;
         if ($id == 0) {
             $this->error = 'Invalid ID in Read()';
             return;
         }
 
         $result = DB_query("SELECT *
-                    FROM {$_TABLES['shop.prod_attr']}
-                    WHERE attr_id='$id'");
+                    FROM {$_TABLES['shop.prod_opt_vals']}
+                    WHERE pov_id='$id'");
         if (!$result || DB_numRows($result) != 1) {
             return false;
         } else {
@@ -200,16 +198,14 @@ class Attribute
         }
 
         // Get the option group in from the text field, or selection
-        if (isset($_POST['og_name']) && !empty($_POST['og_name'])) {
-            $OG = OptionGroup::getByName($_POST['og_name']);
-            if ($OG) {
-                $this->og_id = $OG->og_id;
-            } else {
-                $OG = new OptionGroup;
-                $OG->og_name = $_POST['og_name'];
-                $OG->Save();
-                $this->og_id = $OG->og_id;
+        if (isset($A['pog_name']) && !empty($A['pog_name'])) {
+            $POG = ProductOptionGroup::getByName($A['pog_name']);
+            if (!$POG) {
+                $POG = new ProductOptionGroup;
+                $POG->setName($_POST['pog_name']);
+                $POG->Save();
             }
+            $this->pog_id = $POG->pog_id;
         }
 
         // Make sure the necessary fields are filled in
@@ -219,20 +215,19 @@ class Attribute
 
         // Insert or update the record, as appropriate.
         if ($this->isNew) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.prod_attr']}";
+            $sql1 = "INSERT INTO {$_TABLES['shop.prod_opt_vals']}";
             $sql3 = '';
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.prod_attr']}";
-            $sql3 = " WHERE attr_id={$this->attr_id}";
+            $sql1 = "UPDATE {$_TABLES['shop.prod_opt_vals']}";
+            $sql3 = " WHERE pov_id={$this->pov_id}";
         }
 
         $sql2 = " SET item_id='{$this->item_id}',
-                attr_name='" . DB_escapeString($this->attr_name) . "',
-                og_id = {$this->og_id},
-                attr_value='" . DB_escapeString($this->attr_value) . "',
+                pog_id = {$this->pog_id},
+                pov_value='" . DB_escapeString($this->pov_value) . "',
                 sku = '" . DB_escapeString($this->sku) . "',
                 orderby='{$this->orderby}',
-                attr_price='" . number_format($this->attr_price, 2, '.', '') . "',
+                pov_price='" . number_format($this->pov_price, 2, '.', '') . "',
                 enabled='{$this->enabled}'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -240,12 +235,12 @@ class Attribute
         $err = DB_error();
         if ($err == '') {
             if ($this->isNew) {
-                $this->attr_id = DB_insertID();
+                $this->pov_id = DB_insertID();
             }
             self::reOrder($this->item_id);
-            //Cache::delete('prod_attr_' . $this->item_id);
+            //Cache::delete('options_' . $this->item_id);
             Cache::clear('products');
-            Cache::clear('attributes');
+            Cache::clear('options');
             return true;
         } else {
             $this->AddError($err);
@@ -257,17 +252,17 @@ class Attribute
     /**
      * Delete the current category record from the database.
      *
-     * @param   integer $attr_id    Attribute ID, empty for current object
+     * @param   integer $opt_id    Option ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
      */
-    public static function Delete($attr_id)
+    public static function Delete($opt_id)
     {
         global $_TABLES;
 
-        if ($attr_id <= 0)
+        if ($opt_id <= 0)
             return false;
 
-        DB_delete($_TABLES['shop.prod_attr'], 'attr_id', $attr_id);
+        DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
         Cache::clear('products');
         return true;
     }
@@ -283,8 +278,8 @@ class Attribute
         // Check that basic required fields are filled in
         if (
             $this->item_id == 0 ||
-            $this->og_id == 0 ||
-            $this->attr_value == ''
+            $this->pog_id == 0 ||
+            $this->pov_value == ''
         ) {
             return false;
         }
@@ -295,7 +290,7 @@ class Attribute
     /**
      * Creates the edit form.
      *
-     * @param   integer $id Attributeal ID, current record used if zero
+     * @param   integer $id Optional ID, current record used if zero
      * @return  string      HTML for edit form
      */
     public function Edit()
@@ -308,20 +303,21 @@ class Attribute
             return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
         }
 
-        $T = SHOP_getTemplate('attribute_form', 'attrform');
-        $id = $this->attr_id;
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('optform', 'option_val_form.thtml');
+        $id = $this->pov_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_attr'] . ': ' . $this->attr_value);
-            $T->set_var('attr_id', $id);
+            $retval = COM_startBlock($LANG_SHOP['edit_opt'] . ': ' . $this->pov_value);
+            $T->set_var('pov_id', $id);
             $init_item_id = $this->item_id;
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->og_id = OptionGroup::getFirst()->og_id;
-            $T->set_var('attr_id', '');
+            $this->og_id = ProductOptionGroup::getFirst()->getID();
+            $T->set_var('pov_id', '');
             $init_item_id = Product::getFirst();
         }
         $T->set_var(array(
@@ -334,24 +330,24 @@ class Attribute
             'item_id'       => $this->item_id,
             'init_item_id'  => $init_item_id,
             'item_name'     => Product::getByID($this->item_id)->name,
-            'og_id'         => $this->og_id,
-            'og_name'       => OptionGroup::getInstance($this->og_id)->og_name,
-            'attr_value'    => $this->attr_value,
-            'attr_price'    => $this->attr_price,
+            'pog_id'        => $this->pog_id,
+            'pog_name'      => ProductOptionGroup::getInstance($this->pog_id)->getName(),
+            'pov_value'     => $this->pov_value,
+            'pov_price'     => $this->pov_price,
             'product_select' => COM_optionList($_TABLES['shop.products'],
                     'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
-                        $_TABLES['shop.opt_grp'],
-                        'og_id,og_name',
-                        $this->og_id,
+                        $_TABLES['shop.prod_opt_grps'],
+                        'pog_id,pog_name',
+                        $this->pog_id,
                         0
                     ),
-            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->og_id, $this->orderby),
+            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->pog_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
             'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
-        $retval .= $T->parse('output', 'attrform');
+        $retval .= $T->parse('output', 'optform');
         $retval .= COM_endBlock();
         return $retval;
     }   // function Edit()
@@ -373,9 +369,9 @@ class Attribute
         $oldvalue = $oldvalue == 0 ? 0 : 1;
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES['shop.prod_attr']}
+        $sql = "UPDATE {$_TABLES['shop.prod_opt_vals']}
                 SET $varname=$newvalue
-                WHERE attr_id=$id";
+                WHERE pov_id=$id";
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
@@ -383,7 +379,7 @@ class Attribute
             return $oldvalue;
         } else {
             Cache::clear('products');
-            Cache::clear('attributes');
+            Cache::clear('options');
             return $newvalue;
         }
     }
@@ -392,7 +388,7 @@ class Attribute
     /**
      * Toggles the "enabled" field value.
      *
-     * @uses    Attribute::_toggle()
+     * @uses    self::_toggle()
      * @param   integer $oldvalue   Original field value
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
@@ -422,10 +418,10 @@ class Attribute
     {
         global $_TABLES;
 
-        $sql = "SELECT attr_id, orderby
-                FROM {$_TABLES['shop.prod_attr']}
+        $sql = "SELECT pov_id, orderby
+                FROM {$_TABLES['shop.prod_opt_vals']}
                 WHERE item_id = '{$this->item_id}'
-                AND og_id= '{$this->og_id}'
+                AND pog_id= '{$this->pog_id}'
                 ORDER BY orderby ASC;";
         //echo $sql;die;
         $result = DB_query($sql);
@@ -434,13 +430,13 @@ class Attribute
         $stepNumber = 10;   // Increment amount
         $changed = false;   // Assume no changes
         while ($A = DB_fetchArray($result, false)) {
-            SHOP_log("checking item {$A['attr_id']}", SHOP_LOG_DEBUG);
+            SHOP_log("checking item {$A['pov_id']}", SHOP_LOG_DEBUG);
             SHOP_log("Order by is {$A['orderby']}, should be $order", SHOP_LOG_DEBUG);
             if ($A['orderby'] != $order) {  // only update incorrect ones
                 $changed = true;
-                $sql = "UPDATE {$_TABLES['shop.prod_attr']}
+                $sql = "UPDATE {$_TABLES['shop.prod_opt_vals']}
                     SET orderby = '$order'
-                    WHERE attr_id = '{$A['attr_id']}'";
+                    WHERE pov_id = '{$A['pov_id']}'";
                 DB_query($sql);
             }
             $order += $stepNumber;
@@ -474,9 +470,9 @@ class Attribute
         }
 
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.prod_attr']}
+            $sql = "UPDATE {$_TABLES['shop.prod_opt_vals']}
                     SET orderby = orderby $oper 11
-                    WHERE attr_id = '{$this->attr_id}'";
+                    WHERE pov_id = '{$this->pov_id}'";
             //echo $sql;die;
             DB_query($sql);
             $this->reOrder();
@@ -498,12 +494,12 @@ class Attribute
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT og.og_name, at.*, p.name AS prod_name
-            FROM {$_TABLES['shop.prod_attr']} at
-            LEFT JOIN {$_TABLES['shop.opt_grp']} og
-            ON at.og_id = og.og_id
+        $sql = "SELECT pog.pog_name, pov.*, p.name AS prod_name
+            FROM {$_TABLES['shop.prod_opt_vals']} pov
+            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
+            ON pov.pog_id = pog.pog_id
             LEFT JOIN {$_TABLES['shop.products']} p
-            ON at.item_id = p.id";
+            ON pov.item_id = p.id";
 
         if ($prod_id == 0) {
             return '';
@@ -511,9 +507,9 @@ class Attribute
             $sel_prod_id = (int)$prod_id;
         } elseif (isset($_POST['product_id'])) {
             $sel_prod_id = (int)$_POST['product_id'];
-            SESS_setVar('shop.attr_prod_id', $sel_prod_id);
-        } elseif (SESS_isSet('shop.attr_prod_id')) {
-            $sel_prod_id = (int)SESS_getVar('shop.attr_prod_id');
+            SESS_setVar('shop.opt_prod_id', $sel_prod_id);
+        } elseif (SESS_isSet('shop.opt_prod_id')) {
+            $sel_prod_id = (int)SESS_getVar('shop.opt_prod_id');
         } else {
             $sel_prod_id = 0;
         }
@@ -521,7 +517,7 @@ class Attribute
         $header_arr = array(
             array(
                 'text' => 'ID',
-                'field' => 'attr_id',
+                'field' => 'pov_id',
                 'sort' => true,
             ),
             array(
@@ -542,13 +538,13 @@ class Attribute
                 'sort' => true,
             ),
             array(
-                'text' => $LANG_SHOP['attr_name'],
-                'field' => 'og_name',
+                'text' => $LANG_SHOP['opt_name'],
+                'field' => 'pog_name',
                 'sort' => true,
             ),
             array(
-                'text' => $LANG_SHOP['attr_value'],
-                'field' => 'attr_value',
+                'text' => $LANG_SHOP['opt_value'],
+                'field' => 'pov_value',
                 'sort' => true,
             ),
             array(
@@ -559,6 +555,7 @@ class Attribute
             ),
         );
         if ($prod_id == -1) {
+            // No changing the order when shown as part of the product edit form
             $header_arr[] = array(
                 'text'  => $LANG_SHOP['orderby'],
                 'field' => 'orderby',
@@ -567,27 +564,26 @@ class Attribute
             );
         }
         $header_arr[] = array(
-                'text' => $LANG_SHOP['attr_price'],
-                'field' => 'attr_price',
+                'text' => $LANG_SHOP['opt_price'],
+                'field' => 'pov_price',
                 'align' => 'right',
                 'sort' => true,
-            );
-            /*array(
+        );
+        $header_arr[] = array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
-            ),*/
-        //);
+        );
 
         $defsort_arr = array(
-            'field' => 'prod_name,og_orderby,orderby',
+            'field' => 'prod_name,pog_orderby,orderby',
             'direction' => 'ASC',
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink($LANG_SHOP['new_attr'],
-            SHOP_ADMIN_URL . '/index.php?editattr=0&item_id=' . $sel_prod_id,
+        $display .= COM_createLink($LANG_SHOP['new_opt'],
+            SHOP_ADMIN_URL . '/index.php?pov_edit=0&item_id=' . $sel_prod_id,
             array(
                 'style' => 'float:left;',
                 'class' => 'uk-button uk-button-success',
@@ -599,9 +595,9 @@ class Attribute
             $def_filter = '';
         }
         $query_arr = array(
-            'table' => 'shop.prod_attr',
+            'table' => 'shop.prod_opt_values',
             'sql' => $sql,
-            'query_fields' => array('p.name', 'attr_name', 'attr_value'),
+            'query_fields' => array('p.name', 'pog_name', 'pov_value'),
             'default_filter' => $def_filter,
         );
 
@@ -615,7 +611,7 @@ class Attribute
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/index.php?attributes=x',
         );
-        $options = array('chkdelete' => true, 'chkfield' => 'attr_id');
+        $options = array('chkdelete' => true, 'chkfield' => 'pov_id');
         } else {
             $text_arr = array();
             $filter = '';
@@ -632,13 +628,13 @@ class Attribute
         // Create the "copy attributes" form at the bottom
         if ($prod_id == 0) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
-            $T->set_file('copy_attr_form', 'copy_attributes_form.thtml');
+            $T->set_file('copy_opt_form', 'copy_attributes_form.thtml');
             $T->set_var(array(
                 'src_product'       => $product_selection,
                 'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
                 'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
             ) );
-            $display .= $T->parse('output', 'copy_attr_form');
+            $display .= $T->parse('output', 'copy_opt_form');
         }
 
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
@@ -664,18 +660,21 @@ class Attribute
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?editattr=x&amp;attr_id={$A['attr_id']}"
+                Icon::getHTML('edit', 'tooltip', array(
+                    'title' => $LANG_ADMIN['edit'],
+                ) ),
+                SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;opt_id={$A['pov_id']}"
             );
             break;
 
         case 'orderby':
             $retval = COM_createLink(
-                '<i class="uk-icon uk-icon-arrow-up"></i>',
-                SHOP_ADMIN_URL . '/index.php?attrmove=up&id=' . $A['attr_id']
+                Icon::getHTML('arrow-up'),
+                SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['pov_id']
             ) .
-            COM_createLink('<i class="uk-icon uk-icon-arrow-down"></i>',
-                SHOP_ADMIN_URL . '/index.php?attrmove=down&id=' . $A['attr_id']
+            COM_createLink(
+                Icon::getHTML('arrow-down'),
+                SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['pov_id']
             );
             break;
 
@@ -688,15 +687,15 @@ class Attribute
                 $enabled = 0;
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['attr_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['attr_id']}\",\"enabled\",".
-                "\"attribute\");' />" . LB;
+                id=\"togenabled{$A['pov_id']}\"
+                onclick='SHOP_toggle(this,\"{$A['pov_id']}\",\"enabled\",".
+                "\"option\");' />" . LB;
             break;
 
         case 'delete':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
-                SHOP_ADMIN_URL. '/index.php?deleteopt=x&amp;attr_id=' . $A['attr_id'],
+                Icon::getHTML('delete'),
+                SHOP_ADMIN_URL. '/index.php?deleteopt=x&amp;opt_id=' . $A['pov_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
@@ -705,7 +704,7 @@ class Attribute
             );
             break;
 
-        case 'attr_price':
+        case 'opt_price':
             $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
             break;
 
@@ -723,7 +722,7 @@ class Attribute
      * Used here and from admin/ajax.php.
      *
      * @param   integer $item_id    Current product ID
-     * @param   integer $og_id      Current Attribute Group ID
+     * @param   integer $og_id      Current Option Group ID
      * @param   integer $sel        Currently-selection option
      * @return  string      Option elements for a selection list
      */
@@ -736,11 +735,11 @@ class Attribute
         $sel = (int)$sel;
         $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
         $retval .= COM_optionList(
-            $_TABLES['shop.prod_attr'],
-            'orderby,attr_value',
+            $_TABLES['shop.prod_opt_vals'],
+            'orderby,pov_value',
             $sel - 10,
             0,
-            "og_id = '$og_id' AND item_id = '$item_id' AND orderby <> '$sel'"
+            "pog_id = '$og_id' AND item_id = '$item_id' AND orderby <> '$sel'"
         );
         return $retval;
     }
@@ -751,7 +750,7 @@ class Attribute
      * Attempts to retrieve first from cache, then reads from the DB.
      *
      * @param   integer $prod_id    Product ID
-     * @param   integer $og_id      Optional OptionGroup ID
+     * @param   integer $og_id      Optional ProductOptionGroup ID
      * @return  array       Array of Option objects
      */
     public static function getByProduct($prod_id, $og_id=0)
@@ -764,23 +763,132 @@ class Attribute
         $opts = Cache::get($cache_key);
         if ($opts === NULL) {
             $opts = array();
-            $sql = "SELECT og.og_name, at.*
-                FROM {$_TABLES['shop.prod_attr']} at
-                LEFT JOIN {$_TABLES['shop.opt_grp']} og
-                    ON og.og_id = at.og_id
-                WHERE at.item_id = '{$prod_id}' AND at.enabled = 1";
+            $sql = "SELECT pog.pog_name, pov.*
+                FROM {$_TABLES['shop.prod_opt_vals']} pov
+                LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
+                    ON pov.pog_id = pog.pog_id
+                WHERE pov.item_id = '{$prod_id}' AND pov.enabled = 1";
             if ($og_id > 0) {
-                $sql .= " AND at.og_id = '$og_id'";
+                $sql .= " AND pov.pog_id = '$og_id'";
             }
-            $sql .= " ORDER BY og.og_orderby, at.orderby ASC";
+            $sql .= " ORDER BY pog.pog_orderby, pov.orderby ASC";
             $result = DB_query($sql);
             while ($A = DB_fetchArray($result, false)) {
-                $opts[$A['attr_id']] = new self($A);
+                $opts[$A['pov_id']] = new self($A);
             }
-            Cache::set($cache_key, $opts, array('products', 'attributes', $prod_id));
+            Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
         }
         return $opts;
-     }
+    }
+
+
+    /**
+     * Get the incremental price for this optionvalue.
+     *
+     * @return  float   Option price
+     */
+    public function getPrice()
+    {
+        return $this->pov_price;
+    }
+
+
+    /**
+     * Get the SKU for this opion.
+     *
+     * @return  string  SKU string
+     */
+    public function getSKU()
+    {
+        return $this->sku;
+    }
+
+
+    /**
+     * Get the text value for this option.
+     *
+     * @return  string  OptionValue value string
+     */
+    public function getValue()
+    {
+        return $this->pov_value;
+    }
+
+
+    /**
+     * Get the record ID for this item.
+     *
+     * @return  integer     Record ID
+     */
+    public function getID()
+    {
+        return $this->pov_id;
+    }
+
+
+    /**
+     * Get the OptionGroup ID for this value.
+     *
+     * @return  integer ProductOptionGroup ID
+     */
+    public function getGroupID()
+    {
+        return $this->pog_id;
+    }
+
+
+    /**
+     * Set the OptionGroup ID for this value.
+     *
+     * @param   integer $grp_id     ProductOptionGroup ID
+     */
+    public function setGroupID($grp_id)
+    {
+        $this->pog_id = $grp_id;
+    }
+
+
+    /**
+     * Set the product ID for this value.
+     *
+     * @param   integer $item_id    Product ID
+     */
+    public function setItemID($item_id)
+    {
+        $this->item_id = $item_id;
+    }
+
+
+    /**
+     * Delete the option values related to a specific product.
+     * Called when deleting the product.
+     *
+     * @param   integer $item_id    Product ID
+     */
+    public static function deleteProduct($item_id)
+    {
+        global $_TABLES;
+
+        $item_id = (int)$item_id;
+        DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $item_id);
+    }
+
+
+    public static function cloneProduct($src, $dst, $del_existing=true)
+    {
+        global $_TABLES;
+
+        $src = (int)$src;
+        $dst = (int)$dst;
+        if ($del_existing) {
+            self::deleteProduct($dst);
+        }
+        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
+            SELECT NULL, $dst, pog_id, pov_name, pov_value, orderby, pov_price, enabled
+            FROM {$_TABLES['shop.prod_opt_vals']}
+            WHERE item_id = $src";
+        DB_query($sql);
+    }
 
 }
 

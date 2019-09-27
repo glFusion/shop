@@ -632,14 +632,15 @@ class Sales
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink('<i class="uk-icon uk-icon-edit"></i>',
+            $retval = COM_createLink(
+                Icon::getHTML('edit'),
                 SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
             );
             break;
 
         case 'delete':
             $retval = COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                Icon::getHTML('delete'),
                 SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
@@ -731,7 +732,7 @@ class Sales
      * @param   float   $price  Original price
      * @return  float       Sale price.
      */
-    public function getAttributePrice($price)
+    public function getOptionPrice($price)
     {
         if ($this->discount_type == 'percent') {
             $price = $price * (100 - $this->amount) / 100;

@@ -128,17 +128,18 @@ $_SQL = array(
   KEY `cat_rgt` (`rgt`)
 ) ENGINE=MyISAM",
 
-'shop.prod_attr' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_attr']}` (
-  `attr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `ag_id` int(11) unsigned NOT NULL DEFAULT '0',
+'shop.prod_opt_vals' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prod_opt_vals']}` (
+  `pov_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `pog_id` int(11) unsigned NOT NULL DEFAULT '0',
   `item_id` int(11) unsigned DEFAULT NULL,
-  `attr_value` varchar(64) DEFAULT NULL,
+  `pov_value` varchar(64) DEFAULT NULL,
   `orderby` int(3) NOT NULL DEFAULT '0',
-  `attr_price` decimal(9,4) DEFAULT NULL,
+  `pov_price` decimal(9,4) DEFAULT NULL,
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
-  PRIMARY KEY (`attr_id`),
-  UNIQUE KEY `item_id` (`item_id`,`attr_name`,`attr_value`)
+  `attr_name` varchar(40) DEFAULT NULL,
+  PRIMARY KEY (`pov_id`),
+  UNIQUE KEY `item_id` (`item_id`,`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -509,46 +510,53 @@ $_SHOP_SAMPLEDATA = array(
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
 );
 $SHOP_UPGRADE['1.0.0'] = array(
-    "CREATE TABLE `{$_TABLES['shop.attr_grp']}` (
-      `ag_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `ag_type` varchar(11) NOT NULL DEFAULT 'select',
-      `ag_name` varchar(40) NOT NULL DEFAULT '',
-      `ag_orderby` tinyint(2) DEFAULT '0',
-      PRIMARY KEY (`ag_id`),
-      KEY `orderby` (`ag_orderby`,`ag_name`)
+    "CREATE TABLE `{$_TABLES['shop.prod_opt_grps']}` (
+      `pog_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `pog_type` varchar(11) NOT NULL DEFAULT 'select',
+      `pog_name` varchar(40) NOT NULL DEFAULT '',
+      `pog_orderby` tinyint(2) DEFAULT '0',
+      PRIMARY KEY (`pog_id`),
+      KEY `orderby` (`pog_orderby`,`pog_name`),
+      UNIQUE `pog_name` (`pog_name`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `oi_id` int(11) unsigned NOT NULL,
-      `ag_id` int(11) unsigned NOT NULL DEFAULT '0',
-      `attr_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pog_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
       `oio_name` varchar(40) DEFAULT NULL,
       `oio_value` varchar(40) DEFAULT NULL,
       `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`oio_id`),
-      UNIQUE KEY `key1` (`oi_id`,`ag_id`,`attr_id`,`oio_name`)
+      UNIQUE KEY `key1` (`oi_id`,`pog_id`,`pov_id`,`oio_name`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
-    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `ag_id` int(11) UNSIGNED NOT NULL AFTER `attr_id`",
-    "ALTER TABLE {$_TABLES['shop.prod_attr']} ADD `sku` varchar(8) DEFAUlt NULL",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD google_taxonomy text AFTER `image`",
     "ALTER TABLE {$_TABLES['shop.images']} ADD `nonce` varchar(20) DEFAULT NULL",
+    "RENAME TABLE {$_TABLES['shop.prod_attr']} TO {$_TABLES['shop.prod_opt_vals']}",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `opt_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_id pov_id int(11) unsigned NOT NULL AUTO_INCREMENT",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_value pov_value varchar(64) DEFAULT NULL",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
 );
 
-$_SQL['shop.attr_grp'] = $SHOP_UPGRADE['1.0.0'][0];
+$_SQL['shop.opt_grp'] = $SHOP_UPGRADE['1.0.0'][0];
 $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
+$_SQL['shop.prod_opt_vals'] = $SHOP_UPGRADE['1.0.0'][2];
 
 ?>

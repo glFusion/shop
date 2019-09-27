@@ -36,7 +36,7 @@ class OrderItemOption
      * @var array */
     private static $fields = array(
         'oio_id', 'oi_id',
-        'ag_id', 'attr_id',
+        'pog_id', 'pov_id',
         'oio_name', 'oio_value',
         'oio_price',
     );
@@ -124,8 +124,8 @@ class OrderItemOption
         switch ($key) {
         case 'oio_id':
         case 'oi_id':
-        case 'ag_id':
-        case 'attr_id':
+        case 'pog_id':
+        case 'pov_id':
             $this->properties[$key] = (int)$value;
             break;
         case 'oio_price':
@@ -195,8 +195,8 @@ class OrderItemOption
 
         $sql = "INSERT INTO {$_TABLES['shop.oi_opts']} SET
             oi_id = '{$this->oi_id}',
-            ag_id = '{$this->ag_id}',
-            attr_id = '{$this->attr_id}',
+            pog_id = '{$this->pog_id}',
+            pov_id = '{$this->pov_id}',
             oio_name = '" . DB_escapeString($this->oio_name) . "',
             oio_value = '" . DB_escapeString($this->oio_value) . "',
             oio_price = '{$this->oio_price}'";
@@ -219,25 +219,26 @@ class OrderItemOption
      * Set the Option attributes from the attibute table.
      * Allows for a standad option, or for a custom name/value pair.
      *
-     * @param   integer $attr_id    Option ID, zero to user name/value
+     * @param   integer $pov_id     Product Option Value ID, zero to use name/value
      * @param   string  $name       Name of custom field
      * @param   string  $value      Value of custom field
      */
-    public function setOpt($attr_id, $name='', $value='')
+    public function setOpt($pov_id, $name='', $value='')
     {
-        if ($attr_id > 0) {
-            $Attr = new Attribute($attr_id);
-            if ($Attr->attr_id > 0) {
-                $AG = new AttributeGroup($Attr->ag_id);
-                $this->attr_id = $Attr->attr_id;
-                $this->ag_id = $Attr->ag_id;
-                $this->oio_name = $AG->ag_name;
-                $this->oio_value = $Attr->attr_value;
-                $this->oio_price = $Attr->attr_price;
+        if ($pov_id > 0) {
+            $POV = new ProductOptionValue($pov_id);
+            if ($POV->getID() > 0) {
+                // Have a valid object
+                $POG = new ProductOptionGroup($POV->getGroupID());
+                $this->pov_id = $POV->getID();
+                $this->pog_id = $POG->getID();;
+                $this->oio_name = $POG->getName();
+                $this->oio_value = $POV->getValue();
+                $this->oio_price = $POV->getPrice();
             }
         } elseif ($name != '' && $value != '') {
-            $this->attr_id = 0;
-            $this->ag_id = 0;
+            $this->pov_id = 0;
+            $this->pog_id = 0;
             $this->oio_name = $name;
             $this->oio_value = $value;
             $this->oio_price = 0;
@@ -267,7 +268,7 @@ class OrderItemOption
     public function Matches($Attr2)
     {
         $flds_to_check = array(
-            'ag_id', 'attr_id',
+            'pog_id', 'pov_id',
             'oio_name', 'oio_value',
             'oio_price',
         );
@@ -303,6 +304,11 @@ class OrderItemOption
         return true;
     }
 
+
+    public function getID()
+    {
+        return $this->oio_id;
+    }
 }
 
 ?>

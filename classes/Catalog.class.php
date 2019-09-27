@@ -1,11 +1,12 @@
 <?php
 /**
- * Plugin-specific functions for the Shop plugin for glFusion.
+ * Class to render the catalog view.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
  * @version     v0.7.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -314,7 +315,7 @@ class Catalog
 
             // Get the product buttons for the list
             $T->set_block('product', 'BtnBlock', 'Btn');
-            if (!$P->hasAttributes() && !$P->hasCustomFields() && !$P->hasSpecialFields()) {
+            if (!$P->hasOptions() && !$P->hasCustomFields() && !$P->hasSpecialFields()) {
                 // Buttons only show in the list if there are no options to select
                 $buttons = $P->PurchaseLinks('list');
                 foreach ($buttons as $name=>$html) {

@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <form class="uk-form uk-form-horizontal" action="{action_url}/index.php" method="post">
-  <input type="hidden" name="attr_id" value="{attr_id}" />
+  <input type="hidden" name="pov_id" value="{pov_id}" />
   <fieldset>
 
   <div class="uk-form-row">
@@ -20,37 +20,37 @@
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_SHOP['attr_name']}:
-      <span id="attr_name" class="tooltip_cfg tooltipstered"></span>
+    <label class="uk-form-label">{$LANG_SHOP['opt_name']}:
+      <span id="opt_name" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-{!if attr_id}
-      <input type="hidden" name="og_id" value="{og_id}" />
-      {og_name}
+{!if opt_id}
+      <input type="hidden" name="pog_id" value="{pog_id}" />
+      {pog_name}
 {!else}
-    <select name="og_id" id="attr_name_sel" onchange="updateAG(this.value);">
+    <select name="pog_id" id="opt_name_sel" onchange="updatePOG(this.value);">
       {option_group_select}
     </select>
-    &nbsp; ... or create new: <input type="text" name="og_name" value="" />
+    &nbsp; ... or create new: <input type="text" name="pog_name" value="" />
 {!endif}
     </div>
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_SHOP['attr_value']}:
-      <span id="attr_value" class="tooltip_cfg tooltipstered"></span>
+    <label class="uk-form-label">{$LANG_SHOP['opt_value']}:
+      <span id="opt_value" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <input type="text" name="attr_value" value="{attr_value}" size="32" maxlength="32" />
+    <input type="text" name="pov_value" value="{pov_value}" size="32" maxlength="32" />
     </div>
   </div>
 
   <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_SHOP['attr_price']}:
-      <span id="attr_price" class="tooltip_cfg tooltipstered"></span>
+    <label class="uk-form-label">{$LANG_SHOP['opt_price']}:
+      <span id="pov_price" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-    <input type="text" id="attr_price" name="attr_price" value="{attr_price}" size="32" maxlength="32" />
+    <input type="text" id="pov_price" name="pov_price" value="{pov_price}" size="32" maxlength="32" />
     </div>
   </div>
 
@@ -138,7 +138,7 @@ function updateItemID(new_id)
 /**
  * Update the attribute group selected.
  */
-function updateAG(new_id)
+function updatePOG(new_id)
 {
     og_id = new_id;
     updateOrderbyOpts()
@@ -150,7 +150,7 @@ function updateAG(new_id)
 function updateOrderbyOpts()
 {
     var dataS = {
-        "action": "attr_orderby_opts",
+        "action": "opt_orderby_opts",
         "item_id": item_id,
         "og_id": og_id,
     };

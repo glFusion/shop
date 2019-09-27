@@ -101,9 +101,15 @@ class orderlist extends \Shop\Report
                 $header_arr,
                 array(
                 array(
-                    'text'  => $LANG_SHOP['total'] .
-                        '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                        $LANG_SHOP_HELP['orderlist_total'] . '"></i>',
+                    'text'  => $LANG_SHOP['total'] . '&nbsp;' .
+                    \Shop\Icon::getHTML(
+                        'question',
+                        'tooltip',
+                        array(
+                            'title' => $LANG_SHOP_HELP['orderlist_total']
+                        )
+                    ),
+                    //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
                 'field' => 'sales_amt',
                 'sort'  => true,
                 'align' => 'right',

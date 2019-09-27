@@ -74,10 +74,10 @@ class MigratePP
         if (!self::migrateImages()) {
             return false;
         }
-        if (!self::migrateAttributes()) {
+        if (!self::migrateOptions()) {
             return false;
         }
-        if (!self::migrateAttributeGroups()) {
+        if (!self::migrateOptionGroups()) {
             return false;
         }
         if (!self::migrateShipping()) {
@@ -302,39 +302,48 @@ class MigratePP
 
 
     /**
-     * Migrate product attributes. Adding the ag_id field.
+     * Migrate product attributes. Adding the og_id field.
+     * Adds the `attr_name` column for use by migrateOptionGroups().
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateAttributes()
+    public function migrateOptionValues()
     {
         global $_TABLES;
 
-        return self::_dbExecute(
-            "TRUNCATE {$_TABLES['shop.prod_attr']}",
-            "INSERT INTO {$_TABLES['shop.prod_attr']}
-                SELECT *, 0 as ag_id FROM {$_TABLES['paypal.prod_attr']}"
-        );
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
+            "ALTER TABLE {$_TABLES['shop.prod_opt-vals']} DROP KEY `item_id`",
+            "INSERT INTO {$_TABLES['shop.prod_opt_vals']}
+                SELECT  attr_id as pov_id, 0 as pog_id, item_id, attr_value as pov_value,
+                orderby, attr_price as pov_price, enabled, '' as sku, attr_name
+                FROM {$_TABLES['paypal.prod_attr']}"
+        ) );
     }
 
 
     /**
-     * Create the attribute groups from the names of existing product attributes.
+     * Create the option groups from the names of existing product options.
+     * Uses the `attr_name` column to get the option group for each option value,
+     * then drops that column.
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateAttributeGroups()
+    public function migrateOptionGroups()
     {
         global $_TABLES;
     
         // Initial populate of the new attribute group table, after the main migration.
         return self::_dbExecute(array(
-            "TRUNCATE {$_TABLES['shop.attr_grp']}",
-            "INSERT INTO {$_TABLES['shop.attr_grp']} (ag_name) 
+            "TRUNCATE {$_TABLES['shop.prod_opt_grps']}",
+            "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (og_name) 
                 (SELECT DISTINCT attr_name FROM {$_TABLES['paypal.prod_attr']})",
-            "UPDATE {$_TABLES['shop.prod_attr']} AS pa INNER JOIN
-                (SELECT ag_id,ag_name FROM {$_TABLES['shop.attr_grp']}) AS ag ON pa.attr_name=ag.ag_name
-                SET pa.ag_id = ag.ag_id",
+            "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN
+                (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name
+                SET pov.pog_id = pog.pog_id",
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name",
+            "ALTER TABLE {$_TABLES['shop.prod_opt-vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)",
         ) );
     }
 

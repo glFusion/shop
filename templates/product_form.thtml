@@ -13,7 +13,7 @@
   <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
     <li id="tab-general"><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images"><a href="#">{$LANG_SHOP['images']}</a></li>
-    <li id="tab-options"><a href="#">{$LANG_SHOP['attributes']}</a></li>
+    <li id="tab-options"><a href="#">{$LANG_SHOP['options']}</a></li>
     <li id="tab-discounts"><a href="#">{$LANG_SHOP['qty_discounts']}</a></li>
   </ul>
 

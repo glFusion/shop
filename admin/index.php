@@ -46,14 +46,14 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'saveopt', 'deleteopt', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'attrcopy', 'attrmove',
+    'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
-    'migrate_pp', 'purge_trans', 'ag_del', 'ag_move', 'ag_save',
+    'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'attributes', 'editattr', 'other', 'products', 'gwadmin', 'gwedit',
-    'attr_grp', 'ag_edit',
+    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
 );
@@ -135,36 +135,36 @@ case 'savecat':
     }
     break;
 
-case 'ag_save':
-    $AG = new \Shop\AttributeGroup($_POST['ag_id']);
-    if (!$AG->Save($_POST)) {
+case 'pog_save':
+    $POG = new \Shop\ProductOptionGroup($_POST['og_id']);
+    if (!$POG->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?attr_grp=x');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
     break;
 
 case 'saveopt':
-    $Attr = new \Shop\Attribute($_POST['attr_id']);
-    if (!$Attr->Save($_POST)) {
+    $Opt = new \Shop\ProductOptionValue($_POST['opt_id']);
+    if (!$Opt->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
-    if (isset($_POST['attr_id']) && !empty($_POST['attr_id'])) {
+    if (isset($_POST['opt_id']) && !empty($_POST['opt_id'])) {
         // Updating an existing option, return to the list
         COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editattr=x&item_id=' . $_POST['item_id']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editopt=x&item_id=' . $_POST['item_id']);
     }
     break;
 
-case 'ag_del':
-    Shop\AttributeGroup::Delete($_REQUEST['ag_id']);
-    $view = 'attr_grp';
+case 'pog_del':
+    Shop\ProductOptionGroup::Delete($_REQUEST['og_id']);
+    $view = 'opt_grp';
     break;
 
 case 'deleteopt':
-    // attr_id could be via $_GET or $_POST
-    Shop\Attribute::Delete($_REQUEST['attr_id']);
-    $view = 'attributes';
+    // opt_id could be via $_GET or $_POST
+    Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
+    $view = 'options';
     break;
 
 case 'resetbuttons':
@@ -259,22 +259,22 @@ case 'gwsave':
     $view = 'gwadmin';
     break;
 
-case 'ag_move':
-    $ag_id = SHOP_getVar($_GET, 'id', 'integer');
+case 'pog_move':
+    $og_id = SHOP_getVar($_GET, 'id', 'integer');
     if ($og_id > 0) {
-        $AG = new \Shop\AttributeGroup($ag_id);
-        $AG->moveRow($actionval);
+        $OG = new \Shop\ProductOptionGroup($og_id);
+        $OG->moveRow($actionval);
     }
-    $view = 'attr_grp';
+    $view = 'opt_grp';
     break;
 
-case 'attrmove':
-    $attr_id = SHOP_getVar($_GET, 'id', 'integer');
-    if ($attr_id > 0) {
-        $Attr = new \Shop\Attribute($attr_id);
-        $Attr->moveRow($actionval);
+case 'pov_move':
+    $opt_id = SHOP_getVar($_GET, 'id', 'integer');
+    if ($opt_id > 0) {
+        $Opt = new \Shop\ProductOptionValue($opt_id);
+        $Opt->moveRow($actionval);
     }
-    $view = 'attributes';
+    $view = 'options';
     break;
 
 case 'gwmove':
@@ -317,11 +317,11 @@ case 'attrcopy':
                 $dest_prod = (int)$A['id'];
                 $done_prods[] = $dest_prod;     // track for later
                 if ($del_existing) {
-                    DB_delete($_TABLES['shop.prod_attr'], 'item_id', $dest_prod);
+                    DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $dest_prod);
                 }
-                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_attr']}
-                SELECT NULL, $dest_prod, attr_name, attr_value, orderby, attr_price, enabled
-                FROM {$_TABLES['shop.prod_attr']}
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
+                SELECT NULL, $dest_prod, pog_id, pov_name, pov_value, orderby, pov_price, enabled
+                FROM {$_TABLES['shop.prod_opt_vals']}
                 WHERE item_id = $src_prod";
                 DB_query($sql);
             }
@@ -332,11 +332,11 @@ case 'attrcopy':
     // already been done as part of the category, then update the target product also.
     if ($dest_prod > 0 && $dest_prod != $src_prod && !in_array($dest_prod, $done_prods)) {
         if ($del_existing) {
-            DB_delete($_TABLES['shop.prod_attr'], 'item_id', $dest_prod);
+            DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $dest_prod);
         }
-        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_attr']}
-            SELECT NULL, $dest_prod, attr_name, attr_value, orderby, attr_price, enabled
-            FROM {$_TABLES['shop.prod_attr']}
+        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
+            SELECT NULL, $dest_prod, pog_id, pov_name, pov_value, orderby, pov_price, enabled
+            FROM {$_TABLES['shop.prod_opt_vals']}
             WHERE item_id = $src_prod";
         DB_query($sql);
     }
@@ -534,27 +534,27 @@ case 'sales':
     $view = 'products';   // cheating, to get the active menu set
     break;
 
-case 'attributes':
-    $content .= Shop\Menu::adminCatalog('attributes');
+case 'options':
+    $content .= Shop\Menu::adminCatalog('options');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
         // Delete some checked options 
-        foreach ($_POST['delitem'] as $attr_id) {
-            \Shop\Attribute::Delete($attr_id);
+        foreach ($_POST['delitem'] as $opt_id) {
+            \Shop\ProductOptionValue::Delete($opt_id);
         }
     }
-    $content .= Shop\Attribute::adminList();
+    $content .= Shop\ProductOptionValue::adminList();
     $view = 'products';
     break;
 
-case 'attr_grp':
-    $content .= Shop\Menu::adminCatalog('attr_grp');
+case 'opt_grp':
+    $content .= Shop\Menu::adminCatalog('opt_grp');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
         // Delete some checked option groups
         foreach ($_POST['delitem'] as $og_id) {
-            \Shop\AttributeGroup::Delete($og_id);
+            \Shop\ProductOptionGroup::Delete($og_id);
         }
     }
-    $content .= Shop\AttributeGroup::adminList();
+    $content .= Shop\ProductOptionGroup::adminList();
     $view = 'products';   // cheating, to get the active menu set
     break;
 
@@ -562,21 +562,21 @@ case 'shipping':
     $content .= Shop\Shipper::adminList();
     break;
 
-case 'editattr':
-    $attr_id = SHOP_getVar($_GET, 'attr_id', 'integer');
+case 'pov_edit':
+    $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
-    $Attr = new Shop\Attribute($attr_id);
-    if ($attr_id == 0) {
-        $Attr->item_id = SHOP_getVar($_GET, 'item_id', 'integer');
+    $Opt = new Shop\ProductOptionValue($opt_id);
+    if ($opt_id == 0) {
+        $Opt->item_id = SHOP_getVar($_GET, 'item_id', 'integer');
     }
-    $content .= $Attr->Edit();
+    $content .= $Opt->Edit();
     break;
 
-case 'ag_edit':
-    $ag_id = SHOP_getVar($_GET, 'ag_id');
-    $AG = new \Shop\AttributeGroup($ag_id);
+case 'pog_edit':
+    $og_id = SHOP_getVar($_GET, 'og_id');
+    $OG = new \Shop\ProductOptionGroup($og_id);
     $content .= Shop\Menu::adminCatalog($view);
-    $content .= $AG->Edit();
+    $content .= $OG->Edit();
     break;
 
 case 'editsale':

@@ -45,11 +45,11 @@ class Product
 
     /** Product attributes.
      * @var array */
-    public $attribs;
+    public $Options;
 
     /** Attribute Groups used for this product.
      * @var array */
-    public $AttributeGroups = array();
+    public $OptionGroups = array();
 
     /** Indicate whether the current user is an administrator.
      * @var boolean */
@@ -103,7 +103,7 @@ class Product
     /** Selected attributes.
      * Using a property to pass between functions.
      * @var array */
-    private $sel_attrs = array();
+    private $sel_opts = array();
 
     /** Query string, if any.
      * @var string */
@@ -221,7 +221,7 @@ class Product
                     $P[$id] = self::getByID($item[0]);
                 }
                 if (isset($item[1])) {
-                    $P[$id]->setSelectedAttributes($item[1]);
+                    $P[$id]->setSelectedOptions($item[1]);
                 }
             }
             return $P[$id];
@@ -230,7 +230,7 @@ class Product
 
 
     /**
-     * Instantiate an objec from a DB record array.
+     * Instantiate an object from a DB record array.
      * Internal products only, called from `getByID()` and `getBySKU()`.
      *
      * @param   array   $A  DB record
@@ -244,7 +244,7 @@ class Product
             $P = new self($A);
         }
         if ($P->hasAccess()) {
-            $P->loadAttributes();
+            $P->loadOptions();
         }
         return $P;
     }
@@ -307,6 +307,35 @@ class Product
             }
             return self::_getInstance($A);
         }
+    }
+
+
+    /**
+     * Get all products under a category.
+     *
+     * @param   integer $cat_id Category ID
+     * @return  array       Array of Product objects, keyed by ID
+     */
+    public static function getIDsByCategory($cat_id)
+    {
+        global $_TABLES;
+
+        $cat_id = (int)$cat_id;
+        $cache_key = 'prod_idbycat_' . $cat_id;
+        $retval = Cache::get($cache_key);
+        //$retval = NULL;
+        if (!is_array($retval)) {
+            $retval = array();
+            $sql = "SELECT id FROM {$_TABLES['shop.products']} WHERE cat_id = $cat_id";
+            $res = DB_query($sql);
+            if ($res) {
+                while ($A = DB_fetchArray($res, false)) {
+                    $retval[] = $A['id'];
+                }
+            }
+            Cache::set($cache_key, $retval, array('products', 'categories'));
+        }
+        return $retval;
     }
 
 
@@ -542,7 +571,7 @@ class Product
         if (!empty($row)) {
             $this->setVars($row, true);
             $this->isNew = false;
-            $this->loadAttributes();
+            $this->loadOptions();
             return true;
         } else {
             return false;
@@ -553,20 +582,20 @@ class Product
     /**
      * Load the product attributs into the options array.
      */
-    protected function loadAttributes()
+    protected function loadOptions()
     {
-        if (empty($this->AttributeGroups)) {   // Load only once
-            $this->AttributeGroups = AttributeGroup::getByProduct($this->id);
-            foreach ($this->AttributeGroups as $ag_id=>$AG) {
-                $AG->getAttributes($this->id);
+        if (empty($this->OptionGroups)) {   // Load only once
+            $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
+            foreach ($this->OptionGroups as $og_id=>$OG) {
+                $OG->getOptions($this->id);
                 // TODO: deprecate this array and use group/option objects
-                foreach ($AG->Attribs as $attr_id=>$Attr) {
-                    $this->attribs[$attr_id] = array(
-                        'ag_id'     => $Attr->ag_id,
-                        'attr_name' => $AG->ag_name,
-                        'attr_value' => $Attr->attr_value,
-                        'attr_price' => $Attr->attr_price,
-                        'sku'       => $Attr->sku,
+                foreach ($OG->Options as $opt_id=>$Opt) {
+                    $this->Options[$opt_id] = array(
+                        'og_id'     => $Opt->getID(),
+                        'attr_name' => $OG->getName(),
+                        'attr_value' => $Opt->getValue(),
+                        'attr_price' => $Opt->getPrice(),
+                        'sku'       => $Opt->getSKU(),
                     );
                 }
             }
@@ -767,7 +796,8 @@ class Product
             $this->deleteImage($prow['img_id']);
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
-        DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
+        Option::deleteProduct($this->id);
+        //DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -931,7 +961,7 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
-            'option_list'   => Attribute::adminList($this->id),
+            'option_list'   => ProductOptionValue::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
@@ -1140,15 +1170,15 @@ class Product
         // Used when displaying the product detail from an orde or cart view.
         // If none requested or the current user can't view the order, then
         // create an empty object for later use.
-        // $this->sel_attrs may also be set in getInstance()if an option
+        // $this->sel_opts may also be set in getInstance()if an option
         // string is provided in the item number.
         if ($this->oi_id > 0) {
             $OI = new OrderItem($this->oi_id);
             if ($OI->canView()) {
-                $this->sel_attrs = array();
+                $this->sel_opts = array();
                 foreach ($OI->getOptions() as $OIO) {
-                    if ($OIO->attr_id > 0) {    // not a custom text field
-                        $this->sel_attrs[] = $OIO->attr_id;
+                    if ($OIO->getID() > 0) {    // not a custom text field
+                        $this->sel_opts[] = $OIO->getID();
                     }
                 }
             }
@@ -1157,7 +1187,7 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = new \Template(__DIR__ . '//../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
+        $T = new \Template(__DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
         $T->set_file('product', 'product_detail_attrib.thtml');
         // Set up the template containing common javascript
         $JT = new \Template(__DIR__ . '/../templates/detail');
@@ -1230,74 +1260,74 @@ class Product
         // Get the product options, if any, and set them into the form
         $json_opts = array();
         $this->_orig_price = $this->price;
-        $T->set_block('product', 'AttributeGroup', 'AG');
+        $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
-        foreach ($this->AttributeGroups as $AG) {
+        foreach ($this->OptionGroups as $OG) {
             // Most options use the option group name as the prompt
-            $display_name = $AG->ag_name;
-            $T->set_block('product', 'Attribute' . $AG->ag_type, 'optSel');
-            switch ($AG->ag_type) {
+            $display_name = $OG->getName();
+            $T->set_block('product', 'Option' . $OG->getType(), 'optSel');
+            switch ($OG->getType()) {
             case 'select':
             case 'radio':
                 // First find the selected option
                 $sel_opt = 0;
-                foreach ($AG->Attribs as $Attr) {
-                    if (in_array($Attr->attr_id, $this->sel_attrs)) {
-                        $sel_opt = $Attr->attr_id;
+                foreach ($OG->Options as $Opt) {
+                    if (in_array($Opt->getID(), $this->sel_opts)) {
+                        $sel_opt = $Opt->getID();
                     }
                 }
                 if (!$sel_opt) {    // no selected attribute found
-                    $sel_opt = reset($AG->Attribs)->attr_id;
+                    $sel_opt = reset($OG->Options)->getID();
                 }
-                foreach ($AG->Attribs as $Attr) {
-                    $attr_price = $Sale->getAttributePrice($Attr->attr_price);
-                    $json_opts[$Attr->attr_id] = $attr_price;
-                    if ($attr_price != 0) {
+                foreach ($OG->Options as $Opt) {
+                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
+                    $json_opts[$Opt->getID()] = $opt_price;
+                    if ($opt_price != 0) {
                         // Show the incremental price in the selection.
-                        $attr_str = sprintf(" ( %+0.2f )", $attr_price);
-                    } else {
-                        $attr_str = '';
-                    }
-                    $T->set_var(array(
-                        'attr_id'   => $Attr->attr_id,
-                        'attr_str'  => htmlspecialchars($Attr->attr_value) . $attr_str,
-                        'radio_selected'  => $Attr->attr_id == $sel_opt ? 'checked="checked"' : '',
-                        'select_selected'  => $Attr->attr_id == $sel_opt ? 'selected="selected"' : '',
-                    ) );
-                    $T->parse('optSel', 'Attribute' . $AG->ag_type, true);
-                }
-                break;
-            case 'checkbox':
-                foreach ($AG->Attribs as $Attr) {
-                    $attr_price = $Sale->getAttributePrice($Attr->attr_price);
-                    $json_opts[$Attr->attr_id] = $attr_price;
-                    if ($attr_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $attr_price);
+                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
                     } else {
                         $opt_str = '';
                     }
-                    $checked = in_array($Attr->attr_id, $this->sel_attrs) ? 'checked="checked"' : '';
                     $T->set_var(array(
-                        'attr_id'   => $Attr->attr_id,
-                        'attr_str'  => htmlspecialchars($Attr->attr_value) . $opt_str,
+                        'opt_id'   => $Opt->getID(),
+                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
+                        'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
+                    ) );
+                    $T->parse('optSel', 'Option' . $OG->getType(), true);
+                }
+                break;
+            case 'checkbox':
+                foreach ($OG->Options as $Opt) {
+                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
+                    $json_opts[$Opt->getID()] = $opt_price;
+                    if ($opt_price != 0) {
+                        // Show the incremental price in the selection.
+                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
+                    } else {
+                        $opt_str = '';
+                    }
+                    $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
+                    $T->set_var(array(
+                        'opt_id'   => $Opt->getID(),
+                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
                         'checked'   => $checked,
                     ) );
-                    $T->parse('optSel', 'Option' . $AG->ag_type, true);
+                    $T->parse('optSel', 'Option' . $OG->og_type, true);
                 }
                 break;
 
             case 'text':
-                $display_name = current($AG->Attribs)->attr_value;
-                $T->set_var('var_name', 'text_option_' . $AG->ag_id);
+                $display_name = current($OG->Options)->getValue();
+                $T->set_var('var_name', 'text_option_' . $OG->getID());
                 break;
             }
             $T->set_var(array(
-                'ag_id'     => $AG->ag_id,
-                'ag_name'   => $display_name,
-                'ag_type'   => $AG->ag_type,
+                'og_id'     => $OG->getID(),
+                'og_name'   => $display_name,
+                'og_type'   => $OG->getType(),
             ) );
-            $T->parse('AG', 'AttributeGroup', true);
+            $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
 
@@ -1310,7 +1340,7 @@ class Product
             $shipping_txt = '';
         }
         $T->set_var(array(
-            'have_attributes'   => $this->hasAttributes(),
+            'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
             'id'                => $prod_id,
             'name'              => $name,
@@ -1479,7 +1509,7 @@ class Product
             // If out of stock, display but deny purchases
             $add_cart = false;
         } elseif ($_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy'] &&
-                !$this->hasAttributes() && $this->price > 0) {
+                !$this->hasOptions() && $this->price > 0) {
             // Requires login before purchasing
             $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
             $buttons['login'] = $T->parse('', 'login_req');
@@ -1510,7 +1540,7 @@ class Product
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
-                //'form_url'  => $this->hasAttributes() ? '' : 'true',
+                //'form_url'  => $this->hasOptions() ? '' : 'true',
                 //'form_url'  => false,
                 'form_url'  => $this->_view == 'list' ? true : false,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
@@ -1529,9 +1559,9 @@ class Product
      *
      * @return  boolean     True if attributes exist, False if not.
      */
-    public function hasAttributes()
+    public function hasOptions()
     {
-        return empty($this->AttributeGroups) ? false : true;
+        return empty($this->OptionGroups) ? false : true;
     }
 
 
@@ -1633,7 +1663,7 @@ class Product
     {
         if (
             !$this->canOrder()          // Can't be ordered, unavailable
-            || $this->hasAttributes()   // no attributes to select
+            || $this->hasOptions()   // no attributes to select
             || $this->hasDiscounts()    // no quantity-based discounts
             || $this->hasCustomFields() // no text fields to fill in
             || $this->hasSpecialFields()    // no special fields to fill in
@@ -1688,15 +1718,15 @@ class Product
      * Quantity discounts are considered, the return value is the effictive
      * price per unit.
      *
-     * @param   array   $attribs    Array of integer option values
+     * @param   array   $opts       Array of integer option values
      * @param   integer $quantity   Quantity, used to calculate discounts
      * @param   array   $override   Override elements (price, uid)
      * @return  float       Product price, including option
      */
-    public function getPrice($attribs = array(), $quantity = 1, $override = array())
+    public function getPrice($opts = array(), $quantity = 1, $override = array())
     {
-        if (!is_array($attribs)) {
-            $attribs = explode(',', $attribs);
+        if (!is_array($opts)) {
+            $opts= explode(',', $opts);
         }
 
         if ($this->override_price && isset($override['price'])) {
@@ -1711,19 +1741,19 @@ class Product
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
         // Add attribute prices to base price
-        foreach ($attribs as $Attr) {
+        foreach ($opts as $Option) {
             $key = 0;
-            // Allow for $attribs to be an array of attribute IDs, or Attribute objects.
-            if (is_object($Attr)) {
-                if ($Attr->opt_id > 0) {
-                    $key = $Attr->opt_id;
+            // Allow for $opts to be an array of attribute IDs, or Option objects.
+            if (is_object($Option)) {
+                if ($Option->opt_id > 0) {
+                    $key = $Option->getID();
                 }
             } else {
-                $key = $Attr;
+                $key = $Option;
             }
-            $Attribute = $this->getAttribute($key);
-            if ($Attribute !== false) {
-                $price += (float)$Attribute->attr_price;
+            $Option = $this->getOption($key);
+            if ($Option !== false) {
+                $price += (float)$Option->getPrice();
             }
         }
 
@@ -1777,12 +1807,12 @@ class Product
 
         // Get attributes selected from the available options
         // Skip any that don't have a sku value set
-        foreach ($item->options as $attr_id=>$OIO) {
+        foreach ($item->options as $opt_id=>$OIO) {
             if (
-                isset($this->attribs[$OIO->attr_id]) &&
-                $this->attribs[$OIO->attr_id]['sku'] != ''
+                isset($this->Options[$OIO->pov_id]) &&
+                $this->Options[$OIO->pov_id]['sku'] != ''
             ) {
-                $sku .= '-' . $this->attribs[$OIO->attr_id]['sku'];
+                $sku .= '-' . $this->Options[$OIO->pov_id]['sku'];
             }
         }
         return $sku;
@@ -1811,8 +1841,8 @@ class Product
             $options = explode(',', $item_options);
             foreach ($options as $option) {
                 $opts[] = array(
-                    'opt_name'  => $this->options[$option]['attr_name'],
-                    'opt_value' => $this->options[$option]['attr_value'],
+                    'opt_name'  => $this->options[$option]['opt_name'],
+                    'opt_value' => $this->options[$option]['opt_value'],
                 );
             }
         }
@@ -1947,17 +1977,17 @@ class Product
 
 
     /**
-     * Get an option object from the AttributeGroups property.
+     * Get an option object from the OptionGroups property.
      * Returns false if the option key is not found.
      *
      * @param   string  $key    Option name to retrieve
      * @return  mixed       Option value, False if not set
      */
-    public function getAttribute($key)
+    public function getOption($key)
     {
-        foreach ($this->AttributeGroups as $AG) {
-            if (isset($AG->Attribs[$key])) {
-                return $AG->Attribs[$key];
+        foreach ($this->OptionGroups as $OG) {
+            if (isset($OG->Options[$key])) {
+                return $OG->Options[$key];
             }
         }
         return false;
@@ -2743,9 +2773,8 @@ class Product
                 'align' => 'center',
             ),
             array(
-                'text'  => $LANG_ADMIN['delete'] .
-                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP_HELP['hlp_prod_delete'] . '"></i>',
+                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' . 
+                Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
             ),
@@ -2834,15 +2863,14 @@ class Product
         switch($fieldname) {
         case 'copy':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-clone tooltip" title="' .
-                $LANG_SHOP['copy_product'] . '"></i>',
+                Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
                 SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
             );
             break;
 
         case 'edit':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
                 SHOP_ADMIN_URL . "/index.php?editproduct=x&amp;id={$A['id']}"
             );
             break;
@@ -2850,7 +2878,7 @@ class Product
         case 'delete':
             if (!\Shop\Product::isUsed($A['id'])) {
                 $retval .= COM_createLink(
-                    '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                    Icon::getHTML('delete'),
                     SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
                     array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
@@ -2865,12 +2893,10 @@ class Product
 
         case 'enabled':
             if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $icon = "uk-icon-toggle-on uk-text-success";
+                $switch = 'checked="checked"';
                 $enabled = 1;
             } else {
                 $switch = '';
-                $icon - "uk-icon-toggle-off";
                 $enabled = 0;
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
@@ -2880,21 +2906,20 @@ class Product
             break;
 
         case 'availability':
-            $icon = 'uk-icon-circle';
             if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
-                $cls = 'uk-text-danger';
+                $icon = 'avail-unavail';
                 $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
             } elseif ($A['track_onhand'] == 1 && $A['onhand'] < 1) {
-                $cls = $A['oversell'] > 0 ? 'uk-text-danger' : 'uk-text-warning';
+                $icon = $A['oversell'] > 0 ? 'avail-unavail' : 'avail-nostock';
                 $caption = $LANG_SHOP['out_of_stock'];
             } else {
-                $cls = 'uk-text-success';
+                $icon = 'avail-ok';
                 $caption = $LANG_SHOP['available'] . '.';
                 if ($A['track_onhand'] == 1) {
                     $caption .= "<br />{$LANG_SHOP['onhand']} = {$A['onhand']}.";
                 }
             }
-            $retval = "<i class=\"tooltip uk-icon $icon $cls\" title=\"$caption\"></i>";
+            $retval = Icon::getHTML($icon, 'tooltip', array('title' => $caption));
             break;
 
         case 'featured':
@@ -3025,14 +3050,14 @@ class Product
      * Used to display the detail page with options selected from the
      * product link in the cart or order.
      *
-     * @param   array   $attrs  Array of attribute IDs (id1, id2, id3, ...)
+     * @param   array   $opts   Array of attribute IDs (id1, id2, id3, ...)
      */
-    public function setSelectedAttributes($attrs)
+    public function setSelectedOptions($opts)
     {
-        if (!is_array($attrs)) {
-            $attrs = explode(',', $attrs);
+        if (!is_array($opts)) {
+            $opts = explode(',', $opts);
         }
-        $this->sel_attrs = $attrs;
+        $this->sel_opts = $opts;
     }
 
 

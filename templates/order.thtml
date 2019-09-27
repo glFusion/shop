@@ -13,13 +13,6 @@
       </a>
   {!endif}
     </div>
-  {!if not_anon}
-    <div style="display:inline-block;float:right;">
-      <a href="{account_url}" class="uk-button uk-button-primary uk-button-small">
-        {$LANG01[47]}
-      </a>
-    </div>
-  {!endif}
 {!endif}
   <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!if not_final}

@@ -11,7 +11,7 @@ Release TBD
   * Fix shipping selection not correctly updating total on cart view.
   * Allow use of SKU as product ID in URLs.
   * Item options can now have SKU values.
-  * Implement Attribute Groups to control attribute ordering on product form.
+  * Implement Option Groups to control option field ordering on product form.
   * Move catalog-related admin options under one menu to shorten the admin menu.
   * Product links from orders include selected options for logged-in users.
   * Add authorized group to shippers to limit usage to trusted members.

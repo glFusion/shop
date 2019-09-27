@@ -154,9 +154,9 @@ $INSTALL_plugin['shop'] = array(
 
 $tables = array(
     'products', 'categories', 'orderitems', 'ipnlog', 'orders', 'sales',
-    'prod_attr', 'images', 'gateways', 'address', 'userinfo', 'workflows',
+    'prod_opt_vals', 'images', 'gateways', 'address', 'userinfo', 'workflows',
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
-    'shipping', 'oi_opts', 'attr_grp',
+    'shipping', 'oi_opts', 'prod_opt_grps',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(

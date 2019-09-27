@@ -196,7 +196,7 @@ function plugin_getmenuitems_shop()
     if ($_SHOP_CONF['menuitem'] && SHOP_access_check()) {
         $a = preg_replace(
             '/\{(.*)\}/i',
-            '<i class="uk-icon-${1}"></i>',
+            '<i class="uk-icon uk-icon-${1}"></i>',
             $LANG_SHOP['mnu_shop']);
         $menuitems[$a] = SHOP_URL . '/index.php';
     }
@@ -817,7 +817,7 @@ function plugin_autouninstall_shop()
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
-            'shop.attr_grp',
+            'shop.prod_opt_grps',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -1369,7 +1369,7 @@ function SHOP_phpblock_product($sql)
                 'on_sale'   => $isOnSale,
             ) );
 
-            if (!$P->hasAttributes()) {
+            if (!$P->hasOptions()) {
                 $buttons = $P->PurchaseLinks();
                 $btn_txt = '';
                 foreach ($buttons as $name=>$html) {

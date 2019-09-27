@@ -35,7 +35,7 @@ $_TABLES['shop.downloads']    = $_SHOP_table_prefix . 'downloads';
 $_TABLES['shop.orderitems']   = $_SHOP_table_prefix . 'orderitems';
 $_TABLES['shop.images']       = $_SHOP_table_prefix . 'images';
 $_TABLES['shop.categories']   = $_SHOP_table_prefix . 'categories';
-$_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
+$_TABLES['shop.prod_opt_vals'] = $_SHOP_table_prefix . 'product_option_values';
 $_TABLES['shop.address']      = $_SHOP_table_prefix . 'address';
 $_TABLES['shop.orders']       = $_SHOP_table_prefix . 'orders';
 $_TABLES['shop.userinfo']     = $_SHOP_table_prefix . 'userinfo';
@@ -49,8 +49,13 @@ $_TABLES['shop.coupons']      = $_SHOP_table_prefix . 'coupons';
 $_TABLES['shop.coupon_log']   = $_SHOP_table_prefix . 'coupon_log';
 $_TABLES['shop.sales']        = $_SHOP_table_prefix . 'sales';
 $_TABLES['shop.shipping']     = $_SHOP_table_prefix . 'shipping';
-$_TABLES['shop.attr_grp']     = $_SHOP_table_prefix . 'attribute_groups';
+$_TABLES['shop.prod_opt_grps'] = $_SHOP_table_prefix . 'product_option_groups';
 $_TABLES['shop.oi_opts']      = $_SHOP_table_prefix . 'orderitem_options';
+$_TABLES['shop.shipments']    = $_SHOP_table_prefix . 'shipments';
+$_TABLES['shop.shipment_items']   = $_SHOP_table_prefix . 'shipment_items';
+
+// Deprecate eventually
+$_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
 
 // Other relatively static values;
 $_SHOP_CONF['logfile'] = "{$_CONF['path']}/logs/{$_SHOP_CONF['pi_name']}_downloads.log";

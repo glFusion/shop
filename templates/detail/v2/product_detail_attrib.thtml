@@ -61,28 +61,28 @@
     </div>
 
     <div id="shopProductAttrib" class="shopDetailAddCart v2">
-<!-- BEGIN AttributeGroup -->
+<!-- BEGIN OptionGroup -->
       <div class="uk-form-row">
-        <label class="uk-form-label" for="attributes{ag_id}">{ag_name}:</label>
+        <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
         <div class="uk-form-controls">
-{!!if {ag_type} == "select" !!}
-          <select class="uk-form" id="attributes{ag_id}" name="attributes[]" onchange="ProcessForm();">
-<!-- BEGIN Attributeselect -->
-            <option value="{attr_id}" {select_selected}>{attr_str}</option>
-<!-- END Attributeselect -->
+{!!if {og_type} == "select" !!}
+          <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm();">
+<!-- BEGIN Optionselect -->
+            <option value="{opt_id}" {select_selected}>{opt_str}</option>
+<!-- END Optionselect -->
           </select>
-{!!elseif {ag_type} == "checkbox" !!}
-<!-- BEGIN Attributecheckbox -->
-        <input type="checkbox" name="attributes[]" value="{attr_id}" {checked} onclick="ProcessForm();"/>&nbsp;{attr_str}<br />
-<!-- END Attributecheckbox -->
-{!!elseif {ag_type} == "radio" !!}
-<!-- BEGIN Attributeradio -->
-        <input type="radio" name="attributes[]" value="{attr_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{attr_str}<br />
-<!-- END Attributeradio -->
+{!!elseif {og_type} == "checkbox" !!}
+<!-- BEGIN Optioncheckbox -->
+        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm();"/>&nbsp;{opt_str}<br />
+<!-- END Optioncheckbox -->
+{!!elseif {og_type} == "radio" !!}
+<!-- BEGIN Optionradio -->
+        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{opt_str}<br />
+<!-- END Optionradio -->
 {!endif}
         </div>
       </div>
-<!-- END AttributeGroup -->
+<!-- END OptionGroup -->
 
 <!-- BEGIN CustAttrib -->
       <div class=uk-form-row>

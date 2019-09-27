@@ -172,7 +172,7 @@ class Cart extends Order
         $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
         $override   = isset($args['override']) ? $args['price'] : NULL;
         $extras     = SHOP_getVar($args, 'extras', 'array');
-        $attributes = SHOP_getVar($args, 'attributes', 'array');
+        $options    = SHOP_getVar($args, 'options', 'array');
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
@@ -183,17 +183,17 @@ class Cart extends Order
         // Extract the attribute IDs from the options array to create
         // the item_id.
         // Options are an array(id1, id2, id3, ...)
-        $attrs = array();
-        if (is_array($attributes) && !empty($attributes)) {
-            foreach($attributes as $attr_id) {
-                $attrs[] = new Attribute($attr_id);
+        $opts = array();
+        if (is_array($options) && !empty($options)) {
+            foreach($options as $opt_id) {
+                $opts[] = new ProductOptionValue($opt_id);
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
-            $opt_str = implode(',', $attributes);
+            $opt_str = implode(',', $options);
             $item_id .= '|' . $opt_str;
         } else {
-            $atttrs = array();
+            $opts = array();
         }
 
         // Look for identical items, including options (to catch
@@ -216,7 +216,7 @@ class Cart extends Order
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
                 //'price'     => sprintf("%.2f", $price),
-                'attributes' => $attrs,
+                'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );
