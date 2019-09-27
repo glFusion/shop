@@ -861,6 +861,24 @@ class Shipper
         return $retval;
     }
 
+
+    /**
+     * Get the names of shippers defined in class files.
+     * Currently these are only used to get tracking info, but may have
+     * additional features added.
+     *
+     * @return  array   Array of (ClassName => Shipper Name)
+     */
+    public static function getShipperNames()
+    {
+        $shippers = array(
+            'usps'  => 'US Postal Service',
+            'fedex' => 'FedEx',
+            'ups'   => 'United Parcel Service',
+        );
+        return $shippers;
+    }
+
 }   // class Shipper
 
 ?>
