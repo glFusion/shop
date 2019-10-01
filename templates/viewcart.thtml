@@ -63,7 +63,7 @@
         <td class="alignright">{item_total}</td>
         <td class="aligncenter" style="width:32px;white-space:nowrap;">
           <a href="{del_item_url}"><i
-              class="uk-icon uk-icon-trash uk-text-danger tooltip" title="{$LANG_SHOP['delete']}"></i></a>
+              class="uk-icon uk-icon-remove uk-text-danger  tooltip" title="{$LANG_SHOP['delete']}"></i></a>
         </td>
         <td class="alignleft">
 {!if taxable}
@@ -132,7 +132,7 @@
       <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
     <button style="float:none;" type="reset" class="uk-button uk-button-danger" name="emptycart"
       onclick="document.location.href='{pi_url}/cart.php?empty=x';">
-      <i class="uk-icon uk-icon-trash-o"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
+      <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
     <div class="uk-width-1-1 uk-margin">
       <div class="uk-width-2-3 uk-margin floatleft">
         <div class="gwRadiosOuter">
