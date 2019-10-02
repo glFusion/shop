@@ -24,6 +24,7 @@ Release TBD
   * Pass query string to product detail view for highlighting.
   * Add `View Cart` button to shop header when cart has items.
   * Add shipping and tracking for orders.
+  * Update PDF creation, require lgLib 1.0.9+
 
 ## v0.7.1
 Release 2019-08-02

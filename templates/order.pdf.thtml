@@ -23,58 +23,14 @@
   <td style="width:50%;vertical-align:top;">
       <b>{$LANG_SHOP['bill_to']}:</b>
 {!if is_invoice}
-{!if have_billto}
-  {!if billto_name}
-      <br />{billto_name}
-  {!endif}
-  {!if billto_company}
-      <br />{billto_company}
-  {!endif}
-  {!if billto_address1}
-      <br />{billto_address1}
-  {!endif}
-  {!if billto_address2}
-      <br />{billto_address2}
-  {!endif}
-  {!if billto_city}
-    <br />{billto_city}
-    {!if billto_state}
-    ,&nbsp;
-    {!endif}
-  {!endif}
-      <br />{billto_state} {billto_zip}
-  {!if billto_country}
-      <br />{billto_country}
-  {!endif}
-{!endif}
+      <br />
+      {billto_addr}
 {!endif}
   </td>
   <td style="width:50%;vertical-align:top;">
       <b>{$LANG_SHOP['ship_to']}:</b>
-{!if have_shipto}
-  {!if shipto_name}
-      <br />{shipto_name}
-  {!endif}
-  {!if shipto_company}
-      <br />{shipto_company}
-  {!endif}
-  {!if shipto_address1}
-      <br />{shipto_address1}
-  {!endif}
-  {!if shipto_address2}
-      <br />{shipto_address2}
-  {!endif}
-  {!if shipto_city}
-      <br />{shipto_city}
-    {!if shipto_state}
-      ,&nbsp;
-    {!endif}
-      {shipto_state} {shipto_zip}
-  {!endif}
-  {!if shipto_country}
-      <br />{shipto_country}
-  {!endif}
-{!endif}
+      <br />
+      {shipto_addr}
   </td>
 </tr>
 </table>
@@ -135,14 +91,13 @@
       {subtotal}
     </td>
   </tr>
-{!endif}
 {!if cart_tax}
   <tr>
     <td colspan="2" style="text-align:right">{lang_tax_on_items}</td>
     <td colspan="2" style="text-align:right">{cart_tax}</td>
   </tr>
 {!endif}
-{!!if {shipper_id} > 0 || {shipping} > 0 ||}
+{!!if {shipper_id} > 0 || {shipping} > 0 !!}
   <tr>
     <td colspan="2" style="text-align:right;">{$LANG_SHOP['shipping']}
 {!if ship_method}

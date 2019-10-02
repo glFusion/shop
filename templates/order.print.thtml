@@ -22,64 +22,16 @@
   <div style="clear:both;"></div>
   <div id="shopAddr">
 {!if is_invoice}
-  {!if have_billto}
     <div id="shopBilling">
       <b>{$LANG_SHOP['bill_to']}:</b>
       <br />
-    {!if billto_name}
-      {billto_name}<br />
-    {!endif}
-    {!if billto_company}
-      {billto_company}<br />
-    {!endif}
-    {!if billto_address1}
-      {billto_address1}<br />
-    {!endif}
-    {!if billto_address2}
-      {billto_address2}<br />
-    {!endif}
-    {!if billto_city}
-      {billto_city}
-      {!if billto_state}
-        ,&nbsp;
-      {!endif}
-    {!endif}
-      {billto_state} {billto_zip}<br />
-    {!if billto_country}
-      {billto_country}
-    {!endif}
-    </div>
-  {!endif}
+      {billto_addr}
 {!endif}
 
-{!if have_shipto}
     <div id="shopShipping">
       <b>{$LANG_SHOP['ship_to']}:</b>&nbsp;
       <br />
-  {!if shipto_name}
-      {shipto_name}<br />
-  {!endif}
-  {!if shipto_company}
-      {shipto_company}<br />
-  {!endif}
-  {!if shipto_address1}
-      {shipto_address1}<br />
-  {!endif}
-  {!if shipto_address2}
-      {shipto_address2}<br />
-  {!endif}
-  {!if shipto_city}
-      {shipto_city}
-    {!if shipto_state}
-      ,&nbsp;
-    {!endif}
-      {shipto_state} {shipto_zip}<br />
-  {!endif}
-  {!if shipto_country}
-      {shipto_country}
-  {!endif}
-    </div>
-{!endif}
+      {shipto_addr}
   </div>
 
     <div id="shopOrderNumber">
