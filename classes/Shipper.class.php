@@ -130,6 +130,7 @@ class Shipper
         global $LANG_SHOP;
 
         $this->id = SHOP_getVar($A, 'id', 'integer');
+        $this->code = SHOP_getVar($A, 'code');
         $this->name = SHOP_getVar($A, 'name');
         $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
@@ -223,7 +224,16 @@ class Shipper
         $retval = array();
         foreach ($shippers as $shipper) {
             if (in_array($shipper['auth_grp'], $_GROUPS)) {
-                $retval[$shipper['id']] = new self($shipper);
+                if (array_key_exists($shipper['code'], self::getShipperNames())) {
+                    $cls = 'Shop\\Shippers\\' . $shipper['code'];
+                    if (class_exists($cls)) {
+                        $retval[$shipper['id']] = new $cls($shipper);
+                    } else {
+                        $retval[$shipper['id']] = new self($shipper);
+                    }
+                } else {
+                    $retval[$shipper['id']] = new self($shipper);
+                }
             }
         }
         return $retval;
@@ -523,6 +533,7 @@ class Shipper
             break;
 
         case 'name':
+        case 'code':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -605,14 +616,15 @@ class Shipper
             return $a['units'] <=> $b['units'];
         });
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
-                enabled = '{$this->enabled}',
-                min_units = '{$this->min_units}',
-                max_units = '{$this->max_units}',
-                valid_from = '{$this->valid_from->toUnix()}',
-                valid_to = '{$this->valid_to->toUnix()}',
-                use_fixed = '{$this->use_fixed}',
-                auth_grp = '{$this->auth_grp}',
-                rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
+            code = '" . DB_escapeString($this->code) . "',
+            enabled = '{$this->enabled}',
+            min_units = '{$this->min_units}',
+            max_units = '{$this->max_units}',
+            valid_from = '{$this->valid_from->toUnix()}',
+            valid_to = '{$this->valid_to->toUnix()}',
+            use_fixed = '{$this->use_fixed}',
+            auth_grp = '{$this->auth_grp}',
+            rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -673,6 +685,16 @@ class Shipper
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->auth_grp),
         ) );
+        $T->set_block('form', 'shipperCodes', 'sCodes');
+        foreach (self::getShipperNames() as $code=>$name) {
+            $T->set_var(array(
+                'code'  => $code,
+                'code_name'  => $name,
+                'selected' => $code == $this->code ? 'selected="selected"' : '',
+            ) );
+            $T->parse('sCodes', 'shipperCodes', true);
+        }
+
         $T->set_block('form', 'rateTable', 'rt');
         foreach ($this->rates as $R) {
             $T->set_var(array(
@@ -716,6 +738,17 @@ class Shipper
             Cache::clear(self::$base_tag);
             return $newvalue;
         }
+    }
+
+
+    /**
+     * Get the name of the shipper.
+     *
+     * @return  string      Shipper name
+     */
+    public function getName()
+    {
+        return $this->name;
     }
 
 
@@ -859,6 +892,67 @@ class Shipper
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the names of shippers defined in class files.
+     * Currently these are only used to get tracking info, but may have
+     * additional features added.
+     *
+     * @return  array   Array of (ClassName => Shipper Name)
+     */
+    public static function getShipperNames()
+    {
+        $shippers = array(
+            'usps'  => 'US Postal Service',
+            'fedex' => 'FedEx',
+            'ups'   => 'United Parcel Service',
+        );
+        return $shippers;
+    }
+
+
+    /**
+     * Get the HTML option list of shippers.
+     *
+     * @param   integer $selected   Selected item ID
+     * @param   boolean $ena_only   True to include only enabled (default)
+     * @return  string      HTML for selection list
+     */
+    public static function optionList($selected = 0, $ena_only=false)
+    {
+        global $_TABLES;
+
+        $where = $ena_only ? 'enabled = 1' : '';
+        $lst = COM_optionList(
+            $_TABLES['shop.shipping'],
+            'id,name',
+            $selected,
+            1,
+            $where
+        );
+        $lst = str_replace("\n", '', $lst);
+        return $lst;
+    }
+
+
+    /**
+     * Get the tracking info URL for a shipper.
+     * This default returns an empty string.
+     *
+     * @param   string  $tracking_num   Tracking number
+     * @return  string      URL to shipper's tracking site
+     */
+    public function getTrackingUrl($tracking_num)
+    {
+        /*$code = 'usps';
+        $cls = 'Shop\\Shippers\\' . $code;
+        if (class_exists($cls)) {
+            $C = new $cls;
+            return $C->getTrackingUrl($tracking_num);
+        }*/
+        return '';
     }
 
 }   // class Shipper

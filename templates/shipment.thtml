@@ -1,0 +1,93 @@
+{# begin {templatelocation} #}
+<form id="shipmentform" method="post" action="{site_admin_url}/plugins/shop/index.php">
+<input type="hidden" name="order_id" value="{order_id}" />
+<input type="hidden" name="shp_id" value="{shp_id}" />
+<div class="shopOrderContainer">
+  <h1 class="aligncenter">{$LANG_SHOP['ship_order']}</h1>
+    {linkPackingList}
+
+  <div class="shopOrder">
+
+  <div>
+    <div id="shopBilling">
+      <b>{$LANG_SHOP['bill_to']}:</b>
+{!if not_final}
+      <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
+{!endif}
+      <br />
+    {billto_addr}
+    </div>
+
+    <div id="shopShipping">
+      <b>{$LANG_SHOP['ship_to']}:</b>&nbsp;
+{!if not_final}
+      <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
+{!endif}
+      <br />
+    {shipto_addr}
+    </div>
+  </div>
+
+    <div id="shopOrderNumber">
+      {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
+      {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+    </div>
+
+    <div class="shopOrderItems">
+      <table>
+        <tr>
+          <th class="aligncenter">{$LANG_SHOP['description']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['ordered']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['shipped']}</th>
+          <th style="width:10%" class="alignright">{$LANG_SHOP['toship']}</th>
+        </tr>
+        <!-- BEGIN ItemRow -->
+        <tr>
+          <td>
+            {item_dscp}
+{!if sku}
+        <br />{sku}
+{!endif}
+        <!-- BEGIN ItemOptions -->
+            <div class="ItemOptions">{option_dscp}</div>
+        <!-- END ItemOptions -->
+          </td>
+          <td class="alignright">{ordered}</td>
+          <td class="alignright">{shipped}</td>
+          <td class="alignright">
+{!if toship}
+            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright" value="{toship}" />
+{!endif}
+          </td>
+        </tr>
+        <tr class="shopItemRowSpacer"></tr>
+        <!-- END ItemRow -->
+      </table>
+    </div>
+  </div>
+
+  <div id="trackinginfo">
+    {tracking_form}
+  </div>
+
+{!if ship_method}
+    <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
+{!endif}
+
+  <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
+{!if order_instr}
+    {order_instr}
+{!else}
+    <span class="orderInstructions">{$LANG_SHOP['none']}</span>
+{!endif}
+  </div>
+</div>
+<button style="float:none;" type="submit" class="uk-button uk-button-success"
+{!if shp_id}
+  name="updateshipment">
+{!else}
+  name="addshipment">
+{!endif}
+    {$LANG_ADMIN['submit']}</button>
+</form>
+{# end {templatelocation} #}

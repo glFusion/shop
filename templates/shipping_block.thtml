@@ -1,0 +1,37 @@
+{# begin {templatelocation} #}
+<table style="width:100%;">
+  <tr>
+    <th colspan="4">
+      {$LANG_SHOP['shipto_info']}
+    </td>
+  </tr>
+  <tr>
+    <th>{$LANG_SHOP['datetime']}</th>
+    <th>{$LANG_SHOP['carrier']}</th>
+    <th>{$LANG_SHOP['tracking']}</th>
+  </tr>
+<!-- BEGIN Packages -->
+  <tr>
+    <td>
+{!if show_ship_info}
+      {ship_date}
+      <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shp_id}"
+        class="uk-icon uk-icon-edit"></a>
+{!endif}
+    </td>
+    <td>
+      {shipper_info}
+    </td>
+{!if tracking_num}
+    <td>
+{!if tracking_url}
+      <a href="{tracking_url}" target="_blank">{tracking_num}</a>
+{!else}
+      {tracking_num}
+{!endif}
+    </td>
+{!endif}
+  </tr>
+<!-- END Packages -->
+</table>
+{# end {templatelocation} #}

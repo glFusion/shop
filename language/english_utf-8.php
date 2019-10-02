@@ -507,6 +507,16 @@ $LANG_SHOP = array (
 'new_image' => 'Upload New',
 'google_taxonomy' => 'Google Taxonomy',
 'brand' => 'Brand',
+'ship' => 'Ship',
+'ship_order' => 'Ship Order',
+'ordered' => 'Ordered',
+'shipped' => 'Shipped',
+'toship' => 'To Ship',
+'carrier' => 'Carrier',
+'other' => 'Other',
+'tracking' => 'Tracking',
+'tracking_info' => 'Tracking Information',
+'add_tracking' => 'Add Tracking',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

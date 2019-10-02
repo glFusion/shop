@@ -87,6 +87,15 @@ class Order
      * @var object */
     protected $order_date;
 
+    /** Billing address object.
+     * @var object */
+    protected $Billto;
+
+    /** Shipping address object.
+     * @var object */
+    protected $Shipto;
+
+
     /**
      * Set internal variables and read the existing order if an id is provided.
      *
@@ -416,6 +425,8 @@ class Order
                 $this->$fld = $A[$fld];
             }
         }
+        $this->Billto = new Address($this->getAddress('billto'));
+        $this->Shipto = new Address($this->getAddress('shipto'));
         if (isset($A['uid'])) $this->uid = $A['uid'];
 
         if (isset($A['order_id']) && !empty($A['order_id'])) {
@@ -586,6 +597,10 @@ class Order
             $this->isFinalView = true;
             $tplname = 'order.pdf';
             break;
+        case 'shipment':
+            $this->isFinalView = true;
+            $tplname = 'shipment';
+            break;
         }
         $step = (int)$step;
 
@@ -736,6 +751,10 @@ class Order
             'have_images'   => $is_invoice ? $have_images : false,
             'linkPackingList' => self::linkPackingList($this->order_id),
             'linkPrint'     => self::linkPrint($this->order_id, $this->token),
+            'billto_addr'   => $this->Billto->toHTML(),
+            'shipto_addr'   => $this->Shipto->toHTML(),
+            'shipment_block' => $this->getShipmentBlock(),
+            'itemsToShip'   => $this->itemsToShip(),
         ) );
 
         if ($this->isAdmin) {
@@ -831,7 +850,9 @@ class Order
         $oldstatus = $this->status;
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
-        if ($oldstatus == $newstatus) return true;
+        if ($oldstatus == $newstatus) {
+            return true;
+        }
 
         $this->status = $newstatus;
         $db_order_id = DB_escapeString($this->order_id);
@@ -1555,16 +1576,17 @@ class Order
      * Check if this order has any physical items.
      * Used to adapt workflows based on product types.
      *
-     * @return  boolean     True if at least one physical product is present
+     * @return  integer     Number of physical items x quantity
      */
     public function hasPhysical()
     {
+        $retval = 0;
         foreach ($this->items as $id=>$item) {
             if ($item->getProduct()->isPhysical()) {
-                return true;
+                $retval += $item->quantity;
             }
         }
-        return false;
+        return $retval;
     }
 
 
@@ -2135,6 +2157,114 @@ class Order
         }
         $html2pdf->Output($type . 'list.pdf', 'I');
         return true;
+    }
+
+
+    /**
+     * Get the order date.
+     *
+     * @return  object  Date object
+     */
+    public function getOrderDate()
+    {
+        return $this->order_date;
+    }
+
+
+    /**
+     * Get the Billing address.
+     *
+     * @return  object  Address object with billing information
+     */
+    public function getBillto()
+    {
+        return $this->Billto;
+    }
+
+
+    /**
+     * Get the Shipping address.
+     *
+     * @return  object  Address object with shipping information
+     */
+    public function getShipto()
+    {
+        return $this->Shipto;
+    }
+
+
+    /**
+     * Get the shipping info block for display on order views.
+     *
+     * @return  string      HTML for shipping info block
+     */
+    public function getShipmentBlock()
+    {
+        global $_CONF;
+
+        $Shipments = Shipment::getByOrder($this->order_id);
+        if (empty($Shipments)) {
+            return '';
+        }
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('html', 'shipping_block.thtml');
+        $T->set_block('html', 'Packages', 'packages');
+        foreach ($Shipments as $Shipment) {
+            $Dt = new \Date($Shipment->ts, $_CONF['timezone']);
+            $Packages = $Shipment->getPackages();
+            if (empty($Packages)) {
+                // Create a dummy package so something shows for the shipment
+                $Packages[]= new ShipmentPackage();
+            }
+            $show_ship_info = true;
+            foreach ($Packages as $Pkg) {
+                $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
+                $T->set_var(array(
+                    'show_ship_info' => $show_ship_info,
+                    'ship_date' => $Dt->toMySQL(true),
+                    'shp_id'    => $Shipment->shp_id,
+                    'shipper_info'  => $Pkg->shipper_info,
+                    'tracking_num'  => $Pkg->tracking_num,
+                    'tracking_url'  => $url,
+                ) );
+                $show_ship_info = false;
+                $T->parse('packages', 'Packages', true);
+            }
+        }
+        $T->parse('output', 'html');
+        $html = $T->finish($T->get_var('output'));
+        return $html;
+    }
+
+
+    /**
+     * Get all shipment objects related to this order.
+     *
+     * @return  array   Array of Shipment objects
+     */
+    public function getShipments()
+    {
+        return Shipment::getByOrder($this->order_id);
+    }
+
+
+    /**
+     * Get the total number of items yet to be shipped.
+     * Only considers physical products.
+     *
+     * @return  integer     Total items (quantitity) to be shipped
+     */
+    public function itemsToShip()
+    {
+        $total_items = 0;
+        $shipped_items = 0;
+        foreach ($this->items as $oi_id=>$data) {
+            if ($data->getProduct()->isPhysical()) {
+                $total_items += $data->quantity;
+                $shipped_items += ShipmentItem::getItemsShipped($oi_id);
+            }
+        }
+        return ($total_items - $shipped_items);
     }
 
 }

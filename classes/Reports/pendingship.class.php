@@ -129,6 +129,11 @@ class pendingship extends \Shop\Report
                 'field' => 'status',
                 'sort'  => true,
             ),
+            array(
+                'text' => $LANG_SHOP['ship'],
+                'field' => 'ship',
+                'sort' => 'false',
+            ),
         );
 
         $defsort_arr = array(
@@ -234,6 +239,9 @@ class pendingship extends \Shop\Report
                 $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']);
             }
             $retval .= '</span>';
+            break;
+        case 'ship':
+            $retval = '<a class="uk-button" href="' . SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'] . '">' . $LANG_SHOP['ship'] . '</a>';
             break;
         }
         return $retval;
