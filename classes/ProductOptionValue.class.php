@@ -874,6 +874,13 @@ class ProductOptionValue
     }
 
 
+    /**
+     * Clone a product's option values to another product.
+     *
+     * @param   integer $src    Source product ID
+     * @param   integer $dst    Destination product ID
+     * @param   boolean $del_existing   True to remove existing values in dst
+     */
     public static function cloneProduct($src, $dst, $del_existing=true)
     {
         global $_TABLES;
