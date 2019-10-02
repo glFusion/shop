@@ -237,12 +237,13 @@ class ipnlog extends \Shop\Report
                 }
             }
             if ($ipn) {
-                $T->set_block('report', 'rawBlock', 'Raw');
                 $T->set_var('ipn_data', true);
+                $T->set_block('report', 'rawBlock', 'Raw');
                 foreach ($ipn as $name => $value) {
                     $T->set_var(array(
                         'name'  => $name,
-                        'value' => $value,
+                        'value' => htmlspecialchars($value),
+                        //'value' => $value,
                     ) );
                     $T->parse('Raw', 'rawBlock', true);
                 }
