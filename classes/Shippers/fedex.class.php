@@ -20,7 +20,7 @@ class fedex extends \Shop\Shipper
      *
      * @return  string  Package tracing URL
      */
-    public static function getTrackingUrl($track_num)
+    public function getTrackingUrl($track_num)
     {
         return 'https://www.fedex.com/apps/fedextrack/index.html?trackingnumbers=' . urlencode($track_num);
     }

@@ -205,7 +205,7 @@ class usps extends \Shop\Shipper
      *
      * @return  string  Package tracing URL
      */
-    public static function getTrackingUrl($track_num)
+    public function getTrackingUrl($track_num)
     {
         return 'https://tools.usps.com/go/TrackConfirmAction_input?strOrigTrackNum=' . urlencode($track_num);
     }

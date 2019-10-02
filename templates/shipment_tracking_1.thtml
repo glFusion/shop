@@ -1,0 +1,81 @@
+{# begin {templatelocation} #}
+    <table id="trackingTable">
+      <tr>
+        <th style="width:60%" colspan="2">{$LANG_SHOP['carrier']}</th>
+        <th style="width:30%">{$LANG_SHOP['tracking']}</th>
+        <th style="width:10%">{$LANG_SHOP['delete']}</th>
+      </tr>
+<!-- BEGIN trackingPackages -->
+      <tr id="trackrow_{pkg_id}">
+        <td>{shipper_code}</td>
+        <td>{shipper_name}</td>
+        <td>{tracking_num}</td>
+        <td class="aligncenter">
+          <i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}"
+            onclick="javascript:return delTrackingRowAjax({pkg_id});">
+          </i>
+        </td>
+      </tr>
+<!-- END trackingPackages -->
+    </table>
+    <button class="uk-button" onclick="addTrackingRow();return false;">{$LANG_SHOP['add_tracking']}</button>
+<script type="text/javascript">
+var i = 1;
+function addTrackingRow()
+{
+    $('#trackingTable').append('<tr>' +
+        '<td><select onchange="updateCarrier(this, ' + i + ');return false;" name="tracking[' + i + '][shipper_id]">' +
+          '<option value="custom">Custom</option>' +
+          '{shipper_select}' +
+          '</select></td>' +
+        '<td><input type="text" id="carrierName' + i + '" name="tracking[' + i + '][shipper_name]" value="" /></td>' +
+        '<td><input type="text" name="tracking[' + i + '][tracking_num]" value="" /></td>' +
+        '<td class="aligncenter"><i class="uk-icon uk-icon-remove uk-text-danger" ' +
+        'data-uk-tooltip title="{$LANG_SHOP['rem_row']}" ' +
+        'onclick="javascript:return delTrackingRow(this);"></i></td>' +
+        '</tr>'
+    );
+    i++;
+    return false;
+}
+function delTrackingRow(elem)
+{
+    $(elem).parent().parent().remove();
+    return false;
+}
+
+function delTrackingRowAjax(pkg_id)
+{
+    var dataS = {
+        "action": "del_tracking",
+        "pkg_id": pkg_id,
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: site_admin_url  + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                row = document.getElementById("trackrow_"+pkg_id);
+                row.remove();
+            } catch(err) {
+            }
+        }
+    });
+    return false;
+}
+
+function updateCarrier(elem, row)
+{
+    name_fld = document.getElementById("carrierName" + row);
+    if (elem.value > 0) {
+        name_fld.value = elem.selectedOptions[0].innerHTML;
+    } else {
+        name_fld.value = "";
+    }
+}
+
+</script>
+{# end {templatelocation} #}

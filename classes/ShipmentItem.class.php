@@ -11,7 +11,6 @@
  *              GNU Public License v2 or later
  * @filesource
  */
-
 namespace Shop;
 
 /**
@@ -30,6 +29,8 @@ class ShipmentItem
         'si_id', 'shipment_id', 'orderitem_id', 'quantity',
     );
 
+    /** OrderItem related to this shipment item
+     * @var object */
     private $OrderItem = NULL;
 
 
@@ -80,12 +81,21 @@ class ShipmentItem
     }
 
 
+    /**
+     * Create a new ShipmentItem object.
+     *
+     * @param   integer $shp_id     ID of parent shipment
+     * @param   integer $oi_id      ID of order item being shipped
+     * @param   integer $qty        Quantity of items in this shipment
+     * @return  object      ShipmentItem object
+     */
     public static function Create($shp_id, $oi_id, $qty)
     {
         $Obj = new self;
         $Obj->shipment_id = $shp_id;
         $Obj->orderitem_id = $oi_id;
-        $Obj->qty = $qty;
+        $Obj->quantity = $qty;
+        return $Obj;
     }
 
 
@@ -125,7 +135,7 @@ class ShipmentItem
         $retval = array();
         $oi_id = (int)$oi_id;
         $sql = "SELECT * FROM {$_TABLES['shop.shipment_items']}
-            WHERE orderietm_id = $oi_id";
+            WHERE orderitem_id = $oi_id";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $retval[] = new self($A);
@@ -139,7 +149,7 @@ class ShipmentItem
      *
      * @return  object  OrderItem object
      */
-    public function OrderItem()
+    public function getOrderItem()
     {
         if ($this->OrderItem === NULL && $this->si_id > 0) {
             $this->OrderItem = new OrderItem($this->orderitem_id);
@@ -242,6 +252,24 @@ class ShipmentItem
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * Get the total number of items shipped for an order.
+     *
+     * @param   string  $oi_id  Order ID
+     * @return  integer     Number of items shipped
+     */
+    public static function getItemsShipped($oi_id)
+    {
+        global $_TABLES;
+
+        return (int)DB_getItem(
+            $_TABLES['shop.shipment_items'],
+            'SUM(quantity)',
+            "orderitem_id = $oi_id"
+        );
     }
 
 }

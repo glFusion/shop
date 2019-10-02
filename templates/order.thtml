@@ -24,79 +24,32 @@
     {linkPrint}
 {!if is_admin}
     {linkPackingList}
+{!if itemsToShip}
+    <br /><a class="uk-button uk-button-primary" href="{site_admin_url}/plugins/shop/index.php?shiporder=x&order_id={order_number}">{$LANG_SHOP['ship']}</a>
+{!endif}
 {!endif}
   </div>
 {!endif}
 
   <div class="shopOrder">
 
-    {!if have_billto}
     <div id="shopBilling">
       <b>{$LANG_SHOP['bill_to']}:</b>
 {!if not_final}
       <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
       <br />
-      {!if billto_name}
-      {billto_name}<br />
-      {!endif}
-      {!if billto_company}
-      {billto_company}<br />
-      {!endif}
-      {!if billto_address1}
-      {billto_address1}<br />
-      {!endif}
-      {!if billto_address2}
-      {billto_address2}<br />
-      {!endif}
-      {!if billto_city}
-        {!if billto_state}
-          {billto_city},&nbsp;
-        {!else}
-          {billto_city}
-        {!endif}
-      {!endif}
-      {billto_state} {billto_zip}<br />
-      {!if billto_country}
-      {billto_country}
-      {!endif}
-      <p>&nbsp;</p>
+      {billto_addr}
     </div>
-    {!endif}
 
-    {!if have_shipto}
     <div id="shopShipping">
       <b>{$LANG_SHOP['ship_to']}:</b>&nbsp;
 {!if not_final}
       <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
       <br />
-      {!if shipto_name}
-      {shipto_name}<br />
-      {!endif}
-      {!if shipto_company}
-      {shipto_company}<br />
-      {!endif}
-      {!if shipto_address1}
-      {shipto_address1}<br />
-      {!endif}
-      {!if shipto_address2}
-      {shipto_address2}<br />
-      {!endif}
-      {!if shipto_city}
-      {!if shipto_state}
-      {shipto_city},&nbsp;
-      {!else}
-      {shipto_city}
-      {!endif}
-      {shipto_state} {shipto_zip}<br />
-      {!endif}
-      {!if shipto_country}
-      {shipto_country}
-      {!endif}
-      <p>&nbsp;</p>
+      {shipto_addr}
     </div>
-    {!endif}
 
     {!if checkout}
     {!else}
@@ -263,26 +216,35 @@
 {!else}
   <p>{$LANG_SHOP['status']}: {status}</p>
 {!endif}
+{!if shipment_block}
+  <div id="orderShipmentBlock">
+    {shipment_block}
+  </div>
+{!endif}
   <p>
     <table id="shopOrderLog">
-    <tr>
+     <tr>
       <th>{$LANG_SHOP['timestamp']}</th>
 {!if is_admin}
       <th>{$LANG_SHOP['username']}</th>
 {!endif}
       <th>{$LANG_SHOP['message']}</th>
-    </tr>
+     </tr>
     <!-- BEGIN LogMessages -->
     <tr style="line-height: 1.5rem;">
       <td style="vertical-align:top;white-space:nowrap" class="tooltip" title="{log_ts_tip}">{log_ts}</td>
 {!if is_admin}
       <td style="vertical-align:top;white-space:nowrap" >{log_username}</td>
-{!endif}
+ {!endif}
       <td style="vertical-align:top;">{log_msg}</td>
     </tr>
     <!-- END LogMessages -->
-    </table>
+     </table>
   {!endif}
+
+  <p>
+    {shipping_block}
+  </p>
   </div>
 </div>
 {# end {templatelocation} #}

@@ -24,23 +24,30 @@ class Shipment
      * @var array */
     private $properties = array();
 
-
+    /** Order object related to this shipment.
+     * var object */
     private $Order = NULL;
-    public $Items = array();
 
-    /** Fields for an OrderItem record.
+    /** ShipmentItem objects included in this shipment.
+     * @var array */
+    public $Items = NULL;
+
+    /** Packages (tracking info) included in this shipment.
+     * @var array */
+    public $Packages = NULL;
+
+    /** Fields for a Shipment record.
      * @var array */
     private static $fields = array(
-        'shp_id', 'order_id', 'shipper_id', 'ts', 'shipper_info',
+        'shp_id', 'order_id', 'ts',
         'tracking_num', 'comment',
     );
 
     /**
      * Constructor.
-     * Initializes the order item
+     * Initializes the order item.
      *
-     * @param   integer $shp_id  OrderItem record ID
-     * @uses    self::Load()
+     * @param   integer|array   $shp_id  Record ID or array
      */
     public function __construct($shp_id = 0)
     {
@@ -50,10 +57,25 @@ class Shipment
             if (!$status) {
                 $this->shp_id = 0;
             }
-        } elseif (is_array($shp_id) && isset($shp_id['quantity'])) {
+        } elseif (is_array($shp_id)) {
             // Got a shipment record, just set the variables
             $this->setVars($shp_id);
         }
+    }
+
+
+    /**
+     * Create a new shipment.
+     * Instantiates a Shipment object and sets the order ID.
+     *
+     * @param   string  $order_id   ID of related order
+     * @return  object      Shipment object with order ID set
+     */
+    public static function Create($order_id)
+    {
+        $Obj = new self();
+        $Obj->order_id = $order_id;
+        $Order = $Obj->getOrder();
     }
 
 
@@ -75,6 +97,7 @@ class Shipment
         if ($res) {
             $this->setVars(DB_fetchArray($res, false));
             $this->getItems();
+            $this->getPackages();
             return true;
         } else {
             $this->shp_id = 0;
@@ -139,6 +162,33 @@ class Shipment
     }
 
 
+    /**
+     * Get all the shipments related to a specific order.
+     *
+     * @param   string  $order_id   ID of order
+     * @return  array       Array of Shipment objects
+     */
+    public static function getByOrder($order_id)
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.shipments']}
+            WHERE order_id = '" . DB_escapeString($order_id) . "'
+            ORDER BY ts ASC";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[] = new self($A);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the order object related to this shipment.
+     *
+     * @return  object      Order object
+     */
     public function getOrder()
     {
         if ($this->Order === NULL) {
@@ -153,7 +203,22 @@ class Shipment
      */
     public function getItems()
     {
-        $this->Items = ShipmentItem::getByShipment($this->shp_id);
+        if ($this->Items === NULL) {
+            $this->Items = ShipmentItem::getByShipment($this->shp_id);
+        }
+        return $this->Items;
+    }
+
+
+    /**
+     * Get the packages included in this shipment.
+     */
+    public function getPackages()
+    {
+        if ($this->Packages === NULL) {
+            $this->Packages = ShipmentPackage::getByShipment($this->shp_id);
+        }
+        return $this->Packages;
     }
 
 
@@ -162,7 +227,7 @@ class Shipment
      * `$form` is expected to contain shipment info, including an array
      * named `orderitem` with orderitem IDs and quantities for each.
      *
-     * @param   array   $A  Optional array of data to save
+     * @param   array   $form   Optional array of data to save ($_POST)
      * @return  boolean     True on success, False on DB error
      */
     public function Save($form = NULL)
@@ -175,10 +240,14 @@ class Shipment
             $this->setVars($form);
         }
 
+        if (!$this->_isValidRecord($form)) {
+            return false;
+        }
+
         if ($this->shp_id > 0) {
             // New shipment
             $sql1 = "UPDATE {$_TABLES['shop.shipments']} ";
-            $sql3 = " WHERE id = '{$this->shp_id}'";
+            $sql3 = " WHERE shp_id = '{$this->shp_id}'";
         } else {
             $sql1 = "INSERT INTO {$_TABLES['shop.shipments']} ";
             $sql3 = '';
@@ -187,9 +256,6 @@ class Shipment
         $sql2 = "SET 
             order_id = '" . DB_escapeString($this->order_id) . "',
             ts = UNIX_TIMESTAMP(),
-            shipper_id = '{$this->shipper_id}',
-            shipper_info = '" . DB_escapeString($this->shipper_info) . "',
-            tracking_num = '" . DB_escapeString($this->tracking_num) . "',
             comment = '" . DB_escapeString($this->comment) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -198,11 +264,24 @@ class Shipment
         if (!DB_error()) {
             if ($this->shp_id == 0) {
                 $this->shp_id = DB_insertID();
-                if (isset($form['orderitems']) && is_array($form['orderitems'])) {
-                    foreach ($form['orderitems'] as $oi_id=>$qty) {
-                        $SI = ShipmentItem::create($this->shp_id, $oi_id, $qty);
+                $ord_status = 'shipped';    // assume all shipped
+                foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                    if ($qty > 0) {
+                        $SI = ShipmentItem::Create($this->shp_id, $oi_id, $qty);
                         $SI->Save();
+                    } else {
+                        $ord_status = 'processing';
                     }
+                }
+                $this->getOrder()->updateStatus($ord_status);
+            }
+            if (isset($form['tracking']) && is_array($form['tracking'])) {
+                foreach ($form['tracking'] as $id=>$data) {
+                    $this->addPackage(
+                        $data['shipper_id'],
+                        $data['shipper_name'],
+                        $data['tracking_num']
+                    );
                 }
             }
             return true;
@@ -212,14 +291,68 @@ class Shipment
     }
 
 
-
-    public function Edit()
+    /**
+     * Check that required variables are set prior to saving the shipment.
+     * Checks that there is some quantity being shipped, for new shipments.
+     * Returns True when updating existing shipments.
+     *
+     * @param   array   $form   Array of form fields ($_POST)
+     * @return  boolean     True if the record is OK to save, False if not
+     */
+    private function _isValidRecord($form)
     {
-        $T = new \Template(__DIR__ . '/../templates');
-        $T->set_file('shipment_form', 'shipment_form.thtml');
+        // Check that the shipping quantity field is present, for new shipments.
+        if ($this->shp_id == 0) {
+            if (!isset($form['ship_qty']) || !is_array($form['ship_qty'])) {
+                return false;
+            }
 
+            // Check that at least one item is being shipped
+            $total_qty = 0;
+            foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                if ($qty > 0) {
+                    $total_qty += $qty;
+                }
+            }
+            if ($total_qty <= 0) {
+                return false;
+            }
+        }
+
+        // All check passed OK
+        return true;
     }
 
+
+    /**
+     * Add a package with tracking info to this shipment.
+     * A shipper name or tracking number must be specified.
+     *
+     * @param   string  $shipper_id     Shipper ID, if a saved shipper is used
+     * @param   string  $shipper_info   Optional override for shipper name
+     * @param   string  $tracking_num   Tracking number
+     */
+    public function addPackage($shipper_id, $shipper_info, $tracking_num)
+    {
+        if ($shipper_info == '') {
+            if ($shipper_id > 0) {
+                $shipper_info = Shipper::getInstance($shipper_id)->getName();
+            }
+        }
+
+        // Have to have at least a shipper name or tracking number, otherwise
+        // nothing to save
+        if (empty($hipper_info) && empty($tracking_num)) {
+            return false;
+        }
+
+        $Pkg = new ShipmentPackage();
+        $Pkg->shp_id = $this->shp_id;
+        $Pkg->shipper_id = $shipper_id;
+        $Pkg->shipper_info = $shipper_info;
+        $Pkg->tracking_num = $tracking_num;
+        $Pkg->Save();
+    }
 
 }
 

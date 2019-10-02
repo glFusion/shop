@@ -4,6 +4,20 @@
   <fieldset>
 
   <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['carrier']}:
+      <span id="code" class="tooltip_cfg tooltipstered"></span>
+    </label>
+    <div class="uk-form-controls">
+      <select name="code">
+      <option value="">--{$LANG_SHOP['other']}--</option>
+<!-- BEGIN shipperCodes -->
+      <option value="{code}" {selected}>{code_name} ({code})</option>
+<!-- END shipperCodes -->
+      </select>
+    </div>
+  </div>
+
+  <div class="uk-form-row">
     <label class="uk-form-label">{$LANG_SHOP['name']}:
       <span id="name" class="tooltip_cfg tooltipstered"></span>
     </label>
