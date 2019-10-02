@@ -64,7 +64,7 @@ case 'addcartitem':
         'short_dscp'    => SHOP_getVar($_POST, 'short_dscp', 'string', $P->getDscp()),
         'quantity'      => SHOP_getVar($_POST, 'quantity', 'int', 1),
         'price'         => $P->getPrice(),
-        'attributes'    => SHOP_getVar($_POST, 'attributes', 'array'),
+        'options'       => SHOP_getVar($_POST, 'options', 'array'),
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );

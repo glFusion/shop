@@ -355,7 +355,7 @@ div.shopProductListItem.v1 div.ItemButtons {
 }
 
 .shopOrderContainer {
-    max-width: 800px;
+    max-width: 90%;
     margin-left: auto;
     margin-right: auto;
 }
@@ -721,4 +721,29 @@ tr.shopItemRowSpacer {
 input.shopErr {
     border-radius: 5px;
     border:#FF0000 1px solid;
+}
+
+div#trackinginfo {
+    float:right;
+    width: calc( (100%) * .5 - 30px );
+    background: #ccc;
+}
+table#trackingTable {
+    width: 100%;
+    table-layout:fixed;
+}
+table#trackingTable td.aligncenter {
+    width: 10%;
+}
+table#trackingTable td {
+    background: #ccc;
+    padding: 2px;
+}
+table#trackingTable select,input {
+    max-width:90%;
+}
+div#orderShipmentBlock {
+    width:70%;
+    background:#ccc;
+    padding:8px;
 }

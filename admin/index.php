@@ -44,18 +44,20 @@ $action = '';
 $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
-    'saveproduct', 'savecat', 'saveopt', 'deleteopt', 'resetbuttons',
+    'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
+    'addshipment', 'updateshipment',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
     'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
+    'shiporder', 'editshipment',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -143,16 +145,16 @@ case 'pog_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
     break;
 
-case 'saveopt':
-    $Opt = new \Shop\ProductOptionValue($_POST['opt_id']);
+case 'pov_save':
+    $Opt = new \Shop\ProductOptionValue($_POST['pov_id']);
     if (!$Opt->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
-    if (isset($_POST['opt_id']) && !empty($_POST['opt_id'])) {
+    if (isset($_POST['pov_id']) && !empty($_POST['pov_id'])) {
         // Updating an existing option, return to the list
         COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editopt=x&item_id=' . $_POST['item_id']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&item_id=' . $_POST['item_id'] . '&pog_id=' . $Opt->getGroupID());
     }
     break;
 
@@ -161,7 +163,7 @@ case 'pog_del':
     $view = 'opt_grp';
     break;
 
-case 'deleteopt':
+case 'pov_del':
     // opt_id could be via $_GET or $_POST
     Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
     $view = 'options';
@@ -309,36 +311,20 @@ case 'attrcopy':
     // Ignore the source product, which may or may not be in the category.
     if ($dest_cat > 0) {
         // Get all products in the category
-        $res = DB_query("SELECT id FROM {$_TABLES['shop.products']}
-                WHERE cat_id = $dest_cat
-                AND id <> $src_prod");
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $dest_prod = (int)$A['id'];
-                $done_prods[] = $dest_prod;     // track for later
-                if ($del_existing) {
-                    DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $dest_prod);
-                }
-                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
-                SELECT NULL, $dest_prod, pog_id, pov_name, pov_value, orderby, pov_price, enabled
-                FROM {$_TABLES['shop.prod_opt_vals']}
-                WHERE item_id = $src_prod";
-                DB_query($sql);
+        $Products = Shop\Product::getIDsByCategory($dest_cat);
+        foreach ($Products as $dst_id) {
+            if ($dst_id == $src_prod) {
+                continue;
             }
+            $done_prods[] = $dst_id;    // track for later
+            Shop\ProductOptionValue::cloneProduct($src_prod, $dst_id, $del_existing);
         }
     }
 
     // If a target product was selected, it's not the same as the source, and hasn't
     // already been done as part of the category, then update the target product also.
     if ($dest_prod > 0 && $dest_prod != $src_prod && !in_array($dest_prod, $done_prods)) {
-        if ($del_existing) {
-            DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $dest_prod);
-        }
-        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
-            SELECT NULL, $dest_prod, pog_id, pov_name, pov_value, orderby, pov_price, enabled
-            FROM {$_TABLES['shop.prod_opt_vals']}
-            WHERE item_id = $src_prod";
-        DB_query($sql);
+        Shop\ProductOptionValue::cloneProduct($src_prod, $dest_prod, $del_existing);
     }
     \Shop\Cache::clear();
     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
@@ -419,6 +405,19 @@ case 'delsale':
         \Shop\Sales::Delete($id);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
+    break;
+
+case 'updateshipment':
+    $shp_id = SHOP_getVar($_POST, 'shp_id', 'integer');
+    if ($shp_id > 0) {
+        $S = new Shop\Shipment($shp_id);
+        $S->Save($_POST);
+    }
+    break;
+
+case 'addshipment':
+    $S = new Shop\Shipment();
+    $S->Save($_POST);
     break;
 
 default:
@@ -567,7 +566,8 @@ case 'pov_edit':
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
     if ($opt_id == 0) {
-        $Opt->item_id = SHOP_getVar($_GET, 'item_id', 'integer');
+        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
+        $Opt->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
     }
     $content .= $Opt->Edit();
     break;
@@ -655,6 +655,26 @@ case 'configreport':
 case 'editshipper':
     $S = new \Shop\Shipper($actionval);
     $content .= $S->Edit();
+    break;
+
+case 'editshipment':
+    $shp_id = (int)$actionval;
+    if ($shp_id > 0) {
+        $S = new Shop\Shipment($shp_id);
+        $V = new Shop\Views\Shipment($S->order_id);
+        $V->setShipmentID($shp_id);
+        $content = $V->Render();
+    }
+    break;
+
+case 'shiporder':
+    $V = new Shop\Views\Shipment($_GET['order_id']);
+    $content = $V->Render();
+    /*
+    $Ord = Shop\Order::getInstance($_GET['order_id']);
+    if (!$Ord->isNew) {
+        $content .= $Ord->View('shipment');
+    }*/
     break;
 
 default:

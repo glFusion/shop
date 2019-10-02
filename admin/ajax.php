@@ -59,7 +59,7 @@ case 'dropupload':
         }
         Shop\Cache::clear('products');
     }
-    header('Content-Type: applicsation/json');
+    header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
     //A date in the past
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
@@ -72,7 +72,7 @@ case 'attr_orderby_opts':
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\Attribute::getOrderbyOpts($item_id, $og_id, $selected);
+    $retval = Shop\ProductOptionValue::getOrderbyOpts($item_id, $og_id, $selected);
     echo $retval;
     exit;
 
@@ -95,7 +95,7 @@ case 'updatestatus':
                 $L['newstatus'] = $newstatus;
             }
         }
-        header('Content-Type: applicsation/json');
+        header('Content-Type: application/json');
         header("Cache-Control: no-cache, must-revalidate");
         //A date in the past
         header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
@@ -111,11 +111,48 @@ case 'delimage':
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::DeleteImage($img_id),
     );
-    header('Content-Type: applicsation/json');
+    header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
     //A date in the past
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
     echo json_encode($arr);
+    break;
+
+case 'addtracking':
+    $retval = array('status' => false);
+    $shp_id = SHOP_getVar($_POST, 'shp_id', 'integer');
+    if ($shp_id > 0) {
+        $SP = new Shop\ShippingPackage($shp_id);
+        if ($SP->Save($_POST)) {
+            $retval = array(
+                'status'    => true,
+                'shipper_id' => $SP->shipper_id,
+                'shipper_name' => $SP->shipper_name,
+                'tracking_num' => $SP->tracking_num,
+                'comment'   => $SP->comment,
+            );
+        }
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
+
+case 'del_tracking':
+    $pkg_id = SHOP_getVar($_POST, 'pkg_id', 'integer');
+    if ($pkg_id > 0) {
+        Shop\ShipmentPackage::Delete($pkg_id);
+    }
+    $retval = array(
+        'status' => true,
+    );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'toggle':
@@ -129,7 +166,6 @@ case 'toggle':
         case 'featured':
             $newval = \Shop\Product::toggleFeatured($_POST['oldval'], $_POST['id']);
             break;
-
          default:
             exit;
         }
@@ -140,7 +176,6 @@ case 'toggle':
         case 'enabled':
             $newval = \Shop\Category::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
-
          default:
             exit;
         }
@@ -149,13 +184,11 @@ case 'toggle':
     case 'option':
         switch ($_POST['type']) {
         case 'enabled':
-            $newval = \Shop\Option::toggleEnabled($_POST['oldval'], $_POST['id']);
+            $newval = \Shop\ProductOptionValue::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
-
          default:
             exit;
         }
-
        break;
 
     case 'shipping':
@@ -163,11 +196,9 @@ case 'toggle':
         case 'enabled':
             $newval = \Shop\Shipper::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
-
          default:
             exit;
         }
-
        break;
 
     case 'gateway':
@@ -175,15 +206,12 @@ case 'toggle':
         case 'enabled':
             $newval = \Shop\Gateway::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
-
         case 'buy_now':
             $newval = \Shop\Gateway::toggleBuyNow($_POST['oldval'], $_POST['id']);
             break;
-
         case 'donation':
             $newval = \Shop\Gateway::toggleDonation($_POST['oldval'], $_POST['id']);
             break;
-
         default:
             exit;
         }
@@ -199,7 +227,6 @@ case 'toggle':
         case 'enabled':
             $newval = \Shop\Workflow::setValue($_POST['id'], $field, $newval);
             break;
-
         default:
             exit;
         }
@@ -213,7 +240,6 @@ case 'toggle':
         case 'notify_admin':
             $newval = \Shop\OrderStatus::Toggle($_POST['id'], $field, $_POST['oldval']);
             break;
-
         default:
             exit;
         }
@@ -232,8 +258,7 @@ case 'toggle':
         'statusMessage' => $newval != $_POST['oldval'] ?
                 $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
     );
-
-    header('Content-Type: applicsation/json');
+    header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
     //A date in the past
     header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
