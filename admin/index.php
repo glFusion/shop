@@ -417,7 +417,12 @@ case 'updateshipment':
 
 case 'addshipment':
     $S = new Shop\Shipment();
-    $S->Save($_POST);
+    if ($S->Save($_POST)) {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editshipment=x&shp_id=' . $S->shp_id);
+    } else {
+        COM_setMsg("Error Adding Shipment, see the error log");
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
+    }
     break;
 
 default:

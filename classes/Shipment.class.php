@@ -43,6 +43,7 @@ class Shipment
         'tracking_num', 'comment',
     );
 
+
     /**
      * Constructor.
      * Initializes the order item.
@@ -266,10 +267,13 @@ class Shipment
                 $this->shp_id = DB_insertID();
                 $ord_status = 'shipped';    // assume all shipped
                 foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                    $qty = (float)$qty;
                     if ($qty > 0) {
                         $SI = ShipmentItem::Create($this->shp_id, $oi_id, $qty);
                         $SI->Save();
                     } else {
+                        // This is an empty quantity, so there are some items
+                        // still to ship
                         $ord_status = 'processing';
                     }
                 }
