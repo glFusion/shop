@@ -305,6 +305,11 @@ class OrderItemOption
     }
 
 
+    /**
+     * Get the record ID for this item option
+     *
+     * @return  integer     DB record ID
+     */
     public function getID()
     {
         return $this->oio_id;
