@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -169,16 +169,17 @@ $LANG_SHOP = array (
 'shipping_amt'      => 'Fixed Amount',
 'per_item'          => 'Per Item',
 'storefront'        => 'Go to Store',
-'options_msg'       => 'Adding attributes  will prevent encrypted buttons from being created.',
-'new_attr'          => 'New Attribute',
-'edit_attr'         => 'Edit Attribute',
-'new_ag'            => 'New Attribute Group',
-'edit_ag'           => 'Edit Attribute Group',
+'options_msg'       => 'Adding attributes will prevent encrypted buttons from being created.',
+'new_opt'           => 'New Option Value',
+'edit_opt'          => 'Edit Option',
+'new_og'            => 'New Option Group',
+'edit_og'           => 'Edit Option Group',
 'attributes'        => 'Attributes',
-'attr_grps'         => 'Attribute Groups',
-'attr_name'         => 'Attribute Name',
-'attr_value'        => 'Attribute Value',
-'attr_price'        => 'Attribute Price',
+'options'           => 'Options',
+'opt_grps'          => 'Option Groups',
+'opt_name'          => 'Option Name',
+'opt_value'         => 'Option Value',
+'opt_price'         => 'Option Price',
 'order'             => 'Order',
 'err_missing_name'  => 'Missing product name',
 'err_missing_desc'  => 'Missing product description',
@@ -243,6 +244,7 @@ $LANG_SHOP = array (
 'buyer_email'   => 'Buyer E-Mail',
 'todo_noproducts' => 'There are no products in the catalog.',
 'todo_nogateways' => 'There are no payment gateways enabled.',
+'todo_migrate_pp' => 'You may want to migrate from the Paypal plugin via the Maintenance menu.',
 'orderstatus'   => array(
     'pending'   => 'Pending',
     'paid'      => 'Paid',
@@ -440,8 +442,8 @@ $LANG_SHOP = array (
 'max_ship_units' => 'Max Shipping Units',
 'rate_table' => 'Rate Table',
 'rate' => 'Parcel Rate',
-'add_rate_tt' => 'Click to add a new rate',
-'rem_rate_tt' => 'Click to remove this rate',
+'add_row' => 'Click to add a new row',
+'rem_row' => 'Click to remove this row',
 'add_rate'  => 'Add Rate',
 'new_ship_method' => 'New Shipment Method',
 'admin_hdr_shipping' => 'Create and update shipping methods based on a number of product &quot;units&quot; shipped. Units provide a rough method of combining products into single shipments but do not consider weight, size or distance.',
@@ -504,6 +506,17 @@ $LANG_SHOP = array (
 'allday' => 'All Day',
 'new_image' => 'Upload New',
 'google_taxonomy' => 'Google Taxonomy',
+'brand' => 'Brand',
+'ship' => 'Ship',
+'ship_order' => 'Ship Order',
+'ordered' => 'Ordered',
+'shipped' => 'Shipped',
+'toship' => 'To Ship',
+'carrier' => 'Carrier',
+'other' => 'Other',
+'tracking' => 'Tracking',
+'tracking_info' => 'Tracking Information',
+'add_tracking' => 'Add Tracking',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
