@@ -1,12 +1,12 @@
 <?php
 /**
- * Pending Shipments report.
+ * Pending Shipments report by Shipper.
  * For a selected shipper, list all the pending fulfillments.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.1
+ * @version     v1.0.0
  * @since       v0.7.1
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
@@ -15,29 +15,16 @@
 namespace Shop\Reports;
 
 /**
- * Class for Pending Shipments Report.
+ * Class for Pending Shipments Report by Shipper.
  * @package shop
  */
-class pendingship_shipper extends \Shop\Report
+class pendingship_shipper extends pendingship
 {
-    /** Name of icon to use in report selection.
-     * @var string */
-    protected $icon = 'truck';
-
-
     /**
      * Constructor. Override the allowed statuses.
      */
     public function __construct()
     {
-        // This report doesn't show shipped or closed statuses.
-        $this->allowed_statuses = array(
-            'pending',
-            'paid',
-            'processing',
-        );
-        $this->filter_dates = false;
-        $this->filter_uid = false;
         parent::__construct();
         if (isset($_GET['shipper_id'])) {
             $this->setParam('shipper_id', $_GET['shipper_id']);
@@ -75,7 +62,7 @@ class pendingship_shipper extends \Shop\Report
     /**
      * Create and render the report contents.
      *
-     * @return  string  HTML for report
+     * @return  string  Output for report
      */
     public function Render()
     {
@@ -133,17 +120,14 @@ class pendingship_shipper extends \Shop\Report
             'direction' => 'ASC',
         );
 
-        $sql = "SELECT ord.*, itm.quantity
-            FROM {$_TABLES['shop.orderitems']} itm
-            LEFT JOIN {$_TABLES['shop.orders']} ord
-                ON itm.order_id = ord.order_id";
-
         $query_arr = array(
             'table' => 'shop.orders',
-            'sql' => $sql,
+            'sql' => $this->sql,
             'query_fields' => array(),
             'default_filter' => "WHERE ord.status IN ($nonshipped)
                 AND ord.shipper_id = '{$Shipper->id}'",
+            /*'default_filter' => "WHERE itm.product_id = '{$Item->id}'
+            HAVING qty_shipped < itm.quantity",*/
         );
 
         $text_arr = array(
@@ -161,7 +145,7 @@ class pendingship_shipper extends \Shop\Report
             $T->set_var(array(
                 'report_title' => sprintf($this->getTitle(), $Shipper->name),
                 'output'    => \ADMIN_list(
-                    'shop_rep_pendingship',
+                    'shop_rep_' . $this->key,
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
                     '', $this->extra, $this->_getListOptions()
@@ -203,37 +187,6 @@ class pendingship_shipper extends \Shop\Report
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
         return $this->getOutput($report);
-    }
-
-
-    /**
-     * Get the display value for a field specific to this report.
-     * This function takes over the "default" handler in Report::getReportField().
-     * @access  protected as it is only called from Report::getReportField().
-     *
-     * @param   string  $fieldname  Name of field (from the array, not the db)
-     * @param   mixed   $fieldvalue Value of the field
-     * @param   array   $A          Array of all fields from the database
-     * @param   array   $icon_arr   System icon array (not used)
-     * @param   array   $extra      Extra verbatim values
-     * @return  string              HTML for field display in the table
-     */
-    protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
-    {
-        global $LANG_SHOP;
-
-        $retval = NULL;
-        switch ($fieldname) {
-        case 'action':
-            $retval = '<span style="white-space:nowrap" class="nowrap">';
-            $retval .= \Shop\Order::linkPrint($A['order_id']);
-            if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']);
-            }
-            $retval .= '</span>';
-            break;
-        }
-        return $retval;
     }
 
 }

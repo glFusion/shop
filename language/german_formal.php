@@ -292,6 +292,11 @@ $LANG_SHOP = array (
         'dscp' => 'List payments received during a time period.',
     ),
     'pendingship' => array(
+        'name' => 'All Pending Shipments',
+        'dscp' => 'List all orders pending shipment.',
+        'title' => 'Pending Shipments',
+    ),
+    'pendingship_item' => array(
         'name' => 'Pending Shipments by Item',
         'dscp' => 'List pending shipments for a specific item. Useful when backordered items are received and must be shipped.',
         'title' => 'Pending Shipments for Item %s',

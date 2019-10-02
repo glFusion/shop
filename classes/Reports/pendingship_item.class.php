@@ -1,12 +1,12 @@
 <?php
 /**
- * All Pending Shipments report.
- * Shows all orders that are awaiting fulfillment.
+ * Pending Shipments report by Item.
+ * For a selected item, list all the pending fulfillments.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
@@ -15,42 +15,51 @@
 namespace Shop\Reports;
 
 /**
- * Class for Pending Shipments Report.
- * Also serves as a base class for pending shipment by item and shipper.
+ * Class for Pending Shipments Report by Item.
  * @package shop
  */
-class pendingship extends \Shop\Report
+class pendingship_item extends pendingship
 {
-    /** Name of icon to use for report selection.
-     * @var string */
-    protected $icon = 'truck';
-
-    /** Generic SQL to selet orders.
-     * Child classes may wish to override or not use this.
-     * @var string */
-    protected $sql;
-
-
     /**
-     * Constructor.
-     * Override the allowed statuses and set the base SQL for other classes.
+     * Constructor. Override the allowed statuses.
      */
     public function __construct()
     {
-        global $_TABLES;
-
-        // This report doesn't show shipped or closed statuses.
-        $this->allowed_statuses = array(
-            'pending',
-            'paid',
-            'processing',
-        );
-        $this->filter_dates = false;
-        $this->filter_uid = false;
         parent::__construct();
-        // Common SQL for pending shipment reports.
-        // Some reports may change or disregard this.
-        $this->sql = "SELECT ord.* FROM {$_TABLES['shop.orders']} ord";
+        if (isset($_GET['item_id'])) {
+            $this->setParam('item_id', $_GET['item_id']);
+        }
+    }
+
+
+    /**
+     * Creates the configuration form for elements unique to this report.
+     *
+     * @return  string          HTML for edit form
+     */
+    protected function getReportConfig()
+    {
+        global $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
+
+        $retval = '';
+        $T = $this->getTemplate('config');
+        $item_id = self::_getSessVar('item_id');
+        $items = \Shop\Product::getAll();
+        $T->set_block('report', 'itemSelect', 'itemsel');
+        foreach ($items as $id => $obj) {
+            if (!$obj->isPhysical()) {
+                // No shipping required for non-physical items
+                continue;
+            }
+            $T->set_var(array(
+                'item_name' => $obj->name,
+                'item_id'   => $id,
+                'selected'  => $id == $item_id ? 'selected="selected"' : '',
+            ) );
+            $T->parse('itemsel', 'itemSelect', true);
+        }
+        $retval .= $T->parse('output', 'report');
+        return $retval;
     }
 
 
@@ -70,6 +79,10 @@ class pendingship extends \Shop\Report
             }
         }
         $nonshipped = "'" . implode("','", $nonshipped) . "'";
+        $Item = \Shop\Product::getByID($this->item_id);
+        if ($Item->isNew) {
+            return $LANG_SHOP['no_data'];
+        }
 
         $header_arr = array(
             array(
@@ -94,6 +107,11 @@ class pendingship extends \Shop\Report
                 'sort'  => true,
             ),
             array(
+                'text'  => $LANG_SHOP['quantity'],
+                'field' => 'quantity',
+                'align' => 'right',
+            ),
+            array(
                 'text'  => $LANG_SHOP['status'],
                 'field' => 'status',
                 'sort'  => true,
@@ -110,12 +128,23 @@ class pendingship extends \Shop\Report
             'direction' => 'ASC',
         );
 
+        $sql = "SELECT ord.*, itm.quantity
+            FROM {$_TABLES['shop.orderitems']} itm
+            LEFT JOIN {$_TABLES['shop.orders']} ord
+                ON itm.order_id = ord.order_id";
+
         $query_arr = array(
             'table' => 'shop.orders',
-            'sql' => $this->sql,
+            'sql' => $sql,
             'query_fields' => array(),
-            'default_filter' => "WHERE ord.status IN ($nonshipped)",
+            'default_filter' => "WHERE ord.status IN ($nonshipped)
+                AND itm.product_id = '{$Item->id}'",
+            /*'default_filter' => "WHERE itm.product_id = '{$Item->id}'
+                AND ord.order_id IS NOT NULL
+                GROUP BY itm.id
+                HAVING (ifnull(qty_shipped,0)) < itm.quantity",*/
         );
+        //echo $this->sql . ' ' . $query_arr['default_filter'];die;
 
         $text_arr = array(
             'has_extras' => false,
@@ -174,40 +203,6 @@ class pendingship extends \Shop\Report
         $T->parse('output', 'report');
         $report = $T->finish($T->get_var('output'));
         return $this->getOutput($report);
-    }
-
-
-    /**
-     * Get the display value for a field specific to this report.
-     * This function takes over the "default" handler in Report::getReportField().
-     * @access  protected as it is only called from Report::getReportField().
-     *
-     * @param   string  $fieldname  Name of field (from the array, not the db)
-     * @param   mixed   $fieldvalue Value of the field
-     * @param   array   $A          Array of all fields from the database
-     * @param   array   $icon_arr   System icon array (not used)
-     * @param   array   $extra      Extra verbatim values
-     * @return  string              HTML for field display in the table
-     */
-    protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
-    {
-        global $LANG_SHOP;
-
-        $retval = NULL;
-        switch ($fieldname) {
-        case 'action':
-            $retval = '<span style="white-space:nowrap" class="nowrap">';
-            $retval .= \Shop\Order::linkPrint($A['order_id']);
-            if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']);
-            }
-            $retval .= '</span>';
-            break;
-        case 'ship':
-            $retval = '<a class="uk-button" href="' . SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'] . '">' . $LANG_SHOP['ship'] . '</a>';
-            break;
-        }
-        return $retval;
     }
 
 }
