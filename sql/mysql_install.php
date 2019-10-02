@@ -30,9 +30,10 @@ $_SQL = array(
   PRIMARY KEY (`id`),
   KEY `ipnlog_ts` (`ts`),
   KEY `ipnlog_txnid` (`txn_id`)
- ) ENGINE=MyISAM",
+) ENGINE=MyISAM",
 
 'shop.products' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
+CREATE TABLE `gl_shop_products` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
   `cat_id` int(11) unsigned NOT NULL DEFAULT '0',
@@ -72,8 +73,7 @@ $_SQL = array(
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
   KEY `avail_beg` (`avail_beg`),
-  KEY `avail_end` (`avail_end`),
-  KEY `name` (`name`)
+  KEY `avail_end` (`avail_end`)
 ) ENGINE=MyISAM",
 
 'shop.orderitems' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.orderitems']} (
@@ -119,6 +119,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned DEFAULT '1',
   `grp_access` mediumint(8) unsigned NOT NULL DEFAULT '1',
   `image` varchar(255) DEFAULT '',
+  `googl_taxonomy` text,
   `google_taxonomy` text,
   `lft` smallint(5) unsigned NOT NULL DEFAULT '0',
   `rgt` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -524,8 +525,8 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `pog_name` varchar(40) NOT NULL DEFAULT '',
       `pog_orderby` tinyint(2) DEFAULT '0',
       PRIMARY KEY (`pog_id`),
-      KEY `orderby` (`pog_orderby`,`pog_name`),
-      UNIQUE `pog_name` (`pog_name`)
+      UNIQUE KEY `pog_name` (`pog_name`),
+      KEY `orderby` (`pog_orderby`,`pog_name`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -538,7 +539,32 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`oio_id`),
       UNIQUE KEY `key1` (`oi_id`,`pog_id`,`pov_id`,`oio_name`)
     ) ENGINE=MyISAM",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD KEY (`name`)",
+    "CREATE TABLE `{$_TABLES['shop.shipments']}` (
+      `shp_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `order_id` varchar(40) DEFAULT NULL,
+      `ts` int(11) unsigned DEFAULT NULL,
+      `comment` text,
+      `shipping_address` text,
+      PRIMARY KEY (`shp_id`),
+      KEY `order_id` (`order_id`,`ts`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.shipment_items']}` (
+      `si_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `shipment_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `orderitem_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `quantity` int(11) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`si_id`),
+      KEY `shipment_id` (`shipment_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.shipment_packages']}` (
+      `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `shp_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `shipper_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `shipper_info` varchar(255) DEFAULT NULL,
+      `tracking_num` varchar(80) DEFAULT NULL,
+      PRIMARY KEY (`pkg_id`)
+    ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD KEY products_name (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
@@ -557,6 +583,8 @@ $SHOP_UPGRADE['1.0.0'] = array(
 
 $_SQL['shop.opt_grp'] = $SHOP_UPGRADE['1.0.0'][0];
 $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
-$_SQL['shop.prod_opt_vals'] = $SHOP_UPGRADE['1.0.0'][2];
+$_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
+$_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
+$_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 
 ?>
