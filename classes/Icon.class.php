@@ -19,6 +19,8 @@ namespace Shop;
  */
 class Icon
 {
+    /** Icon designations.
+     * @var array */
     static $icons = array(
         'edit'      => 'uk-icon uk-icon-edit',
         'delete'    => 'uk-icon uk-icon-remove uk-text-danger',
