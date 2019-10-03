@@ -25,6 +25,7 @@ Release TBD
   * Add `View Cart` button to shop header when cart has items.
   * Add shipping and tracking for orders.
   * Update PDF creation, require lgLib 1.0.9+
+  * Replace Orders main menu option, add shipment listing.
 
 ## v0.7.1
 Release 2019-08-02
