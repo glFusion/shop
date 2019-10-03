@@ -500,6 +500,13 @@ class Shipment
             $retval = $D->toMySQL(true);
             break;
 
+        case 'order_id':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?order=' . urlencode($fieldvalue)
+            );
+            break;
+
         case 'delete':
             $retval = COM_createLink(
                 '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
