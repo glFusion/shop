@@ -25,7 +25,7 @@ class ShipmentPackage
      * @var array */
     private $properties = array();
 
-    /** Fields for an OrderItem record.
+    /** Fields for an ShipmentPackage record.
      * @var array */
     private static $fields = array(
         'pkg_id', 'shp_id', 'shipper_id', 'shipper_info',
@@ -34,11 +34,10 @@ class ShipmentPackage
 
 
     /**
-     * Constructor.
-     * Initializes the package item.
+     * Initializes the package item based on optional id or array.
      *
-     * @param   integer $shp_id  OrderItem record ID
-     * @uses    self::Load()
+     * @param   integer $pkg_id  Package ID or record array
+     * @uses    self::Read()
      */
     public function __construct($pkg_id = 0)
     {
