@@ -23,6 +23,7 @@ $LANG_SHOP = array (
 'cart_blocktitle'   => 'Shopping Cart',
 'srchtitle'         => 'Products',
 'products'          => 'Products',
+'orders'            => 'Orders',
 'category'          => 'Category',
 'item_name'         => 'Item Name',
 'featured_product'  => 'Featured Product',

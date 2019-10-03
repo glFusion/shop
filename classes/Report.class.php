@@ -66,7 +66,7 @@ class Report
     protected $allowed_statuses = array();
 
     /**
-     * Array of status selection info
+     * Array of status selections.
      * @var array */
     protected $statuses = array();
 

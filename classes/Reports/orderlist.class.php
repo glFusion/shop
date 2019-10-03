@@ -23,6 +23,14 @@ class orderlist extends \Shop\Report
      * @var string */
     protected $icon = 'list';
 
+    /** All possible allowed order statuses.
+     * Excludes cart.
+     * @var array */
+    private $default_statuses = array(
+        'pending', 'paid', 'processing', 'shipped',
+        'closed', 'complete', 'refunded',
+    );
+
     /**
      * Create and render the report contents.
      *
@@ -94,6 +102,11 @@ class orderlist extends \Shop\Report
                 'field' => 'status',
                 'sort'  => true,
             ),
+            array(
+                'text'  => 'sequence',
+                'field' => 'order_seq',
+                'sort'  => true,
+            ),
         )
         );
         } else {
@@ -134,6 +147,12 @@ class orderlist extends \Shop\Report
         $orderstatus = $this->allowed_statuses;
         if (empty($orderstatus)) {
             $orderstatus = self::_getSessVar('orderstatus');
+        }
+        if (empty($orderstatus)) {
+            // If still empty, may come from a direct link instead of the
+            // report config page. Allow all valid "order" statuses.
+            // Excludes cart.
+            $orderstatus = $this->default_statuses;
         }
         if (!empty($orderstatus)) {
             $status_sql = "'" . implode("','", $orderstatus) . "'";

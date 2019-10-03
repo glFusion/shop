@@ -52,7 +52,7 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment',
     // Views to display
-    'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
+    'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
     'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -72,7 +72,7 @@ foreach($expected as $provided) {
 }
 
 $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
-$view = 'products';
+$view = 'products';     // Default if no correct view specified
 
 switch ($action) {
 case 'dup_product':
@@ -443,24 +443,13 @@ case 'history':
     $content .= \Shop\history(true);
     break;
 
-case 'orderhist':
-    // Show all purchases
-    if (isset($_POST['upd_orders']) && is_array($_POST['upd_orders'])) {
-        $i = 0;
-        foreach ($_POST['upd_orders'] as $order_id) {
-            if (!isset($_POST['newstatus'][$order_id]) ||
-                !isset($_POST['oldstatus'][$order_id]) ||
-                $_POST['newstatus'][$order_id] == $_POST['oldstatus'][$order_id]) {
-                continue;
-            }
-            $ord = new \Shop\Order($order_id);
-            $ord->updateStatus($_POST['newstatus'][$order_id]);
-            $i++;
-        }
-        $msg[] = sprintf($LANG_SHOP['updated_x_orders'], $i);
+case 'orders':
+    $content .= Shop\Menu::adminOrders($view);
+    $R = \Shop\Report::getInstance('orderlist');
+    if ($R !== NULL) {
+        $R->setAdmin(true);
+        $content .= $R->Render();
     }
-    $uid = isset($_REQUEST['uid']) ? $_REQUEST['uid'] : 0;
-    $content .= \Shop\listOrders(true, $uid);
     break;
 
 case 'coupons':
@@ -536,7 +525,7 @@ case 'editcat':
 case 'categories':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Category::adminList();
-    $view = 'products';
+    $view = 'products';     // to set the active menu
     break;
 
 case 'sales':
@@ -554,7 +543,7 @@ case 'options':
         }
     }
     $content .= Shop\ProductOptionValue::adminList();
-    $view = 'products';
+    $view = 'products';     // to set the active menu
     break;
 
 case 'opt_grp':
@@ -570,7 +559,7 @@ case 'opt_grp':
     break;
 
 case 'shipping':
-    $content .= Shop\Menu::adminShipping($view);
+    //$content .= Shop\Menu::adminShipping($view);
     $content .= Shop\Shipper::adminList();
     break;
 
@@ -683,8 +672,9 @@ case 'editshipment':
 case 'shipments':
     // View admin list of shipments
     SHOP_setUrl();
-    $content .= Shop\Menu::adminShipping($view);
+    $content .= Shop\Menu::adminOrders($view);
     $content .= Shop\Shipment::adminList();
+    $view = 'orders';       // to set the active top-level menu
     break;
 
 case 'shiporder':
@@ -699,7 +689,7 @@ case 'shiporder':
 
 default:
     SHOP_setUrl();
-    $view = 'products';
+    $view = 'products';     // to set the active menu
     $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::adminList($cat_id);

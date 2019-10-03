@@ -84,6 +84,11 @@ class Menu
                 'text' => $LANG_SHOP['catalog'],
                 'active' => $view == 'products' ? true : false,
             ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?orders',
+                'text' => $LANG_SHOP['orders'],
+                'active' => $view == 'orders' || $view == 'shipments' ? true : false,
+            ),
             /*array(
                 'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
                 'text' => $LANG_SHOP['categories'],
@@ -202,21 +207,7 @@ class Menu
                 'active' => $view == 'sales' ? true : false,
             ),
         );
-        $retval = '<ul class="uk-subnav uk-subnav-pill">' . LB;
-        foreach ($menu_arr as $mnu) {
-            if ($mnu['active']) {
-                $cls = 'class="uk-active"';
-                $url = '#!';
-            } else {
-                $cls = '';
-                $url = $mnu['url'];
-            }
-            $retval .= '<li ' . $cls . '>' .
-                COM_createLink($mnu['text'], $url) .
-                '</li>' . LB;
-        }
-        $retval .= '</ul>' . LB;
-        return $retval;
+        return self::_makeSubMenu($menu_arr);
     }
 
 
@@ -243,20 +234,58 @@ class Menu
                 'active' => $view == 'shipments' ? true : false,
             ),
         );
-        $retval = '<ul class="uk-subnav uk-subnav-pill">' . LB;
+        return self::_makeSubMenu($menu_arr);
+    }
+
+
+    /**
+     * Create the administrator sub-menu for the Orders option.
+     * Includes orders and shipment listing.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminOrders($view='')
+    {
+        global $LANG_SHOP;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?orders',
+                'text' => $LANG_SHOP['orders'],
+                'active' => $view == 'orders' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+                'text' => $LANG_SHOP['shipments'],
+                'active' => $view == 'shipments' ? true : false,
+            ),
+        );
+        return self::_makeSubMenu($menu_arr);
+    }
+
+
+    /**
+     * Create a submenu using a standard template.
+     *
+     * @param   array   $menu_arr   Array of menu items
+     * @return  string      HTML for the submenu
+     */
+    private static function _makeSubMenu($menu_arr)
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('menu', 'submenu.thtml');
+        $T->set_block('menu', 'menuItems', 'items');
         foreach ($menu_arr as $mnu) {
-            if ($mnu['active']) {
-                $cls = 'class="uk-active"';
-                $url = '#!';
-            } else {
-                $cls = '';
-                $url = $mnu['url'];
-            }
-            $retval .= '<li ' . $cls . '>' .
-                COM_createLink($mnu['text'], $url) .
-                '</li>' . LB;
+            $url = COM_createLink($mnu['text'], $mnu['url']);
+            $T->set_var(array(
+                'active'    => $mnu['active'],
+                'url'       => $url,
+            ) );
+            $T->parse('items', 'menuItems', true);
         }
-        $retval .= '</ul>' . LB;
+        $T->parse('output', 'menu');
+        $retval = $T->finish($T->get_var('output'));
         return $retval;
     }
 
