@@ -126,6 +126,7 @@ function addTrackingNumber()
         url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
+console.log(result);
             try {
                 if (result.status = true) {
                     if (result.tracking_url != '') {
@@ -134,12 +135,12 @@ function addTrackingNumber()
                     } else {
                         var tracking_url = result.tracking_num;
                     }
-                    var newRowContent = '<tr><td>' +
+                    var newRowContent = '<tr id="trackrow_' + result.pkg_id + '"><td>' +
                         result.shipper_code + '</td><td>' +
                         result.shipper_name + '</td><td>' +
                         tracking_url + '</td><td class="aligncenter">' +
                         '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}"' +
-                        'onclick="javascript:return delTrackingRowAjax({pkg_id});"></i>' +
+                        'onclick="javascript:return delTrackingRowAjax(' + result.pkg_id + ');"></i>' +
                         '</td></tr>';
                     $("#trackingTable tbody").append(newRowContent);
                     document.getElementById("trackingNum0").value = '';

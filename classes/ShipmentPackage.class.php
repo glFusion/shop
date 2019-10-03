@@ -50,6 +50,8 @@ class ShipmentPackage
         } elseif (is_array($pkg_id)) {
             // Got a shipment record, just set the variables
             $this->setVars($pkg_id);
+        } else {
+            $this->pkg_id = 0;
         }
     }
 
@@ -188,11 +190,14 @@ class ShipmentPackage
             shipper_info = '" . DB_escapeString($this->shipper_info) . "',
             tracking_num = '" . DB_escapeString($this->tracking_num) . "'";
         $sql = $sql1 . $sql2 . $sql3;
-        COM_errorLog($sql);
+        //COM_errorLog($sql);
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
+            if ($this->pkg_id <= 0) {
+                $this->pkg_id = DB_insertID();
+            }
             return true;
         } else {
             return false;

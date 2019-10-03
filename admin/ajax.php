@@ -119,7 +119,6 @@ case 'delimage':
     break;
 
 case 'add_tracking':
-    COM_errorLog(print_r($_POST,true));
     $retval = array('status' => false);
     $shipment_id = SHOP_getVar($_POST, 'shipment_id', 'integer');
     if ($shipment_id > 0) {
@@ -135,6 +134,7 @@ case 'add_tracking':
             $retval = array(
                 'status'        => true,
                 'shipper_id'    => $SP->shipper_id,
+                'pkg_id'        => $SP->pkg_id,
                 'shipper_name'  => $SP->shipper_info,
                 'tracking_num'  => $SP->tracking_num,
                 'shipper_code'  => $shipper_code,
