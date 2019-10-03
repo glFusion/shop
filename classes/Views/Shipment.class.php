@@ -101,11 +101,16 @@ class Shipment extends Order
             $T->clear_var('iOpts');
         }
 
+        $T->set_var(array(
+            'shp_id'    => $this->shp_id,
+            'shipper_select' => Shipper::optionList(),
+        ) );
         if ($this->shp_id > 0) {
             $T->set_block('order', 'trackingPackages', 'TP');
             $Shp = new \Shop\Shipment($this->shp_id);
             foreach ($Shp->Packages as $Pkg) {
                 $T->set_var(array(
+                    'shipper_code'  => $Pkg->getShipper()->code,
                     'shipper_name'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
                     'pkg_id'        => $Pkg->pkg_id,
@@ -113,10 +118,6 @@ class Shipment extends Order
                 $T->parse('TP', 'trackingPackages', true);
             }
         }
-
-        $T->set_var(array(
-            'shipper_select' => Shipper::optionList(),
-        ) );
 
         $T->set_var(array(
             'shp_id'        => $this->shp_id,

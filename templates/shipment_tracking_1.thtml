@@ -1,10 +1,14 @@
 {# begin {templatelocation} #}
     <table id="trackingTable">
+      <thead>
       <tr>
-        <th style="width:60%" colspan="2">{$LANG_SHOP['carrier']}</th>
+        <th style="width:15%"></th>
+        <th style="width:45%">{$LANG_SHOP['carrier']}</th>
         <th style="width:30%">{$LANG_SHOP['tracking']}</th>
         <th style="width:10%">{$LANG_SHOP['delete']}</th>
       </tr>
+      </thead>
+      <tbody>
 <!-- BEGIN trackingPackages -->
       <tr id="trackrow_{pkg_id}">
         <td>{shipper_code}</td>
@@ -17,8 +21,29 @@
         </td>
       </tr>
 <!-- END trackingPackages -->
+      </tbody>
+{!if shp_id}
+      <tfoot>
+        <tr>
+          <td>
+            <select id="carrierID0" name="shipper_id" onchange="updateCarrier(this, 0);return false;">
+              <option value="custom">Custom</option>
+              {shipper_select}
+            </select>
+          </td>
+          <td><input type="text" name="shipper_name" id="carrierName0" value="" /></td>
+          <td><input type="text" name="tracking_num" id="trackingNum0" value="" /></td>
+          <td class="aligncenter"><button class="uk-button uk-button-success" onclick="addTrackingNumber();return false;">
+            <i class="uk-icon uk-icon-plus-circle"></i></button></td>
+        </tr>
+      </tfoot>
+{!endif}
     </table>
+{!if shp_id}
+{!else}
     <button class="uk-button" onclick="addTrackingRow();return false;">{$LANG_SHOP['add_tracking']}</button>
+{!endif}
+
 <script type="text/javascript">
 var i = 1;
 function addTrackingRow()
@@ -76,6 +101,47 @@ function updateCarrier(elem, row)
         name_fld.value = "";
     }
 }
+function addTrackingNumber()
+{
+    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
+    spinner.show();
+
+    var dataS = {
+        "action": "add_tracking",
+        "shp_id": "{shp_id}",
+        "shipper_id": document.getElementById("carrierID0").value,
+        "shipper_info": document.getElementById("carrierName0").value,
+        "tracking_num": document.getElementById("trackingNum0").value,
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: site_admin_url + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status = true) {
+                    var newRowContent = '<tr><td>' +
+                        result.shipper_code + '</td><td>' +
+                        result.shipper_name + '</td><td>' +
+                        result.tracking_num + '</td><td class="aligncenter">' +
+                        '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}"' +
+                        'onclick="javascript:return delTrackingRowAjax({pkg_id});"></i>' +
+                        '</td></tr>';
+                    $("#trackingTable tbody").append(newRowContent);
+                    document.getElementById("trackingNum0").value = '';
+                }
+            } catch(err) {
+            }
+            spinner.hide();
+        },
+        error: function() {
+            spinner.hide();
+        }
+    });
+    return false;
+};
 
 </script>
 {# end {templatelocation} #}

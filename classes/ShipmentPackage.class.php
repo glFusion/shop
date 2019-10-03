@@ -35,31 +35,31 @@ class ShipmentPackage
 
     /**
      * Constructor.
-     * Initializes the order item
+     * Initializes the package item.
      *
      * @param   integer $shp_id  OrderItem record ID
      * @uses    self::Load()
      */
-    public function __construct($shp_id = 0)
+    public function __construct($pkg_id = 0)
     {
-        if (is_numeric($shp_id) && $shp_id > 0) {
+        if (is_numeric($pkg_id) && $pkg_id > 0) {
             // Got an item ID, read from the DB
-            $status = $this->Read($shp_id);
+            $status = $this->Read($pkg_id);
             if (!$status) {
-                $this->shp_id = 0;
+                $this->pkg_id = 0;
             }
-        } elseif (is_array($shp_id)) {
+        } elseif (is_array($pkg_id)) {
             // Got a shipment record, just set the variables
-            $this->setVars($shp_id);
+            $this->setVars($pkg_id);
         }
     }
 
 
     /**
-     * Get the shipment items associated with a shipment.
+     * Get the packages associated with a shipment.
      *
      * @param   integer $shp_id     Shipment ID
-     * @return  array       Array of ShipmentItem objects
+     * @return  array       Array of ShipmentPackage objects
      */
     public static function getByShipment($shp_id)
     {
@@ -95,7 +95,6 @@ class ShipmentPackage
         $res = DB_query($sql);
         if ($res) {
             $this->setVars(DB_fetchArray($res, false));
-            $this->getItems();
             return true;
         } else {
             $this->shp_id = 0;
@@ -190,6 +189,7 @@ class ShipmentPackage
             shipper_info = '" . DB_escapeString($this->shipper_info) . "',
             tracking_num = '" . DB_escapeString($this->tracking_num) . "'";
         $sql = $sql1 . $sql2 . $sql3;
+        COM_errorLog($sql);
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -213,6 +213,17 @@ class ShipmentPackage
 
         DB_delete($_TABLES['shop.shipment_packages'], 'pkg_id', $pkg_id);
         return true;
+    }
+
+
+    /**
+     * Get the shipper object associated with this package.
+     *
+     * @return  object      Shipper object
+     */
+    public function getShipper()
+    {
+        return Shipper::getInstance($this->shipper_id);
     }
 
 }

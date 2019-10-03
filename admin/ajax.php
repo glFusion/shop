@@ -118,18 +118,24 @@ case 'delimage':
     echo json_encode($arr);
     break;
 
-case 'addtracking':
+case 'add_tracking':
+    COM_errorLog(print_r($_POST,true));
     $retval = array('status' => false);
     $shp_id = SHOP_getVar($_POST, 'shp_id', 'integer');
     if ($shp_id > 0) {
-        $SP = new Shop\ShippingPackage($shp_id);
+        $SP = new Shop\ShipmentPackage();
         if ($SP->Save($_POST)) {
+            if ($SP->shipper_id > 0) {
+                $shipper_code = Shop\Shipper::getInstance($SP->shipper_id)->code;
+            } else {
+                $shipper_code = '';
+            }
             $retval = array(
-                'status'    => true,
-                'shipper_id' => $SP->shipper_id,
-                'shipper_name' => $SP->shipper_name,
-                'tracking_num' => $SP->tracking_num,
-                'comment'   => $SP->comment,
+                'status'        => true,
+                'shipper_id'    => $SP->shipper_id,
+                'shipper_name'  => $SP->shipper_info,
+                'tracking_num'  => $SP->tracking_num,
+                'shipper_code'  => $shipper_code,
             );
         }
     }
