@@ -28,7 +28,7 @@ class ShipmentPackage
     /** Fields for an ShipmentPackage record.
      * @var array */
     private static $fields = array(
-        'pkg_id', 'shp_id', 'shipper_id', 'shipper_info',
+        'pkg_id', 'shipment_id', 'shipper_id', 'shipper_info',
         'tracking_num', 'comment',
     );
 
@@ -57,17 +57,17 @@ class ShipmentPackage
     /**
      * Get the packages associated with a shipment.
      *
-     * @param   integer $shp_id     Shipment ID
+     * @param   integer $shipment_id     Shipment ID
      * @return  array       Array of ShipmentPackage objects
      */
-    public static function getByShipment($shp_id)
+    public static function getByShipment($shipment_id)
     {
         global $_TABLES;
 
         $retval = array();
-        $shp_id = (int)$shp_id;
+        $shipment_id = (int)$shipment_id;
         $sql = "SELECT * FROM {$_TABLES['shop.shipment_packages']}
-            WHERE shp_id = $shp_id
+            WHERE shipment_id = $shipment_id
             ORDER BY pkg_id ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -96,7 +96,7 @@ class ShipmentPackage
             $this->setVars(DB_fetchArray($res, false));
             return true;
         } else {
-            $this->shp_id = 0;
+            $this->shipment_id = 0;
             return false;
         }
     }
@@ -131,7 +131,7 @@ class ShipmentPackage
     {
         switch ($key) {
         case 'pkg_id':
-        case 'shp_id':
+        case 'shipment_id':
         case 'shipper_id':
             $this->properties[$key] = (int)$value;
             break;
@@ -183,7 +183,7 @@ class ShipmentPackage
             $sql3 = '';
         }
         $sql2 = "SET 
-            shp_id = '{$this->shp_id}',
+            shipment_id = '{$this->shipment_id}',
             shipper_id = '{$this->shipper_id}',
             shipper_info = '" . DB_escapeString($this->shipper_info) . "',
             tracking_num = '" . DB_escapeString($this->tracking_num) . "'";

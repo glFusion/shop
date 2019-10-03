@@ -121,8 +121,8 @@ case 'delimage':
 case 'add_tracking':
     COM_errorLog(print_r($_POST,true));
     $retval = array('status' => false);
-    $shp_id = SHOP_getVar($_POST, 'shp_id', 'integer');
-    if ($shp_id > 0) {
+    $shipment_id = SHOP_getVar($_POST, 'shipment_id', 'integer');
+    if ($shipment_id > 0) {
         $SP = new Shop\ShipmentPackage();
         if ($SP->Save($_POST)) {
             if ($SP->shipper_id > 0) {

@@ -50,14 +50,14 @@ $expected = array(
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
-    'addshipment', 'updateshipment',
+    'addshipment', 'updateshipment', 'del_shipment',
     // Views to display
     'history', 'orderhist', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
     'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'shiporder', 'editshipment',
+    'shiporder', 'editshipment', 'shipments',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -408,17 +408,24 @@ case 'delsale':
     break;
 
 case 'updateshipment':
-    $shp_id = SHOP_getVar($_POST, 'shp_id', 'integer');
-    if ($shp_id > 0) {
-        $S = new Shop\Shipment($shp_id);
+    $shipment_id = SHOP_getVar($_POST, 'shipment_id', 'integer');
+    if ($shipment_id > 0) {
+        $S = new Shop\Shipment($shipment_id);
         $S->Save($_POST);
     }
+    break;
+
+case 'del_shipment':
+    $S = new Shop\Shipment($actionval);
+    $S->Delete();
+    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?shipments');
+    COM_refresh($url);
     break;
 
 case 'addshipment':
     $S = new Shop\Shipment();
     if ($S->Save($_POST)) {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editshipment=x&shp_id=' . $S->shp_id);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editshipment=' . $S->shipment_id);
     } else {
         COM_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
@@ -563,6 +570,7 @@ case 'opt_grp':
     break;
 
 case 'shipping':
+    $content .= Shop\Menu::adminShipping($view);
     $content .= Shop\Shipper::adminList();
     break;
 
@@ -663,18 +671,25 @@ case 'editshipper':
     break;
 
 case 'editshipment':
-    $shp_id = (int)$actionval;
-    if ($shp_id > 0) {
-        $S = new Shop\Shipment($shp_id);
+    $shipment_id = (int)$actionval;
+    if ($shipment_id > 0) {
+        $S = new Shop\Shipment($shipment_id);
         $V = new Shop\Views\Shipment($S->order_id);
-        $V->setShipmentID($shp_id);
+        $V->setShipmentID($shipment_id);
         $content = $V->Render();
     }
     break;
 
+case 'shipments':
+    // View admin list of shipments
+    SHOP_setUrl();
+    $content .= Shop\Menu::adminShipping($view);
+    $content .= Shop\Shipment::adminList();
+    break;
+
 case 'shiporder':
     $V = new Shop\Views\Shipment($_GET['order_id']);
-    $content = $V->Render();
+    $content .= $V->Render();
     /*
     $Ord = Shop\Order::getInstance($_GET['order_id']);
     if (!$Ord->isNew) {

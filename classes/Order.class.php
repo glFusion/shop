@@ -841,9 +841,10 @@ class Order
      * @uses    Order::Log()
      * @param   string  $newstatus      New order status
      * @param   boolean $log            True to log the change, False to not
+     * @param   boolean $notify         True to notify the buyer, False to not.
      * @return  boolean                 True on success or no change
      */
-    public function updateStatus($newstatus, $log = true)
+    public function updateStatus($newstatus, $log = true, $notify=true)
     {
         global $_TABLES, $LANG_SHOP;
 
@@ -890,7 +891,9 @@ class Order
         if ($log) {
             $this->Log($msg, $log_user);
         }
-        $this->Notify($newstatus, $msg);
+        if ($notify) {
+            $this->Notify($newstatus, $msg);
+        }
         return true;
     }
 
@@ -2222,7 +2225,7 @@ class Order
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date' => $Dt->toMySQL(true),
-                    'shp_id'    => $Shipment->shp_id,
+                    'shipment_id'    => $Shipment->shipment_id,
                     'shipper_info'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
                     'tracking_url'  => $url,

@@ -39,7 +39,7 @@ class Shipment
     /** Fields for a Shipment record.
      * @var array */
     private static $fields = array(
-        'shp_id', 'order_id', 'ts',
+        'shipment_id', 'order_id', 'ts',
         'tracking_num', 'comment',
     );
 
@@ -48,19 +48,19 @@ class Shipment
      * Constructor.
      * Initializes the order item.
      *
-     * @param   integer|array   $shp_id  Record ID or array
+     * @param   integer|array   $shipment_id  Record ID or array
      */
-    public function __construct($shp_id = 0)
+    public function __construct($shipment_id = 0)
     {
-        if (is_numeric($shp_id) && $shp_id > 0) {
+        if (is_numeric($shipment_id) && $shipment_id > 0) {
             // Got an item ID, read from the DB
-            $status = $this->Read($shp_id);
+            $status = $this->Read($shipment_id);
             if (!$status) {
-                $this->shp_id = 0;
+                $this->shipment_id = 0;
             }
-        } elseif (is_array($shp_id)) {
+        } elseif (is_array($shipment_id)) {
             // Got a shipment record, just set the variables
-            $this->setVars($shp_id);
+            $this->setVars($shipment_id);
         }
     }
 
@@ -92,7 +92,7 @@ class Shipment
 
         $rec_id = (int)$rec_id;
         $sql = "SELECT * FROM {$_TABLES['shop.shipments']}
-                WHERE shp_id = $rec_id";
+                WHERE shipment_id = $rec_id";
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
@@ -101,7 +101,7 @@ class Shipment
             $this->getPackages();
             return true;
         } else {
-            $this->shp_id = 0;
+            $this->shipment_id = 0;
             return false;
         }
     }
@@ -135,7 +135,7 @@ class Shipment
     public function __set($key, $value)
     {
         switch ($key) {
-        case 'shp_id':
+        case 'shipment_id':
         case 'shipper_id':
         case 'ts':
             $this->properties[$key] = (int)$value;
@@ -205,7 +205,7 @@ class Shipment
     public function getItems()
     {
         if ($this->Items === NULL) {
-            $this->Items = ShipmentItem::getByShipment($this->shp_id);
+            $this->Items = ShipmentItem::getByShipment($this->shipment_id);
         }
         return $this->Items;
     }
@@ -217,7 +217,7 @@ class Shipment
     public function getPackages()
     {
         if ($this->Packages === NULL) {
-            $this->Packages = ShipmentPackage::getByShipment($this->shp_id);
+            $this->Packages = ShipmentPackage::getByShipment($this->shipment_id);
         }
         return $this->Packages;
     }
@@ -245,10 +245,10 @@ class Shipment
             return false;
         }
 
-        if ($this->shp_id > 0) {
+        if ($this->shipment_id > 0) {
             // New shipment
             $sql1 = "UPDATE {$_TABLES['shop.shipments']} ";
-            $sql3 = " WHERE shp_id = '{$this->shp_id}'";
+            $sql3 = " WHERE shipment_id = '{$this->shipment_id}'";
         } else {
             $sql1 = "INSERT INTO {$_TABLES['shop.shipments']} ";
             $sql3 = '';
@@ -263,13 +263,13 @@ class Shipment
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
-            if ($this->shp_id == 0) {
-                $this->shp_id = DB_insertID();
+            if ($this->shipment_id == 0) {
+                $this->shipment_id = DB_insertID();
                 $ord_status = 'shipped';    // assume all shipped
                 foreach ($form['ship_qty'] as $oi_id=>$qty) {
                     $qty = (float)$qty;
                     if ($qty > 0) {
-                        $SI = ShipmentItem::Create($this->shp_id, $oi_id, $qty);
+                        $SI = ShipmentItem::Create($this->shipment_id, $oi_id, $qty);
                         $SI->Save();
                     } else {
                         // This is an empty quantity, so there are some items
@@ -306,7 +306,7 @@ class Shipment
     private function _isValidRecord($form)
     {
         // Check that the shipping quantity field is present, for new shipments.
-        if ($this->shp_id == 0) {
+        if ($this->shipment_id == 0) {
             if (!isset($form['ship_qty']) || !is_array($form['ship_qty'])) {
                 return false;
             }
@@ -351,11 +351,172 @@ class Shipment
         }
 
         $Pkg = new ShipmentPackage();
-        $Pkg->shp_id = $this->shp_id;
+        $Pkg->shipment_id = $this->shipment_id;
         $Pkg->shipper_id = $shipper_id;
         $Pkg->shipper_info = $shipper_info;
         $Pkg->tracking_num = $tracking_num;
         $Pkg->Save();
+    }
+
+
+    /**
+     * Delete a shipment record. Also deletes related packages.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public function Delete()
+    {
+        global $_TABLES;
+
+        if ($this->shipment_id > 0) {
+            DB_delete($_TABLES['shop.shipment_packages'], 'shipment_id', $this->shipment_id);
+            DB_delete($_TABLES['shop.shipment_items'], 'shipment_id', $this->shipment_id);
+            DB_delete($_TABLES['shop.shipments'], 'shipment_id', $this->shipment_id);
+            $this->getOrder()->updateStatus('processing', true, false);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Shipment listing
+     *
+     * @return  string      HTML for the shipment listing
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
+            $LANG32;
+
+        $sql = "SELECT shp.*, ord.billto_name, ord.shipto_name
+            FROM {$_TABLES['shop.shipments']} shp
+            LEFT JOIN {$_TABLES['shop.orders']} ord
+                ON ord.order_id = shp.order_id";
+
+        $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => 'ID',
+                'field' => 'shipment_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['datetime'],
+                'field' => 'ts',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['order'],
+                'field' => 'order_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['customer'],
+                'field' => 'customer',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort'  => 'false',
+                'align' => 'center',
+            ),
+        );
+
+        $extra = array();
+
+        $defsort_arr = array(
+            'field' => 'ts',
+            'direction' => 'DESC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.shopments',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_shipments',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', $extra, '', ''
+        );
+
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the options admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed in verbatim
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                SHOP_ADMIN_URL . "/index.php?editshipment={$A['shipment_id']}"
+            );
+            break;
+
+        case 'customer':
+            $retval = empty($A['shipto_name']) ? $A['billto_name'] : $A['shipto_name'];
+            $retval = htmlspecialchars($retval);
+            break;
+
+        case 'ts':
+            $D = new \Date($fieldvalue, $_CONF['timezone']);
+            $retval = $D->toMySQL(true);
+            break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                SHOP_ADMIN_URL. '/index.php?del_shipment=' . $A['shipment_id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
     }
 
 }

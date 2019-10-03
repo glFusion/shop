@@ -84,15 +84,15 @@ class ShipmentItem
     /**
      * Create a new ShipmentItem object.
      *
-     * @param   integer $shp_id     ID of parent shipment
+     * @param   integer $shipment_id     ID of parent shipment
      * @param   integer $oi_id      ID of order item being shipped
      * @param   integer $qty        Quantity of items in this shipment
      * @return  object      ShipmentItem object
      */
-    public static function Create($shp_id, $oi_id, $qty)
+    public static function Create($shipment_id, $oi_id, $qty)
     {
         $Obj = new self;
-        $Obj->shipment_id = $shp_id;
+        $Obj->shipment_id = $shipment_id;
         $Obj->orderitem_id = $oi_id;
         $Obj->quantity = $qty;
         return $Obj;
@@ -102,17 +102,17 @@ class ShipmentItem
     /**
      * Get the shipment items associated with a shipment.
      *
-     * @param   integer $shp_id     Shipment ID
+     * @param   integer $shipment_id     Shipment ID
      * @return  array       Array of ShipmentItem objects
      */
-    public static function getByShipment($shp_id)
+    public static function getByShipment($shipment_id)
     {
         global $_TABLES;
 
         $retval = array();
-        $shp_id = (int)$shp_id;
+        $shipment_id = (int)$shipment_id;
         $sql = "SELECT * FROM {$_TABLES['shop.shipment_items']}
-            WHERE shipment_id = $shp_id";
+            WHERE shipment_id = $shipment_id";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $retval[] = new self($A);

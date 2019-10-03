@@ -540,12 +540,12 @@ $SHOP_UPGRADE['1.0.0'] = array(
       UNIQUE KEY `key1` (`oi_id`,`pog_id`,`pov_id`,`oio_name`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.shipments']}` (
-      `shp_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `shipment_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `order_id` varchar(40) DEFAULT NULL,
       `ts` int(11) unsigned DEFAULT NULL,
       `comment` text,
       `shipping_address` text,
-      PRIMARY KEY (`shp_id`),
+      PRIMARY KEY (`shipment_id`),
       KEY `order_id` (`order_id`,`ts`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.shipment_items']}` (
@@ -558,7 +558,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.shipment_packages']}` (
       `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `shp_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `shipment_id` int(11) unsigned NOT NULL DEFAULT '0',
       `shipper_id` int(11) unsigned NOT NULL DEFAULT '0',
       `shipper_info` varchar(255) DEFAULT NULL,
       `tracking_num` varchar(80) DEFAULT NULL,

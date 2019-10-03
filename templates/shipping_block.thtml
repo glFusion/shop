@@ -15,7 +15,7 @@
     <td>
 {!if show_ship_info}
       {ship_date}
-      <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shp_id}"
+      <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shipment_id}"
         class="uk-icon uk-icon-edit"></a>
 {!endif}
     </td>

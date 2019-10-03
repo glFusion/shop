@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <form id="shipmentform" method="post" action="{site_admin_url}/plugins/shop/index.php">
 <input type="hidden" name="order_id" value="{order_id}" />
-<input type="hidden" name="shp_id" value="{shp_id}" />
+<input type="hidden" name="shipment_id" value="{shipment_id}" />
 <div class="shopOrderContainer">
   <h1 class="aligncenter">{$LANG_SHOP['ship_order']}</h1>
     {linkPackingList}
@@ -83,11 +83,16 @@
   </div>
 </div>
 <button style="float:none;" type="submit" class="uk-button uk-button-success"
-{!if shp_id}
+{!if shipment_id}
   name="updateshipment">
 {!else}
   name="addshipment">
 {!endif}
     {$LANG_ADMIN['submit']}</button>
+<button style="float:right;" type="submit" class="uk-button uk-button-danger"
+    name="del_shipment" value="{shipment_id}"
+    onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_ADMIN['delete']}</button>
+<button style="float:none;" type="submit" class="uk-button" name="cancel"
+    onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
 </form>
 {# end {templatelocation} #}

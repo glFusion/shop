@@ -22,7 +22,7 @@ class Shipment extends Order
 {
     /** Shipment record ID.
      * @var integer */
-    private $shp_id = 0;
+    private $shipment_id = 0;
 
 
     /**
@@ -44,11 +44,11 @@ class Shipment extends Order
     /**
      * Set the shipment ID.
      *
-     * @param   integer $shp_id     Shipment record ID
+     * @param   integer $shipment_id     Shipment record ID
      */
-    public function setShipmentID($shp_id)
+    public function setShipmentID($shipment_id)
     {
-        $this->shp_id = (int)$shp_id;
+        $this->shipment_id = (int)$shipment_id;
     }
 
 
@@ -102,12 +102,12 @@ class Shipment extends Order
         }
 
         $T->set_var(array(
-            'shp_id'    => $this->shp_id,
+            'shipment_id'    => $this->shipment_id,
             'shipper_select' => Shipper::optionList(),
         ) );
-        if ($this->shp_id > 0) {
+        if ($this->shipment_id > 0) {
             $T->set_block('order', 'trackingPackages', 'TP');
-            $Shp = new \Shop\Shipment($this->shp_id);
+            $Shp = new \Shop\Shipment($this->shipment_id);
             foreach ($Shp->Packages as $Pkg) {
                 $T->set_var(array(
                     'shipper_code'  => $Pkg->getShipper()->code,
@@ -120,7 +120,7 @@ class Shipment extends Order
         }
 
         $T->set_var(array(
-            'shp_id'        => $this->shp_id,
+            'shipment_id'        => $this->shipment_id,
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,

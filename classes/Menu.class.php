@@ -166,7 +166,7 @@ class Menu
 
 
     /**
-     * Create the administrator sub-menu for the Catalog option
+     * Create the administrator sub-menu for the Catalog option.
      *
      * @param   string  $view   View being shown, so set the help text
      * @return  string      Administrator menu
@@ -200,6 +200,47 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
+            ),
+        );
+        $retval = '<ul class="uk-subnav uk-subnav-pill">' . LB;
+        foreach ($menu_arr as $mnu) {
+            if ($mnu['active']) {
+                $cls = 'class="uk-active"';
+                $url = '#!';
+            } else {
+                $cls = '';
+                $url = $mnu['url'];
+            }
+            $retval .= '<li ' . $cls . '>' .
+                COM_createLink($mnu['text'], $url) .
+                '</li>' . LB;
+        }
+        $retval .= '</ul>' . LB;
+        return $retval;
+    }
+
+
+    /**
+     * Create the administrator sub-menu for the Shipping option.
+     * Includes shipper setup and shipment listing.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminShipping($view='')
+    {
+        global $LANG_SHOP;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
+                'text' => $LANG_SHOP['shippers'],
+                'active' => $view == 'shipping' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+                'text' => $LANG_SHOP['shipments'],
+                'active' => $view == 'shipments' ? true : false,
             ),
         );
         $retval = '<ul class="uk-subnav uk-subnav-pill">' . LB;

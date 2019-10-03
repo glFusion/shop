@@ -22,7 +22,7 @@
       </tr>
 <!-- END trackingPackages -->
       </tbody>
-{!if shp_id}
+{!if shipment_id}
       <tfoot>
         <tr>
           <td>
@@ -39,7 +39,7 @@
       </tfoot>
 {!endif}
     </table>
-{!if shp_id}
+{!if shipment_id}
 {!else}
     <button class="uk-button" onclick="addTrackingRow();return false;">{$LANG_SHOP['add_tracking']}</button>
 {!endif}
@@ -108,7 +108,7 @@ function addTrackingNumber()
 
     var dataS = {
         "action": "add_tracking",
-        "shp_id": "{shp_id}",
+        "shipment_id": "{shipment_id}",
         "shipper_id": document.getElementById("carrierID0").value,
         "shipper_info": document.getElementById("carrierName0").value,
         "tracking_num": document.getElementById("trackingNum0").value,
