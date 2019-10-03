@@ -114,6 +114,7 @@ class Shipment extends Order
                     'shipper_name'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
                     'pkg_id'        => $Pkg->pkg_id,
+                    'tracking_url'  => \Shop\Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num),
                 ) );
                 $T->parse('TP', 'trackingPackages', true);
             }

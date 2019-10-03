@@ -13,7 +13,13 @@
       <tr id="trackrow_{pkg_id}">
         <td>{shipper_code}</td>
         <td>{shipper_name}</td>
-        <td>{tracking_num}</td>
+        <td>
+{!if tracking_url}
+            <a href="{tracking_url}" target="_blank">{tracking_num}</a>
+{!else}
+            {tracking_num}
+{!endif}
+        </td>
         <td class="aligncenter">
           <i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}"
             onclick="javascript:return delTrackingRowAjax({pkg_id});">
@@ -122,10 +128,16 @@ function addTrackingNumber()
         success: function(result) {
             try {
                 if (result.status = true) {
+                    if (result.tracking_url != '') {
+                        var tracking_url = '<a href="' + result.tracking_url +
+                            '" target="_blank">' + result.tracking_num + '</a>';
+                    } else {
+                        var tracking_url = result.tracking_num;
+                    }
                     var newRowContent = '<tr><td>' +
                         result.shipper_code + '</td><td>' +
                         result.shipper_name + '</td><td>' +
-                        result.tracking_num + '</td><td class="aligncenter">' +
+                        tracking_url + '</td><td class="aligncenter">' +
                         '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['rem_row']}"' +
                         'onclick="javascript:return delTrackingRowAjax({pkg_id});"></i>' +
                         '</td></tr>';

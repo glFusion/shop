@@ -127,8 +127,10 @@ case 'add_tracking':
         if ($SP->Save($_POST)) {
             if ($SP->shipper_id > 0) {
                 $shipper_code = Shop\Shipper::getInstance($SP->shipper_id)->code;
+                $tracking_url = Shop\Shipper::getInstance($SP->shipper_id)->getTrackingUrl($SP->tracking_num);
             } else {
                 $shipper_code = '';
+                $tracking_url = '';
             }
             $retval = array(
                 'status'        => true,
@@ -136,6 +138,7 @@ case 'add_tracking':
                 'shipper_name'  => $SP->shipper_info,
                 'tracking_num'  => $SP->tracking_num,
                 'shipper_code'  => $shipper_code,
+                'tracking_url'  => $tracking_url,
             );
         }
     }
