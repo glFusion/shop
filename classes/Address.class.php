@@ -55,7 +55,7 @@ class Address
      * @param   string  $key    Key to properties array
      * @param   mixed   $val    Value to set
      */
-    private function __set($key, $val)
+    public function __set($key, $val)
     {
         $this->properties[$key] = $val;
     }
@@ -67,7 +67,7 @@ class Address
      * @param   string  $key    Name of value to retrieve
      * @return  mixed       Value of property, NULL if not set
      */
-    private function __get($key)
+    public function __get($key)
     {
         if (array_key_exists($key, $this->properties)) {
             return $this->properties[$key];
