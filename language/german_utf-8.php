@@ -525,6 +525,7 @@ $LANG_SHOP = array (
 'add_tracking' => 'Add Tracking',
 'shippers' => 'Shippers',
 'shipments' => 'Shipments',
+'order_seq' => 'Sequence',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
