@@ -450,13 +450,17 @@ class Report
      * Get the time period selector.
      *
      * @param   string  $period     Selected period
+     * @param   boolean $incl_cust  True to include custom date option
      * @return  string      HTML for the period selector
      */
-    public static function getPeriodSelection($period=NULL)
+    public static function getPeriodSelection($period=NULL, $incl_cust=true)
     {
         global $LANG_SHOP;
 
         foreach ($LANG_SHOP['periods'] as $key=>$text) {
+            if ($key == 'cust' && !$incl_cust) {
+                continue;
+            }
             $sel = $key === $period ? 'selected="selected"' : '';
             $retval .= "<option value=\"$key\" $sel>$text</option>" . LB;
         }
