@@ -849,7 +849,7 @@ class Shipper
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                Icon::getHTML('delete', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
                 SHOP_ADMIN_URL . "/index.php?editshipper={$A['id']}"
             );
             break;
@@ -870,7 +870,7 @@ class Shipper
 
         case 'delete':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                Icon::getHTML('delete'),
                 SHOP_ADMIN_URL. '/index.php?delshipping=x&amp;id=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',

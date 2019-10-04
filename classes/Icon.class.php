@@ -38,6 +38,9 @@ class Icon
         'avail-unavail' => 'uk-icon uk-icon-circle uk-text-danger',
         'avail-nostock' => 'uk-icon uk-icon-circle uk-text-danger',
         'avail-ok'  => 'uk-icon uk-icon-circle uk-text-success',
+        'lock'      => 'uk-icon uk-icon-lock',
+        'unlock'    => 'uk-icon uk-icon-unlock',
+        'add'       => 'uk-icon uk-icon-plus-circle uk-text-success',
     );
 
 

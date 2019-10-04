@@ -26,7 +26,7 @@
           </label>
           <div class="uk-form-controls">
             <input required type="text" id="name" name="name" value="{name}" size="40" maxlength="255" />
-            <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+            <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
           </div>
         </div>
       </div>
@@ -55,7 +55,7 @@
       <div class="uk-form-controls">
         <input required type="text" name="short_description" id="short_desc" value="{short_description}"
           size="40" maxlength="255" />
-        <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+        <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
       </div>
     </div>
 
@@ -67,7 +67,7 @@
         <select name="cat_id" id="cat_id">
           {cat_select}
         </select>
-        <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+        <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
       </div>
     </div>
 
@@ -222,7 +222,7 @@
         <span id="avail_dates" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <i class="uk-icon uk-icon-trash uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['reset']}" onclick="SHOP_resetAvailDates();"></i>
+        <i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['reset']}" onclick="SHOP_resetAvailDates();"></i>
         {$LANG_SHOP['from']}: <input type="text" id="avail_beg" name="avail_beg" size="12"
             data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}" data-uk-tooltip
             value="{avail_beg}" maxlength="12" />&nbsp;&nbsp;

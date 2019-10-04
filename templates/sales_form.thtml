@@ -33,7 +33,7 @@
         <option value="0">--{$LANG_SHOP['none']}--</option>
         {product_select}
       </select>
-      <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+      <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
     </div>
   </div>
 
@@ -46,7 +46,7 @@
         <option value="0">--{$LANG_SHOP['none']}--</option>
         {category_select}
       </select>
-      <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+      <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
     </div>
   </div>
 
@@ -68,7 +68,7 @@
     </label>
     <div class="uk-form-controls">
       <input type="text" name="amount" value="{amount}" size="10" maxlength="10" />
-      <i class="uk-icon uk-icon-warning uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+      <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
     </div>
   </div>
 
@@ -113,7 +113,7 @@
             {st_time_disabled}
             data-uk-tooltip />
       &nbsp;<input type="checkbox" name="start_allday" value="1" {st_allday_chk} onclick="setAllday(this,'start');"/>&nbsp;{$LANG_SHOP['allday']}
-      &nbsp;<i class="uk-icon uk-icon-trash-o uk-text-danger tooltip"
+      &nbsp;<i class="uk-icon uk-icon-remove-o uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("start");'></i>&nbsp;{$LANG_SHOP['reset']}
     </div>
@@ -134,7 +134,7 @@
             {end_time_disabled}
             data-uk-tooltip />
       &nbsp;<input type="checkbox" name="end_allday" value="1" {end_allday_chk} onclick="setAllday(this,'end');"/>&nbsp;{$LANG_SHOP['allday']}
-      &nbsp;<i class="uk-icon uk-icon-trash-o uk-text-danger tooltip"
+      &nbsp;<i class="uk-icon uk-icon-remove-o uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("end");'></i>&nbsp;{$LANG_SHOP['reset']}
     </div>

@@ -1521,7 +1521,7 @@ class Gateway
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_ADMIN['edit'] . '"></i>',
+                Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
                 SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
             );
             break;
@@ -1543,14 +1543,15 @@ class Gateway
         case 'orderby':
             if ($fieldvalue > 10) {
                 $retval = COM_createLink(
-                    '<i class="uk-icon uk-icon-justify uk-icon-arrow-up"></i>',
+                    Icon::getHTML('arrow-up', 'uk-icon-justify'),
                     SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
                 );
             } else {
                 $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
             }
             if ($fieldvalue < $extra['gw_count'] * 10) {
-                $retval .= COM_createLink('<i class="uk-icon uk-icon-justify uk-icon-arrow-down"></i>',
+                $retval .= COM_createLink(
+                    Icon::getHTML('arrow-down', 'uk-icon-justify'),
                     SHOP_ADMIN_URL . '/index.php?gwmove=down&id=' . $A['id']
                 );
             } else {
@@ -1560,7 +1561,7 @@ class Gateway
 
         case 'delete':
             $retval = COM_createLink(
-                '<i class="uk-icon uk-icon-trash uk-text-danger"></i>',
+                Icon::getHTML('delete'),
                 SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
