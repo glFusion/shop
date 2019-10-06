@@ -992,17 +992,25 @@ class Order
             $T->set_file(array(
                 'msg'       => 'msg_buyer.thtml',
                 'msg_body'  => 'order_detail.thtml',
+                'tracking'  => 'tracking_info.thtml',
             ) );
 
-            $text = $this->_prepareNotification($T, $gw_msg);
+            $text = $this->_prepareNotification($T, $gw_msg, true);
 
             SHOP_log("Sending email to " . $this->uid . ' at ' . $this->buyer_email, SHOP_LOG_DEBUG);
+            $subject = SHOP_getVar(
+                $LANG_SHOP['subj_email_user'],
+                $status,
+                'string',
+                $LANG_SHOP['subj_email']
+            );
+            $subject = sprintf($subject, $_CONF['site_name']);
             if ($this->buyer_email != '') {
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
                     'from' => $_CONF['site_mail'],
                     'htmlmessage' => $text,
-                    'subject' => $LANG_SHOP['subj_email_user'],
+                    'subject' => $subject,
                 ) );
             }
             $LANG_SHOP = $save_language;    // Restore the default language
@@ -1023,7 +1031,7 @@ class Order
                 'msg_body'  => 'order_detail.thtml',
             ) );
 
-            $text = $this->_prepareNotification($T, $gw_msg);
+            $text = $this->_prepareNotification($T, $gw_msg, false);
 
             $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
                 $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
@@ -1045,7 +1053,7 @@ class Order
      * @param   string  $gw_msg Optional gateway message to include
      * @return  string      Text for email body
      */
-    private function _prepareNotification(&$T, $gw_msg='')
+    private function _prepareNotification(&$T, $gw_msg='', $incl_trk=true)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
@@ -1100,6 +1108,31 @@ class Order
         $user_name = COM_getDisplayName($this->uid);
         if ($this->billto_name == '') {
             $this->billto_name = $user_name;
+        }
+
+        if ($incl_trk) {        // include tracking information block
+            $Shipments = Shipment::getByOrder($this->order_id);
+            $cbrk = NULL;
+            foreach ($Shipments as $Shp) {
+                $shp_dt = $Shp->getDate()->toMySQL(true);
+                if ($shp_dt != $cbrk) {
+                    $cbrk = $shp_dt;
+                } else {
+                    $shp_dt = '';
+                }
+                $Packages = $Shp->getPackages();
+                $T->set_block('tracking', 'trackingPackages', 'TP');
+                foreach ($Packages as $Pkg) {
+                    $T->set_var(array(
+                        'shipment_date' => $shp_dt,
+                        'shipper_name'  => $Pkg->shipper_info,
+                        'tracking_num'  => $Pkg->tracking_num,
+                        'tracking_url'  => $Pkg->getTrackingURL(),
+                    ) );
+                    $T->parse('TP', 'trackingPackages', true);
+                }
+            }
+            $T->set_var('tracking_info', $T->parse('detail', 'tracking'));
         }
 
         $T->set_var(array(
@@ -2224,11 +2257,12 @@ class Order
                 $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
-                    'ship_date' => $Dt->toMySQL(true),
-                    'shipment_id'    => $Shipment->shipment_id,
+                    'ship_date'     => $Dt->toMySQL(true),
+                    'shipment_id'   => $Shipment->shipment_id,
                     'shipper_info'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
                     'tracking_url'  => $url,
+                    'ret_url'       => COM_getCurrentUrl(),
                 ) );
                 $show_ship_info = false;
                 $T->parse('packages', 'Packages', true);

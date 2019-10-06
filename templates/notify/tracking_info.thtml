@@ -1,0 +1,26 @@
+{# begin {templatelocation} #}
+    <table width="60%">
+      <tbody>
+      <tr>
+        <td colspan="2">
+          {$LANG_SHOP['tracking_info']}:
+        </td>
+      </tr>
+<!-- BEGIN trackingPackages -->
+      <tr>
+        <td>{shipment_date}</td>
+        <td>{shipper_name}
+{!if tracking_num}
+        ,&nbsp;{$LANG_SHOP['tracking']}:&nbsp;
+{!if tracking_url}
+            <a href="{tracking_url}" target="_blank">{tracking_num}</a>
+{!else}
+            {tracking_num}
+{!endif}
+{!endif}
+        </td>
+      </tr>
+<!-- END trackingPackages -->
+      </tbody>
+    </table>
+{# end {templatelocation} #}

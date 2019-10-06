@@ -176,6 +176,10 @@ class ShipmentPackage
             $this->setVars($form);
         }
 
+        if (!$this->_isValidRecord()) {
+            return false;
+        }
+
         if ($this->pkg_id > 0) {
             // New shipment
             $sql1 = "UPDATE {$_TABLES['shop.shipment_packages']} ";
@@ -228,6 +232,31 @@ class ShipmentPackage
     public function getShipper()
     {
         return Shipper::getInstance($this->shipper_id);
+    }
+
+
+    /**
+     * Shortcut function to get the tracking URL for this package.
+     *
+     * @return  string  Tracking URL, empty string if not available.
+     */
+    public function getTrackingUrl()
+    {
+        return $this->getShipper()->getTrackingURL($this->tracking_num);
+    }
+
+
+    /**
+     * Verify that this package record is valid.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    private function _isValidRecord()
+    {
+        if ($this->shipper_info == '' && $this->tracking_num == '') {
+            return false;
+        }
+        return true;
     }
 
 }

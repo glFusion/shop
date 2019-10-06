@@ -12,7 +12,6 @@ You can download your purchased files from the following links:
 {!if order_instr}
 <p>Special Instructions: {order_instr}</p>
 {!endif}
-<p>Order Status: {status}</p>
 {!if pending}
 <p>
 Your payment is pending.  Once your payment is received, you will receive

@@ -134,4 +134,10 @@
     {$LANG_SHOP['pmt_method']}: {pmt_method}
 </p>
 {!endif}
+<p>{$LANG_SHOP['status']}: {status}</p>
+{!if tracking_info}
+<p>
+    {tracking_info}
+</p>
+{!endif}
 <p />
