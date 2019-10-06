@@ -221,12 +221,12 @@ function plugin_commentsupport_shop()
  *
  * @param   string  $title      Comment title
  * @param   string  $comment    Comment text
- * @param   string  $id         Item id to which $cid belongs
+ * @param   string  $item_id    Item id to which $cid belongs
  * @param   integer $pid        Comment parent
  * @param   string  $postmode   'html' or 'text'
  * @return  mixed   false for failure, HTML string (redirect?) for success
  */
-function plugin_savecomment_shop($title,$comment,$id,$pid,$postmode)
+function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
 {
     global $LANG03, $_SHOP_CONF;
 
@@ -235,21 +235,29 @@ function plugin_savecomment_shop($title,$comment,$id,$pid,$postmode)
     if (!plugin_commentsupport_shop())
         return;
 
-    $id = (int)$id;
+    $item_id = (int)$item_id;
     $title = strip_tags($title);    // No HTML in the comment title
     $pid = COM_applyFilter($pid, true);
     $postmode = COM_applyFilter ($postmode);
 
     // Actually save the comment
-    $ret = CMT_saveComment($title, $comment, $id, $pid, $_SHOP_CONF['pi_name'], $postmode);
+    $ret = CMT_saveComment($title, $comment, $item_id, $pid, $_SHOP_CONF['pi_name'], $postmode);
 
     if ($ret > 0) {     // failure
         return COM_siteHeader()
-            . CMT_commentform ($title, $comment, $id, $pid,
-                    $_SHOP_CONF['pi_name'], $LANG03[14], $postmode)
+            . CMT_commentform(
+                $title,
+                $comment,
+                $item_id,
+                $pid,
+                $_SHOP_CONF['pi_name'],
+                $LANG03[14],
+                $postmode
+            )
             . COM_siteFooter();
     } else {        // success - update the comment counter for this item
-        return COM_refresh(COM_buildUrl(SHOP_URL . "/detail.php?id=$id"));
+        COM_errorLog("Returning to " . SHOP_URL . "/detail.php?item_id=$item_id");
+        return COM_refresh(SHOP_URL . "/detail.php?item_id=$item_id");
     }
 }
 
@@ -2323,9 +2331,9 @@ function SHOP_setUrl($url='')
 function SHOP_getUrl($def_url = '', $keep=true)
 {
     // Only do this if the link is from somewhere in the site.
-    if (stripos($_SERVER['HTTP_REFERER'], $_CONF['site_url']) === false) {
+    /*if (stripos($_SERVER['HTTP_REFERER'], $_CONF['site_url']) === false) {
         return false;
-    }
+    }*/
 
     $url = SESS_getVar('shop_ret_url');
     if (!$url) {
