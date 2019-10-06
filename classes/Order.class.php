@@ -1112,14 +1112,8 @@ class Order
 
         if ($incl_trk) {        // include tracking information block
             $Shipments = Shipment::getByOrder($this->order_id);
-            $cbrk = NULL;
             foreach ($Shipments as $Shp) {
                 $shp_dt = $Shp->getDate()->toMySQL(true);
-                if ($shp_dt != $cbrk) {
-                    $cbrk = $shp_dt;
-                } else {
-                    $shp_dt = '';
-                }
                 $Packages = $Shp->getPackages();
                 $T->set_block('tracking', 'trackingPackages', 'TP');
                 foreach ($Packages as $Pkg) {
@@ -1129,6 +1123,7 @@ class Order
                         'tracking_num'  => $Pkg->tracking_num,
                         'tracking_url'  => $Pkg->getTrackingURL(),
                     ) );
+                    $shp_dt = '';
                     $T->parse('TP', 'trackingPackages', true);
                 }
             }
