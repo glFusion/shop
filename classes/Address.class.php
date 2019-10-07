@@ -135,14 +135,16 @@ class Address
         case 'US':
         case 'CA':
         case 'AU':
-        case '':
+        case 'TW':
             $retval .= $this->city . ' ' . $this->state . ' ' . $this->zip;
             break;
         case 'GB':
+        case 'CO':
+        case 'IE':
             $retval .= $this->city . $sep . $this->zip;
             break;
         default:
-            $retval .= $this->zip. ' ' . $this->city . ' ' . $this->state;
+            $retval .= trim($this->zip. ' ' . $this->city . ' ' . $this->state);
             break;
         }
 
@@ -378,7 +380,7 @@ class Address
             'TR' => 'Turkey',
             'TT' => 'Trinidad and Tobago',
             'TV' => 'Tuvalu',
-            'TW' => 'Taiwan',
+            'TW' => 'Taiwan (R.O.C.)',
             'TZ' => 'Tanzania',
             'UA' => 'Ukraine',
             'UG' => 'Uganda',
