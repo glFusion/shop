@@ -20,12 +20,14 @@ Release TBD
   * Paypal data is not automatically migrated during installation.
   * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
   * Enable Facebook catalog feeds. See https://developers.facebook.com/docs/marketing-api/catalog-feed-setup.
+  * Add optional `brand` field for products to support catalog feeds.
   * Separate ProductImage class into Images\Product.
   * Pass query string to product detail view for highlighting.
   * Add `View Cart` button to shop header when cart has items.
   * Add shipping and tracking for orders.
   * Update PDF creation, require lgLib 1.0.9+
   * Replace Orders main menu option, add shipment listing.
+  * Allow coupons to be voided by administrators.
 
 ## v0.7.1
 Release 2019-08-02
