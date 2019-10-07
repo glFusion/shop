@@ -57,7 +57,7 @@ $expected = array(
     'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'shiporder', 'editshipment', 'shipments',
+    'shiporder', 'editshipment', 'shipments', 'shipment_pl', 'order_pl',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -687,6 +687,30 @@ case 'shiporder':
     if (!$Ord->isNew) {
         $content .= $Ord->View('shipment');
     }*/
+    break;
+
+case 'order_pl':
+    // Get the packing list for an entire order.
+    // This is expected to be shown in a _blank browser window/tab.
+    $order = Shop\Order::getInstance($actionval);
+    if ($order->canView($token)) {
+        echo $order->View('packinglist');
+        exit;
+    } else {
+        COM_404();
+    }
+    break;
+
+case 'shipment_pl':
+    // Get the packing list for a shipment.
+    // This is expected to be shown in a _blank browser window/tab.
+    $V = new Shop\Shipment($actionval);
+    if ($V->getOrder()->canView()) {
+        echo $V->getPackingList();
+        exit;
+    } else {
+        COM_404();
+    }
     break;
 
 default:

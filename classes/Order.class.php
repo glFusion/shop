@@ -756,7 +756,6 @@ class Order
             'shipment_block' => $this->getShipmentBlock(),
             'itemsToShip'   => $this->itemsToShip(),
         ) );
-
         if ($this->isAdmin) {
             $T->set_var(array(
                 'is_admin'      => true,
@@ -2094,7 +2093,7 @@ class Order
 
         return COM_createLink(
             '<i class="uk-icon-mini uk-icon-list"></i>',
-           COM_buildUrl(SHOP_URL . '/order.php?mode=packinglist&id=' . $order_id),
+           SHOP_ADMIN_URL . '/index.php?order_pl=' . $order_id,
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['packinglist'],
