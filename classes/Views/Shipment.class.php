@@ -57,28 +57,45 @@ class Shipment extends Order
      *
      * @return  string      HTML for display
      */
-    public function Render()
+    public function Render($title='shiporder')
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file(array(
             'order'     => $this->tplname . '.thtml',
             'tracking'  => 'shipment_tracking_1.thtml',
         ) );
+        $T->set_var(array(
+            'page_title'    => $LANG_SHOP[$title],
+            'shipment_id'    => $this->shipment_id,
+            'shipper_select' => Shipper::optionList(0, true),
+        ) );
         $T->set_block('order', 'ItemRow', 'iRow');
         foreach ($this->Order->getItems() as $item) {
             $P = $item->getProduct();
-            $shipped = \Shop\ShipmentItem::getItemsShipped($item->id);
-            $toship = max($item->quantity - $shipped, 0);
+            // If this is not a physical product, don't show the qty field,
+            // show the product type text instead.
+            if (!$P->isPhysical()) {
+                $T->set_var(array(
+                    'can_ship' => false,
+                    'toship_text' => $LANG_SHOP['prod_types'][$P->prod_type],
+                ) );
+            } else {
+                $shipped = \Shop\ShipmentItem::getItemsShipped($item->id);
+                $toship = max($item->quantity - $shipped, 0);
+                $T->set_var(array(
+                    'can_ship'  => true,
+                    'shipped'   => $shipped,
+                    'toship'    => $toship,
+                ) );
+            }
             $T->set_var(array(
                 'oi_id'         => $item->id,
                 'fixed_q'       => $P->getFixedQuantity(),
                 'item_id'       => htmlspecialchars($item->product_id),
                 'item_dscp'     => htmlspecialchars($item->description),
                 'ordered'       => $item->quantity,
-                'shipped'       => $shipped,
-                'toship'        => $toship,
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
                 'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
@@ -101,10 +118,6 @@ class Shipment extends Order
             $T->clear_var('iOpts');
         }
 
-        $T->set_var(array(
-            'shipment_id'    => $this->shipment_id,
-            'shipper_select' => Shipper::optionList(),
-        ) );
         if ($this->shipment_id > 0) {
             $T->set_block('order', 'trackingPackages', 'TP');
             $Shp = new \Shop\Shipment($this->shipment_id);

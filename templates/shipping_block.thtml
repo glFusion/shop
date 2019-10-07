@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<table style="width:100%;">
+<table id="shippingBlock">
   <tr>
     <th colspan="4">
       {$LANG_SHOP['shipto_info']}
@@ -12,18 +12,18 @@
   </tr>
 <!-- BEGIN Packages -->
   <tr>
-    <td>
+    <td class="shrink">
 {!if show_ship_info}
       {ship_date}
       <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shipment_id}"
         class="uk-icon uk-icon-edit"></a>
 {!endif}
     </td>
-    <td>
+    <td class="shrink">
       {shipper_info}
     </td>
 {!if tracking_num}
-    <td>
+    <td class="expand">
 {!if tracking_url}
       <a href="{tracking_url}" target="_blank">{tracking_num}</a>
 {!else}

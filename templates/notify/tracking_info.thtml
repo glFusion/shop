@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-    <table width="60%">
+    <table style="width:100%;border-collapse: collapse;">
       <tbody>
       <tr>
         <td colspan="2">
@@ -8,8 +8,8 @@
       </tr>
 <!-- BEGIN trackingPackages -->
       <tr>
-        <td>{shipment_date}</td>
-        <td>{shipper_name}
+        <td style="min-width:30px;white-space:nowrap;">{shipment_date}&nbsp;&nbsp;</td>
+        <td style="width:99%;">{shipper_name}
 {!if tracking_num}
         ,&nbsp;{$LANG_SHOP['tracking']}:&nbsp;
 {!if tracking_url}

@@ -96,6 +96,28 @@ class OrderItem
 
 
     /**
+     * Get an instance of a specific order item.
+     *
+     * @param   integer $oi_id  OrderItem record ID
+     * @return  object      OrderItem object
+     */
+    public static function getInstance($oi)
+    {
+        static $items = array();
+        if (is_array($oi)) {
+            $oi_id = $oi['oi_id'];
+        } else {
+            $oi_id = $oi;
+        }
+
+        if (!array_key_exists($oi_id, $items)) {
+            $items[$oi_id] = new self($oi);
+        }
+        return $items[$oi_id];
+    }
+
+
+    /**
     * Load the item information.
     *
     * @param    integer $rec_id     DB record ID of item

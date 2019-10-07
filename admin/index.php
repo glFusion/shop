@@ -448,6 +448,8 @@ case 'orders':
     $R = \Shop\Report::getInstance('orderlist');
     if ($R !== NULL) {
         $R->setAdmin(true);
+        // Params usually from GET but could be POSTed time period
+        $R->setParams($_REQUEST);
         $content .= $R->Render();
     }
     break;
@@ -537,7 +539,7 @@ case 'sales':
 case 'options':
     $content .= Shop\Menu::adminCatalog('options');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
-        // Delete some checked options 
+        // Delete some checked options
         foreach ($_POST['delitem'] as $opt_id) {
             \Shop\ProductOptionValue::Delete($opt_id);
         }
@@ -665,7 +667,7 @@ case 'editshipment':
         $S = new Shop\Shipment($shipment_id);
         $V = new Shop\Views\Shipment($S->order_id);
         $V->setShipmentID($shipment_id);
-        $content = $V->Render();
+        $content = $V->Render($action);
     }
     break;
 
@@ -679,7 +681,7 @@ case 'shipments':
 
 case 'shiporder':
     $V = new Shop\Views\Shipment($_GET['order_id']);
-    $content .= $V->Render();
+    $content .= $V->Render($action);
     /*
     $Ord = Shop\Order::getInstance($_GET['order_id']);
     if (!$Ord->isNew) {

@@ -3,7 +3,7 @@
 <input type="hidden" name="order_id" value="{order_id}" />
 <input type="hidden" name="shipment_id" value="{shipment_id}" />
 <div class="shopOrderContainer">
-  <h1 class="aligncenter">{$LANG_SHOP['ship_order']}</h1>
+  <h1 class="aligncenter">{page_title}</h1>
     {linkPackingList}
 
   <div class="shopOrder">
@@ -53,10 +53,18 @@
         <!-- END ItemOptions -->
           </td>
           <td class="alignright">{ordered}</td>
-          <td class="alignright">{shipped}</td>
           <td class="alignright">
-{!if toship}
+{!if can_ship}
+            {shipped}
+{!endif}
+          </td>
+          <td class="alignright">
+{!if can_ship}
             <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright" value="{toship}" />
+{!if toship}
+{!endif}
+{!else}
+            {toship_text}
 {!endif}
           </td>
         </tr>

@@ -747,3 +747,15 @@ div#orderShipmentBlock {
     background:#ccc;
     padding:8px;
 }
+table#shippingBlock {
+/*    width: 70$;*/
+}
+table#shippingBlock td,th {
+    padding-right: 10px;
+}
+table#shippingBlock .shrink {
+    white-space: nowrap;
+}
+table#shippingBlock .expand {
+    width: 99%;
+}

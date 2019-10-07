@@ -924,7 +924,15 @@ class Shipper
     {
         global $_TABLES;
 
-        $where = $ena_only ? 'enabled = 1' : '';
+        if ($ena_only) {
+            $now = time();
+            $where = "enabled = 1
+                AND valid_from < '$now'
+                AND valid_to > '$now'";
+        } else {
+            $where = '';
+        }
+
         $lst = COM_optionList(
             $_TABLES['shop.shipping'],
             'id,name',

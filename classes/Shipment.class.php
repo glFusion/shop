@@ -164,6 +164,23 @@ class Shipment
 
 
     /**
+     * Get a date object representing this shipment's timestamp.
+     *
+     * @return  object      Date object
+     */
+    public function getDate()
+    {
+        global $_CONF;
+
+        static $Dt = NULL;
+        if ($Dt === NULL) {
+            $Dt = new \Date($this->ts, $_CONF['timezone']);
+        }
+        return $Dt;
+    }
+
+
+    /**
      * Get all the shipments related to a specific order.
      *
      * @param   string  $order_id   ID of order
@@ -267,6 +284,7 @@ class Shipment
                 $this->shipment_id = DB_insertID();
                 $ord_status = 'shipped';    // assume all shipped
                 foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                    // Double-check that only physical products are being shipped
                     $qty = (float)$qty;
                     if ($qty > 0) {
                         $SI = ShipmentItem::Create($this->shipment_id, $oi_id, $qty);
@@ -297,14 +315,27 @@ class Shipment
 
     /**
      * Check that required variables are set prior to saving the shipment.
-     * Checks that there is some quantity being shipped, for new shipments.
+     * - Checks that there is some quantity being shipped, for new shipments.
+     * - Checks that there's at least one physical item being shipped.
      * Returns True when updating existing shipments.
      *
      * @param   array   $form   Array of form fields ($_POST)
      * @return  boolean     True if the record is OK to save, False if not
      */
-    private function _isValidRecord($form)
+    private function _isValidRecord(&$form)
     {
+        // Check that only physical items are being shipped.
+        // Remove any download or virtual items. If the resulting dataset has
+        // no items, return false.
+        foreach ($form['ship_qty'] as $oi_id=>$qty) {
+            if (!OrderItem::getInstance($oi_id)->getProduct()->isPhysical()) {
+                unset($form['ship_qty'][$oi_id]);
+            }
+            if (empty($form['ship_qty'])) {
+                return false;
+            }
+        }
+
         // Check that the shipping quantity field is present, for new shipments.
         if ($this->shipment_id == 0) {
             if (!isset($form['ship_qty']) || !is_array($form['ship_qty'])) {
@@ -314,12 +345,9 @@ class Shipment
             // Check that at least one item is being shipped
             $total_qty = 0;
             foreach ($form['ship_qty'] as $oi_id=>$qty) {
-                if ($qty > 0) {
-                    $total_qty += $qty;
+                if ($qty == 0) {
+                    unset($form['ship_qty'][$oi_id]);
                 }
-            }
-            if ($total_qty <= 0) {
-                return false;
             }
         }
 

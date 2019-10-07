@@ -126,9 +126,9 @@ function addTrackingNumber()
         url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
-console.log(result);
             try {
-                if (result.status = true) {
+                if (result.status == true) {
+console.log("valid save");
                     if (result.tracking_url != '') {
                         var tracking_url = '<a href="' + result.tracking_url +
                             '" target="_blank">' + result.tracking_num + '</a>';
@@ -144,6 +144,8 @@ console.log(result);
                         '</td></tr>';
                     $("#trackingTable tbody").append(newRowContent);
                     document.getElementById("trackingNum0").value = '';
+                } else {
+                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
                 }
             } catch(err) {
             }
