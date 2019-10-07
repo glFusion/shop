@@ -43,6 +43,9 @@ class Address
         if (!is_array($data)) {
             $data = json_decode($data, true);
         }
+        if (!is_array($data)) {
+            $data = array();
+        }
         foreach (self::$_names as $key) {
             $this->$key= isset($data[$key]) ? $data[$key] : '';
         }
@@ -57,6 +60,17 @@ class Address
      */
     public function __set($key, $val)
     {
+        global $_SHOP_CONF;
+
+        switch($key) {
+        case 'country':
+            if (empty($val)) {
+                $val = $_SHOP_CONF['shop_country'];
+            } else {
+                $val = strtoupper($val);
+            }
+            break;
+        }
         $this->properties[$key] = $val;
     }
 
@@ -94,31 +108,38 @@ class Address
 
 
     /**
-     * Render the address as HTML, separated by `<br>` tags.
+     * Render the address as text, separated by the specified separator.
      * Sets the city, state, zip line according to the country format.
      *
+     * @param   string  $sep    Line separator, simple `\n` by default.
      * @return  string      HTML formatted address
      */
-    public function toHTML()
+    public function toText($sep="\n")
     {
         global $_SHOP_CONF;
 
         $retval = '';
+
+        // Create the address for parts common to all countries
         $common = array(
             'name', 'company', 'address1', 'address2',
         );
         foreach ($common as $key) {
             if ($this->$key != '') {
-                $retval .= $this->$key. "<br />\n";
+                $retval .= $this->$key . $sep;
             }
         }
+
+        // Format the parts that are different by country
         switch($this->country) {
         case 'US':
         case 'CA':
-        case 'UK':
         case 'AU':
         case '':
             $retval .= $this->city . ' ' . $this->state . ' ' . $this->zip;
+            break;
+        case 'GB':
+            $retval .= $this->city . $sep . $this->zip;
             break;
         default:
             $retval .= $this->zip. ' ' . $this->city . ' ' . $this->state;
@@ -127,21 +148,32 @@ class Address
 
         // Include the country as the last line, unless this is a domestic address.
         if ($_SHOP_CONF['shop_country'] != $this->country) {
-            $retval .=  "<br />\n" . self::getCountryName($this->country);
+            $retval .=  $sep . self::getCountryName($this->country);
         }
         return $retval;
     }
 
 
     /**
-     * Return USPS county name by country ISO 3166-1-alpha-2 code.
+     * Get the address in HTML format. Uses `<br />\n` betwen lines.
+     *
+     * @return  string      Address as HTML
+     */
+    public function toHTML()
+    {
+        return $this->toText("<br />\n");
+    }
+
+
+    /**
+     * Return USPS counrty name by country ISO 3166-1-alpha-2 code.
      * Return false for unknown countries.
      * Returns all countries if no ID is provided.
      *
-     * @param   string  $countryId  2-character country ID
+     * @param   string  $countryID  2-character country ID
      * @return  mixed   Country Name, false if not found, or all countries if no ID given
      */
-    public static function getCountryName($countryId = NULL)
+    public static function getCountryName($countryID = NULL)
     {
         $countries = [
             'AD' => 'Andorra',
@@ -214,7 +246,7 @@ class Address
             'FO' => 'Faroe Islands',
             'FR' => 'France',
             'GA' => 'Gabon',
-            'GB' => 'United Kingdom of Great Britain and Northern Ireland',
+            'GB' => 'United Kingdom',
             'GD' => 'Grenada',
             'GE' => 'Georgia, Republic of',
             'GF' => 'French Guiana',
@@ -368,12 +400,12 @@ class Address
             'US' => 'United States',
         ];
 
-        if ($countryId === NULL) {
-            // Nothing requested, retrn all counries
+        if ($countryID === NULL) {
+            // Nothing requested, return all counries
             return $countries;
-        } elseif (isset($countries[$countryId])) {
+        } elseif (isset($countries[$countryID])) {
             // Found the requestd country ID, return the country name
-            return $countries[$countryId];
+            return $countries[$countryID];
         } else {
             // Country ID not found, return false
             return false;
