@@ -1,0 +1,13 @@
+{# begin {templatelocation} #}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['product']}:</label>
+    <div class="uk-form-controls">
+      <select name="item_id">
+<!--        <option value="0">{$LANG_SHOP['all']}</option>-->
+<!-- BEGIN itemSelect -->
+        <option value="{item_id}" {selected}>{item_name}</option>
+<!-- END itemSelect -->
+      </select>
+    </div>
+  </div>
+{# end {templatelocation} #}
