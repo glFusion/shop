@@ -431,6 +431,11 @@ class Shipment
                 'align' => 'center',
             ),
             array(
+                'text'  => '',
+                'field' => 'action',
+                'sort'  => false,
+            ),
+            array(
                 'text'  => 'ID',
                 'field' => 'shipment_id',
                 'sort'  => true,
@@ -535,6 +540,18 @@ class Shipment
             );
             break;
 
+        case 'action':
+            $retval = COM_createLink(
+                Icon::getHTML('list'),
+                SHOP_ADMIN_URL . '/index.php?shipment_pl=' . $A['shipment_id'],
+                array(
+                    'target'    => '_blank',
+                    'class'     => 'tooltip',
+                    'title'     => $LANG_SHOP['packinglist'],
+                )
+            );
+            break;
+
         case 'delete':
             $retval = COM_createLink(
                 Icon::getHTML('delete'),
@@ -552,6 +569,19 @@ class Shipment
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the packing list output for this shipment.
+     *
+     * @return  string  HTML for printable packing list.
+     */
+    public function getPackingList()
+    {
+        $View = new \Shop\Views\PackingList($this->order_id);
+        $View->setShipment($this);
+        return $View->Render();
     }
 
 }

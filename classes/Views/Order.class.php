@@ -35,6 +35,10 @@ class Order
      * @var string */
     protected $tplname;
 
+    /** Tracking info template, if used.
+     * @var string */
+    protected $tracking_tpl;
+
     /** Indicate if this is editable or final.
      * @var boolean */
     protected $isFinalView;
@@ -60,9 +64,9 @@ class Order
      * Load the order information from the database.
      *
      * @param   string  $id     Order ID
-     * @return  boolean     True on success, False if order not found
+     * @return  object      Order object
      */
-    protected function getOrder($id = '')
+    public function getOrder($id = '')
     {
         global $_TABLES;
 
@@ -70,6 +74,7 @@ class Order
             $this->order_id = $id;
         }
         $this->Order = \Shop\Order::getInstance($this->order_id);
+        return $this->Order;
     }
 
 

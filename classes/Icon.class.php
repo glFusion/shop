@@ -41,6 +41,7 @@ class Icon
         'lock'      => 'uk-icon uk-icon-lock',
         'unlock'    => 'uk-icon uk-icon-unlock',
         'add'       => 'uk-icon uk-icon-plus-circle uk-text-success',
+        'list'      => 'uk-icon uk-icon-list',
     );
 
 

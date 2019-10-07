@@ -1,0 +1,20 @@
+{# begin {templatelocation} #}
+    <table id="trackingTable">
+      <thead>
+      <tr>
+        <th>{$LANG_SHOP['carrier']}</th>
+        <th>{$LANG_SHOP['tracking']}</th>
+      </tr>
+      </thead>
+      <tbody>
+<!-- BEGIN trackingPackages -->
+      <tr>
+        <td>{shipper_name}</td>
+        <td>
+            {tracking_num}
+        </td>
+      </tr>
+<!-- END trackingPackages -->
+      </tbody>
+    </table>
+{# end {templatelocation} #}

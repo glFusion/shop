@@ -22,7 +22,7 @@ class Shipment extends Order
 {
     /** Shipment record ID.
      * @var integer */
-    private $shipment_id = 0;
+    protected $shipment_id = 0;
 
 
     /**
@@ -30,12 +30,13 @@ class Shipment extends Order
      *
      * @param   string  $order_id   Optional order ID to read
      */
-    public function __construct($order_id='')
+    public function __construct($order_id = '')
     {
         global $_USER, $_SHOP_CONF;
 
         $this->isFinalView = true;
         $this->tplname = 'shipment';
+        $this->tracking_tpl = 'shipment_tracking_1';
 
         parent::__construct($order_id);
     }

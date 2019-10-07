@@ -28,6 +28,7 @@ Release TBD
   * Update PDF creation, require lgLib 1.0.9+
   * Replace Orders main menu option, add shipment listing.
   * Allow coupons to be voided by administrators.
+  * Create packing lists for each shipment.
 
 ## v0.7.1
 Release 2019-08-02
