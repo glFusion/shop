@@ -78,12 +78,12 @@ class Address
 
 
     /**
-     * Convert the address fields to a single string.
+     * Convert the address fields to a single JSON string.
      *
      * @param   boolean $escape     True to escape for DB storage
      * @return  string  Address string
      */
-    public function toString($escape=false)
+    public function toJSON($escape=false)
     {
         $str = json_encode($this->properties);
         if ($escape) {
@@ -101,6 +101,8 @@ class Address
      */
     public function toHTML()
     {
+        global $_SHOP_CONF;
+
         $retval = '';
         $common = array(
             'name', 'company', 'address1', 'address2',
@@ -122,7 +124,11 @@ class Address
             $retval .= $this->zip. ' ' . $this->city . ' ' . $this->state;
             break;
         }
-        $retval .=  "<br />\n" . self::getCountryName($this->country);
+
+        // Include the country as the last line, unless this is a domestic address.
+        if ($_SHOP_CONF['shop_country'] != $this->country) {
+            $retval .=  "<br />\n" . self::getCountryName($this->country);
+        }
         return $retval;
     }
 

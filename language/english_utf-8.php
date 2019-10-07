@@ -649,6 +649,7 @@ $LANG_confignames['shop'] = array(
     'ipn_url'       => 'IPN URL Override',
     'use_sku'       => 'Use SKU as Product ID?',
     'feed_facebook' => 'Enable Facebook Feed?',
+    'shop_country'  => 'Country',
 );
 
 /** Language strings for the subgroup names in the config section */
