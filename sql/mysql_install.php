@@ -282,6 +282,7 @@ CREATE TABLE `gl_shop_products` (
 ) ENGINE=MyISAM",
 
 'shop.coupons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.coupons']}` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `code` varchar(128) NOT NULL,
   `amount` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
   `balance` decimal(12,4) unsigned NOT NULL DEFAULT '0.0000',
@@ -290,7 +291,9 @@ CREATE TABLE `gl_shop_products` (
   `purchased` int(11) unsigned NOT NULL DEFAULT '0',
   `redeemed` int(11) unsigned NOT NULL DEFAULT '0',
   `expires` date DEFAULT '9999-12-31',
-  PRIMARY KEY (`code`),
+  `status` varchar(10) NOT NULL DEFAULT 'valid',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
   KEY `owner` (`redeemer`,`balance`,`expires`),
   KEY `purchased` (`purchased`)
 ) ENGINE=MyIsam",
@@ -579,6 +582,9 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_value pov_value varchar(64) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+    "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
 );
 
 $_SQL['shop.opt_grp'] = $SHOP_UPGRADE['1.0.0'][0];

@@ -19,6 +19,15 @@ require_once '../../../lib-common.php';
 // so don't try to display a message
 if (!plugin_ismoderator_shop()) {
     COM_accessLog("User {$_USER['username']} tried to illegally access the shop admin ajax function.");
+    $retval = array(
+        'status' => false,
+        'statusMessage' => $LANG_SHOP['access_denied'],
+    );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     exit;
 }
 
@@ -140,7 +149,11 @@ case 'add_tracking':
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
+        } else {
+            $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
         }
+    } else {
+        $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
     }
     header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
@@ -157,6 +170,40 @@ case 'del_tracking':
     $retval = array(
         'status' => true,
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
+
+case 'void':
+    $item_id = $_POST['item_id'];
+    $newval = $_POST['newval'];     // should be "void" or "valid"
+    COM_errorLog(print_r($_POST,true));
+    switch ($_POST['component']) {
+    case 'coupon':
+        $status = Shop\Products\Coupon::Void($item_id, $newval);
+        break;
+    }
+    if ($status) {
+        $next_val = $newval == 'void' ? 'valid' : 'void';
+        $confirm_txt = $next_val == 'valid' ? $LANG_SHOP['q_confirm_unvoid'] : $LANG_SHOP['q_confirm_void'];
+        $retval = array(
+            'status' => $status,
+            'statusMessage' => $LANG_SHOP['msg_updated'],
+            'text' => SHOP_getVar($LANG_SHOP, $newval, 'string', 'Unknown'),
+            'newclass' => $newval == 'void' ? 'uk-button-danger' : 'uk-button-success',
+            'onclick_val' => $next_val,
+            'confirm_txt' => $confirm_txt,
+        );
+    } else {
+        $retval = array(
+            'status' => $status,
+            'statusMessage' => $LANG_SHOP['err_msg'],
+            'text' => $LANG_SHOP['valid'],
+        );
+    }
     header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
     //A date in the past

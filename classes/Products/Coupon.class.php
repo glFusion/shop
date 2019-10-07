@@ -425,7 +425,7 @@ class Coupon extends \Shop\Product
             // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
-                WHERE redeemer = '$uid'";
+                WHERE status='valid' AND redeemer = '$uid'";
             if (!$all) {
                 $sql .= " AND expires >= '$today' AND balance > 0";
             }
@@ -623,6 +623,39 @@ class Coupon extends \Shop\Product
 
 
     /**
+     * Administratively void a single coupon.
+     * Only coupons with a remaining balance can be voided, no reason to
+     * void a fully-used coupon.
+     *
+     * @param   string  $code   Coupon code to void/unvoid
+     * @return  boolean     True on success, False on failure
+     */
+    public static function Void($code, $newstatus='void')
+    {
+        global $_TABLES, $_USER;;
+
+        $code = DB_escapeString($code);
+        $newstatus = DB_escapeString($newstatus);
+        $sql = "UPDATE {$_TABLES['shop.coupons']}
+            SET status = '$newstatus'
+            WHERE code = '$code'";
+        if ($newestatus == 'void') {
+            $log_code = 'gc_voided';
+            $sql .= ' AND balance > 0';
+        } else {
+            $log_code = 'gc_unvoided';
+        }
+        DB_query($sql);
+        if (!DB_error()) {
+            self::writeLog($code, $_USER['uid'], 0, $log_code);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
      * Expire one or more coupons.
      * If $code is empty, then all coupons with a balance > 0 that have
      * expired are updated.
@@ -771,6 +804,11 @@ class Coupon extends \Shop\Product
                 'field' => 'redeemer',
                 'sort' => true,
             ),
+            array(
+                'text' => $LANG_SHOP['status'],
+                'field' => 'status',
+                'sort' => false,
+            ),
         );
 
         $defsort_arr = array(
@@ -857,6 +895,43 @@ class Coupon extends \Shop\Product
         case 'redeemed':
             $Dt->setTimestamp((int)$fieldvalue);
             $retval = SHOP_dateTooltip($Dt);
+            break;
+
+        case 'status':
+            $btn_txt = SHOP_getVar($LANG_SHOP, $A['status'], 'string', 'Valid');
+            if ($A['status'] == 'void' && $A['balance'] > 0) {
+                $conf_txt = $LANG_SHOP['q_confirm_unvoid'];
+                $newval = 'valid';
+                $title = $LANG_SHOP['unvoid_item'];
+                $btn_class = 'danger';
+            } elseif ($A['status'] == 'valid' && $A['balance'] > 0) {
+                $conf_txt = $LANG_SHOP['q_confirm_void'];
+                $newval = 'void';
+                $title = $LANG_SHOP['void_item'];
+                $btn_class = 'success';
+            } else {
+                $newval = NULL;
+            }
+            if ($newval) {
+                $retval .= "<button class=\"uk-button uk-button-mini uk-button-{$btn_class} tooltip\"
+                    title=\"{$title}\"
+                    onclick=\"if (confirm('{$conf_txt}')) {
+                        voidItem('coupon','{$A['code']}','$newval',this);
+                        }return false;\">{$btn_txt}</button>";
+            }
+            /*if ($fieldvalue == 'valid') {
+                $icon = \Shop\Icon::getIcon('unlock') . ' uk-text-success';
+            } else {
+                $icon = \Shop\Icon::getIcon('lock') . ' uk-text-danger';
+            }
+            //$retval = '<i class="' . $icon . '"></i>';
+            $retval = $fieldvalue;
+            if ($fieldvalue == 'valid' && $A['balance'] > 0) {
+                $retval .= ' <i class="' . \Shop\Icon::getIcon('lock') . ' uk-text-danger tooltip' .
+                    '" title="Click to void""></i>';
+            }
+            //<i id="ev_ena_{id}" class="uk-icon uk-icon-toggle-on uk-text-success" value="1" data-uk-tooltip
+             */
             break;
 
         default:

@@ -221,6 +221,10 @@ class coupons extends \Shop\Report
             case 'gc_applied':
                 $var = $A['order_id'];
                 break;
+            case 'gc_voided':
+            case 'gc_unvoided':
+                $var = COM_getDisplayName($A['uid']);
+                break;
             }
             $retval = sprintf(
                 SHOP_getVar($LANG_SHOP, 'msg_' . $fieldvalue, 'string', 'Undefined'),
