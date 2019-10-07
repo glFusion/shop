@@ -627,7 +627,8 @@ class Coupon extends \Shop\Product
      * Only coupons with a remaining balance can be voided, no reason to
      * void a fully-used coupon.
      *
-     * @param   string  $code   Coupon code to void/unvoid
+     * @param   string  $code       Coupon code to be updated
+     * @param   string  $newstatus  New status to set
      * @return  boolean     True on success, False on failure
      */
     public static function Void($code, $newstatus='void')

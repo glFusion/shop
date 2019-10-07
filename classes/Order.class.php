@@ -1049,8 +1049,9 @@ class Order
     /**
      * This function actually creates the text for notification emails.
      *
-     * @param   object  &$T     Template object
-     * @param   string  $gw_msg Optional gateway message to include
+     * @param   object  &$T         Template object reference
+     * @param   string  $gw_msg     Optional gateway message to include
+     * @param   boolean $incl_trk   True to include package tracking info
      * @return  string      Text for email body
      */
     private function _prepareNotification(&$T, $gw_msg='', $incl_trk=true)

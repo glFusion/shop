@@ -55,6 +55,7 @@ class Shipment extends Order
     /**
      * Create the display.
      *
+     * @param   string  $title  Language key for form title
      * @return  string      HTML for display
      */
     public function Render($title='shiporder')
