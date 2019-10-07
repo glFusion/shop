@@ -108,9 +108,6 @@ $(document).ready(function() {
                 var confVar = ajobj.attr('id');
                 if (data.indexOf(confVar) > 0) {
                     var desc = $(data).find('#desc_' + confVar + ' dd:first').text();
-                    //var a = $(data).find('a[name=desc_' + confVar + ']');
-                    //var tds = a.parent().parent().children("td");
-                    //var desc = tds.eq(1).html();
                     origin.tooltipster('content', desc);
                 } else {
                     origin.tooltipster('content', 'No Help Text Found');
@@ -122,8 +119,8 @@ $(document).ready(function() {
     });
 });
 
-var item_id = {init_item_id};
-var og_id = {og_id};
+var item_id = "{init_item_id}";
+var og_id = "{ppg_id}";
 
 /**
  * Update the selected Item ID.
@@ -135,7 +132,7 @@ function updateItemID(new_id)
 }
 
 /**
- * Update the attribute group selected.
+ * Update the option group selected.
  */
 function updatePOG(new_id)
 {
@@ -144,7 +141,7 @@ function updatePOG(new_id)
 }
 
 /**
- * Update the `orderby` selection list when the product or attribute group are changed.
+ * Update the `orderby` selection list when the product or option group are changed.
  */
 function updateOrderbyOpts()
 {
