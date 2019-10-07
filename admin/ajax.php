@@ -75,7 +75,7 @@ case 'dropupload':
     echo json_encode($retval);
     break;
 
-case 'attr_orderby_opts':
+case 'opt_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
