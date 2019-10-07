@@ -95,6 +95,7 @@ class Address
 
     /**
      * Render the address as HTML, separated by `<br>` tags.
+     * Sets the city, state, zip line according to the country format.
      *
      * @return  string      HTML formatted address
      */

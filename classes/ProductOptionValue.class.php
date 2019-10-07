@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -14,7 +14,7 @@
 namespace Shop;
 
 /**
- * Class for product attributes - color, size, etc.
+ * Class for product options - color, size, etc.
  * @package shop
  */
 class ProductOptionValue
@@ -323,10 +323,7 @@ class ProductOptionValue
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL(
-                'attribute_form',
-                $_CONF['language']
-            ),
+            'doc_url'       => SHOP_getDocURL('option_form', $_CONF['language']),
             'item_id'       => $this->item_id,
             'init_item_id'  => $init_item_id,
             'item_name'     => Product::getByID($this->item_id)->name,
@@ -609,7 +606,7 @@ class ProductOptionValue
             "</select>&nbsp;\n";
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?attributes=x',
+            'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
         );
         $options = array('chkdelete' => true, 'chkfield' => 'pov_id');
         } else {
@@ -625,10 +622,10 @@ class ProductOptionValue
             $filter, '', $options, ''
         );
 
-        // Create the "copy attributes" form at the bottom
-        if ($prod_id == 0) {
+        // Create the "copy "options" form at the bottom
+        if ($sel_prod_id == 0) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
-            $T->set_file('copy_opt_form', 'copy_attributes_form.thtml');
+            $T->set_file('copy_opt_form', 'copy_options_form.thtml');
             $T->set_var(array(
                 'src_product'       => $product_selection,
                 'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
@@ -746,7 +743,7 @@ class ProductOptionValue
 
 
     /**
-     * Get all attributes for a product, optionally limited by group.
+     * Get all options for a product, optionally limited by group.
      * Attempts to retrieve first from cache, then reads from the DB.
      *
      * @param   integer $prod_id    Product ID
