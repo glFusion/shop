@@ -32,11 +32,8 @@ class Shipment extends Order
      */
     public function __construct($order_id = '')
     {
-        global $_USER, $_SHOP_CONF;
-
         $this->isFinalView = true;
         $this->tplname = 'shipment';
-        $this->tracking_tpl = 'shipment_tracking_1';
 
         parent::__construct($order_id);
     }
@@ -74,8 +71,8 @@ class Shipment extends Order
             'shipper_select' => Shipper::optionList(0, true),
         ) );
         $T->set_block('order', 'ItemRow', 'iRow');
-        foreach ($this->Order->getItems() as $item) {
-            $P = $item->getProduct();
+        foreach ($this->Order->getItems() as $Item) {
+            $P = $Item->getProduct();
             // If this is not a physical product, don't show the qty field,
             // show the product type text instead.
             if (!$P->isPhysical()) {
@@ -84,8 +81,13 @@ class Shipment extends Order
                     'toship_text' => $LANG_SHOP['prod_types'][$P->prod_type],
                 ) );
             } else {
-                $shipped = \Shop\ShipmentItem::getItemsShipped($item->id);
-                $toship = max($item->quantity - $shipped, 0);
+                $shipped = \Shop\ShipmentItem::getItemsShipped($Item->id);
+                if ($this->shipment_id > 0) {
+                    $toship = $Item->quantity;
+                    $shipped -= $toship;
+                } else {
+                    $toship = 0;
+                }
                 $T->set_var(array(
                     'can_ship'  => true,
                     'shipped'   => $shipped,
@@ -93,25 +95,13 @@ class Shipment extends Order
                 ) );
             }
             $T->set_var(array(
-                'oi_id'         => $item->id,
-                'fixed_q'       => $P->getFixedQuantity(),
-                'item_id'       => htmlspecialchars($item->product_id),
-                'item_dscp'     => htmlspecialchars($item->description),
-                'ordered'       => $item->quantity,
-                'is_admin'      => $this->isAdmin,
-                'is_file'       => $item->canDownload(),
-                'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
-                'tax_icon'      => $LANG_SHOP['tax'][0],
-                'discount_icon' => 'D',
-                'discount_tooltip' => $price_tooltip,
-                'token'         => $item->token,
-                //'item_options'  => $P->getOptionDisplay($item),
-                'item_options'  => $item->getOptionDisplay(),
-                'sku'           => $P->getSKU($item),
-                'item_link'     => $P->getLink($item->id),
+                'oi_id'         => $Item->id,
+                'item_id'       => htmlspecialchars($Item->product_id),
+                'item_dscp'     => htmlspecialchars($Item->description),
+                'ordered'       => $Item->quantity,
+                'item_options'  => $Item->getOptionDisplay(),
+                'sku'           => $P->getSKU($Item),
                 'pi_url'        => SHOP_URL,
-                'is_invoice'    => $is_invoice,
-                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -138,22 +128,13 @@ class Shipment extends Order
         $T->set_var(array(
             'shipment_id'        => $this->shipment_id,
             'pi_url'        => SHOP_URL,
-            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
-            'pi_admin_url'  => SHOP_ADMIN_URL,
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_id'      => $this->Order->order_id,
             'order_instr'   => htmlspecialchars($this->instructions),
-            'shop_name'     => $_SHOP_CONF['shop_name'],
-            'shop_addr'     => $_SHOP_CONF['shop_addr'],
-            'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
-            'status'        => $this->Order->status,
-            'next_step'     => $step + 1,
-            'not_anon'      => !COM_isAnonUser(),
             'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
-            'return_url'    => SHOP_getUrl(),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
 
