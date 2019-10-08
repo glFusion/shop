@@ -37,9 +37,9 @@
       <table>
         <tr>
           <th class="aligncenter">{$LANG_SHOP['description']}</th>
-          <th style="width:10%" class="alignright">{$LANG_SHOP['ordered']}</th>
-          <th style="width:10%" class="alignright">{$LANG_SHOP['shipped']}</th>
-          <th style="width:10%" class="alignright">{$LANG_SHOP['toship']}</th>
+          <th style="width:10%" class="aligncenter">{$LANG_SHOP['ordered']}</th>
+          <th style="width:10%" class="aligncenter">{$LANG_SHOP['prev_shipped']}</th>
+          <th style="width:10%" class="aligncenter">{$LANG_SHOP['ship_this_shipment']}</th>
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
@@ -52,15 +52,15 @@
             <div class="ItemOptions">{option_dscp}</div>
         <!-- END ItemOptions -->
           </td>
-          <td class="alignright">{ordered}</td>
-          <td class="alignright">
+          <td class="aligncenter">{ordered}</td>
+          <td class="aligncenter">
 {!if can_ship}
             {shipped}
 {!endif}
           </td>
-          <td class="alignright">
+          <td class="aligncenter">
 {!if can_ship}
-            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright" value="{toship}" />
+            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
 {!if toship}
 {!endif}
 {!else}
@@ -90,17 +90,33 @@
 {!endif}
   </div>
 </div>
-<button style="float:none;" type="submit" class="uk-button uk-button-success"
+<button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
 {!if shipment_id}
-  name="updateshipment">
+  name="updateshipment"
+    onclick="return delIfNothingShipped();"
 {!else}
-  name="addshipment">
+  name="addshipment"
 {!endif}
-    {$LANG_ADMIN['submit']}</button>
-<button style="float:right;" type="submit" class="uk-button uk-button-danger"
+    >{$LANG_ADMIN['submit']}</button>
+<button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
     name="del_shipment" value="{shipment_id}"
     onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_ADMIN['delete']}</button>
 <button style="float:none;" type="submit" class="uk-button" name="cancel"
     onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
 </form>
+<script type="text/javascript">
+function delIfNothingShipped()
+{
+    flds = document.getElementsByClassName("ship_qty");
+    var qty_shipped = 0;
+    for (i = 0; i < flds.length; i++) {
+        qty_shipped += flds[i].value * 1;
+    }
+    if (qty_shipped == 0) {     // nothing being shipped, delete the shipment?
+        alert("{$LANG_SHOP['msg_nothing_shipped']}");
+        return false;
+    }        
+    return true;
+}
+</script>
 {# end {templatelocation} #}

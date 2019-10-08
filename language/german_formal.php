@@ -543,6 +543,9 @@ $LANG_SHOP = array (
 'q_confirm_unvoid' => 'Are you sure you want to reset this item as &quot;valid&quot;?',
 'err_msg' => 'There was an error.',
 'err_invalid_form' => 'Submitted data was invalid.',
+'ship_this_shipment' => 'This Shipment',
+'prev_shipped' => 'Previously Shipped',
+'msg_nothing_shipped' => 'No items are included in this shipment. Use the Delete button if you wish to delete the shipment.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
