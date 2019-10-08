@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 {!if is_admin}
-<script type="text/javascript" src="{site_url}/shop/js/toggleEnabled.js"></script>
+<script type="text/javascript" src="{site_url}/shop/js/admin.js"></script>
 {!endif}
 <div style="float:right;">
 {!if link_admin}

@@ -917,7 +917,7 @@ class Coupon extends \Shop\Product
                 $retval .= "<button class=\"uk-button uk-button-mini uk-button-{$btn_class} tooltip\"
                     title=\"{$title}\"
                     onclick=\"if (confirm('{$conf_txt}')) {
-                        voidItem('coupon','{$A['code']}','$newval',this);
+                        SHOP_voidItem('coupon','{$A['code']}','$newval',this);
                         }return false;\">{$btn_txt}</button>";
             }
             /*if ($fieldvalue == 'valid') {
