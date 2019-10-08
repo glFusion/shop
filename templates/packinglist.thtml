@@ -1,6 +1,10 @@
+<html>
 {# begin {templatelocation} #}
+<head>
 <link rel="stylesheet" type="text/css" href="{site_url}/shop/css/style.css" />
-<div class="shopOrderContainer">
+</head>
+<body>
+<div>
   <h1 class="aligncenter">{page_title}</h1>
 
   <div class="shopOrder">
@@ -27,15 +31,11 @@
     <div class="shopOrderItems">
       <table>
         <tr>
-          <th style="width:25%;white-space:nowrap;">{$LANG_SHOP['product']}</th>
-          <th class="aligncenter" style="width:55%">{$LANG_SHOP['description']}</th>
-          <th class="alignright" style="width:20%" class="alignright">{$LANG_SHOP['shipped']}</th>
+          <th style="text-align:left;">{$LANG_SHOP['description']}</th>
+          <th style="width:10%;">{$LANG_SHOP['shipped']}</th>
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
-          <td>
-            {sku}
-          </td>
           <td>
             {item_dscp}
 {!if item_options}
@@ -44,10 +44,12 @@
         <!-- BEGIN ItemOptions -->
             <div class="ItemOptions">{option_dscp}</div>
         <!-- END ItemOptions -->
+{!if sku}
+            <br />SKU: {sku}
+{!endif}
           </td>
-          <td class="alignright">{ordered}</td>
-          <td class="alignright">
-            {shipped}
+          <td style="text-align:center;">
+            {item_quantity}
           </td>
         </tr>
         <tr class="shopItemRowSpacer"></tr>
@@ -56,12 +58,14 @@
     </div>
   </div>
 
-  <div id="trackinginfo">
+{!if ship_method}
+    <div style="margin-top:15px;">{$LANG_SHOP['ship_via']}: {ship_method}</div>
+{!endif}
+
+{!if tracking_form}
+  <div id="trackinginfo" style="float:left;width:70%;margin-top:10px;">
     {tracking_form}
   </div>
-
-{!if ship_method}
-    <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
 {!endif}
 
   <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
@@ -72,4 +76,6 @@
 {!endif}
   </div>
 </div>
+</body>
 {# end {templatelocation} #}
+</html>

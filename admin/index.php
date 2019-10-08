@@ -692,9 +692,9 @@ case 'shiporder':
 case 'order_pl':
     // Get the packing list for an entire order.
     // This is expected to be shown in a _blank browser window/tab.
-    $order = Shop\Order::getInstance($actionval);
-    if ($order->canView($token)) {
-        echo $order->View('packinglist');
+    $PL = new Shop\Views\OrderPL($actionval);
+    if ($PL->canView()) {
+        echo $PL->Render();
         exit;
     } else {
         COM_404();
@@ -704,9 +704,9 @@ case 'order_pl':
 case 'shipment_pl':
     // Get the packing list for a shipment.
     // This is expected to be shown in a _blank browser window/tab.
-    $V = new Shop\Shipment($actionval);
-    if ($V->getOrder()->canView()) {
-        echo $V->getPackingList();
+    $PL = new Shop\Views\ShipmentPL($actionval);
+    if ($PL->canView()) {
+        echo $PL->Render();
         exit;
     } else {
         COM_404();

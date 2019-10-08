@@ -571,19 +571,6 @@ class Shipment
         return $retval;
     }
 
-
-    /**
-     * Get the packing list output for this shipment.
-     *
-     * @return  string  HTML for printable packing list.
-     */
-    public function getPackingList()
-    {
-        $View = new \Shop\Views\PackingList($this->order_id);
-        $View->setShipment($this);
-        return $View->Render();
-    }
-
 }
 
 ?>
