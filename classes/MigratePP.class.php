@@ -361,7 +361,7 @@ class MigratePP
             "TRUNCATE {$_TABLES['shop.shipping']}",
             "INSERT INTO {$_TABLES['shop.shipping']}
                 SELECT *, 0 as valid_from, unix_timestamp('2037-12-31') as valid_to,
-                0 as use_fixed, 2 as auth_grp FROM {$_TABLES['paypal.shipping']}",
+                0 as use_fixed, 2 as grp_access FROM {$_TABLES['paypal.shipping']}",
         ) );
     }
 

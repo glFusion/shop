@@ -334,7 +334,7 @@ CREATE TABLE `gl_shop_products` (
   `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399',
   `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `rates` text,
-  `auth_grp` int(3) unsigned NOT NULL DEFAULT '2',
+  `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   PRIMARY KEY (`id`)
 ) ENGINE=MyIsam",
 );
@@ -569,7 +569,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY products_name (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
-    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `auth_grp` int(3) UNSIGNED NOT NULL default 2",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",

@@ -96,11 +96,11 @@
     </div>
 
     <div class="uk-form-row">
-      <label class="uk-form-label">{$LANG_SHOP['auth_grp']}:
-        <span id="auth_grp" class="tooltip_cfg tooltipstered"></span>
+      <label class="uk-form-label">{$LANG_SHOP['grp_access']}:
+        <span id="grp_access" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <select id="auth_grp" name="auth_grp">
+        <select id="grp_access" name="grp_access">
           {grp_sel}
         </select>
       </div>

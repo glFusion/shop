@@ -74,7 +74,7 @@ class Shipper
             $this->use_fixed = 1;
             $this->valid_from = self::MIN_DATETIME;
             $this->valid_to = self::MAX_DATETIME;
-            $this->auth_grp = 2;    // Default = All users
+            $this->grp_access = 2;    // Default = All users
             $this->rates = array(
                 (object)array(
                     'dscp'  => 'Rate 1',
@@ -136,7 +136,7 @@ class Shipper
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
         $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
         $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 0);
-        $this->auth_grp = SHOP_getVar($A, 'auth_grp', 'integer', 2);
+        $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -223,7 +223,7 @@ class Shipper
         }
         $retval = array();
         foreach ($shippers as $shipper) {
-            if (in_array($shipper['auth_grp'], $_GROUPS)) {
+            if (in_array($shipper['grp_access'], $_GROUPS)) {
                 if (array_key_exists($shipper['code'], self::getShipperNames())) {
                     $cls = 'Shop\\Shippers\\' . $shipper['code'];
                     if (class_exists($cls)) {
@@ -527,7 +527,7 @@ class Shipper
 
         switch ($var) {
         case 'id':
-        case 'auth_grp':
+        case 'grp_access':
             // Integer values
             $this->properties[$var] = (int)$value;
             break;
@@ -623,7 +623,7 @@ class Shipper
             valid_from = '{$this->valid_from->toUnix()}',
             valid_to = '{$this->valid_to->toUnix()}',
             use_fixed = '{$this->use_fixed}',
-            auth_grp = '{$this->auth_grp}',
+            grp_access = '{$this->grp_access}',
             rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -683,7 +683,7 @@ class Shipper
             'fixed_sel'     => $this->use_fixed ? 'checked="checked"' : '',
             'valid_from'    => $this->valid_from->format('Y-m-d', true),
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
-            'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->auth_grp),
+            'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
         ) );
         $T->set_block('form', 'shipperCodes', 'sCodes');
         foreach (self::getShipperNames() as $code=>$name) {
@@ -764,7 +764,7 @@ class Shipper
         $sql = "SELECT s.*, g.grp_name
             FROM {$_TABLES['shop.shipping']} s
             LEFT JOIN {$_TABLES['groups']} g
-                ON g.grp_id = s.auth_grp";
+                ON g.grp_id = s.grp_access";
 
         $header_arr = array(
             array(
@@ -789,7 +789,7 @@ class Shipper
                 'field' => 'name',
             ),
             array(
-                'text'  => $LANG_SHOP['auth_grp'],
+                'text'  => $LANG_SHOP['grp_access'],
                 'field' => 'grp_name',
             ),
         );
