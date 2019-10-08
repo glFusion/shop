@@ -43,7 +43,7 @@ class MigratePP
         // Clear out the Shop tables and insert data from Paypal
         $tables = array(
             'address', 'coupon_log', 'coupons',
-            'gateways', 'ipnlog', 'order_log', 'orderstatus',
+            'ipnlog', 'order_log', 'orderstatus',
             'userinfo',
             'workflows', 'currency',
         );
@@ -81,6 +81,9 @@ class MigratePP
             return false;
         }
         if (!self::migrateShipping()) {
+            return false;
+        }
+        if (!self::migrateGateways()) {
             return false;
         }
         return true;
@@ -362,6 +365,25 @@ class MigratePP
             "INSERT INTO {$_TABLES['shop.shipping']}
                 SELECT *, 0 as valid_from, unix_timestamp('2037-12-31') as valid_to,
                 0 as use_fixed, 2 as grp_access FROM {$_TABLES['paypal.shipping']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate Gateway information.
+     * Shop plugin adds the grp_access field in v1.0.0.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public function migrateGateways()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.gateways']}",
+            "INSERT INTO {$_TABLES['shop.gateways']}
+                SELECT *, 2 as grp_access
+                FROM {$_TABLES['paypal.shipping']}",
         ) );
     }
 

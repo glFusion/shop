@@ -51,15 +51,13 @@ class Gateway
      * @var string; */
     protected $gw_provider;
 
-    /**
-     * Services (button types) provided by the gateway.
+    /** Services (button types) provided by the gateway.
      * This is an array of button_name=>0/1 to indicate which services are available.
      * @var array
      */
     protected $services = NULL;
 
-    /**
-     * The gateway's configuration items.
+    /** The gateway's configuration items.
      * This is an associative array of name=>value elements.
      * @var array
      */
@@ -73,8 +71,7 @@ class Gateway
      * @var boolean */
     protected $enabled;
 
-    /**
-     * Order in which the gateway is selected.
+    /** Order in which the gateway is selected.
      * Gateways are selected from lowest to highest order.
      * @var integer
      */
@@ -121,6 +118,12 @@ class Gateway
     /** Language strings specific to this gateway.
      * @var array */
     protected $lang;
+
+    /** ID of user group authorized to use this gateway.
+     * This may be used for non-upfront payment terms such as check,
+     * net 30 or COD.
+     * @var integer */
+    protected $grp_access;
 
 
     /**
@@ -184,6 +187,7 @@ class Gateway
         if (!empty($A)) {
             $this->orderby = (int)$A['orderby'];
             $this->enabled = (int)$A['enabled'];
+            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
             $services = @unserialize($A['services']);
             if ($services) {
                 foreach ($services as $name=>$status) {
@@ -341,6 +345,7 @@ class Gateway
         if (is_array($A)) {
             $this->enabled = isset($A['enabled']) ? 1 : 0;
             $this->orderby = (int)$A['orderby'];
+            $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
             $services = SHOP_getVar($A, 'service', 'array');
         }
         $config = @serialize($this->config);
@@ -354,7 +359,8 @@ class Gateway
                 config = '$config',
                 services = '$services',
                 orderby = '{$this->orderby}',
-                enabled = '{$this->enabled}'
+                enabled = '{$this->enabled}',
+                grp_access = '{$this->grp_access}'
                 WHERE id='$id'";
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -1103,7 +1109,7 @@ class Gateway
      */
     public function Configure()
     {
-        global $_CONF, $LANG_SHOP, $_SHOP_CONF;
+        global $_CONF, $LANG_SHOP, $_SHOP_CONF, $_TABLES;
 
         $T = SHOP_getTemplate('gateway_edit', 'tpl');
         $svc_boxes = $this->getServiceCheckboxes();
@@ -1122,6 +1128,11 @@ class Gateway
             'doc_url'       => $doc_url,
             'svc_checkboxes' => $svc_boxes,
             'gw_instr'      => $this->getInstructions(),
+            'grp_access_sel' => COM_optionList(
+                $_TABLES['groups'],
+                'grp_id,grp_name',
+                $this->grp_access
+            ),
         ), false, false);
 
         $fields = $this->getConfigFields();

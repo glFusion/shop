@@ -227,6 +227,7 @@ CREATE TABLE `gl_shop_products` (
   `description` varchar(255) DEFAULT NULL,
   `config` text,
   `services` varchar(255) DEFAULT NULL,
+  `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   PRIMARY KEY (`id`),
   KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
@@ -585,6 +586,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
+    "ALTER TABLE {$_TABLES['shop.gateways']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
 );
 
 $_SQL['shop.opt_grp'] = $SHOP_UPGRADE['1.0.0'][0];
