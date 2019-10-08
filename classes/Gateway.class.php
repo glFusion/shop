@@ -1427,7 +1427,10 @@ class Gateway
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
             $LANG32;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.gateways']}";
+        $sql = "SELECT *, g.grp_name
+            FROM {$_TABLES['shop.gateways']} gw
+            LEFT JOIN {$_TABLES['groups']} g
+                ON g.grp_id = gw.grp_access";
         $to_install = \Shop\Gateway::getUninstalled();
 
         $header_arr = array(
@@ -1452,6 +1455,11 @@ class Gateway
                 'text'  => $LANG_SHOP['description'],
                 'field' => 'description',
                 'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['grp_access'],
+                'field' => 'grp_name',
+                'sort'  => false,
             ),
             array(
                 'text'  => $LANG_SHOP['enabled'],
@@ -1587,6 +1595,17 @@ class Gateway
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Check that the current user is allowed to use this gateway.
+     *
+     * @return  boolean     True if access is allowed, False if not
+     */
+    public function hasAccess()
+    {
+        return SEC_inGroup($this->grp_access);
     }
 
 }   // class Gateway

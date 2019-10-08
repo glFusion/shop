@@ -151,6 +151,18 @@ class _coupon extends \Shop\Gateway
         return implode("\n", $gatewayVars);
     }
 
+
+    /**
+     * Check that the current user is allowed to use this gateway.
+     * Coupons can be used by anyone.
+     *
+     * @return  boolean     True if access is allowed, False if not
+     */
+    public function hasAccess()
+    {
+        return true;
+    }
+
 }
 
 ?>

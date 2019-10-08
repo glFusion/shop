@@ -490,7 +490,7 @@ class Cart extends Order
         $gateway_vars = '';
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             foreach (Gateway::getAll() as $gw) {
-                if ($gw->Supports('checkout')) {
+                if ($gw->hasAccess() && $gw->Supports('checkout')) {
                     $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
                 }
@@ -538,7 +538,7 @@ class Cart extends Order
                 $gw_sel = Gateway::getSelected();
             }
             foreach ($gateways as $gw_id=>$gw) {
-                if (is_null($gw)) {
+                if (is_null($gw) || !$gw->hasAccess()) {
                     continue;
                 }
                 if ($gw->Supports('checkout')) {
