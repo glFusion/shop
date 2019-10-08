@@ -136,38 +136,3 @@ var shopApplyGC = function(frm_id)
     return false;
 };
 
-function voidItem(component, item_id, newval, elem)
-{
-    var dataS = {
-        "item_id": item_id,
-        "component": component,
-        "action": "void",
-        "newval": newval,
-    };
-    data = $.param(dataS);
-    $.ajax({
-        type: "POST",
-        dataType: "json",
-        url: site_admin_url + "/plugins/shop/ajax.php",
-        data: data,
-        success: function(result) {
-            try {
-                if (result.status) {
-                    elem.innerHTML = result.text;
-                    elem.className = 'tooltip uk-button uk-button-mini ' + result.newclass;
-                    elem.setAttribute('onclick',
-                        "if (confirm('" + result.confirm_txt + "')) {" +
-                        "voidItem('" + component + "','" + item_id + "','" + result.onclick_val + "', this);}" +
-                        "return false;"
-                    );
-                }
-                if (result.msg != '') {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
-                }
-            } catch(err) {
-            }
-        }
-    });
-    return false;
-}
-
