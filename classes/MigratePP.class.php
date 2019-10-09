@@ -184,7 +184,7 @@ class MigratePP
 
 
     /**
-     * Migrate Order. Adds the shipper_id field, but there's no value to apply.
+     * Migrate Orders. Adds the shipper_id field, but there's no value to apply.
      * Also for Paypal < v0.6.1:
      * - Uses the global currency
      * - Creates and sequences the order_seq field
@@ -198,6 +198,7 @@ class MigratePP
         $add_flds = ',0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
         // If not at Paypal 0.6.1, add a dummy order sequence value
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
+            // Needed for Paypal 0.6.0 only
             $add_flds .= ",NULL as order_seq, '{$_SHOP_CONF['currency']}' as currency";
         }
         $sql = array(
@@ -307,6 +308,7 @@ class MigratePP
     /**
      * Migrate product attributes. Adding the og_id field.
      * Adds the `attr_name` column for use by migrateOptionGroups().
+     * Drops the unique item_id key until it can be added back by migrateOptionGroups().
      *
      * @return  boolean     True on success, False on failure
      */
@@ -417,6 +419,8 @@ class MigratePP
     {
         global $_CONF, $_PP_CONF;
 
+        // Check that the Paypal plugin exists on the filesystem, and that
+        // there are no orders or products entered in Shop.
         $pp_path = __DIR__ . '/../../paypal/paypal.php';
         if (
             !is_file($pp_path) ||
@@ -433,6 +437,12 @@ class MigratePP
                 SHOP_log('Could not include ' . $pp_path, SHOP_LOG_ERROR);
                 return false;
             }
+        }
+
+        // Verify that the Paypal plugin is installed.
+        if (!DB_checkTableExists('paypal.products')) {
+            SHOP_log('Paypal tables may be missing', SHOP_LOG_ERROR);
+            return false;
         }
 
         // Must have at least version 0.6.0 of the Paypal plugin
