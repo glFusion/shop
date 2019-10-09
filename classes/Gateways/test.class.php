@@ -108,6 +108,7 @@ class test extends \Shop\Gateway
         global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
+        if ($P->isPhysical()) return '';
         $btn_type = $P->btn_type;
         if (empty($btn_type)) return '';
 
@@ -130,6 +131,8 @@ class test extends \Shop\Gateway
             $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
             $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();
+            $vars['pmt_gross'] = $P->getPrice();
+            $vars['ipn_type'] = 'buy_now';  // force type for IPN processor.
 
             // Get the allowed buy-now quantity. If not defined, set
             // undefined_quantity.
@@ -186,25 +189,11 @@ class test extends \Shop\Gateway
             }
 
             $gateway_vars = '';
-            $enc_btn = '';
-            if ($this->config['encrypt']) {
-                $enc_btn = $this->_encButton($vars);
-                if (!empty($enc_btn)) {
-                    $gateway_vars .=
-                    '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
-                    '<input type="hidden" name="encrypted" value=\'' .
-                        $enc_btn . '\' />' . "\n";
-                }
-            }
-            if (empty($enc_btn)) {
-                // Create unencrypted buttons if not configured to encrypt,
-                // or if encryption fails.
-                foreach ($vars as $name=>$value) {
-                    $gateway_vars .= '<input type="hidden" name="' . $name .
-                        '" value="' . $value . '" />' . "\n";
-                }
-            } else {
-                $this->_SaveButton($P, $btn_key, $gateway_vars);
+            // Create unencrypted buttons, the test gateway does not handle
+            // encryption.
+            foreach ($vars as $name=>$value) {
+                $gateway_vars .= '<input type="hidden" name="' . $name .
+                    '" value="' . $value . '" />' . "\n";
             }
         }
 
@@ -221,8 +210,9 @@ class test extends \Shop\Gateway
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,
             'gateway_vars'  => $gateway_vars,
+            'gw_name'       => $this->gw_name,
             'method'        => $this->getMethod(),
-        ) );
+        ), false, true);
         $retval = $T->parse('', 'btn');
         return $retval;
     }

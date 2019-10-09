@@ -84,6 +84,7 @@ class _internal extends \Shop\Gateway
             $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();
             $vars['notify_url'] = $this->ipn_url;
+            $vars['ipn_type'] = 'buy_now';      // Force the IPN type
 
             // Get the allowed buy-now quantity. If not defined, set
             // undefined_quantity.

@@ -31,6 +31,11 @@ if (!defined ('GVERSION')) {
  */
 class internal extends \Shop\IPN
 {
+    /** Indicate if this is "buy_now" or "cart".
+     * @var string */
+    private $ipn_type;
+
+
     /**
      * Constructor.
      * Fake payment gateway variables.
@@ -44,43 +49,15 @@ class internal extends \Shop\IPN
         $this->gw_id = '_internal';
         parent::__construct($A);
 
-        $cart_id = SHOP_getVar($A, 'cart_id');
-        if (!empty($cart_id)) {
-            $this->Order = $this->getOrder($cart_id);
-        }
-        if (!$this->Order) return NULL;
-
-        $billto = $this->Order->getAddress('billto');
-        $shipto = $this->Order->getAddress('shipto');
-        if (empty($shipto) && !empty($billto)) $shipto = $billto;
-        if (COM_isAnonUser()) $_USER['email'] = '';
-
-        $this->payer_email = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
-        $this->payer_name = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
-        if ($this->payer_name == '') {
-            $this->payer_name = $_USER['fullname'];
-        }
-        $this->order_id = $this->Order->order_id;
-        $this->txn_id = SHOP_getVar($A, 'txn_id');
-        $this->pmt_date = SHOP_now()->toMySQL(true);
-        $this->pmt_gross = $this->Order->getTotal();
-        $this->pmt_tax = $this->Order->getInfo('tax');
-        $this->gw_desc = 'Internal IPN';
-        $this->gw_name = 'Internal IPN';
-        $this->pmt_status = SHOP_getVar($A, 'payment_status');
+        // Get the IPN type, default to "cart" for backward compatibility
+        $this->ipn_type = SHOP_getVar($this->ipn_data, 'ipn_type', 'string', 'cart');
+        $this->pmt_gross = $this->ipn_data['pmt_gross'];
+        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'tax', 'float');
+        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'shipping', 'float');
+        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'handling', 'float');
+        $this->gw_desc = $this->gw->Description();
+        $this->gw_name = $this->gw->Name();
         $this->currency = Currency::getInstance()->code;
-
-
-        $this->shipto = array(
-            'name'      => SHOP_getVar($shipto, 'name'),
-            'company'   => SHOP_getVar($shipto, 'company'),
-            'address1'  => SHOP_getVar($shipto, 'address1'),
-            'address2'  => SHOP_getVar($shipto, 'address2'),
-            'city'      => SHOP_getVar($shipto, 'city'),
-            'state'     => SHOP_getVar($shipto, 'state'),
-            'country'   => SHOP_getVar($shipto, 'country'),
-            'zip'       => SHOP_getVar($shipto, 'zip'),
-        );
 
         // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
@@ -104,9 +81,18 @@ class internal extends \Shop\IPN
      */
     private function Verify()
     {
-        if ($this->Order === NULL) {
-            SHOP_log("No cart provided", SHOP_LOG_ERROR);
-            return false;
+        switch($this->ipn_type) {
+        case 'cart':
+            if ($this->Order === NULL) {
+                SHOP_log("No cart provided", SHOP_LOG_ERROR);
+                return false;
+            }
+            break;
+        case 'buy_now':
+            $this->txn_id = uniqid() . rand(100,999);
+            $this->createOrder();
+            $this->Order->setInfo('gateway', 'test');
+            break;
         }
 
         $info = $this->Order->getInfo();
@@ -127,7 +113,6 @@ class internal extends \Shop\IPN
             break;
         case 'test':
             $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
-            $this->pmt_gross = SHOP_getVar($_POST, 'pmt_gross', 'float');
             break;
         }
         $this->status = 'paid';
@@ -192,9 +177,73 @@ class internal extends \Shop\IPN
         if (!$this->isUniqueTxnId()) {
             return false;
         }
-
         $custom = SHOP_getVar($this->ipn_data, 'custom');
         $this->custom = @unserialize($custom);
+
+        switch ($this->ipn_data['cmd']) {
+        case 'buy_now':
+            $item_number = SHOP_getVar($this->ipn_data, 'item_number');
+            $quantity = SHOP_getVar($this->ipn_data, 'quantity', 'float');
+            $fees_paid = $this->pmt_tax + $this->pmt_shipping + $this->pmt_handling;
+            if (empty($item_number)) {
+                $this->handleFailure(NULL, 'Missing Item Number in Buy-now process');
+                return false;
+            }
+            if (empty($quantity)) {
+                $quantity = 1;
+            }
+            $this->pmt_net = $this->pmt_gross - $fees_paid;
+            $unit_price = $this->pmt_gross / $quantity;
+            $args = array(
+                'item_id'   => $item_number,
+                'quantity'  => $quantity,
+                'price'     => $unit_price,
+                'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
+                'shipping'  => $this->pmt_shipping,
+                'handling'  => $this->pmt_handling,
+            );
+            $this->AddItem($args);
+
+            SHOP_log("Net Settled: {$this->pmt_gross} $this->currency", SHOP_LOG_DEBUG);
+            break;
+
+        default:
+            $cart_id = SHOP_getVar($this->ipn_data, 'cart_id');
+            if (!empty($cart_id)) {
+                $this->Order = $this->getOrder($cart_id);
+            }
+            if (!$this->Order) return NULL;
+
+            $billto = $this->Order->getAddress('billto');
+            $shipto = $this->Order->getAddress('shipto');
+            if (empty($shipto) && !empty($billto)) $shipto = $billto;
+            if (COM_isAnonUser()) $_USER['email'] = '';
+            $this->payer_email = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
+            $this->payer_name = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
+            if ($this->payer_name == '') {
+                $this->payer_name = $_USER['fullname'];
+            }
+            $this->order_id = $this->Order->order_id;
+            $this->txn_id = SHOP_getVar($A, 'txn_id');
+            $this->pmt_date = SHOP_now()->toMySQL(true);
+            $this->pmt_tax = $this->Order->getInfo('tax');
+            $this->gw_desc = 'Internal IPN';
+            $this->gw_name = 'Internal IPN';
+            $this->pmt_status = SHOP_getVar($A, 'payment_status');
+
+            $this->shipto = array(
+                'name'      => SHOP_getVar($shipto, 'name'),
+                'company'   => SHOP_getVar($shipto, 'company'),
+                'address1'  => SHOP_getVar($shipto, 'address1'),
+                'address2'  => SHOP_getVar($shipto, 'address2'),
+                'city'      => SHOP_getVar($shipto, 'city'),
+                'state'     => SHOP_getVar($shipto, 'state'),
+                'country'   => SHOP_getVar($shipto, 'country'),
+                'zip'       => SHOP_getVar($shipto, 'zip'),
+            );
+
+            break;
+        }
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);
@@ -237,7 +286,7 @@ class internal extends \Shop\IPN
         $this->pmt_shipping = $total_shipping;
         $this->pmt_handling = $total_handling;
         return $this->handlePurchase();
-    }   // function Process
+    }
 
 }   // class \Shop\ipn\internal
 
