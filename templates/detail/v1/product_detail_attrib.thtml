@@ -1,5 +1,6 @@
 {# begin {templatelocation} #}
 {javascript}
+<div style="margin=-top:10px;clear:both;"></div>
 {!if can_edit}
 <div class="floatright">
   <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}&from={from_url}">

@@ -1508,8 +1508,11 @@ class Product
         } elseif ($this->_OutOfStock() > 0) {
             // If out of stock, display but deny purchases
             $add_cart = false;
-        } elseif ($_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy'] &&
-                !$this->hasOptions() && $this->price > 0) {
+        } elseif (
+            $_USER['uid'] == 1 &&
+            !$_SHOP_CONF['anon_buy'] &&
+            !$this->hasOptions() && $this->price > 0
+        ) {
             // Requires login before purchasing
             $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
             $buttons['login'] = $T->parse('', 'login_req');

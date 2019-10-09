@@ -137,6 +137,7 @@ div.shopProductDetail .shopShortDesc {
     float: right;
     /*text-align: right;*/
     clear: right;
+    margin-top: 5px;
 }
 
 .shopDetailAddCart.v2 {

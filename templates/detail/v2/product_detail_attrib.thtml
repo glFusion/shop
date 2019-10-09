@@ -27,7 +27,7 @@
 </div>
 
 <div class="shopDetailAttrib v2 uk-width-large-1-3 uk-width-medium-1-2 uk-width-small-1-1">
-  <form class="uk-form" method="post" id="add_cart_{id}" action="javascript:void()">
+  <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
 {!if 0}
     action="{site_url}/shop/index.php" method="post">
 {!endif}
@@ -62,7 +62,7 @@
 
     <div id="shopProductAttrib" class="shopDetailAddCart v2">
 <!-- BEGIN OptionGroup -->
-      <div class="uk-form-row">
+      <div class="uk-form-row alignright">
         <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
         <div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
