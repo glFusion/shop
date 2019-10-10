@@ -639,8 +639,11 @@ class Product
         if ($this->isDownload()) {
             if (!empty($_FILES['uploadfile']['tmp_name'])) {
                 $F = new File('uploadfile');
+                $F->setMaxDimensions(0, 0);
                 $filename = $F->uploadFiles();
                 if ($F->areErrors() > 0) {
+                    var_dump($F->areErrors());
+                    var_dump($F->getErrors());die;
                     $this->Errors[] = $F->printErrors(true);
                 } elseif ($filename != '') {
                     $this->file = $filename;
@@ -747,9 +750,8 @@ class Product
             if (!empty($_FILES['images'])) {
                 $U = new Images\Product($this->id, 'images');
                 $U->uploadFiles();
-
                 if ($U->areErrors() > 0) {
-                    $this->Errors = array_merge($this->Errors, $U->_errors);
+                    $this->Errors = array_merge($this->Errors, $U->getErrors());
                 }
             }
 

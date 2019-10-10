@@ -1,19 +1,19 @@
 <?php
 /**
-*   Download page for files purchased using the shop plugin.
-*   No other files will be accessable via this script.
-*   Based on the PayPal Plugin for Geeklog CMS by Vincent Furia.
+* Download page for files purchased using the shop plugin.
+* No other files will be accessable via this script.
+* Based on the PayPal Plugin for Geeklog CMS by Vincent Furia.
 *
-*   @author     Lee Garner <lee@leegarner.com>
-*   @author     Vincent Furia <vinny01 AT users DOT sourceforge DOT net>
-*   @copyright  Copyright (c) 2009-2019 Lee Garner
-*   @copyright  Copyright (c) 2005-2006 Vincent Furia
-*   @package    shop
-*   @version    v0.7.0
-*   @since      v0.7.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
+* @author       Lee Garner <lee@leegarner.com>
+* @author       Vincent Furia <vinny01 AT users DOT sourceforge DOT net>
+* @copyright    Copyright (c) 2009-2019 Lee Garner
+* @copyright    Copyright (c) 2005-2006 Vincent Furia
+* @package      shop
+* @version      v1.0.0
+* @since        v0.7.0
+* @license      http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
-*   @filesource
+* @filesource
 */
 
 /** Import core glFusion libraries */
@@ -42,15 +42,16 @@ $sql = "SELECT prod.id, prod.file, prod.prod_type
         LEFT JOIN {$_TABLES['shop.products']} AS prod
             ON prod.id = item.product_id
         WHERE $id_sql item.token = '$token'
-        AND item.expiration > '" . SHOP_now()->toUnix() . "'";
+        AND (item.expiration = 0 OR item.expiration > '" . SHOP_now()->toUnix() . "')";
 //echo $sql;die;
 $res = DB_query($sql);
 $A = DB_fetchArray($res, false);
-
 //  If a file was found, do the download.
 //  Otherwise refresh to the home page and log it.
 if (is_array($A) && !empty($A['file'])) {
-    $dwnld = new downloader();
+    $filespec = $_SHOP_CONF['download_path'] . '/' . $A['file'];
+    $DL = new Shop\UploadDownload();
+    $DL->setAllowedMimeTypes();
     $logfile = $_SHOP_CONF['logfile'];
     if (!file_exists($logfile)) {
         $fp = fopen($logfile, "w+");
@@ -61,18 +62,18 @@ if (is_array($A) && !empty($A['file'])) {
         }
     }
     if (file_exists($logfile)) {
-        $dwnld->setLogFile($logfile);
-        $dwnld->setLogging(true);
+        $DL->setLogFile($logfile);
+        $DL->setLogging(true);
     } else {
-        $dwnld->setLogginf(false);
+        $DL->setLogginf(false);
     }
-    $dwnld->setAllowedExtensions($_SHOP_CONF['allowedextensions']);
-    $dwnld->setPath($_SHOP_CONF['download_path']);
-    $dwnld->downloadFile($A['file']);
+    //$DL->setAllowedExtensions($_SHOP_CONF['allowedextensions']);
+    $DL->setPath($_SHOP_CONF['download_path']);
+    $DL->downloadFile($A['file']);
 
     // Check for errors
-    if ($dwnld->areErrors()) {
-        $errs = $dwnld->printErrors(false);
+    if ($DL->areErrors()) {
+        $errs = $DL->printErrors(false);
         SHOP_log("SHOP-DWNLD: {$_USER['username']} tried to download " .
             "the file with id {$id} but for some reason could not",
             SHOP_LOG_ERROR
@@ -81,7 +82,7 @@ if (is_array($A) && !empty($A['file'])) {
         echo COM_refresh($_CONF['site_url']);
     }
 
-    $dwnld->_logItem('Download Success',
+    $DL->_logItem('Download Success',
             "{$_USER['username']} successfully downloaded "
             . "the file with id {$id}.");
 } else {

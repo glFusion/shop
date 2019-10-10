@@ -65,10 +65,12 @@ class Product extends \Shop\Image
         $this->MakeThumbs();
         $filenames = array();
         foreach ($this->goodfiles as $filename) {
+            $parts = pathinfo($filename);
+            $basename = $parts['basename'];
             $sql = "INSERT INTO {$_TABLES['shop.images']} SET
                 product_id = '{$this->record_id}',
                 nonce = '" . DB_escapeString($this->nonce) . "',
-                filename = '" . DB_escapeString($filename) . "'";
+                filename = '" . DB_escapeString($basename) . "'";
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $result = DB_query($sql);
             if (!$result) {

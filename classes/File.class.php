@@ -18,7 +18,7 @@ namespace Shop;
  * Image-handling class.
  * @package shop
  */
-class File extends FileUpload
+class File extends UploadDownload
 {
     /** Array of uploaded filenames.
      * @var array */

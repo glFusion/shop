@@ -18,7 +18,7 @@ namespace Shop;
  * Image-handling class.
  * @package shop
  */
-class Image extends \upload
+class Image extends UploadDownload
 {
     /** Path to actual image (without filename).
      * @var string */
@@ -67,10 +67,10 @@ class Image extends \upload
         $this->setContinueOnError(true);
         $this->setLogFile('/tmp/warn.log');
         $this->setDebug(true);
-        $this->_setAvailableMimeTypes();
+        //$this->_setAvailableMimeTypes();
         $this->setAllowedMimeTypes(array(
-            'image/pjpeg' => '.jpg,.jpeg',
-            'image/jpeg'  => '.jpg,.jpeg',
+            'image/pjpeg' => array('jpg','jpeg'),
+            'image/jpeg'  => array('jpg','jpeg'),
         ));
         $this->setMaxDimensions(0, 0);
 
@@ -98,11 +98,11 @@ class Image extends \upload
         $thumbsize = (int)$_SHOP_CONF['max_thumb_size'];
         if ($thumbsize < 50) $thumbsize = 100;
 
-        if (!is_array($this->_fileNames)) {
+        if (!is_array($this->getFilenames())) {
             return '';
         }
 
-        foreach ($this->_fileNames as $filename) {
+        foreach ($this->getFileNames() as $filename) {
             $src = "{$this->pathImage}/{$filename}";
             $url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
             if (!empty($url)) {
