@@ -579,7 +579,6 @@ class UploadDownload
      * Sets $_FILES fieldname.
      *
      * @param   string    $fieldname of $_FILES array
-     *
      */
     public function setFieldName($fieldname)
     {
@@ -591,11 +590,10 @@ class UploadDownload
      * Sets mode to allow any mime type.
      *
      * @param   boolean $switch  True to turn on, false to turn off
-     *
      */
     public function setAllowAnyMimeType($switch)
     {
-        $this->_allowAnyType = $switch;
+        $this->_allowAnyType = $switch ? true : false;
     }
 
 
@@ -665,11 +663,10 @@ class UploadDownload
      *
      * @param   boolean   $keepit   true = keep original, false = don't
      * @return  boolean   true if we set values OK, otherwise false
-     *
      */
-    public function keepOriginalImage ($keepit)
+    public function keepOriginalImage($keepit)
     {
-        $this->_keepOriginalImage = $keepit;
+        $this->_keepOriginalImage = $keepit ? true : false;
 
         return true;
     }
@@ -705,11 +702,7 @@ class UploadDownload
      */
     public function setContinueOnError($switch)
     {
-        if ($switch) {
-            $this->_continueOnError = true;
-        } else {
-            $this->_continueOnError = false;
-        }
+        $this->_continueOnError = $switch ? true : false;
     }
 
 
@@ -869,7 +862,7 @@ class UploadDownload
     /**
      * Ensure that all mime-types are lower-case.
      *
-     * $param   array   $arr    Original array
+     * @param   array   $arr    Original array
      * @return  array   Array of lower-case mimetype=>extensions
      */
     private static function _fixMimeArrayCase($arr)
@@ -924,10 +917,43 @@ class UploadDownload
 
 
     /**
+     * Add a single mime type and extension to the Available list.
+     * This is to allow the addition of new mime types without updating
+     * the class.
+     * The `$allowed` parameter defaults to `true` since it typically
+     * won't make sense to add to the available types unless the new type
+     * is also to be allowed.
+     *
+     * @param   string  $mime       Mime type
+     * @param   string  $ext        File extension
+     * @param   boolean $allowed    True to also add to the allowed mime types
+     */
+    public function addAvailableMimeType($mime, $ext, $allowed=true)
+    {
+        // Extension is expected to not include the leading dot
+        if ($ext[0] == '.') {
+            $ext = substr($ext, 1);
+        }
+        $mime = strtolower($mime);
+        $ext = strtolower($ext);
+        if (array_key_exists($mime, $this->_availableMimeTypes)) {
+            // Existing mime type, add the extension to the list if not already there
+            if (!in_array($this->_availableMimeTypes[$mime], $ext)) {
+                $this->_availableMimeTypes[$mime][] = $ext;
+            }
+        } else {
+            $this->_availableMimeTypes[$mime] = array($ext);
+        }
+        if ($allowed) {
+            $this->addAllowedMimeType($mime, $ext);
+        }
+    }
+
+
+    /**
      * Gets allowed mime types for this instance.
      *
      * @return  array   Returns array of allowed mime types
-     *
      */
     public function getAllowedMimeTypes()
     {
@@ -1233,7 +1259,6 @@ class UploadDownload
      *
      * @param   string      $fileName       file to download without path
      * @return  boolean     true on success otherwise false
-     *
      */
     public function downloadFile($fileName)
     {
@@ -1359,7 +1384,6 @@ class UploadDownload
      * @comment NOOP compatibility function
      * @param   int       $quality  JPEG quality (0-100)
      * @return  boolean   true if we set values OK, otherwise false
-     *
      */
     public function setJpegQuality($quality)
     {
