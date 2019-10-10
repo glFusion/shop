@@ -283,6 +283,7 @@ class UploadDownload
                 'application/msword'                => array('doc'),
                 'application/vnd.ms-excel'          => array('xls'),
                 'application/octet-stream'          => array('fla','psd'),
+                'application/pdf'                   => array('pdf'),
             );
         } else {
             $this->_availableMimeTypes = $mimeTypes;
@@ -825,11 +826,8 @@ class UploadDownload
     public function printWarnings()
     {
         if (isset($this->_warnings) AND is_array($this->_warnings)) {
-            reset($this->_warnings);
-            $nwarnings = count($this->_warnings);
-            for ($i = 1; $i <= $nwarnings; $i++) {
-                print current($this->_warnings) . "<br" . XHTML . ">\n";
-                next($this->_warnings);
+            foreach ($this->_warnings as $msg) {
+                print $msg . "<br />\n";
             }
         }
     }
@@ -841,20 +839,17 @@ class UploadDownload
     public function printDebugMsgs()
     {
         if (isset($this->_debugMessages) AND is_array($this->_debugMessages)) {
-            reset($this->_debugMessages);
-            $nmsgs = count($this->_debugMessages);
-            for ($i = 1; $i <= $nmsgs; $i++) {
-                print current($this->_debugMessages) . "<br" . XHTML . ">\n";
-                next($this->_debugMessages);
+            foreach ($this->_debugMessages as $msg) {
+                print $msg . "<br />\n";
             }
         }
     }
 
 
     /**
-     *  Returns if any errors have been encountered thus far
+     * Returns if any errors have been encountered thus far.
      *
-     *  @return boolean returns true if there were errors otherwise false
+     * @return  boolean     True if there were errors otherwise False
      */
     public function areErrors()
     {
@@ -870,7 +865,6 @@ class UploadDownload
      * Sets allowed mime types for this instance.
      *
      * @param   array   allowedMimeTypes        Array of allowed mime types
-     *
      */
     public function setAllowedMimeTypes($mimeTypes = array())
     {
@@ -890,12 +884,12 @@ class UploadDownload
      */
     public function addAllowedMimeType($mime, $ext)
     {
-        // Extension is expected to include the dot
+        // Extension is expected to not include the leading dot
         if ($ext[0] == '.') {
             $ext = substr($ext, 1);
         }
         if (array_key_exists($mime, $this->_allowedMimeTypes)) {
-            // existing mime type, add the extension to the list if not already there
+            // Existing mime type, add the extension to the list if not already there
             if (!in_array($this->_allowedMimeTypes[$mime], $ext)) {
                 $this->_allowedMimeTypes[$mime][] = $ext;
             }
@@ -924,23 +918,23 @@ class UploadDownload
      */
     public function checkMimeType()
     {
-        if ( $this->_allowAnyType == true ) {
+        if ($this->_allowAnyType == true) {
             return true;
         }
         $metaData = IMG_getMediaMetaData($this->_currentFile['tmp_name']);
-        if (!isset($metaData['mime_type']) ) {
+        if (!isset($metaData['mime_type'])) {
             $this->_addError('Unable to determine mime type for ' . $this->_currentFile['name']);
             return false;
         }
 
-        if ( $metaData['mime_type'] != '' ) {
+        if ($metaData['mime_type'] != '') {
             $this->_currentFile['type'] = $metaData['mime_type'];
         } else {
             $this->_currentFile['type'] = 'application/octet-stream';
         }
-        $sc = strpos ($this->_currentFile['type'], ';');
+        $sc = strpos($this->_currentFile['type'], ';');
         if ($sc > 0) {
-            $this->_currentFile['type'] = substr ($this->_currentFile['type'], 0, $sc);
+            $this->_currentFile['type'] = substr($this->_currentFile['type'], 0, $sc);
         }
         $mimeTypes = $this->getAllowedMimeTypes ();
         foreach ($mimeTypes as $mimeT => $extList) {
@@ -950,10 +944,12 @@ class UploadDownload
                 }
             }
         }
-        $this->_addError ('Mime type, ' . $this->_currentFile['type']
-                          . ', or extension of ' . $this->_currentFile['name']
-                          . ' not in list of allowed types.');
-        $this->_addError("allowed types: " . print_r($mimeTypes,true));
+        $this->_addError(
+            'Mime type, ' . $this->_currentFile['type']
+            . ', or extension of ' . $this->_currentFile['name']
+            . ' not in list of allowed types.'
+        );
+        //$this->_addError("allowed types: " . print_r($mimeTypes,true));
         return false;
     }
 
@@ -978,7 +974,6 @@ class UploadDownload
         }
 
         $this->_filePath = $path;
-
         return true;
     }
 
@@ -995,10 +990,9 @@ class UploadDownload
 
 
     /**
-     * Sets file name(s) for files.
-     * This function will set the name of any files uploaded.  If the
-     * number of file names sent doesn't match the number of uploaded
-     * files a warning will be generated but processing will continue
+     * This function will set the target names of any files uploaded.
+     * If the number of file names sent doesn't match the number of uploaded
+     * files a warning will be generated but processing will continue.
      *
      * @param   string|array    $fileNames      A string or string array of file names
      */
@@ -1037,14 +1031,14 @@ class UploadDownload
 
     /**
      * Returns how many actual files were sent for upload.
-     * NOTE: this will ignore HTML file fields that were left blank.
+     * This will ignore HTML file fields that were left blank.
      *
-     * @return  int Number of files were sent to be uploaded
+     * @return  integer Number of files sent for upload
      */
     public function numFiles()
     {
         if (empty($this->_filesToUpload)) {
-            if ( empty($this->_fieldName) ) {
+            if (empty($this->_fieldName)) {
                 $this->_filesToUpload = $_FILES;
             } else {
                 $this->_filesToUpload = $_FILES[$this->_fieldName];
@@ -1052,20 +1046,16 @@ class UploadDownload
         }
 
         $fcount = 0;
-
-        if ( is_array($this->_filesToUpload['name']) ) {
+        if (is_array($this->_filesToUpload['name'])) {
             $fcount = 0;
-            for ($i = 0; $i <= count($this->_filesToUpload['name']); $i++) {
-                $curFile = current($this->_filesToUpload['name']);
-                // Make sure file field on HTML form wasn't empty
-                if (!empty($curFile)) {
+            foreach ($this->_filesToUpload['name'] as $key=>$filename) {
+                if (!empty($filename)) {
                     $fcount++;
                 }
-                next($this->_filesToUpload['name']);
             }
             reset($this->_filesToUpload['name']);
         } else {
-            if ( !empty($this->_filesToUpload['name']) ) {
+            if (!empty($this->_filesToUpload['name'])) {
                 $fcount = 1;
             }
         }
@@ -1075,8 +1065,49 @@ class UploadDownload
 
 
     /**
+     * Handle the upload processing for a single file.
+     * The _currentFile array is expected to be set by the caller.
+     * Errors are added to the global _errors array. No return value.
+     */
+    private function _uploadCurrentFile()
+    {
+        $metaData = IMG_getMediaMetaData($this->_currentFile['tmp_name']);
+        if ($metaData['mime_type'] != '') {
+            $this->_currentFile['type'] = $metaData['mime_type'];
+        } else {
+            $this->_currentFile['type'] = 'application/octet-stream';
+        }
+
+        if (!empty($this->_currentFile['name'])) {
+            // Verify file meets size limitations
+            if (!$this->_fileSizeOk()) {
+                $err_msg = 'File, ' . $this->_currentFile['name'] . ', is larger than the ' .
+                    COM_numberFormat($this->_maxFileSize,0) . ' byte limit';
+                $this->_addError($msg);
+                $this->_currentFile['localerror'][] = $msg;
+            }
+
+            // If all systems check, do the upload
+            if (
+                $this->checkMimeType() &&
+                $this->_imageSizeOK() &&
+                empty($this->_currentFile['localerror'])
+            ) {
+                if ($this->_copyFile()) {
+                    $this->_uploadedFiles[] = $this->_filePath . '/' . $this->_getDestinationName();
+                }
+            }
+
+            $this->_currentFile = array();
+        }
+    }
+
+
+
+    /**
      * Uploads any posted files.
      *
+     * @uses    self::_uploadCurrentFile()
      * @return  boolean     True if no errors were encountered otherwise false
      */
     public function uploadFiles()
@@ -1093,7 +1124,7 @@ class UploadDownload
         }
 
         if (empty($this->_filesToUpload)) {
-            if ( empty($this->_fieldName) || $this->_fieldName == '' ) {
+            if (empty($this->_fieldName) || $this->_fieldName == '') {
                 $this->_filesToUpload = $_FILES;
             } else {
                 $this->_filesToUpload = $_FILES[$this->_fieldName];
@@ -1120,6 +1151,7 @@ class UploadDownload
         }
 
         if (is_array($this->_filesToUpload['name'])) {
+            // Multiple files uploaded
             foreach ($this->_filesToUpload["error"] as $key => $error) {
                 if ($error == UPLOAD_ERR_OK) {
                     $fparts = pathinfo($this->_filesToUpload['name'][$key]);
@@ -1133,86 +1165,36 @@ class UploadDownload
                     $this->_currentFile['_data_dir'] = isset($this->_filesToUpload["_data_dir"][$key]) ? $this->_filesToUpload["_data_dir"][$key] : '';
                     $this->_currentFile['localerror'] = array();
 
-                    $metaData = IMG_getMediaMetaData( $this->_currentFile['tmp_name'] );
-                    if ( $metaData['mime_type'] != '' ) {
-                        $this->_currentFile['type'] = $metaData['mime_type'];
-                    } else {
-                        $this->_currentFile['type'] = 'application/octet-stream';
+                    $this->_uploadCurrentFile();
+                    // If errors were set in _uploadCurrentFile(), and _continueOnError is not set,
+                    // abort immediately.
+                    if ($this->areErrors() && !$this->_continueOnError) {
+                        break;
                     }
 
-                    if (!empty($this->_currentFile['name'])) {
-                        // Verify file meets size limitations
-                        if (!$this->_fileSizeOk()) {
-//@TODO - Translate
-                            $this->_addError('File, ' . $this->_currentFile['name'] . ', is larger than the ' . COM_numberFormat($this->_maxFileSize,0) . ' byte limit');
-                            $this->_currentFile['localerror'][] = $this->_currentFile['name'] . ', is larger than the ' . COM_numberFormat($this->_maxFileSize,0) . ' byte limit';
-                        }
-
-                        // If all systems check, do the upload
-                        if (
-                            $this->checkMimeType() &&
-                            $this->_imageSizeOK() &&
-                            empty($this->_currentFile['localerror'])
-                        ) {
-                            if ($this->_copyFile()) {
-                                $this->_uploadedFiles[] = $this->_filePath . '/' . $this->_getDestinationName();
-                            }
-                        }
-
-                        $this->_currentFile = array();
-
-                        if ($this->areErrors() && !$this->_continueOnError) {
-                            return false;
-                        }
-                    }
                 } else {
-                    if ( $error != UPLOAD_ERR_NO_FILE ) {
+                    if ($error != UPLOAD_ERR_NO_FILE) {
                         $this->_uploadError($error);
                     }
                 }
                 $this->_imageIndex++;
             }
         } else {
-            if ( $this->_filesToUpload['name'] != '' && $this->_filesToUpload['error'] == UPLOAD_ERR_OK ) {
-                $this->_currentFile['name'] = $this->_filesToUpload["name"];
+            if ($this->_filesToUpload['name'] != '' && $this->_filesToUpload['error'] == UPLOAD_ERR_OK) {
+                $fparts = pathinfo($this->_filesToUpload['name']);
+                $this->_currentFile['name'] = $fparts['basename'];
+                $this->_currentFile['extension'] = $fparts['extension'];
                 $this->_currentFile['tmp_name'] = $this->_filesToUpload["tmp_name"];
                 $this->_currentFile['type'] = $this->_filesToUpload["type"];
                 $this->_currentFile['size'] = $this->_filesToUpload["size"];
                 $this->_currentFile['error'] = $this->_filesToUpload["error"];
                 $this->_currentFile['_data_dir'] = isset($this->_filesToUpload["_data_dir"]) ? $this->_filesToUpload["_data_dir"] : '' ;
-
-                $metaData = IMG_getMediaMetaData( $this->_currentFile['tmp_name'] );
-                if ( isset($metaData['mime_type']) && $metaData['mime_type'] != '' ) {
-                    $this->_currentFile['type'] = $metaData['mime_type'];
-                } else {
-                    $this->_currentFile['type'] = 'application/octet-stream';
-                }
-                if (!empty($this->_currentFile['name'])) {
-                    // Verify file meets size limitations
-
-                    if (!$this->_fileSizeOk()) {
-                        $this->_addError('File, ' . $this->_currentFile['name'] . ', is bigger than the ' . $this->_maxFileSize . ' byte limit');
-                    }
-// this is where we check the image size.
-                    // If all systems check, do the upload
-                    if (
-                        $this->checkMimeType() &&
-                        $this->_imageSizeOK() &&
-                        !$this->areErrors()
-                    ) {
-                        if ($this->_copyFile()) {
-                            $this->_uploadedFiles[] = $this->_filePath . '/' . $this->_getDestinationName();
-                        }
-                    }
-                    if ($this->areErrors() AND !$this->_continueOnError) {
-                        return false;
-                    }
-                }
+                $this->_uploadCurrentFile();
             } else {
                 $this->_uploadError($this->_filesToUpload['error']);
             }
-
         }
+
         // This function returns false if any errors were encountered
         if ($this->areErrors()) {
             return false;
