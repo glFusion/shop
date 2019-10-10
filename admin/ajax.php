@@ -65,7 +65,13 @@ case 'dropupload':
                 'img_id' => $img_id,
             );
         }
-        $retval['statusMessage'] = sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent);
+        $msg = '<ul>';
+        foreach ($U->getErrors() as $err) {
+            $msg .= '<li>' . $err . '</li>';
+        }
+        $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
+        $msg .= '</ul>';
+        $retval['statusMessage'] = $msg;
         Shop\Cache::clear('products');
     } else {
         $retval['status'] = false;
