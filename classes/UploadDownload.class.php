@@ -283,7 +283,7 @@ class UploadDownload
                 'application/pdf'                   => array('pdf'),
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => array('xlsx'),
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => array('docx'),
-                'pplication/vnd.openxmlformats-officedocument.presentationml.presentation' => array(('pptx'),
+                'pplication/vnd.openxmlformats-officedocument.presentationml.presentation' => array('pptx'),
                 'application/msaccess'              => array('mdb'),
             );
         } else {
