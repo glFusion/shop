@@ -262,7 +262,7 @@ class UploadDownload
                 'application/x-zip-compressed'      => array('zip'),
                 'application/x-tar'                 => array('tar','tar.gz','gz'),
                 'application/x-gtar'                => array('tar'),
-                'text/plain'                        => array('phps','txt','inc'),
+                'text/plain'                        => array('phps','txt','inc','php','md'),
                 'text/html'                         => array('html','htm'),
                 'image/bmp'                         => array('bmp','ico'),
                 'image/gif'                         => array('gif'),
@@ -275,9 +275,16 @@ class UploadDownload
                 'application/pdf'                   => array('pdf'),
                 'application/x-shockwave-flash'     => array('swf'),
                 'application/msword'                => array('doc'),
+                'application/msexcel'               => array('xls'),
+                'application/mspowerpoint'          => array('ppt'),
                 'application/vnd.ms-excel'          => array('xls'),
+                'application/vnd.ms-office'         => array('xls'),
                 'application/octet-stream'          => array('fla','psd'),
                 'application/pdf'                   => array('pdf'),
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => array('xlsx'),
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => array('docx'),
+                'pplication/vnd.openxmlformats-officedocument.presentationml.presentation' => array(('pptx'),
+                'application/msaccess'              => array('mdb'),
             );
         } else {
             $this->_availableMimeTypes = self::_fixMimeArrayCase($mimeTypes);
