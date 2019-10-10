@@ -42,7 +42,8 @@ class UploadDownload
      * @var array */
     private $_debugMessages = array();
 
-    /** Array of (mimetype => array(extension, extension).
+    /** Array of all allowed mimetypes. Subset of `$_availableMimeTypes`.
+     * @see self::$_availableMimeTypes
      * @var array */
     private $_allowedMimeTypes = array();
 
@@ -50,7 +51,8 @@ class UploadDownload
      * @var string */
     private $_fieldName = '';
 
-    /** Array of all available mimetypes. See `$_allowedMimeTypes`.
+    /** Array of all available mimetypes.
+     * @see self::$_allowedMimeTypes
      * @var array */
     private $_availableMimeTypes = array();
 
@@ -129,17 +131,9 @@ class UploadDownload
      * @var boolean */
     private $_limitByIP = false;
 
-    /** Number of successful uploads.
-     * @var integer */
-    private $_numSuccessfulUploads = 0;
-
     /** Index into the filenames and permissions arrays.
      * @var integer */
     private $_imageIndex = 0;
-
-    /** Flag to indicate that an image was resized.
-     * @var boolean */
-    private $_wasResized = false;
 
 
     /**
@@ -286,7 +280,7 @@ class UploadDownload
                 'application/pdf'                   => array('pdf'),
             );
         } else {
-            $this->_availableMimeTypes = $mimeTypes;
+            $this->_availableMimeTypes = self::_fixMimeArrayCase($mimeTypes);
         }
     }
 
@@ -821,6 +815,17 @@ class UploadDownload
 
 
     /**
+     * Return the warning messages accumulated.
+     *
+     * @return  array   Array of warning message strings.
+     */
+    public function getWarnings()
+    {
+        return $this->_warnings;
+    }
+
+
+    /**
      * This function will print any warnings out.  This is useful in debugging.
      */
     public function printWarnings()
@@ -862,6 +867,22 @@ class UploadDownload
 
 
     /**
+     * Ensure that all mime-types are lower-case.
+     *
+     * $param   array   $arr    Original array
+     * @return  array   Array of lower-case mimetype=>extensions
+     */
+    private static function _fixMimeArrayCase($arr)
+    {
+        $arr = array_change_key_case($arr);
+        foreach ($arr as $key=>$data) {
+            $arr[$key] = array_map('strtolower', $data);
+        }
+        return $arr;
+    }
+
+
+    /**
      * Sets allowed mime types for this instance.
      *
      * @param   array   allowedMimeTypes        Array of allowed mime types
@@ -870,9 +891,10 @@ class UploadDownload
     {
         // If nothing set, use all available Mime types.
         if (empty($mimeTypes)) {
-            $mimeTypes = $this->_availableMimeTypes;
+            $this->allowedMimeTypes = $this->_availableMimeTypes;
+        } else {
+            $this->_allowedMimeTypes = self::_fixMimeArrayCase($mimeTypes);
         }
-        $this->_allowedMimeTypes = $mimeTypes;
     }
 
 
@@ -888,6 +910,8 @@ class UploadDownload
         if ($ext[0] == '.') {
             $ext = substr($ext, 1);
         }
+        $mime = strtolower($mime);
+        $ext = strtolower($ext);
         if (array_key_exists($mime, $this->_allowedMimeTypes)) {
             // Existing mime type, add the extension to the list if not already there
             if (!in_array($this->_allowedMimeTypes[$mime], $ext)) {
@@ -1157,7 +1181,7 @@ class UploadDownload
                     $fparts = pathinfo($this->_filesToUpload['name'][$key]);
                     //TODO set extension
                     $this->_currentFile['name'] = $fparts['basename'];
-                    $this->_currentFile['extension'] = $fparts['extension'];
+                    $this->_currentFile['extension'] = strtolower($fparts['extension']);
                     $this->_currentFile['tmp_name'] = $this->_filesToUpload["tmp_name"][$key];
                     $this->_currentFile['type'] = $this->_filesToUpload["type"][$key];
                     $this->_currentFile['size'] = $this->_filesToUpload["size"][$key];
@@ -1183,7 +1207,7 @@ class UploadDownload
             if ($this->_filesToUpload['name'] != '' && $this->_filesToUpload['error'] == UPLOAD_ERR_OK) {
                 $fparts = pathinfo($this->_filesToUpload['name']);
                 $this->_currentFile['name'] = $fparts['basename'];
-                $this->_currentFile['extension'] = $fparts['extension'];
+                $this->_currentFile['extension'] = strtolower($fparts['extension']);
                 $this->_currentFile['tmp_name'] = $this->_filesToUpload["tmp_name"];
                 $this->_currentFile['type'] = $this->_filesToUpload["type"];
                 $this->_currentFile['size'] = $this->_filesToUpload["size"];
