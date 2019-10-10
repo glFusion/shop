@@ -46,25 +46,6 @@ class Category extends \Shop\Image
         parent::__construct($record_id, $varname);
     }
 
-
-    /**
-     * Get an image URL and dimensions from a filename.
-     * For Categories, the max height and width are always used.
-     *
-     * @param   string  $filename   Image filename
-     * @return  array       Array of (url, width, height)
-     */
-    public static function XXXgetUrl($filename)
-    {
-        global $_SHOP_CONF;
-
-        return parent::getUrl(
-            $_SHOP_CONF[self::$pathkey] . DIRECTORY_SEPARATOR . $filename,
-            self::$maxwidth,
-            self::$maxheight
-        );
-    }
-
 }
 
 ?>
