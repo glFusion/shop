@@ -51,7 +51,8 @@ $A = DB_fetchArray($res, false);
 if (is_array($A) && !empty($A['file'])) {
     $filespec = $_SHOP_CONF['download_path'] . '/' . $A['file'];
     $DL = new Shop\UploadDownload();
-    $DL->setAllowedMimeTypes();
+    $DL->setAllowAnyMimeType(true);
+    //$DL->setAllowedMimeTypes();
     $logfile = $_SHOP_CONF['logfile'];
     if (!file_exists($logfile)) {
         $fp = fopen($logfile, "w+");

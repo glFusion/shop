@@ -67,7 +67,7 @@ class Image extends UploadDownload
         $this->setContinueOnError(true);
         $this->setLogFile('/tmp/warn.log');
         $this->setDebug(true);
-        //$this->_setAvailableMimeTypes();
+        // Only JPEG images are currently handled
         $this->setAllowedMimeTypes(array(
             'image/pjpeg' => array('jpg','jpeg'),
             'image/jpeg'  => array('jpg','jpeg'),
