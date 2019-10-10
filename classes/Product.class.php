@@ -642,8 +642,6 @@ class Product
                 $F->setMaxDimensions(0, 0);
                 $filename = $F->uploadFiles();
                 if ($F->areErrors() > 0) {
-                    var_dump($F->areErrors());
-                    var_dump($F->getErrors());die;
                     $this->Errors[] = $F->printErrors(true);
                 } elseif ($filename != '') {
                     $this->file = $filename;
