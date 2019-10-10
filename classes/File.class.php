@@ -13,22 +13,20 @@
  */
 namespace Shop;
 
-// Import core glFusion upload functions
-USES_class_upload();
 
 /**
  * Image-handling class.
  * @package shop
  */
-class File extends \upload
+class File extends FileUpload
 {
     /** Array of uploaded filenames.
      * @var array */
-    var $filenames;
+    private $filenames;
 
     /** Array of the names of successfully uploaded files.
      * @var array */
-    var $goodfiles = array();
+    private $goodfiles = array();
 
     /**
      * Constructor.
@@ -38,11 +36,11 @@ class File extends \upload
     {
         global $_SHOP_CONF, $_CONF;
 
+        parent::__construct();
         $this->filenames = array();
         $this->setContinueOnError(true);
         $this->setLogFile('/tmp/warn.log');
         $this->setDebug(true);
-        $this->_setAvailableMimeTypes();
 
         // Before anything else, check the upload directory
         if (!$this->setPath($_SHOP_CONF['download_path'])) {

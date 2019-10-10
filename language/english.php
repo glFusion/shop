@@ -546,6 +546,8 @@ $LANG_SHOP = array (
 'err_msg' => 'There was an error.',
 'err_invalid_form' => 'Submitted data was invalid.',
 'msg_nothing_shipped' => 'No items are included in this shipment. Use the Delete button if you wish to delete the shipment.',
+'x_of_y_uploaded' => '%d of %d files uploaded',
+'no_files_uploaded' => 'No files were uploaded',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

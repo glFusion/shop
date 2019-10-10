@@ -43,30 +43,33 @@ case 'dropupload':
     // Handle a drag-and-drop image upload
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $nonce = SHOP_getVar($_POST, 'nonce', 'string');
-    $errors = array();
     $retval = array(
+        'status'    => true,    // assume OK
+        'statusMessage' => '',
         'filenames' => array(),
     );
 
     // Handle image uploads.  This is done last because we need
     // the product id to name the images filenames.
     if (!empty($_FILES['files'])) {
+        $sent = count($_FILES['files']['name']);
         $U = new Shop\Images\Product($item_id, 'files');
         $U->setNonce($nonce);
         $filenames = $U->uploadFiles();
-        if ($U->areErrors() > 0) {
-            $errors = $U->_errors;
-        } else {
-            // Only one filename here, this to get the image id also
-            foreach ($filenames as $img_id=>$filename) {
-                $retval['filenames'][] = array(
-                    'img_url'   => Shop\Product::getImage($filename)['url'],
-                    'thumb_url' => Shop\Product::getThumb($filename)['url'],
-                    'img_id' => $img_id,
-                );
-            }
+        $processed = count($filenames);
+        // Only one filename here, this to get the image id also
+        foreach ($filenames as $img_id=>$filename) {
+            $retval['filenames'][] = array(
+                'img_url'   => Shop\Product::getImage($filename)['url'],
+                'thumb_url' => Shop\Product::getThumb($filename)['url'],
+                'img_id' => $img_id,
+            );
         }
+        $retval['statusMessage'] = sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent);
         Shop\Cache::clear('products');
+    } else {
+        $retval['status'] = false;
+        $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
     }
     header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");

@@ -571,9 +571,11 @@ $(function(){
             },
 
             complete: function(response) {
-                f = response.filenames;
-                for (var i = 0; i < f.length; i++) {
-                    addImage(f[i].thumb_url, f[i].img_url, f[i].img_id);
+                if (response.status) {
+                    f = response.filenames;
+                    for (var i = 0; i < f.length; i++) {
+                        addImage(f[i].thumb_url, f[i].img_url, f[i].img_id);
+                    }
                 }
             },
 
@@ -582,7 +584,7 @@ $(function(){
                 setTimeout(function(){
                     progressbar.addClass("uk-hidden");
                 }, 250);
-                $.UIkit.notify("Upload Completed", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify(response.statusMessage, {timeout: 2000,pos:'top-center'});
             }
         };
 
