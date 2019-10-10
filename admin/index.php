@@ -50,7 +50,7 @@ $expected = array(
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
-    'addshipment', 'updateshipment', 'del_shipment',
+    'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -89,6 +89,15 @@ case 'deleteproduct':
         COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
     echo COM_refresh(SHOP_ADMIN_URL);
+    break;
+
+case 'delshipping':
+    if (Shop\Shipper::Delete($actionval)) {
+        COM_setMsg($LANG_SHOP['msg_deleted']);
+    } else {
+        COM_setMsg($LANG_SHOP['error']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?shipping');
     break;
 
 case 'deletecatimage':

@@ -650,12 +650,17 @@ class Shipper
     {
         global $_TABLES;
 
-        if ($id <= 0)
+        if ($id <= 0) {
             return false;
+        }
 
-        DB_delete($_TABLES['shop.shipping'], 'id', $id);
-        Cache::clear(self::$base_tag);
-        return true;
+        if (!self::isUsed($id)) {
+            DB_delete($_TABLES['shop.shipping'], 'id', $id);
+            Cache::clear(self::$base_tag);
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
@@ -759,7 +764,7 @@ class Shipper
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $sql = "SELECT s.*, g.grp_name
             FROM {$_TABLES['shop.shipping']} s
@@ -791,6 +796,12 @@ class Shipper
             array(
                 'text'  => $LANG_SHOP['grp_access'],
                 'field' => 'grp_name',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
+                    Icon::getHTML('question', 'tooltip', array('title'=>$LANG_SHOP_HELP['hlp_delete'])),
+                'field' => 'delete',
+                'align' => 'center',
             ),
         );
 
@@ -849,7 +860,7 @@ class Shipper
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
-                Icon::getHTML('delete', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
+                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
                 SHOP_ADMIN_URL . "/index.php?editshipper={$A['id']}"
             );
             break;
@@ -869,15 +880,17 @@ class Shipper
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?delshipping=x&amp;id=' . $A['id'],
-                array(
-                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                    'title' => $LANG_SHOP['del_item'],
-                    'class' => 'tooltip',
-                )
-            );
+            if (!self::isUsed($A['id'])) {
+                $retval .= COM_createLink(
+                    Icon::getHTML('delete'),
+                    SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
+                    array(
+                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                        'title' => $LANG_SHOP['del_item'],
+                        'class' => 'tooltip',
+                    )
+                );
+            }
             break;
 
 /*        case 'grp_name':
@@ -961,6 +974,28 @@ class Shipper
             return $C->getTrackingUrl($tracking_num);
         }*/
         return '';
+    }
+
+
+    /**
+     * Check if a specific shipper is associated with any orders or packages.
+     * Used to determine whether a shipper record can be deleted.
+     *
+     * @param   integer $shipper_id     Shipper record ID
+     * @return  boolean     True if the shipper is in use, False if not
+     */
+    public static function isUsed($shipper_id)
+    {
+        global $_TABLES;
+
+        $shipper_id = (int)$shipper_id;
+        if (DB_count($_TABLES['shop.orders'], 'shipper_id', $shipper_id) > 0) {
+            return true;
+        } elseif (DB_count($_TABLES['shop.shipment_packages'], 'shipper_id', $shipper_id) > 0) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }   // class Shipper
