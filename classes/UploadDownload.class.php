@@ -966,7 +966,7 @@ class UploadDownload
     {
         $this->_addMimeType($this->_availableMimeTypes, $mime, $exts);
         if ($allowed) {
-            $this->_addMimeType($this->addAllowedMimeType($mime, $exts);
+            $this->_addMimeType($this->addAllowedMimeType, $mime, $exts);
         }
     }
 
