@@ -709,7 +709,12 @@ class Order
             $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
         }
         $this->total = $this->getTotal();     // also calls calcTax()
-        $icon_tooltips = implode('<br />', $icon_tooltips);
+        // Only show the icon descriptions when the invoice amounts are shown
+        if ($is_invoice) {
+            $icon_tooltips = implode('<br />', $icon_tooltips);
+        } else {
+            $icon_tooltips = NULL;
+        }
         $by_gc = (float)$this->getInfo('apply_gc');
 
         // Call selectShipper() here to get the shipping amount into the local var.
