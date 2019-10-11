@@ -889,9 +889,13 @@ class UploadDownload
      */
     public function setAllowedMimeTypes($mimeTypes = array())
     {
+        if (empty($this->_availableMimeTypes)) {
+            $this->setAvailableMimeTypes();
+        }
+
         // If nothing set, use all available Mime types.
         if (empty($mimeTypes)) {
-            $this->allowedMimeTypes = $this->_availableMimeTypes;
+            $this->_allowedMimeTypes = $this->_availableMimeTypes;
         } else {
             $this->_allowedMimeTypes = self::_fixMimeArrayCase($mimeTypes);
         }
@@ -899,27 +903,49 @@ class UploadDownload
 
 
     /**
-     * Add a single mime type and extension to the Allowed list.
+     * Add a mime-type and extension set to an internal variable.
+     * Both `_allowedMimeTypes` and `_availableMimeTypes` share the same
+     * structure, so this function can be used to add elements to both.
      *
-     * @param   string  $mime   Mime type
-     * @param   string  $ext    File extension
+     * @param   array   $arr    Array to affect, by reference
+     * @param   string  $mime   Mime-Type to be added
+     * @param   string|array    $exts   One or more extensions to be added
      */
-    public function addAllowedMimeType($mime, $ext)
+    private function _addMimeType(&$arr, $mime, $exts)
     {
         // Extension is expected to not include the leading dot
-        if ($ext[0] == '.') {
-            $ext = substr($ext, 1);
+        if (!is_array($exts)) {
+            $exts = explode(',', $exts);
         }
+
         $mime = strtolower($mime);
-        $ext = strtolower($ext);
-        if (array_key_exists($mime, $this->_allowedMimeTypes)) {
-            // Existing mime type, add the extension to the list if not already there
-            if (!in_array($this->_allowedMimeTypes[$mime], $ext)) {
-                $this->_allowedMimeTypes[$mime][] = $ext;
-            }
-        } else {
-            $this->_allowedMimeTypes[$mime] = array($ext);
+        if (!array_key_exists($mime, $arr)) {
+            // Add the mime-type key if it doesn't exist
+            $arr[$mime] = array();
         }
+        foreach ($exts as $ext) {
+            if ($ext[0] == '.') {
+                $ext = substr($ext, 1);
+            }
+            $ext = trim(strtolower($ext));
+            if (!in_array($arr[$mime], $ext)) {
+                $arr[$mime][] = $ext;
+            }
+        }
+    }
+
+
+    /**
+     * Add a single mime type and extension to the Allowed list.
+     *
+     * @uses    self::_addMimeType()
+     * @param   string  $mime   Mime type
+     * @param   string|array  $exts   File extension
+     */
+    public function addAllowedMimeType($mime, $exts)
+    {
+        $this->_addMimeType($this->_allowedMimeTypes, $mime, $exts);
+        return;
     }
 
 
@@ -931,28 +957,16 @@ class UploadDownload
      * won't make sense to add to the available types unless the new type
      * is also to be allowed.
      *
+     * @uses    self::_addMimeType()
      * @param   string  $mime       Mime type
-     * @param   string  $ext        File extension
+     * @param   string|array    $exts       One or more file extensions
      * @param   boolean $allowed    True to also add to the allowed mime types
      */
-    public function addAvailableMimeType($mime, $ext, $allowed=true)
+    public function addAvailableMimeType($mime, $exts, $allowed=true)
     {
-        // Extension is expected to not include the leading dot
-        if ($ext[0] == '.') {
-            $ext = substr($ext, 1);
-        }
-        $mime = strtolower($mime);
-        $ext = strtolower($ext);
-        if (array_key_exists($mime, $this->_availableMimeTypes)) {
-            // Existing mime type, add the extension to the list if not already there
-            if (!in_array($this->_availableMimeTypes[$mime], $ext)) {
-                $this->_availableMimeTypes[$mime][] = $ext;
-            }
-        } else {
-            $this->_availableMimeTypes[$mime] = array($ext);
-        }
+        $this->_addMimeType($this->_availableMimeTypes, $mime, $exts);
         if ($allowed) {
-            $this->addAllowedMimeType($mime, $ext);
+            $this->_addMimeType($this->addAllowedMimeType($mime, $exts);
         }
     }
 
@@ -1204,6 +1218,7 @@ class UploadDownload
 
         // Verify allowed mime types exist
         if (!$this->_allowedMimeTypes && $this->_allowAnyType == false) {
+            // TODO: Better to just assume allowed = available?
             $this->_addError('No allowed mime types specified, use setAllowedMimeTypes() method');
         }
 
