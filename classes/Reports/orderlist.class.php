@@ -136,6 +136,15 @@ class orderlist extends \Shop\Report
         ) );
         }
 
+        if ($this->isAdmin) {
+            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
+            $listOptions = $this->_getListOptions();
+            $form_url = SHOP_ADMIN_URL . '/report.php';
+        } else {
+            $listOptions = '';
+            $form_url = '';
+        }
+
         $defsort_arr = array(
             'field' => 'order_date',
             'direction' => 'DESC',
@@ -181,15 +190,11 @@ class orderlist extends \Shop\Report
         );
         $text_arr = array(
             'has_extras' => false,
-            'form_url' => $_SERVER['REQUEST_URI'],
+            'form_url' => $form_url,
             'has_limit' => true,
             'has_paging' => true,
             'has_search' => true,
         );
-        if ($this->isAdmin) {
-            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
-        }
-
         $total_sales = 0;
         $total_tax = 0;
         $total_shipping = 0;
@@ -221,7 +226,7 @@ class orderlist extends \Shop\Report
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
-                    $filter, $this->extra, $this->_getListOptions()
+                    $filter, $this->extra, $listOptions
                 )
             );
             break;
