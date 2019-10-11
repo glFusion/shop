@@ -62,6 +62,14 @@ case 'view':
     }
     break;
 
+case 'pdfpl':
+case 'pdforder':
+    $order = Shop\Order::getInstance($id);
+    if ($order->canView($token)) {
+        \Shop\Order::printPDF($id, $mode);
+    }
+    break;
+
 case 'packinglist':
 case 'print':
     // Display a printed order or packing list and exit.

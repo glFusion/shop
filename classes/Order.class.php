@@ -224,7 +224,7 @@ class Order
             $A = DB_fetchArray($res, false);
             if (empty($A)) return false;
         //    Cache::set($cache_key, $A, 'orders');
-        //}
+            //}
         if ($this->setVars($A)) $this->isNew = false;
 
         // Now load the items
@@ -585,7 +585,10 @@ class Order
             break;
         case 'packinglist':
             // Print a packing list. Same as print view but no prices or fees shown.
+            $tplname = 'packinglist';
             $is_invoice = false;
+            $this->isFinalView = true;
+            break;
         case 'print':
         case 'printorder':
             $this->isFinalView = true;
@@ -2093,7 +2096,7 @@ class Order
 
         return COM_createLink(
             '<i class="uk-icon-mini uk-icon-list"></i>',
-           SHOP_ADMIN_URL . '/index.php?order_pl=' . $order_id,
+           SHOP_ADMIN_URL . '/report.php?pdfpl=' . $order_id,
             array(
                 'class' => 'tooltip',
                 'title' => $LANG_SHOP['packinglist'],
@@ -2115,7 +2118,7 @@ class Order
     {
         global $LANG_SHOP;
 
-        $url = SHOP_URL . '/order.php?mode=print&id=' . $order_id;
+        $url = SHOP_URL . '/order.php?mode=pdforder&id=' . $order_id;
         if ($token != '') $url .= '&token=' . $token;
         return COM_createLink(
             '<i class="uk-icon-mini uk-icon-print"></i>',

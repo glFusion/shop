@@ -1,5 +1,8 @@
+<html>
+<head>
 {# begin {templatelocation} #}
 <link rel="stylesheet" type="text/css" href="{site_url}/shop/css/style.css" />
+<body onload="window.print();">
 <div class="shopOrderContainer print">
   <h1 class="aligncenter">
 {!if is_invoice}
@@ -174,4 +177,6 @@
 {!endif}
 </div>
 {!endif}
+</body>
 {# end {templatelocation} #}
+</html>

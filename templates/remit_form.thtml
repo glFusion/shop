@@ -2,7 +2,8 @@
 <div class="uk-alert" style="width:100%">
   <h2>{$LANG_SHOP_gateway['pmt_instructions']}</h2>
   <a href="{order_url}" target="_blank">
-    <button class="uk-button uk-button-success">{$LANG_SHOP_gateway['print']}</button>
+    <button class="uk-button uk-button-success">
+      <i class="uk-icon uk-icon-print"></i>&nbsp;{$LANG_SHOP_gateway['print']}</button>
   </a>
 </div>
 <div style="clear:both"></div>

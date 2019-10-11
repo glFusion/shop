@@ -111,7 +111,11 @@ case 'run':
 
 case 'pdfpl':
 case 'pdforder':
-    $orders = SHOP_getVar($_POST, 'orders', 'array');
+    if ($actionval == 'x') {
+        $orders = SHOP_getVar($_POST, 'orders', 'array');
+    } else {
+        $orders = $actionval;
+    }
     \Shop\Order::printPDF($orders, $view);
     break;
 

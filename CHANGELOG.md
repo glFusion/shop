@@ -32,6 +32,7 @@ Release TBD
   * Add authorized group to payment gateways, for net terms.
   * Include a new FileUpload class for more consistent upload/download behavior.
   * Allow deletion of unused shippers.
+  * Order and Packing List print icons now create PDF output.
 
 ## v0.7.1
 Release 2019-08-02

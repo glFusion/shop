@@ -508,7 +508,7 @@ class check extends \Shop\Gateway
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('remit', 'remit_form.thtml');
         $T->set_var(array(
-            'order_url' => $Order->buildUrl('print'),
+            'order_url' => $Order->buildUrl('pdforder'),
             'order_id'  => $Order->order_id,
             'token'     => $Order->token,
         ) );
