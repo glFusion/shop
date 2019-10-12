@@ -826,6 +826,10 @@ function plugin_autouninstall_shop()
             'shop.sales',
             'shop.shipping',
             'shop.prod_opt_grps',
+            'shop.prod_opt_vals',
+            'shop.shipments',
+            'shop.shipment_items',
+            'shop.shipment_packages',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -878,7 +882,7 @@ function plugin_enablestatechange_shop($enabled)
     }
     if (!$enabled) {
         // Disable any blocks that rely on this plugin.
-        DB_query("UPDATE {$_TABLES['blocks']} SET enabled = 0 WHERE name LIKE 'phpblock_shop_%'");
+        DB_query("UPDATE {$_TABLES['blocks']} SET is_enabled = 0 WHERE name LIKE 'phpblock_shop_%'");
     }
 }
 

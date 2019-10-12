@@ -33,7 +33,6 @@ $_SQL = array(
 ) ENGINE=MyISAM",
 
 'shop.products' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
-CREATE TABLE `gl_shop_products` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
   `cat_id` int(11) unsigned NOT NULL DEFAULT '0',
@@ -119,7 +118,6 @@ CREATE TABLE `gl_shop_products` (
   `enabled` tinyint(1) unsigned DEFAULT '1',
   `grp_access` mediumint(8) unsigned NOT NULL DEFAULT '1',
   `image` varchar(255) DEFAULT '',
-  `googl_taxonomy` text,
   `google_taxonomy` text,
   `lft` smallint(5) unsigned NOT NULL DEFAULT '0',
   `rgt` smallint(5) unsigned NOT NULL DEFAULT '0',
@@ -138,7 +136,6 @@ CREATE TABLE `gl_shop_products` (
   `pov_price` decimal(9,4) DEFAULT NULL,
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
-  `attr_name` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
   UNIQUE KEY `item_id` (`item_id`,`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
@@ -589,7 +586,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.gateways']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
 );
 
-$_SQL['shop.opt_grp'] = $SHOP_UPGRADE['1.0.0'][0];
+$_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
 $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
 $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];

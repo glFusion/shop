@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.0.0
- * @since       v1.0.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -40,9 +40,10 @@ class MigratePP
         }
 
         // Perform the migration. Don't migrate the button cache.
-        // Clear out the Shop tables and insert data from Paypal
+        // Clear out the Shop tables and insert data from Paypal.
+        // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
-            'address', 'coupon_log', 'coupons',
+            'address', 'coupon_log',
             'ipnlog', 'order_log', 'orderstatus',
             'userinfo',
             'workflows', 'currency',
@@ -74,7 +75,7 @@ class MigratePP
         if (!self::migrateImages()) {
             return false;
         }
-        if (!self::migrateOptions()) {
+        if (!self::migrateOptionValues()) {
             return false;
         }
         if (!self::migrateOptionGroups()) {
@@ -145,6 +146,25 @@ class MigratePP
             "INSERT INTO $shop_tbl (SELECT * FROM $pp_tbl)",
         ) );
     }
+
+
+    /**
+     * Migrate catalog categories from Paypal to Shop.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function migrateCoupons()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.coupons']}",
+            "INSERT INTO {$_TABLES['shop.coupons']}
+                SELECT *, 'valid' as status
+                FROM {$_TABLES['paypal.coupons']}",
+        ) );
+    }
+
 
 
     /**
@@ -319,7 +339,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
-            "ALTER TABLE {$_TABLES['shop.prod_opt-vals']} DROP KEY `item_id`",
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
             "INSERT INTO {$_TABLES['shop.prod_opt_vals']}
                 SELECT  attr_id as pov_id, 0 as pog_id, item_id, attr_value as pov_value,
                 orderby, attr_price as pov_price, enabled, '' as sku, attr_name
@@ -338,17 +358,17 @@ class MigratePP
     public function migrateOptionGroups()
     {
         global $_TABLES;
-    
+
         // Initial populate of the new attribute group table, after the main migration.
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_grps']}",
-            "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (og_name) 
+            "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name)
                 (SELECT DISTINCT attr_name FROM {$_TABLES['paypal.prod_attr']})",
             "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN
                 (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name
                 SET pov.pog_id = pog.pog_id",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name",
-            "ALTER TABLE {$_TABLES['shop.prod_opt-vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)",
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)",
         ) );
     }
 
@@ -385,7 +405,7 @@ class MigratePP
             "TRUNCATE {$_TABLES['shop.gateways']}",
             "INSERT INTO {$_TABLES['shop.gateways']}
                 SELECT *, 2 as grp_access
-                FROM {$_TABLES['paypal.shipping']}",
+                FROM {$_TABLES['paypal.gateways']}",
         ) );
     }
 
