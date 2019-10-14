@@ -60,18 +60,24 @@ class Image extends UploadDownload
      */
     public function uploadFiles()
     {
+        global $_CONF;
+
         // Before anything else, check the upload directory
         if (!$this->setPath($this->pathImage)) {
             return;
         }
         $this->setContinueOnError(true);
-        $this->setLogFile('/tmp/warn.log');
+        $this->setLogFile($_CONF['path'] . 'logs/error.log');
         $this->setDebug(true);
-        // Only JPEG images are currently handled
+        // Only images are allowed
         $this->setAllowedMimeTypes(array(
-            'image/pjpeg' => array('jpg','jpeg'),
-            'image/jpeg'  => array('jpg','jpeg'),
+            'image/gif'     => array('gif'),
+            'image/pjpeg'   => array('jpg','jpeg'),
+            'image/jpeg'    => array('jpg','jpeg'),
+            'image/png'     => array('png'),
+            'image/x-png'   => array('png'),
         ));
+        // Allow any size image
         $this->setMaxDimensions(0, 0);
 
         $filenames = array();

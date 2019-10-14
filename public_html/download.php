@@ -63,7 +63,7 @@ if (is_array($A) && !empty($A['file'])) {
         }
     }
     if (file_exists($logfile)) {
-        $DL->setLogFile($logfile);
+        $DL->setLogFile($_CONF['path'] . 'logs/error.log');
         $DL->setLogging(true);
     } else {
         $DL->setLogginf(false);

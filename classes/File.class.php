@@ -40,7 +40,7 @@ class File extends UploadDownload
         parent::__construct();
         $this->filenames = array();
         $this->setContinueOnError(true);
-        $this->setLogFile('/tmp/warn.log');
+        $this->setLogFile($_CONF['path'] . 'logs/error.log');
         $this->setDebug(true);
 
         // Before anything else, check the upload directory
