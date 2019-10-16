@@ -12,7 +12,7 @@ SHOP_setStatus("{order_id}", "{oldvalue}");
 <span id="shopSetStat_{order_id}" style="visibility:hidden;">
 <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip"
     title="{$LANG_SHOP['update_status']}"
-    onclick='SHOP_updateOrderStatus("{order_id}", SHOP_getStatus("{order_id}"), document.getElementById("statSelect_{order_id}").value, {showlog}, "{site_admin_url}/plugins/shop"); return false;'>
+    onclick='SHOP_updateOrderStatus("{order_id}", SHOP_getStatus("{order_id}"), document.getElementById("statSelect_{order_id}").value, {showlog}, ""); return false;'>
     <i class="uk-icon uk-icon-check"></i></button>
 </span>
 {# end {templatelocation} #}

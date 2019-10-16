@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -964,29 +964,31 @@ class Report
         // Print selected packing lists
         $prt_pl = '<button type="submit" name="pdfpl" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
+            'formtarget="_blank" ' .
             'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
-            'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
-            '<i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
+            '><i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
             '</button>';
         // Print selected orders
         $prt_ord = '<button type="submit" name="pdforder" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
+            'formtarget="_blank" ' .
             'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
-            'onclick="$(this).closest(\'form\').attr(\'target\', \'_blank\');">' .
-            '<i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
+            '><i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
             '</button>';
         $statuses = OrderStatus::getAll();
-        $upd_stat = '<select name="newstatus">';
+        $upd_stat = '<select name="newstatus" onchange="SHOP_enaBtn(bulk_stat_upd, \'\', this.value);">';
         $upd_stat .= '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>';
         foreach ($statuses as $name=>$obj) {
             $upd_stat .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>';
         }
         $upd_stat .= '</select>';
         $upd_stat .= '<button type="submit" name="updstatus" value="x" ' .
+            'id="bulk_stat_upd" ' .
             'class="uk-button uk-button-mini tooltip" ' .
+            'formtarget="_self" ' .
             'title="' . $LANG_SHOP['update_status'] . '" ' .
-            'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');">' .
-            '<i name="updstat" class="uk-icon uk-icon-check"></i>' .
+            'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');"' .
+            '><i name="updstat" class="uk-icon uk-icon-check"></i>' .
             '</button>';
 
         $options = array(

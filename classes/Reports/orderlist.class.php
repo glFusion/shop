@@ -139,7 +139,7 @@ class orderlist extends \Shop\Report
         if ($this->isAdmin) {
             $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
             $listOptions = $this->_getListOptions();
-            $form_url = SHOP_ADMIN_URL . '/report.php';
+            $form_url = SHOP_ADMIN_URL . '/report.php?run=' . $this->key;
         } else {
             $listOptions = '';
             $form_url = '';

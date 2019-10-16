@@ -33,6 +33,8 @@ Release TBD
   * Include a new FileUpload class for more consistent upload/download behavior.
   * Allow deletion of unused shippers.
   * Order and Packing List print icons now create PDF output.
+  * Allow use of PNG and GIF product/category images as well as JPEG.
+  * Add general comment input to orders.
 
 ## v0.7.1
 Release 2019-08-02

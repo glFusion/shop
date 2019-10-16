@@ -212,7 +212,20 @@
 {!endif}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
-  <p>{$LANG_SHOP['status']}: {stat_update}</p>
+  {$LANG_SHOP['status']}: <select id="statSelect_{order_number}" name="newstatus[{order_number}]">
+<!-- BEGIN StatusSelect -->
+    <option value="{stat_key}" {selected}>{stat_descr}</option>
+<!-- END StatusSelect -->
+  </select>
+  <br />
+  <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
+  <br />
+  <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip"
+    title="{$LANG_SHOP['update_status']}"
+    onclick='SHOP_updateOrderStatus("{order_number}", "{order_status}", document.getElementById("statSelect_{order_number}").value, 1, document.getElementById("order_comment").value); return false;'>
+    {$LANG_SHOP['upd_stat_cmt']}
+  </button>
+  </p>
 {!else}
   <p>{$LANG_SHOP['status']}: {status}</p>
 {!endif}

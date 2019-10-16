@@ -769,8 +769,19 @@ class Order
                 'is_admin'      => true,
                 'purch_name'    => COM_getDisplayName($this->uid),
                 'purch_uid'     => $this->uid,
-                'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->status),
+                //'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->status),
+                'order_status'  => $this->status,
             ) );
+            $T->set_block('ordstat', 'StatusSelect', 'Sel');
+            foreach (OrderStatus::getAll() as $key => $data) {
+                if (!$data->enabled) continue;
+                $T->set_var(array(
+                    'selected' => $key == $this->status ? 'selected="selected"' : '',
+                    'stat_key' => $key,
+                    'stat_descr' => OrderStatus::getDscp($key),
+                ) );
+                $T->parse('Sel', 'StatusSelect', true);
+            }
         }
 
         // Instantiate a date objet to handle formatting of log timestamps
@@ -849,7 +860,7 @@ class Order
      * @param   string  $newstatus      New order status
      * @param   boolean $log            True to log the change, False to not
      * @param   boolean $notify         True to notify the buyer, False to not.
-     * @return  boolean                 True on success or no change
+     * @return  string      New status, old status if not updated.
      */
     public function updateStatus($newstatus, $log = true, $notify=true)
     {
@@ -859,7 +870,7 @@ class Order
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
         if ($oldstatus == $newstatus) {
-            return true;
+            return $oldstatus;
         }
 
         $this->status = $newstatus;
@@ -890,7 +901,7 @@ class Order
         //echo $sql;die;
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         if (DB_error()) {
-            return false;
+            return $oldstatus;
         }
         //Cache::deleteOrder($this->order_id);
         $this->status = $newstatus;     // update in-memory object
@@ -901,7 +912,7 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
-        return true;
+        return $newstatus;
     }
 
 
@@ -935,9 +946,13 @@ class Order
             message = '" . DB_escapeString($msg) . "',
             ts = UNIX_TIMESTAMP()";
         DB_query($sql);
-        $cache_key = 'orderlog_' . $order_id;
-        Cache::delete($cache_key);
-        return;
+        if (!DB_error()) {
+            $cache_key = 'orderlog_' . $order_id;
+            Cache::delete($cache_key);
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
@@ -1120,22 +1135,24 @@ class Order
 
         if ($incl_trk) {        // include tracking information block
             $Shipments = Shipment::getByOrder($this->order_id);
-            foreach ($Shipments as $Shp) {
-                $shp_dt = $Shp->getDate()->toMySQL(true);
-                $Packages = $Shp->getPackages();
-                $T->set_block('tracking', 'trackingPackages', 'TP');
-                foreach ($Packages as $Pkg) {
-                    $T->set_var(array(
-                        'shipment_date' => $shp_dt,
-                        'shipper_name'  => $Pkg->shipper_info,
-                        'tracking_num'  => $Pkg->tracking_num,
-                        'tracking_url'  => $Pkg->getTrackingURL(),
-                    ) );
-                    $shp_dt = '';
-                    $T->parse('TP', 'trackingPackages', true);
+            if (count($Shipments) > 0) {
+                foreach ($Shipments as $Shp) {
+                    $shp_dt = $Shp->getDate()->toMySQL(true);
+                    $Packages = $Shp->getPackages();
+                    $T->set_block('tracking', 'trackingPackages', 'TP');
+                    foreach ($Packages as $Pkg) {
+                        $T->set_var(array(
+                            'shipment_date' => $shp_dt,
+                            'shipper_name'  => $Pkg->shipper_info,
+                            'tracking_num'  => $Pkg->tracking_num,
+                            'tracking_url'  => $Pkg->getTrackingURL(),
+                        ) );
+                        $shp_dt = '';
+                        $T->parse('TP', 'trackingPackages', true);
+                    }
                 }
+                $T->set_var('tracking_info', $T->parse('detail', 'tracking'));
             }
-            $T->set_var('tracking_info', $T->parse('detail', 'tracking'));
         }
 
         $T->set_var(array(

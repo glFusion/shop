@@ -61,15 +61,17 @@ var SHOPupdateSel = function(sel, id, type, component) {
 
 var SHOP_status = {};
 
-function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
+function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment)
 {
     var dataS = {
         "action" : "updatestatus",
         "order_id": order_id,
         "newstatus": newstatus,
         "showlog": showlog,
+        "comment": comment,
     };
     data = $.param(dataS);
+    console.log(data);
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -77,10 +79,24 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
         data: data,
         success: function(jsonObj) {
             try {
+                console.log(jsonObj);
                 if (jsonObj.showlog == 1) {
                     var tbl = document.getElementById("shopOrderLog");
                     if (tbl) {
-                        var lastRow = tbl.rows.length;
+                        if (jsonObj.message) {
+                            $('#shopOrderLog').append('<tr>' +
+                                '<td>' + jsonObj.ts + '</td><td>' + jsonObj.username + '</td><td>' + jsonObj.message +
+                                '</td></tr>');
+                            var el = document.getElementById("statSelect_" + jsonObj.order_id);
+                            el.value = jsonObj.newstatus;
+                        }
+                        if (jsonObj.comment) {
+                            $('#shopOrderLog').append('<tr>' +
+                                '<td>' + jsonObj.ts + '</td><td>' + jsonObj.username + '</td><td>' + jsonObj.comment +
+                                '</td></tr>');
+                        }
+
+                        /*var lastRow = tbl.rows.length;
                         var iteration = lastRow;
                         var row = tbl.insertRow(lastRow);
 
@@ -93,19 +109,20 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog)
                         cell1.appendChild(textNode);
                         var cell2 = row.insertCell(2);
                         var textNode = document.createTextNode(jsonObj.message);
-                        cell2.appendChild(textNode);
+                        cell2.appendChild(textNode);*/
                     }
                 }
-                var el = document.getElementById("statSelect_" + jsonObj.order_id);
-                el.value = jsonObj.newstatus;
 
                 // Hide the button and update the new status in our array
-                document.getElementById("shopSetStat_" + jsonObj.order_id).style.visibility = "hidden";
+                btn = document.getElementById("shopSetStat_" + jsonObj.order_id);
+                if (btn) {
+                    btn.style.visibility = "hidden";
+                }
                 SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + jsonObj.message, {timeout: 1000,pos:'top-center'});
+                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + jsonObj.statusMessage, {timeout: 1000,pos:'top-center'});
             }
             catch(err) {
-                alert(result.message);
+                alert("Error Updating");
             }
         }
     });
@@ -175,5 +192,16 @@ function SHOP_voidItem(component, item_id, newval, elem)
         }
     });
     return false;
+}
+
+// Enable and disable the action button to update multiple order statuses
+// in the order list report.
+function SHOP_enaBtn(elem, disa_val, val)
+{
+    if (val != disa_val) {
+        elem.classList.add("uk-button-success");
+    } else {
+        elem.classList.remove("uk-button-success");
+    }
 }
 

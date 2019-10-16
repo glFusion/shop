@@ -105,12 +105,24 @@ case 'updatestatus':
             $L = array(
                 'showlog' => 0,
             );
-        } elseif ($ord->updateStatus($newstatus)) {
-            $L = $ord->getLastLog();
-            if (!empty($L)) {
-                // Add flag to indicate whether to update on-screen log
-                $L['showlog'] = $showlog;
+        } else {
+            $L['showlog'] = $showlog;
+            $L['ts'] = $_CONF['_now']->format($_SHOP_CONF['datetime_fmt'], true);
+            $L['order_id'] = $order_id;
+            $L['username'] = COM_getDisplayName($_USER['uid']) . ' (' . $_USER['uid'] . ')';
+            $L['statusMessage'] = NULL;
+            $oldstatus = $ord->status;
+            if ($ord->updateStatus($newstatus) != $oldstatus) {
                 $L['newstatus'] = $newstatus;
+                $L['statusMessage'] = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
+                $L['message'] = $L['statusMessage'];
+            }
+            $comment = SHOP_getVar($_POST, 'comment');
+            if (!empty($comment && $ord->Log($comment))) {
+                $L['comment'] = $comment;
+                if (empty($L['statusMessage'])) {
+                    $L['statusMessage'] = 'Comment Added';
+                }
             }
         }
         header('Content-Type: application/json');
