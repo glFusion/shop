@@ -224,7 +224,7 @@ class Shipper
         $retval = array();
         foreach ($shippers as $shipper) {
             if (in_array($shipper['grp_access'], $_GROUPS)) {
-                if (array_key_exists($shipper['code'], self::getShipperNames())) {
+                if (array_key_exists($shipper['code'], self::getCarrierNames())) {
                     $cls = 'Shop\\Shippers\\' . $shipper['code'];
                     if (class_exists($cls)) {
                         $retval[$shipper['id']] = new $cls($shipper);
@@ -691,7 +691,7 @@ class Shipper
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
         ) );
         $T->set_block('form', 'shipperCodes', 'sCodes');
-        foreach (self::getShipperNames() as $code=>$name) {
+        foreach (self::getCarrierNames() as $code=>$name) {
             $T->set_var(array(
                 'code'  => $code,
                 'code_name'  => $name,
@@ -754,6 +754,21 @@ class Shipper
     public function getName()
     {
         return $this->name;
+    }
+
+
+    /**
+     * Get the carrier name for a shipper.
+     * This comes from the class under the Shippers namespace.
+     * Safety function in case this function is not defined properly.
+     *
+     * @return  string  Carrier Name.
+     */
+    public static function getCarrierName()
+    {
+        $parts = explode('\\', get_called_class());
+        $cls = $parts[count($parts)-1];
+        return "Unknown ($cls)";
     }
 
 
@@ -915,15 +930,20 @@ class Shipper
      *
      * @return  array   Array of (ClassName => Shipper Name)
      */
-    public static function getShipperNames()
+    public static function getCarrierNames()
     {
-        $shippers = array(
-            'dhl'   => 'DHL Worldwide',
-            'fedex' => 'FedEx',
-            'usps'  => 'US Postal Service',
-            'ups'   => 'United Parcel Service',
-        );
-        return $shippers;
+        $carriers = array();
+        $files = glob(__DIR__ . '/Shippers/*.class.php');
+        if (is_array($files)) {
+            foreach ($files as $fullpath) {
+                $parts = pathinfo($fullpath);
+                list($class,$x1) = explode('.', $parts['filename']);
+                $classfile = __NAMESPACE__ . '\\Shippers\\' . $class;
+                $carriers[$class] = $classfile::getCarrierName();
+            }
+            asort($carriers);
+        }
+        return $carriers;
     }
 
 

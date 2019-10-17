@@ -16,6 +16,17 @@ namespace Shop\Shippers;
 class dhl extends \Shop\Shipper
 {
     /**
+     * Get the shipper's name for display.
+     *
+     * @return  string  Shipper name
+     */
+    public static function getCarrierName()
+    {
+        return 'DHL Worldwide';
+    }
+
+
+    /**
      * Get the package tracking URL for a given tracking number.
      *
      * @return  string  Package tracing URL

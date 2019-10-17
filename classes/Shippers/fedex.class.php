@@ -16,6 +16,17 @@ namespace Shop\Shippers;
 class fedex extends \Shop\Shipper
 {
     /**
+     * Get the shipper's name for display.
+     *
+     * @return  string  Shipper name
+     */
+    public static function getCarrierName()
+    {
+        return 'FedEx';
+    }
+
+
+    /**
      * Get the package tracking URL for a given tracking number.
      *
      * @return  string  Package tracing URL
