@@ -141,6 +141,7 @@ class Address
         case 'GB':
         case 'CO':
         case 'IE':
+        case '':        // default if no country code given
             $retval .= $this->city . $sep . $this->zip;
             break;
         default:
