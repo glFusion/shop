@@ -6,7 +6,7 @@
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.0.0
- * @since       v0.7.0
+ * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -149,7 +149,8 @@ class MigratePP
 
 
     /**
-     * Migrate catalog categories from Paypal to Shop.
+     * Migrate Coupons from Paypal to Shop.
+     * Adds the `status` field for Shop 1.0.0, default to `valid`.
      *
      * @return  boolean     True on success, False on failure
      */
