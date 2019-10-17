@@ -918,8 +918,9 @@ class Shipper
     public static function getShipperNames()
     {
         $shippers = array(
-            'usps'  => 'US Postal Service',
+            'dhl'   => 'DHL Worldwide',
             'fedex' => 'FedEx',
+            'usps'  => 'US Postal Service',
             'ups'   => 'United Parcel Service',
         );
         return $shippers;
@@ -967,12 +968,6 @@ class Shipper
      */
     public function getTrackingUrl($tracking_num)
     {
-        /*$code = 'usps';
-        $cls = 'Shop\\Shippers\\' . $code;
-        if (class_exists($cls)) {
-            $C = new $cls;
-            return $C->getTrackingUrl($tracking_num);
-        }*/
         return '';
     }
 
