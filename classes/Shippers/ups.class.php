@@ -22,7 +22,6 @@ class ups extends \Shop\Shipper
      */
     public function getTrackingUrl($track_num)
     {
-        $locale = urlencode($_CONF['locale']);
         return "https://www.ups.com/track?tracknum={$track_num}";
     }
 }
