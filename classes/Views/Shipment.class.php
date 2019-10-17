@@ -82,12 +82,7 @@ class Shipment extends Order
                 ) );
             } else {
                 $shipped = \Shop\ShipmentItem::getItemsShipped($Item->id);
-                if ($this->shipment_id > 0) {
-                    $toship = $Item->quantity;
-                    $shipped -= $toship;
-                } else {
-                    $toship = 0;
-                }
+                $toship = $Item->quantity - $shipped;
                 $T->set_var(array(
                     'can_ship'  => true,
                     'shipped'   => $shipped,
