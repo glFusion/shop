@@ -130,7 +130,7 @@ class Shipper
         global $LANG_SHOP;
 
         $this->id = SHOP_getVar($A, 'id', 'integer');
-        $this->code = SHOP_getVar($A, 'code');
+        $this->module_code = SHOP_getVar($A, 'module_code');
         $this->name = SHOP_getVar($A, 'name');
         $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
         $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
@@ -222,16 +222,20 @@ class Shipper
             Cache::set($cache_key, $shippers, self::$base_tag);
         }
         $retval = array();
+        $modules = self::getCarrierNames();
         foreach ($shippers as $shipper) {
             if (in_array($shipper['grp_access'], $_GROUPS)) {
-                if (array_key_exists($shipper['code'], self::getCarrierNames())) {
-                    $cls = 'Shop\\Shippers\\' . $shipper['code'];
+                if (array_key_exists($shipper['module_code'], $modules)) {
+                    $cls = 'Shop\\Shippers\\' . $shipper['module_code'];
                     if (class_exists($cls)) {
+                        // Got a known shipping module
                         $retval[$shipper['id']] = new $cls($shipper);
                     } else {
+                        // Module code defined but module not available
                         $retval[$shipper['id']] = new self($shipper);
                     }
                 } else {
+                    // Custom or unknown shipper
                     $retval[$shipper['id']] = new self($shipper);
                 }
             }
@@ -533,7 +537,7 @@ class Shipper
             break;
 
         case 'name':
-        case 'code':
+        case 'module_code':
             // String values
             $this->properties[$var] = trim($value);
             break;
@@ -616,7 +620,7 @@ class Shipper
             return $a['units'] <=> $b['units'];
         });
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
-            code = '" . DB_escapeString($this->code) . "',
+            module_code= '" . DB_escapeString($this->module_code) . "',
             enabled = '{$this->enabled}',
             min_units = '{$this->min_units}',
             max_units = '{$this->max_units}',
@@ -691,11 +695,11 @@ class Shipper
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
         ) );
         $T->set_block('form', 'shipperCodes', 'sCodes');
-        foreach (self::getCarrierNames() as $code=>$name) {
+        foreach (self::getCarrierNames() as $module_code=>$name) {
             $T->set_var(array(
-                'code'  => $code,
-                'code_name'  => $name,
-                'selected' => $code == $this->code ? 'selected="selected"' : '',
+                'module_code'  => $module_code,
+                'module_name'  => $name,
+                'selected' => $module_code == $this->module_code ? 'selected="selected"' : '',
             ) );
             $T->parse('sCodes', 'shipperCodes', true);
         }

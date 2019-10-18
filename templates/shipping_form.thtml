@@ -5,13 +5,13 @@
 
   <div class="uk-form-row">
     <label class="uk-form-label">{$LANG_SHOP['carrier']}:
-      <span id="code" class="tooltip_cfg tooltipstered"></span>
+      <span id="module_code" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <select name="code">
+      <select name="module_code">
       <option value="">--{$LANG_SHOP['other']}--</option>
 <!-- BEGIN shipperCodes -->
-      <option value="{code}" {selected}>{code_name} ({code})</option>
+      <option value="{module_code}" {selected}>{module_name} ({module_code})</option>
 <!-- END shipperCodes -->
       </select>
     </div>

@@ -324,6 +324,7 @@ $_SQL = array(
 
 'shop.shipping' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `module_code` varchar(10) NOT NULL DEFAULT '',
   `name` varchar(255) NOT NULL DEFAULT '',
   `min_units` int(11) unsigned NOT NULL DEFAULT '0',
   `max_units` int(11) unsigned NOT NULL DEFAULT '0',
@@ -506,9 +507,9 @@ $_SHOP_SAMPLEDATA = array(
 	('ZAR','R','South African Rand',710,'before',' ','hidden',2,0.00,',','.','Rand','Cent',1.00000,'2014-01-03 20:49:55'),
 	('ZMK','ZK','Zambian Kwacha',894,'hidden',' ','after',0,0.00,',','.','Kwacha','Ngwee',1.00000,'2014-01-03 20:54:44');",
         "INSERT INTO `{$_TABLES['shop.shipping']}`
-            (id, name, min_units, max_units, rates)
+            (id, module_code, name, min_units, max_units, rates)
         VALUES
-            (0, 'USPS Priority Flat Rate', 0.0001, 50.0000, '[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
+            (0, 'usps', 'USPS Priority Flat Rate', 0.0001, 50.0000, '[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -568,6 +569,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY products_name (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `modjle_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
