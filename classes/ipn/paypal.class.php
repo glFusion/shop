@@ -209,8 +209,6 @@ class paypal extends \Shop\IPN
                 "($logId) Verification failed"
             );
             return false;
-        } else {
-            $logId = $this->Log(true);
         }
 
         // Set the custom data field to the exploded value.  This has to
@@ -304,6 +302,7 @@ class paypal extends \Shop\IPN
             break;
         }
 
+        $this->Log(true);
         return true;
     }   // function Process
 
