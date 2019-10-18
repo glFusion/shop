@@ -137,16 +137,25 @@ class Order
     /**
      * Get an object instance for an order.
      *
-     * @param   string  $id     Order ID
+     * @param   string|array    $key    Order ID or record
      * @return  object          Order object
      */
-    public static function getInstance($id)
+    public static function getInstance($key)
     {
         static $orders = array();
-        if (!array_key_exists($id, $orders)) {
-            $orders[$id] = new self($id);
+        if (is_array($key)) {
+            $id = SHOP_getVar($key, 'order_id');
+        } else {
+            $id = $key;
         }
-        return $orders[$id];
+        if (!empty($id)) {
+            if (!array_key_exists($id, $orders)) {
+                $orders[$id] = new self($id);
+            }
+            return $orders[$id];
+        } else {
+            return new self;
+        }
     }
 
 
