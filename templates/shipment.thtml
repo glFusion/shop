@@ -98,9 +98,11 @@
   name="addshipment"
 {!endif}
     >{$LANG_ADMIN['submit']}</button>
+{!if shipment_id}
 <button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
     name="del_shipment" value="{shipment_id}"
     onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_ADMIN['delete']}</button>
+{!endif}
 <button style="float:none;" type="submit" class="uk-button" name="cancel"
     onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
 </form>
