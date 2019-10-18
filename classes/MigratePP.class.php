@@ -245,19 +245,30 @@ class MigratePP
     {
         global $_TABLES;
 
-        // This version renames the "purchases" table to "orderitems" and adds
-        // a qty_discount field.
+        // This version renames the "purchases" table to "orderitems".
+        // Adds: qty_discounts, base_price
+        // Removes: status
         $shop = $_TABLES['shop.orderitems'];
         $pp = $_TABLES['paypal.purchases'];
         return self::_dbExecute(array(
             "TRUNCATE $shop",
-            "INSERT INTO $shop (SELECT *, 0 as qty_disccount FROM $pp)",
+            "INSERT INTO $shop
+                (id, order_id, product_id, description, quantity, txn_id,
+                txn_type, expiration, base_price, price, qty_discount,
+                taxable, token, options, options_text,
+                extras, shipping, handling, tax)
+            SELECT
+                id, order_id, product_id, description, quantity, txn_id,
+                txn_type, expiration, price, price, 0,
+                taxable, token, options, options_text,
+                extras, shipping, handling, tax
+            FROM $pp)",
         ) );
     }
 
 
     /**
-     * Migrate Order Items.
+     * Migrate Sale Pricing table.
      * Changes the date format from integer timestamp to datetime.
      *
      * @return  boolean     True on success, False on failure
@@ -385,9 +396,14 @@ class MigratePP
 
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.shipping']}",
-            "INSERT INTO {$_TABLES['shop.shipping']}
-                SELECT *, 0 as valid_from, unix_timestamp('2037-12-31') as valid_to,
-                0 as use_fixed, 2 as grp_access FROM {$_TABLES['paypal.shipping']}",
+            "INSERT INTO {$_TABLES['shop.shipping']} SELECT
+                *,
+                '' as module_code,
+                0 as valid_from,
+                unix_timestamp('2037-12-31') as valid_to,
+                0 as use_fixed,
+                2 as grp_access
+            FROM {$_TABLES['paypal.shipping']}",
         ) );
     }
 
