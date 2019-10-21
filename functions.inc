@@ -2350,11 +2350,6 @@ function SHOP_setUrl($url='')
  */
 function SHOP_getUrl($def_url = '', $keep=true)
 {
-    // Only do this if the link is from somewhere in the site.
-    /*if (stripos($_SERVER['HTTP_REFERER'], $_CONF['site_url']) === false) {
-        return false;
-    }*/
-
     $url = SESS_getVar('shop_ret_url');
     if (!$url) {
         if ($def_url !== '') {

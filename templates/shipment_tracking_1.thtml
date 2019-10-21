@@ -5,7 +5,7 @@
         <th style="width:15%"></th>
         <th style="width:45%">{$LANG_SHOP['carrier']}</th>
         <th style="width:30%">{$LANG_SHOP['tracking']}</th>
-        <th style="width:10%">{$LANG_SHOP['delete']}</th>
+        <th style="width:10%">{$LANG_SHOP['action']}</th>
       </tr>
       </thead>
       <tbody>
@@ -39,7 +39,9 @@
           </td>
           <td><input type="text" name="shipper_name" id="carrierName0" value="" /></td>
           <td><input type="text" name="tracking_num" id="trackingNum0" value="" /></td>
-          <td class="aligncenter"><button class="uk-button uk-button-success" onclick="addTrackingNumber();return false;">
+          <td class="aligncenter">
+            <button class="uk-button uk-button-success" data-uk-tooltip onclick="addTrackingNumber();return false;"
+            title="{$LANG_SHOP['add_tracking']}">
             <i class="uk-icon uk-icon-plus-circle"></i></button></td>
         </tr>
       </tfoot>
