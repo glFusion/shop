@@ -49,13 +49,13 @@ class ShipmentPL
      * @param   string  $title  Language key for form title
      * @return  string      HTML for display
      */
-    public function Render($title='packinglist')
+    public function Render($title='packinglist', $type='html')
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file(array(
-            'order'     => 'packinglist.thtml',
+            'order'     => $type == 'pdf' ? 'packinglist.pdf.thtml' : 'packinglist.thtml',
             'tracking'  => 'shipment_tracking_2.thtml',
         ) );
         $T->set_var(array(
@@ -105,6 +105,7 @@ class ShipmentPL
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'status'        => $this->Order->status,
             'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
+            'tracking_info' => count($this->Shipment->Packages),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
 
@@ -112,6 +113,49 @@ class ShipmentPL
         $form = $T->finish($T->get_var('output'));
         return $form;
     }
+
+
+    /**
+     * Create PDF output of one or more packing lists.
+     *
+     * @param   array   $ids    Array of order IDs
+     * @param   string  $type   View type, 'pl' or 'order'
+     * @param   boolean $isAdmin    True if run by an administrator
+     * @return  boolean     True on success, False on error
+     */
+    public static function printPDF($ids, $type='pdfpl')
+    {
+        USES_lglib_class_html2pdf();
+        try {
+            $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
+            //$html2pdf->setModeDebug();
+            $html2pdf->setDefaultFont('Arial');
+        } catch(HTML2PDF_exception $e) {
+            COM_errorLog($e);
+            return false;
+        }
+
+        if (!is_array($ids)) {
+            $ids = array($ids);
+        }
+        foreach ($ids as $shp_id) {
+            $PL = new self($shp_id);
+            if ($PL->Shipment->isNew) {
+                continue;
+            }
+            $content = $PL->Render('packinglist', 'pdf');
+            //echo $content;die;
+            try {
+                $html2pdf->writeHTML($content);
+            } catch(HTML2PDF_exception $e) {
+                COM_errorLog($e);
+                return false;
+            }
+        }
+        $html2pdf->Output($type . 'list.pdf', 'I');
+        return true;
+    }
+
 
 
     /**

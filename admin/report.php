@@ -42,7 +42,7 @@ $expected = array(
     // Actions to perform
     'updstatus',
     // Views to display
-    'pdfpl', 'pdforder',
+    'pdfpl', 'pdforder', 'shipment_pl',
     'configure', 'run', 'report', 'list',
 );
 foreach($expected as $provided) {
@@ -107,6 +107,15 @@ case 'run':
         $R->setParams($_REQUEST);
         $content .= $R->Render();
     }
+    break;
+
+case 'shipment_pl':
+    if ($actionval == 'x') {
+        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
+    } else {
+        $shipments = $actionval;
+    }
+    Shop\Views\ShipmentPL::printPDF($shipments, $view);
     break;
 
 case 'pdfpl':
