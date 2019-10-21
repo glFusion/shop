@@ -38,8 +38,7 @@
         <tr>
           <th class="aligncenter">{$LANG_SHOP['description']}</th>
           <th style="width:10%" class="aligncenter">{$LANG_SHOP['ordered']}</th>
-          <th style="width:10%" class="aligncenter">{$LANG_SHOP['prev_shipped']}</th>
-          <th style="width:10%" class="aligncenter">{$LANG_SHOP['ship_this_shipment']}</th>
+          <th style="width:10%" class="aligncenter">{$LANG_SHOP['shipped']}</th>
         </tr>
         <!-- BEGIN ItemRow -->
         <tr>
@@ -55,13 +54,11 @@
           <td class="aligncenter">{ordered}</td>
           <td class="aligncenter">
 {!if can_ship}
-            {shipped}
-{!endif}
-          </td>
-          <td class="aligncenter">
-{!if can_ship}
+{!if newship}
             <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
-{!if toship}
+            <input type="hidden" name="maxship[{oi_id}]" value="{toship}" />
+{!else}
+            {toship}
 {!endif}
 {!else}
             {toship_text}
@@ -90,6 +87,8 @@
 {!endif}
   </div>
 </div>
+{!if shipment_id}
+{!else}
 <button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
 {!if shipment_id}
   name="updateshipment"
@@ -98,6 +97,7 @@
   name="addshipment"
 {!endif}
     >{$LANG_ADMIN['submit']}</button>
+{!endif}
 {!if shipment_id}
 <button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
     name="del_shipment" value="{shipment_id}"
@@ -114,7 +114,7 @@ function delIfNothingShipped()
     for (i = 0; i < flds.length; i++) {
         qty_shipped += flds[i].value * 1;
     }
-    if (qty_shipped == 0) {     // nothing being shipped, delete the shipment?
+    if ({shipment_id} == 0 && qty_shipped == 0) {     // nothing being shipped, delete the shipment?
         alert("{$LANG_SHOP['msg_nothing_shipped']}");
         return false;
     }        

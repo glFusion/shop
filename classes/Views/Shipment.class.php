@@ -60,6 +60,14 @@ class Shipment extends Order
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        $oi_shipped = array();
+        if ($this->shipment_id > 0) {
+            $Shp = new \Shop\Shipment($this->shipment_id);
+            foreach ($Shp->Items as $key=>$data) {
+                $oi_shipped[$data->orderitem_id] = $key;
+            }
+        }
+
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file(array(
             'order'     => $this->tplname . '.thtml',
@@ -82,11 +90,25 @@ class Shipment extends Order
                 ) );
             } else {
                 $shipped = \Shop\ShipmentItem::getItemsShipped($Item->id);
-                $toship = $Item->quantity - $shipped;
+                if ($this->shipment_id > 0) {
+                    // existing, adjust prev shipped down and use this ship qty
+                    if (isset($oi_shipped[$Item->id])) {
+                        // some of the item was shipped on this shipment
+                        $toship = $Shp->Items[$oi_shipped[$Item->id]]->quantity;
+                    } else {
+                        // Item was not shipped on this order.
+                        $toship = 0;
+                    }
+                    $newshipment = false;
+                } else {
+                    $toship = $Item->quantity - $shipped;
+                    $newshipment = true;
+                }
                 $T->set_var(array(
                     'can_ship'  => true,
                     'shipped'   => $shipped,
                     'toship'    => $toship,
+                    'newship'   => $newshipment,
                 ) );
             }
             $T->set_var(array(
@@ -107,7 +129,6 @@ class Shipment extends Order
 
         if ($this->shipment_id > 0) {
             $T->set_block('order', 'trackingPackages', 'TP');
-            $Shp = new \Shop\Shipment($this->shipment_id);
             foreach ($Shp->Packages as $Pkg) {
                 $T->set_var(array(
                     'shipper_code'  => $Pkg->getShipper()->code,
