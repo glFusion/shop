@@ -422,6 +422,8 @@ case 'updateshipment':
         $S = new Shop\Shipment($shipment_id);
         $S->Save($_POST);
     }
+    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?shipments');
+    COM_refresh($url);
     break;
 
 case 'del_shipment':
