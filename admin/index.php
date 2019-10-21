@@ -57,7 +57,7 @@ $expected = array(
     'opt_grp', 'pog_edit',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'shiporder', 'editshipment', 'shipments', 'shipment_pl', 'order_pl',
+    'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -434,9 +434,9 @@ case 'del_shipment':
     break;
 
 case 'addshipment':
-    $S = new Shop\Shipment();
+    $S = Shop\Shipment::create($_POST['order_id']);
     if ($S->Save($_POST)) {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editshipment=' . $S->shipment_id);
+        COM_refresh(SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?order=' . $S->order_id));
     } else {
         COM_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
@@ -472,6 +472,7 @@ case 'coupons':
 case 'order':
     $order = \Shop\Order::getInstance($actionval);
     $order->setAdmin(true);
+    $content .= Shop\Menu::viewOrder($view, $order);
     $content .= $order->View('adminview');
     break;
 
@@ -675,6 +676,9 @@ case 'editshipper':
 case 'editshipment':
     $shipment_id = (int)$actionval;
     if ($shipment_id > 0) {
+        if (isset($_REQUEST['ret_url'])) {
+            SHOP_setUrl($_REQUEST['ret_url']);
+        }
         $S = new Shop\Shipment($shipment_id);
         $V = new Shop\Views\Shipment($S->order_id);
         $V->setShipmentID($shipment_id);
@@ -685,12 +689,20 @@ case 'editshipment':
 case 'shipments':
     // View admin list of shipments
     SHOP_setUrl();
-    $content .= Shop\Menu::adminOrders($view);
-    $content .= Shop\Shipment::adminList();
+    if ($actionval != 'x') {
+        $Order = Shop\Order::getInstance($actionval);
+        $content .= Shop\Menu::viewOrder($view, $Order);
+    } else {
+        $content .= Shop\Menu::adminOrders($view);
+    }
+    $content .= Shop\Shipment::adminList($actionval);
     $view = 'orders';       // to set the active top-level menu
     break;
 
 case 'shiporder':
+    if (isset($_GET['ret_url'])) {
+        SHOP_setUrl($_GET['ret_url']);
+    }
     $V = new Shop\Views\Shipment($_GET['order_id']);
     $content .= $V->Render($action);
     /*
@@ -713,15 +725,12 @@ case 'order_pl':
     break;
 
 case 'shipment_pl':
-    // Get the packing list for a shipment.
-    // This is expected to be shown in a _blank browser window/tab.
-    $PL = new Shop\Views\ShipmentPL($actionval);
-    if ($PL->canView()) {
-        echo $PL->Render();
-        exit;
+    if ($actionval == 'x') {
+        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
     } else {
-        COM_404();
+        $shipments = $actionval;
     }
+    Shop\Views\ShipmentPL::printPDF($shipments, $view);
     break;
 
 default:

@@ -15,7 +15,7 @@
     <td class="shrink">
 {!if show_ship_info}
       {ship_date}
-      <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shipment_id}"
+      <a href="{site_admin_url}/plugins/shop/index.php?editshipment={shipment_id}&ret_url={ret_url}"
         class="uk-icon uk-icon-edit"></a>
 {!endif}
     </td>

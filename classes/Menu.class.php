@@ -266,6 +266,40 @@ class Menu
 
 
     /**
+     * Show the title and submenu when viewing order info.
+     *
+     * @param   string  $view   View option selected
+     * @param   string  $order_id   Order ID being viewed
+     * @return  string      HTML for title and menu options
+     */
+    public static function viewOrder($view, $Order)
+    {
+        global $LANG_SHOP;
+
+        $retval = COM_startBlock(
+            $LANG_SHOP['order'] . ' ' . $Order->order_id, '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->order_id,
+                'text' => $LANG_SHOP['order'],
+                'active' => $view == 'order' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?shipments=' . $Order->order_id,
+                'text' => $LANG_SHOP['shipments'],
+                'active' => $view == 'shipments' ? true : false,
+            ),
+        );
+        $retval .= self::_makeSubMenu($menu_arr);
+        $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $retval;
+    }
+
+
+    /**
      * Create a submenu using a standard template.
      *
      * @param   array   $menu_arr   Array of menu items

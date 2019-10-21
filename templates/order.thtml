@@ -13,8 +13,8 @@
       </a>
   {!endif}
     </div>
-{!endif}
   <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
+{!endif}
 {!if not_final}
     <div class="shopOrderButtons">
       {gateway_vars}
@@ -25,7 +25,9 @@
 {!if is_admin}
     {linkPackingList}
 {!if itemsToShip}
-    <br /><a class="uk-button uk-button-primary" href="{site_admin_url}/plugins/shop/index.php?shiporder=x&order_id={order_number}">{$LANG_SHOP['ship']}</a>
+    <br />
+    <a class="uk-button uk-button-primary"
+        href="{site_admin_url}/plugins/shop/index.php?shiporder=x&order_id={order_number}&ret_url={ret_url}">{$LANG_SHOP['ship']}</a>
 {!endif}
 {!endif}
   </div>
