@@ -1,4 +1,5 @@
 {# begin {templatelocation} #}
+<h1 style="text-align:center;">{$LANG_SHOP['ipnlog']}</h1>
 <table border="0">
   <tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{id}</td></tr>
   <tr><td><b>{$LANG_SHOP['ip_addr']}:</b></td><td>{ip_addr}<br/ ></td></tr>
