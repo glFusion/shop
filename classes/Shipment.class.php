@@ -77,6 +77,7 @@ class Shipment
         $Obj = new self();
         $Obj->order_id = $order_id;
         $Order = $Obj->getOrder();
+        return $Obj;
     }
 
 
@@ -262,6 +263,8 @@ class Shipment
             return false;
         }
 
+        $this->getOrder();
+
         if ($this->shipment_id > 0) {
             // New shipment
             $sql1 = "UPDATE {$_TABLES['shop.shipments']} ";
@@ -270,7 +273,7 @@ class Shipment
             $sql1 = "INSERT INTO {$_TABLES['shop.shipments']} ";
             $sql3 = '';
         }
-        $shipping_addr = $this->getOrder()->getAddress('shipping');
+        $shipping_addr = $this->Order->getAddress('shipping');
         $sql2 = "SET 
             order_id = '" . DB_escapeString($this->order_id) . "',
             ts = UNIX_TIMESTAMP(),
@@ -280,22 +283,19 @@ class Shipment
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
-            if ($this->shipment_id == 0) {
-                $this->shipment_id = DB_insertID();
-                $ord_status = 'shipped';    // assume all shipped
-                foreach ($form['ship_qty'] as $oi_id=>$qty) {
-                    // Double-check that only physical products are being shipped
-                    $qty = (float)$qty;
-                    if ($qty > 0) {
-                        $SI = ShipmentItem::Create($this->shipment_id, $oi_id, $qty);
-                        $SI->Save();
-                    } else {
-                        // This is an empty quantity, so there are some items
-                        // still to ship
-                        $ord_status = 'processing';
-                    }
+            $this->shipment_id = DB_insertID();
+            foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                $qty = min($form['maxship'][$oi_id], $qty);
+                $qty = (float)$qty;
+                if ($qty > 0) {
+                    $SI = ShipmentItem::Create($this->shipment_id, $oi_id, $qty);
+                    $SI->Save();
                 }
-                $this->getOrder()->updateStatus($ord_status);
+            }
+            if ($this->Order->isShippedComplete()) {
+                $this->Order->updateStatus('shipped');
+            } else {
+                $this->Order->updateStatus('processing');
             }
             if (isset($form['tracking']) && is_array($form['tracking'])) {
                 foreach ($form['tracking'] as $id=>$data) {
@@ -409,11 +409,12 @@ class Shipment
 
 
     /**
-     * Shipment listing
+     * Shipment listing.
      *
+     * @param   string  $order_id   Limit list to only one order ID
      * @return  string      HTML for the shipment listing
      */
-    public static function adminList()
+    public static function adminList($order_id='')
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
             $LANG32;
@@ -470,20 +471,50 @@ class Shipment
             'direction' => 'DESC',
         );
 
+        if ($order_id != 'x') {
+            $filter = "WHERE shp.order_id = '" . DB_escapeString($order_id) . "'";
+            $title = $LANG_SHOP['order'] . ' ' . $order_id;
+            $Order = Order::getInstance($order_id);
+            if (!$Order->isShippedComplete()) {
+                $ship_btn = '<a class="uk-button uk-button-success" href="' .
+                    SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->order_id .
+                    '">' . $LANG_SHOP['shiporder'] . '</a>';
+            }
+        } else {
+            $filter = '';
+            $title = '';
+            $ship_btn = '';
+        }
+
         $display = COM_startBlock(
-            '', '',
+            $ship_btn, '',
             COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        // Print selected packing lists
+        $prt_pl = '<button type="submit" name="shipment_pl" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
+            'formtarget="_blank" ' .
+            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
+            '><i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
+            '</button>';
+        $options = array(
+            'chkselect' => 'true',
+            'chkname'   => 'shipments',
+            'chkfield'  => 'shipment_id',
+            'chkactions' => $prt_pl,
         );
 
         $query_arr = array(
             'table' => 'shop.shopments',
             'sql' => $sql,
             'query_fields' => array(),
-            'default_filter' => '',
+            'default_filter' => $filter,
         );
 
         $text_arr = array(
             'has_extras' => false,
+            'has_limit' => true,
             'form_url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
         );
 
@@ -491,7 +522,7 @@ class Shipment
             $_SHOP_CONF['pi_name'] . '_shipments',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', $extra, '', ''
+            '', $extra, $options, ''
         );
 
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
