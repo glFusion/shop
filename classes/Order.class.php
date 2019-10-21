@@ -54,7 +54,7 @@ class Order
      * @var array */
     protected $_addr_fields = array(
         'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country', 
+        'city', 'state', 'zip', 'country',
     );
 
     /** OrderItem objects.
@@ -772,7 +772,9 @@ class Order
             'shipto_addr'   => $this->Shipto->toHTML(),
             'shipment_block' => $this->getShipmentBlock(),
             'itemsToShip'   => $this->itemsToShip(),
+            'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
         ) );
+
         if ($this->isAdmin) {
             $T->set_var(array(
                 'is_admin'      => true,
@@ -2291,7 +2293,7 @@ class Order
                     'shipper_info'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
                     'tracking_url'  => $url,
-                    'ret_url'       => COM_getCurrentUrl(),
+                    'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
                 ) );
                 $show_ship_info = false;
                 $T->parse('packages', 'Packages', true);
@@ -2331,6 +2333,36 @@ class Order
             }
         }
         return ($total_items - $shipped_items);
+    }
+
+
+    /**
+     * Check if this order has been completely shipped.
+     *
+     * @return  boolean     True if no further shipment is needed
+     */
+    public function isShippedComplete()
+    {
+        $shipped = array();
+        $Shipments = $this->getShipments();
+        foreach ($Shipments as $Shipment) {
+            foreach ($Shipment->getItems() as $SI) {
+                if (!isset($shipped[$SI->orderitem_id])) {
+                    $shipped[$SI->orderitem_id] = $SI->quantity;
+                } else {
+                    $shipped[$SI->orderitem_id] += $SI->quantity;
+                }
+            }
+        }
+        foreach ($this->getItems() as $OI) {
+            if (!$OI->getProduct()->isPhysical()) {
+                continue;
+            }
+            if (!isset($shipped[$OI->id]) || $shipped[$OI->id] < $OI->quantity) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
