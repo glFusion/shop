@@ -130,6 +130,7 @@ class Order
             $this->shipping = 0;
             $this->handling = 0;
             $this->by_gc = 0;
+            $this->shipper_id = 0;
         }
     }
 
