@@ -269,7 +269,7 @@ class Menu
      * Show the title and submenu when viewing order info.
      *
      * @param   string  $view   View option selected
-     * @param   string  $order_id   Order ID being viewed
+     * @param   string  $Order  Order object currently being viewed
      * @return  string      HTML for title and menu options
      */
     public static function viewOrder($view, $Order)

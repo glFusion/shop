@@ -47,7 +47,8 @@ class ShipmentPL
      * Create the display.
      *
      * @param   string  $title  Language key for form title
-     * @return  string      HTML for display
+     * @param   string  $type   Type of output, HTML or PDF
+     * @return  string      HTML or PDF content
      */
     public function Render($title='packinglist', $type='html')
     {
@@ -120,7 +121,6 @@ class ShipmentPL
      *
      * @param   array   $ids    Array of order IDs
      * @param   string  $type   View type, 'pl' or 'order'
-     * @param   boolean $isAdmin    True if run by an administrator
      * @return  boolean     True on success, False on error
      */
     public static function printPDF($ids, $type='pdfpl')

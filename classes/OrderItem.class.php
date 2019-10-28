@@ -98,7 +98,7 @@ class OrderItem
     /**
      * Get an instance of a specific order item.
      *
-     * @param   integer $oi_id  OrderItem record ID
+     * @param   integer $oi OrderItem record array or ID
      * @return  object      OrderItem object
      */
     public static function getInstance($oi)
