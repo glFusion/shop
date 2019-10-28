@@ -141,7 +141,7 @@ class pendingship extends \Shop\Report
             break;
         case 'csv':
             // Create the report manually, this only uses the query parts
-            $res = DB_query($sql . ' ' . $query_arr['default_filter']);
+            $res = DB_query($this->sql . ' ' . $query_arr['default_filter']);
             $order_date = clone $_CONF['_now'];   // Create an object to be updated later
             $qty_sum = 0;
             $T->set_block('report', 'ItemRow', 'row');
