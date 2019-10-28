@@ -69,12 +69,15 @@ class Shipper
         } else {
             // New entry, set defaults
             $this->id = 0;
+            $this->module_code = '';
             $this->enabled = 1;
             $this->name = '';
             $this->use_fixed = 1;
             $this->valid_from = self::MIN_DATETIME;
             $this->valid_to = self::MAX_DATETIME;
             $this->grp_access = 2;    // Default = All users
+            $this->min_units = self::MIN_UNITS;
+            $this->max_units = 1000000;
             $this->rates = array(
                 (object)array(
                     'dscp'  => 'Rate 1',
@@ -694,6 +697,9 @@ class Shipper
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
         ) );
+
+
+        // Construct the dropdown selection of defined carrier modules
         $T->set_block('form', 'shipperCodes', 'sCodes');
         foreach (self::getCarrierNames() as $module_code=>$name) {
             $T->set_var(array(
