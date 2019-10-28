@@ -61,7 +61,7 @@
       <br />{sku}
 {!endif}
 {!if item_options}
-      <br />{item_options}
+      {item_options}
 {!endif}
 <!-- BEGIN ItemOptions -->
       {option_dscp}
