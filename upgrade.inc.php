@@ -267,6 +267,7 @@ function SHOP_remove_old_files()
             'classes/ProductImage.class.php',
             'classes/Attribute.class.php',
             'classes/AttributeGroup.class.php',
+            'classes/UserInfo.class.php',
             'templates/attribute_form.thtml',
         ),
         // public_html/shop

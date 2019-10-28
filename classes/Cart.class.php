@@ -867,7 +867,7 @@ class Cart extends Order
             if ($this->uid > 1) {
                 // Determine the minimum value for a workflow to be "reauired"
                 $wf_required = $this->hasPhysical() ? 1 : 3;
-                $U = UserInfo::getInstance($this->uid);
+                $U = Customer::getInstance($this->uid);
                 if (
                     $this->billto_id == 0 &&
                     Workflow::getInstance(2)->enabled >= $wf_required
@@ -892,7 +892,7 @@ class Cart extends Order
             return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
-            $U = new \Shop\UserInfo();
+            $U = new \Shop\Customer();
             $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($wf_name);
             return $U->AddressForm($wf_name, $A, $step);
         case 'finalize':

@@ -517,7 +517,7 @@ class IPN
         $this->Order->buyer_email = $this->payer_email;
         $this->Order->status = 'pending';
         if ($uid > 1) {
-            $U = new UserInfo($uid);
+            $U = Customer::getInstance($uid);
         }
 
         // Get the billing and shipping addresses from the cart record,

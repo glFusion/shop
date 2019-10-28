@@ -140,13 +140,13 @@ case 'checkout':
 case 'savebillto':
 case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
-    $status = \Shop\UserInfo::isValidAddress($_POST);
+    $status = \Shop\Customer::isValidAddress($_POST);
     if ($status != '') {
         $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
-    $U = \Shop\UserInfo::getInstance();
+    $U = \Shop\Customer::getInstance();
     if ($U->uid > 1) {      // only save addresses for logged-in users
         $addr_id = $U->saveAddress($_POST, $addr_type);
         if ($addr_id[0] < 0) {

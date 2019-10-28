@@ -17,7 +17,7 @@ namespace Shop;
  * Class for user info such as addresses.
  * @package shop
  */
-class UserInfo
+class Customer
 {
     /** User ID
     * @var integer */
@@ -47,6 +47,7 @@ class UserInfo
      * @var array */
     private static $users = array();
 
+
     /**
      * Constructor.
      * Reads in the specified user, if $id is set.  If $id is zero,
@@ -75,6 +76,8 @@ class UserInfo
      */
     public function __set($key, $value)
     {
+        global $_CONF;
+
         switch ($key) {
         case 'cart':
             // Check if the cart is being passed as an array or is already
@@ -83,6 +86,16 @@ class UserInfo
                 $value = @unserialize($value);
                 if (!$value) $value = array();
             }
+            $this->properties[$key] = $value;
+            break;
+        case 'language':
+            if (empty($value)) {
+                // Use default if no user language specified.
+                $value = $_CONF['language'];
+            }
+        case 'username':
+        case 'fullname':
+        case 'email':
             $this->properties[$key] = $value;
             break;
         }
@@ -121,13 +134,21 @@ class UserInfo
         }
 
         $res = DB_query(
-            "SELECT * FROM {$_TABLES['shop.userinfo']} WHERE uid = $uid"
+            "SELECT u.username, u.fullname, u.email, u.language, ui.*
+                FROM {$_TABLES['users']} u
+                LEFT JOIN {$_TABLES['shop.userinfo']} ui
+                ON u.uid = ui.uid
+                WHERE u.uid = $uid"
         );
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $cart = @unserialize($A['cart']);
             if (!$cart) $cart = array();
             $this->cart = $cart;
+            $this->username = $A['username'];
+            $this->fullname = $A['fullname'];
+            $this->email = $A['email'];
+            $this->language = $A['language'];
             $this->isNew = false;
             $res = DB_query(
                 "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
@@ -258,7 +279,7 @@ class UserInfo
                 WHERE id <> $id AND {$type}def = 1"
             );
         }
-        Cache::clear('shopuser_' . $this->uid);
+        Cache::clear('shop.user_' . $this->uid);
         return array($id, '');
     }
 
@@ -280,7 +301,7 @@ class UserInfo
             cart = '$cart'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        Cache::clear('shopuser_' . $this->uid);
+        Cache::clear('shop.user_' . $this->uid);
         return DB_error() ? false : true;
     }
 
@@ -299,7 +320,7 @@ class UserInfo
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
-        Cache::clear('shopuser_' . $uid);
+        Cache::clear('shop.user_' . $uid);
     }
 
 
@@ -316,7 +337,8 @@ class UserInfo
         if ($id < 1) return false;
         $id = (int)$id;
         DB_delete($_TABLES['shop.address'], 'id', $id);
-        Cache::clear('shopuser_' . $this->uid);
+        Cache::clear('shop.user_' . $this->uid);
+        Cache::clear('shop.address_' . $this->uid);
         return true;
     }
 
@@ -493,10 +515,10 @@ class UserInfo
 
 
     /**
-     * Get the instance of a UserInfo object for the specified user.
+     * Get the instance of a Customer object for the specified user.
      *
      * @param   integer $uid    User ID
-     * @return  object          UserInfo object for the user
+     * @return  object          Customer object for the user
      */
     public static function getInstance($uid = 0)
     {
@@ -506,7 +528,7 @@ class UserInfo
         $uid = (int)$uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
-            $key = 'shopuser_' . $uid;  // Both the key and cache tag
+            $key = 'shop.user_' . $uid;  // Both the key and cache tag
             self::$users[$uid] = Cache::get($key);
             if (!self::$users[$uid]) {
                 self::$users[$uid] = new self($uid);
@@ -514,6 +536,27 @@ class UserInfo
             }
         }
         return self::$users[$uid];
+    }
+
+
+    /**
+     * Get the base language name from the full string contained in the user record.
+     * For example, "spanish_columbia_utf-8" returns "spanish" if $fullname is
+     * false, or the full string if $fullname is true.
+     * Supplies the language name for notification template selection and
+     * for loading a $LANG_SHOP array.
+     *
+     * @param   boolean $fullname   True to return full name of language
+     * @return  string  Language name for the buyer.
+     */
+    public function getLanguage($fullname = false)
+    {
+        if (!$fullname) {
+            $lang = explode('_', $this->language);
+            return $lang[0];
+        } else {
+            return $this->language;
+        }
     }
 
 
@@ -537,6 +580,6 @@ class UserInfo
         );
     }
 
-}   // class UserInfo
+}   // class Customer
 
 ?>

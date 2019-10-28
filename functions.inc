@@ -475,7 +475,7 @@ function plugin_user_delete_shop($uid)
             SET uid = 1
             WHERE uid = '$uid'";
 
-    Shop\UserInfo::deleteUser($uid);
+    Shop\Customer::deleteUser($uid);
     Shop\Cart::deleteUser($uid);
 }
 
@@ -1799,7 +1799,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
             'block' => 'profileblock.thtml',
         ));
         $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
-        $U = Shop\UserInfo::getInstance($uid);
+        $U = Shop\Customer::getInstance($uid);
         if ($_SHOP_CONF['gc_enabled']) {
             $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
             $LT->set_var('gc_bal', Shop\Currency::getInstance()->Format($gc_bal));
@@ -2139,9 +2139,9 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
-    $U = Shop\UserInfo::getInstance($uid);
+    $U = Shop\Customer::getInstance($uid);
     foreach ($U->addresses as $addr) {
-        foreach (Shop\UserInfo::Fields() as $fld) {
+        foreach (Shop\Customer::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));
                 $retval .= '<'.$fld.'>'.$d.'</'.$fld.">\n";

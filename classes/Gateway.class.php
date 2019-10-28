@@ -844,7 +844,7 @@ class Gateway
         $ord->status = 'pending';   // so there's something in the status field
 
         if ($uid > 1) {
-            $U = self::UserInfo($uid);
+            $U = self::Customer($uid);
         }
 
         $BillTo = $cart->getAddress('billto');
@@ -1040,20 +1040,20 @@ class Gateway
 
     /**
      * Get the user information.
-     * Just a wrapper for the UserInfo class to save re-reading the
-     * database each time a UserInfo object is needed. Assumes only one
+     * Just a wrapper for the Customer class to save re-reading the
+     * database each time a Customer object is needed. Assumes only one
      * user's information is needed per page load.
      *
-     * @return  object  UserInfo object
+     * @return  object  Customer object
      */
-    protected static function UserInfo()
+    protected static function Customer()
     {
-        static $UserInfo = NULL;
+        static $Customer = NULL;
 
-        if ($UserInfo === NULL) {
-            $UserInfo = new UserInfo();
+        if ($Customer === NULL) {
+            $Customer = Customer::getInstance();
         }
-        return $UserInfo;
+        return $Customer;
     }
 
 

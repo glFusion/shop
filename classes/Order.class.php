@@ -1008,17 +1008,20 @@ class Order
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
         $notify_admin = OrderStatus::getInstance($status)->notifyAdmin();
+        if (!$notify_buyer && !$notify_admin) {
+            return;
+        }
 
+        $Cust = Customer::getInstance($this->uid);
         if ($notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
             $save_userlang = $_CONF['language'];
-            $LANG_SHOP = self::loadLanguage($this->_getLangName(true));
-            $_CONF['language'] = $this->_getLangName(true);
+            $_CONF['language'] = $Cust->getLanguage(true);
+            $LANG_SHOP = self::loadLanguage($_CONF['language']);
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
-            $U = UserInfo::getInstance($this->uid);
             $T = new \Template(array(
-                SHOP_PI_PATH . '/templates/notify/' . $this->_getLangName(),
+                SHOP_PI_PATH . '/templates/notify/' . $Cust->getLanguage(),
                 SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
                 SHOP_PI_PATH . '/templates/notify/english',
                 SHOP_PI_PATH . '/templates/notify', // catch templates using language strings
@@ -1054,7 +1057,7 @@ class Order
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
             // This uses the site default language.
-            $U = UserInfo::getInstance($this->uid);
+            $Cust = Customer::getInstance($this->uid);
             $T = new \Template(array(
                 SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
                 SHOP_PI_PATH . '/templates/notify/english',
@@ -1954,37 +1957,16 @@ class Order
 
     /**
      * Get the base language name from the full string contained in the user record.
-     * For example, "spanish_columbia_utf-8" returns "spanish" if $fullname is
-     * false, or the full string if $fullname is true.
-     * Supplies the language name for notification template selection and
-     * for loading a $LANG_SHOP array.
+     * Wrapper for Customer::getLanguage().
      *
+     * @see     Customer::getLanguage()
      * @param   boolean $fullname   True to return full name of language
      * @return  string  Language name for the buyer.
      */
     private function _getLangName($fullname = false)
     {
-        global $_TABLES, $_CONF;
-
-        $lang_str = NULL;
-        if ($lang_str !== NULL) {
-            return $lang_str;       // already found the language
-        }
-
-        if ($this->uid == 1) {
-            $lang_str = $_CONF['language'];
-        } else {
-            $lang_str = DB_getItem($_TABLES['users'], 'language',
-                "uid = {$this->uid}"
-            );
-        }
-        if ($lang_str == '') $lang_str = $_CONF['language'];    // fallback
-        if (!$fullname) {
-            $lang = explode('_', $lang_str);
-            return $lang[0];
-        } else {
-            return $lang_str;
-        }
+        $Cust = Customer::getInstance($this->uid);
+        return $Cust->getLanguage($fullname);
     }
 
 
@@ -2197,7 +2179,11 @@ class Order
     {
         USES_lglib_class_html2pdf();
         try {
-            $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
+            if (class_exists('\\Spipu\\Html2Pdf\\Html2Pdf')) {
+                $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
+            } else {
+                $html2pdf = new \HTML2PDF('P', 'A4', 'en');
+            }
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {

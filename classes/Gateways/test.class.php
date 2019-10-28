@@ -169,7 +169,7 @@ class test extends \Shop\Gateway
             }
 
             // Buy-now product button, set default billing/shipping addresses
-            $U = self::UserInfo();
+            $U = self::Customer();
             $shipto = $U->getDefaultAddress('shipto');
             if (!empty($shipto)) {
                 if (strpos($shipto['name'], ' ')) {

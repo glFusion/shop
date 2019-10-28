@@ -143,7 +143,7 @@ class Workflow
         case 'billto':
         case 'shipto':
             $A = $Cart->getAddress($this->wf_name);
-            $status = UserInfo::isValidAddress($A) == '' ? true : false;
+            $status = Customer::isValidAddress($A) == '' ? true : false;
             break;
         default:
             $status = true;

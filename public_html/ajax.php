@@ -20,13 +20,13 @@ $action = SHOP_getVar($_GET, 'action');
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
-    $U = Shop\UserInfo::getInstance($uid);
+    $U = Shop\Customer::getInstance($uid);
     $U->deleteAddress($_GET['id']);
     break;
 
 case 'getAddress':
     if ($uid < 2) break;
-    $A = Shop\UserInfo::getInstance($uid)->getAddress($_GET['id']);
+    $A = Shop\Customer::getInstance($uid)->getAddress($_GET['id']);
     //$res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
     //$A = DB_fetchArray($res, false);
     break;
