@@ -2279,6 +2279,7 @@ class Order
                     'shipment_id'   => $Shipment->shipment_id,
                     'shipper_info'  => $Pkg->shipper_info,
                     'tracking_num'  => $Pkg->tracking_num,
+                    'shipper_id'    => $Pkg->shipper_id,
                     'tracking_url'  => $url,
                     'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
                 ) );
