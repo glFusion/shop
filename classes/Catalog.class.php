@@ -88,13 +88,11 @@ class Catalog
                 }
             }
         }*/
-
-        $CT = new \Template(__DIR__ . '/templates');
+        $CT = new \Template(__DIR__ . '/../templates');
         $CT->set_file('catlinks', 'category_links.thtml');
         if ($cat_img_url != '') {
             $CT->set_var('catimg_url', $cat_img_url);
         }
-
         $CT->set_block('catlinks', 'CatLinks', 'link');
         foreach ($A as $category => $info) {
             if (isset($info['url'])) {

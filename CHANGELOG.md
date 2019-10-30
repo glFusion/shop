@@ -35,6 +35,7 @@ Release TBD
   * Order and Packing List print icons now create PDF output.
   * Allow use of PNG and GIF product/category images as well as JPEG.
   * Add general comment input to orders.
+  * Fix location of category links template for catalog listings.
 
 ## v0.7.1
 Release 2019-08-02
