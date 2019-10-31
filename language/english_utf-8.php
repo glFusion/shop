@@ -671,6 +671,7 @@ $LANG_confignames['shop'] = array(
     'name'          => 'Remittance/Support Contact',
     'company'       => 'Company Name',
     'country'       => 'Country',
+    'adm_def_view'  => 'Default Admin View',
 );
 
 /** Language strings for the subgroup names in the config section */

@@ -37,6 +37,8 @@ Release TBD
   * Add general comment input to orders.
   * Fix location of category links template for catalog listings.
   * Break up the shop address into component fields.
+  * Implement package tracking API for UPS and USPS.
+  * Add configuration option to select the default administrative view.
 
 ## v0.7.1
 Release 2019-08-02

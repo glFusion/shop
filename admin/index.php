@@ -40,7 +40,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = '';
+$action = $_SHOP_CONF['adm_def_view'];
 $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
