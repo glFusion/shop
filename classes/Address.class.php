@@ -108,49 +108,78 @@ class Address
 
 
     /**
+     * Get the city, state, zip line, formatted by country.
+     *
+     * @return  string  Formatted string for city, state, zip
+     */
+    private function getCityLine()
+    {
+        switch($this->country) {
+        case 'US':
+        case 'CA':
+        case 'AU':
+        case 'TW':
+            $retval = $this->city . ' ' . $this->state . ' ' . $this->zip;
+            break;
+        case 'GB':
+        case 'CO':
+        case 'IE':
+        case '':        // default if no country code given
+            $retval = $this->city . $sep . $this->zip;
+            break;
+        default:
+            $retval = trim($this->zip. ' ' . $this->city . ' ' . $this->state);
+            break;
+        }
+        return $retval;
+    }
+
+
+    /**
      * Render the address as text, separated by the specified separator.
      * Sets the city, state, zip line according to the country format.
+     * A single address field can be retrieved by setting `$part` to one
+     * of the field names. The special value `address` can be supplied to
+     * get all the address lines except company and person name.
      *
+     * @param   string  $part   Optional part of address to retrieve
      * @param   string  $sep    Line separator, simple `\n` by default.
      * @return  string      HTML formatted address
      */
-    public function toText($sep="\n")
+    public function toText($part="all", $sep="\n")
     {
         global $_SHOP_CONF;
 
         $retval = '';
-
-        // Create the address for parts common to all countries
         $common = array(
             'name', 'company', 'address1', 'address2',
         );
+
+        if ($part == 'address') {
+            // Requesting only the address portion, remove name and company
+            unset($common[0]);
+            unset($common[1]);
+        } elseif ($part != 'all') {
+            // Immediately return the single requested element.
+            // Typically name or company, not address components.
+            if ($this->$part !== NULL) {
+                return $this->$part;
+            } else {
+                return '';
+            }
+        }
+
+        // No specific part requested, format and return all element
         foreach ($common as $key) {
             if ($this->$key != '') {
                 $retval .= $this->$key . $sep;
             }
         }
 
-        // Format the parts that are different by country
-        switch($this->country) {
-        case 'US':
-        case 'CA':
-        case 'AU':
-        case 'TW':
-            $retval .= $this->city . ' ' . $this->state . ' ' . $this->zip;
-            break;
-        case 'GB':
-        case 'CO':
-        case 'IE':
-        case '':        // default if no country code given
-            $retval .= $this->city . $sep . $this->zip;
-            break;
-        default:
-            $retval .= trim($this->zip. ' ' . $this->city . ' ' . $this->state);
-            break;
-        }
+        $retval .= $this->getCityLine();
 
         // Include the country as the last line, unless this is a domestic address.
-        if ($_SHOP_CONF['shop_country'] != $this->country) {
+        if ($_SHOP_CONF['country'] != $this->country) {
             $retval .=  $sep . self::getCountryName($this->country);
         }
         return $retval;
@@ -160,16 +189,34 @@ class Address
     /**
      * Get the address in HTML format. Uses `<br />\n` betwen lines.
      *
+     * @uses    self::toText()
+     * @param   string  $part   Optional part of address to retrieve
      * @return  string      Address as HTML
      */
-    public function toHTML()
+    public function toHTML($part='all')
     {
-        return $this->toText("<br />\n");
+        return $this->toText($part, "<br />\n");
     }
 
 
     /**
-     * Return USPS counrty name by country ISO 3166-1-alpha-2 code.
+     * Get a single element of an address, e.g. `address` or `city`.
+     *
+     * @param   string  $key    Field name to retrieve
+     * @return  string          Value of address field
+     */
+    public function getPart($key)
+    {
+        if (isset($this->$key)) {
+            return $this->$key;
+        } else {
+            return '';
+        }
+    }
+
+
+    /**
+     * Return USPS country name by country ISO 3166-1-alpha-2 code.
      * Return false for unknown countries.
      * Returns all countries if no ID is provided.
      *

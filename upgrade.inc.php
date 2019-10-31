@@ -137,7 +137,35 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    $update_addr = !array_key_exists('address1', $_SHOP_CONF);
+    if ($update_addr) {
+        $shop_name = $_SHOP_CONF['shop_name'];
+        $shop_addr = $_SHOP_CONF['shop_addr'];
+        $shop_country = $_SHOP_CONF['shop_country'];
+    }
     SHOP_update_config();
+    // After the config is updated, we have to split up the old single-line
+    // shop address into reasonable components.
+    if ($update_addr) {
+        $c = config::get_instance();
+        $c->set('company', $shop_name, $_SHOP_CONF['pi_name']);
+        $c->set('country', $shop_country, $_SHOP_CONF['pi_name']);
+        // Try breaking up the address by common separators
+        if (strpos($shop_addr, ',') > 0) {
+            $addr_parts = explode(',', $shop_addr);
+        } elseif (strpos($shop_addr, '<br />') > 0) {
+            $addr_parts = explode('<br />', $shop_addr);
+        } elseif (strpos($shop_addr, '<br/>') > 0) {
+            $addr_parts = explode(',', $shop_addr);
+        }
+        $c->set('address1', trim($addr_parts[0]), $_SHOP_CONF['pi_name']);
+        if (isset($addr_parts[1])) {
+            $c->set('city', trim($addr_parts[1]), $_SHOP_CONF['pi_name']);
+        }
+        if (isset($addr_parts[2])) {
+            $c->set('state', trim($addr_parts[2]), $_SHOP_CONF['pi_name']);
+        }
+    }
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;
         $current_ver = $installed_ver;

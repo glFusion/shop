@@ -726,6 +726,7 @@ class Order
             $icon_tooltips = NULL;
         }
         $by_gc = (float)$this->getInfo('apply_gc');
+        $ShopAddr = new Address($_SHOP_CONF);
 
         // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
@@ -744,8 +745,8 @@ class Order
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
             'order_instr'   => htmlspecialchars($this->instructions),
-            'shop_name'     => $_SHOP_CONF['shop_name'],
-            'shop_addr'     => $_SHOP_CONF['shop_addr'],
+            'shop_name'     => $ShopAddr->toHTML('company'),
+            'shop_addr'     => $ShopAddr->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
@@ -2273,6 +2274,7 @@ class Order
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
                 $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
+                $Sh = Shipper::getInstance($Pkg->shipper_id);
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date'     => $Dt->toMySQL(true),

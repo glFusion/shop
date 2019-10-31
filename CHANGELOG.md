@@ -36,6 +36,7 @@ Release TBD
   * Allow use of PNG and GIF product/category images as well as JPEG.
   * Add general comment input to orders.
   * Fix location of category links template for catalog listings.
+  * Break up the shop address into component fields.
 
 ## v0.7.1
 Release 2019-08-02

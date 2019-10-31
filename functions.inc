@@ -1699,7 +1699,7 @@ function plugin_configmanager_select_product_tpl_ver_shop()
  *
  * @return  array   $option => path
  */
-function plugin_configmanager_select_shop_country_shop()
+function plugin_configmanager_select_country_shop()
 {
     $C = Shop\Address::getCountryName();
     $retval = array();

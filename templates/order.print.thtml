@@ -14,7 +14,8 @@
 </h1>
   <div class="shopOrder">
   <div id="shopShopInfo">
-    <span class="name">{shop_name}</span><br />{shop_addr}<br />
+    <span style="font-size:24px;">{shop_name}</span>
+    <br />{shop_addr}
 {!if shop_phone}
     <br />{shop_phone}
 {!endif}
