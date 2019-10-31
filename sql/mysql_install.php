@@ -566,6 +566,11 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `tracking_num` varchar(80) DEFAULT NULL,
       PRIMARY KEY (`pkg_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE {$_TABLES['shop.carrier_config']} (
+      `code` varchar(10) NOT NULL,
+      `data` text,
+      PRIMARY KEY (`code`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY products_name (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
@@ -593,5 +598,6 @@ $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
 $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
+$_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
 
 ?>

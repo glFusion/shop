@@ -14,6 +14,7 @@
  */
 namespace Shop;
 
+
 /**
  * Class for product and category sales.
  * @package shop
@@ -40,6 +41,14 @@ class Shipper
      * @var array */
     private $properties;
 
+    /** Configuration items, if used.
+     * @var array */
+    protected $_config = NULL;
+
+    /** Configuration item names, to create the config form.
+     *@var array */
+    protected $cfgFields = array();
+
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
     public $isNew;
@@ -47,6 +56,16 @@ class Shipper
     /** Individual rate element.
      * @var array */
     public $rates;
+
+    /** Flag to indicate whether the shipper class implements a quote API.
+     * @var boolean */
+    protected $implementsQuoteAPI = false;
+
+    /** Flag to indicate whether the shipper class implements a tracking API.
+     * @var boolean */
+    protected $implementsTrackingAPI = false;
+
+    protected $key = 'generic';
 
 
     /**
@@ -197,6 +216,17 @@ class Shipper
     }
 
 
+    public static function getByCode($shipper_code)
+    {
+        $cls = '\\Shop\\Shippers\\' . $shipper_code;
+        if (class_exists($cls)) {
+            return new $cls;
+        } else {
+            return NULL;
+        }
+    }
+
+
     /**
      * Get all shipping options.
      *
@@ -209,7 +239,7 @@ class Shipper
 
         $cache_key = 'shippers_all_' . (int)$valid;
         $now = time();
-        $shippers = Cache::get($cache_key);
+//        $shippers = Cache::get($cache_key);
         if ($shippers === NULL) {
             $shippers = array();
             $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
@@ -866,6 +896,58 @@ class Shipper
     }
 
 
+    public static function carrierList()
+    {
+        global $LANG_SHOP;
+
+        $carriers = self::getCarrierNames();
+        $data_arr = array();
+        foreach ($carriers as $code=>$name) {
+            $config = 'n/a';
+            $Sh = self::getByCode($code);
+            if ($Sh !== NULL) {
+                if ($Sh->hasConfig()) {
+                    $config = COM_createLink(
+                        '<i class="uk-icon uk-icon-edit"></i>',
+                        SHOP_ADMIN_URL . '/index.php?carrier_config=' . $code
+                    );
+                }
+            }
+            $data_arr[] = array(
+                'code'  => $code,
+                'name'  => $name,
+                'config' => $config,
+            );
+        }
+        $header_arr = array(
+            array(
+                'text'  => 'ID',
+                'field' => 'code',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['name'],
+                'field' => 'name',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'config',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+        );
+        $text_arr = '';
+        $defsort_arr = '';
+        $retval = ADMIN_listArray(
+            $_SHOP_CONF['pi_name'] . '_carrierlist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $data_arr, $defsort_arr
+        );
+        return $retval;
+    }
+
+
     /**
      * Get an individual field for the shipping profiles.
      *
@@ -925,6 +1007,10 @@ class Shipper
             $retval = $grp_names[$fieldvalue];
             break;
  */
+        case 'config':
+            $retval = $fieldvalue;
+            break;
+
         default:
             $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
             break;
@@ -990,15 +1076,60 @@ class Shipper
 
 
     /**
-     * Get the tracking info URL for a shipper.
+     * Get the default tracking info URL for a shipper
+     * Publicly accessed through getTrackingUrl().
+     * Used if the shipper does not implement a tracking API.
      * This default returns an empty string.
      *
      * @param   string  $tracking_num   Tracking number
      * @return  string      URL to shipper's tracking site
      */
-    public function getTrackingUrl($tracking_num)
+    protected function _getTrackingUrl($tracking_num)
     {
         return '';
+    }
+
+
+    /**
+     * Get the tracking URL for a package.
+     * Checks if the tracking API is available and returns that.
+     * If not, returns the shipper's default URL.
+     *
+     * @uses    self::_getTrackingUrl()
+     * @param   string  $tracking_num   Tracking Number
+     * @return  string      URL to tracking information
+     */
+    public function getTrackingUrl($tracking_num, $text = '')
+    {
+        if ($text == '') {
+            $text = $tracking_num;
+        }
+        if ($this->hasTrackingAPI()) {
+            // Return the internal tracking page
+            $retval = COM_createLink(
+                $text,
+                SHOP_URL . "/track.php?shipper={$this->key}&tracking={$tracking_num}",
+                array(
+                    'data-uk-lightbox' => '',
+                    'data-lightbox-type' => 'iframe',
+                )
+            );
+        } else {
+            $url = $this->_gettrackingUrl($tracking_num);
+            if (!empty($url)) {
+                $retval = COM_createLink(
+                    $text,
+                    $url,
+                    array(
+                        'target' => '_blank',
+                    )
+                );
+            } else {
+                // No url found, just return the text for display
+                $retval = $text;
+            }
+        }
+        return $retval;die;
     }
 
 
@@ -1021,6 +1152,248 @@ class Shipper
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * Read the shipper's configuration from the database.
+     *
+     * @return  boolean     True if config was successfuly read
+     */
+    protected function readConfig()
+    {
+        global $_TABLES;
+
+        $code = DB_escapeString($this->key);
+        $sql = "SELECT data FROM {$_TABLES['shop.carrier_config']}
+            WHERE code = '$code'";
+        $data = DB_getItem(
+            $_TABLES['shop.carrier_config'],
+            'data',
+            "code = '$code'"
+        );
+        if ($data) {        // check that a data item was retrieved
+            $config = @unserialize($data);
+            if ($config) {
+                foreach ($config as $name=>$value) {
+                    if (isset($this->cfgFields[$name])) {
+                        // check carrier-specific fields for special handling
+                        if ($this->cfgFields[$name] == 'password') {
+                            $value = COM_decrypt($value);
+                        }
+                    }
+                    $this->_config[$name] = $value;
+                }
+                return true;
+            }
+        }
+        return false;       // didn't get any config read
+    }
+
+
+    /**
+     * Get the value of a single configuration item.
+     *
+     * @param   string  $cfgItem    Name of field to get
+     * @return  mixed       Value of field, empty string if not defined
+     */
+    protected function getConfig($cfgItem = '')
+    {
+        if ($this->_config === NULL) {
+            $this->readConfig();
+        }
+        if ($cfgItem == '') {
+            // Get all items at once
+            return $this->_config;
+            // Get a single item
+        } elseif (array_key_exists($cfgItem, $this->_config)) {
+            return $this->_config[$cfgItem];
+        } else {
+            // Item specified but not found, return empty string
+            return '';
+        }
+    }
+
+
+    /**
+     * Check if the configuration is valid for this shipper.
+     * Used to check if API functions can be used.
+     *
+     * @return  boolean     True if config is valid, False if not
+     */
+    protected function hasValidConfig()
+    {
+        $this->getConfig();
+        foreach ($this->cfgFields as $name=>$type) {
+            if (!isset($this->_config[$name]) || $this->_config[$name] == '') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * Callback function to sort the rate quote array.
+     * Returns the cost difference between two arrays.
+     *
+     * @param   array   $a      First array to check
+     * @param   array   $b      Second array to check
+     * @return  float       Difference between a and b
+     */
+    protected function sortQuotes($a, $b)
+    {
+        return $a['cost'] - $b['cost'];
+    }
+
+
+    /**
+     * Check if this shipper implements a rate quote API.
+     * Returns false if a quote API isn't implemented, or if the
+     * configuration isn't valid.
+     * 
+     * @return   boolean    True if the api is available, false if not
+     */
+    protected function hasQuoteAPI()
+    {
+        if (!$this->implementsQuoteAPI || !$this->hasValidConfig()) {
+            return false;
+        }
+    }
+
+
+    /**
+     * Check if this shipper implements a package tracking API
+     * Returns false if a tracking API isn't implemented, or if the
+     * configuration isn't valid.
+     * 
+     * @return   boolean    True if the api is available, false if not
+     */
+    protected function hasTrackingAPI()
+    {
+        if (!$this->implementsTrackingAPI || !$this->hasValidConfig()) {
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * Check if this shipper has configuration options.
+     * Used to determine if a link to the configuration form should be shown.
+     *
+     * @return  boolean     True if this shipper can be configured
+     */
+    public function hasConfig()
+    {
+        return !empty($this->cfgFields);
+    }
+
+
+    /**
+     * Save a shipper's configuration from a submitted form.
+     * Encrypts password fields prior to saving.
+     *
+     * @param   array   $form   Form data, e.g. $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public function saveConfig($form)
+    {
+        global $_TABLES;
+
+        $code = DB_escapeString($this->key);
+        // Seed data with common data for all shippers
+        $cfg_data = array(
+            'ena_quotes'    => isset($form['ena_quotes']) ? 1 : 0,
+            'ena_tracking'  => isset($form['ena_tracking']) ? 1 : 0,
+        );
+
+        foreach ($this->cfgFields as $name=>$type) {
+            switch ($type) {
+            case 'checkbox':
+                $value = isset($form[$name]) ? 1 : 0;
+                break;
+            case 'password':
+                if (!isset($form[$name])) {
+                    return false;       // required field missing
+                } else {
+                    $value = COM_encrypt($form[$name]);
+                }
+                break;
+             default:
+                if (!isset($form[$name])) {
+                    return false;       // required field missing
+                } else {
+                    $value = $form[$name];
+                }
+                break;
+            }
+
+            $cfg_data[$name] = $value;
+        }
+        $data = DB_escapeString(serialize($cfg_data));
+        $sql = "INSERT INTO {$_TABLES['shop.carrier_config']} SET
+            code = '$code',
+            data = '$data'
+            ON DUPLICATE KEY UPDATE data = '$data'";
+        //echo $sql;die;
+        DB_query($sql);
+        if (DB_error()) {
+            COM_errorLog("Shipper::saveConfig() error: $sql");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+
+    /**
+     * Present the configuration form for a shipper
+     *
+     * @return  string      HTML for the configuration form.
+     */
+    public function Configure()
+    {
+        global $LANG_SHOP_HELP;
+
+ //       $retval = '<div class="uk-alert">' .
+//            $LANG_SHOP_HELP['hlp_carrier_modules']
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'carrier_config.thtml');
+
+        // Load the language for this gateway and get all the config fields
+        $T->set_var(array(
+            'pi_admin_url'  => SHOP_ADMIN_URL,
+            'carrier_name'  => $this->getCarrierName(),
+            'carrier_code'  => $this->key,
+            'implementsQuotes' => $this->implementsQuoteAPI,
+            'implementsTracking' => $this->implementsTrackingAPI,
+            'ena_quotes_chk' => $this->getConfig('ena_quotes') ? ' checked="checked"' : '',
+            'ena_tracking_chk' => $this->getConfig('ena_tracking') ? ' checked="checked"' : '',
+        ), false, false);
+        $T->set_block('tpl', 'ItemRow', 'IRow');
+        foreach ($this->cfgFields as $name=>$type) {
+            switch ($type) {
+            case 'checkbox':
+                $chk = $this->getConfig($name) == 1 ? 'checked="checked"' : '';
+                $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
+                break;
+            default:
+                $fld = '<input type="text" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
+                break;
+            }
+            $T->set_var(array(
+                'param_name'    => isset($this->lang[$name]) ? $this->lang[$name] : $name,
+                'field_name'    => $name,
+                'field_value'   => $this->getConfig($name),
+                'input_field'   => $fld,
+            ) );
+            $T->parse('IRow', 'ItemRow', true);
+        }
+        $T->parse('output', 'form');
+        $retval .= $T->finish($T->get_var('output'));
+
+        return $retval;
     }
 
 }   // class Shipper

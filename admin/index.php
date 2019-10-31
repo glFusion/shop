@@ -46,6 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
+    'carrier_save',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
@@ -53,8 +54,8 @@ $expected = array(
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
-    'opt_grp', 'pog_edit',
+    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
+    'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments',
@@ -259,6 +260,21 @@ case 'gwdelete':
         $status = $gw->Remove();
     }
     $view = 'gwadmin';
+    break;
+
+case 'carrier_save':
+    // Save a shipping carrier configuration
+    $Shipper = Shop\Shipper::getByCode($_POST['carrier_code']);
+    $status = false;
+    if ($Shipper !== NULL) {
+        $status = $Shipper->saveConfig($_POST);
+    }
+    if ($status) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['err_msg'], 'error');
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?carriers');
     break;
 
 case 'gwsave':
@@ -573,8 +589,13 @@ case 'opt_grp':
     break;
 
 case 'shipping':
-    //$content .= Shop\Menu::adminShipping($view);
+    $content .= Shop\Menu::adminShipping($view);
     $content .= Shop\Shipper::adminList();
+    break;
+
+case 'carriers':
+    $content .= Shop\Menu::adminShipping($view);
+    $content .= Shop\Shipper::carrierLIst();
     break;
 
 case 'pov_edit':
@@ -649,6 +670,13 @@ case 'gwedit':
     $gw = \Shop\Gateway::getInstance($_GET['gw_id']);
     if ($gw !== NULL) {
         $content .= $gw->Configure();
+    }
+    break;
+
+case 'carrier_config':
+    $Shipper = \Shop\Shipper::getByCode($actionval);
+    if ($Shipper !== NULL) {
+        $content .= $Shipper->Configure();
     }
     break;
 

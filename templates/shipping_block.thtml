@@ -24,11 +24,7 @@
     </td>
 {!if tracking_num}
     <td class="expand">
-{!if tracking_url}
-      <a href="{tracking_url}" target="_blank">{tracking_num}</a>
-{!else}
-      {tracking_num}
-{!endif}
+      {tracking_url}
     </td>
 {!endif}
   </tr>

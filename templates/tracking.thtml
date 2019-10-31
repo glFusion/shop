@@ -1,0 +1,60 @@
+{# begin {templatelocation} #}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" class="uk-height-1-1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="https://gldev.leegarner.com/shop/css/tracking.css" />
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.26.3/css/uikit.almost-flat.min.css">
+  <title>glFusion Shop Plugin Configuration</title>
+</head>
+<body class="uk-height-1-1">
+
+<link rel="stylesheet" type="text/css" href="{site_url}/shop/css/tracking.css" />
+<div id="trackingPopup">
+    <h2>{$LANG_SHOP['tracking_info']}</h2>
+    <table id="trackingMeta">
+        <tbody>
+<!-- BEGIN trackingMeta -->
+            <tr>
+{!if meta_name}
+                <th class="metaname">{meta_name}:</th>
+                <td class="metaval">{meta_value}</td>
+{!else}
+                <td colspan="2" class="metaval"">{meta_value}</td>
+{!endif}
+            </tr>
+<!-- END trackingMeta -->
+        </tbody>
+    </table>
+{!if steps_count}
+    <table id="trackingSteps">
+        <thead>
+            <tr>
+                <th>{$LANG_SHOP['location']}</th>
+                <th>{$LANG_SHOP['date']}</th>
+                <th>{$LANG_SHOP['time']}</th>
+                <th>{$LANG_SHOP['description']}</th>
+            </tr>
+        </thead>
+        <tbody>
+<!-- BEGIN trackingSteps -->
+            <tr>
+                <td class="stepval">{location}</td>
+                <td class="stepval">{date}</td>
+                <td class="stepval">{time}</td>
+                <td class="stepval">{message}</td>
+            </tr>
+<!-- END trackingSteps -->
+        </tbody>
+    </table>
+{!endif}
+{!if err_msg}
+    <div class="errmsg">
+        {err_msg}
+    </div>
+{!endif}
+</div>
+</body>
+</html>
+{# end {templatelocation} #}

@@ -10,4 +10,7 @@
     </li>
 <!-- END menuItems -->
 </ul>
+{!if help}
+<div class="uk-alert">{help}</div>
+{!endif}
 {# end {templatelocation} #}

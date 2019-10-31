@@ -1,0 +1,41 @@
+{# begin {templatelocation} #}
+<h2>{carrier_name}</h2>
+<form action="{pi_admin_url}/index.php" method="post" class="uk-form uk-form-horizontal">
+  <input type="hidden" name="carrier_code" value="{carrier_code}" />
+<!-- BEGIN ItemRow -->
+  <div class="uk-form-row">
+    <label class="uk-form-label" for="f_{field_name}">{param_name}:
+    </label>
+    <div class="uk-form-controls">
+      {input_field}
+<!--      <input id="f_{field_name}" type="text" name="{field_name}" value="{field_value}" />-->
+    </div>
+  </div>
+<!-- END ItemRow -->
+{!if implementsQuote}
+  <div class="uk-form-row">
+    <label class="uk-form-label" for="ena_quotes">Enable Quote API?:
+    </label>
+    <div class="uk-form-controls">
+      <input id="ena_quotes" type="checkbox" name="ena_quotes" value="1" {ena_quotes_chk} />
+    </div>
+  </div>
+{!endif}
+{!if implementsTracking}
+  <div class="uk-form-row">
+    <label class="uk-form-label" for="ena_tracking">Enable Tracking API?
+    </label>
+    <div class="uk-form-controls">
+      <input id="ena_tracking" type="checkbox" name="ena_tracking" value="1" {ena_tracking_chk} />
+    </div>
+  </div>
+{!endif}
+  <div class="uk-form-row">
+    <div class="uk-form-controls">
+      <button type="submit" name="carrier_save" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>
+      <button type="reset" name="reset" class="uk-button uk-button-primary">{$LANG_SHOP['clearform']}</button>
+      <button type="submit" name="carriers" class="uk-button">{$LANG_ADMIN['cancel']}</button>
+    </div>
+  </div>
+</form>
+{# end {templatelocation} #}

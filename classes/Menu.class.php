@@ -220,7 +220,7 @@ class Menu
      */
     public static function adminShipping($view='')
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $LANG_SHOP_HELP;
 
         $menu_arr = array(
             array(
@@ -228,10 +228,16 @@ class Menu
                 'text' => $LANG_SHOP['shippers'],
                 'active' => $view == 'shipping' ? true : false,
             ),
-            array(
+            /*array(
                 'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'shipments' ? true : false,
+            ),*/
+            array(
+                'url'   => SHOP_ADMIN_URL . '/index.php?carriers=x',
+                'text'  => $LANG_SHOP['carriers'],
+                'active' => $view == 'carriers' ? true : false,
+                'help'  => $LANG_SHOP_HELP['carrier_modules'],
             ),
         );
         return self::_makeSubMenu($menu_arr);
@@ -310,7 +316,11 @@ class Menu
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('menu', 'submenu.thtml');
         $T->set_block('menu', 'menuItems', 'items');
+        $hlp = '';
         foreach ($menu_arr as $mnu) {
+            if ($mnu['active'] && isset($mnu['help'])) {
+                $hlp = $mnu['help'];
+            }
             $url = COM_createLink($mnu['text'], $mnu['url']);
             $T->set_var(array(
                 'active'    => $mnu['active'],
@@ -318,6 +328,7 @@ class Menu
             ) );
             $T->parse('items', 'menuItems', true);
         }
+        $T->set_var('help', $hlp);
         $T->parse('output', 'menu');
         $retval = $T->finish($T->get_var('output'));
         return $retval;

@@ -1,0 +1,17 @@
+#trackingPopup {
+    margin: 15px;
+}
+#trackingSteps, #trackingMeta {
+    width: 100%;
+}
+#trackingSteps  td,th {
+    padding-right: 10px;
+}
+#trackingMeta th {
+    padding-right: 10px;
+    text-align:left;
+    width: 30%;
+}
+#trackingMeta {
+    margin-bottom: 10px;
+}
