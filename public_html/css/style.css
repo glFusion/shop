@@ -230,7 +230,7 @@ div.shopProductListOuter {
 }
 
 .shopProductListItem.v3 div.ItemImage.noimage {
-    height: 30px;
+    /*height: 30px;*/
 }
 
 .shopProductListItemUrl2 div.ratingbar,
