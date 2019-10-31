@@ -716,11 +716,6 @@ $LANG_configselects['shop'] = array(
         'Hide from Catalog' => 2,
     ),
     17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
-    15 => array(
-        'Product List' => 'products',
-        'Category List' => 'categories',
-        'Order List' => 'orders',
-    ),
     18 => array(
         'DEBUG' => 100,
         'INFO'  => 200,
@@ -737,6 +732,11 @@ $LANG_configselects['shop'] = array(
         'Category List (incl. Home)' => 6,
         'Category List (top-level)' => 10,
         'Category List (top, incl. Home)' => 14,
+    ),
+    20 => array(
+        'Product List' => 'products',
+        'Category List' => 'categories',
+        'Order List' => 'orders',
     ),
 );
 
