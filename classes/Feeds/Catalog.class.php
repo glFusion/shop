@@ -94,7 +94,7 @@ class Catalog
             if (empty($img)) {
                 $img = 'notavailable.jpg';
             }
-            $img_link = $P->ImageURL($img, 480, 480);
+            $img_link = $P->getImage($img, 480, 480)['url'];
             $T->set_var(array(
                 'product_id'    => $P->id,
                 'short_dscp'    => $title,

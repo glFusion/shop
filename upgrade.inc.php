@@ -166,6 +166,19 @@ function SHOP_do_upgrade($dvlp = false)
             $c->set('state', trim($addr_parts[2]), $_SHOP_CONF['pi_name']);
         }
     }
+
+    // Copy the "not available" image if not already in place.
+    if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
+        COM_errorLog("Copying missing not-available image");
+        $status = copy(
+            __DIR__ . '/data/images/products/notavailable.jpg',
+            $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
+        );
+        if (!$status) {
+            COM_errorLog("Error copying the not-available image");
+        }
+    }
+
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;
         $current_ver = $installed_ver;

@@ -254,6 +254,12 @@ function plugin_postinstall_shop()
         }
     }
 
+    // Copy static "not available" product image
+    copy(
+        __DIR__ . '/data/images/products/notavailable.jpg',
+        $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
+    );
+
     // Create an empty log file
     if (!file_exists($_SHOP_CONF['logfile'])) {
         $fp = fopen($_SHOP_CONF['logfile'], "w+");
