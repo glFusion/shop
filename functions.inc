@@ -163,7 +163,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
     if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
-        $display .= Shop\Catalog::Render();
+        $display .= Shop\Catalog::Products();
         $display .= Shop\Menu::siteFooter();
     }
     return $display;

@@ -356,10 +356,10 @@ default:
         $cat_id == 0 &&
         (!isset($_GET['query']) || isset($_GET['clearsearch']))
     ) {
-        $content .= SHOP_homepage_category();
+        $content .= Shop\Catalog::Categories();
     } else {
         SHOP_setUrl();
-        $content .= \Shop\Catalog::Render($cat_id);
+        $content .= Shop\Catalog::Products($cat_id);
         $menu_opt = $LANG_SHOP['products'];
         $page_title = $LANG_SHOP['main_title'];
     }
@@ -376,60 +376,5 @@ $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
 exit;
-
-
-/**
- * Display the shop home page as a collection of category tiles.
- *
- * @return  string  HTML for category homepage
- */
-function SHOP_homepage_category()
-{
-    global $_SHOP_CONF;
-
-    $display = '';
-    $cat_sql = '';
-
-    $RootCat = \Shop\Category::getRoot();
-    // If showing only top-level categories then get the children of Root,
-    // otherwise get the whole category tree.
-    if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
-        $Cats = $RootCat->getChildren();
-        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) == SHOP_HP_CATHOME) {
-            array_unshift($Cats, $RootCat);
-        }
-    } else {
-        $Cats = \Shop\Category::getTree();
-        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME) {
-            unset($Cats[$RootCat->cat_id]);
-        }
-    }
-
-    $T = new \Template(SHOP_PI_PATH . '/templates');
-    $T = SHOP_getTemplate(array(
-        'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-        'start'   => 'product_list_start',
-        'end'     => 'product_list_end',
-    ) );
-    $T->set_var('pi_url', SHOP_URL);
-
-    $T->set_block('wrapper', 'ProductItems', 'PI');
-    foreach ($Cats as $Cat) {
-        $T->set_var(array(
-            'item_id'       => $Cat->cat_id,
-            'short_description' => htmlspecialchars($Cat->cat_name),
-            'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
-            'item_url'      => SHOP_URL . '/index.php?category='. $Cat->cat_id,
-            'small_pic'     => $Cat->ImageUrl(),
-            'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
-        ) );
-        $T->parse('PI', 'ProductItems', true);
-        //var_dump($T);die;
-    }
-    $display .= $T->parse('', 'start');
-    $display .= $T->parse('', 'wrapper');
-    $display .= $T->parse('', 'end');
-    return $display;
-}
 
 ?>

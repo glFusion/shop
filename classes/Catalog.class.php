@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -26,7 +26,7 @@ class Catalog
      * @param   integer $cat_id     Optional category ID to limit display
      * @return  string      HTML for product catalog.
      */
-    public static function Render($cat_id = 0)
+    public static function Products($cat_id = 0)
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
@@ -444,6 +444,61 @@ class Catalog
             $T->set_var('no_rows', true);
         }
 
+        $display .= $T->parse('', 'end');
+        return $display;
+    }
+
+
+    /**
+     * Display the shop home page as a collection of category tiles.
+     *
+     * @return  string  HTML for category homepage
+     */
+    public static function Categories()
+    {
+        global $_SHOP_CONF;
+
+        $display = '';
+        $cat_sql = '';
+
+        $RootCat = Category::getRoot();
+        // If showing only top-level categories then get the children of Root,
+        // otherwise get the whole category tree.
+        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
+            $Cats = $RootCat->getChildren();
+            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) == SHOP_HP_CATHOME) {
+                array_unshift($Cats, $RootCat);
+            }
+        } else {
+            $Cats = \Shop\Category::getTree();
+            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME) {
+                unset($Cats[$RootCat->cat_id]);
+            }
+        }
+
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = SHOP_getTemplate(array(
+            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
+            'start'   => 'product_list_start',
+            'end'     => 'product_list_end',
+        ) );
+        $T->set_var('pi_url', SHOP_URL);
+
+        $T->set_block('wrapper', 'ProductItems', 'PI');
+        foreach ($Cats as $Cat) {
+            $T->set_var(array(
+                'item_id'       => $Cat->cat_id,
+                'short_description' => htmlspecialchars($Cat->cat_name),
+                'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
+                'item_url'      => SHOP_URL . '/index.php?category='. $Cat->cat_id,
+                'small_pic'     => $Cat->getImage()['url'],
+                'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
+            ) );
+            $T->parse('PI', 'ProductItems', true);
+            //var_dump($T);die;
+        }
+        $display .= $T->parse('', 'start');
+        $display .= $T->parse('', 'wrapper');
         $display .= $T->parse('', 'end');
         return $display;
     }
