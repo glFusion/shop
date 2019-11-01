@@ -40,6 +40,7 @@ class fedex extends \Shop\Shipper
         122816215025810 = Delivered
         843119172384577 = Hold at Location
         070358180009382 = Shipment Canceled
+        111111111111    = Delivered (working)
      */
 
     /** Full path to WSDL file, required for API requests.
@@ -165,6 +166,7 @@ class fedex extends \Shop\Shipper
      */
     public function getTracking($track_num)
     {
+        //$track_num = '111111111111';     // testing override
         $Tracking = new \Shop\Tracking;
         $Tracking->addMeta('Tracking Number', $track_num);
         $Tracking->addMeta('Carrier', self::getCarrierName());
@@ -196,23 +198,34 @@ class fedex extends \Shop\Shipper
         );
         $req = $this->_buildSoapRequest('trck', $request);
         $response = $_soapClient->track($req);
+        //var_dump($response);die;
         if ($response === false) {
             $Tracking->addError('Unknown Error Response');
             return $Tracking;
         } elseif ($response->HighestSeverity == 'SUCCESS') {
-            $Tracking->addMeta(
-                'Service',
-                $response->CompletedTrackDetails->TrackDetails->Service->Description
-            );
-            $Events = $response->CompletedTrackDetails->TrackDetails->Events;
+            $TrackDetails = $response->CompletedTrackDetails->TrackDetails;
+            if ($TrackDetails->Service) {
+                $Tracking->addMeta(
+                    'Service',
+                    $TrackDetails->Service->Description
+                );
+            }
+            $StatusDetail = $TrackDetails->StatusDetail;
+            $Tracking->addMeta('Status', $StatusDetail->Description);
+            if ($StatusDetail->Code == 'DL') {   // Delivered
+                $Tracking->addMeta('Delivered to', $TrackDetails->DeliveryLocationDescription);
+                $Tracking->addMeta('Signed By', $TrackDetails->DeliverySignatureName);
+            }
+            $Events = $TrackDetails->Events;
             foreach ($Events as $Event) {
+                $loc = $this->_makeTrackLocation($Event->Address);
                 //var_dump($Event);die;
-                if (isset($Event->Address->City)) {
+                /*if (isset($Event->Address->City)) {
                     $loc = $Event->Address->City . ' ';
                 } else {
                     $loc = '';
                 }
-                $loc .= $Event->Address->CountryCode;
+                $loc .= $Event->Address->CountryCode;*/
                 $Tracking->addStep(
                     array(
                         'location' => $loc,
@@ -228,6 +241,29 @@ class fedex extends \Shop\Shipper
             $Tracking->addError('Non-successful response received.');
         }
         return $Tracking;
+    }
+
+
+    /**
+     * Make a single location string from the separate response fields.
+     * Empty fields are skipped.
+     *
+     * @param   object  $obj    Response Object Snippet
+     * @return  string      Location string, empty if none included in $obj
+     */
+    private function _makeTrackLocation($obj)
+    {
+        $parts = array();
+        foreach (array('City', 'StateOrProvinceCode', 'CountryCode') as $var) {
+            if (!empty($obj->$var)) {
+                $parts[] = $obj->$var;
+            }
+        }
+        if (!empty($parts)) {
+            return implode(', ', $parts);
+        } else {
+            return '';
+        }
     }
 
 }
