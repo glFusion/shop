@@ -13,9 +13,7 @@
 {!if tracking_num}
         ,&nbsp;{$LANG_SHOP['tracking']}:&nbsp;
 {!if tracking_url}
-            <a href="{tracking_url}" target="_blank">{tracking_num}</a>
-{!else}
-            {tracking_num}
+        {tracking_url}
 {!endif}
 {!endif}
         </td>

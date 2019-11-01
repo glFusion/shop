@@ -31,7 +31,7 @@ class dhl extends \Shop\Shipper
      *
      * @return  string  Package tracing URL
      */
-    public function getTrackingUrl($track_num)
+    public function _getTrackingUrl($track_num)
     {
         return "https://www.logistics.dhl/us-en/home/tracking/tracking-freight.html?submit=1&tracking-id={$track_num}";
     }
