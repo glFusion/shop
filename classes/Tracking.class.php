@@ -96,6 +96,7 @@ class Tracking
     {
         global $_CONF, $LANG_SHOP;
 
+        $dt_format = 'd M Y';
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('tracking', 'tracking.thtml');
         $T->set_block('tracking', 'trackingMeta', 'mRow');
@@ -105,7 +106,7 @@ class Tracking
         foreach ($this->meta as $meta) {
             if ($meta['type'] == 'date') {
                 $dt = new \Date($meta['value'], $_CONF['timezone']);
-                $value = $dt->format($_CONF['dateonly'], true);
+                $value = $dt->format($dt_format, true);
             } else {
                 $value = $meta['value'];
             }
@@ -118,7 +119,7 @@ class Tracking
         $T->set_block('tracking', 'trackingSteps', 'tRow');
         foreach ($this->steps as $step) {
             if ($step['datetime'] !== NULL) {
-                $date = $step['datetime']->format($_CONF['dateonly'], true);
+                $date = $step['datetime']->format($dt_format, true);
                 $time = $step['datetime']->format($_CONF['timeonly'], true);
             } else {
                 $date = $step['date'];
