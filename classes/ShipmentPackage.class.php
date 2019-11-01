@@ -238,11 +238,12 @@ class ShipmentPackage
     /**
      * Shortcut function to get the tracking URL for this package.
      *
+     * @param   bolean  $internal   True to show tracking in a popup
      * @return  string  Tracking URL, empty string if not available.
      */
-    public function getTrackingUrl()
+    public function getTrackingUrl($internal=true)
     {
-        return $this->getShipper()->getTrackingURL($this->tracking_num);
+        return $this->getShipper()->getTrackingURL($this->tracking_num, $internal);
     }
 
 

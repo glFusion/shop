@@ -1108,15 +1108,13 @@ class Shipper
      *
      * @uses    self::_getTrackingUrl()
      * @param   string  $tracking_num   Tracking Number
-     * @param   string  $text           Optional text, tracking num by default
+     * @param   boolean $internal       True to show in a popup
      * @return  string      URL to tracking information
      */
-    public function getTrackingUrl($tracking_num, $text = '')
+    public function getTrackingUrl($tracking_num, $internal=true)
     {
-        if ($text == '') {
-            $text = $tracking_num;
-        }
-        if ($this->hasTrackingAPI()) {
+        $text = $tracking_num;
+        if ($internal && $this->hasTrackingAPI()) {
             // Return the internal tracking page
             $retval = COM_createLink(
                 $text,

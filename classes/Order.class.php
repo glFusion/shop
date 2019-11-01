@@ -1161,7 +1161,7 @@ class Order
                             'shipment_date' => $shp_dt,
                             'shipper_name'  => $Pkg->shipper_info,
                             'tracking_num'  => $Pkg->tracking_num,
-                            'tracking_url'  => $Pkg->getTrackingURL(),
+                            'tracking_url'  => $Pkg->getTrackingURL(false),
                         ) );
                         $shp_dt = '';
                         $T->parse('TP', 'trackingPackages', true);
