@@ -13,8 +13,83 @@
  */
 namespace Shop\Shippers;
 
+
+/**
+ * Class to manage FedEx as a carrier
+ * @package shop
+ */
 class fedex extends \Shop\Shipper
 {
+    /*
+     * Test Tracking Numbers:
+        49044304137821 = Shipment information sent to FedEx
+        149331877648230 = Tendered
+        020207021381215 = Picked Up
+        403934084723025 = Arrived at FedEx location
+        920241085725456 = At local FedEx facility
+        568838414941 = At destination sort facility
+        039813852990618 = Departed FedEx location
+        231300687629630 = On FedEx vehicle for delivery
+        797806677146 = International shipment release
+        377101283611590 = Customer not available or business closed
+        852426136339213 = Local Delivery Restriction
+        797615467620 = Incorrect Address
+        957794015041323 = Unable to Deliver
+        076288115212522 = Returned to Sender/Shipper
+        581190049992 = International Clearance delay
+        122816215025810 = Delivered
+        843119172384577 = Hold at Location
+        070358180009382 = Shipment Canceled
+     */
+
+    /** Full path to WSDL file, required for API requests.
+     * @var string */
+    private $wsdl = __DIR__ . '/etc/TrackService_v18.wsdl';
+
+    /** WSDL major version number.
+     * @var string */
+    private $major_ver = '18';
+
+    /** SOAP request.
+     * @var object */
+    private $request;
+
+    /** Tracking URL to use.
+     * @var string */
+    private $track_url;
+
+    /** Test Tracking URL.
+     * @var string */
+    private $track_url_test = 'https://wsbeta.fedex.com:443/web-services';
+
+    /** Production Tracking URL.
+     * @var string */
+    private $track_url_prod = 'https://ws.fedex.com:443/web-services';
+
+
+    /**
+     * Set up local variables and call the parent constructor.
+     */
+    public function __construct()
+    {
+        $this->key = 'fedex';
+        $this->implementsTrackingAPI = true;
+        $this->cfgFields = array(
+            'key' => 'password',
+            'passwd' => 'password',
+            'acct_num' => 'string',
+            'meter_num' => 'string',
+            'test_mode' => 'checkbox',
+        );
+        parent::__construct();
+        if ($this->getConfig('test_mode')) {
+            $this->track_url = $this->track_url_test;
+        } else {
+            $this->track_url = $this->track_url_prod;
+        }
+    }
+
+
     /**
      * Get the shipper's name for display.
      *
@@ -31,10 +106,130 @@ class fedex extends \Shop\Shipper
      *
      * @return  string  Package tracing URL
      */
-    public function getTrackingUrl($track_num)
+    public function _getTrackingUrl($track_num)
     {
         return 'https://www.fedex.com/apps/fedextrack/index.html?trackingnumbers=' . urlencode($track_num);
     }
+
+
+    /**
+     * Builds and returns the basic request array.
+     * Common to Tracking and Quote requests.
+     *
+     * Takes an optional parameter, $addReq. This parameter is
+     * used to set the additonal request details. These details
+     * are determined by the particular service being called and
+     * are passed by the extended service classes.
+     *
+     * @param   string  $svc_id     Service ID
+     * @param   array   $addReq     Additonal request details
+     * @return  object      SOAP request array
+     */
+    private function _buildSoapRequest($svc_id, $addReq = NULL)
+    {
+        $this->requiest = array();
+        // Build Authentication
+        $this->request['WebAuthenticationDetail'] = array(
+            'UserCredential'=> array(
+                'Key'       => $this->getConfig('key'),
+                'Password'  => $this->getConfig('passwd'),
+            )
+        );
+        //Build Client Detail
+        $this->request['ClientDetail'] = array(
+            'AccountNumber' => $this->getConfig('acct_num'),
+            'MeterNumber'   => $this->getConfig('meter_num'),
+        );
+
+        // Build API Version info
+        $this->request['Version'] = array(
+            'ServiceId'     => $svc_id,
+            'Major'         => $this->major_ver,
+            'Intermediate'  => '0',
+            'Minor'         => '0',
+        );
+        // Enable detailed scans
+        $this->request['ProcessingOptions'] = 'INCLUDE_DETAILED_SCANS';
+        if (is_array($addReq)) {
+            $this->request = array_merge($this->request, $addReq);
+        }
+        return $this->request;
+    }
+
+
+    /**
+     * Get tracking data via API and return a Tracking object.
+     *
+     * @param   string  $tracking   Single tracking number
+     * @return  object      Tracking object
+     */
+    public function getTracking($track_num)
+    {
+        $Tracking = new \Shop\Tracking;
+        $Tracking->addMeta('Tracking Number', $track_num);
+        $Tracking->addMeta('Carrier', self::getCarrierName());
+
+        if (!$this->hasValidConfig()) {
+            $Tracking->addError('Invalid Configuration');
+            return $Tracking;
+        }
+
+        // Will throw a SoapFault exception if wsdlPath is unreachable
+        $_soapClient = new \SoapClient($this->wsdl, array('trace' => true));
+
+        // Set the endpoint
+        $_soapClient->__setLocation($this->track_url);
+
+        // Initialize request to an empty array
+        $request = array();
+
+        // Build Customer Transaction Id
+        $request['TransactionDetail'] = array(
+            'CustomerTransactionId' => 'Tracking request via PHP',
+        );
+
+        $request['SelectionDetails'] = array(
+            'PackageIdentifier' => array(
+                'Type' => 'TRACKING_NUMBER_OR_DOORTAG',
+                'Value' => $track_num,  // Tracking ID to track
+            )
+        );
+        $req = $this->_buildSoapRequest('trck', $request);
+        $response = $_soapClient->track($req);
+        if ($response === false) {
+            $Tracking->addError('Unknown Error Response');
+            return $Tracking;
+        } elseif ($response->HighestSeverity == 'SUCCESS') {
+            $Tracking->addMeta(
+                'Service',
+                $response->CompletedTrackDetails->TrackDetails->Service->Description
+            );
+            $Events = $response->CompletedTrackDetails->TrackDetails->Events;
+            foreach ($Events as $Event) {
+                //var_dump($Event);die;
+                if (isset($Event->Address->City)) {
+                    $loc = $Event->Address->City . ' ';
+                } else {
+                    $loc = '';
+                }
+                $loc .= $Event->Address->CountryCode;
+                $Tracking->addStep(
+                    array(
+                        'location' => $loc,
+                        //'datetime' => $Event->Timestamp,
+                        'date'  => substr($Event->Timestamp, 0, 10),
+                        'time'  => substr($Event->Timestamp, 11),
+                        'message' => (string)$Event->EventDescription,
+                    )
+                );
+            }
+        } else {
+            COM_errorLog(print_r($response,true));
+            $Tracking->addError('Non-successful response received.');
+        }
+        return $Tracking;
+    }
+
 }
 
 ?>

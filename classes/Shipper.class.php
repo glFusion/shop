@@ -216,6 +216,12 @@ class Shipper
     }
 
 
+    /**
+     * Get a shipper object by shippe code rather than database ID.
+     *
+     * @param   string  $shipper_code   Carrier class Code, e.g. 'ups'
+     * @return  object|null     Shipper object, NULL if not found
+     */
     public static function getByCode($shipper_code)
     {
         $cls = '\\Shop\\Shippers\\' . $shipper_code;
@@ -896,6 +902,11 @@ class Shipper
     }
 
 
+    /**
+     * Create an admin list of carrier modules available.
+     *
+     * @return  string      HTML for class list.
+     */
     public static function carrierList()
     {
         global $LANG_SHOP;
@@ -1097,6 +1108,7 @@ class Shipper
      *
      * @uses    self::_getTrackingUrl()
      * @param   string  $tracking_num   Tracking Number
+     * @param   string  $text           Optional text, tracking num by default
      * @return  string      URL to tracking information
      */
     public function getTrackingUrl($tracking_num, $text = '')
@@ -1225,8 +1237,11 @@ class Shipper
     {
         $this->getConfig();
         foreach ($this->cfgFields as $name=>$type) {
-            if (!isset($this->_config[$name]) || $this->_config[$name] == '') {
-                return false;
+            if (!isset($this->_config[$name])) {
+                return false;       // config var doesn't exist
+            }
+            if ($type != 'checkbox' && $this->_config[$name] == '') {
+                return false;       // empty string value
             }
         }
         return true;
