@@ -139,6 +139,22 @@ class Cache
         self::delete('shipping_order_' . $order_id);
     }
 
+
+    /**
+     * Expire the general cache.
+     * Used only for glFusion < 2.0.0.
+     */
+    public static function expire()
+    {
+        global $_TABLES;
+
+        if (version_compare(GVERSION, self::MIN_GVERSION, '<')) {
+            $sql = "DELETE FROM {$_TABLES['shop.cache']}
+                WHERE expires < " . time();
+            DB_query($sql);
+        }
+    }
+
 }   // class Shop\Cache
 
 ?>

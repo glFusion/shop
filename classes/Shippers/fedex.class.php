@@ -167,6 +167,12 @@ class fedex extends \Shop\Shipper
     public function getTracking($track_num)
     {
         //$track_num = '111111111111';     // testing override
+        // Attempt to get from cache
+        $Tracking = \Shop\Tracking::getCache($this->key, $track_num);
+        if ($Tracking !== NULL) {
+            return $Tracking;
+        }
+
         $Tracking = new \Shop\Tracking;
         $Tracking->addMeta('Tracking Number', $track_num);
         $Tracking->addMeta('Carrier', self::getCarrierName());
@@ -240,6 +246,7 @@ class fedex extends \Shop\Shipper
             COM_errorLog(print_r($response,true));
             $Tracking->addError('Non-successful response received.');
         }
+        $Tracking->setCache($this->key, $track_num);
         return $Tracking;
     }
 

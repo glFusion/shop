@@ -123,6 +123,12 @@ class ups extends \Shop\Shipper
      */
     public function getTracking($tracking)
     {
+        // Attempt to get from cache
+        $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
+        if ($Tracking !== NULL) {
+            return $Tracking;
+        }
+
         $Tracking = new \Shop\Tracking;
         if (!$this->hasValidConfig()) {
             $Tracking->addError('Invalid Configuration');
@@ -187,7 +193,7 @@ class ups extends \Shop\Shipper
                 }
                 $Tracking->addMeta('Service', $resp->Shipment->Service->Description);
                 if ($resp->Shipment->Package->DeliveryIndicator == 'Y') {
-                    $Tracking->addMeta('Deliverd On', $this->_formatDate($resp->Shipment->Package->DeliveryDate), 'date');
+                    $Tracking->addMeta('Deliverd On', (string)$this->_formatDate($resp->Shipment->Package->DeliveryDate), 'date');
                 }
                 $Tracking->addMeta('Weight', $resp->Shipment->ShipmentWeight->Weight . ' ' .
                     $resp->Shipment->ShipmentWeight->UnitOfMeasurement->Code);
@@ -231,6 +237,7 @@ class ups extends \Shop\Shipper
         } catch ( Exception $ex ) {
             echo $ex;
         }
+        $Tracking->setCache($this->key, $tracking);
         return $Tracking;
     }
 

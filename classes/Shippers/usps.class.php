@@ -337,6 +337,10 @@ class usps extends \Shop\Shipper
             return $false;
         }
 
+        $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
+        if ($Tracking !== NULL) {
+            return $Tracking;
+        }
         $Tracking = new \Shop\Tracking;
         try {
             // Create AccessRequest XMl
@@ -393,6 +397,7 @@ class usps extends \Shop\Shipper
         } catch ( Exception $ex ) {
             echo $ex;
         }
+        $Tracking->setCache($this->key, $tracking);
         return $Tracking;
     }
 

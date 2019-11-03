@@ -70,7 +70,7 @@ class Tracking
     {
         $this->meta[] = array(
             'name'  => $lang_str,
-            'value' => $value,
+            'value' => (string)$value,  // Could be SimpleXmlElement
             'type'  => $type,
         );
     }
@@ -83,7 +83,7 @@ class Tracking
      */
     public function addError($value)
     {
-        $this->errors[] = $value;
+        $this->errors[] = (string)$value;
     }
 
 
@@ -140,6 +140,78 @@ class Tracking
         $T->set_var('err_msg', $err_msg);
         $T->parse('output', 'tracking');
         return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Make a cache key for a specific tracking request.
+     *
+     * @param   string  $shipper    Shipper ID code
+     * @param   string  $tracknum   Tracking Number
+     * @return  string      Cache key
+     */
+    private static function _makeCacheKey($shipper, $tracknum)
+    {
+        return "shop.tracking.{$shipper}.{$tracknum}";
+    }
+
+
+    /**
+     * Read a Tracking object from cache.
+     *
+     * @param   string  $shipper    Shipper ID code
+     * @param   string  $tracknum   Tracking Number
+     * @return  object|null     Tracking object, NULL if not found
+     */
+    public static function getCache($shipper, $tracknum)
+    {
+        global $_TABLES;
+
+        $key = self::_makeCacheKey($shipper, $tracknum);
+        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
+            $key = DB_escapeString($key);
+            $exp = time();
+            $data = DB_getItem(
+                $_TABLES['shop.cache'],
+                'data',
+                "cache_key = '$key' AND expires >= $exp"
+            );
+            if ($data !== NULL) {
+                $data = @unserialize(base64_decode($data));
+            }
+        } else {
+            $data = Cache::get($key);
+        }
+        return $data;
+    }
+
+
+    /**
+     * Set the current Tracking object into cache.
+     *
+     * @param   string  $shipper    Shipper ID code
+     * @param   string  $tracknum   Tracking Number
+     */
+    public function setCache($shipper, $tracknum)
+    {
+        global $_TABLES;
+
+        $key = self::_makeCacheKey($shipper, $tracknum);
+        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
+            $key = DB_escapeString($key);
+            $data = DB_escapeString(base64_encode(serialize($this)));
+            $exp = time() + 600;
+            $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
+                cache_key = '$key',
+                expires = $exp,
+                data = '$data'
+                ON DUPLICATE KEY UPDATE
+                    expires = $exp,
+                    data = '$data'";
+            DB_query($sql);
+        } else {
+            Cache::set($key, $this, 'shop.tracking', 600);
+        }
     }
 
 }
