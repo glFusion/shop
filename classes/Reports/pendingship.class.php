@@ -128,6 +128,7 @@ class pendingship extends \Shop\Report
         $T = $this->getTemplate();
         switch ($this->type) {
         case 'html':
+            SHOP_setUrl();
             $this->extra['class'] = __CLASS__;
             $T->set_var(array(
                 'report_title' => sprintf($this->getTitle(), $Item->name),
@@ -204,7 +205,13 @@ class pendingship extends \Shop\Report
             $retval .= '</span>';
             break;
         case 'ship':
-            $retval = '<a class="uk-button" href="' . SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'] . '">' . $LANG_SHOP['ship'] . '</a>';
+            $retval = COM_createLink(
+                $LANG_SHOP['ship'],
+                SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $A['order_id'],
+                array(
+                    'class' => 'uk-button',
+                )
+            );
             break;
         }
         return $retval;
