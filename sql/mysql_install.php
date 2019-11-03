@@ -571,6 +571,13 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `data` text,
       PRIMARY KEY (`code`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.cache']}` (
+      `cache_key` varchar(255) NOT NULL,
+      `expires` int(11) unsigned NOT NULL DEFAULT '0',
+      `data` mediumtext,
+      PRIMARY KEY (`cache_key`),
+      KEY (`expires`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD KEY products_name (`name`)",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
@@ -599,5 +606,6 @@ $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
+$_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 
 ?>
