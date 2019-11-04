@@ -38,7 +38,6 @@ class coupons extends \Shop\Report
     public function __construct()
     {
         $this->filter_status = false;
-        $this->filter_uid = false;
         // For now, this does not support CSV output
         $this->sel_output = false;
         parent::__construct();
@@ -116,7 +115,6 @@ class coupons extends \Shop\Report
             FROM {$_TABLES['shop.coupon_log']} log
             LEFT JOIN {$_TABLES['users']} u
                 ON u.uid = log.uid ";
-        $this->setUid();
         $where = "WHERE log.ts BETWEEN $from AND $to ";
         if ($this->uid > 0) {
             $where .= "AND log.uid = {$this->uid} ";
@@ -257,6 +255,22 @@ class coupons extends \Shop\Report
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the title for the report.
+     * Appends the user name if report is filtered by user.
+     *
+     * @return  string      Report title
+     */
+    public function getTitle()
+    {
+        $title = parent::getTitle();
+        if ($this->uid > 0) {
+            $title .= ' :: ' . COM_getDisplayName($this->uid) . ' (' . $this->uid . ')';
+        }
+        return $title;
     }
 
 }   // class orderlist
