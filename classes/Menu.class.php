@@ -80,7 +80,7 @@ class Menu
 
         $menu_arr = array(
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php',
+                'url' => SHOP_ADMIN_URL . '/index.php?products',
                 'text' => $LANG_SHOP['catalog'],
                 'active' => $view == 'products' ? true : false,
             ),
