@@ -65,6 +65,8 @@ class Shipper
      * @var boolean */
     protected $implementsTrackingAPI = false;
 
+    /** Base name of shipper class file. Default = `generic`.
+     * @var string */
     protected $key = 'generic';
 
 
