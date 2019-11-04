@@ -489,6 +489,10 @@ class Catalog
 
         $T->set_block('wrapper', 'ProductItems', 'PI');
         foreach ($Cats as $Cat) {
+            if (!Category::hasProducts($Cat->cat_id)) {
+                // Skip categories that have no products
+                continue;
+            }
             $T->set_var(array(
                 'item_id'       => $Cat->cat_id,
                 'short_description' => htmlspecialchars($Cat->cat_name),

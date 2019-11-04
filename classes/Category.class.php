@@ -563,6 +563,20 @@ class Category
 
 
     /**
+     * Check if there are any products directly under a category ID.
+     *
+     * @param   integer $cat_id     Category ID to check
+     * @return  integer     Number of products under the category
+     */
+    public static function hasProducts($cat_id)
+    {
+        global $_TABLES;
+
+        return DB_count($_TABLES['shop.products'], 'cat_id', (int)$cat_id);
+    }
+
+
+    /**
      * Determine if a category is used by any products.
      * Used to prevent deletion of a category if it would orphan a product.
      *
@@ -576,7 +590,7 @@ class Category
         $cat_id = (int)$cat_id;
 
         // Check if any products are under this category
-        if (DB_count($_TABLES['shop.products'], 'cat_id', $cat_id) > 0) {
+        if (self::hasProducts($cat_id) > 0) {
             return true;
         }
 
@@ -846,8 +860,11 @@ class Category
     {
         global $_TABLES;
 
-        $parent = (int)DB_getItem($_TABLES['shop.categories'], 'cat_id',
-                'parent_id = 0');
+        $parent = (int)DB_getItem(
+            $_TABLES['shop.categories'],
+            'cat_id',
+            'parent_id = 0'
+        );
         return self::getInstance($parent);
     }
 
