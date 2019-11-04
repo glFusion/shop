@@ -88,27 +88,30 @@ class Catalog
                 }
             }
         }*/
-        $CT = new \Template(__DIR__ . '/../templates');
-        $CT->set_file('catlinks', 'category_links.thtml');
-        if ($cat_img_url != '') {
-            $CT->set_var('catimg_url', $cat_img_url);
-        }
-        $CT->set_block('catlinks', 'CatLinks', 'link');
-        foreach ($A as $category => $info) {
-            if (isset($info['url'])) {
-                $url = $info['url'];
-            } elseif ($category == $RootCat->cat_id) {
-                $url = SHOP_URL;
-            } else {
-                $url = SHOP_URL . '/index.php?category=' . urlencode($category);
+        if (count($A) > 1) {
+            // Only include the categories if there is more than the root cat.
+            $CT = new \Template(__DIR__ . '/../templates');
+            $CT->set_file('catlinks', 'category_links.thtml');
+            if ($cat_img_url != '') {
+                $CT->set_var('catimg_url', $cat_img_url);
             }
-            $CT->set_var(array(
-                'category_name' => $info['name'],
-                'category_link' => $url,
-            ) );
-            $CT->parse('link', 'CatLinks', true);
+            $CT->set_block('catlinks', 'CatLinks', 'link');
+            foreach ($A as $category => $info) {
+                if (isset($info['url'])) {
+                    $url = $info['url'];
+                } elseif ($category == $RootCat->cat_id) {
+                    $url = SHOP_URL;
+                } else {
+                    $url = SHOP_URL . '/index.php?category=' . urlencode($category);
+                }
+                $CT->set_var(array(
+                    'category_name' => $info['name'],
+                    'category_link' => $url,
+                ) );
+                $CT->parse('link', 'CatLinks', true);
+            }
+            $display .= $CT->parse('', 'catlinks');
         }
-        $display .= $CT->parse('', 'catlinks');
 
         /*
          * Create the product sort selector
