@@ -65,7 +65,7 @@ class Address
         switch($key) {
         case 'country':
             if (empty($val)) {
-                $val = $_SHOP_CONF['shop_country'];
+                $val = $_SHOP_CONF['country'];
             } else {
                 $val = strtoupper($val);
             }
@@ -179,7 +179,7 @@ class Address
         $retval .= $this->getCityLine();
 
         // Include the country as the last line, unless this is a domestic address.
-        if ($_SHOP_CONF['country'] != $this->country) {
+        if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
             $retval .=  $sep . self::getCountryName($this->country);
         }
         return $retval;
@@ -458,7 +458,7 @@ class Address
             return $countries[$countryID];
         } else {
             // Country ID not found, return false
-            return false;
+            return '';
         }
     }
 
