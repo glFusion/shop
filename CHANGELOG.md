@@ -18,7 +18,7 @@ Release TBD
   * Add radio and checkbox-type product options.
   * No buy-now buttons for physical items that may require shipping.
   * Paypal data is not automatically migrated during installation.
-  * Allow drag-and-drop uploads and rapiid AJAX deletion for product images.
+  * Allow drag-and-drop uploads and rapiid AJAX deletion for images.
   * Enable Facebook catalog feeds. See https://developers.facebook.com/docs/marketing-api/catalog-feed-setup.
   * Add optional `brand` field for products to support catalog feeds.
   * Separate ProductImage class into Images\Product.

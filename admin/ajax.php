@@ -39,6 +39,52 @@ if (isset($_POST['action'])) {
     $action = '';
 }
 switch ($action) {
+case 'dropupload_cat':
+    // Handle a drag-and-drop image upload for categories
+    $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
+    $nonce = SHOP_getVar($_POST, 'nonce', 'string');
+    $retval = array(
+        'status'    => true,    // assume OK
+        'statusMessage' => '',
+        'filenames' => array(),
+    );
+
+    // Handle image uploads.  This is done last because we need
+    // the product id to name the images filenames.
+    if (!empty($_FILES['files'])) {
+        $sent = count($_FILES['files']['name']);
+        $U = new Shop\Images\Category($cat_id, 'files');
+        $U->setNonce($nonce);
+        $filenames = $U->uploadFiles();
+        $processed = count($filenames);
+        // Only one filename here, this to get the image id also
+        foreach ($filenames as $filename) {
+            $retval['filenames'][] = array(
+                'img_url'   => Shop\Images\Category::getUrl($filename)['url'],
+                'thumb_url' => Shop\Images\Category::getThumbUrl($filename)['url'],
+                'filename'  => $filename,
+            );
+            break;      // There should be only one image for categories
+        }
+        $msg = '<ul>';
+        foreach ($U->getErrors() as $err) {
+            $msg .= '<li>' . $err . '</li>';
+        }
+        $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
+        $msg .= '</ul>';
+        $retval['statusMessage'] = $msg;
+        Shop\Cache::clear('categories');
+    } else {
+        $retval['status'] = false;
+        $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
+
 case 'dropupload':
     // Handle a drag-and-drop image upload
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
@@ -132,6 +178,21 @@ case 'updatestatus':
         echo json_encode($L);
         break;
     }
+    break;
+
+case 'delimage_cat':
+    // Delete a product image from the product edit form.
+    $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
+    $nonce = SHOP_getVar($_POST, 'nonce');
+    $arr = array(
+        'cat_id'    => $cat_id,
+        'status'    => \Shop\Images\Category::DeleteImage($cat_id, $nonce),
+    );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
     break;
 
 case 'delimage':

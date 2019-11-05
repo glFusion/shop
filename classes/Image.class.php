@@ -165,7 +165,7 @@ class Image extends UploadDownload
      */
     public static function makeNonce($str='')
     {
-        return uniqid();
+        return uniqid() . rand(100,999);
     }
 
 
@@ -178,7 +178,9 @@ class Image extends UploadDownload
      */
     public static function getThumbUrl($filename)
     {
-        return self::getUrl($filename, $_CONF['max_thumb_size']);
+        global $_SHOP_CONF;
+
+        return self::getUrl($filename, $_SHOP_CONF['max_thumb_size']);
     }
 
 

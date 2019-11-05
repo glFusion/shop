@@ -597,8 +597,8 @@ $(function(){
 function addImage(tn_url, img_url, img_id)
 {
     // Create the html for the list element
-    var html = 
-        '   <figure class="uk-overlay uk-overlay-hover">' + 
+    var html =
+        '   <figure class="uk-overlay uk-overlay-hover">' +
         '       <a href="' + img_url + '" data-uk-lightbox="{group:\'shop\'}">' +
         '       <img src="' + tn_url + '" />' +
         '     </a><br />' +

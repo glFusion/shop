@@ -152,9 +152,7 @@ class Category
         $this->lft = isset($row['lft']) ? $row['lft'] : 0;
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
-        if ($fromDB) {
-            $this->image = $row['image'];
-        }
+        $this->image = $row['image'];
     }
 
 
@@ -226,50 +224,18 @@ class Category
             $this->SetVars($A);
         }
 
-        // Handle image uploads.
-        // We don't want to delete the existing image if one isn't
-        // uploaded, we should leave it unchanged.  So we'll first
-        // retrieve the existing image filename, if any.
-        if (!$this->isNew) {
-            $img_filename = DB_getItem(
-                $_TABLES['shop.categories'],
-                'image',
-                "cat_id='" . $this->cat_id . "'"
-            );
-        } else {
-            // New entry, assume no image
-            $img_filename = '';
-        }
-
-        if (isset($A['del_catimg']) && $A['del_catimg'] == 1) {
-            // Option selected to delete the image
-            $this->deleteImage(true);
-        } else {
-            // A new image is being uploaded, assumes deletion of the original.
-            if (is_uploaded_file($_FILES['imagefile']['tmp_name'])) {
-                $img_filename =  rand(100,999) .  "_" .
-                     COM_sanitizeFilename($_FILES['imagefile']['name'], true);
-                $status = IMG_resizeImage(
-                    $_FILES['imagefile']['tmp_name'],
-                    $_SHOP_CONF['catimgpath'] . "/$img_filename",
-                    $_SHOP_CONF['max_thumb_size'],
-                    $_SHOP_CONF['max_thumb_size'],
-                    '',
-                    true
-                );
-                if ($status[0] == false) {
-                    $this->AddError('Error Moving Image');
-                } else {
-                    // If a new image was uploaded, and this is an existing
-                    // category, then delete the old image file, if any.
-                    // The DB still has the old filename at this point.
-                    if (!$this->isNew) {
-                        $this->deleteImage(false);
-                    }
+        // For new images, move the image from temp storage into the
+        // main category image space.
+        if ($this->isNew && $this->image != '') {
+            $src_img = "{$_SHOP_CONF['tmpdir']}images/temp/{$this->image}";
+            if (is_file($src_img)) {
+                $dst_img = "{$_SHOP_CONF['catimgpath']}/{$this->image}";
+                if (!@rename($src_img, $dst_img)) {
+                    // If image not found, unset the image value.
+                    $this->image = '';
                 }
             }
         }
-        $this->image = $img_filename;
 
         // Insert or update the record, as appropriate, as long as a
         // previous error didn't occur.
@@ -290,6 +256,7 @@ class Category
                 google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "'";
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
+            //COM_errorLog($sql);
             SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
             if (!DB_error()) {
@@ -419,6 +386,9 @@ class Category
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
+        // Clean up old upload images that never got assigned to a category
+        Images\Category::cleanUnassigned();
+
         $T = SHOP_getTemplate('category_form', 'category');
         $id = $this->cat_id;
 
@@ -454,10 +424,13 @@ class Category
             'group_sel'     => SEC_getGroupDropdown($this->grp_access, 3, 'grp_access'),
             'doc_url'       => SHOP_getDocURL('category_form'),
             'google_taxonomy' => $this->google_taxonomy,
+            'nonce'         => Images\Category::makeNonce(),
         ) );
-
         if ($this->image != '') {
-            $T->set_var('img_url', $this->getImage())['url'];
+            $T->set_var(array(
+                'tn_url'    => Images\Category::getThumbUrl($this->image)['url'],
+                'img_url'   => $this->getImage()['url']
+            ) );
         }
 
         if (!self::isUsed($this->cat_id)) {
