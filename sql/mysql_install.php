@@ -106,6 +106,7 @@ $_SQL = array(
   `product_id` int(11) unsigned NOT NULL,
   `filename` varchar(255) DEFAULT NULL,
   `nonce` varchar(20) DEFAULT NULL,
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`img_id`),
   KEY `idxProd` (`product_id`,`img_id`)
 ) ENGINE=MyISAM",
@@ -587,6 +588,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD google_taxonomy text AFTER `image`",
     "ALTER TABLE {$_TABLES['shop.images']} ADD `nonce` varchar(20) DEFAULT NULL",
+    "ALTER TABLE {$_TABLES['shop.images']} ADD `last_update` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     "RENAME TABLE {$_TABLES['shop.prod_attr']} TO {$_TABLES['shop.prod_opt_vals']}",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `opt_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",

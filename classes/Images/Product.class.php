@@ -137,6 +137,24 @@ class Product extends \Shop\Image
         DB_query($sql);
     }
 
+
+    /**
+     * Remove images that haven't been assigned to a product.
+     * This happens when images ar uploaded via drag-and-drop but the product
+     * is not created.
+     */
+    public static function cleanUnassigned()
+    {
+        global $_TABLES;
+
+        $sql = "SELECT img_id FROM {$_TABLES['shop.images']}
+            WHERE product_id = 0 AND last_update < DATE_SUB(NOW(), INTERVAL 90 minute)";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            self::DeleteImage($A['img_id']);
+        }
+    }
+
 }
 
 ?>

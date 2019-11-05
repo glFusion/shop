@@ -885,6 +885,9 @@ class Product
             false
         );
 
+        // Delete old image records that aren't associated with a product
+        Images\Product::cleanUnassigned();
+
         $T = SHOP_getTemplate('product_form', 'product');
         // Set up the wysiwyg editor, if available
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
