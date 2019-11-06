@@ -768,3 +768,10 @@ div#orderShipmentBlock {
 #cat_image figcaption {
     text-align:center;
 }
+.shopDetailAddCart.v2 label {
+    width: 110px;
+    text-align:right;
+}
+.shopDetailAddCart.v2 .uk-form-controls {
+    margin-left:120px;
+}
