@@ -765,3 +765,6 @@ div#orderShipmentBlock {
 #shippingBlock .expand {
     width: 99%;
 }
+#cat_image figcaption {
+    text-align:center;
+}
