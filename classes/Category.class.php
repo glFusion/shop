@@ -448,6 +448,7 @@ class Category
                 $amount = $D->amount;
             }
             $DT->set_var(array(
+                'sale_name' => htmlspecialchars($D->name),
                 'sale_start' => $D->start,
                 'sale_end'  => $D->end,
                 'sale_type' => $D->discount_type,
