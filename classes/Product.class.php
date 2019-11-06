@@ -1513,12 +1513,12 @@ class Product
             $add_cart = false;
         } elseif (
             $_USER['uid'] == 1 &&
-            !$_SHOP_CONF['anon_buy'] &&
-            !$this->hasOptions() && $this->price > 0
+            !$_SHOP_CONF['anon_buy']
         ) {
             // Requires login before purchasing
             $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
             $buttons['login'] = $T->parse('', 'login_req');
+            $add_cart = false;
         } else {
             // Normal buttons for everyone else
             if ($this->canBuyNow() && $this->btn_type != '') {
@@ -1534,8 +1534,10 @@ class Product
         // All users and products get an add-to-cart button, if price > 0
         // and cart is enabled, and product is not a donation. Donations
         // can't be mixed with products, so don't allow adding to the cart.
-        if ($add_cart && $this->btn_type != 'donation' &&
-            ($this->price > 0 || !$this->canBuyNow()) ) {
+        if (
+            $add_cart && $this->btn_type != 'donation' &&
+            ($this->price > 0 || !$this->canBuyNow())
+        ) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',

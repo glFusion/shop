@@ -489,7 +489,7 @@ class Catalog
 
         $T->set_block('wrapper', 'ProductItems', 'PI');
         foreach ($Cats as $Cat) {
-            if (!Category::hasProducts($Cat->cat_id)) {
+            if (!$Cat->hasAccess() || !Category::hasProducts($Cat->cat_id)) {
                 // Skip categories that have no products
                 continue;
             }
