@@ -555,6 +555,10 @@ $LANG_SHOP = array (
 'no_files_uploaded' => 'No files were uploaded',
 'comment' => 'Comment',
 'upd_stat_cmt' => 'Update Status/Comment',
+'location' => 'Location',
+'date' => 'Date',
+'time' => 'Time',
+'carriers' => 'Carrier Modules',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -579,6 +583,7 @@ $LANG_SHOP_HELP = array(
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
+'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -663,6 +668,15 @@ $LANG_confignames['shop'] = array(
     'use_sku'       => 'Use SKU as Product ID?',
     'feed_facebook' => 'Enable Facebook Feed?',
     'shop_country'  => 'Country',
+'name' => 'Remittance/Support Contact',
+'company' => 'Company Name',
+'address1' => 'Address Line 1',
+'address2' => 'Address Line 2',
+'city' => 'City',
+'state' => 'State/Province',
+'zip' => 'Postal Code',
+'country' => 'Country',
+'adm_def_view' => 'Default Admin View',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -721,6 +735,11 @@ $LANG_configselects['shop'] = array(
         'Category List (incl. Home)' => 6,
         'Category List (top-level)' => 10,
         'Category List (top, incl. Home)' => 14,
+    ),
+    20 => array(
+        'Product List' => 'products',
+        'Category List' => 'categories',
+        'Order List' => 'orders',
     ),
 );
 
