@@ -815,7 +815,7 @@ function plugin_autouninstall_shop()
             'shop.order_log',
             'shop.orderstatus',
             'shop.orders',
-            'shop.prod_attr',
+            'shop.prod_attr',   // deprecated, here for removal only
             'shop.products',
             'shop.orderitems',
             'shop.oi_opts',
@@ -830,6 +830,8 @@ function plugin_autouninstall_shop()
             'shop.shipments',
             'shop.shipment_items',
             'shop.shipment_packages',
+            'shop.carrier_config',
+            'shop.cache',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
