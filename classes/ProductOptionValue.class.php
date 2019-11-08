@@ -692,7 +692,7 @@ class ProductOptionValue
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?deleteopt=x&amp;opt_id=' . $A['pov_id'],
+                SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
