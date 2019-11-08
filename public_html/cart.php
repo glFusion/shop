@@ -18,6 +18,7 @@ require_once '../lib-common.php';
 if (
     !isset($_SHOP_CONF) ||
     !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) ||
     !SHOP_access_check()
 ) {
     COM_404();
