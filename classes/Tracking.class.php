@@ -35,6 +35,12 @@ class Tracking
 
     /**
      * Add a tracking step.
+     * Parameter array should include:
+     * - location
+     * - message
+     * - date
+     * - time
+     * - Alternatively, a datetime object which will superceded the date/time
      *
      * @param   array   $info   Array of step information
      */
