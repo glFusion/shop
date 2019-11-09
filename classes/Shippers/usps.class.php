@@ -317,6 +317,7 @@ class usps extends \Shop\Shipper
      * Get the package tracking URL for a given tracking number.
      * This is used only if the tracking API is not used.
      *
+     * @param   string  $track_num  Tracking number
      * @return  string  Package tracking URL
      */
     protected function _getTrackingUrl($track_num)

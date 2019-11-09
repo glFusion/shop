@@ -107,7 +107,8 @@ class ups extends \Shop\Shipper
      * Get the package tracking URL for a given tracking number.a
      * This is used if the Tracking API is not used.
      *
-     * @return  string  Package tracing URL
+     * @param   string  $track_num  Tracking number
+     * @return  string  Package tracking URL
      */
     protected function _getTrackingUrl($track_num)
     {
@@ -137,7 +138,7 @@ class ups extends \Shop\Shipper
 
         try {
             // Create AccessRequest XMl
-            $accessRequestXML = new SimpleXMLElement ( "<AccessRequest></AccessRequest>" );
+            $accessRequestXML = new SimpleXmlElement('<AccessRequest></AccessRequest>');
             $accessRequestXML->addChild("AccessLicenseNumber", $this->getConfig('access_key'));
             $accessRequestXML->addChild("UserId", $this->getConfig('userid'));
             $accessRequestXML->addChild("Password", $this->getConfig('passwd'));

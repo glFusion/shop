@@ -105,7 +105,8 @@ class fedex extends \Shop\Shipper
     /**
      * Get the package tracking URL for a given tracking number.
      *
-     * @return  string  Package tracing URL
+     * @param   string  $track_num  Tracking number
+     * @return  string  Package tracking URL
      */
     public function _getTrackingUrl($track_num)
     {
@@ -161,7 +162,7 @@ class fedex extends \Shop\Shipper
     /**
      * Get tracking data via API and return a Tracking object.
      *
-     * @param   string  $tracking   Single tracking number
+     * @param   string  $track_num  Single tracking number
      * @return  object      Tracking object
      */
     public function getTracking($track_num)
