@@ -71,13 +71,16 @@ class Category extends \Shop\Image
                 $sql = "UPDATE {$_TABLES['shop.categories']}
                     SET image = '" . DB_escapeString($basename) . "'
                     WHERE cat_id = '{$this->record_id}'";
-COM_errorLog($sql);
                 $result = DB_query($sql);
                 if (!$result) {
                     $this->_addError("Category::uploadFiles() : Failed to upload {$basename}");
                 } else {
                     $filenames[] = $basename;;
                 }
+            } else {
+                // For a new record, just add the filename.
+                // The DB will be updated when the record is saved.
+                $filenames[] = $basename;
             }
         }
         return $filenames;
