@@ -413,6 +413,7 @@ class Category
         } else {
             $T->set_var('parent_sel', self::optionList($this->parent_id, $this->cat_id));
         }
+
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -1082,7 +1083,7 @@ class Category
             break;
 
         case 'delete':
-            if (!\Shop\Category::isUsed($A['cat_id'])) {
+            if (!self::isUsed($A['cat_id'])) {
                 $retval .= COM_createLink(
                     '<i class="uk-icon uk-icon-remove uk-text-danger"></i>',
                     SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],

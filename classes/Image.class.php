@@ -104,11 +104,12 @@ class Image extends UploadDownload
         $thumbsize = (int)$_SHOP_CONF['max_thumb_size'];
         if ($thumbsize < 50) $thumbsize = 100;
 
-        if (!is_array($this->getFilenames())) {
+        $filenames = $this->getFilenames();
+        if (!is_array($filenames) || empty($filenames)) {
             return '';
         }
 
-        foreach ($this->getFileNames() as $filename) {
+        foreach ($filenames as $filename) {
             $src = "{$this->pathImage}/{$filename}";
             $url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
             if (!empty($url)) {
