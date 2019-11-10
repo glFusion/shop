@@ -353,7 +353,7 @@ class Menu
         if (DB_count($_TABLES['shop.gateways'], 'enabled', 1) == 0) {
             $todo[] = $LANG_SHOP['todo_nogateways'];
         }
-        if (!empty($todo) && array_key_exists('paypal', $_PLUGIN_INFO)) {
+        if (MigratePP::canMigrate()) {
             $todo[] = $LANG_SHOP['todo_migrate_pp'];
         }
         return $todo;

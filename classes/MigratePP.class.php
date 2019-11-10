@@ -177,12 +177,19 @@ class MigratePP
     {
         global $_TABLES;
 
-        return self::_dbExecute(array(
+        $sql = array(
             "TRUNCATE {$_TABLES['shop.categories']}",
-            "INSERT INTO {$_TABLES['shop.categories']}
-                SELECT *, '' as google_taxonomy
-                FROM {$_TABLES['paypal.categories']}",
-        ) );
+            "INSERT INTO {$_TABLES['shop.categories']} (
+                cat_id, parent_id, cat_name, description,
+                enabled, grp_access, image, google_taxonomy,
+                lft, rgt
+            ) SELECT
+                cat_id, parent_id, cat_name, description,
+                enabled, grp_access, image, '' as google_taxonomy,
+                lft, rgt
+            FROM {$_TABLES['paypal.categories']}",
+        );
+        return self::_dbExecute($sql);
     }
 
 
@@ -262,7 +269,7 @@ class MigratePP
                 txn_type, expiration, price, price, 0,
                 taxable, token, options, options_text,
                 extras, shipping, handling, tax
-            FROM $pp)",
+            FROM $pp",
         ) );
     }
 
@@ -439,7 +446,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.images']}",
             "INSERT INTO {$_TABLES['shop.images']}
-                SELECT *, NULL as nonce
+                SELECT *, NULL as nonce, '2018-01-01 00:00:00' as last_update
                 FROM {$_TABLES['paypal.images']}",
         ) );
     }
