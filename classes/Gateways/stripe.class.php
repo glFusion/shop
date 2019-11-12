@@ -88,7 +88,7 @@ class stripe extends \Shop\Gateway
 
     /**
      *  Get the form variables for this checkout button.
-     *  Used if the entire order is being paid by the gift card balance.
+     *  For Stripe there are several things to do, but there are no form vars.
      *
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
@@ -96,6 +96,8 @@ class stripe extends \Shop\Gateway
     public function gatewayVars($cart)
     {
         global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP, $_CONF;
+
+        static $have_js = false;
 
         if (!$this->_Supports('checkout')) {
             return '';
@@ -168,18 +170,14 @@ class stripe extends \Shop\Gateway
             'client_reference_id' => $cartID,
         ) );
 
-        $gatewayVars = array(
-            '<script src="https://js.stripe.com/v3/"></script>',
-            '<script type="text/javascript">',
-            'var stripe = Stripe("' . $this->pub_key . '");',
-            //'stripe.redirectToCheckout({' ,
-            //'   sessionId: "'. $session->id . '"',
-            //'}).then(function (result) {',
-            //'});',
-            '</script>',
-        );
-        $gateway_vars = implode("\n", $gatewayVars);
-        return $gateway_vars;
+        if (!$have_js) {
+            $outputHandle = \outputHandler::getInstance();
+            $outputHandle->addLinkScript('https://js.stripe.com/v3/');
+            $have_js = true;
+        }
+
+        // No actual form vars needed
+        return '';
     }
 
 
@@ -241,21 +239,17 @@ class stripe extends \Shop\Gateway
 
 
     /**
-     * Override the final checkout button URL to redirect to stripe.com.
+     * Get additional javascript to be attached to the checkout button.
      *
-     * @return  string      HTML for button code.
+     * @return  string  Javascript commands.
      */
-    public function getCheckoutButton()
+    public function getCheckoutJS()
     {
-        global $LANG_SHOP;
-
-        return '<button
-            type="submit"
-            onclick="finalizeCart(\'' . $this->_cart->order_id . '\',\'' . $this->_cart->uid . '\');
-                stripe.redirectToCheckout({sessionId: \''. $this->session->id . '\'});
-                return false;"
-            class="uk-button uk-button-success"
-            name="submit">' . $LANG_SHOP["confirm_order"] . '</button>';
+        $js = array(
+            'var stripe = Stripe("' . $this->pub_key . '");',
+            "stripe.redirectToCheckout({sessionId: \"{$this->session->id}\"});",
+        );
+        return implode(" ", $js);
     }
 
 

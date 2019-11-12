@@ -933,6 +933,7 @@ class Gateway
             'cart_id'   => $cart->cartID(),
             'uid'       => $_USER['uid'],
             'set_final' => $this->_setFinal(),
+            'gw_js'     => $this->getCheckoutJS(),
         ) );
         return $T->parse('', 'btn');
     }
@@ -1272,6 +1273,17 @@ class Gateway
     public function getCheckoutButton()
     {
         return NULL;
+    }
+
+
+    /**
+     * Get additional javascript to be attached to the checkout button.
+     *
+     * @return  string  Javascript commands.
+     */
+    public function getCheckoutJS()
+    {
+        return '';
     }
 
 

@@ -82,9 +82,9 @@ case 'addcartitem':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $status = Shop\Cart::setFinal($cart_id);
+    Shop\Cart::setFinal($cart_id);
     $A = array(
-        'status' => $status,
+        'status' => true,
     );
     echo json_encode($A);
     exit;

@@ -79,11 +79,12 @@ function finalizeCart(cart_id, uid)
         return false;
     }
 */
-     var dataS = {
+    var dataS = {
         "cart_id": cart_id,
         "uid": uid,
     };
-    data = $.param(dataS);
+    var data = $.param(dataS);
+    var stat = false;
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -91,16 +92,17 @@ function finalizeCart(cart_id, uid)
         data: data,
         success: function(result) {
             try {
-                if (result.status == 0) {
-                    status = true;
+                if (result.status == true) {
+                    stat = true;
                 } else {
-                    status = false;
+                    stat = false;
                 }
             } catch(err) {
+                stat = false;
             }
         }
     });
-    return status;
+    return stat;
 }
 
 /**

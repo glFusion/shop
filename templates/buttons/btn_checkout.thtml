@@ -1,20 +1,23 @@
 {# begin {templatelocation} #}
 <form style="display:inline;" class="frm_checkout" name="frm_checkout"
-    action="{action}"
+    action="{action}" id="frm_{uniqid}"
 {!if method}
     method="{method}"
 {!else}
     method="post"
 {!endif}
+    onsubmit='
+{!if set_final}
+    finalizeCart("{cart_id}","{uid}");
+{!endif}
+    {gw_js}
+    return false;'
 >
   {gateway_vars}
 {!if button_url}
   {button_url}
 {!else}
   <button
-{!if set_final}
-    onclick="return finalizeCart('{cart_id}','{uid}');"
-{!endif}
 type="submit" class="uk-button uk-button-success" name="submit">{$LANG_SHOP['confirm_order']}</button>
 {!endif}
 </form>
