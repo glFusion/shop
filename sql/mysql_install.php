@@ -22,11 +22,12 @@ $_SQL = array(
 'shop.ipnlog' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `ip_addr` varchar(15) NOT NULL,
-  `ts` int(11) unsigned,
+  `ts` int(11) unsigned DEFAULT NULL,
   `verified` tinyint(1) DEFAULT '0',
   `txn_id` varchar(255) DEFAULT NULL,
   `gateway` varchar(25) DEFAULT NULL,
   `ipn_data` text NOT NULL,
+  `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ipnlog_ts` (`ts`),
   KEY `ipnlog_txnid` (`txn_id`)
