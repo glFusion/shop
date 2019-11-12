@@ -44,7 +44,7 @@ class MigratePP
         // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
             'address', 'coupon_log',
-            'ipnlog', 'order_log', 'orderstatus',
+            'order_log', 'orderstatus',
             'userinfo',
             'workflows', 'currency',
         );
@@ -85,6 +85,9 @@ class MigratePP
             return false;
         }
         if (!self::migrateGateways()) {
+            return false;
+        }
+        if (!self::migrateIPNLog()) {
             return false;
         }
         return true;
@@ -457,6 +460,25 @@ class MigratePP
             "INSERT INTO {$_TABLES['shop.images']}
                 SELECT *, NULL as nonce, '2018-01-01 00:00:00' as last_update
                 FROM {$_TABLES['paypal.images']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate Gateway information.
+     * Shop plugin adds the grp_access field in v1.0.0.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public function migrateIPNLog()
+    {
+        global $_TABLES;
+
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.ipnlog']}",
+            "INSERT INTO {$_TABLES['shop.ipnlog']}
+                SELECT *, '' as order_id
+                FROM {$_TABLES['paypal.ipnlog']}",
         ) );
     }
 

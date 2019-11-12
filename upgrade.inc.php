@@ -90,11 +90,6 @@ function SHOP_do_upgrade($dvlp = false)
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.sales']} CHANGE end_tmp end datetime NOT NULL DEFAULT '9999-12-31 23:59:59'";
         }
 
-        if (!_SHOPtableHasColumn('shop.ipnlog', 'order_id')) {
-            // This was in the 0.7.1 upgrade but not the installation, so add
-            // it if it's missing.
-            $SHOP_UPGRADE[$current_ver][] = $SHOP_UPGRADE['0.7.1'][4];
-        }
 
         // Make a note if the OrderItemOptions table exists.
         // Will use this after all the other SQL updates are done if necessary.
