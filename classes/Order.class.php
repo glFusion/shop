@@ -728,6 +728,10 @@ class Order
         $by_gc = (float)$this->getInfo('apply_gc');
         $ShopAddr = new Address($_SHOP_CONF);
 
+        // Reload the address objects in case the addresses were updated
+        $this->Billto = new Address($this->getAddress('billto'));
+        $this->Shipto = new Address($this->getAddress('shipto'));
+
         // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
         $T->set_var(array(
