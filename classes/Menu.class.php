@@ -294,9 +294,9 @@ class Menu
                 'active' => $view == 'order' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?shipments=' . $Order->order_id,
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->order_id,
                 'text' => $LANG_SHOP['shipments'],
-                'active' => $view == 'shipments' ? true : false,
+                'active' => $view == 'ord_ship' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);

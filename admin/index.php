@@ -58,7 +58,7 @@ $expected = array(
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments',
+    'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -715,6 +715,7 @@ case 'editshipment':
     break;
 
 case 'shipments':
+case 'ord_ship':
     // View admin list of shipments
     SHOP_setUrl();
     if ($actionval != 'x') {
@@ -724,7 +725,9 @@ case 'shipments':
         $content .= Shop\Menu::adminOrders($view);
     }
     $content .= Shop\Shipment::adminList($actionval);
-    $view = 'orders';       // to set the active top-level menu
+    if ($view == 'shipments') {
+        $view = 'orders';       // to set the active top-level menu
+    }
     break;
 
 case 'shiporder':
