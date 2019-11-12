@@ -71,7 +71,7 @@ function SHOP_do_upgrade($dvlp = false)
             // The table won't exist yet, these statememts get appended
             // to the upgrade SQL.
             $SHOP_UPGRADE[$current_ver][] = "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name) (SELECT DISTINCT attr_name FROM {$_TABLES['shop.prod_opt_vals']})";
-            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.pov_name=pog.pog_name SET pov.pog_id = pog.pog_id";
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name SET pov.pog_id = pog.pog_id";
         }
         // This has to be done after updating the attribute group above
         $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name";
