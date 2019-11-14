@@ -564,13 +564,15 @@ class square extends \Shop\Gateway
 
 
     /**
+     * Get additional javascript to be attached to the checkout button.
      * Square doesn't support a "cancel URL", so don't finalize the cart.
      *
-     * @return  boolean True to set final, False to leave as "cart"
+     * @param   object  $cart   Shopping cart object
+     * @return  string  Javascript commands.
      */
-    protected function _setFinal()
+    public function getCheckoutJS($cart)
     {
-        return false;
+        return '';
     }
 
 }   // class square

@@ -6,19 +6,15 @@
 {!else}
     method="post"
 {!endif}
-    onsubmit='
-{!if set_final}
-    finalizeCart("{cart_id}","{uid}");
+{!if gw_js}
+    onsubmit='{gw_js}'
 {!endif}
-    {gw_js}
-    return false;'
 >
   {gateway_vars}
 {!if button_url}
   {button_url}
 {!else}
-  <button
-type="submit" class="uk-button uk-button-success" name="submit">{$LANG_SHOP['confirm_order']}</button>
+  <button type="submit" class="uk-button uk-button-success" name="submit">{$LANG_SHOP['confirm_order']}</button>
 {!endif}
 </form>
 {# end {templatelocation} #}

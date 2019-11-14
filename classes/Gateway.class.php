@@ -932,8 +932,7 @@ class Gateway
             'button_url' => $this->getCheckoutButton(),
             'cart_id'   => $cart->cartID(),
             'uid'       => $_USER['uid'],
-            'set_final' => $this->_setFinal(),
-            'gw_js'     => $this->getCheckoutJS(),
+            'gw_js'     => $this->getCheckoutJS($cart),
         ) );
         return $T->parse('', 'btn');
     }
@@ -1279,11 +1278,12 @@ class Gateway
     /**
      * Get additional javascript to be attached to the checkout button.
      *
+     * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
      */
-    public function getCheckoutJS()
+    public function getCheckoutJS($cart)
     {
-        return '';
+        return 'finalizeCart("' . $cart->order_id . '","' . $cart->uid . '", this); return true;';
     }
 
 
@@ -1335,18 +1335,6 @@ class Gateway
     protected function _postConfigSave()
     {
         return;
-    }
-
-
-    /**
-     * Check whether to set the order status to "pending" when the final confirmation button is clicked.
-     * This requires a "cancel URL" option in the gateway to return to the cart, and some gateways don't support this.
-     *
-     * @return  boolean True to set final, False to leave as "cart"
-     */
-    protected function _setFinal()
-    {
-        return true;
     }
 
 

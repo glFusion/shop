@@ -240,14 +240,18 @@ class stripe extends \Shop\Gateway
 
     /**
      * Get additional javascript to be attached to the checkout button.
+     * Stripe redirect is done completely in JS, and there is no cancel option.
      *
+     * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
      */
-    public function getCheckoutJS()
+    public function getCheckoutJS($cart)
     {
         $js = array(
+            'finalizeCart("' . $cart->order_id . '","' . $cart->uid . '");',
             'var stripe = Stripe("' . $this->pub_key . '");',
             "stripe.redirectToCheckout({sessionId: \"{$this->session->id}\"});",
+            "return false;",
         );
         return implode(" ", $js);
     }

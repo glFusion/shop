@@ -84,10 +84,11 @@ function finalizeCart(cart_id, uid)
         "uid": uid,
     };
     var data = $.param(dataS);
-    var stat = false;
+    var stat = true;
     $.ajax({
         type: "POST",
         dataType: "json",
+        async: false,
         url: glfusionSiteUrl + "/shop/ajax.php?action=finalizecart",
         data: data,
         success: function(result) {
@@ -100,7 +101,15 @@ function finalizeCart(cart_id, uid)
             } catch(err) {
                 stat = false;
             }
-        }
+        },
+        error: function(httpRequest, message, errorThrown) {
+            console.log(cart_id);
+            console.log(httpRequest);
+            console.log(message);
+            console.log(errorThrown);
+            throw errorThrown + ': ' + message;
+            return false;
+        },
     });
     return stat;
 }
