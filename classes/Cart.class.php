@@ -809,15 +809,15 @@ class Cart extends Order
             return;
         }
 
-        $oldstatus = $Order->status;
-        $newstatus = $status ? 'pending' : 'cart';
-        $Order->status = $newstatus;
+        //$oldstatus = $Order->status;
+        //$newstatus = $status ? 'pending' : 'cart';
+        //$Order->status = $newstatus;
         $Order->tax_rate = SHOP_getTaxRate();
         $Order->order_date->setTimestamp(time());
         $Order->Save();
         self::setSession('order_id', $cart_id);
 
-        if ($newstatus != 'cart') {
+        /*if ($newstatus != 'cart') {
             // Make sure the cookie gets deleted also
             self::_expireCookie();
         } else {
@@ -825,7 +825,7 @@ class Cart extends Order
             self::_setCookie($cart_id);
             // delete all open user carts except this one
             self::deleteUser(0, $cart_id);
-        }
+        }*/
         Cache::delete('order_' . $cart_id);
         // Is it really necessary to log that it changed from a cart to pending?
         //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
