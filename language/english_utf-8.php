@@ -672,6 +672,7 @@ $LANG_confignames['shop'] = array(
     'company'       => 'Company Name',
     'country'       => 'Country',
     'adm_def_view'  => 'Default Admin View',
+    'def_prod_type' => 'Default Product Type',
 );
 
 /** Language strings for the subgroup names in the config section */

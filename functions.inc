@@ -1701,6 +1701,23 @@ function plugin_configmanager_select_product_tpl_ver_shop()
 
 
 /**
+ * Select the default type for new products.
+ *
+ * @return  $array  $option => value
+ */
+function plugin_configmanager_select_def_prod_type_shop()
+{
+    global $LANG_SHOP;
+
+    $A = array();
+    foreach (array(1, 2, 4, 8) as $type) {
+        $A[$LANG_SHOP['prod_types'][$type]] = $type;
+    }
+    return $A;
+}
+
+
+/**
  * Select the country code for the shop.
  *
  * @return  array   $option => path
