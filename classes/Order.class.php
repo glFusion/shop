@@ -338,6 +338,7 @@ class Order
      * Set the shipping address.
      *
      * @param   array|NULL  $A      Array of info, or NULL to clear
+     * @return  object      Current Order object
      */
     public function setShipping($A)
     {
@@ -387,6 +388,7 @@ class Order
             shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'";
         DB_query($sql);
         //Cache::delete('order_' . $this->order_id);
+        return $this;
     }
 
 
@@ -394,6 +396,7 @@ class Order
      * Set all class variables, from a form or a database item
      *
      * @param   array   $A      Array of items
+     * @return  object      Current Order object
      */
     public function setVars($A)
     {
@@ -449,6 +452,7 @@ class Order
             Cart::clearSession('order_id');
         }
         $this->shipper_id = $A['shipper_id'];
+        return $this;
     }
 
 
@@ -1428,6 +1432,8 @@ class Order
      * Set a new token on the order.
      * Used after an action is performed to prevent the same action from
      * happening again accidentally.
+     *
+     * @return  string      Token value
      */
     public function setToken()
     {
@@ -1472,10 +1478,12 @@ class Order
      * Set the isAdmin field to indicate whether admin access is being requested.
      *
      * @param   boolean $isAdmin    True to get admin view, False for user view
+     * @return  object      Current Order object
      */
     public function setAdmin($isAdmin = false)
     {
         $this->isAdmin = $isAdmin == false ? false : true;
+        return $this;
     }
 
 
@@ -1590,10 +1598,12 @@ class Order
      *
      * @param   string  $key    Name of var to set
      * @param   mixed   $value  Value to set
+     * @return  object      Current Order object
      */
     public function setInfo($key, $value)
     {
         $this->m_info[$key] = $value;
+        return $this;
     }
 
 
@@ -1605,6 +1615,7 @@ class Order
     public function remInfo($key)
     {
         unset($this->m_info[$key]);
+        return $this;
     }
 
 
@@ -1623,6 +1634,7 @@ class Order
      * Apply a gift card amount to this cart.
      *
      * @param   float   $amt    Amount of credit to apply
+     * @return  object      Current Order object
      */
     public function setGC($amt)
     {
@@ -1632,6 +1644,7 @@ class Order
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
         $this->setInfo('apply_gc', $amt);
+        return $this;
     }
 
 

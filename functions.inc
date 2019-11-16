@@ -2362,7 +2362,7 @@ function SHOP_getUrl($def_url = '', $keep=true)
             $url = $def_url;
         } else {
             // final failsafe
-            $url = SHOP_URL;
+            $url = SHOP_URL . '/index.php';
         }
     } elseif (!$keep) {
         // This is a one-time use value

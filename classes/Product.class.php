@@ -963,7 +963,7 @@ class Product
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
-            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL),
+            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
             'option_list'   => ProductOptionValue::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
