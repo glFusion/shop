@@ -143,7 +143,7 @@ class Product
             $this->short_description = '';
             $this->description = '';
             $this->price = 0;
-            $this->prod_type = SHOP_PROD_VIRTUAL;
+            $this->prod_type = $_SHOP_CONF['def_prod_type'];
             $this->weight = 0;
             $this->file = '';
             $this->expiration = $_SHOP_CONF['def_expiration'];
