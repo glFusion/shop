@@ -197,7 +197,7 @@ $_SQL = array(
 ) ENGINE=MyISAM",
 
 'shop.address' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.address']}` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `addr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '1',
   `name` varchar(255) DEFAULT NULL,
   `company` varchar(255) DEFAULT NULL,
@@ -521,6 +521,7 @@ $SHOP_UPGRADE['0.7.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
+    "ALTER TABLE {$_TABLES['shop.address']} CHANGE id addr_id int(11) unsigned NOT NULL auto_increment",
 );
 $SHOP_UPGRADE['1.0.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.prod_opt_grps']}` (
@@ -582,7 +583,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
-    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `modjle_code` varchar(10) AFTER `id`",
+    "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD base_price decimal(9,4) NOT NULL default 0 AFTER expiration",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",

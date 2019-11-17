@@ -43,13 +43,12 @@ class MigratePP
         // Clear out the Shop tables and insert data from Paypal.
         // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
-            'address', 'coupon_log',
+            'coupon_log',
             'order_log', 'orderstatus',
             'userinfo',
             'workflows', 'currency',
         );
         foreach ($tables as $table) {
-            COM_errorLog("-- Migrating table $table");
             if (!self::migrateTable($table)) {
                 return false;
             }
@@ -88,6 +87,9 @@ class MigratePP
             return false;
         }
         if (!self::migrateIPNLog()) {
+            return false;
+        }
+        if (!self::migrateAddress()) {
             return false;
         }
         return true;
@@ -142,6 +144,7 @@ class MigratePP
             $pp_tbl = $shop_tbl;
         }
 
+        COM_errorLog("-- Migrating table $shop_tbl");
         $shop_tbl = $_TABLES['shop.' . $shop_tbl];
         $pp_tbl = $_TABLES['paypal.' . $pp_tbl];
         return self::_dbExecute(array(
@@ -161,6 +164,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Coupons ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.coupons']}",
             "INSERT INTO {$_TABLES['shop.coupons']}
@@ -180,6 +184,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Product Categories ...");
         $sql = array(
             "TRUNCATE {$_TABLES['shop.categories']}",
             "INSERT INTO {$_TABLES['shop.categories']} (
@@ -205,6 +210,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Products ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.products']}",
             "INSERT INTO {$_TABLES['shop.products']}
@@ -226,6 +232,7 @@ class MigratePP
     {
         global $_TABLES, $_PP_CONF, $_SHOP_CONF;
 
+        COM_errorLog("Migrating Orders ...");
         $add_flds = ',0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
         // If not at Paypal 0.6.1, add a dummy order sequence value
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
@@ -255,6 +262,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Order Items ...");
         // This version renames the "purchases" table to "orderitems".
         // Adds: qty_discounts, base_price
         // Removes: status
@@ -287,6 +295,7 @@ class MigratePP
     {
         global $_TABLES, $_CONF;
 
+        COM_errorLog("Migrating Sale Pricing ...");
         // Shop 1.0.0 changes the dates used in the Sales table.
         $tz_offset = $_CONF['_now']->format('P', true);
         return self::_dbExecute(array(
@@ -358,6 +367,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Option Values ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
@@ -382,6 +392,7 @@ class MigratePP
         global $_TABLES;
 
         // Initial populate of the new attribute group table, after the main migration.
+        COM_errorLog("Migrating Option Groups ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_grps']}",
             "INSERT INTO {$_TABLES['shop.prod_opt_grps']} (pog_name)
@@ -404,6 +415,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Shipping ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.shipping']}",
             "INSERT INTO {$_TABLES['shop.shipping']} (
@@ -437,6 +449,7 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating Payment Gateways ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.gateways']}",
             "INSERT INTO {$_TABLES['shop.gateways']}
@@ -474,11 +487,37 @@ class MigratePP
     {
         global $_TABLES;
 
+        COM_errorLog("Migrating IPN Log ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.ipnlog']}",
             "INSERT INTO {$_TABLES['shop.ipnlog']}
                 SELECT *, '' as order_id
                 FROM {$_TABLES['paypal.ipnlog']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate Addresses.
+     * Shop plugin changes the "id" field to "addr_id".
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public function migrateAddress()
+    {
+        global $_TABLES;
+
+        COM_errorLog("Migrating Addreses ...");
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.address']}",
+            "INSERT INTO {$_TABLES['shop.address']} (
+                addr_id, uid, name, company, address1, address2,
+                city, state, country, zip,
+                billto_def, shipto_def
+            ) SELECT id, uid, name, company, address1, address2,
+                city, state, country, zip,
+                billto_def, shipto_def
+            FROM {$_TABLES['paypal.address']}",
         ) );
     }
 
