@@ -17,18 +17,21 @@ require_once '../lib-common.php';
 
 $uid = (int)$_USER['uid'];
 $action = SHOP_getVar($_GET, 'action');
+$output = NULL;
+
 switch ($action) {
 case 'delAddress':          // Remove a shipping address
     if ($uid < 2) break;    // Not available to anonymous
-    $U = Shop\Customer::getInstance($uid);
-    $U->deleteAddress($_GET['id']);
+    $status = Shop\Customer::getInstance($uid)->deleteAddress($_GET['addr_id']);
+    $output = array(
+        'status'    => $status,
+    );
     break;
 
 case 'getAddress':
     if ($uid < 2) break;
-    $A = Shop\Customer::getInstance($uid)->getAddress($_GET['id']);
-    //$res = DB_query("SELECT * FROM {$_TABLES['shop.address']} WHERE id=$id",1);
-    //$A = DB_fetchArray($res, false);
+    $Address = Shop\Customer::getInstance($uid)->getAddress($_GET['id']);
+    $output = $Address->toJSON();
     break;
 
 case 'addcartitem':
@@ -69,25 +72,21 @@ case 'addcartitem':
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
     $Cart->addItem($args);
-    $A = array(
+    $output = array(
         'content' => phpblock_shop_cart_contents(),
         'statusMessage' => $LANG_SHOP['msg_item_added'],
         'ret_url' => isset($_POST['_ret_url']) && !empty($_POST['_ret_url']) ?
                 $_POST['_ret_url'] : '',
         'unique' => $unique ? true : false,
     );
-    echo json_encode($A);
-    exit;
     break;
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
     Shop\Cart::setFinal($cart_id);
-    $A = array(
+    $output = array(
         'status' => true,
     );
-    echo json_encode($A);
-    exit;
     break;
 
 case 'redeem_gc':
@@ -103,17 +102,30 @@ case 'redeem_gc':
         list($status, $status_msg) = Shop\Products\Coupon::Redeem($code, $uid);
         $gw = Shop\Gateway::getInstance('_coupon');
         $gw_radio = $gw->checkoutRadio($status == 0 ? true : false);
-        $A = array (
+        $output = array (
             'statusMessage' => $status_msg,
             'html' => $gw_radio,
             'status' => $status,
         );
     }
-    echo json_encode($A);
-    exit;
+    break;
+
 default:
     // Missing action, nothing to do
     break;
+}
+
+if ($output === NULL) {
+    $ouptut = array('status' => false);
+}
+header('Content-Type: application/json');
+header("Cache-Control: no-cache, must-revalidate");
+//A date in the past
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+if (is_array($output)) {
+    echo json_encode($output);
+} else {
+    echo $output;
 }
 
 ?>

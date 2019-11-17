@@ -150,16 +150,18 @@ class Customer
             $this->email = $A['email'];
             $this->language = $A['language'];
             $this->isNew = false;
-            $res = DB_query(
+            $this->addresses = Address::getByUser($uid);
+            /*$res = DB_query(
                 "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
             );
             while ($A = DB_fetchArray($res, false)) {
                 $this->addresses[$A['id']] = $A;
-            }
+            }*/
         } else {
             $this->cart = array();
             $this->isNew = true;
             $this->saveUser();
+            $this->addresses = array();
         }
     }
 
@@ -208,9 +210,9 @@ class Customer
     {
         if ($type != 'billto') $type = 'shipto';
 
-        foreach ($this->addresses as $addr) {
-            if ($addr[$type.'_def'] == 1) {
-                return $addr;
+        foreach ($this->addresses as $Addr) {
+            if ($Addr->isDefault($type)) {
+                return $Addr;
             }
         }
         if (isset($this->addresses[0])) {
@@ -223,6 +225,7 @@ class Customer
 
     /**
      * Save the current values to the database.
+     * The $A parameter must contain the addr_id value if updating.
      *
      * @param   array   $A      Array of data ($_POST)
      * @param   string  $type   Type of address (billing or shipping)
@@ -232,6 +235,27 @@ class Customer
     {
         global $_TABLES, $_USER;
 
+        // Don't save invalid addresses, or anonymous
+        if ($_USER['uid'] < 2 || !is_array($A)) {
+            return array(-1, '');
+        }
+        $type = $type == 'billto' ? 'billto' : 'shipto';
+
+        $Address = new Address($A);
+        $Address->uid = $this->uid;     // Probably not included in $_POST
+
+        $msg = $Address->isValid();
+        if (!empty($msg)) {
+            return array(-1, $msg);
+        }
+
+        if (isset($A['is_default'])) {
+            $Address->setDefault($type);
+        }
+        $addr_id = $Address->Save();
+        return $addr_id;
+
+        // TODO: Deprecated
         // Don't save invalid addresses, or anonymous
         if ($_USER['uid'] < 2 || !is_array($A)) {
             return array(-1, '');
@@ -328,18 +352,21 @@ class Customer
      * Delete an address by id.
      * Called when the user deletes one of their billing or shipping addresses.
      *
-     * @param   integer $id     Record ID of address to delete
+     * @param   integer $addr_id    Record ID of address to delete
+     * @return  boolean     Status of change, True if successful
      */
-    public function deleteAddress($id)
+    public function deleteAddress($addr_id)
     {
-        global $_TABLES;
-
-        if ($id < 1) return false;
-        $id = (int)$id;
-        DB_delete($_TABLES['shop.address'], 'id', $id);
-        Cache::clear('shop.user_' . $this->uid);
-        Cache::clear('shop.address_' . $this->uid);
-        return true;
+        $addr_id = (int)$addr_id;
+        if ($addr_id < 1 || !array_key_exists($addr_id, $this->addresses)) {
+            $status = false;
+        } else {
+            $status = $this->addresses[$addr_id]->Delete();
+            if ($status) {
+                unset($this->addresses[$addr_id]);
+            }
+        }
+        return $status;
     }
 
 
@@ -397,7 +424,8 @@ class Customer
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
-        $T = SHOP_getTemplate('address', 'address');
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('address', 'address.thtml');
 
         // Set the address to select by default. Start by using the one
         // already stored in the cart, if any.
@@ -411,34 +439,43 @@ class Customer
         $T->set_block('address', 'SavedAddress', 'sAddr');
         foreach($this->addresses as $ad_id => $address) {
             $count++;
-            if ($address[$type.'_def'] == 1) {
+            if ($address->isDefault($type)) {
                 $is_default = true;
-                $def_addr = $address['id'];
+                $def_addr = $ad_id;
             } else {
                 $is_default = false;
             }
 
             // If this is the default address, or this is the already-stored
             // address, then check it's radio button.
-            if ( (empty($addr_id) && $is_default) ||
-                    $addr_id == $address['id'] ) {
+            if (
+                (empty($addr_id) && $is_default) ||
+                $addr_id == $ad_id
+            ) {
                 $ad_checked = 'checked="checked"';
-                $addr_id = $address['id'];
+                $addr_id = $ad_id;
             } else {
                 $ad_checked = '';
             }
 
             $T->set_var(array(
-                'id'        => $address['id'],
-                'ad_name'   => $address['name'],
-                'ad_company' => $address['company'],
-                'ad_addr_1' => $address['address1'],
-                'ad_addr_2' => $address['address2'],
-                'ad_city'   => $address['city'],
-                'ad_state'  => $address['state'],
-                'ad_country' => $address['country'],
-                'ad_zip'    => $address['zip'],
+                'id'        => $address->addr_id,
+                'ad_name'   => $address->name,
+                'ad_company' => $addres->company,
+                'ad_addr_1' => $address->address1,
+                'ad_addr_2' => $address->address2,
+                'ad_city'   => $address->city,
+                'ad_state'  => $address->state,
+                'ad_country' => $address->country,
+                'ad_zip'    => $address->zip,
                 'ad_checked' => $ad_checked,
+                'del_icon'  => Icon::getHTML(
+                    'delete', 'tooltip',
+                    array(
+                        'title' => $LANG_SHOP['delete'],
+                        'onclick' => 'removeAddress(' . $address->addr_id . ');',
+                    )
+                ),
             ) );
             $T->parse('sAddr', 'SavedAddress', true);
         }

@@ -172,20 +172,22 @@ class test extends \Shop\Gateway
             $U = self::Customer();
             $shipto = $U->getDefaultAddress('shipto');
             if (!empty($shipto)) {
-                if (strpos($shipto['name'], ' ')) {
-                    list($fname, $lname) = explode(' ', $shipto['name']);
+                $fullname = $shipto->name;
+                if (strpos($fullname, ' ')) {
+                    list($fname, $lname) = explode(' ', $fullname);
                     $vars['first_name'] = $fname;
                     if ($lname) $vars['last_name'] = $lname;
                 } else {
-                    $vars['first_name'] = $shipto['name'];
+                    $vars['first_name'] = $fullname;
                 }
-                $vars['address1'] = $shipto['address1'];
-                if (!empty($shipto['address2']))
-                    $vars['address2'] = $shipto['address2'];
-                $vars['city'] = $shipto['city'];
-                $vars['state'] = $shipto['state'];
-                $vars['zip'] = $shipto['zip'];
-                $vars['country'] = $shipto['country'];
+                $vars['address1'] = $shipto->address1;
+                if (!empty($shipto->address2)) {
+                    $vars['address2'] = $shipto->address2;
+                }
+                $vars['city'] = $shipto->city;
+                $vars['state'] = $shipto->state;
+                $vars['zip'] = $shipto->zip;
+                $vars['country'] = $shipto->country;
             }
 
             $gateway_vars = '';

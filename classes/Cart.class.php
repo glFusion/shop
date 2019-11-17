@@ -274,14 +274,13 @@ class Cart extends Order
     public function View($view = 'order', $step = 0)
     {
         foreach ($this->items as $key=>$Item) {
-            //$prod_price = $Item->getProduct()->getPrice($Item->options, $Item->quantity);
-            //$prod_price = $Item->getItemPrice();
+            $prod_price = $Item->getItemPrice();
             if (!$Item->getProduct()->canOrder()) {
                 $this->Remove($Item->id);
-            }/* elseif ($Item->price != $prod_price) {
+            } elseif ($Item->price != $prod_price) {
                 $Item->price = $prod_price;
                 $Item->Save();
-                }*/
+            }
         }
         return parent::View($view, $step);
     }
@@ -618,7 +617,6 @@ class Cart extends Order
             $A[$fld] = $this->$var;
         }
         return $A;
-        //return isset($this->m_info[$type]) ? $this->m_info[$type] : array();
     }
 
 
@@ -874,7 +872,7 @@ class Cart extends Order
                 ) {
                     $A = $U->getDefaultAddress('billto');
                     if ($A) {
-                        $this->setAddress($A, 'billto');
+                        $this->setAddress($A->toArray(), 'billto');
                     }
                 }
                 if (
@@ -883,7 +881,7 @@ class Cart extends Order
                 ) {
                     $A = $U->getDefaultAddress('shipto');
                     if ($A) {
-                        $this->setAddress($A, 'shipto');
+                        $this->setAddress($A->toArray(), 'shipto');
                     }
                 }
             }
@@ -988,7 +986,8 @@ class Cart extends Order
      * Validate all the items on an order.
      * Called just prior to final checkout to ensure that all the items are
      * available for ordering.
-     * Removes any unavailable products.
+     * - Removes any unavailable products.
+     * - Update all the cart items to the current catalog price.
      *
      * @return  array   Array of invalid order item objects.
      */

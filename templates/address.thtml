@@ -26,29 +26,35 @@ function updateForm(id)
     initCountry();
 }
 
-function removeAddress(id)
+function removeAddress(addr_id)
 {
     if (confirm("Are you sure")) {
-
-        var xmlHttp = null;
-        if (window.XMLHttpRequest) {
-            xmlHttp = new XMLHttpRequest();
-        } else if (window.ActiveXObject) {
-            xmlHttp = new ActiveXObject("Microsoft.XMLHTTP");
-        }
-        if (xmlHttp == null) return false;
-
-        url = "{pi_url}/ajax.php?action=delAddress&id=" + id;
-        xmlHttp.open("GET", url, true);
-        xmlHttp.send(null);
-
-        var el = document.getElementById("use_addr"+id);
-        var p = el.parentNode;
-        p.removeChild(el);
-        return true;
-    } else {
-        return false;
+        var dataS = {
+            "action": "delAddress",
+            "addr_id": addr_id,
+        };
+        data = $.param(dataS);
+        $.ajax({
+            type: "GET",
+            dataType: "json",
+            url: "{pi_url}/ajax.php",
+            data: data,
+            success: function(result) {
+                try {
+                    if (result.status) {
+                        var el = document.getElementById("use_addr" + addr_id);
+                        var p = el.parentNode;
+                        p.removeChild(el);
+                    }
+                    return result.status;
+                } catch(err) {
+                }
+            },
+            error: function(err) {
+            }
+        });
     }
+    return false;
 }
 </script>
 
@@ -84,8 +90,7 @@ function removeAddress(id)
     {ad_addr_2},
 {!endif}
     {ad_city}, {ad_state} {ad_zip}
-    <img src="{layout_url}/images/admin/delete.png"
-        onclick="removeAddress({id});" />
+    {del_icon}
     <input type="hidden" name="ad_name[{id}]" id="ad_name[{id}]" value="{ad_name}" />
     <input type="hidden" name="ad_company[{id}]" id="ad_company[{id}]" value="{ad_company}" />
     <input type="hidden" name="ad_addr_1[{id}]" id="ad_addr_1[{id}]" value="{ad_addr_1}" />
