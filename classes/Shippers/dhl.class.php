@@ -32,8 +32,10 @@ class dhl extends \Shop\Shipper
 
     /**
      * Set up local variables and call the parent constructor.
+     *
+     * @param   mixed   $A      Optional data array or shipper ID
      */
-    public function __construct()
+    public function __construct($A = array())
     {
         $this->key = 'dhl';
         $this->implementsTrackingAPI = true;
@@ -45,7 +47,7 @@ class dhl extends \Shop\Shipper
             'consumer_secret' => 'password',
             //'test_mode' => 'checkbox',
         );
-        parent::__construct();
+        parent::__construct($A);
     }
 
 

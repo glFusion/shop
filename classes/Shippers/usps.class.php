@@ -135,8 +135,10 @@ class usps extends \Shop\Shipper
 
     /**
      * Set up local variables and call the parent constructor.
+     *
+     * @param   mixed   $A      Optional data array or shipper ID
      */
-    public function __construct()
+    public function __construct($A = array())
     {
         $this->key = 'usps';
         $this->implementsTrackingAPI = true;
@@ -145,7 +147,7 @@ class usps extends \Shop\Shipper
             'password' => 'password',
             'origin_zip' => 'string',
         );
-        parent::__construct();
+        parent::__construct($A);
     }
 
 

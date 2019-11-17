@@ -69,8 +69,10 @@ class ups extends \Shop\Shipper
 
     /**
      * Set up local variables and call the parent constructor.
+     *
+     * @param   mixed   $A      Optional data array or shipper ID
      */
-    public function __construct()
+    public function __construct($A = array())
     {
         $this->key = 'ups';
         $this->implementsTrackingAPI = true;
@@ -80,7 +82,7 @@ class ups extends \Shop\Shipper
             'access_key' => 'password',
             'test_mode' => 'checkbox',
         );
-        parent::__construct();
+        parent::__construct($A);
 
         if ($this->getConfig('test_mode')) {
             $this->rate_url = $this->rate_url_test;

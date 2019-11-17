@@ -70,8 +70,10 @@ class fedex extends \Shop\Shipper
 
     /**
      * Set up local variables and call the parent constructor.
+     *
+     * @param   mixed   $A      Optional data array or shipper ID
      */
-    public function __construct()
+    public function __construct($A = array())
     {
         $this->key = 'fedex';
         $this->implementsTrackingAPI = true;
@@ -82,7 +84,7 @@ class fedex extends \Shop\Shipper
             'meter_num' => 'string',
             'test_mode' => 'checkbox',
         );
-        parent::__construct();
+        parent::__construct($A);
         if ($this->getConfig('test_mode')) {
             $this->track_url = $this->track_url_test;
         } else {
