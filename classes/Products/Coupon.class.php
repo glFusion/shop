@@ -55,19 +55,27 @@ class Coupon extends \Shop\Product
      * @author      Joash Pereira
      * @author      Alex Rabinovich
      * @see         https://github.com/joashp/simple-php-coupon-code-generator
+     * @param   array   $opts   Override options
      * @return  string      Coupon code
      */
-    public static function generate()
+    public static function generate($opts = array())
     {
         global $_SHOP_CONF;
 
-        $length = SHOP_getVar($_SHOP_CONF, 'gc_length', 'int', 10);
-        $prefix = $_SHOP_CONF['gc_prefix'];
-        $suffix = $_SHOP_CONF[ 'gc_suffix'];
-        $useLetters = SHOP_getVar($_SHOP_CONF, 'gc_letters', 'int');
-        $useNumbers = SHOP_getVar($_SHOP_CONF, 'gc_numbers', 'int');
-        $useSymbols = SHOP_getVar($_SHOP_CONF, 'gc_symbols', 'int');
-        $mask = $_SHOP_CONF['gc_mask'];
+        // Set all the standard option values
+        $options = array(
+            'length'    => SHOP_getVar($_SHOP_CONF, 'gc_length', 'int', 10),
+            'prefix'    => $_SHOP_CONF['gc_prefix'],
+            'suffix'    => $_SHOP_CONF[ 'gc_suffix'],
+            'letters'   => SHOP_getVar($_SHOP_CONF, 'gc_letters', 'int'),
+            'numbers'   => SHOP_getVar($_SHOP_CONF, 'gc_numbers', 'int'),
+            'symbols'   => SHOP_getVar($_SHOP_CONF, 'gc_symbols', 'int'),
+            'mask'      => $_SHOP_CONF['gc_mask'],
+        );
+
+        foreach ($opts as $key=>$val) {
+            $options[$key] = $val;
+        }
 
         $uppercase  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $lowercase  = 'abcdefghijklmnopqrstuvwxyz';
@@ -77,7 +85,7 @@ class Coupon extends \Shop\Product
         $characters = array();
         $coupon = '';
 
-        switch ($useLetters) {
+        switch ($options['letters']) {
         case 1:     // uppercase only
             $characters = $uppercase;
             break;
@@ -91,17 +99,18 @@ class Coupon extends \Shop\Product
         default:
             break;
         }
-        if ($useNumbers) {
+        if ($options['numbers']) {
             $characters .= $numbers;
         }
-        if ($useSymbols) {
+        if ($options['symbols']) {
             $characters .= $symbols;
         }
         $charcount = strlen($characters);
 
         // If a mask is specified, use it and substitute 'X' for coupon chars.
         // Otherwise use the specified length.
-        if ($mask) {
+        if ($options['mask'] != '') {
+            $mask = $options['mask'];
             $len = strlen($mask);
             for ($i = 0; $i < $len; $i++) {
                 if ($mask[$i] === 'X') {
@@ -112,12 +121,14 @@ class Coupon extends \Shop\Product
             }
         } else {
             // if neither mask nor length given use a default length
-            if ($length == 0) $length = 16;
-            for ($i = 0; $i < $length; $i++) {
+            if ($options['length'] == 0) {
+                $options['length'] = 16;
+            }
+            for ($i = 0; $i < $options['length']; $i++) {
                 $coupon .= $characters[mt_rand(0, $charcount - 1)];
             }
         }
-        return $prefix . $coupon . $suffix;
+        return $options['prefix'] . $coupon . $options['suffix'];
     }
 
 

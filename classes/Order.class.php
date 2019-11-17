@@ -126,7 +126,7 @@ class Order
                 $this->order_id = self::_createID();
             }
             $this->order_date = SHOP_now();
-            $this->token = self::_createToken();
+            $this->token = $this->_createToken();
             $this->shipping = 0;
             $this->handling = 0;
             $this->by_gc = 0;
@@ -279,7 +279,7 @@ class Order
             $args['product_id'] = $item_id[0];
         }
         $args['order_id'] = $this->order_id;    // make sure it's set
-        $args['token'] = self::_createToken();  // create a unique token
+        $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
         $OI->setQuantity($args['quantity']);
         $OI->Save();
@@ -1415,21 +1415,21 @@ class Order
 
 
     /**
-     * Create a random token string for this order to allow anonymous users
-     * to view the order from an email link.
+     * Create a random token string for this order.
+     * Allows anonymous users to view the order from an email link.
      *
      * @return  string      Token string
      */
-    private static function _createToken()
+    private function _createToken()
     {
-        $len = 13;
+        $len = 12;      // Actual length of the token needed.
         if (function_exists("random_bytes")) {
             $bytes = random_bytes(ceil($len / 2));
         } elseif (function_exists("openssl_random_pseudo_bytes")) {
             $bytes = openssl_random_pseudo_bytes(ceil($len / 2));
         } else {
             $options = array(
-                'length'    => $len * 2,
+                'length'    => ceil($len / 2),
                 'letters'   => 3,       // mixed case
                 'numbers'   => true,    // include numbers
                 'symbols'   => true,    // include symbols
@@ -1452,7 +1452,7 @@ class Order
     {
         global $_TABLES;
 
-        $token = self::_createToken();
+        $token = $this->_createToken();
         $sql = "UPDATE {$_TABLES['shop.orders']}
             SET token = '" . DB_escapeString($token) . "'
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
@@ -2302,6 +2302,17 @@ class Order
         $T->parse('output', 'html');
         $html = $T->finish($T->get_var('output'));
         return $html;
+    }
+
+
+    /**
+     * Get the token assigned to this order.
+     *
+     * @return  string  Token string
+     */
+    public function getToken()
+    {
+        return $this->token;
     }
 
 
