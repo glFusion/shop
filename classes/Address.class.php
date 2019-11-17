@@ -49,6 +49,8 @@ class Address
         foreach (self::$_names as $key) {
             $this->$key= isset($data[$key]) ? $data[$key] : '';
         }
+        $this->uid = SHOP_getVar($data, 'uid', 'integer');
+        $this->addr_id = SHOP_getVar($data, 'addr_id', 'integer');
     }
 
 
@@ -63,6 +65,10 @@ class Address
         global $_SHOP_CONF;
 
         switch($key) {
+        case 'addr_id':
+        case 'uid':
+            $val = (int)$val;
+            break;
         case 'country':
             if (empty($val)) {
                 $val = $_SHOP_CONF['country'];
@@ -92,6 +98,89 @@ class Address
 
 
     /**
+     * Check if this is the default billing or shipping address.
+     * Returns an integer to be compatible with the database field.
+     *
+     * @param   string  $type   Type of address, either `billto` or `shipto`
+     * @return  integer     1 if this is the default, 0 if not
+     */
+    public function isDefault($type)
+    {
+        if ($type == 'billto') {
+            return $this->isDefaultBillto();
+        } else {
+            return $this->isDefaultShipto();
+        }
+    }
+
+
+    /**
+     * Check if this is the default billing address.
+     * Returns an integer to be compatible with the database field.
+     *
+     * @return  integer     1 if this is the default, 0 if not
+     */
+    public function isDefaultShipto()
+    {
+        return $this->shipto_def ? 1 : 0;
+    }
+
+
+    /**
+     * Check if this is the default billing address.
+     * Returns an integer to be compatible with the database field.
+     *
+     * @return  integer     1 if this is the default, 0 if not
+     */
+    public function isDefaultBillto()
+    {
+        return $this->billto_def ? 1 : 0;
+    }
+
+
+    /**
+     * Set this Address as the default biling address.
+     *
+     * @param   boolean $value  True to set as default, False to unset
+     * @return  object  $this
+     */
+    public function setBilltoDefault($value)
+    {
+        $this->billto_def = $value ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Set this Address as the default shipping address.
+     *
+     * @param   boolean $value  True to set as default, False to unset
+     * @return  object  $this
+     */
+    public function setShiptoDefault($value)
+    {
+        $this->shipto_def = $value ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Set this Address as the default shipping or billing address.
+     *
+     * @param   string  $type   Address type, `billto` or `shipto`
+     * @param   boolean $value  True to set as default, False to unset
+     */
+    public function setDefault($type, $value = true)
+    {
+        if ($type == 'billto') {
+            return $this->setBilltoDefault($value);
+        } else {
+            return $this->setShiptoDefault($value);
+        }
+    }
+
+
+    /**
      * Convert the address fields to a single JSON string.
      *
      * @param   boolean $escape     True to escape for DB storage
@@ -104,6 +193,30 @@ class Address
             $str = DB_escapeString($str);
         }
         return $str;
+    }
+
+
+    /**
+     * Get all address records belonging to a specific user ID.
+     *
+     * @param   integer $uid    User ID
+     * @return  array       Array of Address objects
+     */
+    public static function getByUser($uid)
+    {
+        global $_TABLES;
+
+        $uid = (int)$uid;
+        $retval = array();
+        if ($uid > 1) {
+            $res = DB_query(
+                "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
+            );
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['addr_id']] = new self($A);
+            }
+        }
+        return $retval;
     }
 
 
@@ -460,6 +573,118 @@ class Address
             // Country ID not found, return false
             return '';
         }
+    }
+
+    public function Save()
+    {
+        global $_TABLES;
+
+        if ($this->addr_id > 0) {
+            $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
+            $sql2 = " WHERE addr_id='" . $this->addr_id . "'";
+        } else {
+            $sql1 = "INSERT INTO {$_TABLES['shop.address']} SET ";
+            $sql2 = '';
+        }
+
+        $sql = "uid = '" . (int)$this->uid . "',
+                name = '" . DB_escapeString($this->name) . "',
+                company = '" . DB_escapeString($this->company) . "',
+                address1 = '" . DB_escapeString($this->address1) . "',
+                address2 = '" . DB_escapeString($this->address2) . "',
+                city = '" . DB_escapeString($this->city) . "',
+                state = '" . DB_escapeString($this->state) . "',
+                country = '" . DB_escapeString($this->country) . "',
+                zip = '" . DB_escapeString($this->zipostal) . "',
+                billto_def = '" . $this->isDefaultBillto() . "',
+                shipto_def = '" . $this->isDefaultShipto() . "'";
+        $sql = $sql1 . $sql . $sql2;
+        //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
+        DB_query($sql);
+        if ($this->addr_id == 0) {
+            $this->addr_id = DB_insertID();
+        }
+
+        // If this is the new default address, turn off the other default
+        foreach (array('billto', 'shipto') as $type) {
+            if ($this->isDefault($type)) {
+                DB_query(
+                    "UPDATE {$_TABLES['shop.address']}
+                    SET {$type}_def = 0
+                    WHERE addr_id <> '" . $this->addr_id . "' AND {$type}_def = 1"
+                );
+            }
+        }
+        Cache::clear('shop.user_' . $this->uid);
+        return $id;
+    }
+
+
+    public function toArray()
+    {
+        return $this->properties;
+    }
+
+
+    /**
+     * Validate the address components.
+     *
+     * @return  string      List of invalid items, or empty string for success
+     */
+    public function isValid()
+    {
+        global $LANG_SHOP, $_SHOP_CONF;
+
+        $invalid = array();
+        $retval = '';
+
+        if ($this->name == '' && $this->company == '') {
+            $invalid[] = 'name_or_company';
+        }
+        if ($_SHOP_CONF['get_street'] == 2 && $this->address1 == '') {
+            $invalid[] = 'address1';
+        }
+        if ($_SHOP_CONF['get_city'] == 2 && $this->city == '') {
+            $invalid[] = 'city';
+        }
+        if ($_SHOP_CONF['get_state'] == 2 && $this->state == '') {
+            $invalid[] = 'state';
+        }
+        if ($_SHOP_CONF['get_postal'] == 2 && $this->zipo == '') {
+            $invalid[] = 'zip';
+        }
+        if ($_SHOP_CONF['get_country'] == 2 && $this->country == '') {
+            $invalid[] = 'country';
+        }
+
+        if (!empty($invalid)) {
+            foreach ($invalid as $id) {
+                $retval .= '<li> ' . $LANG_SHOP[$id] . '</li>' . LB;
+            }
+            $retval = '<ul>' . $retval . '</ul>';
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Delete an address by id.
+     * Called when the user deletes one of their billing or shipping addresses.
+     *
+     * @param   integer $id     Record ID of address to delete
+     */
+    public function Delete()
+    {
+        global $_TABLES;
+
+        if ($this->addr_id < 1) {
+            return false;
+        }
+        DB_delete($_TABLES['shop.address'], 'addr_id', $this->addr_id);
+        Cache::clear('shop.user_' . $this->uid);
+        Cache::clear('shop.address_' . $this->uid);
+        return true;
     }
 
 }
