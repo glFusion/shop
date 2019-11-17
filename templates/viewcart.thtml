@@ -72,6 +72,9 @@
 {!if discount_tooltip}
           <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
 {!endif}
+{!if sale_tooltip}
+          <span class="tooltip" title="{sale_tooltip}">{sale_icon}</span>
+{!endif}
         </td>
       </tr>
       <!-- END ItemRow -->

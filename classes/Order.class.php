@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.1
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -643,6 +643,7 @@ class Order
         $this->subtotal = 0;
         $item_qty = array();        // array to track quantity by base item ID
         $have_images = false;
+        $has_sale_items = false;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
@@ -681,6 +682,13 @@ class Order
             } else {
                 $price_tooltip = '';
             }
+            if ($item->getProduct()->isOnSale()) {
+                $has_sale_items = true;
+                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' . $item->getProduct()->getSale()->name;
+            } else {
+                $sale_tooltip = '';
+            }
+
             $item_total = $item->price * $item->quantity;
             $this->subtotal += $item_total;
             if ($P->taxable) {
@@ -698,8 +706,10 @@ class Order
                 'is_file'       => $item->canDownload(),
                 'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
+                'sale_icon'     => $LANG_SHOP['sale_price'][0],
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
+                'sale_tooltip'  => $sale_tooltip,
                 'token'         => $item->token,
                 //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
@@ -721,6 +731,9 @@ class Order
         }
         if ($this->tax_items > 0) {
             $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
+        }
+        if ($has_sale_items) {
+            $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
         }
         $this->total = $this->getTotal();     // also calls calcTax()
         // Only show the icon descriptions when the invoice amounts are shown
@@ -1544,13 +1557,18 @@ class Order
 
     /**
      * Get the requested address array.
+     * Converts internal vars named 'billto_name', etc. to an array keyed by
+     * the base field namee 'name', 'address1', etc. The result can be passed
+     * to the Address class.
      *
      * @param   string  $type   Type of address, billing or shipping
      * @return  array           Array of name=>value address elements
      */
     public function getAddress($type)
     {
-        if ($type != 'billto') $type = 'shipto';
+        if ($type != 'billto') {
+            $type = 'shipto';
+        }
         $fields = array();
         foreach ($this->_addr_fields as $name) {
             $var = $type . '_' . $name;
@@ -1654,10 +1672,12 @@ class Order
      * cart update page.
      *
      * @param   string  $gw_name    Gateway name
+     * @return  object      Current Order object
      */
     public function setGateway($gw_name)
     {
         $this->setInfo('gateway', $gw_name);
+        return $this;
     }
 
 
@@ -1735,47 +1755,18 @@ class Order
 
 
     /**
-     * Set an order record field to a given value.
-     *
-     * @deprecated
-     * @param   string  $field  Field name.
-     * @param   mixed   $value  Field value.
-     * @return  boolean     True on success, False on DB error.
-     */
-    public function setField($field, $value)
-    {
-        global $_TABLES;
-
-        $value = DB_escapeString($value);
-        $order_id = DB_escapeString($this->order_id);
-        $sql = "UPDATE {$_TABLES['shop.orders']}
-            SET $field = '$value'
-            WHERE order_id = '$order_id'";
-        $res = DB_query($sql);
-        if (DB_error()) {
-            SHOP_log("error executing SQL: $sql", SHOP_LOG_DEBUG);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-
-    /**
      * Set the buyer email to the supplied email address.
      * First checks that the supplied address is a valid one.
      *
      * @param   string  $email  Email address
-     * @return  boolean     True on success, False if not a valid address
+     * @return  object      Current Order object
      */
     public function setEmail($email)
     {
         if (COM_isEmail($email)) {
             $this->buyer_email = $email;
-            return true;
-        } else {
-            return false;
         }
+        return $this;
     }
 
 
@@ -1783,6 +1774,7 @@ class Order
      * Set shipper information in the info array, including the best rate.
      *
      * @param   integer $shipper_id     Shipper record ID
+     * @return  object      Current Order object
      */
     public function setShipper($shipper_id)
     {
@@ -1801,6 +1793,7 @@ class Order
             $this->shipping = 0;
             $this->shipper_id = 0;
         }
+        return $this;
     }
 
 
@@ -1912,7 +1905,7 @@ class Order
      *
      * @param   string  $new    New currency, configured currency by default
      * @param   string  $old    Original currency, $this->currency by default
-     * @return  boolean     True on success, False on error
+     * @return  object      Current Order object
      */
     public function convertCurrency($new ='', $old='')
     {
@@ -1921,21 +1914,21 @@ class Order
         if ($new == '') $new = $_SHOP_CONF['currency'];
         if ($old == '') $old = $this->currency;
         // If already set, return OK. Nothing to do.
-        if ($new == $old) return true;
+        if ($new != $old) {
+            // Update each item's pricing
+            foreach ($this->items as $Item) {
+                $Item->convertCurrency($old, $new);
+            }
 
-        // Update each item's pricing
-        foreach ($this->items as $Item) {
-            $Item->convertCurrency($old, $new);
+            // Update the currency amounts stored with the order
+            foreach (array('tax', 'shipping', 'handling') as $fld) {
+                $this->$fld = Currency::Convert($this->$fld, $new, $old);
+            }
+
+            // Set the order's currency code to the new value and save.
+            $this->currency = $new;
+            $this->Save();
         }
-
-        // Update the currency amounts stored with the order
-        foreach (array('tax', 'shipping', 'handling') as $fld) {
-            $this->$fld = Currency::Convert($this->$fld, $new, $old);
-        }
-
-        // Set the order's currency code to the new value and save.
-        $this->currency = $new;
-        $this->Save();
         return true;
     }
 
