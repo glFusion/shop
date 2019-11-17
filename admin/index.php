@@ -126,7 +126,7 @@ case 'deletecat':
     break;
 
 case 'saveproduct':
-    $url = SHOP_getUrl(SHOP_ADMIN_URL);
+    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php');
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
         $msg = $P->PrintErrors();
