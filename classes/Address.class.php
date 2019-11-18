@@ -51,6 +51,8 @@ class Address
         }
         $this->uid = SHOP_getVar($data, 'uid', 'integer');
         $this->addr_id = SHOP_getVar($data, 'addr_id', 'integer');
+        $this->billto_def = SHOP_getVar($data, 'billto_def', 'integer');
+        $this->shipto_def = SHOP_getVar($data, 'shipto_def', 'integer');
     }
 
 
@@ -315,12 +317,15 @@ class Address
     /**
      * Get a single element of an address, e.g. `address` or `city`.
      *
-     * @param   string  $key    Field name to retrieve
+     * @param   string  $key    Field name to retrieve, NULL to get everything
      * @return  string          Value of address field
      */
-    public function getPart($key)
+    public function getPart($key = NULL)
     {
-        if (isset($this->$key)) {
+        if ($key === NULL) {
+            // Nothing requested, return all properties
+            return $this->properties;
+        } elseif (isset($this->$key)) {
             return $this->$key;
         } else {
             return '';
