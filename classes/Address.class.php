@@ -622,7 +622,7 @@ class Address
             }
         }
         Cache::clear('shop.user_' . $this->uid);
-        return $id;
+        return $this->addr_id;
     }
 
 

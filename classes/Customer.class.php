@@ -215,10 +215,10 @@ class Customer
                 return $Addr;
             }
         }
-        if (isset($this->addresses[0])) {
-            return $this->addresses[0];
+        if (count($this->addresses) > 0) {
+            return reset($this->addresses);
         } else {
-            return NULL;
+            return new Address;
         }
     }
 
@@ -253,7 +253,7 @@ class Customer
             $Address->setDefault($type);
         }
         $addr_id = $Address->Save();
-        return $addr_id;
+        return array($addr_id, $msg);
 
         // TODO: Deprecated
         // Don't save invalid addresses, or anonymous
