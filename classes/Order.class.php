@@ -300,7 +300,7 @@ class Order
 
         $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
         if ($addr_id == 0) {
-            $addr_id = SHOP_getVar($A, 'id', 'integer', 0);
+            $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
         }
         if ($addr_id > 0) {
             // If set, the user has selected an existing address. Read
@@ -328,7 +328,8 @@ class Order
             billto_city = '" . DB_escapeString($this->billto_city) . "',
             billto_state = '" . DB_escapeString($this->billto_state) . "',
             billto_country = '" . DB_escapeString($this->billto_country) . "',
-            billto_zip = '" . DB_escapeString($this->billto_zip) . "'";
+            billto_zip = '" . DB_escapeString($this->billto_zip) . "'
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         //Cache::delete('order_' . $this->order_id);
     }
@@ -358,7 +359,7 @@ class Order
         } elseif (is_array($A)) {
             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
             if ($addr_id == 0) {
-                $addr_id = SHOP_getVar($A, 'id', 'integer', 0);
+                $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
             }
             if ($addr_id > 0) {
                 // If set, read and use an existing address
@@ -385,7 +386,8 @@ class Order
             shipto_city = '" . DB_escapeString($this->shipto_city) . "',
             shipto_state = '" . DB_escapeString($this->shipto_state) . "',
             shipto_country = '" . DB_escapeString($this->shipto_country) . "',
-            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'";
+            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         //Cache::delete('order_' . $this->order_id);
         return $this;
