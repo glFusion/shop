@@ -100,6 +100,37 @@ class Address
 
 
     /**
+     * Get a specific address by ID.
+     *
+     * @param   integer $addr_id    Address ID to retrieve
+     * @return  object      Address object, empty if not found
+     */
+    public static function getInstance($addr_id)
+    {
+        global $_TABLES;
+        static $addrs = array();
+
+        $addr_id = (int)$addr_id;
+        if (isset($addrs[$addr_id])) {
+            echo "returning address for $addr_id\n";
+            return new self($addrs[$addr_id]);
+        } else {
+            $res = DB_query("SELECT *
+                FROM {$_TABLES['shop.address']}
+                WHERE addr_id = '{$addr_id}'");
+            if ($res) {
+                $A = DB_fetchArray($res, true);
+                echo "setting address $addr_id\n";
+                $addrs[$addr_id] = $A;
+                return new self($A);
+            } else {
+                return new self;
+            }
+        }
+    }
+
+
+    /**
      * Check if this is the default billing or shipping address.
      * Returns an integer to be compatible with the database field.
      *
@@ -325,12 +356,40 @@ class Address
         if ($key === NULL) {
             // Nothing requested, return all properties
             return $this->properties;
-        } elseif (isset($this->$key)) {
+        } elseif (isset($this->properties[$key])) {
             return $this->$key;
         } else {
             return '';
         }
     }
+
+
+    /**
+     * Get the parsed parts of a name field.
+     *
+     * @param   string  $req    Requested part, NULL for all
+     * @return  string|array    Requested part, or array of all parts
+     */
+    public function parseName($req = NULL)
+    {
+        static $parts = array();;
+
+        if (!isset($parts[$this->name])) {
+            $parts[$this->name] = array();
+            $status = PLG_invokeService('lglib', 'parseName',
+                array(
+                    'name' => $this->name,
+                ),
+                $parts[$this->name], $svc_msg
+            );
+        }
+        if ($req == NULL) {
+            return $parts[$this->name];
+        } else {
+            return isset($parts[$this->name][$req]) ? $parts[$this->name][$req] : '';
+        }
+    }
+
 
 
     /**
