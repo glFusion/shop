@@ -13,6 +13,10 @@
  */
 namespace Shop\Gateways;
 
+use Shop\Address;
+use Shop\Currency;
+use Shop\Order;
+
 /**
  * Class for Paypal payment gateway
  * @package shop
@@ -27,6 +31,10 @@ class paypal extends \Shop\Gateway
     /** PayPal-assigned certificate ID to be used for encrypted buttons.
     * @var string */
     private $cert_id;
+
+    /** Paypal API URL, sandbox or production.
+     * @var string */
+    private $api_url;
 
 
     /**
@@ -88,9 +96,11 @@ class paypal extends \Shop\Gateway
         if ($this->config['test_mode'] == 1) {
             $this->gw_url = $this->config['sandbox_url'];
             $this->postback_url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
+            $this->api_url = 'https://api.sandbox.paypal.com';
         } else {
             $this->gw_url = $this->config['prod_url'];
             $this->postback_url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
+            $this->api_url = 'https://api.paypal.com';
         }
 
         // If the configured currency is not one of the supported ones,
@@ -979,8 +989,229 @@ class paypal extends \Shop\Gateway
     }
 
 
-    public function createInvoice($Order)
+    /**
+     * Get the Paypal API token to be used for web requests.
+     *
+     * @return  string  API token value
+     */
+    private function getBearerToken()
     {
+        global $_SHOP_CONF;     // TODO: move tokens to gw config
+
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $this->api_url . '/v1/oauth2/token',
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
+            CURLOPT_USERPWD => $_SHOP_CONF['pp_api_username'] . ':' . $_SHOP_CONF['pp_api_passwd'],
+            CURLOPT_HTTPHEADER  => array (
+                'Accept: application/json',
+            ),
+            CURLOPT_RETURNTRANSFER  => true,
+        ) );
+
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        $auth = json_decode($result, true);
+        $access_token = isset($auth['access_token']) ? $auth['access_token'] : NULL;
+        return $access_token;
+    }
+
+
+    /**
+     * Get the invoice terms string to pass to Paypal.
+     * Returns the closest Paypal terms string to match the days due.
+     *
+     * @param   integer $due_days   Due days (terms)
+     * @return  string      Proper terms string for Paypal
+     */
+    private function getInvoiceTerms($due_days=0)
+    {
+        $due_days = (int)$due_days;
+        if ($due_days == 0) {
+            $retval = 'DUE_ON_RECEIPT';
+        } else {
+            $day_arr = array(10, 15, 30, 45, 60, 90);
+            $retval = 90;
+            foreach ($day_arr as $days) {
+                if ($due_days <= $days) {
+                    $retval = $days;
+                    break;
+                }
+            }
+            $retval = 'NET_' . $retval;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Create and send an invoice for an order.
+     *
+     * @param   string  $order_num  Order Number
+     * @return  boolean     True on success, False on error
+     */
+    public function createInvoice($order_num)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        $access_token = $this->getBearerToken();
+        if (!$access_token) {
+            SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
+            return false;
+        }
+        echo "Token: $access_token\n";
+
+        $Order = Order::getInstance($order_num);
+        $Currency = Currency::getInstance($Order->currency);
+        $Billto = new Address($Order->getAddress('billto'));
+        $Shipto = new Address($Order->getAddress('shipto'));
+
+        $A = array(
+            'detail' => array(
+                'invoice_number' => $order_num,
+                'reference' => $order_num,
+                'currency_code' => $Order->currency,
+                'payment_term' => array(
+                    'term_type' => $this->getInvoiceTerms(),
+                ),
+            ),
+            'invoicer' => array(
+                'name' => array(
+                    'business_name' => $_SHOP_CONF['company'],
+                ),
+                'address' => array(
+                    'address_line_1' => $_SHOP_CONF['address1'],
+                    'address_line_2' => $_SHOP_CONF['address2'],
+                    'admin_area_2' => $_SHOP_CONF['city'],
+                    'admin_area_1' => $_SHOP_CONF['state'],
+                    'postal_code' => $_SHOP_CONF['zip'],
+                    'country_code' => $_SHOP_CONF['country'],
+                ),
+                'website' => $_CONF['site_url'],
+            ),
+            'primary_recipients' => array(
+                array(
+                    'billing_info' => array(
+                        'name' => array(
+                            'given_name' => $Billto->getNamePart('fname'),
+                            'surname' => $Billto->getNamePart('lname'),
+                        ),
+                        'address' => array(
+                            'address_line_1'    => $Order->billto_address1,
+                            'address_line_2'    => $Order->billto_address2,
+                            'admin_area_2'      => $Order->billto_city,
+                            'admin_area_1'      => $Order->billto_state,
+                            'postal_code'       => $Order->billto_zip,
+                            'country_code'      => $Order->billto_country,
+                        ),
+                        'email_address' => $Order->buyer_email,
+                    ),
+                    'shipping_info' => array(
+                        'name' => array(
+                            'given_name' => $Shipto->getNamePart('fname'),
+                            'surname' => $Shipto->getNamePart('lname'),,
+                        ),
+                        'address' => array(
+                            'address_line_1'    => $Order->shipto_address1,
+                            'address_line_2'    => $Order->shipto_address2,
+                            'admin_area_2'      => $Order->shipto_city,
+                            'admin_area_1'      => $Order->shipto_state,
+                            'postal_code'       => $Order->shipto_zip,
+                            'country_code'      => $Order->shipto_country,
+                        ),
+                    ),
+                ),
+            ),
+            'items' => array(
+            ),
+            'configuration' => array(
+                'partial_payment' => array(
+                    'allow_partial_payment' => false,
+                ),
+                'tax_calculated_after_discount' => true,
+                'tax_inclusive' => false,
+            ),
+            'amount' => array(
+                'breakdown' => array(
+                    'shipping' => array(
+                        'amount' => array(
+                            'currency_code' => $Order->currency,
+                            'value' => $Currency->FormatValue($Order->shipping),
+                        ),
+                    ),
+                ),
+            ),
+        );
+        foreach ($Order->getItems() as $OI) {
+            $item = array(
+                'name' => $OI->getProduct()->name,
+                'description' => $OI->description,
+                'quantity' => $OI->quantity,
+                'unit_amount' => array(
+                    'currency_code' => $Currency->code,
+                    'value' => $Currency->FormatValue($OI->price),
+                ),
+                'unit_of_measure' => 'QUANTITY',
+            );
+            if ($OI->getProduct()->isTaxable()) {
+                $item['tax'] = array(
+                    'name' => $LANG_SHOP['tax'],
+                    'percent' => SHOP_getTaxRate() * 100,
+                );
+            }
+            $A['items'][] = $item;
+        }
+
+        // Create the draft invoice
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $this->api_url . '/v2/invoicing/invoices',
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $access_token,
+            ),
+            CURLOPT_POSTFIELDS => json_encode($A),
+        ) );
+        $inv = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+
+        // If the invoice was created successfully, send to the buyer
+        if ($http_code == 201) {
+            $json = json_decode($inv, true);
+            if (isset($json['href'])) {
+                $ch = curl_init();
+                curl_setopt_array($ch, array(
+                    CURLOPT_URL => $json['href'] . '/send',
+                    CURLOPT_RETURNTRANSFER  => true,
+                    CURLOPT_HTTPHEADER => array(
+                        'Content-Type: application/json',
+                        'Authorization: Bearer ' . $access_token,
+                    ),
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => '{"send_to_recipient": true}',
+                ) );
+                $send_response = curl_exec($ch);
+                $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+                curl_close($ch);
+                if ($http_code > 299) {
+            /*        echo "Failed to send invoice\n";
+                    var_dump($http_code);
+            var_dump($send_response);*/
+                    SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
+                    return false;
+                }
+            }
+        } else {
+//            var_dump($inv);
+            SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
+            return false;
+        }
+        return true;
     }
 
 
