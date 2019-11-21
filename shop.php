@@ -56,6 +56,7 @@ $_TABLES['shop.shipment_items']   = $_SHOP_table_prefix . 'shipment_items';
 $_TABLES['shop.shipment_packages']   = $_SHOP_table_prefix . 'shipment_packages';
 $_TABLES['shop.carrier_config'] = $_SHOP_table_prefix . 'carrier_config';
 $_TABLES['shop.cache'] = $_SHOP_table_prefix . 'cache';
+$_TABLES['shop.payments'] = $_SHOP_table_prefix . 'payments';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
