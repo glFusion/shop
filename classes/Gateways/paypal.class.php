@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -51,21 +51,32 @@ class paypal extends \Shop\Gateway
 
         // Set default values for the config items, just to be sure that
         // something is set here.
+        $this->cfgFields= array(
+            'bus_prod_email'    => 'string',
+            'micro_prod_email'  => 'string',
+            'bus_test_email'    => 'string',
+            'micro_test_email'  => 'string',
+            'test_mode'         => 'checkbox',
+            'micro_threshold'   => 'string',
+            'encrypt'           => 'checkbox',
+            'pp_cert'           => 'string',
+            'pp_cert_id'        => 'string',
+            'micro_cert_id'     => 'string',
+            'sandbox_main_cert' => 'string',
+            'sandbox_micro_cert' => 'string',
+            'prv_key'           => 'string',
+            'pub_key'           => 'string',
+            'prod_url'          => 'string',
+            'sandbox_url'       => 'string',
+            'api_username'      => 'password',
+            'api_password'      => 'password',
+            'api_sig'           => 'password',
+        );
+
+        // Set defaults
         $this->config = array(
-            'bus_prod_email'    => '',
-            'micro_prod_email'  => '',
-            'bus_test_email'    => '',
-            'micro_test_email'  => '',
-            'test_mode'         => 1,
             'micro_threshold'   => '10',
-            'encrypt'           => 0,
-            'pp_cert'           => '',
-            'pp_cert_id'        => '',
-            'micro_cert_id'     => '',
-            'sandbox_main_cert' => '',
-            'sandbox_micro_cert' => '',
-            'prv_key'           => '',
-            'pub_key'           => '',
+            'test_mode'         => '1',
             'prod_url'          => 'https://www.paypal.com',
             'sandbox_url'       => 'https://www.sandbox.paypal.com',
         );
@@ -85,11 +96,11 @@ class paypal extends \Shop\Gateway
         parent::__construct();
 
         // Set the gateway URL depending on whether we're in test mode or not
-        if ($this->config['test_mode'] == 1) {
-            $this->gw_url = $this->config['sandbox_url'];
+        if ($this->getConfig('test_mode') == 1) {
+            $this->gw_url = $this->getConfig('sandbox_url');
             $this->postback_url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
         } else {
-            $this->gw_url = $this->config['prod_url'];
+            $this->gw_url = $this->getConfig('prod_url');
             $this->postback_url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
         }
 
@@ -100,8 +111,8 @@ class paypal extends \Shop\Gateway
         }
 
         // Set defaults, just to make sure something is set
-        $this->cert_id = $this->config['pp_cert_id'];
-        $this->receiver_email = $this->config['bus_prod_email'];
+        $this->cert_id = $this->getConfig('pp_cert_id');
+        $this->receiver_email = $this->getConfig('bus_prod_email');
     }
 
 
@@ -324,7 +335,7 @@ class paypal extends \Shop\Gateway
 
         $gatewayVars = array();
         $enc_btn = '';
-        if ($this->config['encrypt']) {
+        if ($this->getConfig('encrypt')) {
             $enc_btn = self::_encButton($fields);
             if (!empty($enc_btn)) {
                 $gatewayVars[] =
@@ -361,10 +372,10 @@ class paypal extends \Shop\Gateway
         global $_CONF, $_SHOP_CONF;
 
         // Make sure button encryption is enabled and needed values are set
-        if ($this->config['encrypt'] != 1 ||
-            empty($this->config['prv_key']) ||
-            empty($this->config['pub_key']) ||
-            empty($this->config['pp_cert']) ||
+        if ($this->getConfig('encrypt') != 1 ||
+            empty($this->getConfig('prv_key')) ||
+            empty($this->getConfig('pub_key')) ||
+            empty($this->getConfig('pp_cert')) ||
             $this->cert_id == '') {
             return '';
         }
@@ -372,7 +383,7 @@ class paypal extends \Shop\Gateway
         $keys = array();
         // Now check that the files exist and can be read
         foreach (array('prv_key', 'pub_key', 'pp_cert') as $idx=>$name) {
-            $keys[$name] = $_SHOP_CONF['tmpdir'] . 'keys/' . $this->config[$name];
+            $keys[$name] = $_SHOP_CONF['tmpdir'] . 'keys/' . $this->getConfig($name);
             if (!is_file($keys[$name]) ||
                 !is_readable($keys[$name])) {
                 return '';
@@ -507,12 +518,6 @@ class paypal extends \Shop\Gateway
         $this->AddCustom('transtype', $btn_type);
         $gateway_vars = '';
 
-        // See if the button is in our cache table
-        // DEPRECATED - DOES NOT SUPPORT CUSTOM DATA
-        /*$btn_key = $P->btn_type . '_' . $P->getPrice();
-        if ($this->config['encrypt']) {
-            $gateway_vars = $this->_ReadButton($P, $btn_key);
-        }*/
         if (empty($gateway_vars)) {
             $vars = array();
             $vars['cmd'] = $btn_info['cmd'];
@@ -586,7 +591,7 @@ class paypal extends \Shop\Gateway
 
             $gateway_vars = '';
             $enc_btn = '';
-            if ($this->config['encrypt']) {
+            if ($this->getConfig('encrypt')) {
                 $enc_btn = $this->_encButton($vars);
                 if (!empty($enc_btn)) {
                     $gateway_vars .=
@@ -726,9 +731,8 @@ class paypal extends \Shop\Gateway
             $vars['tax'] = '0';
         }
 
-        if ($this->config['encrypt']) {
+        if ($this->getConfig('encrypt')) {
             $enc_btn = $this->_encButton($vars);
-            //if (empty($enc_btn)) $this->config['encrypt'] = 0;
             if (!empty($enc_btn)) {
                 $vars = array(
                     'encrypted' => $enc_btn,
@@ -736,12 +740,6 @@ class paypal extends \Shop\Gateway
                 );
             }
         }
-         /*if ($this->config['encrypt']) {
-            $vars = array(
-                'encrypted' => $enc_btn,
-                'cmd'       => '_s-xclick',
-            );
-        }*/
         $gateway_vars = '';
         foreach ($vars as $name=>$value) {
             $gateway_vars .= '<input type="hidden" name="' . $name .
@@ -808,10 +806,10 @@ class paypal extends \Shop\Gateway
     public function isBusinessEmail($email)
     {
         switch ($email) {
-        case $this->config['bus_prod_email']:
-        case $this->config['micro_prod_email']:
-        case $this->config['bus_test_email']:
-        case $this->config['micro_test_email']:
+        case $this->getConfig('bus_prod_email'):
+        case $this->getConfig('micro_prod_email'):
+        case $this->getConfig('bus_test_email'):
+        case $this->getConfig('micro_test_email'):
             $retval = true;
             break;
         default:
@@ -819,39 +817,6 @@ class paypal extends \Shop\Gateway
             break;
         }
         return $retval;
-    }
-
-
-    /**
-     * Get all the configuration fields specifiec to this gateway.
-     *
-     * @return  array   Array of fields (name=>field_info)
-     */
-    protected function getConfigFields()
-    {
-        $fields = array();
-        foreach($this->config as $name=>$value) {
-            $other_label = '';
-            switch ($name) {
-            case 'test_mode':
-            case 'encrypt':
-                $field = '<input type="checkbox" name="' . $name .
-                    '" value="1" ';
-                if ($value == 1) $field .= 'checked="checked" ';
-                $field .= '/>';
-                break;
-            default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $value . '" size="60" />';
-                break;
-            }
-            $fields[$name] = array(
-                'param_field'   => $field,
-                'other_label'   => $other_label,
-                'doc_url'       => '',
-            );
-        }
-        return $fields;
     }
 
 
@@ -865,21 +830,15 @@ class paypal extends \Shop\Gateway
     public function SaveConfig($A = NULL)
     {
         if (is_array($A)) {
-            foreach ($this->config as $name=>$value) {
+            foreach ($this->getConfig() as $name=>$value) {
                 switch ($name) {
                 case 'encrypt':
                     // Check if the "encrypt" value has changed.  If so, clear the
                     // button cache
                     $encrypt = isset($A['encrypt']) ? 1 : 0;
-                    if ($encrypt != $this->config['encrypt'])
+                    if ($encrypt != $this->getConfig('encrypt')) {
                         $this->ClearButtonCache();
-                    $this->config['encrypt'] = $encrypt;
-                    break;
-                case 'test_mode':
-                    $this->config[$name] = isset($A[$name]) ? 1 : 0;
-                    break;
-                default:
-                    $this->config[$name] = $A[$name];
+                    }
                     break;
                 }
             }
@@ -919,15 +878,15 @@ class paypal extends \Shop\Gateway
         );
 
         // Set the array keys based on test mode and amount
-        $kTest = $this->config['test_mode'] == 1 ? 1 : 0;
-        $kAmount = $amount < $this->config['micro_threshold'] ? 1 : 0;
-        $this->receiver_email = !empty($this->config[$aEmail[$kTest][$kAmount]]) ?
-                $this->config[$aEmail[$kTest][$kAmount]] :
-                $this->config[$aEmail[$kTest][0]];
+        $kTest = $this->getConfig('test_mode') == 1 ? 1 : 0;
+        $kAmount = $amount < $this->getConfig('micro_threshold') ? 1 : 0;
+        $this->receiver_email = !empty($this->getConfig($aEmail[$kTest][$kAmount])) ?
+                $this->getConfig($aEmail[$kTest][$kAmount]) :
+                $this->getConfig($aEmail[$kTest][0]);
 
-        $this->cert_id = !empty($this->config[$aCert[$kTest][$kAmount]]) ?
-                $this->config[$aCert[$kTest][$kAmount]] :
-                $this->config[$aCert[$kTest][0]];
+        $this->cert_id = !empty($this->getConfig($aCert[$kTest][$kAmount])) ?
+                $this->getConfig($aCert[$kTest][$kAmount]) :
+                $this->getConfig($aCert[$kTest][0]);
     }
 
 
