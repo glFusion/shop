@@ -35,13 +35,6 @@ class check extends \Shop\Gateway
 
         $this->gw_desc = $LANG['descr_text'];
 
-        // Set default values for the config items, just to be sure that
-        // something is set here.
-        $this->config = array();
-        foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
-            $this->config['prod_types'][$typeID] = 1;
-        }
-
         // Set the services array to override the default.  Only checkout
         // is supported by this gateway.
         $this->services = array(
@@ -82,7 +75,7 @@ class check extends \Shop\Gateway
             case 'get_shipping':
                 $this->properties[$key] = (int)$value;
         }
-    }               
+    }
 
 
     /**
@@ -113,57 +106,6 @@ class check extends \Shop\Gateway
             return implode(';', $tmp);
          }else
             return '';
-    }
-
-
-    /**
-     * Get a "buy now" button for a catalog item.
-     *
-     * @deprecated
-     * @uses    _addItem()
-     * @uses    _getButton()
-     * @uses    getActionUrl()
-     * @param   object  $P      Product Object
-     * @return  string          HTML for button
-     */
-    public function XProductButton($P)
-    {
-        global $LANG_SHOP_check;
-
-        if (!$this->Supports($P->btn_type) || $P->prod_type != SHOP_PROD_PHYSICAL) {
-            return '';
-        }
-
-        // If this is a physical item, instruct the gateway to collect
-        // the shipping address.
-        /*$type = $P->prod_type;
-        if ($type & SHOP_PROD_PHYSICAL == SHOP_PROD_PHYSICAL) {
-            $this->get_shipping = 1;
-        }*/
-
-        $vars = array(
-            'item_number'   => $P->id,
-            'amount'        => $P->price,
-            'quantity'      => 1,
-        );
-        $gateway_vars = '';
-        foreach ($vars as $name => $value) {
-            $gateway_vars .= '<input type="hidden" name="' . $name .
-                    '" value="' . $value. '" />' . LB;
-        }
-
-        $T = SHOP_getTemplate('btn' . self::gwButtonType($P->btn_type), 'btn',
-                    'buttons/' . $this->gw_name);
-        $T->set_var(array(
-            'action_url'    => $this->getActionUrl(),
-            'gateway_vars'  => $gateway_vars,
-            'btn_text'      => $LANG['buy_now'],
-        ) );
-
-        $retval = $T->parse('', 'btn');
-
-        return $retval;
-
     }
 
 
@@ -305,146 +247,6 @@ class check extends \Shop\Gateway
 
 
     /**
-     * Get all the configuration fields specifiec to this gateway
-     *
-     * @return  array   Array of fields (name=>field_info)
-     */
-    protected function getConfigFields()
-    {
-        global $LANG_SHOP;
-
-        $fields = array();
-        foreach($this->config as $name=>$value) {
-            switch ($name) {
-            case 'prod_types':
-                $field = '';
-                foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
-                    $chk = isset($this->config['prod_types'][$typeID]) ?
-                            'checked="checked"' : '';
-                    $field .= '<input type="checkbox" name="prod_types[' .
-                        $typeID . ']" value="1" ' . $chk . ' />&nbsp;' .
-                        $LANG_SHOP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
-                }
-                break;
-            case 'test_mode':
-                $field = '<input type="checkbox" name="' . $name .
-                    '" value="1" ';
-                if ($value == 1) $field .= 'checked="checked" ';
-                $field .= '/>';
-                break;
-            default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $value . '" size="60" />';
-                break;
-            }
-            $doc_url = '';
-            $fields[$name] = array(
-                'param_field'   => $field,
-                'field_name'    => $name,
-                'doc_url'       => $doc_url,
-            );
-        }
-        return $fields;
-    }
-
-
-    /**
-     * Present the configuration form for this gateway.
-     *
-     * @deprecated
-     * @uses    PaymentGw::getServiceCheckboxes
-     * @return  string      HTML for the configuration form.
-     */
-    public function XConfigure()
-    {
-        global $_CONF, $LANG_SHOP, $LANG_SHOP_check;
-
-        $T = self::getTemplate();
-        $doc_url = SHOP_getDocUrl('gwhelp_' . $this->gw_name . '.html',
-                $_CONF['language']);
-
-        $svc_boxes = $this->getServiceCheckboxes();
-
-        $T->set_var(array(
-            'gw_description' => self::Description(),
-            'gw_id'         => $this->gw_name,
-            'enabled_chk'   => $this->enabled == 1 ? ' checked="checked"' : '',
-            'orderby'       => $this->orderby,
-            'pi_admin_url'  => SHOP_ADMIN_URL,
-            'doc_url'       => $doc_url,
-            'svc_checkboxes' => $svc_boxes,
-        ) );
-
-        $T->set_block('tpl', 'ItemRow', 'IRow');
-        foreach($this->config as $name=>$value) {
-            switch ($name) {
-            case 'prod_types':
-                $field = '';
-                foreach ($LANG_SHOP['prod_types'] as $typeID=>$text) {
-                    $chk = isset($this->config['prod_types'][$typeID]) ?
-                            'checked="checked"' : '';
-                    $field .= '<input type="checkbox" name="prod_types[' .
-                        $typeID . ']" value="1" ' . $chk . ' />' .
-                        $LANG_SHOP['prod_types'][$typeID] . '&nbsp;&nbsp;' . LB;
-                }
-                break;
-            case 'test_mode':
-                $field = '<input type="checkbox" name="' . $name .
-                    '" value="1" ';
-                if ($value == 1) $field .= 'checked="checked" ';
-                $field .= '/>';
-                break;
-            default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $value . '" size="60" />';
-                break;
-            }
-
-            $T->set_var(array(
-                'param_name'    => $LANG_SHOP_check[$name],
-                'param_field'   => $field,
-                'field_name'    => $name,
-                'doc_url'       => $doc_url,
-            ) );
-            $T->parse('IRow', 'ItemRow', true);
-        }
-        $T->parse('output', 'tpl');
-        $form = $T->finish($T->get_var('output'));
-        return $form;
-    }
-
-
-    /**
-     * Prepare to save the configuraiton.
-     * This copies the new config values into our local variables, then
-     * calls the parent function to save to the database.
-     *
-     * @uses    PaymentGw::SaveConfig()
-     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
-     * @return  boolean         Results of parent SaveConfig function
-     */
-    public function SaveConfig($A=NULL)
-    {
-        if (!is_array($A)) return false;
-        foreach ($this->config as $name=>$value) {
-            switch ($name) {
-            case 'test_mode':
-                $this->config[$name] = isset($A[$name]) ? 1 : 0;
-                break;
-            default:
-                if (isset($A[$name])) {
-                    $this->config[$name] = $A[$name];
-                } else {
-                    $this->config[$name] = NULL;
-                }
-                break;
-            }
-        }
-        return parent::SaveConfig($A);
-    }
-
-
-    /**
      * Add a single item to our item array.
      *
      * @param   mixed   $item_id    ID of item, including options
@@ -503,7 +305,7 @@ class check extends \Shop\Gateway
         $Order = \Shop\Order::getInstance($cart_id);
         if ($Order->isNew) {
             return '';
-        } 
+        }
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('remit', 'remit_form.thtml');

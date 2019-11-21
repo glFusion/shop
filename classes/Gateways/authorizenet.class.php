@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2012-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
@@ -54,16 +54,16 @@ class authorizenet extends \Shop\Gateway
 
         // Set default values for the config items, just to be sure that
         // something is set here.
-        $this->config = array(
-            'prod_api_login'    => '',
-            'prod_trans_key'    => '',
-            'test_api_login'    => '',
-            'test_trans_key'    => '',
+        $this->cfgFields= array(
+            'prod_api_login'    => 'password',
+            'prod_trans_key'    => 'password',
+            'test_api_login'    => 'password',
+            'test_trans_key'    => 'password',
 //            'prod_md5_hash'     => '',
 //            'test_md5_hash'     => '',
-            'test_mode'         => 1,
-            'test_hash_key'     => '',
-            'prod_hash_key'     => '',
+            'test_mode'         => 'checkbox',
+            'test_hash_key'     => 'password',
+            'prod_hash_key'     => 'password',
         );
 
         // Set the supported services as this gateway only supports cart checkout
@@ -77,16 +77,16 @@ class authorizenet extends \Shop\Gateway
 
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
-        if ($this->config['test_mode'] == '1') {
-            $this->api_login    = trim($this->config['test_api_login']);
-            $this->trans_key    = trim($this->config['test_trans_key']);
-            $this->hash_key     = trim($this->config['test_hash_key']);
+        if ($this->getConfig('test_mode') == '1') {
+            $this->api_login    = trim($this->getConfig('test_api_login'));
+            $this->trans_key    = trim($this->getConfig('test_trans_key'));
+            $this->hash_key     = trim($this->getconfig('test_hash_key'));
             $this->token_url = 'https://apitest.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://test.authorize.net/payment/payment';
         } else {
-            $this->api_login    = trim($this->config['prod_api_login']);
-            $this->trans_key    = trim($this->config['prod_trans_key']);
-            $this->hash_key     = trim($this->config['prod_hash_key']);
+            $this->api_login    = trim($this->getConfig('prod_api_login'));
+            $this->trans_key    = trim($this->getConfig('prod_trans_key'));
+            $this->hash_key     = trim($this->getconfig('prod_hash_key'));
             $this->token_url = 'https://api.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://accept.authorize.net/payment/payment';
         }
@@ -297,66 +297,6 @@ class authorizenet extends \Shop\Gateway
             'gateway_name'  => $this->gw_provider,
         );
         return $R;
-    }
-
-
-    /**
-     * Get all the configuration fields specifiec to this gateway.
-     *
-     * @return  array   Array of fields (name=>field_info)
-     */
-    protected function getConfigFields()
-    {
-        $fields = array();
-        foreach($this->config as $name=>$value) {
-            $other_label = '';
-            switch ($name) {
-            case 'test_mode':
-            case 'encrypt':
-                $field = '<input type="checkbox" name="' . $name .
-                    '" value="1" ';
-                if ($value == 1) $field .= 'checked="checked" ';
-                $field .= '/>';
-                break;
-            default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $value . '" size="60" />';
-                break;
-            }
-            $fields[$name] = array(
-                'param_field'   => $field,
-                'other_label'   => $other_label,
-                'doc_url'       => '',
-            );
-        }
-        return $fields;
-    }
-
-
-
-    /**
-     * Prepare to save the configuration.
-     * This copies the new config values into our local variables, then
-     * calls the parent function to save to the database.
-     *
-     * @uses    PaymentGw::SaveConfig()
-     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
-     * @return  boolean         Results of parent SaveConfig function
-     */
-    public function SaveConfig($A=NULL)
-    {
-        if (!is_array($A)) return false;
-        foreach ($this->config as $name=>$value) {
-            switch ($name) {
-            case 'test_mode':
-                $this->config[$name] = isset($A[$name]) ? 1 : 0;
-                break;
-            default:
-                $this->config[$name] = $A[$name];
-                break;
-            }
-        }
-        return parent::SaveConfig($A);
     }
 
 

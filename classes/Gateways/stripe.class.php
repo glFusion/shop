@@ -58,14 +58,14 @@ class stripe extends \Shop\Gateway
         $this->gw_desc = 'Stripe Payment Gateway';
         $this->gw_url = SHOP_URL . '/ipn/stripe.php';
 
-        $this->config = array(
-            'pub_key_prod'  => '',
-            'sec_key_prod'  => '',
-            'hook_sec_prod' => '',
-            'pub_key_test'  => '',
-            'sec_key_test'  => '',
-            'hook_sec_test' => '',
-            'test_mode'     => '',
+        $this->cfgFields = array(
+            'pub_key_prod'  => 'password',
+            'sec_key_prod'  => 'password',
+            'hook_sec_prod' => 'password',
+            'pub_key_test'  => 'password',
+            'sec_key_test'  => 'password',
+            'hook_sec_test' => 'password',
+            'test_mode'     => 'checkbox',
         );
 
         // Set the only service supported
@@ -73,14 +73,14 @@ class stripe extends \Shop\Gateway
 
         parent::__construct();
 
-        if ($this->config['test_mode'] == 1) {
-            $this->pub_key = $this->config['pub_key_test'];
-            $this->sec_key = $this->config['sec_key_test'];
-            $this->hook_sec = $this->config['hook_sec_test'];
+        if ($this->getConfig('test_mode') == 1) {
+            $this->pub_key = $this->getConfig('pub_key_test');
+            $this->sec_key = $this->getConfig('sec_key_test');
+            $this->hook_sec = $this->getConfig('hook_sec_test');
         } else {
-            $this->pub_key = $this->config['pub_key_prod'];
-            $this->sec_key = $this->config['sec_key_prod'];
-            $this->hook_sec = $this->config['hook_sec_prod'];
+            $this->pub_key = $this->getConfig('pub_key_prod');
+            $this->sec_key = $this->getConfig('sec_key_prod');
+            $this->hook_sec = $this->getConfig('hook_sec_prod');
         }
         \Stripe\Stripe::setApiKey($this->sec_key);
     }
@@ -178,63 +178,6 @@ class stripe extends \Shop\Gateway
 
         // No actual form vars needed
         return '';
-    }
-
-
-    /**
-     * No config fields for the test gateway.
-     *
-     * @return  array   Empty array
-     */
-    protected function getConfigFields()
-    {
-        $fields = array();
-        foreach($this->config as $name=>$value) {
-            $other_label = '';
-            switch ($name) {
-            case 'test_mode':
-                $field = '<input type="checkbox" name="' . $name .
-                    '" value="1" ';
-                if ($value == 1) $field .= 'checked="checked" ';
-                $field .= '/>';
-                break;
-            default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $value . '" size="60" />';
-                break;
-            }
-            $fields[$name] = array(
-                'param_field'   => $field,
-                'other_label'   => $other_label,
-                'doc_url'       => '',
-            );
-        }
-        return $fields;
-    }
-
-
-    /**
-     * Prepare to save the configuraiton.
-     * This copies the new config values into our local variables, then
-     * calls the parent function to save to the database.
-     *
-     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
-     */
-    public function SaveConfig($A = NULL)
-    {
-        if (is_array($A)) {
-            foreach ($this->config as $name=>$value) {
-                switch ($name) {
-                case 'test_mode':
-                    $this->config[$name] = isset($A[$name]) ? 1 : 0;
-                    break;
-                default:
-                    $this->config[$name] = $A[$name];
-                    break;
-                }
-            }
-        }
-        return parent::SaveConfig($A);
     }
 
 

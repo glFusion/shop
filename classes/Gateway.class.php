@@ -63,6 +63,10 @@ class Gateway
      */
     protected $config = array();
 
+    /** Configuration item names, to create the config form.
+     *@var array */
+    protected $cfgFields = array();
+
     /** The URL to the gateway's IPN processor.
      * @var string */
     protected $ipn_url;
@@ -200,7 +204,10 @@ class Gateway
             $props = @unserialize($A['config']);
             if ($props) {
                 foreach ($props as $key=>$value) {
-                    if (array_key_exists($key, $this->config)) {
+                    if (array_key_exists($key, $this->cfgFields)) {
+                        if ($this->cfgFields[$key] == 'password') {
+                            $value = COM_decrypt($value);
+                        }
                         $this->config[$key] = $value;
                     }
                 }
@@ -348,6 +355,21 @@ class Gateway
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
             $services = SHOP_getVar($A, 'service', 'array');
         }
+        foreach ($this->cfgFields as $name=>$type) {
+            switch ($type) {
+            case 'checkbox':
+                $value = isset($A[$name]) ? 1 : 0;
+                break;
+            case 'password':
+                $value = COM_encrypt($A[$name]);
+                break;
+             default:
+                $value = $A[$name];
+                break;
+            }
+            $this->setConfig($name, $value);
+        }
+
         $config = @serialize($this->config);
         if (!$config) return false;
 
@@ -1153,6 +1175,41 @@ class Gateway
 
 
     /**
+     * Get all the configuration fields specifiec to this gateway.
+     * Can be overridden by a specific gateway if necessary
+     *
+     * @return  array   Array of fields (name=>field_info)
+     */
+    protected function getConfigFields()
+    {
+        $fields = array();
+        //foreach($this->getConfig() as $name=>$value) {
+        foreach ($this->cfgFields as $name=>$type) {
+            switch ($type) {
+            case 'checkbox':
+                $field = '<input type="checkbox" name="' . $name .
+                    '" value="1" ';
+                if ($this->getConfig($name) == 1) {
+                    $field .= 'checked="checked" ';
+                }
+                $field .= '/>';
+                break;
+            default:
+                $field = '<input type="text" name="' . $name . '" value="' .
+                    $this->getConfig($name) . '" size="60" />';
+                break;
+            }
+            $fields[$name] = array(
+                'param_field'   => $field,
+                'other_label'   => $other_label,
+                'doc_url'       => '',
+            );
+        }
+        return $fields;
+    }
+
+
+    /**
      * Get an instance of a gateway.
      * Supports reading multiple gateways, but only one is normally needed.
      *
@@ -1220,16 +1277,23 @@ class Gateway
 
 
     /**
-     * Get a config item.
-     * Provides a safe way to reference a configuration item without first
-     * checking whether it's set.
+     * Get the value of a single configuration item.
      *
-     * @param   string  $item   Config item name
-     * @return  mixed       Value of item, or NULL if not set
+     * @param   string  $cfgItem    Name of field to get
+     * @return  mixed       Value of field, empty string if not defined
      */
-    public function getConfig($item)
+    protected function getConfig($cfgItem = '')
     {
-        return isset($this->config[$item]) ? $this->config[$item] : NULL;
+        if ($cfgItem == '') {
+            // Get all items at once
+            return $this->config;
+            // Get a single item
+        } elseif (array_key_exists($cfgItem, $this->config)) {
+            return $this->config[$cfgItem];
+        } else {
+            // Item specified but not found, return empty string
+            return '';
+        }
     }
 
 

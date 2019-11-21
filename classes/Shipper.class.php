@@ -934,6 +934,12 @@ class Shipper
         }
         $header_arr = array(
             array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'config',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
                 'text'  => 'ID',
                 'field' => 'code',
                 'sort'  => true,
@@ -942,12 +948,6 @@ class Shipper
                 'text'  => $LANG_SHOP['name'],
                 'field' => 'name',
                 'sort'  => false,
-            ),
-            array(
-                'text'  => $LANG_SHOP['edit'],
-                'field' => 'config',
-                'sort'  => false,
-                'align' => 'center',
             ),
         );
         $text_arr = '';

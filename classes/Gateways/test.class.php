@@ -115,11 +115,6 @@ class test extends \Shop\Gateway
         $this->AddCustom('transtype', $btn_type);
         $gateway_vars = '';
 
-        // See if the button is in our cache table
-        $btn_key = $P->btn_type . '_' . $P->getPrice();
-        if ($this->config['encrypt']) {
-            $gateway_vars = $this->_ReadButton($P, $btn_key);
-        }
         if (empty($gateway_vars)) {
             $vars = array();
             $vars['cmd'] = $btn_type;
