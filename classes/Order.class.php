@@ -332,6 +332,7 @@ class Order
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         //Cache::delete('order_' . $this->order_id);
+        return $this;
     }
 
 
@@ -675,11 +676,11 @@ class Order
                 );
             }*/
             //if ($item_qty[$item->product_id]['discount'] > 0) {
-            if ($item->qty_discount > 0) {
+            if ($item->getDiscount() > 0) {
                 $discount_items ++;
                 $price_tooltip = sprintf(
                     $LANG_SHOP['reflects_disc'],
-                    ($item->qty_discount * 100)
+                    ($item->getDiscount() * 100)
                 );
             } else {
                 $price_tooltip = '';
@@ -691,18 +692,18 @@ class Order
                 $sale_tooltip = '';
             }
 
-            $item_total = $item->price * $item->quantity;
+            $item_total = $item->getPrice() * $item->getQuantity();
             $this->subtotal += $item_total;
             if ($P->taxable) {
                 $this->tax_items++;       // count the taxable items for display
             }
             $T->set_var(array(
-                'cart_item_id'  => $item->id,
+                'cart_item_id'  => $item->getID(),
                 'fixed_q'       => $P->getFixedQuantity(),
-                'item_id'       => htmlspecialchars($item->product_id),
-                'item_dscp'     => htmlspecialchars($item->description),
-                'item_price'    => $Currency->FormatValue($item->price),
-                'item_quantity' => $item->quantity,
+                'item_id'       => htmlspecialchars($item->getProductId()),
+                'item_dscp'     => htmlspecialchars($item->getDscp()),
+                'item_price'    => $Currency->FormatValue($item->getPrice()),
+                'item_quantity' => $item->getQuantity(),
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
@@ -712,14 +713,16 @@ class Order
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
                 'sale_tooltip'  => $sale_tooltip,
-                'token'         => $item->token,
+                'token'         => $item->getToken(),
                 //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
-                'item_link'     => $P->getLink($item->id),
+                'item_link'     => $P->getLink($item->getID()),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
-                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->id}"),
+                'del_item_url'  => COM_buildUrl(
+                    SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
+                ),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -1125,7 +1128,7 @@ class Order
         $item_total = 0;
         $dl_links = '';         // Start with empty download links
         $email_extras = array();
-        $Cur = Currency::getInstance();     // get currency for formatting
+        $Cur = Currency::getInstance($this->curency);   // get currency object for formatting
 
         foreach ($this->items as $id=>$item) {
             $P = $item->getProduct();
@@ -1138,24 +1141,24 @@ class Order
                 $dl_url = SHOP_URL . '/download.php?';
                 // There should always be a token, but fall back to the
                 // product ID if there isn't
-                if ($item->token != '') {
-                    $dl_url .= 'token=' . urlencode($item->token);
-                    $dl_url .= '&i=' . $item->id;
+                if ($item->getToken() != '') {
+                    $dl_url .= 'token=' . urlencode($item->getToken());
+                    $dl_url .= '&i=' . $item->getID();
                 } else {
-                    $dl_url .= 'id=' . $item->product_id;
+                    $dl_url .= 'id=' . $item->getProductId();
                 }
                 $dl_links .= "<a href=\"$dl_url\">$dl_url</a><br />";
             }
 
-            $ext = (float)$item->quantity * (float)$item->price;
+            $ext = $item->getQuantity() * $item->getPrice();
             $item_total += $ext;
             $item_descr = $item->getShortDscp();
             $options_text = $item->getOptionDisplay();
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
-                'qty'   => $item->quantity,
-                'price' => $Cur->FormatValue($item->price),
+                'qty'   => $item->getQuantity(),
+                'price' => $Cur->FormatValue($item->getPrice()),
                 'ext'   => $Cur->FormatValue($ext),
                 'name'  => $item_descr,
                 'options_text' => $options_text,
@@ -1345,8 +1348,9 @@ class Order
             $tax = 0;
             $this->tax_items = 0;
             foreach ($this->items as $item) {
-                if ($item->getProduct()->taxable) {
-                    $tax += Currency::getInstance()->RoundVal($this->tax_rate * $item->quantity * $item->price);
+                if ($item->getProduct()->isTaxable()) {
+                    $tax += Currency::getInstance($this->currency)
+                        ->RoundVal($this->tax_rate * $item->getQuantity() * $item->getPrice());
                     $this->tax_items++;
                 }
             }
@@ -1407,7 +1411,7 @@ class Order
         $this->handling = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
-            $this->handling += $P->getHandling($item->quantity);
+            $this->handling += $P->getHandling($item->getQuantity());
         }
 
         $this->calcTax();   // Tax calculation is slightly more complex
@@ -1448,7 +1452,7 @@ class Order
      * Used after an action is performed to prevent the same action from
      * happening again accidentally.
      *
-     * @return  string      Token value
+     * @return  object  $this
      */
     public function setToken()
     {
@@ -1463,7 +1467,7 @@ class Order
             $this->token = $token;
             //Cache::clear('orders');
         }
-        return $this->token;
+        return $this;
     }
 
 
@@ -1476,7 +1480,7 @@ class Order
     {
         $total = 0;
         foreach ($this->items as $id => $item) {
-            $total += ($item->price * $item->quantity);
+            $total += ($item->getPrice() * $item->getQuantity());
         }
         if ($this->status == 'cart') {
             $total += $this->calcTotalCharges();
@@ -1694,7 +1698,7 @@ class Order
         $retval = 0;
         foreach ($this->items as $id=>$item) {
             if ($item->getProduct()->isPhysical()) {
-                $retval += $item->quantity;
+                $retval += $item->getQuantity();
             }
         }
         return $retval;
@@ -2051,8 +2055,8 @@ class Order
         if (!isset($qty[$item_id])) {
             $qty[$item_id] = 0;
             foreach ($this->items as $item) {
-                if ($item->product_id == $item_id) {
-                    $qty[$item_id] += $item->quantity;
+                if ($item->getProductId() == $item_id) {
+                    $qty[$item_id] += $item->getQuantity();
                 }
             }
         }
@@ -2173,7 +2177,7 @@ class Order
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($P->isPhysical()) {
-                $units += $P->shipping_units * $item->quantity;
+                $units += $P->getShippingUnits() * $item->getQuantity();
             }
         }
         return $units;
@@ -2376,6 +2380,19 @@ class Order
             }
         }
         return true;
+    }
+
+
+    /**
+     * Set the order status to a new value.
+     *
+     * @param   string  $newstatus  New status to set
+     * @return  object  $this
+     */
+    public function setStatus($newstatus)
+    {
+        $this->status = $newstatus;
+        return $this;
     }
 
 }

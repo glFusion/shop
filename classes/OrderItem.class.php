@@ -295,6 +295,17 @@ class OrderItem
 
 
     /**
+     * Get the item long description.
+     *
+     * @return  string      Item description
+     */
+    public function getDscp()
+    {
+        return $this->description;
+    }
+
+
+    /**
      * Set the options text based on selected standard options.
      *
      * @return  aray    Array of option desciptions
@@ -477,6 +488,17 @@ class OrderItem
     public function setDiscount($disc)
     {
         $this->qty_discount = $disc;
+    }
+
+
+    /**
+     * Get the quantity discount applied to this item.
+     *
+     * @return  float   Quantity discount
+     */
+    public function getDiscount()
+    {
+        return $this->qty_discount;
     }
 
 
@@ -714,6 +736,50 @@ class OrderItem
     public function getPrice()
     {
         return $this->price;
+    }
+
+
+    /**
+     * Get the item quantity.
+     *
+     * @return  integer     Item quantity
+     */
+    public function getQuantity()
+    {
+        return $this->quantity;
+    }
+
+
+    /**
+     * Get the product ID for this order item.
+     *
+     * @return  string      Product ID
+     */
+    public function getProductId()
+    {
+        return $this->product_id;
+    }
+
+
+    /**
+     * Get the database record ID of this item.
+     *
+     * @return  integer     DB record ID
+     */
+    public function getID()
+    {
+        return $this->id;
+    }
+
+
+    /**
+     * Get the random token for this item.
+     *
+     * @return  string      Token string
+     */
+    public function getToken()
+    {
+        return $this->token;
     }
 
 }

@@ -3090,6 +3090,17 @@ class Product
         $this->oi_id = (int)$oi_id;
     }
 
+
+    /**
+     * Get the number of shipping units for this product.
+     *
+     * @return  float   Shipping units
+     */
+    public function getShippingUnits()
+    {
+        return $this->shipping_units;
+    }
+
 }
 
 ?>
