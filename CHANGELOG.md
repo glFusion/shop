@@ -40,6 +40,7 @@ Release TBD
   * Implement package tracking API for UPS, FedEx, DHL and USPS.
   * Add configuration option to select the default administrative view.
   * Add default product type configuration option.
+  * Just show raw IPN data array in reports to allow nested array formats.
 
 ## v0.7.1
 Release 2019-08-02
