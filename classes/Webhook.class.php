@@ -100,16 +100,13 @@ class Webhook
 
     public function recordPayment()
     {
-        global $_TABLES;
 
-        $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
-            pmt_ts = UNIX_TIMESTAMP(),
-            pmt_gateway = '" . DB_escapeString($this->whSource) . "',
-            pmt_amount = '" . $this->getPayment() . "',
-            pmt_ref_id = '" . DB_escapeString($this->whID) . "'";
-        //echo $sql;die;
-        $res = DB_query($sql);
-        return DB_error() ? false : true;
+        $Pmt = new Payment();
+        $Pmt->setRefID($this->whID)
+            ->setGateway($this->whSource)
+            ->setAmount($this->getPayment())
+            ->setOrderID($this->whOrderID);
+        return $Pmt->Save();
     }
 
 }
