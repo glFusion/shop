@@ -1070,7 +1070,7 @@ class paypal extends \Shop\Gateway
                     'shipping_info' => array(
                         'name' => array(
                             'given_name' => $Shipto->getNamePart('fname'),
-                            'surname' => $Shipto->getNamePart('lname'),,
+                            'surname' => $Shipto->getNamePart('lname'),
                         ),
                         'address' => array(
                             'address_line_1'    => $Order->shipto_address1,
