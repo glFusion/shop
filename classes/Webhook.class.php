@@ -9,6 +9,7 @@ class Webhook
     protected $whEvent;         // event type
     protected $whOrderID;       // Order ID
     protected $whPmtTotal;      // Total Payment Amount
+    protected $whVerified;
 
     protected function saveToDB()
     {
@@ -98,6 +99,11 @@ class Webhook
     }
 
 
+    public function isVerified()
+    {
+        return $this->whVerified ? 1 : 0;
+    }
+
     public function recordPayment()
     {
 
@@ -107,6 +113,17 @@ class Webhook
             ->setAmount($this->getPayment())
             ->setOrderID($this->whOrderID);
         return $Pmt->Save();
+    }
+
+    public function logIPN()
+    {
+        $ipn = new logIPN();
+        $ipn->setOrderID($this->whOrderID)
+            ->setTxnID($this->whID)
+            ->setGateway($this->whSource)
+            ->setVerified($this->isVerified())
+            ->setData($this->whData);
+        $ipn->Save();
     }
 
 }
