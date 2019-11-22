@@ -943,11 +943,6 @@ class paypal extends \Shop\Gateway
     }
 
 
-    public function handlePayment($json)
-    {
-    }
-
-
 }   // class paypal
 
 ?>
