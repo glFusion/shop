@@ -79,6 +79,8 @@ class paypal extends \Shop\Gateway
             'api_username'      => 'password',
             'api_password'      => 'password',
             'api_sig'           => 'password',
+            'sandbox_webhook_id' => 'string',
+            'prod_webhook_id'   => 'string',
         );
 
         // Set defaults
@@ -953,7 +955,7 @@ class paypal extends \Shop\Gateway
      *
      * @return  string  API token value
      */
-    private function getBearerToken()
+    public function getBearerToken()
     {
         global $_SHOP_CONF;     // TODO: move tokens to gw config
 
@@ -1178,6 +1180,31 @@ class paypal extends \Shop\Gateway
     {
     }
 
+
+    /**
+     * Expose the API url for webhook verification.
+     *
+     * @return  string      API URL
+     */
+    public function getApiUrl()
+    {
+        return $this->api_url;
+    }
+
+
+    /**
+     * Get the webhook ID depending on whether in test or produciton mode.
+     *
+     * @return  string      Webhook ID from Paypal
+     */
+    public function getWebhookID()
+    {
+        if ($this->getConfg('test_mode')) {
+            return $this->getConfig('sandbox_webhook_id');
+        } else {
+            return $this->getConfig('prod_webhook_id');
+        }
+    }
 
 }   // class paypal
 

@@ -241,6 +241,19 @@ class Webhook
 
 
     /**
+     * Set the verification status after running Verify().
+     *
+     * @param   boolean $verified   True if verified, False if not
+     * @return  object  $this
+     */
+    public function setVerified($verified)
+    {
+        $this->whVerified = $verified ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
      * Check if this webhook has been verified.
      *
      * @return  integer     1 if verified, 0 if not
@@ -283,6 +296,43 @@ class Webhook
             ->setVerified($this->isVerified())
             ->setData($this->whData);
         return $ipn->Write();
+    }
+
+
+    /**
+     * Set the header array from the received webhook headers.
+     *
+     * @return  object  $this
+     */
+    public function setHeaders()
+    {
+        $headers = array();
+        foreach($_SERVER as $key => $value) {
+            if (substr($key, 0, 5) <> 'HTTP_') {
+                continue;
+            }
+            $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+            $this->headers[$header] = $value;
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get one or all webhook headers.
+     *
+     * @param   string|null $header     Header name, NULL for all
+     * @return  string|array    One or all headers
+     */
+    public function getHeader($header=NULL)
+    {
+        if ($header === NULL) {
+            return $this->headers;
+        } elseif (isset($this->headers[$header])) {
+            return $this->headers[$header];
+        } else {
+            return '';
+        }
     }
 
 }

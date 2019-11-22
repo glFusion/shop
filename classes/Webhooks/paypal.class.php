@@ -52,6 +52,7 @@ class paypal extends \Shop\Webhook
                 }
             }
         }
+        $this->setHeaders();
     }
 
 
@@ -70,6 +71,51 @@ class paypal extends \Shop\Webhook
             return self::EV_UNDEFINED;
             break;
         }
+    }
+
+
+    /**
+     * Verify that the webhook is valid.
+     *
+     * @return  boolean     True if valid, False if not.
+     */
+    public function Verify()
+    {
+        $gw = \Shop\Gateway::getInstance($this->getSource());
+        $body = array(
+            'transmission_id' => $this->getHeader('Paypal-Transmission-Id'),
+            'transmission_time' => $this->getHeader('Paypal-Transmission-Time'),
+            'cert_url' => $this->getHeader('Paypal-Cert-Url'),
+            'auth_algo' => $this->getHeader('Paypal-Auth-Algo'),
+            'transmission_sig' => $this->getHeader('Paypal-Transmission-Sig'),
+            'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
+            'webhook_event' => $this->getData(),
+        );
+        $body = json_encode($body);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $gw->getApiUrl() . '/v1/notifications/verify-webhook-signature');
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $gw->getBearerToken(),
+        ) ); 
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($code != 200) {
+            $status = false;
+        } else {
+            $result = @json_decode($result, true);
+            if (!$result) {
+                COM_errorLog("Paypal WebHook verification result: Code $code, Data " . print_r($result,true));
+                $status = false;
+            } else {
+                $status - SHOP_getVar($result, 'verification_status') == 'SuCCESS' ? true : false;
+            }
+        }
+        $this->setVerified($status);
+        return $status;
     }
 
 }
