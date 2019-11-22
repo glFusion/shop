@@ -248,7 +248,7 @@ class paypal extends \Shop\IPN
             // shopping cart
             // Create a cart and read the info from the cart table.
             $this->Order = $this->getOrder($this->order_id);
-            if ($this->Order->isNew) {
+            if (!$this->Order || $this->Order->isNew) {
                 $this->handleFailure(NULL, "Order ID {$this->order_id} not found for cart purchases");
                 return false;
             }

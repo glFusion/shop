@@ -143,6 +143,9 @@ class authorizenet extends \Shop\IPN
         if (empty($order)) return false;
         $this->order_id = SHOP_getVar($order, 'invoiceNumber');
         $this->Order = $this->getOrder($this->order_id);
+        if (!$this->Order) {
+            return false;
+        }
 
         // Get the custom data from the order since authorize.net doesn't
         // support pass-through user variables

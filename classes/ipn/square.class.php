@@ -49,7 +49,7 @@ class square extends \Shop\IPN
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if ($this->Order->isNew) return NULL;
+        if (!$this->Order || $this->Order->isNew) return NULL;
 
         $this->order_id = $this->Order->order_id;
         $this->txn_id = SHOP_getVar($A, 'transactionId');
