@@ -51,7 +51,6 @@ class stripe extends \Shop\IPN
         global $_USER, $_CONF;
 
         $this->gw_id = 'stripe';
-
         parent::__construct();  // construct without IPN data.
 
         $this->_event = $A;        
@@ -63,7 +62,7 @@ class stripe extends \Shop\IPN
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if ($this->Order->isNew) return NULL;
+        if (!$this->Order || $this->Order->isNew) return NULL;
 
         $this->order_id = $this->Order->order_id;
         $billto = $this->Order->getAddress('billto');
