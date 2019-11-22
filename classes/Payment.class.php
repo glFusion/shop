@@ -232,6 +232,62 @@ class Payment
         return DB_error() ? 0 : DB_insertID();
     }
 
+
+    public static function loadFromIPN()
+    {
+        global $_TABLES;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']}
+            ORDER BY ts ASC";
+            //WHERE id = 860
+        $res = DB_query($sql);
+        $Pmt = new self;
+        $done = array();        // Avoid duplicates
+        while ($A = DB_fetchArray($res, false)) {
+            //            if (empty($A['gateway']) || empty($A['order_id'])) {
+            $ipn_data = @unserialize($A['ipn_data']);
+            if (empty($A['gateway']) || empty($ipn_data)) {
+                //echo "Skipping id {$A['id']} - empty\n";
+                continue;
+            }
+            $cls = 'Shop\\ipn\\' . $A['gateway'];
+            if (!class_exists($cls)) {
+                //echo "Skipping id {$A['id']} - class $cls does not exist\n";
+                continue;
+            }
+            $ipn = new $cls($ipn_data);
+            if (isset($ipn_data['pmt_gross']) && $ipn_data['pmt_gross'] > 0) {
+                $pmt_gross = $ipn_data['pmt_gross'];
+            } else {
+                $pmt_gross = $ipn->pmt_gross;
+            }
+            if ($pmt_gross < .01) {
+                //echo "Skipping id {$A['id']} - amount is empty\n";
+                continue;
+            }
+            if (!empty($A['order_id'])) {
+                $order_id = $A['order_id'];
+            } elseif ($ipn->txn_id != '') {
+                $order_id = DB_getItem(
+                    $_TABLES['shop.orders'],
+                    'order_id',
+                    "pmt_txn_id = '" . DB_escapeString($ipn->txn_id) . "'"
+                );
+            } else {
+                $order_id = '';
+            }
+            if (!array_key_exists($A['txn_id'], $done)) {
+                $Pmt->setRefID($A['txn_id'])
+                    ->setAmount($pmt_gross)
+                    ->setTS($A['ts'])
+                    ->setGateway($A['gateway'])
+                    ->setOrderID($order_id);
+                $Pmt->Save();
+                $done[$Pmt->getRefId()] = 'done';
+            }
+        }
+    }
+
 }
 
 ?>
