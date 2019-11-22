@@ -1060,7 +1060,7 @@ class Shipper
      * Get the HTML option list of shippers.
      *
      * @param   integer $selected   Selected item ID
-     * @param   boolean $ena_only   True to include only enabled (default)
+     * @param   boolean $ena_only   True to include only enabled
      * @return  string      HTML for selection list
      */
     public static function optionList($selected = 0, $ena_only=false)
@@ -1141,7 +1141,7 @@ class Shipper
                 $retval = $text;
             }
         }
-        return $retval;die;
+        return $retval;
     }
 
 
@@ -1177,8 +1177,6 @@ class Shipper
         global $_TABLES;
 
         $code = DB_escapeString($this->key);
-        $sql = "SELECT data FROM {$_TABLES['shop.carrier_config']}
-            WHERE code = '$code'";
         $data = DB_getItem(
             $_TABLES['shop.carrier_config'],
             'data',
@@ -1271,14 +1269,12 @@ class Shipper
      */
     protected function hasQuoteAPI()
     {
-        if (!$this->implementsQuoteAPI || !$this->hasValidConfig()) {
-            return false;
-        }
+        return ($this->implementsQuoteAPI && $this->hasValidConfig());
     }
 
 
     /**
-     * Check if this shipper implements a package tracking API
+     * Check if this shipper implements a package tracking API.
      * Returns false if a tracking API isn't implemented, or if the
      * configuration isn't valid.
      * 
@@ -1286,10 +1282,7 @@ class Shipper
      */
     protected function hasTrackingAPI()
     {
-        if (!$this->implementsTrackingAPI || !$this->hasValidConfig()) {
-            return false;
-        }
-        return true;
+        return ($this->implementsTrackingAPI && $this->hasValidConfig());
     }
 
 
@@ -1390,11 +1383,11 @@ class Shipper
         foreach ($this->cfgFields as $name=>$type) {
             switch ($type) {
             case 'checkbox':
-                $chk = $this->getConfig($name) == 1 ? 'checked="checked"' : '';
+                $chk = $this->getConfig($name) ? 'checked="checked"' : '';
                 $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
                 break;
             default:
-                $fld = '<input type="text" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
+                $fld = '<input type="text" size="80" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
                 break;
             }
             $T->set_var(array(
