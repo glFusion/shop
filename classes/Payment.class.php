@@ -41,6 +41,9 @@ class Payment
     private $order_id;
 
 
+    private $method;
+    private $comment;
+
     /**
      * Set internal variables from a data array.
      *
@@ -54,6 +57,8 @@ class Payment
             $this->setTS($A['pmt_ts']);
             $this->setGateway($A['pmt_gateway']);
             $this->setOrderID($A['pmt_order_id']);
+            $this->setOrderID($A['comment']);
+            $this->setOrderID($A['method']);
         }
     }
 
@@ -145,6 +150,20 @@ class Payment
     }
 
 
+    public function setMethod($method)
+    {
+        $this->method = $method;
+        return $this;
+    }
+
+
+    public function setComment($comment)
+    {
+        $this->comment = $comment;
+        return $this;
+    }
+
+
     /**
      * Accessor function to get the Reference ID.
      *
@@ -226,7 +245,9 @@ class Payment
             pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
             pmt_amount = '" . $this->getAmount() . "',
             pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
-            pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "'";
+            pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
+            pmt_method = '" . DB_escapeString($this->method) . "',
+            pmt_comment = '" . DB_escapeString($this->comment) . "'";
         //echo $sql;die;
         $res = DB_query($sql);
         return DB_error() ? 0 : DB_insertID();
