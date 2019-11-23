@@ -1176,11 +1176,6 @@ class paypal extends \Shop\Gateway
     }
 
 
-    public function handlePayment($json)
-    {
-    }
-
-
     /**
      * Expose the API url for webhook verification.
      *
@@ -1199,7 +1194,7 @@ class paypal extends \Shop\Gateway
      */
     public function getWebhookID()
     {
-        if ($this->getConfg('test_mode')) {
+        if ($this->getConfig('test_mode')) {
             return $this->getConfig('sandbox_webhook_id');
         } else {
             return $this->getConfig('prod_webhook_id');
