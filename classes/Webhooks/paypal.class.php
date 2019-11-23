@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Webhooks;
+use Shop\Payment;
 
 
 /**
@@ -28,31 +29,54 @@ class paypal extends \Shop\Webhook
     public function __construct($blob)
     {
         $this->setSource('paypal');
+        //$this->setHeaders();
         $this->setTimestamp();
         $this->setData(json_decode($blob, true));
+        //COM_errorLog('HEADERS: ' . var_export($this->getHeader(),true));
+        //COM_errorLog('DATA: ' . $blob);
 
         // Check that the blob was decoded successfully.
         // If so, extract the key fields and set Webhook variables.
         $data = $this->getData();
+        //var_dump($data);die;
         if ($data) {        // Indicates that the blob was decoded
             $this->setID(SHOP_getVar($this->getData(), 'id'));
             $this->setEvent(SHOP_getVar($this->getData(), 'event_type'));
+            $this->Dispatch();
+        }
+    }
+
+
+
+    protected function Dispatch()
+    {
+        switch ($this->getEvent()) {
+        case self::EV_PAYMENT:
             $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
             if  ($resource) {
                 $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
                 if ($invoice) {
                     $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
                     if ($detail) {
-                        $this->setOrderID(SHOP_getVar($detail, 'invoice_number'));
+                        $this->setOrderID(SHOP_getVar($detail, 'reference'));
                     }
                     $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
                     if ($payments) {
-                        $this->setPayment($payments['paid_amount']['value']);
+                        $payment = array_pop($payments['transactions']);
+                        $Pmt = new Payment;
+                        $Pmt->setRefID($this->getID())
+                            ->setAmount($payment['amount']['value'])
+                            ->setGateway($this->getSource())
+                            ->setMethod($payment['method'])
+                            ->setComment($payment['note'])
+                            ->setOrderID($this->getOrderID());
+                        return $Pmt->Save();
                     }
                 }
             }
+            break;
         }
-        $this->setHeaders();
+        return false;
     }
 
 
@@ -83,15 +107,16 @@ class paypal extends \Shop\Webhook
     {
         $gw = \Shop\Gateway::getInstance($this->getSource());
         $body = array(
-            'transmission_id' => $this->getHeader('Paypal-Transmission-Id'),
-            'transmission_time' => $this->getHeader('Paypal-Transmission-Time'),
-            'cert_url' => $this->getHeader('Paypal-Cert-Url'),
-            'auth_algo' => $this->getHeader('Paypal-Auth-Algo'),
-            'transmission_sig' => $this->getHeader('Paypal-Transmission-Sig'),
-            'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
+            'transmission_id' => $this->getHeader('Paypal-transmission-id'),
+            'transmission_time' => $this->getHeader('Paypal-transmission-time'),
+            'cert_url' => $this->getHeader('Paypal-cert-url'),
+            'auth_algo' => $this->getHeader('Paypal-auth-algo'),
+            'transmission_sig' => $this->getHeader('Paypal-transmission-sig'),
+            'webhook_id' => '7AL053045J1030934',
+            //'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
             'webhook_event' => $this->getData(),
         );
-        $body = json_encode($body);
+        $body = json_encode($body, JSON_UNESCAPED_SLASHES);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $gw->getApiUrl() . '/v1/notifications/verify-webhook-signature');
         curl_setopt($ch, CURLOPT_POST, 1);
@@ -103,7 +128,10 @@ class paypal extends \Shop\Webhook
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $status = false;
         if ($code != 200) {
+            var_dump($code);
+            var_dump($result);
             $status = false;
         } else {
             $result = @json_decode($result, true);
@@ -111,7 +139,7 @@ class paypal extends \Shop\Webhook
                 COM_errorLog("Paypal WebHook verification result: Code $code, Data " . print_r($result,true));
                 $status = false;
             } else {
-                $status - SHOP_getVar($result, 'verification_status') == 'SuCCESS' ? true : false;
+                $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
             }
         }
         $this->setVerified($status);
