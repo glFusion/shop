@@ -143,7 +143,6 @@ class square extends \Shop\IPN
                 }
             }
         }
-        $this->ipn_data['status'] = $this->status;  // to get into handlePurchase()
         return true;
     }
 

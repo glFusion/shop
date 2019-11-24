@@ -760,8 +760,13 @@ class Gateway
                         'item' => $item,
                         'ipn_data' => array(),
                 );
-                $status = LGLIB_invokeService($pi_info[0], 'handlePurchase',
-                            $vars, $A, $svc_msg);
+                $status = LGLIB_invokeService(
+                    $pi_info[0],
+                    'handlePurchase',
+                    $vars,
+                    $A,
+                    $svc_msg
+                );
                 if ($status != PLG_RET_OK) {
                     $A = array();
                 }
@@ -1282,7 +1287,7 @@ class Gateway
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
      */
-    protected function getConfig($cfgItem = '')
+    public function getConfig($cfgItem = '')
     {
         if ($cfgItem == '') {
             // Get all items at once

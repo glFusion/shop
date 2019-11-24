@@ -81,21 +81,20 @@ class paypal extends \Shop\IPN
                 $this->custom = array('uid' => $A['custom']);
             }
         }
-        $this->ipn_data['custom'] = $this->custom;  // backward compatibility
         $this->uid = SHOP_getVar($this->custom, 'uid', 'integer', 1);
 
+        // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->status = 'pending';
+            $this->status = self::PENDING;
             break;
         case 'Completed':
-            $this->status = 'paid';
+            $this->status = self::PAID;
             break;
         case 'Refunded':
-            $this->status = 'refunded';
+            $this->status = self::REFUNDED;
             break;
         }
-        $this->ipn_data['status'] = $this->status;  // to get into handlePurchase()
 
         switch (SHOP_getVar($A, 'txn_type')) {
         case 'web_accept':
@@ -120,10 +119,6 @@ class paypal extends \Shop\IPN
      */
     private function Verify()
     {
-        if ($this->gw->getConfig('test_mode') && isset($this->ipn_data['test_ipn'])) {
-            return true;
-        }
-
         // Default verification to false
         $verified = false;
 
@@ -144,9 +139,14 @@ class paypal extends \Shop\IPN
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $req);
         curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1);
-        $SHOP_response = curl_exec($ch);
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        if (strcmp($SHOP_response, 'VERIFIED') == 0) $verified = true;
+        if ($http_code != 200) {
+            SHOP_log("IPN Verification returned $http_code", SHOP_LOG_ERROR);
+        } elseif (strcmp($response, 'VERIFIED') == 0) {
+            $verified = true;
+        }
         return $verified;
     }
 
