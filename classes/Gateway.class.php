@@ -760,8 +760,13 @@ class Gateway
                         'item' => $item,
                         'ipn_data' => array(),
                 );
-                $status = LGLIB_invokeService($pi_info[0], 'handlePurchase',
-                            $vars, $A, $svc_msg);
+                $status = LGLIB_invokeService(
+                    $pi_info[0],
+                    'handlePurchase',
+                    $vars,
+                    $A,
+                    $svc_msg
+                );
                 if ($status != PLG_RET_OK) {
                     $A = array();
                 }

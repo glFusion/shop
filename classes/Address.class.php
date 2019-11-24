@@ -639,6 +639,12 @@ class Address
         }
     }
 
+
+    /**
+     * Save the address to the database.
+     *
+     * @return  integer     Record ID of address, zero on error
+     */
     public function Save()
     {
         global $_TABLES;
@@ -666,18 +672,20 @@ class Address
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        if ($this->addr_id == 0) {
-            $this->addr_id = DB_insertID();
-        }
+        if (!DB_error()) {
+            if ($this->addr_id == 0) {
+                $this->addr_id = DB_insertID();
+            }
 
-        // If this is the new default address, turn off the other default
-        foreach (array('billto', 'shipto') as $type) {
-            if ($this->isDefault($type)) {
-                DB_query(
-                    "UPDATE {$_TABLES['shop.address']}
-                    SET {$type}_def = 0
-                    WHERE addr_id <> '" . $this->addr_id . "' AND {$type}_def = 1"
-                );
+            // If this is the new default address, turn off the other default
+            foreach (array('billto', 'shipto') as $type) {
+                if ($this->isDefault($type)) {
+                    DB_query(
+                        "UPDATE {$_TABLES['shop.address']}
+                        SET {$type}_def = 0
+                        WHERE addr_id <> '" . $this->addr_id . "' AND {$type}_def = 1"
+                    );
+                }
             }
         }
         Cache::clear('shop.user_' . $this->uid);
@@ -685,6 +693,11 @@ class Address
     }
 
 
+    /**
+     *  Return the properties array.
+     *
+     *  @return array   Address properties
+     */
     public function toArray()
     {
         return $this->properties;
