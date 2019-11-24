@@ -937,12 +937,6 @@ class paypal extends \Shop\Gateway
         return $this->adminWarnBB();
     }
 
-
-    public function createInvoice($Order)
-    {
-    }
-
-
 }   // class paypal
 
 ?>
