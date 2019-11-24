@@ -46,6 +46,10 @@ define('IPN_FAILURE_FUNDS', 5);
  */
 class IPN
 {
+    const PAID = 'paid';
+    const PENDING = 'pending';
+    const REFUNDED = 'refunded';
+
     /** Holder for properties accessed via `__set()` and `__get()`.
      * @var array */
     private $properties = array();
@@ -448,8 +452,11 @@ class IPN
             $this->Order->updateStatus($this->status, 'IPN: ' . $this->gw->Description());
 
             // Handle the purchase for each order item
+            $ipn_data = $this->ipn_data;
+            $ipn_data['status'] = $this->status;
+            $ipn_data['custom'] = $this->custom;
             foreach ($this->Order->getItems() as $item) {
-                $item->getProduct()->handlePurchase($item, $this->Order, $this->ipn_data);
+                $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
             if ($this->pmt_gross > 0) {
                 $this->Order->Log(sprintf(
