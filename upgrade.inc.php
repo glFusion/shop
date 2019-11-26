@@ -132,6 +132,11 @@ function SHOP_do_upgrade($dvlp = false)
                     }
                 }
             }
+
+            // Leverage this check to see if the gateway keys need to be encrypted.
+            foreach (Shop\Gateway::getAll() as $gw) {
+                $gw->Save();
+            }
         }
 
         if (!SHOP_do_set_version($current_ver)) return false;

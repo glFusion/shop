@@ -206,7 +206,13 @@ class Gateway
                 foreach ($props as $key=>$value) {
                     if (array_key_exists($key, $this->cfgFields)) {
                         if ($this->cfgFields[$key] == 'password') {
-                            $value = COM_decrypt($value);
+                            // Decrypt the value. If decryption fails then the
+                            // string may not have been encrypted so use the
+                            // original.
+                            $decrypted = COM_decrypt($value);
+                            if ($decrypted !== '') {
+                                $value = $decrypted;
+                            }
                         }
                         $this->config[$key] = $value;
                     }
@@ -264,6 +270,23 @@ class Gateway
     {
         return $this->gw_name;
     }
+    public function getName()
+    {
+        return $this->gw_name;
+    }
+
+
+    /**
+     * Set the user-friendly display name for the provier.
+     *
+     * @param   string  $name   Provider name
+     * @return  object  $this
+     */
+    public function setDisplayName($name)
+    {
+        $this->gw_provider = $name;
+        return $this;
+    }
 
 
     /**
@@ -272,6 +295,10 @@ class Gateway
      * @return  string      Short name of gateway
      */
     public function DisplayName()
+    {
+        return $this->gw_provider;
+    }
+    public function getDisplayName()
     {
         return $this->gw_provider;
     }
@@ -286,7 +313,10 @@ class Gateway
     {
         return $this->gw_desc;
     }
-
+    public function getDscp()
+    {
+        return $this->gw_desc;
+    }
 
     /**
      * Get a single buy_now-type button from the database.
@@ -1287,7 +1317,7 @@ class Gateway
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
      */
-    public function getConfig($cfgItem = '')
+    protected function getConfig($cfgItem = '')
     {
         if ($cfgItem == '') {
             // Get all items at once
@@ -1299,6 +1329,17 @@ class Gateway
             // Item specified but not found, return empty string
             return '';
         }
+    }
+
+
+    /**
+     * See if this gateway is in Sandbox mode.
+     *
+     * @return  boolean     True if the test_mode config var is set
+     */
+    public function isSandbox()
+    {
+        return $this->getConfig('test_mode');
     }
 
 
