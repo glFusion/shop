@@ -348,9 +348,12 @@ class usps extends \Shop\Shipper
         try {
             // Create AccessRequest XMl
             $RequestXML = new SimpleXMLElement(
-                '<TrackFieldRequest USERID="' . $this->getConfig('user_id') . '"></TrackFieldRequest>'
+                '<TrackFieldRequest></TrackFieldRequest>'
             );
-            $RequestXML->addChild('TrackID ID="' . $tracking . '"');
+            $RequestXML->addAttribute('USERID', $this->getConfig('user_id'));
+            $RequestXML
+                ->addChild('TrackID')
+                ->addAttribute('ID', $tracking);
             $XML = $RequestXML->asXML ();
             $request = 'API=TrackV2&XML=' . urlencode($XML);
 
@@ -374,6 +377,11 @@ class usps extends \Shop\Shipper
                 $info = $resp->TrackInfo;
                 $Tracking->addMeta('Tracking Number', $tracking);
                 $Tracking->addMeta('Carrier', self::getCarrierName());
+                if ($info->ExpectedDeliveryDate) {
+                    $Tracking->addMeta(
+                        'Expected Delivery',
+                        $info->ExpectedDeliveryDate . ' ' . $info->ExpectedDeliveryTime);
+                }
 
                 if (isset($info->Error)) {
                     $Tracking->addError(html_entity_decode($info->Error->Description));
