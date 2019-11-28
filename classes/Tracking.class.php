@@ -40,7 +40,7 @@ class Tracking
      * - message
      * - date
      * - time
-     * - Alternatively, a datetime object which will superceded the date/time
+     * - Alternatively, a datetime object which will supercede the date/time
      *
      * @param   array   $info   Array of step information
      */
