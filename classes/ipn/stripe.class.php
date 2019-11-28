@@ -36,10 +36,6 @@ class stripe extends \Shop\IPN
      * @var object */
     private $_payment;
 
-    /** Currency object, used for formatting numbers.
-     * @var object */
-    private $_currency;
-
 
     /**
      * Constructor.
@@ -57,25 +53,28 @@ class stripe extends \Shop\IPN
         $session = $this->_event->data->object;
         $order_id = $session->client_reference_id;
         $this->ipn_data['order_id'] = $order_id;
-        $this->txn_id = $session->payment_intent;
+        $this->setTxnId($session->payment_intent);
 
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if (!$this->Order || $this->Order->isNew) return NULL;
+        if (!$this->Order || $this->Order->isNew) {
+            // Invalid order specified, nothing can be done.
+            return NULL;
+        }
 
-        $this->order_id = $this->Order->order_id;
+        $this->setOrderId($this->Order->order_id);
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
         if (empty($shipto) && !empty($billto)) {
             $shipto = $billto;
         }
 
-        $this->payer_email = $this->Order->buyer_email;
-        $this->payer_name = $_USER['fullname'];
-        $this->pmt_date = $_CONF['_now']->toMySQL(true);
-        $this->gw_name = $this->gw->Name();;
-        $this->status = $status;
+        $this
+            ->setEmail($this->Order->buyer_email)
+            ->setPayerName($_USER['fullname'])
+            ->setGwName($this->GW->getName())
+            ->setStatus(self::PENDING);
 
         $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
@@ -89,14 +88,10 @@ class stripe extends \Shop\IPN
         );
 
         $this->custom = array(
-            'transtype' => $this->gw->Name(),
+            'transtype' => $this->GW->getName(),
             'uid'       => $this->Order->uid,
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
-
-        //$total_shipping = $this->Order->shipping;
-        //$total_handling = $this->Order->handling;
-        //$total_tax = $this->Order->tax;
 
         foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
@@ -108,9 +103,7 @@ class stripe extends \Shop\IPN
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
             );
-            $this->AddItem($args);
-            //$total_shipping += $item->shipping;
-            //$total_handling += $item->handling;
+            $this->addItem($args);
         }
     }
 
@@ -125,10 +118,10 @@ class stripe extends \Shop\IPN
     private function Verify()
     {
         // Get the payment intent from Stripe
-        $trans = $this->gw->getPayment($this->txn_id);
+        $trans = $this->GW->getPayment($this->getTxnId());
+        COM_errorLog("got transaction: " . var_dump($trans, true));
         $this->_payment = $trans;
 
-        $this->status = 'pending';
         if (!$trans || $trans->status != 'succeeded') {
             // Payment verification failed.
             return false;
@@ -136,30 +129,32 @@ class stripe extends \Shop\IPN
         $this->ipn_data['txn'] = $trans;
 
         // Verification succeeded, get payment info.
-        $this->status = 'paid';
-        $this->currency = strtoupper($trans->currency);
-        $this->_currency = \Shop\Currency::getInstance($this->currency);
-        $this->pmt_gross = $this->_currency->fromInt($trans->amount_received);
+        $this
+            ->setStatus(self::PAID)
+            ->setCurrency($trans->currency)
+            ->setPmtGross($this->getCurrency()->fromInt($trans->amount_received));
 
         $session = $this->_event->data->object;
         $pmt_shipping = 0;
         $pmt_tax = 0;
         foreach ($session->display_items as $item) {
             if ($item->custom->name == '__tax') {
-                $pmt_tax += $this->_currency->fromInt($item->amount);
+                $pmt_tax += $this->getCurrency()->fromInt($item->amount);
             } elseif ($item->custom->name == '__shipping') {
-                $pmt_shipping += $this->_currency->fromInt($item->amount);
+                $pmt_shipping += $this->getCurrency()->fromInt($item->amount);
             } elseif ($item->custom->name == '__gc') {
                 // TODO when Stripe supports coupons
                 $this->addCredit('gc', $item->amount);
             }
         }
-        $this->pmt_tax = $pmt_tax;
-        $this->pmt_shipping = $pmt_shipping;
-        $this->ipn_data['pmt_shipping'] = $this->pmt_shipping;
-        $this->ipn_data['pmt_tax'] = $this->pmt_tax;
-        $this->ipn_data['pmt_gross'] = $this->pmt_gross;
-        $this->ipn_data['status'] = $this->status;  // to get into handlePurchase()
+
+        $this
+            ->setPmtTax($pmt_tax)
+            ->setPmtShipping($pmt_shipping);
+        $this->ipn_data['pmt_shipping'] = $this->getPmtShipping();
+        $this->ipn_data['pmt_tax'] = $this->getPmtTax();
+        $this->ipn_data['pmt_gross'] = $this->getPmtGross();
+        $this->ipn_data['status'] = $this->getStatus();  // to get into handlePurchase()
         return true;
     }
 
@@ -192,12 +187,12 @@ class stripe extends \Shop\IPN
         if (!$this->Verify()) {
             $logId = $this->Log(false);
             $this->handleFailure(
-                IPN_FAILURE_VERIFY,
+                self::FAILURE_VERIFY,
                 "($logId) Verification failed"
             );
             return false;
         } elseif (!$this->isUniqueTxnId()) {
-            COM_errorLog("Duplicate Txn ID " . $this->txn_id);
+            COM_errorLog("Duplicate Txn ID " . $this->getTxnId());
             $logId = $this->Log(false);
             return false;
         } else {
@@ -221,7 +216,7 @@ class stripe extends \Shop\IPN
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
             );
-            $this->AddItem($args);
+            $this->addItem($args);
         }
 
         return $this->handlePurchase();

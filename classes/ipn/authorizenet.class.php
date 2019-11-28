@@ -34,21 +34,21 @@ class authorizenet extends \Shop\IPN
         parent::__construct($A);
 
         // Get the needed values from the Webhook payload
-        $payload = SHOP_getVar($A, 'payload', 'array', array());
-        $this->txn_id = SHOP_getVar($payload, 'id');
-        $this->pmt_date = strftime('%d %b %Y %H:%M:%S', time());
-        $this->pmt_gross = SHOP_getVar($payload, 'authAmount', 'float');
-        $this->gw_name = $this->gw->Description();
+        $payload = SHOP_getVar($A, 'payload', 'array');
+        $this->setTxnId(SHOP_getVar($payload, 'id'))
+            ->setPmtGross(SHOP_getVar($payload, 'authAmount', 'float'))
+            ->setOrderId(SHOP_getVar($payload, 'invoiceNumber'));
+        $this->gw_name = $this->GW->getDscp();
 
         switch(SHOP_getVar($A, 'eventType')) {
         case 'net.authorize.payment.authcapture.created':
-            $this->status = 'paid';
+            $this->setStatus(self::PAID);
             break;
         default:
-            $this->status = 'pending';
+            $this->setStatus(self::PENDING);
             break;
         }
-        $this->ipn_data['status'] = $this->status;
+        $this->ipn_data['status'] = $this->getStatus();
     }
 
 
@@ -65,7 +65,7 @@ class authorizenet extends \Shop\IPN
     {
         if (
             !$this->Verify() ||
-            'paid' != $this->status ||
+            self::PAID != $this->getStatus() ||
             !$this->isUniqueTxnId()
         ) {
             return false;
@@ -94,19 +94,24 @@ class authorizenet extends \Shop\IPN
      */
     private function Verify()
     {
-        //return true;
+        if (isset($this->ipn_data['shop_test_ipn'])) {
+            // Use the order ID provided in the constructor to get the order
+            $this->Order = $this->getOrder($this->getOrderId());
+            return true;
+        }
 
-        if ($this->isEmpty('txn_id')) {
+        //if ($this->isEmpty('txn_id')) {
+        if (empty($this->getTxnId())) {
             return false;
         }
         $json = array(
             'getTransactionDetailsRequest' => array(
                 'merchantAuthentication' => array(
-                    'name' => $this->gw->getApiLogin(),
-                    'transactionKey' => $this->gw->getTransKey(),
+                    'name' => $this->GW->getApiLogin(),
+                    'transactionKey' => $this->GW->getTransKey(),
                 ),
                 //'refId' => $this->order_id,
-                'transId' => $this->txn_id,
+                'transId' => $this->getTxnId(),
             ),
         );
         $jsonEncoded = json_encode($json);
@@ -119,31 +124,45 @@ class authorizenet extends \Shop\IPN
         $result = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($code != 200) {
+            SHOP_log("Error received during authorize.net verification: code $code", SHOP_LOG_ERROR);
             return false;
         }
         $bom = pack('H*','EFBBBF');
         $result = preg_replace("/^$bom/", '', $result);
-        $result = json_decode($result, true);
+        $json = json_decode($result, true);
+        if (!$json) {
+            SHOP_log("Error decoding authorize.net verification JSON: $result", SHOP_LOG_ERROR);
+            return false;
+        }
 
         // Check return fields against known values
-        $trans = SHOP_getVar($result, 'transaction', 'array', NULL);
-        if (!$trans) return false;
+        $trans = SHOP_getVar($json, 'transaction', 'array', NULL);
+        if (!$trans)
+            SHOP_log("Transaction not found during authorize.net verification.", SHOP_LOG_ERROR);
+            return false;
 
-        if (SHOP_getVar($trans, 'transId') != $this->txn_id) {
+        if (SHOP_getVar($trans, 'transId') != $this->getTxnId()) {
+            SHOP_log("Transaction ID mismatch during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
         }
         if (SHOP_getVar($trans, 'responseCode', 'integer') != 1) {
+            SHOP_log("Transaction response code not found during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
         }
-        if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->pmt_gross) {
+        if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->getPmtGross()) {
+            SHOP_log("Settlement amount not found during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
         }
 
         $order = SHOP_getVar($trans, 'order', 'array');
-        if (empty($order)) return false;
-        $this->order_id = SHOP_getVar($order, 'invoiceNumber');
-        $this->Order = $this->getOrder($this->order_id);
+        if (empty($order)) {
+            SHOP_log("Order ID not found during authorize.net verification.", SHOP_LOG_ERROR);
+            return false;
+        }
+        $this->setOrderId(SHOP_getVar($order, 'invoiceNumber'));
+        $this->Order = $this->getOrder($this->getOrderId());
         if (!$this->Order) {
+            SHOP_log("Order ID $order invalid during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
         }
 
@@ -160,9 +179,9 @@ class authorizenet extends \Shop\IPN
             $this->addCredit('gc', $by_gc);
         }*/
         $shipping = SHOP_getVar($trans, 'shipping', 'array');
-        $this->pmt_shipping = SHOP_getVar($shipping, 'amount', 'float');
+        $this->setPmtShipping(SHOP_getVar($shipping, 'amount', 'float'));
         $tax = SHOP_getVar($trans, 'tax', 'array');
-        $this->pmt_tax = SHOP_getVar($tax, 'amount', 'float');
+        $this->setPmtTax(SHOP_getVar($tax, 'amount', 'float'));
 
         // All conditions met
         return true;
@@ -177,9 +196,9 @@ class authorizenet extends \Shop\IPN
      */
     public function testVerify()
     {
-        $this->order_id = '20180925224531700';
-        $this->txn_id = '40018916851';
-        $this->pmt_gross = 23.77;
+        $this->setOrderId('20180925224531700')
+            ->setTxnId('40018916851')
+            ->setPmtGross(23.77);
         return $this->Verify();
     }
 

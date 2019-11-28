@@ -51,13 +51,13 @@ class internal extends \Shop\IPN
 
         // Get the IPN type, default to "cart" for backward compatibility
         $this->ipn_type = SHOP_getVar($this->ipn_data, 'ipn_type', 'string', 'cart');
-        $this->pmt_gross = $this->ipn_data['pmt_gross'];
-        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'tax', 'float');
-        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'shipping', 'float');
-        $this->pmt_tax = SHOP_getVar($this->ipn_data, 'handling', 'float');
-        $this->gw_desc = $this->gw->Description();
+        $this->setPmtGross($this->ipn_data['pmt_gross'])
+            ->setPmtTax(SHOP_getVar($this->ipn_data, 'tax', 'float'))
+            ->setPmtShipping(SHOP_getVar($this->ipn_data, 'shipping', 'float'))
+            ->setPmtHandling(SHOP_getVar($this->ipn_data, 'handling', 'float'))
+            ->setCurrency();
         $this->gw_name = $this->gw->Name();
-        $this->currency = Currency::getInstance()->code;
+        $this->gw_desc = $this->gw->Description();
 
         // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
@@ -67,8 +67,8 @@ class internal extends \Shop\IPN
                 $this->custom = array('uid' => $A['custom']);
             }
         }
-        $this->uid = $this->custom['uid'];
-        $this->pmt_status = 'paid';
+        $this->setUid($this->custom['uid'])
+            ->setStatus(self::PAID);
     }
 
 
@@ -89,7 +89,7 @@ class internal extends \Shop\IPN
             }
             break;
         case 'buy_now':
-            $this->txn_id = uniqid() . rand(100,999);
+            $this->setTxnId(uniqid() . rand(100,999));
             $this->createOrder();
             $this->Order->setInfo('gateway', 'test');
             break;
@@ -108,14 +108,14 @@ class internal extends \Shop\IPN
             }
             if ($by_gc < $total) return false;
             // This only handles fully-paid items
-            $this->pmt_gross = 0;
+            $this->setPmtGross(0);
             $this->addCredit('gc', min($by_gc, $total));
             break;
         case 'test':
             $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
             break;
         }
-        $this->status = 'paid';
+        $this->setStatus(self::PAID);
         return true;
     }
 
@@ -156,7 +156,7 @@ class internal extends \Shop\IPN
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses    BaseIPN::AddItem()
+     * @uses    BaseIPN::addItem()
      * @uses    BaseIPN::handleFailure()
      * @uses    BaseIPN::handlePurchase()
      * @uses    BaseIPN::isUniqueTxnId()
@@ -184,7 +184,6 @@ class internal extends \Shop\IPN
         case 'buy_now':
             $item_number = SHOP_getVar($this->ipn_data, 'item_number');
             $quantity = SHOP_getVar($this->ipn_data, 'quantity', 'float');
-            $fees_paid = $this->pmt_tax + $this->pmt_shipping + $this->pmt_handling;
             if (empty($item_number)) {
                 $this->handleFailure(NULL, 'Missing Item Number in Buy-now process');
                 return false;
@@ -192,19 +191,18 @@ class internal extends \Shop\IPN
             if (empty($quantity)) {
                 $quantity = 1;
             }
-            $this->pmt_net = $this->pmt_gross - $fees_paid;
-            $unit_price = $this->pmt_gross / $quantity;
+            $unit_price = $this->getPmtGross() / $quantity;
             $args = array(
                 'item_id'   => $item_number,
                 'quantity'  => $quantity,
                 'price'     => $unit_price,
                 'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
-                'shipping'  => $this->pmt_shipping,
-                'handling'  => $this->pmt_handling,
+                'shipping'  => $this->getPmtShipping(),
+                'handling'  => $this->getPmtHandling(),
             );
-            $this->AddItem($args);
+            $this->addItem($args);
 
-            SHOP_log("Net Settled: {$this->pmt_gross} $this->currency", SHOP_LOG_DEBUG);
+            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->code}", SHOP_LOG_DEBUG);
             break;
 
         default:
@@ -218,18 +216,18 @@ class internal extends \Shop\IPN
             $shipto = $this->Order->getAddress('shipto');
             if (empty($shipto) && !empty($billto)) $shipto = $billto;
             if (COM_isAnonUser()) $_USER['email'] = '';
-            $this->payer_email = SHOP_getVar($A, 'payer_email', 'string', $_USER['email']);
-            $this->payer_name = trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name'));
-            if ($this->payer_name == '') {
-                $this->payer_name = $_USER['fullname'];
+            $this->setEmail(SHOP_getVar($A, 'payer_email', 'string', $_USER['email']));
+            $this->setPayerName(trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name')));
+            if ($this->getPayerName() == '') {
+                $this->setPayerName($_USER['fullname']);
             }
-            $this->order_id = $this->Order->order_id;
-            $this->txn_id = SHOP_getVar($A, 'txn_id');
-            $this->pmt_date = SHOP_now()->toMySQL(true);
-            $this->pmt_tax = $this->Order->getInfo('tax');
-            $this->gw_desc = 'Internal IPN';
+            $this
+                ->setOrderID($this->Order->order_id)
+                ->setTxnId(SHOP_getVar($A, 'txn_id'))
+                ->setPmtTax($this->Order->getInfo('tax'))
+                ->setStatus(SHOP_getVar($A, 'payment_status'));
             $this->gw_name = 'Internal IPN';
-            $this->pmt_status = SHOP_getVar($A, 'payment_status');
+            $this->gw_desc = 'Internal IPN'
 
             $this->shipto = array(
                 'name'      => SHOP_getVar($shipto, 'name'),
@@ -247,8 +245,10 @@ class internal extends \Shop\IPN
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);
-            $this->handleFailure(IPN_FAILURE_VERIFY,
-                            "($logId) Verification failed");
+            $this->handleFailure(
+                self::FAILURE_VERIFY,
+                "($logId) Verification failed"
+            );
             return false;
         } else {
             $logId = $this->Log(true);
@@ -279,12 +279,12 @@ class internal extends \Shop\IPN
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
             );
-            $this->AddItem($args);
+            $this->addItem($args);
             $total_shipping += $item->shipping;
             $total_handling += $item->handling;
         }
-        $this->pmt_shipping = $total_shipping;
-        $this->pmt_handling = $total_handling;
+        $this->setPmtShipping($total_shipping)
+            ->setPmtHandling($total_handling);
         return $this->handlePurchase();
     }
 

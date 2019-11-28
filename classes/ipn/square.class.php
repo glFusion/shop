@@ -7,7 +7,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -43,26 +43,22 @@ class square extends \Shop\IPN
         parent::__construct($A);
 
         $order_id = SHOP_getVar($A, 'referenceId');
-        $this->pmt_gross = 0;
-        $this->pmt_fee = 0;
 
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
         if (!$this->Order || $this->Order->isNew) return NULL;
 
-        $this->order_id = $this->Order->order_id;
-        $this->txn_id = SHOP_getVar($A, 'transactionId');
+        $this->setOrderId($this->Order->order_id)
+            ->setTxnId(SHOP_getVar($A, 'transactionId'))
+            ->setEmail($this->Order->buyer_email)
+            ->setPayerName($_USER['fullname'])
+            ->setStatus($status);
+        $this->gw_name = $this->GW->getName();;
+
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
         if (empty($shipto) && !empty($billto)) $shipto = $billto;
-
-        $this->payer_email = $this->Order->buyer_email;
-        $this->payer_name = $_USER['fullname'];
-        $this->pmt_date = $_CONF['_now']->toMySQL(true);
-        $this->gw_name = $this->gw->Name();;
-        $this->status = $status;
-        $this->currency = $C->code;
 
         $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
@@ -84,7 +80,7 @@ class square extends \Shop\IPN
             }
         }*/
         $this->custom = array(
-            'transtype' => $this->gw->Name(),
+            'transtype' => $this->GW->getName(),
             'uid'       => $this->Order->uid,
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
@@ -99,12 +95,12 @@ class square extends \Shop\IPN
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
             );
-            $this->AddItem($args);
+            $this->addItem($args);
             $total_shipping += $item->shipping;
             $total_handling += $item->handling;
         }
-        $this->pmt_shipping = $total_shipping;
-        $this->pmt_handling = $total_handling;
+        $this->setPmtShipping($total_shipping)
+            ->setPmtHandling($total_handling);
     }
 
 
@@ -118,7 +114,9 @@ class square extends \Shop\IPN
     private function Verify()
     {
         // Gets the transaction via the Square API to get the real values.
-        $trans = $this->gw->getTransaction($this->txn_id);
+        SHOP_log("transaction ID: " . $this->getTxnId());
+        $trans = $this->GW->getTransaction($this->getTxnId());
+
         SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
         $this->status = 'pending';
         if ($trans) {
@@ -132,16 +130,18 @@ class square extends \Shop\IPN
             $order_id = SHOP_getVar($trans, 'reference_id');
             if (empty($order_id)) return false;
 
-            $this->status = 'paid';
+            $this->setStatus(self::PAID);
+            $pmt_gross = 0;
             foreach ($tenders as $tender) {
                 if ($tender['card_details']['status'] == 'CAPTURED') {
                     $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
-                    $this->pmt_gross += $C->fromInt($tender['amount_money']['amount']);
-                    $this->pmt_fee += $C->fromInt($tender['processing_fee_money']['amount']);
+                    $pmt_gross += $C->fromInt($tender['amount_money']['amount']);
+                    //$pmt_fee += $C->fromInt($tender['processing_fee_money']['amount']);
                 } else {
-                    $this->status = 'pending';
+                    $this->setStatus(self::PENDING);
                 }
             }
+            $this->setPmtGross($pmt_gross);
         }
         return true;
     }
@@ -183,7 +183,7 @@ class square extends \Shop\IPN
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses   IPN::AddItem()
+     * @uses   IPN::addItem()
      * @uses   IPN::handleFailure()
      * @uses   IPN::handlePurchase()
      * @uses   IPN::isUniqueTxnId()
@@ -216,7 +216,7 @@ class square extends \Shop\IPN
                 'handling'  => $item->handling,
                 'extras'    => $item->extras,
             );
-            $this->AddItem($args);
+            $this->addItem($args);
             $total_shipping += $item->shipping;
             $total_handling += $item->handling;
         }
@@ -224,7 +224,7 @@ class square extends \Shop\IPN
         if (!$this->Verify()) {
             $logId = $this->Log(false);
             $this->handleFailure(
-                IPN_FAILURE_VERIFY,
+                self::FAILURE_VERIFY,
                 "($logId) Verification failed"
             );
             return false;

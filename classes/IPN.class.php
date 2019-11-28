@@ -31,14 +31,6 @@ if (!defined ('GVERSION')) {
 // Just for E_ALL. If "testing" isn't defined, define it.
 if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
 
-// Define failure reasons- maybe delete if not needed for all gateways
-define('IPN_FAILURE_UNKNOWN', 0);
-define('IPN_FAILURE_VERIFY', 1);
-define('IPN_FAILURE_COMPLETED', 2);
-define('IPN_FAILURE_UNIQUE', 3);
-define('IPN_FAILURE_EMAIL', 4);
-define('IPN_FAILURE_FUNDS', 5);
-
 
 /**
  * Class to deal with IPN transactions from a payment gateway.
@@ -49,10 +41,71 @@ class IPN
     const PAID = 'paid';
     const PENDING = 'pending';
     const REFUNDED = 'refunded';
+    const CLOSED = 'closed';
 
-    /** Holder for properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
+    const FAILURE_UNKNOWN = 0;
+    const FAILURE_VERIFY = 1;
+    const FAILURE_COMPLETED = 2;
+    const FAILURE_UNIQUE = 3;
+    const FAILURE_EMAIL = 4;
+    const FAILURE_FUNDS = 5;
+
+
+    /** Gross payment amount, including shipping, handling, tax.
+     * @var float */
+    private $pmt_gross = 0;
+
+    /** Shipping charge paid.
+     * @var float */
+    private $pmt_shipping = 0;
+
+    /** Handling charge paid.
+     * @var float */
+    private $pmt_handling = 0;
+
+    /** Tax amount paid.
+     * @var float */
+    private $pmt_tax = 0;
+
+    /** Total credit applied. Includes gross payment and any discounts/coupons.
+     * @var float */
+    private $total_credit = 0;
+
+    /** User ID submitting the payment.
+     * @var integer */
+    private $uid = 0;
+
+    /** Payment transaction ID.
+     * @var string */
+    private $txn_id = '';
+
+    /** Payer email.
+     * @var string */
+    private $payer_email = '';
+
+    /** Payer's name.
+     * @var string */
+    private $payer_name = '';
+
+    /** Gateway Name.
+     * @var string */
+    private $gw_name = '';
+
+    /** Currency Code.
+     * @var string */
+    private $currency = NULL;
+
+    /** Order ID of order being paid.
+     * @var string */
+    private $order_id = '';
+
+    /** Parent Transaction ID. Needed for refunds and adjustments.
+     * @var string */
+    private $parent_txn_id = '';
+
+    /** Payment status string.
+     * @var string */
+    private $status = '';
 
     /**
      * Holder for the complete IPN data array.
@@ -82,22 +135,15 @@ class IPN
 
     /** ID of payment gateway, e.g. 'shop' or 'amazon'.
      * @var string */
-    public $gw_id;
+    public $gw_id = '';
 
     /** Instance of the appropriate gateway object.
-    * @var object */
-    protected $gw;
+    * @var \Shop\Gateway */
+    protected $GW = NULL;
 
     /** Accumulator for credits applied to orders.
      * @var array */
     protected $credits = array();
-
-
-    /**
-     * This is just a holder for the current date in SQL format,
-     * so we don't have to rely on the database's NOW() function.
-     * @var string */
-    //var $sql_date;
 
     /** Order object.
      * @var object */
@@ -122,106 +168,380 @@ class IPN
             $this->ipn_data = $A;
         }
 
-        // Make sure values are defined
-        $this->sql_date = SHOP_now()->toMySQL();
-
         // Create a gateway object to get some of the config values
-        $this->gw = Gateway::getInstance($this->gw_id);
+        $this->GW = Gateway::getInstance($this->gw_id);
     }
 
 
     /**
-     * Set a property value.
-     * These are mostly values obtained from the IPN message.
-     * This also provides a partial list of variables that are expected for every IPN.
+     * Set the gross payment amount.
      *
-     * @param   string  $key    Property name
-     * @param   mixed   $val    Property value
+     * @param   float   $amount Gross Payment Amount
+     * @return  object  $this
      */
-    public function __set($key, $val)
+    public function setPmtGross($amount)
     {
-        switch ($key) {
-        case 'pmt_gross':       // Gross (total) payment amt
-            $this->properties[$key] = (float)$val;
-            break;
-        case 'pmt_shipping':    // Shipping payment (included in  gross)
-        case 'pmt_handling':    // Handling payment (included in gross)
-        case 'pmt_tax':         // Tax payment (included in gross)
-        case 'pmt_net':         // Net payment for order items
-        case 'total_credit':    // total payment, coupons, discounts, etc.
-            $this->properties[$key] = (float)$val;
-            break;
-
-        case 'uid':             // ID of user submitting the payment
-            $this->properties[$key] = (int)$val;
-            break;
-
-        case 'txn_id':          // IPN transaction ID
-        case 'payer_email':     // Payer email address
-        case 'payer_name':      // Payer name
-        case 'pmt_date':        // Payment date
-        case 'sql_date':        // Payment date (SQL format)
-        case 'gw_name':         // Name of gateway used for payment
-        case 'currency':        // Currenc code of payment
-        case 'order_id':        // Internal order ID
-        case 'parent_txn_id':   // Parent txn ID for adjustments
-            $this->properties[$key] = trim($val);
-            break;
-
-        case 'status':          // Payment status, certain values allowed
-            switch ($val) {
-            case 'pending':
-            case 'paid':
-            case 'refunded':
-            case 'closed':
-                $this->properties[$key] = $val;
-                break;
-            default:
-                $this->properties[$key] = 'unknown';
-                break;
-            }
-            break;
-        }
-
-/*
-            'shipto'        => array(),
-            'custom'        => array(),
-            'pmt_other'     => array(),     // pmt-equivalents, coupons, discounts, etc.
-        );*/
-
+        $this->pmt_gross = (float)$amount;
+        return $this;
     }
 
 
     /**
-     * Get a value from the properties array, or NULL if not defined.
+     * Get the gross payment amount.
      *
-     * @param   string  $key    Name of property
-     * @return  mixed       Value of property, NULL if undefined
+     * @return  float   Gross Payment Amount
      */
-    public function __get($key)
+    public function getPmtGross()
     {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        return $this->pmt_gross;
     }
 
 
     /**
-     * Check if a key variable is empty.
-     * Used because empty() doesn't work right with __set() and __get().
+     * Set the shipping payment amount.
      *
-     * @param   string  $key    Variable name
-     * @return  boolean     True if the var is empty, False if not.
+     * @param   float   $amount Shipping Payment Amount
+     * @return  object  $this
      */
-    protected function isEmpty($key)
+    public function setPmtShipping($amount)
     {
-        if (empty($this->properties[$key])) {
-            return true;
-        } else {
-            return false;
+        $this->pmt_shipping = (float)$amount;
+        return $this;
+    }
+
+
+    /**
+     * Get the shipping payment amount.
+     *
+     * @return  float   Shipping Payment Amount
+     */
+    public function getPmtShipping()
+    {
+        return $this->pmt_shipping;
+    }
+
+
+    /**
+     * Set the handling payment amount.
+     *
+     * @param   float   $amount Handling Payment Amount
+     * @return  object  $this
+     */
+    public function setPmtHandling($amount)
+    {
+        $this->pmt_handling = (float)$amount;
+        return $this;
+    }
+
+
+    /**
+     * Get the handling payment amount.
+     *
+     * @return  float   Handling Payment Amount
+     */
+    public function getPmtHandling()
+    {
+        $this->pmt_handling = (float)$amount;
+        return $this;
+    }
+
+
+    /**
+     * Set the tax payment amount.
+     *
+     * @param   float   $amount Tax Payment Amount
+     * @return  object  $this
+     */
+    public function setPmtTax($amount)
+    {
+        $this->pmt_tax = (float)$amount;
+        return $this;
+    }
+
+
+    /**
+     * Get the tax payment amount.
+     *
+     * @return  float   Tax Payment Amount
+     */
+    public function getPmtTax()
+    {
+        return $this->pmt_tax;
+    }
+
+
+    /**
+     * Get the fees paid, e.g. tax, shipping, handling.
+     *
+     * @return  float   Total non-product fees paid
+     */
+    public function getPmtFees()
+    {
+        return $this->getPmtHandling() + $this->getPmtShipping() + $this->getPmtTax();
+    }
+
+
+    /**
+     * Get the net payment amount.
+     *
+     * @return  float   Net Payment Amount
+     */
+    public function getPmtNet()
+    {
+        return $this->getPmtGross() - $this->getPmtFees();
+    }
+
+
+    /**
+     * Set the total credit amount.
+     *
+     * @param   float   $amount Total credit applied
+     * @return  object  $this
+     */
+    public function setTotalCredit($amount)
+    {
+        $this->total_credit = (float)$amount;
+        return $this;
+    }
+
+
+    /**
+     * Get the total credit amount.
+     *
+     * @return  float   Total credit applied
+     */
+    public function getTotalCredit()
+    {
+        return $this->total_credit;
+    }
+
+
+    /**
+     * Set the ID of the paying user.
+     *
+     * @param   integer $uid    User ID
+     * @return  object  $this
+     */
+    public function setUid($uid)
+    {
+        $this->uid = (int)$uid;
+        return $this;
+    }
+
+
+    /**
+     * Get the ID of the paying user.
+     *
+     * @return  integer User ID
+     */
+    public function getUid()
+    {
+        return $this->uid;
+    }
+
+
+    /**
+     * Set the transaction ID.
+     *
+     * @param   string  $txn_id Transaction ID
+     * @return  object  $this
+     */
+    public function setTxnId($txn_id)
+    {
+        $this->txn_id = $txn_id;
+        return $this;
+    }
+
+
+    /**
+     * Get the transaction ID.
+     *
+     * @return  string  Transaction ID
+     */
+    public function getTxnId()
+    {
+        return $this->txn_id;
+    }
+
+
+    /**
+     * Set the parent transaction ID.
+     *
+     * @param   string  $txn_id Parent Transaction ID
+     * @return  object  $this
+     */
+    public function setParentTxnId($txn_id)
+    {
+        $this->parent_txn_id = $txn_id;
+        return $this;
+    }
+
+
+    /**
+     * Get the parent transaction ID.
+     *
+     * @return  string  Parent Transaction ID
+     */
+    public function getParentTxnId()
+    {
+        return $this->parent_txn_id;
+    }
+
+
+    /**
+     * Set the payer's email address.
+     *
+     * @param   string  $email  Payer's email address
+     * @return  object  $this
+     */
+    public function setEmail($email)
+    {
+        $this->payer_email = $email;
+        return $this;
+    }
+
+
+    /**
+     * Get the payer's email address.
+     *
+     * @return  string  Payer's email address
+     */
+    public function getEmail()
+    {
+        return $this->payer_email;
+    }
+
+
+    /**
+     * Set the payer's name.
+     *
+     * @param   string  $name   Payer's name
+     * @return  object  $this
+     */
+    public function setPayerName($name)
+    {
+        $this->payer_name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the payer's name.
+     *
+     * @return  string  Payer's name
+     */
+    public function getPayerName()
+    {
+        return $this->payer_name;
+    }
+
+
+    /**
+     * Set the gateway name.
+     *
+     * @param   string  $name   Gateway name
+     * @return  object  $this
+     */
+    public function setGwName($name)
+    {
+        $this->gw_name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the gateway name.
+     *
+     * @return  string  Gateway name
+     */
+    public function getGwName()
+    {
+        return $this->GW->getName();
+    }
+
+
+    /**
+     * Set the payment currency object.
+     *
+     * @param   string  $code   Currency code, empty for site default
+     * @return  object  $this
+     */
+    public function setCurrency($code='')
+    {
+        $this->currency = Currency::getInstance(strtoupper($code));
+        return $this;
+    }
+
+
+    /**
+     * Get the payment currency object.
+     *
+     * @return string  Currency code
+     */
+    public function getCurrency()
+    {
+        if ($this->currency === NULL) {
+            $this->setCurrency();
         }
+        return $this->currency;
+    }
+
+
+    /**
+     * Set the order ID.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  $this
+     */
+    public function setOrderId($order_id)
+    {
+        $this->order_id = $order_id;
+        return $this;
+    }
+
+
+    /**
+     * Get the order ID.
+     *
+     * @return  string  Order ID
+     */
+    public function getOrderId()
+    {
+        return $this->order_id;
+    }
+
+
+    /**
+     * Set the payment status.
+     *
+     * @param   string  $status Status string
+     * @return  object  $this
+     */
+    public function setStatus($status)
+    {
+        switch ($status) {
+        case self::PENDING:
+        case self::PAID:
+        case self::REFUNDED:
+        case self::CLOSED:
+            $this->status = $status;
+            break;
+        default:
+            $this->status = 'unknown';
+            break;
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the payment status.
+     *
+     * @return  string  Status string
+     */
+    public function getStatus()
+    {
+        return $this->status;
     }
 
 
@@ -230,7 +550,7 @@ class IPN
      *
      * @param   array   $args   Array of arguments
      */
-    protected function AddItem($args)
+    protected function addItem($args)
     {
         // Minimum required arguments: item, quantity, unit price
         if (!isset($args['item_id']) || !isset($args['quantity']) || !isset($args['price'])) {
@@ -346,13 +666,16 @@ class IPN
      */
     protected function isSufficientFunds()
     {
-        $Cur = \Shop\Currency::getInstance();
+        $Cur = $this->getCurrency();
         $total_credit = $this->calcTotalCredit();
         $credit = $this->getCredit();
         // Compare total order amount to gross payment.  The ".0001" is to help
         // kill any floating-point errors. Include any discount.
+        if (!$this->Order) {
+            return false;
+        }
         $total_order = $this->Order->getTotal();
-        $msg = $Cur->FormatValue($this->pmt_gross) . ' received plus ' .
+        $msg = $Cur->FormatValue($this->getPmtGross()) . ' received plus ' .
             $Cur->FormatValue($credit) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
@@ -383,7 +706,7 @@ class IPN
             $P = Product::getByID($item['item_number']);
             if ($P->isNew) {
                 $this->Error("Item {$item['item_number']} not found - txn " .
-                        $this->txn_id);
+                        $this->getTxnId());
                 continue;
             }
 
@@ -393,7 +716,7 @@ class IPN
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
                 $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->file;
-                $token_base = $this->txn_id . time() . rand(0,99);
+                $token_base = $this->getTxnId() . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
             } else {
@@ -418,7 +741,7 @@ class IPN
             // for each item.
             if (!$this->isSufficientFunds()) {
                 $logId = $this->gw_name . ' - ' . $this->txn_id;
-                $this->handleFailure(IPN_FAILURE_FUNDS,
+                $this->handleFailure(self::FAILURE_FUNDS,
                         "($logId) Insufficient/incorrect funds for purchase");
                 return false;
             }
@@ -449,7 +772,6 @@ class IPN
                 $this->status = 'closed';
             }
             $this->Order->Save();
-            $this->Order->updateStatus($this->status, 'IPN: ' . $this->gw->Description());
 
             // Handle the purchase for each order item
             $ipn_data = $this->ipn_data;
@@ -462,7 +784,7 @@ class IPN
                 $this->Order->Log(sprintf(
                     $LANG_SHOP['amt_paid_gw'],
                     $this->pmt_gross,
-                    $this->gw->DisplayName()
+                    $this->GW->getDisplayName()
                 ));
             }
         } else {
@@ -470,6 +792,8 @@ class IPN
             return false;
         }
 
+        // Update the status last since it sends the notification.
+        $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp());
         return true;
     }  // function handlePurchase
 
@@ -501,7 +825,7 @@ class IPN
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->order_id != '') {
-                $this->Order->log_user = $this->gw->Description();
+                $this->Order->log_user = $this->GW->getDscp();
             }
             return 2;
         }
@@ -561,7 +885,7 @@ class IPN
         $this->Order->shipping = $this->pmt_shipping;
         $this->Order->handling = $this->pmt_handling;
         $this->Order->buyer_email = $this->payer_email;
-        $this->Order->log_user = $this->gw->Description();
+        $this->Order->log_user = $this->GW->getDscp();
 
         $this->Order->items = array();
         foreach ($this->items as $id=>$item) {
@@ -632,37 +956,39 @@ class IPN
 
         // Try to get original order information.  Use the "parent transaction"
         // or invoice number, if available from the IPN message
-        if ($this->order_id !== NULL) {
-            $order_id = $this->order_id;
-        } elseif ($this->parent_txn_id != '') {
-            $order_id = DB_getItem(
-                $_TABLES['shop.orders'],
-                'order_id',
-                "pmt_txn_id = '" . DB_escapeString($this->parent_txn_id) . "'"
-            );
+        $order_id = $this->getOrderId();
+        if (empty($order_id)) {
+            $parent_txn = $this->getParentTxnId();
+            if ($parent_txn != '') {
+                $order_id = DB_getItem(
+                    $_TABLES['shop.orders'],
+                    'order_id',
+                    "pmt_txn_id = '" . DB_escapeString($parent_txn_id) . "'"
+                );
+            }
         }
 
-        if (is_string($order_id)) {
+        if (!empty($order_id)) {
             $Order = Order::getInstance($order_id);
         }
-        if ($Order->order_id == '') {
+        if (!$Order || $Order->isNew) {
             return false;
         }
 
         // Figure out if the entire order was refunded
-        $refund_amt = abs((float)$this->pmt_gross);
+        $refund_amt = abs($this->getPmtGross());
 
         $item_total = 0;
-        foreach ($Order->getItems() as $key => $Item) {
+        foreach ($Order->getItems() as $key=>$Item) {
             $item_total += $Item->quantity * $Item->price;
         }
         $item_total += $Order->miscCharges();
 
         if ($item_total == $refund_amt) {
-            // Completely refunded, let the items handle any refund
-            // actions.  None for catalog items (since there's no inventory,
+            // Completely refunded, let the items handle any refund actions.
+            // None for catalog items since there's no inventory,
             // but plugin items may need to do something.
-            foreach ($Order->items as $key=>$data) {
+            foreach ($Order->getItems() as $key=>$data) {
                 $P = Product::getByID($data['product_id'], $this->custom);
                 // Don't care about the status, really.  May not even be
                 // a plugin function to handle refunds
@@ -671,7 +997,7 @@ class IPN
             // Update the order status to Refunded
             $Order->updateStatus('refunded');
         }
-        $msg = sprintf($LANG_SHOP['refunded_x'], Currency::getInstance($this->currency)->Format($refund_amt));
+        $msg = sprintf($LANG_SHOP['refunded_x'], $this->getCurrency()->Format($refund_amt));
         $Order->Log($msg);
     }
 
@@ -683,7 +1009,7 @@ class IPN
      */
     /*private function handleSubscription()
     {
-        $this->handleFailure(IPN_FAILURE_UNKNOWN, "Subscription not handled");
+        $this->handleFailure(self::FAILURE_UNKNOWN, "Subscription not handled");
     }*/
 
 
@@ -694,7 +1020,7 @@ class IPN
      */
     /*private function handleDonation()
     {
-        $this->handleFailure(IPN_FAILURE_UNKNOWN, "Donation not handled");
+        $this->handleFailure(self::FAILURE_UNKNOWN, "Donation not handled");
     }*/
 
 
@@ -707,7 +1033,7 @@ class IPN
      * @param   integer $type   Type of failure that occurred
      * @param   string  $msg    Failure message
      */
-    protected function handleFailure($type = IPN_FAILURE_UNKNOWN, $msg = '')
+    protected function handleFailure($type = self::FAILURE_UNKNOWN, $msg = '')
     {
         // Log the failure to glFusion's error log
         $this->Error($this->gw_id . '-IPN: ' . $msg, 1);
@@ -780,6 +1106,7 @@ class IPN
         if ($amount != 0) {
             $this->credits[$name] = (float)$amount;
         }
+        return $this;
     }
 
 
@@ -854,8 +1181,11 @@ class IPN
      * @param   string  $order_id   Order ID gleaned from the IPN message
      * @return  object      Order object
      */
-    protected function getOrder($order_id)
+    protected function getOrder($order_id = NULL)
     {
+        if ($order_id === NULL) {
+            $order_id = $this->order_id;
+        }
         $this->Order = Order::getInstance($order_id);
         $this->addCredit('gc', $this->Order->getInfo('apply_gc'));
         return $this->Order;
