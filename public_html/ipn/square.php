@@ -16,7 +16,7 @@
 require_once '../../lib-common.php';
 
 // Get the complete IPN message prior to any processing
-SHOP_log('Recieved Square IPN: ' . print_r($_GET, true), SHOP_LOG_DEBUG);
+SHOP_log('Recieved Square IPN: ' . var_export($_GET, true), SHOP_LOG_DEBUG);
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('square', $_GET);
