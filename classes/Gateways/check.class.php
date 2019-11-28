@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2013-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -47,34 +48,6 @@ class check extends \Shop\Gateway
 
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
-    }
-
-
-    /**
-     * Magic "setter" function.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-            case 'item_name':
-            case 'currency_code':
-                $this->properties[$key] = trim($value);
-                break;
-
-            case 'item_number':
-                $this->properties[$key] = COM_sanitizeId($value, false);
-                break;
-
-            case 'amount':
-                $this->properties[$key] = (float)$value;
-                break;
-
-            case 'get_shipping':
-                $this->properties[$key] = (int)$value;
-        }
     }
 
 

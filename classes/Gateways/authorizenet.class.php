@@ -95,35 +95,6 @@ class authorizenet extends \Shop\Gateway
 
 
     /**
-     * Magic "setter" function.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set
-     */
-    function __set($key, $value)
-    {
-        switch ($key) {
-        case 'item_name':
-        case 'currency_code':
-        case 'token_url':
-            $this->properties[$key] = trim($value);
-            break;
-
-        case 'item_number':
-            $this->properties[$key] = COM_sanitizeId($value, false);
-            break;
-
-        case 'amount':
-            $this->properties[$key] = (float)$value;
-            break;
-
-        case 'get_shipping':
-            $this->properties[$key] = (int)$value;
-        }
-    }                
-
-
-    /**
      * Get the main website URL for this payment gateway.
      * Used to tell the buyer where to log in to check their account.
      *

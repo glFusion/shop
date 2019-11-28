@@ -19,7 +19,6 @@ namespace Shop\Gateways;
  */
 class paypal extends \Shop\Gateway
 {
-
     /** Business e-mail to be used for creating buttons.
      * @var string */
     private $receiver_email;
@@ -142,57 +141,6 @@ class paypal extends \Shop\Gateway
     public function getActionUrl()
     {
         return $this->gw_url . '/cgi-bin/webscr';
-    }
-
-
-    /**
-     * Magic "setter" function.
-     *
-     * @see     Gateway::__get()
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  New value for property
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'business':
-        case 'item_name':
-        case 'currency_code':
-        case 'cert_id':
-        case 'bus_prod_email':
-        case 'micro_prod_email':
-        case 'bus_test_email':
-        case 'micro_test_email':
-            $this->properties[$key] = trim($value);
-            break;
-
-        case 'item_number':
-            $this->properties[$key] = COM_sanitizeId($value, false);
-            break;
-
-        case 'amount':
-        case 'weight':
-        case 'tax':
-        case 'shipping_amount':
-            $this->properties[$key] = (float)$value;
-            break;
-
-        case 'shipping_type':
-            $this->properties[$key] = (int)$value;
-            break;
-
-        case 'service':
-            foreach ($value as $svc=>$enabled) {
-                $this->services[$svc] = $enabled == 1 ? 1 : 0;
-            }
-            break;
-        /*case 'buy_now':
-        case 'pay_now':
-        case 'donation':
-        case 'subscribe':
-            $this->services[$key] = $value == 1 ? 1 : 0;
-            break;*/
-        }
     }
 
 
@@ -878,7 +826,7 @@ class paypal extends \Shop\Gateway
         );
 
         // Set the array keys based on test mode and amount
-        $kTest = $this->getConfig('test_mode') == 1 ? 1 : 0;
+        $kTest = $this->isSandbox() ? 1 : 0;
         $kAmount = $amount < $this->getConfig('micro_threshold') ? 1 : 0;
         $this->receiver_email = !empty($this->getConfig($aEmail[$kTest][$kAmount])) ?
                 $this->getConfig($aEmail[$kTest][$kAmount]) :
