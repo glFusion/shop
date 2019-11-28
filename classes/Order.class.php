@@ -19,6 +19,10 @@ namespace Shop;
  */
 class Order
 {
+    const PROCESSING = 'processing';
+    const SHIPPED = 'shipped';
+    const CLOSED = 'closed';
+
     /** Session variable name for storing cart info.
      * @var string */
     protected static $session_var = 'glShopCart';
@@ -1097,15 +1101,20 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
-            $email_addr = empty($_SHOP_CONF['admin_email_addr']) ?
-                $_CONF['site_mail'] : $_SHOP_CONF['admin_email_addr'];
-            SHOP_log("Sending email to admin at $email_addr", SHOP_LOG_DEBUG);
-            COM_emailNotification(array(
-                'to' => array($email_addr),
-                'from' => $_CONF['noreply_mail'],
-                'htmlmessage' => $text,
-                'subject' => $LANG_SHOP['subj_email_admin'],
-            ) );
+            if (!empty($_SHOP_CONF['admin_email_addr'])) {
+                $email_addr = $_SHOP_CONF['admin_email_addr'];
+            } else {
+                $email_addr = $_CONF['site_mail'];
+            }
+            SHOP_log("Sending email to admin at '$email_addr'", SHOP_LOG_DEBUG);
+            if (!empty($email_addr)) {
+                COM_emailNotification(array(
+                    'to' => array($email_addr),
+                    'from' => $_CONF['noreply_mail'],
+                    'htmlmessage' => $text,
+                    'subject' => $LANG_SHOP['subj_email_admin'],
+                ) );
+            }
         }
     }
 
