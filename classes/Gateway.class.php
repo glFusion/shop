@@ -223,6 +223,8 @@ class Gateway
         // The user ID is usually required, and doesn't hurt to add it here.
         $this->AddCustom('uid', $_USER['uid']);
 
+        // If the actual gateway class doesn't define a postback url,
+        // then assume it's the gateway url.
         if ($this->postback_url === NULL) {
             $this->postback_url = $this->gw_url;
         }
@@ -266,11 +268,11 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function Name()
+    public function getName()
     {
         return $this->gw_name;
     }
-    public function getName()
+    public function Name()      // deprecate
     {
         return $this->gw_name;
     }
@@ -294,11 +296,11 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function DisplayName()
+    public function getDisplayName()
     {
         return $this->gw_provider;
     }
-    public function getDisplayName()
+    public function DisplayName()       // deprecate
     {
         return $this->gw_provider;
     }
@@ -309,14 +311,15 @@ class Gateway
     *
     *   @return string      Full name of the gateway
     */
-    public function Description()
-    {
-        return $this->gw_desc;
-    }
     public function getDscp()
     {
         return $this->gw_desc;
     }
+    public function Description()       // deprecate
+    {
+        return $this->gw_desc;
+    }
+
 
     /**
      * Get a single buy_now-type button from the database.
@@ -717,17 +720,15 @@ class Gateway
      * The default is to mark the order "closed" for downloadable items,
      * since no further processing is needed, and "paid" for other items.
      *
-     * @param   integer $types  A single value made by OR'ing the types
+     * @param   object  $Order  Order object
      * @return  string          Status of the order
      */
-    public function getPaidStatus($types)
+    public function getPaidStatus($Order)
     {
-        if ($types == SHOP_PROD_DOWNLOAD) {
-            // Only downloadable items, nothing to ship, mark as closed.
-            $retval = 'closed';
+        if ($Order->hasPhysical()) {
+            $retval = Order::PROCESSING;
         } else {
-            // Physical and/or Other Virtual items, may have other actions.
-            $retval = 'paid';
+            $retval = Order::CLOSED;
         }
         return $retval;
     }
