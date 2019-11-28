@@ -384,6 +384,7 @@ class usps extends \Shop\Shipper
                 $info = $resp->TrackInfo;
                 $Tracking->addMeta($LANG_SHOP['tracking_num'], $tracking);
                 $Tracking->addMeta($LANG_SHOP['carrier'], self::getCarrierName());
+                $Tracking->addMeta($LANG_SHOP['service'], $info->Class);
 
                 $dest = array();
                 foreach (array('DestinationCity', 'DestinationState', 'DestinationZip') as $elem) {
