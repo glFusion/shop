@@ -156,12 +156,11 @@ class internal extends \Shop\IPN
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses    BaseIPN::addItem()
-     * @uses    BaseIPN::handleFailure()
-     * @uses    BaseIPN::handlePurchase()
-     * @uses    BaseIPN::isUniqueTxnId()
-     * @uses    BaseIPN::isSufficientFunds()
-     * @uses    BaseIPN::Log()
+     * @uses    IPN::addItem()
+     * @uses    IPN::handleFailure()
+     * @uses    IPN::handlePurchase()
+     * @uses    IPN::isUniqueTxnId()
+     * @uses    IPN::Log()
      * @uses    self::Verify()
      * @param   array   $in     POST variables of transaction
      * @return  boolean True if processing valid and completed, false otherwise
@@ -227,7 +226,7 @@ class internal extends \Shop\IPN
                 ->setPmtTax($this->Order->getInfo('tax'))
                 ->setStatus(SHOP_getVar($A, 'payment_status'));
             $this->gw_name = 'Internal IPN';
-            $this->gw_desc = 'Internal IPN'
+            $this->gw_desc = 'Internal IPN';
 
             $this->shipto = array(
                 'name'      => SHOP_getVar($shipto, 'name'),
