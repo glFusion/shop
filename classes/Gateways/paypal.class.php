@@ -23,7 +23,6 @@ use Shop\Order;
  */
 class paypal extends \Shop\Gateway
 {
-
     /** Business e-mail to be used for creating buttons.
      * @var string */
     private $receiver_email;
@@ -158,57 +157,6 @@ class paypal extends \Shop\Gateway
 
 
     /**
-     * Magic "setter" function.
-     *
-     * @see     Gateway::__get()
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  New value for property
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'business':
-        case 'item_name':
-        case 'currency_code':
-        case 'cert_id':
-        case 'bus_prod_email':
-        case 'micro_prod_email':
-        case 'bus_test_email':
-        case 'micro_test_email':
-            $this->properties[$key] = trim($value);
-            break;
-
-        case 'item_number':
-            $this->properties[$key] = COM_sanitizeId($value, false);
-            break;
-
-        case 'amount':
-        case 'weight':
-        case 'tax':
-        case 'shipping_amount':
-            $this->properties[$key] = (float)$value;
-            break;
-
-        case 'shipping_type':
-            $this->properties[$key] = (int)$value;
-            break;
-
-        case 'service':
-            foreach ($value as $svc=>$enabled) {
-                $this->services[$svc] = $enabled == 1 ? 1 : 0;
-            }
-            break;
-        /*case 'buy_now':
-        case 'pay_now':
-        case 'donation':
-        case 'subscribe':
-            $this->services[$key] = $value == 1 ? 1 : 0;
-            break;*/
-        }
-    }
-
-
-    /**
      * Get the form variables for the cart checkout button.
      *
      * @uses    Gateway::_Supports()
@@ -280,24 +228,24 @@ class paypal extends \Shop\Gateway
             $cartItems = $cart->getItems();
             foreach ($cartItems as $cart_item_id=>$item) {
                 $item_count++;
-                $opt_str = '';
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
                 $P = \Shop\Product::getByID($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
+                $pov_arr = array();
                 foreach ($item->options as $OIO) {
-                    $opt_str .= ', ' . $OIO->oio_value;
-                    $fields['on'.$oc.'_'.$i] = $OIO->oio_name;
-                    $fields['os'.$oc.'_'.$i] = $OIO->oio_value;
+                    $oio_arr[] = $OIO;
+                    $fields['on'.$oc.'_'.$i] = $OIO->getName();
+                    $fields['os'.$oc.'_'.$i] = $OIO->getValue();
                     $oc++;
                 }
                 $overrides = array(
                     'price' => $item->price,
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($item->options, $item->quantity, $overrides);
+                $item_amount = $P->getPrice($oio_arr, $item->quantity, $overrides);
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
@@ -890,7 +838,7 @@ class paypal extends \Shop\Gateway
         );
 
         // Set the array keys based on test mode and amount
-        $kTest = $this->getConfig('test_mode') == 1 ? 1 : 0;
+        $kTest = $this->isSandbox() ? 1 : 0;
         $kAmount = $amount < $this->getConfig('micro_threshold') ? 1 : 0;
         $this->receiver_email = !empty($this->getConfig($aEmail[$kTest][$kAmount])) ?
                 $this->getConfig($aEmail[$kTest][$kAmount]) :

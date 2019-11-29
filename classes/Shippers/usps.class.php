@@ -336,6 +336,8 @@ class usps extends \Shop\Shipper
      */
     public function getTracking($tracking)
     {
+        global $LANG_SHOP;
+
         if (!$this->hasTrackingAPI()) {
             return $false;
         }
@@ -348,10 +350,17 @@ class usps extends \Shop\Shipper
         try {
             // Create AccessRequest XMl
             $RequestXML = new SimpleXMLElement(
-                '<TrackFieldRequest USERID="' . $this->getConfig('user_id') . '"></TrackFieldRequest>'
+                '<TrackFieldRequest></TrackFieldRequest>'
             );
-            $RequestXML->addChild('TrackID ID="' . $tracking . '"');
+            $RequestXML->addAttribute('USERID', $this->getConfig('user_id'));
+            $RequestXML->addChild('Revision', '1');
+            $RequestXML->addChild('ClientIp', '127.0.0.1');
+            $RequestXML->addChild('SourceId', 'glfusion-shop');
+            $RequestXML
+                ->addChild('TrackID')
+                ->addAttribute('ID', $tracking);
             $XML = $RequestXML->asXML ();
+            //var_dump($XML);die;
             $request = 'API=TrackV2&XML=' . urlencode($XML);
 
             // get request
@@ -360,6 +369,7 @@ class usps extends \Shop\Shipper
             curl_setopt($ch, CURLOPT_HEADER, 0);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $result = curl_exec($ch);
+            //var_dump($result);die;
             curl_close($ch);
 
             /* Testing, use this instead of the above block
@@ -372,8 +382,33 @@ class usps extends \Shop\Shipper
                 // get response status
                 $resp = new SimpleXMLElement($result);
                 $info = $resp->TrackInfo;
-                $Tracking->addMeta('Tracking Number', $tracking);
-                $Tracking->addMeta('Carrier', self::getCarrierName());
+                $Tracking->addMeta($LANG_SHOP['tracking_num'], $tracking);
+                $Tracking->addMeta($LANG_SHOP['carrier'], self::getCarrierName());
+                $Tracking->addMeta($LANG_SHOP['service'], $info->Class);
+
+                $dest = array();
+                foreach (array('DestinationCity', 'DestinationState', 'DestinationZip') as $elem) {
+                    if ($info->$elem) {
+                        $dest[] = $info->$elem;
+                    }
+                }
+                if (!empty($dest)) {
+                    $dest = implode(', ', $dest);
+                    $Tracking->addMeta($LANG_SHOP['destination'], $dest);
+                }
+                if ($info->ExpectedDeliveryDate) {
+                    $Tracking->addMeta($LANG_SHOP['expected_dely'], $info->ExpectedDeliveryDate);
+                }
+                if ($info->StatusSummary) {
+                    $Tracking->addMeta($LANG_SHOP['status'], $info->StatusSummary);
+                }
+                $Tracking->AddMeta($LANG_SHOP['tracking_info'], COM_createLink(
+                    $this->_getTrackingUrl($tracking),
+                    $this->_getTrackingUrl($tracking),
+                    array(
+                        'target' => '_blank',
+                    )
+                ) );
 
                 if (isset($info->Error)) {
                     $Tracking->addError(html_entity_decode($info->Error->Description));

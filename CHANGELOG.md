@@ -41,6 +41,7 @@ Release TBD
   * Add configuration option to select the default administrative view.
   * Add default product type configuration option.
   * Just show raw IPN data array in reports to allow nested array formats.
+  * Download all product files as attachments.
 
 ## v0.7.1
 Release 2019-08-02

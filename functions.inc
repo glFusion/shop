@@ -1648,7 +1648,6 @@ function SHOP_log($msg, $level = SHOP_LOG_ERROR)
     case SHOP_LOG_NOTICE:
         $msg1 .= 'NOTICE';
         break;
-        case SHOP_LOG_ERROR;
     case SHOP_LOG_WARNING:
         $msg1 .= 'WARNING';
         break;

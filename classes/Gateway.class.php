@@ -206,7 +206,13 @@ class Gateway
                 foreach ($props as $key=>$value) {
                     if (array_key_exists($key, $this->cfgFields)) {
                         if ($this->cfgFields[$key] == 'password') {
-                            $value = COM_decrypt($value);
+                            // Decrypt the value. If decryption fails then the
+                            // string may not have been encrypted so use the
+                            // original.
+                            $decrypted = COM_decrypt($value);
+                            if ($decrypted !== '') {
+                                $value = $decrypted;
+                            }
                         }
                         $this->config[$key] = $value;
                     }
@@ -217,6 +223,8 @@ class Gateway
         // The user ID is usually required, and doesn't hurt to add it here.
         $this->AddCustom('uid', $_USER['uid']);
 
+        // If the actual gateway class doesn't define a postback url,
+        // then assume it's the gateway url.
         if ($this->postback_url === NULL) {
             $this->postback_url = $this->gw_url;
         }
@@ -260,9 +268,26 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function Name()
+    public function getName()
     {
         return $this->gw_name;
+    }
+    public function Name()      // deprecate
+    {
+        return $this->gw_name;
+    }
+
+
+    /**
+     * Set the user-friendly display name for the provier.
+     *
+     * @param   string  $name   Provider name
+     * @return  object  $this
+     */
+    public function setDisplayName($name)
+    {
+        $this->gw_provider = $name;
+        return $this;
     }
 
 
@@ -271,7 +296,11 @@ class Gateway
      *
      * @return  string      Short name of gateway
      */
-    public function DisplayName()
+    public function getDisplayName()
+    {
+        return $this->gw_provider;
+    }
+    public function DisplayName()       // deprecate
     {
         return $this->gw_provider;
     }
@@ -282,7 +311,11 @@ class Gateway
     *
     *   @return string      Full name of the gateway
     */
-    public function Description()
+    public function getDscp()
+    {
+        return $this->gw_desc;
+    }
+    public function Description()       // deprecate
     {
         return $this->gw_desc;
     }
@@ -687,17 +720,15 @@ class Gateway
      * The default is to mark the order "closed" for downloadable items,
      * since no further processing is needed, and "paid" for other items.
      *
-     * @param   integer $types  A single value made by OR'ing the types
+     * @param   object  $Order  Order object
      * @return  string          Status of the order
      */
-    public function getPaidStatus($types)
+    public function getPaidStatus($Order)
     {
-        if ($types == SHOP_PROD_DOWNLOAD) {
-            // Only downloadable items, nothing to ship, mark as closed.
-            $retval = 'closed';
+        if ($Order->hasPhysical()) {
+            $retval = Order::PROCESSING;
         } else {
-            // Physical and/or Other Virtual items, may have other actions.
-            $retval = 'paid';
+            $retval = Order::CLOSED;
         }
         return $retval;
     }
@@ -1287,7 +1318,7 @@ class Gateway
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
      */
-    public function getConfig($cfgItem = '')
+    protected function getConfig($cfgItem = '')
     {
         if ($cfgItem == '') {
             // Get all items at once
@@ -1299,6 +1330,17 @@ class Gateway
             // Item specified but not found, return empty string
             return '';
         }
+    }
+
+
+    /**
+     * See if this gateway is in Sandbox mode.
+     *
+     * @return  boolean     True if the test_mode config var is set
+     */
+    public function isSandbox()
+    {
+        return $this->getConfig('test_mode');
     }
 
 

@@ -1332,13 +1332,7 @@ class UploadDownload
         header('Content-Type: ' . $this->_currentFile['type']);
         header('Content-Transfer-Encoding: binary');
         header('Content-Length: '. $this->_currentFile['size']);
-
-        // send images as 'inline' everything else as 'attachment'
-        if ($this->_isImage()) {
-            header('Content-Disposition: inline; filename="' . $fileName . '"');
-        } else {
-            header('Content-Disposition: attachment; filename="' . $fileName . '"');
-        }
+        header('Content-Disposition: attachment; filename="' . $fileName . '"');
         session_write_close();
         ob_end_flush();
         // Send file contents.

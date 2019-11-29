@@ -314,6 +314,40 @@ class OrderItemOption
     {
         return $this->oio_id;
     }
+
+
+    /**
+     * Get the name of the item option, e.g. "color".
+     *
+     * @return  string      Name of option
+     */
+    public function getName()
+    {
+        return $this->oio_name;
+    }
+
+
+    /**
+     * Get the price for this item option.
+     *
+     * @return  float       Option price
+     */
+    public function getPrice()
+    {
+        return $this->oio_price;
+    }
+
+
+    /**
+     * Get the value (text string) of the option.
+     *
+     * @return  string      Option value
+     */
+    public function getValue()
+    {
+        return $this->oio_value;
+    }
+
 }
 
 ?>

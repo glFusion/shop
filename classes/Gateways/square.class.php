@@ -33,6 +33,8 @@ class square extends \Shop\Gateway
      * @var string */
     private $token;
 
+    private $api_url;
+
 
     /**
      * Constructor.
@@ -74,16 +76,20 @@ class square extends \Shop\Gateway
         parent::__construct();
 
         // Set the gateway URL depending on whether we're in test mode or not
-        if ($this->getConfig('test_mode') == 1) {
+        if ($this->isSandbox()) {
+            // Test settings
             $this->loc_id = $this->getConfig('sb_loc_id');
             $this->appid = $this->getConfig('sb_appid');
             $this->token = $this->getConfig('sb_token');
+            $this->api_url = 'https://connect.squareupsandbox.com';
         } else {
+            // Production settings
             $this->loc_id = $this->getConfig('prod_loc_id');
             $this->appid = $this->getConfig('prod_appid');
             $this->token = $this->getConfig('prod_token');
+            $this->api_url = 'https://connect.squareup.com';
         }
-        $this->gw_url = NULL;
+        $this->gw_url = NULL;   // Normal gateway action url not used
 
         // If the configured currency is not one of the supported ones,
         // this gateway cannot be used, so disable it.
@@ -96,60 +102,13 @@ class square extends \Shop\Gateway
     /**
      * Get the main gateway url.
      * This is used to tell the buyer where they can log in to check their
-     * purchase.  For PayPal this is the same as the production action URL.
+     * purchase. For PayPal this is the same as the production action URL.
      *
      * @return  string      Gateway's home page
      */
     public function getMainUrl()
-    {   return '';    }
-
-
-    /**
-     * Magic "setter" function.
-     *
-     * @see     Gateway::__get()
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  New value for property
-     */
-    public function __set($key, $value)
     {
-        switch ($key) {
-        case 'business':
-        case 'item_name':
-        case 'currency_code':
-        case 'cert_id':
-        case 'bus_prod_email':
-        case 'micro_prod_email':
-        case 'bus_test_email':
-        case 'micro_test_email':
-            $this->properties[$key] = trim($value);
-            break;
-
-        case 'item_number':
-            $this->properties[$key] = COM_sanitizeId($value, false);
-            break;
-
-        case 'amount':
-        case 'weight':
-        case 'tax':
-        case 'shipping_amount':
-            $this->properties[$key] = (float)$value;
-            break;
-
-        case 'shipping_type':
-            $this->properties[$key] = (int)$value;
-            break;
-
-        case 'service':
-            foreach ($value as $svc=>$enabled) {
-                $this->services[$svc] = $enabled == 1 ? 1 : 0;
-            }
-            break;
-
-        default:
-            $this->properties[$key] = $value;
-            break;
-        }
+        return '';
     }
 
 
@@ -180,6 +139,7 @@ class square extends \Shop\Gateway
         // Create and configure a new API client object
         $defaultApiConfig = new \SquareConnect\Configuration();
         $defaultApiConfig->setAccessToken($accessToken);
+        $defaultApiConfig->setHost($this->api_url);
         $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
         $checkoutClient = new \SquareConnect\Api\CheckoutApi($defaultApiClient);
 
@@ -191,9 +151,10 @@ class square extends \Shop\Gateway
             $PriceMoney->setCurrency($this->currency_code);
             $PriceMoney->setAmount($Cur->toInt($total_amount));
             $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-            $itm->setName($LANG_SHOP['all_items']);
-            $itm->setQuantity('1');
-            $itm->setBasePriceMoney($PriceMoney);
+            $itm
+                ->setName($LANG_SHOP['all_items'])
+                ->setQuantity('1')
+                ->setBasePriceMoney($PriceMoney);
             //Puts our line item object in an array called lineItems.
             array_push($lineItems, $itm);
         } else {
@@ -245,55 +206,53 @@ class square extends \Shop\Gateway
             }
         }
 
+        // Add a line item for the total tax charge
         if ($cart->tax > 0) {
             $TaxMoney = new \SquareConnect\Model\Money;
-            $TaxMoney->setCurrency($this->currency_code);
-            $TaxMoney->setAmount($Cur->toInt($cart->tax));
+            $TaxMoney->setCurrency($this->currency_code)
+                ->setAmount($Cur->toInt($cart->tax));
             $itm = new \SquareConnect\Model\OrderLineItem;
-            $itm->setName($LANG_SHOP['tax']);
-            $itm->setUid('__tax');
-            $itm->setQuantity('1');
-            $itm->setBasePriceMoney($TaxMoney);
+            $itm->setName($LANG_SHOP['tax'])
+                ->setUid('__tax')
+                ->setQuantity('1')
+                ->setBasePriceMoney($TaxMoney);
             array_push($lineItems, $itm);
         }
 
+        // Add a line item for the total shipping charge
         if ($shipping > 0) {
             $ShipMoney = new \SquareConnect\Model\Money;
-            $ShipMoney->setCurrency($this->currency_code);
-            $ShipMoney->setAmount($Cur->toInt($shipping));
-            //$itm = new \SquareConnect\Model\OrderServiceCharge;
+            $ShipMoney->setCurrency($this->currency_code)
+                ->setAmount($Cur->toInt($shipping));
             $itm = new \SquareConnect\Model\OrderLineItem;
-            $itm->setName($LANG_SHOP['shipping']);
-            $itm->setUid('__shipping');
-            $itm->setQuantity('1');
-            $itm->setBasePriceMoney($ShipMoney);
-            //$itm->setAmountMoney($ShipMoney);
-            //$itm->setTotalMoney($ShipMoney);
-            //$itm->setCalculationPhase(TOTAL_PHASE);
-//            var_dump($itm);die;
+            $itm->setName($LANG_SHOP['shipping'])
+                ->setUid('__shipping')
+                ->setQuantity('1')
+                ->setBasePriceMoney($ShipMoney);
             array_push($lineItems, $itm);
         }
 
         // Create an Order object using line items from above
         $order = new \SquareConnect\Model\CreateOrderRequest();
-        $order->setIdempotencyKey(uniqid()); //uniqid() generates a random string.
-        $order->setReferenceId($cart->cartID());
-
-        //sets the lineItems array in the order object
-        $order->setLineItems($lineItems);
+        $order
+            ->setIdempotencyKey(uniqid())
+            ->setReferenceId($cart->cartID())
+            //sets the lineItems array in the order object
+            ->setLineItems($lineItems);
 
         $checkout = new \SquareConnect\Model\CreateCheckoutRequest();
-        $checkout->setPrePopulateBuyerEmail($cart->getInfo('payer_email'));
-        $checkout->setIdempotencyKey(uniqid()); //uniqid() generates a random string.
-        $checkout->setOrder($order); //this is the order we created in the previous step
-        $checkout->setRedirectUrl($this->ipn_url . '?thanks=square');
+        $checkout
+            ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
+            ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
+            ->setOrder($order)          //this is the order we created in the previous step
+            ->setRedirectUrl($this->ipn_url . '?thanks=square');
 
         $url = '';
         $gatewayVars = array();
         try {
             $result = $checkoutClient->createCheckout(
-              $locationId,
-              $checkout
+                $locationId,
+                $checkout
             );
             //Save the checkout ID for verifying transactions
             $checkoutId = $result->getCheckout()->getId();
@@ -302,8 +261,6 @@ class square extends \Shop\Gateway
         } catch (Exception $e) {
             COM_setMsg('Exception when calling CheckoutApi->createCheckout: ', $e->getMessage(), PHP_EOL);
         }
-
-        //$url = 'https://connect.squareup.com/v2/checkout?c=CBASECUd9G1SQkYybg1uchpFRRogAQ&amp;l=CBASEFAhbyuNAPycQ8Pxr1hdbWIgAQ';
         $url_parts = parse_url($url);
         parse_str($url_parts['query'], $q_parts);
         foreach ($q_parts as $key=>$val) {
@@ -437,7 +394,8 @@ class square extends \Shop\Gateway
      */
     public function getActionUrl()
     {
-        return 'https://connect.squareup.com/v2/checkout';
+        //return 'https://connect.squareup.com/v2/checkout';
+        return $this->api_url . '/v2/checkout';
     }
 
 
@@ -487,6 +445,7 @@ class square extends \Shop\Gateway
         // Create and configure a new API client object
         $defaultApiConfig = new \SquareConnect\Configuration();
         $defaultApiConfig->setAccessToken($this->token);
+        $defaultApiConfig->setHost($this->api_url);
         $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
 
         $api = new \SquareConnect\Api\TransactionsApi();

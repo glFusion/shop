@@ -1736,7 +1736,6 @@ class Product
         if (!is_array($opts)) {
             $opts= explode(',', $opts);
         }
-
         if ($this->override_price && isset($override['price'])) {
             // If an override price is specified, just return it.
             return round((float)$override['price'], Currency::getInstance()->Decimals());
@@ -1748,20 +1747,19 @@ class Product
         // Calculate the discount factor if a quantity discount is in play
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
-        // Add attribute prices to base price
+        // Add attribute prices to base price.
+        // $Option could be an OrderItemOption or ProductOptionValue key
         foreach ($opts as $Option) {
             $key = 0;
-            // Allow for $opts to be an array of attribute IDs, or Option objects.
+            // Allow for $opts to be an array of attribute IDs, or ProductOption objects.
             if (is_object($Option)) {
-                if ($Option->opt_id > 0) {
-                    $key = $Option->getID();
-                }
+                $price += $Option->getPrice();
             } else {
-                $key = $Option;
-            }
-            $Option = $this->getOption($key);
-            if ($Option !== false) {
-                $price += (float)$Option->getPrice();
+                // Option is a ProductOptionValue record key
+                $POV = $this->getOption($Option);
+                if ($POV !== false) {
+                    $price += (float)$POV->getPrice();
+                }
             }
         }
 

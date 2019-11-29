@@ -77,10 +77,19 @@ case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
+
     // Validate the cart items
     $invalid = $Cart->updateItems();
     if (!empty($invalid)) {
         COM_refresh(SHOP_URL . '/cart.php');
+    }
+
+    // Check that the cart has items. Could be empty if the session or login
+    // has expired.
+    if (!$Cart->hasItems()) {
+        COM_setMsg($LANG_SHOP['cart_empty']);
+        COM_refresh(SHOP_URL . '/index.php');
+        exit;
     }
 
     $gateway = SHOP_getVar($_POST, 'gateway');
@@ -89,10 +98,13 @@ case 'checkout':
         $Cart->setGateway($gateway);
     }
     if (isset($_POST['by_gc'])) {
+        // Has some amount paid by coupon
         $Cart->setGC($_POST['by_gc']);
     } elseif ($gateway == '_coupon') {
+        // Entire order is paid by coupon
         $Cart->setGC(-1);
     } else {
+        // No amount paid by coupon
         $Cart->setGC(0);
     }
 
