@@ -35,7 +35,8 @@ class authorizenet extends \Shop\IPN
 
         // Get the needed values from the Webhook payload
         $payload = SHOP_getVar($A, 'payload', 'array');
-        $this->setTxnId(SHOP_getVar($payload, 'id'))
+        $this
+            ->setTxnId(SHOP_getVar($payload, 'id'))
             ->setPmtGross(SHOP_getVar($payload, 'authAmount', 'float'))
             ->setOrderId(SHOP_getVar($payload, 'invoiceNumber'));
         $this->gw_name = $this->GW->getDscp();
@@ -68,6 +69,10 @@ class authorizenet extends \Shop\IPN
             self::PAID != $this->getStatus() ||
             !$this->isUniqueTxnId()
         ) {
+            SHOP_log(
+                "Process Failed: status = " . $this->getStatus() .
+                ', not unique txn_id or verification failed'
+            );
             return false;
         }
 
@@ -75,12 +80,7 @@ class authorizenet extends \Shop\IPN
         $LogID = $this->Log(true);
 
         SHOP_log("Received $item_gross gross payment", SHOP_LOG_DEBUG);
-        if ($this->isSufficientFunds()) {
-            $this->handlePurchase();
-            return true;
-        } else {
-            return false;
-        }
+        return $this->handlePurchase();
     }
 
 
@@ -94,14 +94,16 @@ class authorizenet extends \Shop\IPN
      */
     private function Verify()
     {
-        if (isset($this->ipn_data['shop_test_ipn'])) {
+        /*if (isset($this->ipn_data['shop_test_ipn'])) {
             // Use the order ID provided in the constructor to get the order
             $this->Order = $this->getOrder($this->getOrderId());
+            SHOP_log("Testing IPN, automatically returning true");
             return true;
-        }
+    }*/
 
         //if ($this->isEmpty('txn_id')) {
         if (empty($this->getTxnId())) {
+            SHOP_log("Authorize.net IPN: txn_id is empty", SHOP_LOG_ERROR);
             return false;
         }
         $json = array(
@@ -137,10 +139,10 @@ class authorizenet extends \Shop\IPN
 
         // Check return fields against known values
         $trans = SHOP_getVar($json, 'transaction', 'array', NULL);
-        if (!$trans)
+        if (!$trans) {
             SHOP_log("Transaction not found during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
-
+        }
         if (SHOP_getVar($trans, 'transId') != $this->getTxnId()) {
             SHOP_log("Transaction ID mismatch during authorize.net verification.", SHOP_LOG_ERROR);
             return false;
