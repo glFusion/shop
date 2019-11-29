@@ -31,6 +31,10 @@ class authorizenet extends \Shop\Gateway
      * @var string */
     private $hash_key;
 
+    /** URL for requesting an authorization token.
+     * @var string */
+    private $token_url;
+
     /**
      * Shopping cart object.
      * We need to access this both from `CheckoutButon()`  and `_getButton()`.
@@ -77,7 +81,7 @@ class authorizenet extends \Shop\Gateway
 
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
-        if ($this->getConfig('test_mode') == '1') {
+        if ($this->isSandbox()) {
             $this->api_login    = trim($this->getConfig('test_api_login'));
             $this->trans_key    = trim($this->getConfig('test_trans_key'));
             $this->hash_key     = trim($this->getconfig('test_hash_key'));
@@ -119,12 +123,42 @@ class authorizenet extends \Shop\Gateway
         // Make sure we have at least one item
         if (empty($cart->getItems())) return '';
         $total_amount = 0;
+        $line_items = array();
         $Cur = \Shop\Currency::getInstance();
 
         $return_opts = array(
             'url'       => SHOP_URL . '/index.php?' . urlencode('thanks=authorizenet'),
             'cancelUrl' => $cart->cancelUrl(),
         );
+
+        $by_gc = $cart->getGC();
+        if ($by_gc > 0) {
+            $total_amount = $cart->getTotal() - $by_gc;
+            $line_items[] = array(
+                    'itemId' => $LANG_SHOP['cart'],
+                    'name' => $LANG_SHOP['all_items'],
+                    'description' => $LANG_SHOP['all_items'],
+                    'quantity' => 1,
+                    'unitPrice' => $Cur->FormatValue($total_amount),
+                    'taxable' => false,
+            );
+        } else {
+            foreach ($cart->getItems() as $Item) {
+                $P = $Item->getProduct();
+                $line_items[] = array(
+                    'itemId'    => substr($P->item_id, 0, 31),
+                    'name'      => substr(strip_tags($P->short_description), 0, 31),
+                    'description' => substr(strip_tags($P->description), 0, 255),
+                    'quantity' => $Item->quantity,
+                    'unitPrice' => $Cur->FormatValue($Item->price),
+                    'taxable' => $Item->taxable ? true : false,
+                );
+                $total_amount += (float)$Item->price * (float)$Item->quantity;
+            }
+            $total_amount += $cart->shipping;
+            $total_amount += $cart->handling;
+            $total_amount += $cart->tax;
+        }
 
         $json = array(
             'getHostedPaymentPageRequest' => array(
@@ -135,11 +169,13 @@ class authorizenet extends \Shop\Gateway
                 'refId' => $cart->order_id,
                 'transactionRequest' => array(
                     'transactionType' => 'authCaptureTransaction',
-                    'amount' => '0.00',         // this will be overridden later
+                    'amount' => $Cur->FormatValue($total_amount),
                     'order' => array(
                         'invoiceNumber' => $cart->order_id,
                     ),
-                    'lineItems' => array(),
+                    'lineItems' => array(
+                        'lineItem' => $line_items,
+                    ),
                     'tax' => array(
                         'amount' => $Cur->FormatValue($cart->tax),
                         'name' => 'Sales Tax',
@@ -180,36 +216,6 @@ class authorizenet extends \Shop\Gateway
             ),
         );
 
-        $by_gc = $cart->getGC();
-        if ($by_gc > 0) {
-            $total_amount = $cart->getTotal() - $by_gc;
-            $json['getHostedPaymentPageRequest']['transactionRequest']['lineItems']['lineItem'][] = array(
-                    'itemId' => $LANG_SHOP['cart'],
-                    'name' => $LANG_SHOP['all_items'],
-                    'description' => $LANG_SHOP['all_items'],
-                    'quantity' => 1,
-                    'unitPrice' => $Cur->FormatValue($total_amount),
-                    'taxable' => false,
-            );
-        } else {
-            foreach ($cart->getItems() as $Item) {
-                $P = $Item->getProduct();
-                $json['getHostedPaymentPageRequest']['transactionRequest']['lineItems']['lineItem'][] = array(
-                    'itemId'    => substr($P->item_id, 0, 31),
-                    'name'      => substr(strip_tags($P->short_description), 0, 31),
-                    'description' => substr(strip_tags($P->description), 0, 255),
-                    'quantity' => $Item->quantity,
-                    'unitPrice' => $Cur->FormatValue($Item->price),
-                    'taxable' => $Item->taxable ? true : false,
-                );
-                $total_amount += (float)$Item->price * (float)$Item->quantity;
-            }
-            $total_amount += $cart->shipping;
-            $total_amount += $cart->handling;
-            $total_amount += $cart->tax;
-        }
-
-        $json['getHostedPaymentPageRequest']['transactionRequest']['amount'] = $Cur->FormatValue($total_amount);
         $jsonEncoded = json_encode($json, JSON_UNESCAPED_SLASHES);
         //var_export($json);
 
