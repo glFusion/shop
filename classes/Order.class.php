@@ -1076,10 +1076,14 @@ class Order
             if ($this->buyer_email != '') {
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
-                    'from' => $_CONF['site_mail'],
+                    'from' => array(
+                        'email' => $_CONF['site_mail'],
+                        'name'  => SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']),
+                    ),
                     'htmlmessage' => $text,
-                    'subject' => $subject,
+                    'subject' => htmlspecialchars($subject),
                 ) );
+                SHOP_log("Buyer Notification Done.", SHOP_LOG_DEBUG);
             }
             $LANG_SHOP = $save_language;    // Restore the default language
         }
@@ -1106,14 +1110,18 @@ class Order
             } else {
                 $email_addr = $_CONF['site_mail'];
             }
-            SHOP_log("Sending email to admin at '$email_addr'", SHOP_LOG_DEBUG);
+            SHOP_log("Sending email to admin at $email_addr", SHOP_LOG_DEBUG);
             if (!empty($email_addr)) {
                 COM_emailNotification(array(
-                    'to' => array($email_addr),
-                    'from' => $_CONF['noreply_mail'],
+                    'to' => array(
+                        'email' => $email_addr,
+                        'name'  => $_CONF['site_name'],
+                    ),
+                    'from' => SHOP_getVar($_CONF, 'noreply_mail', 'string', $_CONF['site_mail']),
                     'htmlmessage' => $text,
-                    'subject' => $LANG_SHOP['subj_email_admin'],
+                    'subject' => htmlspecialchars($LANG_SHOP['subj_email_admin']),
                 ) );
+                SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
             }
         }
     }
