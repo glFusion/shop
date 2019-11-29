@@ -216,24 +216,24 @@ class paypal extends \Shop\Gateway
             $cartItems = $cart->getItems();
             foreach ($cartItems as $cart_item_id=>$item) {
                 $item_count++;
-                $opt_str = '';
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
                 $P = \Shop\Product::getByID($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
+                $pov_arr = array();
                 foreach ($item->options as $OIO) {
-                    $opt_str .= ', ' . $OIO->oio_value;
-                    $fields['on'.$oc.'_'.$i] = $OIO->oio_name;
-                    $fields['os'.$oc.'_'.$i] = $OIO->oio_value;
+                    $oio_arr[] = $OIO;
+                    $fields['on'.$oc.'_'.$i] = $OIO->getName();
+                    $fields['os'.$oc.'_'.$i] = $OIO->getValue();
                     $oc++;
                 }
                 $overrides = array(
                     'price' => $item->price,
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($item->options, $item->quantity, $overrides);
+                $item_amount = $P->getPrice($oio_arr, $item->quantity, $overrides);
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
