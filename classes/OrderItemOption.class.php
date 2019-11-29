@@ -314,6 +314,18 @@ class OrderItemOption
     {
         return $this->oio_id;
     }
+
+
+    /**
+     * Get the price for this item option.
+     *
+     * @return  float       Option price
+     */
+    public function getPrice()
+    {
+        return $this->oio_price;
+    }
+
 }
 
 ?>
