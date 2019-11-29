@@ -115,6 +115,7 @@ class square extends \Shop\IPN
     {
         // Gets the transaction via the Square API to get the real values.
         SHOP_log("transaction ID: " . $this->getTxnId());
+        sleep(3);
         $trans = $this->GW->getTransaction($this->getTxnId());
 
         SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
@@ -187,7 +188,6 @@ class square extends \Shop\IPN
      * @uses   IPN::handleFailure()
      * @uses   IPN::handlePurchase()
      * @uses   IPN::isUniqueTxnId()
-     * @uses   IPN::isSufficientFunds()
      * @uses   IPN::Log()
      * @uses   Verify()
      * @param  array   $in     POST variables of transaction
