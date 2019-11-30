@@ -675,6 +675,7 @@ $LANG_confignames['shop'] = array(
     'name'          => 'Remittance/Support Contact',
     'company'       => 'Company Name',
     'country'       => 'Country',
+    'remit_to'      => 'Remit To (Attn)',
     'adm_def_view'  => 'Default Admin View',
     'def_prod_type' => 'Default Product Type',
 );
