@@ -31,7 +31,7 @@ $actionval = '';
 $view = '';
 $expected = array(
     // Actions
-    'update', 'checkout', 'savebillto', 'saveshipto', 'delete',
+    'update', 'checkout', 'savebillto', 'saveshipto', 'delete', 'nextstep',
     'empty',
     // Views
     'view',
@@ -176,6 +176,12 @@ case 'saveshipto':
     $Cart->setAddress($_POST, $addr_type);
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     $content = $Cart->getView($next_step);
+    $view = 'none';
+    break;
+
+case 'nextstep':
+    $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
+    $content = Shop\Cart::getInstance()->getView($next_step);
     $view = 'none';
     break;
 
