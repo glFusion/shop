@@ -519,7 +519,7 @@ class paypal extends \Shop\Gateway
             $U = self::Customer();
             $shipto = $U->getDefaultAddress('shipto');
             if (!empty($shipto)) {
-                $fullname = $shipto->name;
+                $fullname = $shipto->getName();
                 if (strpos($fullname, ' ')) {
                     list($fname, $lname) = explode(' ', $fullname);
                     $vars['first_name'] = $fname;
@@ -527,14 +527,14 @@ class paypal extends \Shop\Gateway
                 } else {
                     $vars['first_name'] = $fullname;
                 }
-                $vars['address1'] = $shipto->address1;
-                if (!empty($shipto->address2)) {
-                    $vars['address2'] = $shipto->address2;
+                $vars['address1'] = $shipto->getAddress1();
+                if (!empty($shipto->getAddress2())) {
+                    $vars['address2'] = $shipto->getAddress2();
                 }
-                $vars['city'] = $shipto->city;
-                $vars['state'] = $shipto->state;
-                $vars['zip'] = $shipto->zip;
-                $vars['country'] = $shipto->country;
+                $vars['city'] = $shipto->getCity();
+                $vars['state'] = $shipto->getState();
+                $vars['zip'] = $shipto->getPostal();
+                $vars['country'] = $shipto->getCountry();
             }
 
             $gateway_vars = '';
