@@ -616,6 +616,8 @@ class Cart extends Order
             $var = $type . '_' . $fld;
             $A[$fld] = $this->$var;
         }
+        $var = $type . '_id';
+        $A['addr_id'] = $this->$var;
         return $A;
     }
 
