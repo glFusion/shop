@@ -33,6 +33,8 @@ class square extends \Shop\Gateway
      * @var string */
     private $token;
 
+    /** Square API URL. Set to production or sandbox in constructor.
+     * @var string */
     private $api_url;
 
 
