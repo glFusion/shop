@@ -284,7 +284,6 @@ class Catalog
             }
 
             $prodrows++;
-            $pic_filename = $P->getOneImage();
             $T->set_var(array(
                 'item_id'       => $P->id,
                 'name'          => htmlspecialchars($P->getName()),
