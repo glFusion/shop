@@ -15,6 +15,7 @@ namespace Shop\Shippers;
 // For getTracking() and getQuote()
 use \SimpleXmlElement;
 use \Exception;
+use \Shop\Company;
 
 
 /**
@@ -323,22 +324,26 @@ class ups extends \Shop\Shipper
             $shipperddress->addChild ( "PostalCode", "93536" );
             $shipperddress->addChild ( "CountryCode", "US" );
 
-            $shipTo = $shipment->addChild ( 'ShipTo' );
-            $shipTo->addChild ("CompanyName", $Addr->company);
+            $shipTo = $shipment->addChild('ShipTo');
+            $shipTo->addChild("CompanyName", $Addr->getCompany());
             $shipToAddress = $shipTo->addChild ( 'Address' );
-            $shipToAddress->addChild ( "AddressLine1", $Addr->address1);
-            $shipToAddress->addChild ( "City",$Addr->city);
-            $shipToAddress->addChild ( "PostalCode", $Addr->zip);
-            $shipToAddress->addChild ( "CountryCode", $Addr->country );
+            $shipToAddress->addChild("AddressLine1", $Addr->getAddress1());
+            $shipToAddress->addChild("City",$Addr->getCity());
+            $shipToAddress->addChild("PostalCode", $Addr->getPostal());
+            $shipToAddress->addChild("CountryCode", $Addr->getCountry());
 
-            $shipFrom = $shipment->addChild ( 'ShipFrom' );
-            $shipFrom->addChild ( "CompanyName", "Company Name" );
-            $shipFromAddress = $shipFrom->addChild ( 'Address' );
-            $shipFromAddress->addChild ( "AddressLine1", "Address Line" );
-            $shipFromAddress->addChild ( "City", "Lancaster" );
-            $shipFromAddress->addChild ( "StateProvinceCode", "CA" );
-            $shipFromAddress->addChild ( "PostalCode", "93536" );
-            $shipFromAddress->addChild ( "CountryCode", "US" );
+            $Company = Company::getInstance();
+            $shipFrom = $shipment->addChild('ShipFrom');
+            $shipFrom->addChild("CompanyName", $Company->getCompany());
+            $shipFromAddress = $shipFrom->addChild('Address');
+            $shipFromAddress->addChild("AddressLine1", $Company->getAddress1());
+            if ($Company->getAddress2() != '') {
+                $shipFromAddress->addChild("AddressLine2", $Company->getAddress2());
+            }
+            $shipFromAddress->addChild("City", $Company->getCity());
+            $shipFromAddress->addChild("StateProvinceCode", $Company->getState());
+            $shipFromAddress->addChild("PostalCode", $Company->getPostal());
+            $shipFromAddress->addChild("CountryCode", $Company->getCountry());
 
         //    $service = $shipment->addChild ( 'Service' );
         //    $service->addChild ( "Code", "01,02" );

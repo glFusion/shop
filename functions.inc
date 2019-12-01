@@ -1723,12 +1723,7 @@ function plugin_configmanager_select_def_prod_type_shop()
  */
 function plugin_configmanager_select_country_shop()
 {
-    $C = Shop\Address::getCountryName();
-    $retval = array();
-    foreach ($C as $code=>$name) {
-        $retval[$name] = $code;
-    }
-    return $retval;
+    return Shop\Country::makeConfigSelection();
 }
 
 

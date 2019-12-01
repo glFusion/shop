@@ -193,7 +193,7 @@ function removeAddress(addr_id)
     <label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
     <div class="uk-form-controls">
       <select
-        id="stateSelect" name="state" class="shopStateSelect"">
+        id="stateSelect" name="state" class="shopStateSelect">
       </select>
 {!if req_state}
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
@@ -236,8 +236,9 @@ function removeAddress(addr_id)
   <div class="uk-form-row" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls" style="text-align:center;">
-      <button class="uk-button uk-button-success" type="submit" name="{action}">Submit</button>
-      <button class="uk-button uk-button-primary" type="reset">Reset</button>
+      <button class="uk-button uk-button-success" type="submit" name="{action}">{$LANG_ADMIN['submit']}</button>
+      <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
+      <button class="uk-button" type="submit" name="nextstep">{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
 </form>

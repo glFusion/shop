@@ -209,7 +209,6 @@ class Customer
     public function getDefaultAddress($type='billto')
     {
         if ($type != 'billto') $type = 'shipto';
-
         foreach ($this->addresses as $Addr) {
             if ($Addr->isDefault($type)) {
                 return $Addr;
@@ -240,9 +239,8 @@ class Customer
             return array(-1, '');
         }
         $type = $type == 'billto' ? 'billto' : 'shipto';
-
         $Address = new Address($A);
-        $Address->uid = $this->uid;     // Probably not included in $_POST
+        $Address->setUid($this->uid);     // Probably not included in $_POST
 
         $msg = $Address->isValid();
         if (!empty($msg)) {
@@ -254,57 +252,6 @@ class Customer
         }
         $addr_id = $Address->Save();
         return array($addr_id, $msg);
-
-        // TODO: Deprecated
-        // Don't save invalid addresses, or anonymous
-        if ($_USER['uid'] < 2 || !is_array($A)) {
-            return array(-1, '');
-        }
-        $type = $type == 'billto' ? 'billto_' : 'shipto_';
-
-        $id = isset($A['addr_id']) && !empty($A['addr_id']) ?
-            (int)$A['addr_id'] : 0;
-
-        $msg = self::isValidAddress($A, $type);
-        if (!empty($msg)) return array(-1, $msg);
-
-        if ($id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
-            $sql2 = " WHERE id='$id'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.address']} SET ";
-            $sql2 = '';
-        }
-
-        $is_default = isset($A['is_default']) ? 1 : 0;
-        $sql = "uid = '" . $this->uid . "',
-                name = '" . DB_escapeString($A['name']) . "',
-                company = '" . DB_escapeString($A['company']) . "',
-                address1 = '" . DB_escapeString($A['address1']) . "',
-                address2 = '" . DB_escapeString($A['address2']) . "',
-                city = '" . DB_escapeString($A['city']) . "',
-                state = '" . DB_escapeString($A['state']) . "',
-                country = '" . DB_escapeString($A['country']) . "',
-                zip = '" . DB_escapeString($A['zip']) . "',
-                {$type}def = '$is_default'";
-        $sql = $sql1 . $sql . $sql2;
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
-        if ($id == 0) {
-            $id = DB_insertID();
-        }
-
-        // If this is the new default address, turn off the other default
-        if ($is_default) {
-            DB_query(
-                "UPDATE {$_TABLES['shop.address']}
-                SET {$type}def = 0
-                WHERE id <> $id AND {$type}def = 1"
-            );
-        }
-        Cache::clear('shop.user_' . $this->uid);
-        return array($id, '');
     }
 
 
@@ -430,9 +377,11 @@ class Customer
         // Set the address to select by default. Start by using the one
         // already stored in the cart, if any.
         if (empty(array_filter($A))) {
-            $A = $this->getDefaultAddress($type)->getPart(NULL);
+            $Def = $this->getDefaultAddress($type);
+        } else {
+            $Def = new Address();
         }
-        $addr_id = isset($A['addr_id']) ? $A['addr_id'] : '';
+        $addr_id = $Def->getID();
         $count = 0;
         $def_addr = 0;
 
@@ -459,21 +408,21 @@ class Customer
             }
 
             $T->set_var(array(
-                'id'        => $address->addr_id,
-                'ad_name'   => $address->name,
-                'ad_company' => $addres->company,
-                'ad_addr_1' => $address->address1,
-                'ad_addr_2' => $address->address2,
-                'ad_city'   => $address->city,
-                'ad_state'  => $address->state,
-                'ad_country' => $address->country,
-                'ad_zip'    => $address->zip,
+                'id'        => $address->getID(),
+                'ad_name'   => $address->getName(),
+                'ad_company' => $address->getCompany(),
+                'ad_addr_1' => $address->getAddress1(),
+                'ad_addr_2' => $address->getAddress2(),
+                'ad_city'   => $address->getCity(),
+                'ad_state'  => $address->getState(),
+                'ad_country' => $address->getCountry(),
+                'ad_zip'    => $address->getPostal(),
                 'ad_checked' => $ad_checked,
                 'del_icon'  => Icon::getHTML(
                     'delete', 'tooltip',
                     array(
                         'title' => $LANG_SHOP['delete'],
-                        'onclick' => 'removeAddress(' . $address->addr_id . ');',
+                        'onclick' => 'removeAddress(' . $address->getID() . ');',
                     )
                 ),
             ) );

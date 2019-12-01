@@ -186,10 +186,10 @@ class usps extends \Shop\Shipper
         $weight = ($weight < 0.1 ? 0.1 : $weight);
         $pounds = floor($weight);
         $ounces = round(16 * ($weight - floor($weight)));
-        $postcode = str_replace(' ', '', $address->zip);
+        $postcode = str_replace(' ', '', $address->getPostal());
         $status = true;
 
-        if ($address->country == 'US') {
+        if ($address->getCountry() == 'US') {
             $xml = new SimpleXMLElement(
                 '<RateV4Request USERID="' . $this->getConfig('user_id') . '"></RateV4Request>'
             );
@@ -214,7 +214,7 @@ class usps extends \Shop\Shipper
             $pkg->addChild('Machinable', $this->usps_machinable ? 'True' : 'False');
             $request = 'API=RateV4&XML=' . urlencode($xml->asXML());
         } else {
-            $countryname = \Shop\Address::getCountryName($address->country);
+            $countryname = \Shop\Country::getInstance($address->getCountry())->getName();
             if ($countryname) {
                 $xml = new SimpleXMLElement(
                     '<IntlRateV2Request USERID="' . $this->getConfig('user_id') . '"></IntlRateV2Request>'
@@ -250,7 +250,7 @@ class usps extends \Shop\Shipper
                 //$intl_rate_response = $dom->getElementsByTagName('IntlRateResponse')->item(0);
                 $error = $xml->Error;
 
-                if ($address->country == 'US') {
+                if ($address->getCountry() == 'US') {
                     $allowed = array(0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 16, 17, 18, 19, 22, 23, 25, 27, 28);
                     $package = $xml->Package;
                     //$package = $rate_v4_response->getElementsByTagName('Package')->item(0);

@@ -19,20 +19,16 @@ namespace Shop;
  */
 class Sales
 {
-    /** Minimum possible date.
-     * @const string */
+    /** Minimum possible date.*/
     const MIN_DATE = '1970-01-01';
 
-    /** Minimum possible time.
-     * @const string */
+    /** Minimum possible time. */
     const MIN_TIME = '00:00:00';
 
-    /** Maximum possible date.
-     * @const string */
+    /** Maximum possible date. */
     const MAX_DATE = '9999-12-31';
 
-    /** Maximum possible time.
-     * @const string */
+    /** Maximum possible time. */
     const MAX_TIME = '23:59:59';
 
     /** Base tag to use in creating cache IDs.
@@ -46,6 +42,10 @@ class Sales
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
     public $isNew;
+
+    /** Item type for the discount, either `product` or `category`.
+     * @var string */
+    private $item_type;
 
 
     /**
@@ -68,7 +68,7 @@ class Sales
         } else {
             // New entry, set defaults
             $this->id = 0;
-            $this->item_type = 'product';
+            $this->setItemType('product');
             $this->name = '';
             $this->item_id = 0;
             $this->start = '';
@@ -111,7 +111,7 @@ class Sales
     public function setVars($A, $fromDB=true)
     {
         $this->id = SHOP_getVar($A, 'id', 'integer');
-        $this->item_type = SHOP_getVar($A, 'item_type');
+        $this->setItemType(SHOP_getVar($A, 'item_type'));
         $this->discount_type = SHOP_getVar($A, 'discount_type');
         $this->amount = SHOP_getVar($A, 'amount', 'float');
         $this->name = SHOP_getVar($A, 'name', 'string');
@@ -137,6 +137,9 @@ class Sales
             } else {
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
+
+            // Get the item type from the correct form field depending on
+            // whether it's applied to a category or product.
             if ($this->item_type == 'product') {
                 $this->item_id = $A['item_id'];
             } else {
@@ -298,7 +301,6 @@ class Sales
             $this->properties[$var] = new \Date($value, $_CONF['timezone']);
             break;
 
-        case 'item_type':
         case 'discount_type':
         case 'name':
             // String values
@@ -330,6 +332,19 @@ class Sales
         } else {
             return NULL;
         }
+    }
+
+
+    /**
+     * Set the item type to either `product` or `category`.
+     *
+     * @param   string  $key    Product or Category
+     * @return  object  $this
+     */
+    public function setItemType($key)
+    {
+        $this->item_type = $key == 'product' ? $key : 'category';
+        return $this;
     }
 
 
@@ -385,8 +400,9 @@ class Sales
     {
         global $_TABLES;
 
-        if ($id <= 0)
+        if ($id <= 0) {
             return false;
+        }
 
         DB_delete($_TABLES['shop.sales'], 'id', $id);
         Cache::clear(self::$base_tag);
@@ -673,8 +689,7 @@ class Sales
                 if ($fieldvalue == 0) {     // root category
                     $retval = $LANG_SHOP['home'];
                 } else {
-                    $C = Category::getInstance($fieldvalue);
-                    $retval = $C->cat_name;
+                    $retval = Category::getInstance($fieldvalue)->cat_name;
                 }
                 break;
             default;
@@ -739,6 +754,79 @@ class Sales
             $price = Currency::getInstance()->RoundVal($price);
         }
         return $price;
+    }
+
+
+    /**
+     * Get the name of the sale, e.g. "Black Friday".
+     *
+     * @return  string      Sale name
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+
+    /**
+     * Get the type of the discount, amount or percent.
+     *
+     * @return  string      Type of discount
+     */
+    public function getValueType()
+    {
+        return $this->type;
+    }
+
+
+    /**
+     * Get the value of the discount, either a percentage or amount.
+     * Percent is in whole numbers, e.g. "15" for "15%".
+     *
+     * @return  float       Numeric value of discount
+     */
+    public function getValue()
+    {
+        return $this->amount;
+    }
+
+
+    /**
+     * Get the formatted value of the discount amount.
+     * Returns either the simple amount string for a percentage, or a
+     * formatted dollar amount.
+     *
+     * @return  string      Formatted value
+     */
+    public function getFormattedValue()
+    {
+        if ($this->type == 'amount') {
+            return Currency::getInstance()->Format($this->amount);
+        } else {
+            return $this->amount;
+        }
+    }
+
+
+    /**
+     * Get the starting date.
+     *
+     * @return  object      Starting date object
+     */
+    public function getStart()
+    {
+        return $this->start;
+    }
+
+
+    /**
+     * Get the ending date.
+     *
+     * @return  object      Starting date object
+     */
+    public function getEnd()
+    {
+        return $this->end;
     }
 
 }   // class Sales

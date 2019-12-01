@@ -443,16 +443,12 @@ class Category
         $DT->set_var('edit_sale_url', SHOP_ADMIN_URL . '/index.php?sales');
         $DT->set_block('stable', 'SaleList', 'SL');
         foreach (Sales::getCategory($this->cat_id) as $D) {
-            if ($D->discount_type == 'amount') {
-                $amount = Currency::getInstance()->Format($D->amount);
-            } else {
-                $amount = $D->amount;
-            }
+            $amount = $D->getFormattedValue();
             $DT->set_var(array(
-                'sale_name' => htmlspecialchars($D->name),
-                'sale_start' => $D->start,
-                'sale_end'  => $D->end,
-                'sale_type' => $D->discount_type,
+                'sale_name' => htmlspecialchars($D->getName()),
+                'sale_start' => $D->getStart(),
+                'sale_end'  => $D->getEnd(),
+                'sale_type' => $D->getValueType(),
                 'sale_amt'  => $amount,
             ) );
             $DT->parse('SL', 'SaleList', true);

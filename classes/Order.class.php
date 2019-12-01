@@ -1043,6 +1043,7 @@ class Order
             return;
         }
 
+        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
         $Cust = Customer::getInstance($this->uid);
         if ($notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
@@ -1072,13 +1073,13 @@ class Order
                 'string',
                 $LANG_SHOP['subj_email']
             );
-            $subject = sprintf($subject, $_CONF['site_name']);
+            $subject = sprintf($subject, $store_name);
             if ($this->buyer_email != '') {
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
                     'from' => array(
                         'email' => $_CONF['site_mail'],
-                        'name'  => SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']),
+                        'name'  => $store_name,
                     ),
                     'htmlmessage' => $text,
                     'subject' => htmlspecialchars($subject),
@@ -1115,7 +1116,7 @@ class Order
                 COM_emailNotification(array(
                     'to' => array(
                         'email' => $email_addr,
-                        'name'  => $_CONF['site_name'],
+                        'name'  => $store_name,
                     ),
                     'from' => SHOP_getVar($_CONF, 'noreply_mail', 'string', $_CONF['site_mail']),
                     'htmlmessage' => $text,
@@ -1226,7 +1227,7 @@ class Order
             'payment_date'      => SHOP_now()->toMySQL(true),
             'payer_email'       => $this->buyer_email,
             'payer_name'        => $this->billto_name,
-            'site_name'         => $_CONF['site_name'],
+            'site_name'         => SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']),
             'txn_id'            => $this->pmt_txn_id,
             'pi_url'            => SHOP_URL,
             'pi_admin_url'      => SHOP_ADMIN_URL,
