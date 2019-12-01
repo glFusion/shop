@@ -214,7 +214,7 @@ class usps extends \Shop\Shipper
             $pkg->addChild('Machinable', $this->usps_machinable ? 'True' : 'False');
             $request = 'API=RateV4&XML=' . urlencode($xml->asXML());
         } else {
-            $countryname = \Shop\Address::getCountryName($address->country);
+            $countryname = \Shop\Country::getInstance($address->country)->getName();
             if ($countryname) {
                 $xml = new SimpleXMLElement(
                     '<IntlRateV2Request USERID="' . $this->getConfig('user_id') . '"></IntlRateV2Request>'
