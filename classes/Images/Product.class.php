@@ -32,6 +32,7 @@ class Product extends \Shop\Image
      * @var integer */
     static $maxheight = 600;
 
+
     /**
      * Constructor.
      *
@@ -79,6 +80,7 @@ class Product extends \Shop\Image
                 $filenames[DB_insertID()] = $filename;
             }
         }
+        self::reOrder($this->record_id);
         return $filenames;
     }
 
@@ -113,6 +115,67 @@ class Product extends \Shop\Image
         DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
         \Shop\Cache::clear('products');
         return true;
+    }
+
+
+    /**
+     * Sets the default image for a product.
+     *
+     * @param   integer $img_id     Image record ID
+     * @param   integer $prod_id    Product record ID
+     * @return  boolean     True on success, False on error
+     */
+    public function setAsDefault($img_id, $prod_id)
+    {
+        global $_TABLES;
+
+        $img_id = (int)$img_id;
+        $prod_id = (int)$prod_id;
+        \Shop\Cache::clear('products');
+        $sql = "UPDATE {$_TABLES['shop.images']}
+            SET orderby = 5
+            WHERE product_id = $prod_id AND img_id = $img_id";
+        DB_query($sql);
+        if (DB_error()) {
+            return false;
+        }
+        self::reOrder($prod_id);
+        return true;
+    }
+
+
+    /**
+     * Reorder images for a product.
+     *
+     * @param   integer $prod_id    Product record ID
+     */
+    public static function reOrder($prod_id)
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        $sql = "SELECT img_id, orderby
+                FROM {$_TABLES['shop.images']}
+                WHERE product_id = $prod_id
+                ORDER BY orderby, img_id ASC";
+        $result = DB_query($sql);
+
+        $order = 10;        // First orderby value
+        $stepNumber = 10;   // Increment amount
+        $changed = false;   // Assume no changes
+        while ($A = DB_fetchArray($result, false)) {
+            if ($A['orderby'] != $order) {  // only update incorrect ones
+                $changed = true;
+                $sql = "UPDATE {$_TABLES['shop.images']}
+                    SET orderby = '$order'
+                    WHERE img_id = '{$A['img_id']}'";
+                DB_query($sql);
+            }
+            $order += $stepNumber;
+        }
+        if ($changed) {
+            \Shop\Cache::clear('products');
+        }
     }
 
 

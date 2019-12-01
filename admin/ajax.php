@@ -209,6 +209,21 @@ case 'delimage':
     echo json_encode($arr);
     break;
 
+case 'setDefImg':
+    // Set an image as the default.
+    $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
+    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
+    $arr = array(
+        'img_id'    => $img_id,
+        'status'    => \Shop\Images\Product::setAsDefault($img_id, $prod_id),
+    );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
+    break;
+
 case 'add_tracking':
     $retval = array('status' => false);
     $shipment_id = SHOP_getVar($_POST, 'shipment_id', 'integer');

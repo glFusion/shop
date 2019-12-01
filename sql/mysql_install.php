@@ -105,6 +105,7 @@ $_SQL = array(
 'shop.images' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
   `img_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(11) unsigned NOT NULL,
+  `orderby` int(3) NOT NULL DEFAULT 999,
   `filename` varchar(255) DEFAULT NULL,
   `nonce` varchar(20) DEFAULT NULL,
   `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -602,6 +603,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `status` varchar(10) NOT NULL DEFAULT 'valid'",
     "ALTER TABLE {$_TABLES['shop.gateways']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
+    "ALTER TABLE {$_TABLES['shop.images']} ADD `orderby` int(3) NOT NULL default 999 AFTER `product_id`";
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
