@@ -1012,13 +1012,13 @@ class Product
 
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
-        //$i = 0;     // initialize $i in case there are no images
+        $i = 0;     // initialize image counter
         foreach ($this->Images as $id=>$prow) {
             $T->set_var(array(
                 'img_url'   => $this->getImage($prow['filename'])['url'],
                 'thumb_url' => $this->getThumb($prow['filename'])['url'],
-                //'seq_no'    => $i++,
                 'img_id'    => $prow['img_id'],
+                'img_cnt'   => $i++,
             ) );
             $T->parse('PRow', 'PhotoRow', true);
         }
@@ -2473,7 +2473,8 @@ class Product
             $this->Images = array();
             $sql = "SELECT img_id, filename
                 FROM {$_TABLES['shop.images']}
-                WHERE product_id='". $this->id . "'";
+                WHERE product_id='". $this->id . "'
+                ORDER BY orderby ASC";
             $res = DB_query($sql);
             while ($prow = DB_fetchArray($res, false)) {
                 if (self::imageExists($prow['filename'])) {

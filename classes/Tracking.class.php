@@ -3,7 +3,7 @@
  * Class to standardize shipment tracking information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.0.0
  * @since       v1.0.0
