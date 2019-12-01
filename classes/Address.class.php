@@ -20,12 +20,53 @@ namespace Shop;
  */
 class Address
 {
-    /** Address field names.
-     * @var array */
-    private static $_names= array(
-        'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country', 
-    );
+    /** Person name.
+     * @var string */
+    private $name;
+
+    /** Company name.
+     * @var string */
+    private $company;
+
+    /** Address Line 1.
+     * @var string */
+    private $address1;
+
+    /** Address Line 2.
+     * @var string */
+    private $address2;
+
+    /** City name.
+     * @var string */
+    private $city;
+
+    /** State/Province.
+     * @var string */
+    private $state;
+
+    /** Postal code.
+     * @var string */
+    private $zip;
+
+    /** Country code.
+     * @var string */
+    private $country;
+
+    /** User ID.
+     * @var integer */
+    private $uid;
+
+    /** Flag indicates this is a default Billing address.
+     * @var integer */
+    private $billto_def;
+
+    /** Flag indicates this is a default Shipping address.
+     * @var integer */
+    private $shipto_def;
+
+    /** Address record ID.
+     * @var integer */
+    private $addr_id;
 
     /** Address data fields.
      * @var array */
@@ -41,61 +82,23 @@ class Address
     public function __construct($data=array())
     {
         if (!is_array($data)) {
+            // Allow for a JSON string to be provided.
             $data = json_decode($data, true);
         }
         if (!is_array($data)) {
             $data = array();
         }
-        foreach (self::$_names as $key) {
-            $this->$key= isset($data[$key]) ? $data[$key] : '';
-        }
         $this->uid = SHOP_getVar($data, 'uid', 'integer');
         $this->addr_id = SHOP_getVar($data, 'addr_id', 'integer');
         $this->billto_def = SHOP_getVar($data, 'billto_def', 'integer');
         $this->shipto_def = SHOP_getVar($data, 'shipto_def', 'integer');
-    }
-
-
-    /**
-     * Set a property value.
-     *
-     * @param   string  $key    Key to properties array
-     * @param   mixed   $val    Value to set
-     */
-    public function __set($key, $val)
-    {
-        global $_SHOP_CONF;
-
-        switch($key) {
-        case 'addr_id':
-        case 'uid':
-            $val = (int)$val;
-            break;
-        case 'country':
-            if (empty($val)) {
-                $val = $_SHOP_CONF['country'];
-            } else {
-                $val = strtoupper($val);
-            }
-            break;
-        }
-        $this->properties[$key] = $val;
-    }
-
-
-    /**
-     * Get a property's value.
-     *
-     * @param   string  $key    Name of value to retrieve
-     * @return  mixed       Value of property, NULL if not set
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        $this->name = SHOP_getVar($data, 'name');
+        $this->address1 = SHOP_getVar($data, 'address1');
+        $this->address2 = SHOP_getVar($data, 'address2');
+        $this->city = SHOP_getVar($data, 'city');
+        $this->state = SHOP_getVar($data, 'state');
+        $this->zip = SHOP_getVar($data, 'zip');
+        $this->country = SHOP_getVar($data, 'country');
     }
 
 
@@ -112,7 +115,6 @@ class Address
 
         $addr_id = (int)$addr_id;
         if (isset($addrs[$addr_id])) {
-            echo "returning address for $addr_id\n";
             return new self($addrs[$addr_id]);
         } else {
             $res = DB_query("SELECT *
@@ -120,13 +122,252 @@ class Address
                 WHERE addr_id = '{$addr_id}'");
             if ($res) {
                 $A = DB_fetchArray($res, true);
-                echo "setting address $addr_id\n";
                 $addrs[$addr_id] = $A;
                 return new self($A);
             } else {
                 return new self;
             }
         }
+    }
+
+
+    /**
+     * Set the record ID.
+     *
+     * @param   integer $id     DB record ID
+     * @return  object  $this
+     */
+    public function setID($id)
+    {
+        $this->addr_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the record ID.
+     *
+     * @return  integer     Record ID
+     */
+    public function getID()
+    {
+        return (int)$this->addr_id;
+    }
+
+
+    /**
+     * Set the user ID.
+     *
+     * @param   integer $uid    User ID
+     * @return  object  $this
+     */
+    public function setUid($uid)
+    {
+        $this->uid = (int)$uid;
+        return $this;
+    }
+
+
+    /**
+     * Get the user ID.
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
+    }
+
+
+    /**
+     * Set the person's name.
+     *
+     * @param   string  $name   Person's name
+     * @return  object  $this
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the name for the address.
+     *
+     * @return  string      Name value
+     */
+    public function getName()
+    {
+        return (string)$this->name;
+    }
+
+
+    /**
+     * Set the company name.
+     *
+     * @param   string  $name   Company name
+     * @return  object  $this
+     */
+    public function setCompany($name)
+    {
+        $this->company = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the company name.
+     *
+     * @return  string      Company name
+     */
+    public function getCompany()
+    {
+        return (string)$this->company;
+    }
+
+
+    /**
+     * Set the first address line.
+     *
+     * @param   string  $address    Address value
+     * @return  object  $this
+     */
+    public function setAddress1($address)
+    {
+        $this->address1 = $address;
+        return $this;
+    }
+
+
+    /**
+     * Get the first address line.
+     *
+     * @return  string      Address value
+     */
+    public function getAddress1()
+    {
+        return (string)$this->address1;
+    }
+
+
+    /**
+     * Set the second address line.
+     *
+     * @param   string  $address    Address value
+     * @return  object  $this
+     */
+    public function setAddress2($address)
+    {
+        $this->address2 = $address;
+        return $this;
+    }
+
+
+    /**
+     * Get the second address line.
+     *
+     * @return  string      Address value
+     */
+    public function getAddress2()
+    {
+        return (string)$this->address2;
+    }
+
+
+    /**
+     * Set the city value.
+     *
+     * @param   string  $city   City name
+     * @return  object  $this
+     */
+    public function setCity($city)
+    {
+        $this->city = $city;
+        return $this;
+    }
+
+
+    /**
+     * Get the city name.
+     *
+     * @return  string      City name
+     */
+    public function getCity()
+    {
+        return (string)$this->city;
+    }
+
+
+    /**
+     * Set the state/province name.
+     *
+     * @param   string  $state      State/Province name
+     * @return  object  $this
+     */
+    public function setState($state)
+    {
+        $this->state = $state;
+        return $this;
+    }
+
+
+    /**
+     * Get the state/province.
+     *
+     * @return  string      State/Province value
+     */
+    public function getState()
+    {
+        return (string)$this->state;
+    }
+
+
+    /**
+     * Set the postal code.
+     *
+     * @param   string  $zip    Postal (zip) code
+     * @return  object  $this
+     */
+    public function setPostal($zip)
+    {
+        $this->zip = $zip;
+        return $this;
+    }
+
+
+    /**
+     * Get the postal code.
+     *
+     * @return  string      Postal (zip) code
+     */
+    public function getPostal()
+    {
+        return (string)$this->zip;
+    }
+
+
+    /**
+     * Set the country code.
+     *
+     * @param   string  $code   2-letter country code
+     * @return  object  $this
+     */
+    public function setCountry($code)
+    {
+        $this->country = $code;
+        return $this;
+    }
+
+
+    /**
+     * Get the country code.
+     *
+     * @return  string      2-letter country code
+     */
+    public function getCountry()
+    {
+        return (string)$this->country;
     }
 
 
@@ -221,7 +462,7 @@ class Address
      */
     public function toJSON($escape=false)
     {
-        $str = json_encode($this->properties);
+        $str = json_encode($this->toArray());
         if ($escape) {
             $str = DB_escapeString($str);
         }
@@ -326,7 +567,7 @@ class Address
 
         // Include the country as the last line, unless this is a domestic address.
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
-            $retval .=  $sep . self::getCountryName($this->country);
+            $retval .=  $sep . Country::getInstance($this->country)->getName();
         }
         return $retval;
     }
@@ -342,25 +583,6 @@ class Address
     public function toHTML($part='all')
     {
         return $this->toText($part, "<br />\n");
-    }
-
-
-    /**
-     * Get a single element of an address, e.g. `address` or `city`.
-     *
-     * @param   string  $key    Field name to retrieve, NULL to get everything
-     * @return  string          Value of address field
-     */
-    public function getPart($key = NULL)
-    {
-        if ($key === NULL) {
-            // Nothing requested, return all properties
-            return $this->properties;
-        } elseif (isset($this->properties[$key])) {
-            return $this->$key;
-        } else {
-            return '';
-        }
     }
 
 
@@ -384,258 +606,11 @@ class Address
             );
         }
         if ($req == NULL) {
+            // return all parts
             return $parts[$this->name];
         } else {
+            // return only the selected part
             return isset($parts[$this->name][$req]) ? $parts[$this->name][$req] : '';
-        }
-    }
-
-
-
-    /**
-     * Return USPS country name by country ISO 3166-1-alpha-2 code.
-     * Return false for unknown countries.
-     * Returns all countries if no ID is provided.
-     *
-     * @param   string  $countryID  2-character country ID
-     * @return  mixed   Country Name, false if not found, or all countries if no ID given
-     */
-    public static function getCountryName($countryID = NULL)
-    {
-        $countries = [
-            'AD' => 'Andorra',
-            'AE' => 'United Arab Emirates',
-            'AF' => 'Afghanistan',
-            'AG' => 'Antigua and Barbuda',
-            'AI' => 'Anguilla',
-            'AL' => 'Albania',
-            'AM' => 'Armenia',
-            'AN' => 'Netherlands Antilles',
-            'AO' => 'Angola',
-            'AR' => 'Argentina',
-            'AT' => 'Austria',
-            'AU' => 'Australia',
-            'AW' => 'Aruba',
-            'AX' => 'Aland Island (Finland)',
-            'AZ' => 'Azerbaijan',
-            'BA' => 'Bosnia-Herzegovina',
-            'BB' => 'Barbados',
-            'BD' => 'Bangladesh',
-            'BE' => 'Belgium',
-            'BF' => 'Burkina Faso',
-            'BG' => 'Bulgaria',
-            'BH' => 'Bahrain',
-            'BI' => 'Burundi',
-            'BJ' => 'Benin',
-            'BM' => 'Bermuda',
-            'BN' => 'Brunei Darussalam',
-            'BO' => 'Bolivia',
-            'BR' => 'Brazil',
-            'BS' => 'Bahamas',
-            'BT' => 'Bhutan',
-            'BW' => 'Botswana',
-            'BY' => 'Belarus',
-            'BZ' => 'Belize',
-            'CA' => 'Canada',
-            'CC' => 'Cocos Island (Australia)',
-            'CD' => 'Congo, Democratic Republic of the',
-            'CF' => 'Central African Republic',
-            'CG' => 'Congo, Republic of the',
-            'CH' => 'Switzerland',
-            'CI' => 'Ivory Coast (Cote d Ivoire)',
-            'CK' => 'Cook Islands (New Zealand)',
-            'CL' => 'Chile',
-            'CM' => 'Cameroon',
-            'CN' => 'China',
-            'CO' => 'Colombia',
-            'CR' => 'Costa Rica',
-            'CU' => 'Cuba',
-            'CV' => 'Cape Verde',
-            'CX' => 'Christmas Island (Australia)',
-            'CY' => 'Cyprus',
-            'CZ' => 'Czech Republic',
-            'DE' => 'Germany',
-            'DJ' => 'Djibouti',
-            'DK' => 'Denmark',
-            'DM' => 'Dominica',
-            'DO' => 'Dominican Republic',
-            'DZ' => 'Algeria',
-            'EC' => 'Ecuador',
-            'EE' => 'Estonia',
-            'EG' => 'Egypt',
-            'ER' => 'Eritrea',
-            'ES' => 'Spain',
-            'ET' => 'Ethiopia',
-            'FI' => 'Finland',
-            'FJ' => 'Fiji',
-            'FK' => 'Falkland Islands',
-            'FM' => 'Micronesia, Federated States of',
-            'FO' => 'Faroe Islands',
-            'FR' => 'France',
-            'GA' => 'Gabon',
-            'GB' => 'United Kingdom',
-            'GD' => 'Grenada',
-            'GE' => 'Georgia, Republic of',
-            'GF' => 'French Guiana',
-            'GH' => 'Ghana',
-            'GI' => 'Gibraltar',
-            'GL' => 'Greenland',
-            'GM' => 'Gambia',
-            'GN' => 'Guinea',
-            'GP' => 'Guadeloupe',
-            'GQ' => 'Equatorial Guinea',
-            'GR' => 'Greece',
-            'GS' => 'South Georgia (Falkland Islands)',
-            'GT' => 'Guatemala',
-            'GW' => 'Guinea-Bissau',
-            'GY' => 'Guyana',
-            'HK' => 'Hong Kong',
-            'HN' => 'Honduras',
-            'HR' => 'Croatia',
-            'HT' => 'Haiti',
-            'HU' => 'Hungary',
-            'ID' => 'Indonesia',
-            'IE' => 'Ireland',
-            'IL' => 'Israel',
-            'IN' => 'India',
-            'IQ' => 'Iraq',
-            'IR' => 'Iran',
-            'IS' => 'Iceland',
-            'IT' => 'Italy',
-            'JM' => 'Jamaica',
-            'JO' => 'Jordan',
-            'JP' => 'Japan',
-            'KE' => 'Kenya',
-            'KG' => 'Kyrgyzstan',
-            'KH' => 'Cambodia',
-            'KI' => 'Kiribati',
-            'KM' => 'Comoros',
-            'KN' => 'Saint Kitts (Saint Christopher and Nevis)',
-            'KP' => 'North Korea (Korea, Democratic People\'s Republic of)',
-            'KR' => 'South Korea (Korea, Republic of)',
-            'KW' => 'Kuwait',
-            'KY' => 'Cayman Islands',
-            'KZ' => 'Kazakhstan',
-            'LA' => 'Laos',
-            'LB' => 'Lebanon',
-            'LC' => 'Saint Lucia',
-            'LI' => 'Liechtenstein',
-            'LK' => 'Sri Lanka',
-            'LR' => 'Liberia',
-            'LS' => 'Lesotho',
-            'LT' => 'Lithuania',
-            'LU' => 'Luxembourg',
-            'LV' => 'Latvia',
-            'LY' => 'Libya',
-            'MA' => 'Morocco',
-            'MC' => 'Monaco (France)',
-            'MD' => 'Moldova',
-            'MG' => 'Madagascar',
-            'MK' => 'Macedonia, Republic of',
-            'ML' => 'Mali',
-            'MM' => 'Burma',
-            'MN' => 'Mongolia',
-            'MO' => 'Macao',
-            'MQ' => 'Martinique',
-            'MR' => 'Mauritania',
-            'MS' => 'Montserrat',
-            'MT' => 'Malta',
-            'MU' => 'Mauritius',
-            'MV' => 'Maldives',
-            'MW' => 'Malawi',
-            'MX' => 'Mexico',
-            'MY' => 'Malaysia',
-            'MZ' => 'Mozambique',
-            'NA' => 'Namibia',
-            'NC' => 'New Caledonia',
-            'NE' => 'Niger',
-            'NG' => 'Nigeria',
-            'NI' => 'Nicaragua',
-            'NL' => 'Netherlands',
-            'NO' => 'Norway',
-            'NP' => 'Nepal',
-            'NR' => 'Nauru',
-            'NZ' => 'New Zealand',
-            'OM' => 'Oman',
-            'PA' => 'Panama',
-            'PE' => 'Peru',
-            'PF' => 'French Polynesia',
-            'PG' => 'Papua New Guinea',
-            'PH' => 'Philippines',
-            'PK' => 'Pakistan',
-            'PL' => 'Poland',
-            'PM' => 'Saint Pierre and Miquelon',
-            'PN' => 'Pitcairn Island',
-            'PT' => 'Portugal',
-            'PY' => 'Paraguay',
-            'QA' => 'Qatar',
-            'RE' => 'Reunion',
-            'RO' => 'Romania',
-            'RS' => 'Serbia',
-            'RU' => 'Russia',
-            'RW' => 'Rwanda',
-            'SA' => 'Saudi Arabia',
-            'SB' => 'Solomon Islands',
-            'SC' => 'Seychelles',
-            'SD' => 'Sudan',
-            'SE' => 'Sweden',
-            'SG' => 'Singapore',
-            'SH' => 'Saint Helena',
-            'SI' => 'Slovenia',
-            'SK' => 'Slovak Republic',
-            'SL' => 'Sierra Leone',
-            'SM' => 'San Marino',
-            'SN' => 'Senegal',
-            'SO' => 'Somalia',
-            'SR' => 'Suriname',
-            'ST' => 'Sao Tome and Principe',
-            'SV' => 'El Salvador',
-            'SY' => 'Syrian Arab Republic',
-            'SZ' => 'Eswatini',
-            'TC' => 'Turks and Caicos Islands',
-            'TD' => 'Chad',
-            'TG' => 'Togo',
-            'TH' => 'Thailand',
-            'TJ' => 'Tajikistan',
-            'TK' => 'Tokelau (Union Group) (Western Samoa)',
-            'TL' => 'East Timor (Timor-Leste, Democratic Republic of)',
-            'TM' => 'Turkmenistan',
-            'TN' => 'Tunisia',
-            'TO' => 'Tonga',
-            'TR' => 'Turkey',
-            'TT' => 'Trinidad and Tobago',
-            'TV' => 'Tuvalu',
-            'TW' => 'Taiwan (R.O.C.)',
-            'TZ' => 'Tanzania',
-            'UA' => 'Ukraine',
-            'UG' => 'Uganda',
-            'UY' => 'Uruguay',
-            'UZ' => 'Uzbekistan',
-            'VA' => 'Vatican City',
-            'VC' => 'Saint Vincent and the Grenadines',
-            'VE' => 'Venezuela',
-            'VG' => 'British Virgin Islands',
-            'VN' => 'Vietnam',
-            'VU' => 'Vanuatu',
-            'WF' => 'Wallis and Futuna Islands',
-            'WS' => 'Western Samoa',
-            'YE' => 'Yemen',
-            'YT' => 'Mayotte (France)',
-            'ZA' => 'South Africa',
-            'ZM' => 'Zambia',
-            'ZW' => 'Zimbabwe',
-            'US' => 'United States',
-        ];
-
-        if ($countryID === NULL) {
-            // Nothing requested, return all counries
-            return $countries;
-        } elseif (isset($countries[$countryID])) {
-            // Found the requestd country ID, return the country name
-            return $countries[$countryID];
-        } else {
-            // Country ID not found, return false
-            return '';
         }
     }
 
@@ -700,7 +675,18 @@ class Address
      */
     public function toArray()
     {
-        return $this->properties;
+        return array(
+            'addr_id'   => $this->addr_id,
+            'uid'       => $this->uid,
+            'name'      => $this->name,
+            'company'   => $this->company,
+            'address1'  => $this->address1,
+            'address2'  => $this->address2,
+            'city'      => $this->city,
+            'state'     => $this->state,
+            'zip'       => $this->zip,
+            'country'       => $this->country,
+        );
     }
 
 
@@ -765,3 +751,5 @@ class Address
     }
 
 }
+
+?>
