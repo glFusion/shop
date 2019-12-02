@@ -16,6 +16,7 @@ use \ArrayAccess;
  * @author   Square Inc.
  * @license  http://www.apache.org/licenses/LICENSE-2.0 Apache License v2
  * @link     https://squareup.com/developers
+ * Note: This endpoint is in beta.
  */
 class OrderReturnLineItemModifier implements ArrayAccess
 {
@@ -72,7 +73,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
     );
   
     /**
-      * $uid Unique ID that identifies the return modifier only within this order.  This field is read-only.
+      * $uid Unique ID that identifies the return modifier only within this order.
       * @var string
       */
     protected $uid;
@@ -82,7 +83,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
       */
     protected $source_modifier_uid;
     /**
-      * $catalog_object_id The catalog object id referencing [CatalogModifier](#type-catalogmodifier).
+      * $catalog_object_id The catalog object id referencing `CatalogModifier`.
       * @var string
       */
     protected $catalog_object_id;
@@ -92,7 +93,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
       */
     protected $name;
     /**
-      * $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined [CatalogModifier](#type-catalogmodifier) price.
+      * $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined `CatalogModifier` price.
       * @var \SquareConnect\Model\Money
       */
     protected $base_price_money;
@@ -152,7 +153,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
   
     /**
      * Sets uid
-     * @param string $uid Unique ID that identifies the return modifier only within this order.  This field is read-only.
+     * @param string $uid Unique ID that identifies the return modifier only within this order.
      * @return $this
      */
     public function setUid($uid)
@@ -190,7 +191,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
   
     /**
      * Sets catalog_object_id
-     * @param string $catalog_object_id The catalog object id referencing [CatalogModifier](#type-catalogmodifier).
+     * @param string $catalog_object_id The catalog object id referencing `CatalogModifier`.
      * @return $this
      */
     public function setCatalogObjectId($catalog_object_id)
@@ -228,7 +229,7 @@ class OrderReturnLineItemModifier implements ArrayAccess
   
     /**
      * Sets base_price_money
-     * @param \SquareConnect\Model\Money $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined [CatalogModifier](#type-catalogmodifier) price.
+     * @param \SquareConnect\Model\Money $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined `CatalogModifier` price.
      * @return $this
      */
     public function setBasePriceMoney($base_price_money)

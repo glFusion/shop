@@ -81,6 +81,8 @@ class Address
      */
     public function __construct($data=array())
     {
+        global $_SHOP_CONF;
+
         if (!is_array($data)) {
             // Allow for a JSON string to be provided.
             $data = json_decode($data, true);
@@ -98,7 +100,7 @@ class Address
         $this->city = SHOP_getVar($data, 'city');
         $this->state = SHOP_getVar($data, 'state');
         $this->zip = SHOP_getVar($data, 'zip');
-        $this->country = SHOP_getVar($data, 'country');
+        $this->country = SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']);
     }
 
 
@@ -640,7 +642,7 @@ class Address
                 city = '" . DB_escapeString($this->city) . "',
                 state = '" . DB_escapeString($this->state) . "',
                 country = '" . DB_escapeString($this->country) . "',
-                zip = '" . DB_escapeString($this->zipostal) . "',
+                zip = '" . DB_escapeString($this->zip) . "',
                 billto_def = '" . $this->isDefaultBillto() . "',
                 shipto_def = '" . $this->isDefaultShipto() . "'";
         $sql = $sql1 . $sql . $sql2;
@@ -714,7 +716,7 @@ class Address
         if ($_SHOP_CONF['get_state'] == 2 && $this->state == '') {
             $invalid[] = 'state';
         }
-        if ($_SHOP_CONF['get_postal'] == 2 && $this->zipo == '') {
+        if ($_SHOP_CONF['get_postal'] == 2 && $this->zip == '') {
             $invalid[] = 'zip';
         }
         if ($_SHOP_CONF['get_country'] == 2 && $this->country == '') {

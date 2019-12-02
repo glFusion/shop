@@ -22,7 +22,6 @@ abstract class WebhookSignature
      */
     public static function verifyHeader($payload, $header, $secret, $tolerance = null)
     {
-        return true;
         // Extract timestamp and signatures from header
         $timestamp = self::getTimestamp($header);
         $signatures = self::getSignatures($header, self::EXPECTED_SCHEME);

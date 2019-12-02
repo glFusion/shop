@@ -241,7 +241,6 @@ class Customer
         $type = $type == 'billto' ? 'billto' : 'shipto';
         $Address = new Address($A);
         $Address->setUid($this->uid);     // Probably not included in $_POST
-
         $msg = $Address->isValid();
         if (!empty($msg)) {
             return array(-1, $msg);
@@ -377,9 +376,11 @@ class Customer
         // Set the address to select by default. Start by using the one
         // already stored in the cart, if any.
         if (empty(array_filter($A))) {
+            // No address specified, get the customer's default address
             $Def = $this->getDefaultAddress($type);
         } else {
-            $Def = new Address();
+            // Cart has an address, retrieve it to use as the default
+            $Def = new Address($A);
         }
         $addr_id = $Def->getID();
         $count = 0;

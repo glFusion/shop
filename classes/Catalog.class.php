@@ -185,6 +185,9 @@ class Catalog
             $query_str = '';
         }
         $pagenav_args = array();
+        if ($cat_id > 0) {
+            $pagenav_args[] = 'category=' . $cat_id;
+        }
 
         // If applicable, order by
         $sql .= " ORDER BY $sql_sortby";

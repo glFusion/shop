@@ -1,5 +1,62 @@
 # Change Log
 
+## Version 2.20191120.0 (2019-11-20)
+!!!important
+Square has begun the retirement process for Connect v1 APIs. See the [Connect v1 Retirement](/migrate-from-v1) information page for details.
+!!!
+
+* __GA releases:__ SDKs now support the new `modify_tax_basis` field to Discounts and v2 Sandbox
+* __BETA releases:__ SDKs now support the Shifts API webhooks for Labor shift created, updated, deleted, CreateLocation endpoint, and the ability to customize statement description in Payments API.
+* **Deprecated**: Support for v1Items API and v1Locations API is fully deprecated.
+
+
+
+
+## Version 2.20191023.0 (2019-10-23)
+* **GA release**: Merchants.ListMerchant is GA for all SDKs.
+* **Beta release**: All SDKs support new Locations API endpoint, CreateLocation.
+* **Beta release**: All SDKs support exclusion strategies for pricing rules.
+
+
+## Version 2.20190925.0 (2019-09-25)
+
+* **GA release**: All SDKs have been updated to support the new Merchants API.
+
+* **Beta release**: All SDKs have been updated to support the new endpoints (RetrieveLocation, UpdateLocation) added to the Locations API.
+
+* **Beta release**: All SDKs have been updated to support the new field (`mcc`) added to the `Location` type. 
+
+* **GA release**:  All SDKs have been updated to support the new field (`bin`) added to the `Card` type. 
+
+* **GA release**: All SDKs have been updated to support the new `CardPaymentDetails` fields  (`verification_results`, `statement_description`, and `verification_method`). 
+
+* **GA release**: All SDKs have been updated to support the new `Payment` field, (`employee_id`).
+
+
+## Version 2.20190814.2 (2019-08-23)
+
+* **Bug fix**: Fixed path parameters for `UpdateOrder`
+
+## Version 2.20190814.1 (2018-08-16)
+
+* **Bug fix**: Removed a currentlyunsupported API object type
+## Version 2.20190814.0 (2019-08-15)
+
+* **New functionality**: All SDKs have been updated to support the Sandbox v2 BETA release
+* **Deprecated functionality**: All Transactions API functionality is deprecated in favor of Payments API and Refunds API functionality.
+* **New functionality**: All SDKs have been updated to support the Payments API GA.
+* **New functionality**: All SDKs have been updated to support the Refunds API GA.
+* **New functionality**: All SDKs have been updated to support Orders API updates:
+  * Pickup Fulfillments, SearchOrders, and ServiceCharges move from BETA to GA.
+  * New BETA endpoint: Orders.UpdateOrder &mdash; use the UpdateOrder endpoint to update existing orders.
+  * New BETA functionality: Create shipment-type fulfillments. 
+* **New functionality**: Locations.RetrieveLocation &mdash; use the RetrieveLocation endpoint to load details for a specific Location.
+
+## Version 2.20190724.0 (2019-07-24)
+
+* **BETA releases**:
+  * Catalog API: supports item options with datatypes and enums for item options and item option values.
+
 ## Version 2.20190710.0 (2019-07-10)
 
 * **Retired functionality** &mdash; The `CatalogItem.image_url` field (deprecated under `Square-Version` YYYYMMDD) is retired and no longer included in Connect SDKs.
