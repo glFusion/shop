@@ -37,6 +37,7 @@ class CatalogItemVariation implements ArrayAccess
         'inventory_alert_threshold' => 'int',
         'user_data' => 'string',
         'service_duration' => 'int',
+        'item_option_values' => '\SquareConnect\Model\CatalogItemOptionValueForItemVariation[]',
         'measurement_unit_id' => 'string'
     );
   
@@ -58,6 +59,7 @@ class CatalogItemVariation implements ArrayAccess
         'inventory_alert_threshold' => 'inventory_alert_threshold',
         'user_data' => 'user_data',
         'service_duration' => 'service_duration',
+        'item_option_values' => 'item_option_values',
         'measurement_unit_id' => 'measurement_unit_id'
     );
   
@@ -79,6 +81,7 @@ class CatalogItemVariation implements ArrayAccess
         'inventory_alert_threshold' => 'setInventoryAlertThreshold',
         'user_data' => 'setUserData',
         'service_duration' => 'setServiceDuration',
+        'item_option_values' => 'setItemOptionValues',
         'measurement_unit_id' => 'setMeasurementUnitId'
     );
   
@@ -100,11 +103,12 @@ class CatalogItemVariation implements ArrayAccess
         'inventory_alert_threshold' => 'getInventoryAlertThreshold',
         'user_data' => 'getUserData',
         'service_duration' => 'getServiceDuration',
+        'item_option_values' => 'getItemOptionValues',
         'measurement_unit_id' => 'getMeasurementUnitId'
     );
   
     /**
-      * $item_id The ID of the [CatalogItem](#type-catalogitem) associated with this item variation. Searchable.
+      * $item_id The ID of the `CatalogItem` associated with this item variation. Searchable.
       * @var string
       */
     protected $item_id;
@@ -124,7 +128,7 @@ class CatalogItemVariation implements ArrayAccess
       */
     protected $upc;
     /**
-      * $ordinal The order in which this item variation should be displayed. This value is read-only. On writes, the ordinal for each item variation within a parent [CatalogItem](#type-catalogitem) is set according to the item variations's position. On reads, the value is not guaranteed to be sequential or unique.
+      * $ordinal The order in which this item variation should be displayed. This value is read-only. On writes, the ordinal for each item variation within a parent `CatalogItem` is set according to the item variations's position. On reads, the value is not guaranteed to be sequential or unique.
       * @var int
       */
     protected $ordinal;
@@ -139,7 +143,7 @@ class CatalogItemVariation implements ArrayAccess
       */
     protected $price_money;
     /**
-      * $location_overrides Per-[location](#type-location) price and inventory overrides.
+      * $location_overrides Per-location price and inventory overrides.
       * @var \SquareConnect\Model\ItemVariationLocationOverrides[]
       */
     protected $location_overrides;
@@ -159,15 +163,20 @@ class CatalogItemVariation implements ArrayAccess
       */
     protected $inventory_alert_threshold;
     /**
-      * $user_data Arbitrary user metadata to associate with the item variation. Cannot exceed 255 characters. Searchable.
+      * $user_data Arbitrary user metadata to associate with the item variation. Searchable. This field has max length of 255 Unicode code points.
       * @var string
       */
     protected $user_data;
     /**
-      * $service_duration If the [CatalogItem](#type-catalogitem) that owns this item variation is of type `APPOINTMENTS_SERVICE`, then this is the duration of the service in milliseconds. For example, a 30 minute appointment would have the value `1800000`, which is equal to 30 (minutes) * 60 (seconds per minute) * 1000 (milliseconds per second).
+      * $service_duration If the `CatalogItem` that owns this item variation is of type `APPOINTMENTS_SERVICE`, then this is the duration of the service in milliseconds. For example, a 30 minute appointment would have the value `1800000`, which is equal to 30 (minutes) * 60 (seconds per minute) * 1000 (milliseconds per second).
       * @var int
       */
     protected $service_duration;
+    /**
+      * $item_option_values List of item option values associated with this item variation. Listed in the same order as the item options of the parent item.
+      * @var \SquareConnect\Model\CatalogItemOptionValueForItemVariation[]
+      */
+    protected $item_option_values;
     /**
       * $measurement_unit_id ID of the ‘CatalogMeasurementUnit’ that is used to measure the quantity sold of this item variation. If left unset, the item will be sold in whole quantities.
       * @var string
@@ -246,6 +255,11 @@ class CatalogItemVariation implements ArrayAccess
             } else {
               $this->service_duration = null;
             }
+            if (isset($data["item_option_values"])) {
+              $this->item_option_values = $data["item_option_values"];
+            } else {
+              $this->item_option_values = null;
+            }
             if (isset($data["measurement_unit_id"])) {
               $this->measurement_unit_id = $data["measurement_unit_id"];
             } else {
@@ -264,7 +278,7 @@ class CatalogItemVariation implements ArrayAccess
   
     /**
      * Sets item_id
-     * @param string $item_id The ID of the [CatalogItem](#type-catalogitem) associated with this item variation. Searchable.
+     * @param string $item_id The ID of the `CatalogItem` associated with this item variation. Searchable.
      * @return $this
      */
     public function setItemId($item_id)
@@ -340,7 +354,7 @@ class CatalogItemVariation implements ArrayAccess
   
     /**
      * Sets ordinal
-     * @param int $ordinal The order in which this item variation should be displayed. This value is read-only. On writes, the ordinal for each item variation within a parent [CatalogItem](#type-catalogitem) is set according to the item variations's position. On reads, the value is not guaranteed to be sequential or unique.
+     * @param int $ordinal The order in which this item variation should be displayed. This value is read-only. On writes, the ordinal for each item variation within a parent `CatalogItem` is set according to the item variations's position. On reads, the value is not guaranteed to be sequential or unique.
      * @return $this
      */
     public function setOrdinal($ordinal)
@@ -397,7 +411,7 @@ class CatalogItemVariation implements ArrayAccess
   
     /**
      * Sets location_overrides
-     * @param \SquareConnect\Model\ItemVariationLocationOverrides[] $location_overrides Per-[location](#type-location) price and inventory overrides.
+     * @param \SquareConnect\Model\ItemVariationLocationOverrides[] $location_overrides Per-location price and inventory overrides.
      * @return $this
      */
     public function setLocationOverrides($location_overrides)
@@ -473,7 +487,7 @@ class CatalogItemVariation implements ArrayAccess
   
     /**
      * Sets user_data
-     * @param string $user_data Arbitrary user metadata to associate with the item variation. Cannot exceed 255 characters. Searchable.
+     * @param string $user_data Arbitrary user metadata to associate with the item variation. Searchable. This field has max length of 255 Unicode code points.
      * @return $this
      */
     public function setUserData($user_data)
@@ -492,12 +506,31 @@ class CatalogItemVariation implements ArrayAccess
   
     /**
      * Sets service_duration
-     * @param int $service_duration If the [CatalogItem](#type-catalogitem) that owns this item variation is of type `APPOINTMENTS_SERVICE`, then this is the duration of the service in milliseconds. For example, a 30 minute appointment would have the value `1800000`, which is equal to 30 (minutes) * 60 (seconds per minute) * 1000 (milliseconds per second).
+     * @param int $service_duration If the `CatalogItem` that owns this item variation is of type `APPOINTMENTS_SERVICE`, then this is the duration of the service in milliseconds. For example, a 30 minute appointment would have the value `1800000`, which is equal to 30 (minutes) * 60 (seconds per minute) * 1000 (milliseconds per second).
      * @return $this
      */
     public function setServiceDuration($service_duration)
     {
         $this->service_duration = $service_duration;
+        return $this;
+    }
+    /**
+     * Gets item_option_values
+     * @return \SquareConnect\Model\CatalogItemOptionValueForItemVariation[]
+     */
+    public function getItemOptionValues()
+    {
+        return $this->item_option_values;
+    }
+  
+    /**
+     * Sets item_option_values
+     * @param \SquareConnect\Model\CatalogItemOptionValueForItemVariation[] $item_option_values List of item option values associated with this item variation. Listed in the same order as the item options of the parent item.
+     * @return $this
+     */
+    public function setItemOptionValues($item_option_values)
+    {
+        $this->item_option_values = $item_option_values;
         return $this;
     }
     /**

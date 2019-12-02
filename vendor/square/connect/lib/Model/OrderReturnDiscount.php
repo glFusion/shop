@@ -16,6 +16,7 @@ use \ArrayAccess;
  * @author   Square Inc.
  * @license  http://www.apache.org/licenses/LICENSE-2.0 Apache License v2
  * @link     https://squareup.com/developers
+ * Note: This endpoint is in beta.
  */
 class OrderReturnDiscount implements ArrayAccess
 {
@@ -84,7 +85,7 @@ class OrderReturnDiscount implements ArrayAccess
     );
   
     /**
-      * $uid Unique ID that identifies the return discount only within this order.  This field is read-only.
+      * $uid Unique ID that identifies the return discount only within this order.
       * @var string
       */
     protected $uid;
@@ -94,7 +95,7 @@ class OrderReturnDiscount implements ArrayAccess
       */
     protected $source_discount_uid;
     /**
-      * $catalog_object_id The catalog object id referencing [CatalogDiscount](#type-catalogdiscount).
+      * $catalog_object_id The catalog object id referencing `CatalogDiscount`.
       * @var string
       */
     protected $catalog_object_id;
@@ -104,17 +105,17 @@ class OrderReturnDiscount implements ArrayAccess
       */
     protected $name;
     /**
-      * $type The type of the discount. If it is created by API, it would be either `FIXED_PERCENTAGE` or `FIXED_AMOUNT`.  VARIABLE_* is not supported in API because the order is created at the time of sale and either percentage or amount has to be specified. See [OrderLineItemDiscountType](#type-orderlineitemdiscounttype) for possible values
+      * $type The type of the discount. If it is created by API, it would be either `FIXED_PERCENTAGE` or `FIXED_AMOUNT`.  Discounts that don't reference a catalog object ID must have a type of `FIXED_PERCENTAGE` or `FIXED_AMOUNT`. See [OrderLineItemDiscountType](#type-orderlineitemdiscounttype) for possible values
       * @var string
       */
     protected $type;
     /**
-      * $percentage The percentage of the tax, as a string representation of a decimal number. A value of `7.25` corresponds to a percentage of 7.25%.  The percentage won't be set for an amount-based discount.
+      * $percentage The percentage of the tax, as a string representation of a decimal number. A value of `7.25` corresponds to a percentage of 7.25%.  `percentage` is not set for amount-based discounts.
       * @var string
       */
     protected $percentage;
     /**
-      * $amount_money The total monetary amount of the applicable discount. If it is at order level, it is the value of the order level discount. If it is at line item level, it is the value of the line item level discount.  The amount_money won't be set for a percentage-based discount.
+      * $amount_money The total declared monetary amount of the discount.  `amount_money` is not set for percentage-based discounts.
       * @var \SquareConnect\Model\Money
       */
     protected $amount_money;
@@ -124,7 +125,7 @@ class OrderReturnDiscount implements ArrayAccess
       */
     protected $applied_money;
     /**
-      * $scope Indicates the level at which the discount applies. This field is set by the server. If set in a CreateOrder request, it will be ignored on write. See [OrderLineItemDiscountScope](#type-orderlineitemdiscountscope) for possible values
+      * $scope Indicates the level at which the `OrderReturnDiscount` applies. For `ORDER` scoped discounts, the server will generate references in `applied_discounts` on all `OrderReturnLineItem`s. For `LINE_ITEM` scoped discounts, the discount will only apply to `OrderReturnLineItem`s with references in their `applied_discounts` field. See [OrderLineItemDiscountScope](#type-orderlineitemdiscountscope) for possible values
       * @var string
       */
     protected $scope;
@@ -194,7 +195,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets uid
-     * @param string $uid Unique ID that identifies the return discount only within this order.  This field is read-only.
+     * @param string $uid Unique ID that identifies the return discount only within this order.
      * @return $this
      */
     public function setUid($uid)
@@ -232,7 +233,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets catalog_object_id
-     * @param string $catalog_object_id The catalog object id referencing [CatalogDiscount](#type-catalogdiscount).
+     * @param string $catalog_object_id The catalog object id referencing `CatalogDiscount`.
      * @return $this
      */
     public function setCatalogObjectId($catalog_object_id)
@@ -270,7 +271,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets type
-     * @param string $type The type of the discount. If it is created by API, it would be either `FIXED_PERCENTAGE` or `FIXED_AMOUNT`.  VARIABLE_* is not supported in API because the order is created at the time of sale and either percentage or amount has to be specified. See [OrderLineItemDiscountType](#type-orderlineitemdiscounttype) for possible values
+     * @param string $type The type of the discount. If it is created by API, it would be either `FIXED_PERCENTAGE` or `FIXED_AMOUNT`.  Discounts that don't reference a catalog object ID must have a type of `FIXED_PERCENTAGE` or `FIXED_AMOUNT`. See [OrderLineItemDiscountType](#type-orderlineitemdiscounttype) for possible values
      * @return $this
      */
     public function setType($type)
@@ -289,7 +290,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets percentage
-     * @param string $percentage The percentage of the tax, as a string representation of a decimal number. A value of `7.25` corresponds to a percentage of 7.25%.  The percentage won't be set for an amount-based discount.
+     * @param string $percentage The percentage of the tax, as a string representation of a decimal number. A value of `7.25` corresponds to a percentage of 7.25%.  `percentage` is not set for amount-based discounts.
      * @return $this
      */
     public function setPercentage($percentage)
@@ -308,7 +309,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets amount_money
-     * @param \SquareConnect\Model\Money $amount_money The total monetary amount of the applicable discount. If it is at order level, it is the value of the order level discount. If it is at line item level, it is the value of the line item level discount.  The amount_money won't be set for a percentage-based discount.
+     * @param \SquareConnect\Model\Money $amount_money The total declared monetary amount of the discount.  `amount_money` is not set for percentage-based discounts.
      * @return $this
      */
     public function setAmountMoney($amount_money)
@@ -346,7 +347,7 @@ class OrderReturnDiscount implements ArrayAccess
   
     /**
      * Sets scope
-     * @param string $scope Indicates the level at which the discount applies. This field is set by the server. If set in a CreateOrder request, it will be ignored on write. See [OrderLineItemDiscountScope](#type-orderlineitemdiscountscope) for possible values
+     * @param string $scope Indicates the level at which the `OrderReturnDiscount` applies. For `ORDER` scoped discounts, the server will generate references in `applied_discounts` on all `OrderReturnLineItem`s. For `LINE_ITEM` scoped discounts, the discount will only apply to `OrderReturnLineItem`s with references in their `applied_discounts` field. See [OrderLineItemDiscountScope](#type-orderlineitemdiscountscope) for possible values
      * @return $this
      */
     public function setScope($scope)

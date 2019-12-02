@@ -16,6 +16,7 @@ use \ArrayAccess;
  * @author   Square Inc.
  * @license  http://www.apache.org/licenses/LICENSE-2.0 Apache License v2
  * @link     https://squareup.com/developers
+ * Note: This endpoint is in beta.
  */
 class OrderReturnLineItem implements ArrayAccess
 {
@@ -35,6 +36,8 @@ class OrderReturnLineItem implements ArrayAccess
         'return_modifiers' => '\SquareConnect\Model\OrderReturnLineItemModifier[]',
         'return_taxes' => '\SquareConnect\Model\OrderReturnTax[]',
         'return_discounts' => '\SquareConnect\Model\OrderReturnDiscount[]',
+        'applied_taxes' => '\SquareConnect\Model\OrderLineItemAppliedTax[]',
+        'applied_discounts' => '\SquareConnect\Model\OrderLineItemAppliedDiscount[]',
         'base_price_money' => '\SquareConnect\Model\Money',
         'variation_total_price_money' => '\SquareConnect\Model\Money',
         'gross_return_money' => '\SquareConnect\Model\Money',
@@ -59,6 +62,8 @@ class OrderReturnLineItem implements ArrayAccess
         'return_modifiers' => 'return_modifiers',
         'return_taxes' => 'return_taxes',
         'return_discounts' => 'return_discounts',
+        'applied_taxes' => 'applied_taxes',
+        'applied_discounts' => 'applied_discounts',
         'base_price_money' => 'base_price_money',
         'variation_total_price_money' => 'variation_total_price_money',
         'gross_return_money' => 'gross_return_money',
@@ -83,6 +88,8 @@ class OrderReturnLineItem implements ArrayAccess
         'return_modifiers' => 'setReturnModifiers',
         'return_taxes' => 'setReturnTaxes',
         'return_discounts' => 'setReturnDiscounts',
+        'applied_taxes' => 'setAppliedTaxes',
+        'applied_discounts' => 'setAppliedDiscounts',
         'base_price_money' => 'setBasePriceMoney',
         'variation_total_price_money' => 'setVariationTotalPriceMoney',
         'gross_return_money' => 'setGrossReturnMoney',
@@ -107,6 +114,8 @@ class OrderReturnLineItem implements ArrayAccess
         'return_modifiers' => 'getReturnModifiers',
         'return_taxes' => 'getReturnTaxes',
         'return_discounts' => 'getReturnDiscounts',
+        'applied_taxes' => 'getAppliedTaxes',
+        'applied_discounts' => 'getAppliedDiscounts',
         'base_price_money' => 'getBasePriceMoney',
         'variation_total_price_money' => 'getVariationTotalPriceMoney',
         'gross_return_money' => 'getGrossReturnMoney',
@@ -116,7 +125,7 @@ class OrderReturnLineItem implements ArrayAccess
     );
   
     /**
-      * $uid Unique identifier for this return line item entry. This is a read-only field.
+      * $uid Unique identifier for this return line item entry.
       * @var string
       */
     protected $uid;
@@ -146,7 +155,7 @@ class OrderReturnLineItem implements ArrayAccess
       */
     protected $note;
     /**
-      * $catalog_object_id The [CatalogItemVariation](#type-catalogitemvariation) id applied to this returned line item.
+      * $catalog_object_id The `CatalogItemVariation` id applied to this returned line item.
       * @var string
       */
     protected $catalog_object_id;
@@ -156,20 +165,30 @@ class OrderReturnLineItem implements ArrayAccess
       */
     protected $variation_name;
     /**
-      * $return_modifiers The [CatalogModifier](#type-catalogmodifier)s applied to this line item.
+      * $return_modifiers The `CatalogModifier`s applied to this line item.
       * @var \SquareConnect\Model\OrderReturnLineItemModifier[]
       */
     protected $return_modifiers;
     /**
-      * $return_taxes A list of taxes applied to this line item. On read or retrieve, this list includes both item-level taxes and any return-level taxes apportioned to this item.
+      * $return_taxes A list of taxes applied to this line item. On read or retrieve, this list includes both item-level taxes and any return-level taxes apportioned to this item.  This field has been deprecated in favour of `applied_taxes`.
       * @var \SquareConnect\Model\OrderReturnTax[]
       */
     protected $return_taxes;
     /**
-      * $return_discounts A list of discounts applied to this line item. On read or retrieve, this list includes both item-level discounts and any return-level discounts apportioned to this item.
+      * $return_discounts A list of discounts applied to this line item. On read or retrieve, this list includes both item-level discounts and any return-level discounts apportioned to this item.  This field has been deprecated in favour of `applied_discounts`.
       * @var \SquareConnect\Model\OrderReturnDiscount[]
       */
     protected $return_discounts;
+    /**
+      * $applied_taxes The list of references to `OrderReturnTax` entities applied to the returned line item. Each `OrderLineItemAppliedTax` has a `tax_uid` that references the `uid` of a top-level `OrderReturnTax` applied to the returned line item. On reads, the amount applied is populated.
+      * @var \SquareConnect\Model\OrderLineItemAppliedTax[]
+      */
+    protected $applied_taxes;
+    /**
+      * $applied_discounts The list of references to `OrderReturnDiscount` entities applied to the returned line item. Each `OrderLineItemAppliedDiscount` has a `discount_uid` that references the `uid` of a top-level `OrderReturnDiscount` applied to the returned line item. On reads, the amount applied is populated.
+      * @var \SquareConnect\Model\OrderLineItemAppliedDiscount[]
+      */
+    protected $applied_discounts;
     /**
       * $base_price_money The base price for a single unit of the line item.
       * @var \SquareConnect\Model\Money
@@ -181,22 +200,22 @@ class OrderReturnLineItem implements ArrayAccess
       */
     protected $variation_total_price_money;
     /**
-      * $gross_return_money The gross return amount of money calculated as (item base price + modifiers price) * quantity.  This field is read-only.
+      * $gross_return_money The gross return amount of money calculated as (item base price + modifiers price) * quantity.
       * @var \SquareConnect\Model\Money
       */
     protected $gross_return_money;
     /**
-      * $total_tax_money The total tax amount of money to return for the line item.  This field is read-only.
+      * $total_tax_money The total tax amount of money to return for the line item.
       * @var \SquareConnect\Model\Money
       */
     protected $total_tax_money;
     /**
-      * $total_discount_money The total discount amount of money to return for the line item.  This field is read-only.
+      * $total_discount_money The total discount amount of money to return for the line item.
       * @var \SquareConnect\Model\Money
       */
     protected $total_discount_money;
     /**
-      * $total_money The total amount of money to return for this line item.  This field is read-only.
+      * $total_money The total amount of money to return for this line item.
       * @var \SquareConnect\Model\Money
       */
     protected $total_money;
@@ -263,6 +282,16 @@ class OrderReturnLineItem implements ArrayAccess
             } else {
               $this->return_discounts = null;
             }
+            if (isset($data["applied_taxes"])) {
+              $this->applied_taxes = $data["applied_taxes"];
+            } else {
+              $this->applied_taxes = null;
+            }
+            if (isset($data["applied_discounts"])) {
+              $this->applied_discounts = $data["applied_discounts"];
+            } else {
+              $this->applied_discounts = null;
+            }
             if (isset($data["base_price_money"])) {
               $this->base_price_money = $data["base_price_money"];
             } else {
@@ -306,7 +335,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets uid
-     * @param string $uid Unique identifier for this return line item entry. This is a read-only field.
+     * @param string $uid Unique identifier for this return line item entry.
      * @return $this
      */
     public function setUid($uid)
@@ -420,7 +449,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets catalog_object_id
-     * @param string $catalog_object_id The [CatalogItemVariation](#type-catalogitemvariation) id applied to this returned line item.
+     * @param string $catalog_object_id The `CatalogItemVariation` id applied to this returned line item.
      * @return $this
      */
     public function setCatalogObjectId($catalog_object_id)
@@ -458,7 +487,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets return_modifiers
-     * @param \SquareConnect\Model\OrderReturnLineItemModifier[] $return_modifiers The [CatalogModifier](#type-catalogmodifier)s applied to this line item.
+     * @param \SquareConnect\Model\OrderReturnLineItemModifier[] $return_modifiers The `CatalogModifier`s applied to this line item.
      * @return $this
      */
     public function setReturnModifiers($return_modifiers)
@@ -477,7 +506,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets return_taxes
-     * @param \SquareConnect\Model\OrderReturnTax[] $return_taxes A list of taxes applied to this line item. On read or retrieve, this list includes both item-level taxes and any return-level taxes apportioned to this item.
+     * @param \SquareConnect\Model\OrderReturnTax[] $return_taxes A list of taxes applied to this line item. On read or retrieve, this list includes both item-level taxes and any return-level taxes apportioned to this item.  This field has been deprecated in favour of `applied_taxes`.
      * @return $this
      */
     public function setReturnTaxes($return_taxes)
@@ -496,12 +525,50 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets return_discounts
-     * @param \SquareConnect\Model\OrderReturnDiscount[] $return_discounts A list of discounts applied to this line item. On read or retrieve, this list includes both item-level discounts and any return-level discounts apportioned to this item.
+     * @param \SquareConnect\Model\OrderReturnDiscount[] $return_discounts A list of discounts applied to this line item. On read or retrieve, this list includes both item-level discounts and any return-level discounts apportioned to this item.  This field has been deprecated in favour of `applied_discounts`.
      * @return $this
      */
     public function setReturnDiscounts($return_discounts)
     {
         $this->return_discounts = $return_discounts;
+        return $this;
+    }
+    /**
+     * Gets applied_taxes
+     * @return \SquareConnect\Model\OrderLineItemAppliedTax[]
+     */
+    public function getAppliedTaxes()
+    {
+        return $this->applied_taxes;
+    }
+  
+    /**
+     * Sets applied_taxes
+     * @param \SquareConnect\Model\OrderLineItemAppliedTax[] $applied_taxes The list of references to `OrderReturnTax` entities applied to the returned line item. Each `OrderLineItemAppliedTax` has a `tax_uid` that references the `uid` of a top-level `OrderReturnTax` applied to the returned line item. On reads, the amount applied is populated.
+     * @return $this
+     */
+    public function setAppliedTaxes($applied_taxes)
+    {
+        $this->applied_taxes = $applied_taxes;
+        return $this;
+    }
+    /**
+     * Gets applied_discounts
+     * @return \SquareConnect\Model\OrderLineItemAppliedDiscount[]
+     */
+    public function getAppliedDiscounts()
+    {
+        return $this->applied_discounts;
+    }
+  
+    /**
+     * Sets applied_discounts
+     * @param \SquareConnect\Model\OrderLineItemAppliedDiscount[] $applied_discounts The list of references to `OrderReturnDiscount` entities applied to the returned line item. Each `OrderLineItemAppliedDiscount` has a `discount_uid` that references the `uid` of a top-level `OrderReturnDiscount` applied to the returned line item. On reads, the amount applied is populated.
+     * @return $this
+     */
+    public function setAppliedDiscounts($applied_discounts)
+    {
+        $this->applied_discounts = $applied_discounts;
         return $this;
     }
     /**
@@ -553,7 +620,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets gross_return_money
-     * @param \SquareConnect\Model\Money $gross_return_money The gross return amount of money calculated as (item base price + modifiers price) * quantity.  This field is read-only.
+     * @param \SquareConnect\Model\Money $gross_return_money The gross return amount of money calculated as (item base price + modifiers price) * quantity.
      * @return $this
      */
     public function setGrossReturnMoney($gross_return_money)
@@ -572,7 +639,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets total_tax_money
-     * @param \SquareConnect\Model\Money $total_tax_money The total tax amount of money to return for the line item.  This field is read-only.
+     * @param \SquareConnect\Model\Money $total_tax_money The total tax amount of money to return for the line item.
      * @return $this
      */
     public function setTotalTaxMoney($total_tax_money)
@@ -591,7 +658,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets total_discount_money
-     * @param \SquareConnect\Model\Money $total_discount_money The total discount amount of money to return for the line item.  This field is read-only.
+     * @param \SquareConnect\Model\Money $total_discount_money The total discount amount of money to return for the line item.
      * @return $this
      */
     public function setTotalDiscountMoney($total_discount_money)
@@ -610,7 +677,7 @@ class OrderReturnLineItem implements ArrayAccess
   
     /**
      * Sets total_money
-     * @param \SquareConnect\Model\Money $total_money The total amount of money to return for this line item.  This field is read-only.
+     * @param \SquareConnect\Model\Money $total_money The total amount of money to return for this line item.
      * @return $this
      */
     public function setTotalMoney($total_money)
