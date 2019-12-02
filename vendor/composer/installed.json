@@ -1,17 +1,17 @@
 [
     {
         "name": "square/connect",
-        "version": "2.20190710.0",
-        "version_normalized": "2.20190710.0.0",
+        "version": "2.20191120.0",
+        "version_normalized": "2.20191120.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/square/connect-php-sdk.git",
-            "reference": "5a54406d8175f0663a1cc88df32c2b7ca0f3c643"
+            "reference": "12053024c2a6ce3514594dfbf2ad0d630c304d78"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/square/connect-php-sdk/zipball/5a54406d8175f0663a1cc88df32c2b7ca0f3c643",
-            "reference": "5a54406d8175f0663a1cc88df32c2b7ca0f3c643",
+            "url": "https://api.github.com/repos/square/connect-php-sdk/zipball/12053024c2a6ce3514594dfbf2ad0d630c304d78",
+            "reference": "12053024c2a6ce3514594dfbf2ad0d630c304d78",
             "shasum": ""
         },
         "require": {
@@ -25,7 +25,7 @@
             "satooshi/php-coveralls": "~0.6.1",
             "squizlabs/php_codesniffer": "~2.0"
         },
-        "time": "2019-07-10T17:03:51+00:00",
+        "time": "2019-11-21T00:19:47+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -54,17 +54,17 @@
     },
     {
         "name": "stripe/stripe-php",
-        "version": "v6.40.0",
-        "version_normalized": "6.40.0.0",
+        "version": "v6.43.1",
+        "version_normalized": "6.43.1.0",
         "source": {
             "type": "git",
             "url": "https://github.com/stripe/stripe-php.git",
-            "reference": "9c22ffab790ef4dae0f371929de50e8b53c9ec8d"
+            "reference": "42fcdaf99c44bb26937223f8eae1f263491d5ab8"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/stripe/stripe-php/zipball/9c22ffab790ef4dae0f371929de50e8b53c9ec8d",
-            "reference": "9c22ffab790ef4dae0f371929de50e8b53c9ec8d",
+            "url": "https://api.github.com/repos/stripe/stripe-php/zipball/42fcdaf99c44bb26937223f8eae1f263491d5ab8",
+            "reference": "42fcdaf99c44bb26937223f8eae1f263491d5ab8",
             "shasum": ""
         },
         "require": {
@@ -79,7 +79,7 @@
             "squizlabs/php_codesniffer": "~2.0",
             "symfony/process": "~2.8"
         },
-        "time": "2019-06-27T23:24:51+00:00",
+        "time": "2019-08-29T16:56:12+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
