@@ -318,12 +318,15 @@
               <br />
             <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
               <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage({img_id});">{$LANG_ADMIN['delete']}</button>
-              <br /><button class="uk-button uk-button-mini uk-button-primary img_def_btn" id="setDefBtn_{img_id}"
+              <span class="img_def_btn" id="setDefBtn_{img_id}"
 {!if img_cnt}
 {!else}
-                style="visibility:hidden;"
+                style="display:none;"
 {!endif}
+              >
+                <br /><button class="uk-button uk-button-mini uk-button-primary"
                 onclick="return setDefImg({img_id});">{$LANG_SHOP['set_as_def']}</button>
+              </span>
             </figcaption>
             </figure>
           </li>
@@ -536,8 +539,10 @@ function setDefImg(img_id)
         success: function(result) {
             try {
                 if (result.status) {    // Default was changed
-                    $(".img_def_btn:not(#setDefBtn_" + img_id + ")").css("visibility", "");
-                    $("#setDefBtn_" + img_id).css("visibility", "hidden");
+                    // change all buttons except the new default to be displayed
+                    $(".img_def_btn:not(#setDefBtn_" + img_id + ")").css("display", "");
+                    // hide the "default" button for the new default image
+                    $("#setDefBtn_" + img_id).css("display", "none");
                 }
             } catch(err) {
             }
@@ -643,8 +648,10 @@ function addImage(tn_url, img_url, img_id)
         '   <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">' +
         '      <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage(' + img_id + ');">' +
         '    {$LANG_ADMIN['delete']}</button>' +
-        '      <br /><button class="uk-button uk-button-mini uk-button-primary img_def_btn" id="setDefBtn_' + img_id + '" onclick="return setDefImg(' + img_id + ');">' +
+        '     <span class="img_def_btn" id="setDefBtn_' + img_id + '">' +
+        '      <br /><button class="uk-button uk-button-mini uk-button-primary" onclick="return setDefImg(' + img_id + ');">' +
         '    {$LANG_SHOP['set_as_def']}</button>' +
+        '    </span>' +
         '   </figcaption></figure>';
     var ul = document.getElementById("imagegrid");
     var li = document.createElement("li");
