@@ -640,7 +640,7 @@ class Address
                 city = '" . DB_escapeString($this->city) . "',
                 state = '" . DB_escapeString($this->state) . "',
                 country = '" . DB_escapeString($this->country) . "',
-                zip = '" . DB_escapeString($this->zipostal) . "',
+                zip = '" . DB_escapeString($this->zip) . "',
                 billto_def = '" . $this->isDefaultBillto() . "',
                 shipto_def = '" . $this->isDefaultShipto() . "'";
         $sql = $sql1 . $sql . $sql2;
@@ -714,7 +714,7 @@ class Address
         if ($_SHOP_CONF['get_state'] == 2 && $this->state == '') {
             $invalid[] = 'state';
         }
-        if ($_SHOP_CONF['get_postal'] == 2 && $this->zipo == '') {
+        if ($_SHOP_CONF['get_postal'] == 2 && $this->zip == '') {
             $invalid[] = 'zip';
         }
         if ($_SHOP_CONF['get_country'] == 2 && $this->country == '') {
