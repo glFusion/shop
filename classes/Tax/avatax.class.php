@@ -41,16 +41,13 @@ class avatax extends \Shop\Tax
 
     /**
      * Set up internal variables and get the configuration.
-     *
-     * @param   object  $Address    Address to look up
      */
-    public function __construct($Address)
+    public function __construct()
     {
         global $_SHOP_CONF;
         $this->account = $_SHOP_CONF['tax_avatax_account'];
         $this->api_key = $_SHOP_CONF['tax_avatax_key'];
         $this->test_mode = (int)$_SHOP_CONF['tax_test_mode'];
-        $this->Address = $Address;
         if ($this->test_mode) {
             $this->endpoint = 'https://sandbox-rest.avatax.com/api/v2/taxrates/byaddress';
         } else {
@@ -66,7 +63,29 @@ class avatax extends \Shop\Tax
      */
     public function getTaxRate()
     {
-        global $_SHOP_CONF;
+        return $this->_getData()['totalRate'];
+    }
+
+
+    /**
+     * Get all the tax elements, e.g. State, County, City, etc.
+     *
+     * @return  array       Array of tax data
+     */
+    public function getTaxBreakdown()
+    {
+        return $this->_getData()['rates'];
+    }
+
+
+    /**
+     * Get tax data from the provider.
+     *
+     * @return  array   Decoded array of data from the JSON reply
+     */
+    private function _getData()
+    {
+        global $_SHOP_CONF, $LANG_SHOP;
 
         $resp = $this->getCache();      // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
@@ -99,18 +118,26 @@ class avatax extends \Shop\Tax
             
             if ($status['http_code'] == 200) {
                 $this->setCache($resp);
-                $taxRate = (float)$decoded['totalRate'];
+                //$taxRate = (float)$decoded['totalRate'];
             } elseif (isset($decoded['error'])) {
                 $err = $decoded['error']['details'][0];
                 SHOP_log("Tax/Avatax {$err['code']}: {$err['message']}, {$err['description']}, {$err['helpLink']}", SHOP_LOG_ERROR);
-                $taxRate = $_SHOP_CONF['tax_rate'];
+                //$taxRate = $_SHOP_CONF['tax_rate'];
+                $decoded = array(
+                    'totalRate' => $_SHOP_CONF['tax_rate'],
+                    'rates' => array(
+                        'rate'  => $_SHOP_CONF['tax_rate'],
+                        'name'  => $LANG_SHOP['sales_tax'],
+                        'type'  => 'Total',
+                    ),
+                );
             }
         } else {
             $decoded = json_decode($resp, true);
-            $taxRate = (float)$decoded['totalRate'];
+            //$taxRate = (float)$decoded['totalRate'];
         }
 
-        return $taxRate;
+        return $decoded;
     }
 }
 

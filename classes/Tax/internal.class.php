@@ -22,13 +22,36 @@ namespace Shop\Tax;
  */
 class internal extends \Shop\Tax
 {
+
     /**
-     * Included for compatibility but not used by the Internal tax rate class.
+     * Get the sales tax rate.
+     * The default function only returns the globally-configured rate.
      *
-     * @param   object  $Address    Address to look up
+     * @return  float   Default configured tax rate.
      */
-    public function __construct($Address=NULL)
+    public function getTaxRate()
     {
+        global $_SHOP_CONF;
+        return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+    }
+
+
+    /**
+     * Get all the tax elements, e.g. State, County, City, etc.
+     *
+     * @return  array       Array of tax data
+     */
+    public function getTaxBreakdown()
+    {
+        global $LANG_SHOP;
+
+        return array(
+            array(
+                'rate'  => $this->getTaxRate(),
+                'name'  => $LANG_SHOP['sales_tax'],
+                'type'  => 'Total',
+            ),
+        );
     }
 
 }

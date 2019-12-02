@@ -26,16 +26,34 @@ class Tax
 
 
     /**
-     * Get the tax rate for the provided address.
-     * The default function only returns the globally-configured rate.
+     * Get an instance of the tax provider class.
      *
-     * @return  float   Globally-configured rate.
+     * @return  object      Tax provider object
      */
-    public function getTaxRate()
+    public static function getProvider()
     {
         global $_SHOP_CONF;
 
-        return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+        $cls = '\\Shop\\Tax\\' . $_SHOP_CONF['tax_provider'];
+        if (class_exists($cls)) {
+            return new $cls;
+        } else {
+            // Fallback to internal provider
+            return new \Shop\Tax\internal;
+        }
+    }
+
+
+    /**
+     * Set the address for the tax calculation.
+     *
+     * @param   object  $Addr   Address object
+     * @return  object  $this
+     */
+    public function withAddress($Addr)
+    {
+        $this->Address = $Addr;
+        return $this;
     }
 
 
