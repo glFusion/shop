@@ -745,6 +745,10 @@ $LANG_configselects['shop'] = array(
         'Category List' => 'categories',
         'Order List' => 'orders',
     ),
+    21 => array(
+        'Avalara Free Api' => 'avalara',
+        'Internal Config' => 'internal',
+    ),
 );
 
 ?>
