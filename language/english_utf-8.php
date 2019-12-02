@@ -560,6 +560,7 @@ $LANG_SHOP = array (
 'time' => 'Time',
 'carriers' => 'Carrier Modules',
 'set_as_def' => 'Set as Default',
+'sales_tax' => 'Sales Tax',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -679,6 +680,10 @@ $LANG_confignames['shop'] = array(
     'remit_to'      => 'Remit To (Attn)',
     'adm_def_view'  => 'Default Admin View',
     'def_prod_type' => 'Default Product Type',
+    'tax_provider'  => 'Sales Tax Calculation Provider',
+    'tax_test_mode' => 'Test Mode?',
+    'tax_avatax_account' => 'Avalar Avatax Account',
+    'tax_avatax_key' => 'Avalar Avatax Access key',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -702,6 +707,7 @@ $LANG_fs['shop'] = array(
     'fs_gc'     => 'Gift Card Configuration',
     'fs_gc_format' => 'Gift Card Format',
     'fs_feeds'  => 'Feeds',
+    'fs_tax'    => 'Taxes',
 );
 
 /**
@@ -746,7 +752,7 @@ $LANG_configselects['shop'] = array(
         'Order List' => 'orders',
     ),
     21 => array(
-        'Avalara Free Api' => 'avalara',
+        'Avalara Free Api' => 'avatax',
         'Internal Config' => 'internal',
     ),
 );
