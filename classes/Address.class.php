@@ -81,6 +81,8 @@ class Address
      */
     public function __construct($data=array())
     {
+        global $_SHOP_CONF;
+
         if (!is_array($data)) {
             // Allow for a JSON string to be provided.
             $data = json_decode($data, true);
@@ -98,7 +100,7 @@ class Address
         $this->city = SHOP_getVar($data, 'city');
         $this->state = SHOP_getVar($data, 'state');
         $this->zip = SHOP_getVar($data, 'zip');
-        $this->country = SHOP_getVar($data, 'country');
+        $this->country = SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']);
     }
 
 
