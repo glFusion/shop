@@ -321,7 +321,7 @@ class Address
      */
     public function getState()
     {
-        return (string)$this->state;
+        return (string)strtoupper($this->state);
     }
 
 
@@ -369,7 +369,7 @@ class Address
      */
     public function getCountry()
     {
-        return (string)$this->country;
+        return (string)strtoupper($this->country);
     }
 
 
