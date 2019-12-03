@@ -24,6 +24,10 @@ class Tax
      * @var object */
     protected $Address;
 
+    /** Use test endpoints.
+     * @var boolean */
+    protected $test_mode = false;
+
 
     /**
      * Get an instance of the tax provider class.
@@ -58,10 +62,9 @@ class Tax
 
 
     /**
-     * Make a cache key for a specific tracking request.
+     * Make a cache key for a specific tax request.
      *
-     * @param   string  $shipper    Shipper ID code
-     * @param   string  $tracknum   Tracking Number
+     * @param   string  $key    Additional cache key for data type
      * @return  string      Cache key
      */
     private function _makeCacheKey($key='')
@@ -80,7 +83,7 @@ class Tax
     /**
      * Read a Tracking object from cache.
      *
-     * @param   object  $Address    Address object
+     * @param   string  $key    Additional cache key for data type
      * @return  object|null     Tracking object, NULL if not found
      */
     protected function getCache($key='')
@@ -106,6 +109,7 @@ class Tax
      * Set the current Tracking object into cache.
      *
      * @param   string  $data       Data to set in cache
+     * @param   string  $key        Additional cache key for data type
      * @param   integer $exp        Seconds for cache timeout
      */
     protected function setCache($data, $key='', $exp=0)
@@ -141,6 +145,7 @@ class Tax
         global $_SHOP_CONF;
 
         if (empty($_SHOP_CONF['tax_nexuses'])) {
+            // No nexus locations configured
             return false;
         }
 

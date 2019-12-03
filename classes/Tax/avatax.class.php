@@ -26,10 +26,6 @@ class avatax extends \Shop\Tax
      * @var integer */
     private $curl_timeout = 5000;
 
-    /** Use test endpoints.
-     * @var boolean */
-    private $test_mode = false;      // todo configuration item
-
     /** Primary API endpoint.
      * @var string */
     private $endpoint;

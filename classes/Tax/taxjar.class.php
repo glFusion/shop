@@ -32,8 +32,6 @@ class taxjar extends \Shop\Tax
      * @var string */
     private $api_key;
 
-    private $test_mode;
-
 
     /**
      * Set up local variables and call the parent constructor.
