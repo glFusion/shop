@@ -29,7 +29,7 @@ class internal extends \Shop\Tax
      *
      * @return  float   Default configured tax rate.
      */
-    public function getTaxRate()
+    public function getRate()
     {
         global $_SHOP_CONF;
         return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
@@ -41,13 +41,13 @@ class internal extends \Shop\Tax
      *
      * @return  array       Array of tax data
      */
-    public function getTaxBreakdown()
+    public function getRateBreakdown()
     {
         global $LANG_SHOP;
 
         return array(
             array(
-                'rate'  => $this->getTaxRate(),
+                'rate'  => $this->getRate(),
                 'name'  => $LANG_SHOP['sales_tax'],
                 'type'  => 'Total',
             ),

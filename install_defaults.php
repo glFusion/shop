@@ -989,6 +989,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'tax_taxjar_key',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 30,
+        'fieldset' => 10,
+        'selection_array' => 0,
+        'sort' => 50,
+        'set' => true,
+        'group' => 'shop',
+    ),
 );
 
 

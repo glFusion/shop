@@ -601,7 +601,7 @@ class Order
         case 'checkout':
             $this->tax_rate = Tax::getProvider()
                 ->withAddress($this->Shipto)
-                ->getTaxRate();
+                ->getRate();
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -1362,8 +1362,10 @@ class Order
      */
     public function calcTax()
     {
-        $this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getTaxRate();
-
+        if ($this->Shipto === NULL) {
+            return 0;
+        }
+        $this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
         if ($this->tax_rate == 0) {
             $this->tax_items = 0;
             $this->tax = 0;

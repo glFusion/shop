@@ -684,6 +684,7 @@ $LANG_confignames['shop'] = array(
     'tax_test_mode' => 'Test Mode?',
     'tax_avatax_account' => 'Avalar Avatax Account',
     'tax_avatax_key' => 'Avalar Avatax Access key',
+    'tax_taxjar_key' => 'TaxJar API Key',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -691,6 +692,7 @@ $LANG_configsubgroups['shop'] = array(
     'sg_main'   => 'Main Settings',
     'sg_shop'   => 'Shop Information',
     'sg_gc'     => 'Gift Cards',
+    'sg_tax'    => 'Sales Tax',
 );
 
 /** Language strings for the field set names in the config section */
@@ -754,6 +756,7 @@ $LANG_configselects['shop'] = array(
     21 => array(
         'Avalara Free Api' => 'avatax',
         'Internal Config' => 'internal',
+        'TaxJar API' => 'taxjar',
     ),
 );
 
