@@ -66,10 +66,10 @@ class Tax
      */
     private function _makeCacheKey()
     {
-        $parts = $this->Address->getAddress1() .
-            $this->Address->getCity() .
+        $parts = $this->Address->getCity() .
             $this->Address->getState() .
-            $this->Address->getPostal();
+            $this->Address->getPostal() .
+            $this->Address->getCountry();
         return 'shop.tax.' . $this->key . '.' . md5($parts);
     }
 
