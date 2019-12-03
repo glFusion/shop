@@ -66,7 +66,11 @@ class taxjar extends \Shop\Tax
     public function getRate()
     {
         $data = $this->_getData()['rate'];
-        return $data['combined_rate'];
+        foreach (array('combined_rate', 'standard_rate') as $key)
+        if (array_key_exists($key, $data)) {
+            return (float)$data[$key];
+        }
+        return 0;
     }
 
 
