@@ -52,7 +52,7 @@ class Order
     /** Flag to indicate that "no shipping" should be set.
      * @deprecated ?
      * @var boolean */
-    var $no_shipping = 1;
+    private $no_shipping = 1;
 
     /** Address field names.
      * @var array */
@@ -764,14 +764,11 @@ class Order
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
-            'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
-            'shipper_id'    => $this->shipper_id,
             'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
-            'shipping'      => $Currency->FormatValue($this->shipping),
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
             'order_instr'   => htmlspecialchars($this->instructions),
@@ -787,7 +784,6 @@ class Order
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
             'next_step'     => $step + 1,
             'not_anon'      => !COM_isAnonUser(),
-            'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
             'total_prefix'  => $Currency->Pre(),
             'total_postfix' => $Currency->Post(),
             'total_num'     => $Currency->FormatValue($this->total),
@@ -806,6 +802,15 @@ class Order
             'itemsToShip'   => $this->itemsToShip(),
             'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
         ) );
+
+        if (!$this->no_shipping) {
+            $T->set_var(array(
+                'shipper_id'    => $this->shipper_id,
+                'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
+                'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
+                'shipping'      => $Currency->FormatValue($this->shipping),
+            ) );
+        }
 
         if ($this->isAdmin) {
             $T->set_var(array(
