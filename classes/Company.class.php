@@ -48,7 +48,7 @@ class Company extends Address
 
 
     /**
-     * Get a specific address by ID.
+     * Get an instance of the Company object.
      *
      * @return  object      Company Address object
      */
