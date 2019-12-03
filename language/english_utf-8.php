@@ -685,6 +685,7 @@ $LANG_confignames['shop'] = array(
     'tax_avatax_account' => 'Avalar Avatax Account',
     'tax_avatax_key' => 'Avalar Avatax Access key',
     'tax_taxjar_key' => 'TaxJar API Key',
+    'tax_nexuses'   => 'Tax Nexuses',
 );
 
 /** Language strings for the subgroup names in the config section */

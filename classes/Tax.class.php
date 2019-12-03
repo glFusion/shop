@@ -64,13 +64,16 @@ class Tax
      * @param   string  $tracknum   Tracking Number
      * @return  string      Cache key
      */
-    private function _makeCacheKey()
+    private function _makeCacheKey($key='')
     {
+        if ($key != '') {
+            $key = $key . '.';
+        }
         $parts = $this->Address->getCity() .
             $this->Address->getState() .
             $this->Address->getPostal() .
             $this->Address->getCountry();
-        return 'shop.tax.' . $this->key . '.' . md5($parts);
+        return 'shop.tax.' . $this->key . '.' . $key . md5($parts);
     }
 
 
@@ -80,11 +83,11 @@ class Tax
      * @param   object  $Address    Address object
      * @return  object|null     Tracking object, NULL if not found
      */
-    protected function getCache()
+    protected function getCache($key='')
     {
         global $_TABLES;
 
-        $key = $this->_makeCacheKey();
+        $key = $this->_makeCacheKey($key);
         $key = DB_escapeString($key);
         $exp = time();
         $data = DB_getItem(
@@ -103,15 +106,19 @@ class Tax
      * Set the current Tracking object into cache.
      *
      * @param   string  $data       Data to set in cache
+     * @param   integer $exp        Seconds for cache timeout
      */
-    protected function setCache($data)
+    protected function setCache($data, $key='', $exp=0)
     {
         global $_TABLES;
 
-        $key = $this->_makeCacheKey();
+        $key = $this->_makeCacheKey($key);
         $key = DB_escapeString($key);
         $data = DB_escapeString(base64_encode(@serialize($data)));
-        $exp = time() + (86400 * 7);
+        if ($exp <= 0) {
+            $exp = 86400 * 7;
+        }
+        $exp += time();
         $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
             cache_key = '$key',
             expires = $exp,
@@ -120,6 +127,34 @@ class Tax
                 expires = $exp,
                 data = '$data'";
         DB_query($sql);
+    }
+
+
+    /**
+     * Determine if the shop has a nexus in the destination state/province.
+     * Uses a statically-configured array of state,country values.
+     *
+     * @return  boolean     True if there is a nexus, False if not.
+     */
+    protected function haveNexus()
+    {
+        global $_SHOP_CONF;
+
+        if (empty($_SHOP_CONF['tax_nexuses'])) {
+            return false;
+        }
+
+        foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
+            list($country, $state) = explode(',', strtoupper($str));
+            if (
+                $this->Address->getCountry() == $country
+                &&
+                $this->Address->getState() == $state
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

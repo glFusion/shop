@@ -87,6 +87,19 @@ class avatax extends \Shop\Tax
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        if (!$this->haveNexus()) {
+            return array(
+                'totalRate' => 0,
+                'rates' => array(
+                    array(
+                      'rate'  => 0,
+                        'name'  => 'No Nexus',
+                        'type'  => 'Total',
+                    ),
+                ),
+            );
+        }
+
         $resp = $this->getCache();      // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
             $url_params = 'line1=' . rawurlencode($this->Address->getAddress1());
@@ -139,6 +152,7 @@ class avatax extends \Shop\Tax
 
         return $decoded;
     }
+
 }
 
 ?>
