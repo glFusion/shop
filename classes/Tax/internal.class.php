@@ -32,7 +32,12 @@ class internal extends \Shop\Tax
     public function getRate()
     {
         global $_SHOP_CONF;
-        return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+
+        if ($this->haveNexus()) {
+            return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+        } else {
+            return 0;
+        }
     }
 
 
