@@ -51,7 +51,10 @@ class internal extends \Shop\Tax
         global $LANG_SHOP;
 
         return array(
-            array(
+            'country' => $this->Address->getCountry(),
+            'totalRate' => $this->getRate(),
+            'freightTaxable' => 0,
+            'rates' => array(
                 'rate'  => $this->getRate(),
                 'name'  => $LANG_SHOP['sales_tax'],
                 'type'  => 'Total',
