@@ -64,9 +64,10 @@ class taxjar extends \Shop\Tax
     public function getRate()
     {
         $data = $this->_getData()['rate'];
-        foreach (array('combined_rate', 'standard_rate') as $key)
-        if (array_key_exists($key, $data)) {
-            return (float)$data[$key];
+        foreach (array('combined_rate', 'standard_rate') as $key) {
+            if (array_key_exists($key, $data)) {
+                return (float)$data[$key];
+            }
         }
         return 0;
     }
@@ -80,32 +81,162 @@ class taxjar extends \Shop\Tax
     public function getRateBreakdown()
     {
         $data = $this->_getData()['rate'];
+        switch ($data['country']) {
+        case 'US':
+            $retval = $this->_breakdownUS($data);
+            break;
+        case 'CA':
+            $retval = $this->_breakdownCA($data);
+            break;
+        case 'AU':
+            $retval = $this->_breakdownAU($data);
+            break;
+        default:        // EU
+            $retval = $this->_breakdownEU($data);
+            break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the rate breakdown array for US addresses.
+     *
+     * @param   array   $data   Data returned from provider
+     * @return  array       Standard Tax object data array
+     */
+    private function _breakdownUS($data)
+    {
         $retval = array(
-            array(
-                'rate'  => (float)$data['state_rate'],
-                'name'  => 'State: ' . $data['state'],
-                'type'  => 'State'
+            'country' => $data['country'],
+            'totalRate' => $data['combined_rate'],
+            'freightTaxable' => $data['freight_taxable'],
+            'rates' => array(
+                array(
+                    'rate'  => (float)$data['state_rate'],
+                    'name'  => 'State: ' . $data['state'],
+                    'type'  => 'State'
+                ),
+                array(
+                    'rate' => (float)$data['county_rate'],
+                    'name' => 'County: ' . $data['county'],
+                    'type' => 'County',
+                ),
+                array(
+                    'rate' => (float)$data['city_rate'],
+                    'name' => 'City: ' . $data['city'],
+                    'type' => 'City',
+                ),
+                array(
+                    'rate' => (float)$data['combined_district_rate'],
+                    'name' => 'District Rate',
+                    'type' => 'District',
+                ),
+                array(
+                    'rate' => (float)$data['country_rate'],
+                    'name' => 'Country: ' . $data['country'],
+                    'type' => 'Country',
+                ),
             ),
-            array(
-                'rate' => (float)$data['county_rate'],
-                'name' => 'County: ' . $data['county'],
-                'type' => 'County',
+        );
+        return $retval;
+    }
+
+
+    /**
+     * Get the rate breakdown array for Canadiaan addresses.
+     *
+     * @param   array   $data   Data returned from provider
+     * @return  array       Standard Tax object data array
+     */
+    private function _breakdownCA($data)
+    {
+        $retval = array(
+            'country' => $data['country'],
+            'totalRate' => $data['combined_rate'],
+            'freightTaxable' => $data['freight_taxable'],
+            'rates' => array(
+                array(
+                    'rate'  => (float)$data['combioned_rate'],
+                    'name'  => 'Total Tax',
+                    'type'  => 'Total'
+                ),
             ),
-            array(
-                'rate' => (float)$data['city_rate'],
-                'name' => 'City: ' . $data['city'],
-                'type' => 'City',
+        );
+        return $retval;
+    }
+
+
+
+    /**
+     * Get the rate breakdown array for Australian addresses.
+     *
+     * @param   array   $data   Data returned from provider
+     * @return  array       Standard Tax object data array
+     */
+    private function _breakdownAU($data)
+    {
+        $retval = array(
+            'country' => $data['country'],
+            'totalRate' => $data['combined_rate'],
+            'freightTaxable' => $data['freight_taxable'],
+            'rates' => array(
+                array(
+                    'rate'  => (float)$data['country_rate'],
+                    'name'  => 'Country: ' . $data['country'],
+                    'type'  => 'Country'
+                ),
             ),
-            array(
-                'rate' => (float)$data['combined_district_rate'],
-                'name' => 'District Rate',
-                'type' => 'District',
+        );
+        return $retval;
+    }
+
+
+    /**
+     * Get the rate breakdown array for European addresses.
+     *
+     * @param   array   $data   Data returned from provider
+     * @return  array       Standard Tax object data array
+     */
+    private function _breakdownEU($data)
+    {
+        foreach (array('combined_rate', 'standard_rate') as $key) {
+            if (array_key_exists($key, $data)) {
+                $combined_rate = $data[$key];
+                break;
+            }
+        }
+        $retval = array(
+            'country' => $data['country'],
+            'totalRate' => 0,
+            'freightTaxable' => $data['freight_taxable'],
+            'rates' => array(
+                array(
+                    'rate'  => (float)$data['standard_rate'],
+                    'name'  => 'Standard Rate',
+                    'type'  => 'Standard'
+                ),
+                array(
+                    'rate'  => (float)$data['reduced_rate'],
+                    'name'  => 'Reduced Rate',
+                    'type'  => 'Reduced'
+                ),
+                array(
+                    'rate'  => (float)$data['super_reduced_rate'],
+                    'name'  => 'Super-Reduced Rate',
+                    'type'  => 'Super-Reduced'
+                ),
+                array(
+                    'rate'  => (float)$data['parking_rate'],
+                    'name'  => 'Parking Rate',
+                    'type'  => 'Parking'
+                ),
+                array(
+                    'rate'  => $data['distance_threshold'],
+                    'name'  => 'Distance Threshold',
+                    'type'  => 'Distance'
+                ),
             ),
-            array(
-                'rate' => (float)$data['country_rate'],
-                'name' => 'Country: ' . $data['country'],
-                'type' => 'Country',
-            )
         );
         return $retval;
     }
@@ -129,7 +260,7 @@ class taxjar extends \Shop\Tax
                 'freight_taxable'  => false,
                 'county_rate' => 0,
                 'county' => 'Undefined',
-                'country_rage' => 0,
+                'country_rate' => 0,
                 'country' => $this->Address->getCountry(),
                 'combined_rate' => 0,
                 'combined_district_rate' => 0,
