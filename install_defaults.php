@@ -1002,7 +1002,7 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'tax_taxjar_key',
+        'name' => 'tax_taxjar_token',
         'default_value' => '',
         'type' => 'passwd',
         'subgroup' => 30,

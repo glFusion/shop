@@ -30,7 +30,7 @@ class taxjar extends \Shop\Tax
 
     /** Tracking URL. Set to production or test values in constructor.
      * @var string */
-    private $api_key;
+    private $api_token;
 
 
     /**
@@ -42,7 +42,7 @@ class taxjar extends \Shop\Tax
     {
         global $_SHOP_CONF;     // todo remove
 
-        $this->api_key = $_SHOP_CONF['taxjar_key'];
+        $this->api_token= $_SHOP_CONF['tax_taxjar_token'];
         $this->test_mode = (int)$_SHOP_CONF['tax_test_mode'];
         if ($this->test_mode) {
             $this->api_endpoint = $this->api_endpoint_test;     // todo: configure
@@ -51,7 +51,7 @@ class taxjar extends \Shop\Tax
         }
         $this->key = 'taxjar';
         $this->cfgFields = array(
-            'api_key' => 'password',
+            'api_token' => 'password',
         );
     }
 
@@ -288,7 +288,7 @@ class taxjar extends \Shop\Tax
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_CONNECTTIMEOUT_MS => $this->curl_timeout, //timeout in milliseconds
                 CURLOPT_HTTPHEADER => array(
-                    'Authorization: Bearer ' . $this->api_key,
+                    'Authorization: Bearer ' . $this->api_token,
                 ),
                 //CURLOPT_VERBOSE => true,
             ) );
@@ -334,7 +334,7 @@ class taxjar extends \Shop\Tax
                 CURLOPT_SSL_VERIFYPEER => false,
                 CURLOPT_CONNECTTIMEOUT_MS => $this->curl_timeout, //timeout in milliseconds
                 CURLOPT_HTTPHEADER => array(
-                    'Authorization: Bearer ' . $this->api_key,
+                    'Authorization: Bearer ' . $this->api_token,
                 ),
                 //CURLOPT_VERBOSE => true,
             ) );

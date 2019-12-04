@@ -684,7 +684,7 @@ $LANG_confignames['shop'] = array(
     'tax_test_mode' => 'Test Mode?',
     'tax_avatax_account' => 'Avalar Avatax Account',
     'tax_avatax_key' => 'Avalar Avatax Access key',
-    'tax_taxjar_key' => 'TaxJar API Key',
+    'tax_taxjar_token' => 'TaxJar API Token',
     'tax_nexuses'   => 'Tax Nexuses',
 );
 
@@ -757,7 +757,7 @@ $LANG_configselects['shop'] = array(
     21 => array(
         'Avalara Free Api' => 'avatax',
         'Internal Config' => 'internal',
-        'TaxJar API' => 'taxjar',
+        'TaxJar SmartCalcs' => 'taxjar',
     ),
 );
 
