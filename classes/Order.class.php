@@ -350,6 +350,8 @@ class Order
     {
         global $_TABLES;
 
+        $tax_rate = $this->tax_rate;    // just keep the same
+        $tax = $this->tax;
         if ($A === NULL) {
             // Clear out the shipping address
             $this->shipto_id        = 0;
@@ -380,6 +382,12 @@ class Order
                 $this->shipto_state     = SHOP_getVar($A, 'state');
                 $this->shipto_country   = SHOP_getVar($A, 'country');
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
+                $Address = new Address($A);
+                $new_tax_rate = Tax::getProvider()->withAddress($Address)->getRate();
+                if ($new_tax_rate != $tax_rate) {
+                    $this->tax_rate = $new_tax_rate;
+                    $this->calcTax();
+                }
             }
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET
@@ -391,9 +399,12 @@ class Order
             shipto_city = '" . DB_escapeString($this->shipto_city) . "',
             shipto_state = '" . DB_escapeString($this->shipto_state) . "',
             shipto_country = '" . DB_escapeString($this->shipto_country) . "',
-            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "'
+            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "',
+            tax_rate = '{$this->tax_rate}',
+            tax = '{$this->tax}'
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         //Cache::delete('order_' . $this->order_id);
         return $this;
     }
@@ -434,9 +445,9 @@ class Order
         $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
         $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
         $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer');
-        if ($this->status != 'cart') {
+        //if ($this->status != 'cart') {
             $this->tax_rate = SHOP_getVar($A, 'tax_rate');
-        }
+        //}
         $this->m_info = @unserialize(SHOP_getVar($A, 'info'));
         if ($this->m_info === false) $this->m_info = array();
         foreach (array('billto', 'shipto') as $type) {
@@ -599,9 +610,9 @@ class Order
         case 'adminview';
             $this->isFinalView = true;
         case 'checkout':
-            $this->tax_rate = Tax::getProvider()
+            /*$this->tax_rate = Tax::getProvider()
                 ->withAddress($this->Shipto)
-                ->getRate();
+                ->getRate();*/
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -1368,9 +1379,10 @@ class Order
     public function calcTax()
     {
         if ($this->Shipto === NULL) {
+            $this->tax = 0;
             return 0;
         }
-        $this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
+        //$this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
         if ($this->tax_rate == 0) {
             $this->tax_items = 0;
             $this->tax = 0;
