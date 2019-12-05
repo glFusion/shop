@@ -205,6 +205,21 @@ case 'thanks':
                 }
                 $message = $T->parse('output', 'msg');
             }
+
+            // Update the cart to "pending" at this point if not already
+            // done via payment notification.
+            $order_id = SHOP_getVar($_GET, 'o');
+            $token = SHOP_getVar($_GET, 't');
+            if (!empty($order_id) && !empty($token)) {
+                $Order = \Shop\Order::getInstance($order_id);
+                // Since this is public-facing, make sure it only updates from
+                // 'cart' to 'pending'
+                if ($Order->getStatus() == 'cart') {
+                    if ($Order->canView($token)) {
+                        $Order->updateStatus('pending', false, false);
+                    }
+                }
+            }
         }
     }
     $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
