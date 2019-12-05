@@ -210,7 +210,7 @@ $_SQL = array(
   `zip` varchar(40) DEFAULT NULL,
   `billto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `shipto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY (`addr_id`),
   KEY `uid` (`uid`,`zip`)
 ) ENGINE=MyISAM",
 

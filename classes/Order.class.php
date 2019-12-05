@@ -1063,6 +1063,9 @@ class Order
         }
 
         $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
+        if (empty($store_name)) {
+            $store_name = $_CONF['site_name'];  // company could be set but empty
+        }
         $Cust = Customer::getInstance($this->uid);
         if ($notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
