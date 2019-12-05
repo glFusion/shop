@@ -555,6 +555,12 @@ $LANG_SHOP = array (
 'date' => 'Date',
 'time' => 'Time',
 'carriers' => 'Carrier Modules',
+'tracking_num' => 'Tracking Number',
+'destination' => 'Destination',
+'service' => 'Service',
+'expected_dely' => 'Expected Delivery',
+'set_as_def' => 'Set as Default',
+'custom_shp' => 'Custom',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
