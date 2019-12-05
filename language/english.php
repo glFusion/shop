@@ -561,6 +561,7 @@ $LANG_SHOP = array (
 'carriers' => 'Carrier Modules',
 'set_as_def' => 'Set as Default',
 'custom_shp' => 'Custom',
+'sales_tax' => 'Sales Tax',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
