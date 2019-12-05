@@ -173,7 +173,7 @@ class paypal extends \Shop\Gateway
             'cmd'       => '_cart',
             'upload'    => '1',
             'cancel_return' => $cart->cancelUrl(),
-            'return'    => SHOP_URL.'/index.php?thanks=paypal',
+            'return'    => $this->returnUrl($cart->order_id, $cart->token),
             'rm'        => '1',     // simple GET return url
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
