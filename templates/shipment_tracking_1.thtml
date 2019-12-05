@@ -31,7 +31,7 @@
         <tr>
           <td>
             <select id="carrierID0" name="shipper_id" onchange="updateCarrier(this, 0);return false;">
-              <option value="custom">Custom</option>
+              <option value="custom">{$LANG_SHOP['custom_shp']}</option>
               {shipper_select}
             </select>
           </td>
@@ -56,7 +56,7 @@ function addTrackingRow()
 {
     $('#trackingTable').append('<tr>' +
         '<td><select onchange="updateCarrier(this, ' + i + ');return false;" name="tracking[' + i + '][shipper_id]">' +
-          '<option value="custom">Custom</option>' +
+          '<option value="custom">{$LANG_SHOP['custom_shp']}</option>' +
           '{shipper_select}' +
           '</select></td>' +
         '<td><input type="text" id="carrierName' + i + '" name="tracking[' + i + '][shipper_name]" value="" /></td>' +

@@ -407,7 +407,7 @@ $LANG_SHOP = array (
 'end' => 'End',
 'item_type' => 'Item Type',
 'timepicker' => 'Click for Time Selector',
-'gc_need_acct' => 'Before you can apply gift cards to your account, you need to have an account. You may still use the coupon code when placing an order.',
+'gc_need_acct' => 'Please log in to access your shopping account.',
 'msg_itemcat_req' => 'A product or category ID is required',
 'msg_amount_req' => 'An amount is required',
 'enter_email' => 'Your E-Mail Address',
@@ -532,8 +532,12 @@ $LANG_SHOP = array (
 'carrier' => 'Carrier',
 'other' => 'Other',
 'tracking' => 'Tracking',
+'tracking_num' => 'Tracking Number',
 'tracking_info' => 'Tracking Information',
 'add_tracking' => 'Add Tracking',
+'destination' => 'Destination',
+'service' => 'Service',
+'expected_dely' => 'Expected Delivery',
 'shippers' => 'Shippers',
 'shipments' => 'Shipments',
 'order_seq' => 'Sequence',
@@ -555,6 +559,8 @@ $LANG_SHOP = array (
 'date' => 'Date',
 'time' => 'Time',
 'carriers' => 'Carrier Modules',
+'set_as_def' => 'Set as Default',
+'custom_shp' => 'Custom',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -671,7 +677,9 @@ $LANG_confignames['shop'] = array(
     'name'          => 'Remittance/Support Contact',
     'company'       => 'Company Name',
     'country'       => 'Country',
+    'remit_to'      => 'Remit To (Attn)',
     'adm_def_view'  => 'Default Admin View',
+    'def_prod_type' => 'Default Product Type',
 );
 
 /** Language strings for the subgroup names in the config section */
