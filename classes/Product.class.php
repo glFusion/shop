@@ -1362,9 +1362,10 @@ class Product
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
-            'stock_msg'         => $this->_OutOfStock(),
+            'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
             'rating_bar'        => $this->ratingBar(),
         ) );
+
         $T->set_block('product', 'SpecialFields', 'SF');
         //var_dump($this->special_fields);die;
         foreach ($this->special_fields as $fld) {
