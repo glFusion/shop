@@ -42,6 +42,7 @@ Release TBD
   * Add default product type configuration option.
   * Just show raw IPN data array in reports to allow nested array formats.
   * Download all product files as attachments.
+  * Key fields in gateways configurations are encrypted at rest.
 
 ## v0.7.1
 Release 2019-08-02
