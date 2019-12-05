@@ -561,6 +561,7 @@ $LANG_SHOP = array (
 'expected_dely' => 'Expected Delivery',
 'set_as_def' => 'Set as Default',
 'custom_shp' => 'Custom',
+'sales_tax' => 'Sales Tax',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -679,6 +680,8 @@ $LANG_confignames['shop'] = array(
 'zip' => 'Postal Code',
 'country' => 'Country',
 'adm_def_view' => 'Default Admin View',
+'remit_to' => 'Remit To (Attn)',
+'def_prod_type' => 'Default Product Type',
 );
 
 /** Language strings for the subgroup names in the config section */
