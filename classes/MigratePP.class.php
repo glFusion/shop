@@ -471,11 +471,11 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.images']}",
             "INSERT INTO {$_TABLES['shop.images']}
-                SELECT *, NULL as nonce, '2018-01-01 00:00:00' as last_update
+                (img_id, product_id, filename, last_update)
+            SELECT img_id, product_id, filename, '2018-01-01 00:00:00'
                 FROM {$_TABLES['paypal.images']}",
         ) );
     }
-
 
     /**
      * Migrate Gateway information.
