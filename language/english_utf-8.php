@@ -560,6 +560,7 @@ $LANG_SHOP = array (
 'time' => 'Time',
 'carriers' => 'Carrier Modules',
 'set_as_def' => 'Set as Default',
+'custom_shp' => 'Custom',
 'sales_tax' => 'Sales Tax',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
