@@ -127,7 +127,7 @@ class authorizenet extends \Shop\Gateway
         $Cur = \Shop\Currency::getInstance();
 
         $return_opts = array(
-            'url'       => SHOP_URL . '/index.php?' . urlencode('thanks=authorizenet'),
+            'url'       => $this->returnUrl($cart->order_id, $cart->token),
             'cancelUrl' => $cart->cancelUrl(),
         );
 

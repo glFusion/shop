@@ -214,6 +214,18 @@ class Order
 
 
     /**
+     * Get the order status.
+     *
+     * @return  string      Order status
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+
+
+    /**
      * Load the order information from the database.
      *
      * @param   string  $id     Order ID

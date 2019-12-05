@@ -247,7 +247,7 @@ class square extends \Shop\Gateway
             ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
             ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
             ->setOrder($order)          //this is the order we created in the previous step
-            ->setRedirectUrl($this->ipn_url . '?thanks=square');
+            ->setRedirectUrl($this->returnUrl($cart->order_id, $cart->token));
 
         $url = '';
         $gatewayVars = array();
@@ -468,6 +468,21 @@ class square extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         return '';
+    }
+
+
+    /**
+     * Set the return URL after payment is made.
+     *
+     * @param   string  $cart_id    Cart order ID
+     * @param   string  $token      Order token, to verify accessa
+     * @return  string      URL to pass to the gateway as the return URL
+     */
+    protected function returnUrl($cart_id, $token)
+    {
+        return $this->ipn_url . '?thanks=' . $this->gw__name .
+            '&o=' . $cart_id .
+            '&t=' . $token;
     }
 
 }   // class square

@@ -1711,12 +1711,28 @@ class Gateway
 
     /**
      * Check that the current user is allowed to use this gateway.
+     * This limits access to special gateways like 'check' or 'terms'.
      *
      * @return  boolean     True if access is allowed, False if not
      */
     public function hasAccess()
     {
         return SEC_inGroup($this->grp_access);
+    }
+
+
+    /**
+     * Set the return URL after payment is made.
+     *
+     * @param   string  $cart_id    Cart order ID
+     * @param   string  $token      Order token, to verify accessa
+     * @return  string      URL to pass to the gateway as the return URL
+     */
+    protected function returnUrl($cart_id, $token)
+    {
+        return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
+            '&o=' . $cart_id .
+            '&t=' . $token;
     }
 
 }   // class Gateway
