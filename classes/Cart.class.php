@@ -165,11 +165,12 @@ class Cart extends Order
         ) {
             return false;
         }
+        COM_errorLog("adding item: " . print_r($args,true));
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
         $P = Product::getByID($item_id);
-        $quantity   = SHOP_getVar($args, 'quantity', 'float', 1);
+        $quantity   = SHOP_getVar($args, 'quantity', 'float', $P->getMinOrderQty());
         $override   = isset($args['override']) ? $args['price'] : NULL;
         $extras     = SHOP_getVar($args, 'extras', 'array');
         $options    = SHOP_getVar($args, 'options', 'array');
@@ -204,6 +205,7 @@ class Cart extends Order
             $have_id = false;
         }
 
+        $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
@@ -319,9 +321,12 @@ class Cart extends Order
                     $this->Remove($id);
                     $this->applyQtyDiscounts($item_id);
                 } else {
-                //} elseif ($qty != $this->items[$id]->quantity) {
-                    // If the quantity changed, set to the new value and apply
-                    // quantity-based pricing.
+                    // The number field on the viewcart form should prevent this,
+                    // but just in case ensure that the qty ordered is allowed.
+                    $max = Product::getById($this->items[$id]->getProductId())->getMaxOrderQty();
+                    if ($qty > $max) {
+                        $qty = $max;
+                    }
                     $this->items[$id]->setQuantity($qty);
                 }
             }

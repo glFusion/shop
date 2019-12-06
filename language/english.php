@@ -562,6 +562,13 @@ $LANG_SHOP = array (
 'set_as_def' => 'Set as Default',
 'custom_shp' => 'Custom',
 'sales_tax' => 'Sales Tax',
+'allowed_ord_qty' => 'Allowed Order Quantity',
+'minimum' => 'Minimum',
+'maximum' => 'Maximum',
+'zero_unlimited' => 'Zero = unlimited',
+'qty_adjusted' => 'Quantity was adjusted to stock limits.',
+'backordered' => 'Backordered',
+'qty_bo' => '%s items are backordered.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

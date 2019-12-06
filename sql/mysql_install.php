@@ -69,6 +69,8 @@ $_SQL = array(
   `avail_beg` date DEFAULT '1900-01-01',
   `avail_end` date DEFAULT '9999-12-31',
   `brand` varchar(255) NOT NULL DEFAULT '',
+  `min_ord_qty` int(3) NOT NULL DEFAULT 1,
+  `max_ord_qty` int(3) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -583,6 +585,8 @@ $SHOP_UPGRADE['1.0.0'] = array(
       KEY (`expires`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",

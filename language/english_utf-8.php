@@ -265,7 +265,7 @@ $LANG_SHOP = array (
 'pmt_error' => 'There was an error processing your payment.',
 'pmt_made_via' => 'Payment was made via %s on %s.',
 'new_option' => 'Add a new option',
-'oversell_action' => 'Allow overselling/backordering?',
+'oversell_action' => 'If out of stock',
 'oversell_allow' => 'Allow, display product and accept orders',
 'oversell_deny' => 'Deny, display product but prevent ordering',
 'oversell_hide' => 'Hide product from catalog',
@@ -562,6 +562,13 @@ $LANG_SHOP = array (
 'set_as_def' => 'Set as Default',
 'custom_shp' => 'Custom',
 'sales_tax' => 'Sales Tax',
+'allowed_ord_qty' => 'Allowed Order Quantity',
+'minimum' => 'Minimum',
+'maximum' => 'Maximum',
+'zero_unlimited' => 'Zero = unlimited',
+'qty_adjusted' => 'Quantity was adjusted to stock limits.',
+'backordered' => 'Backordered',
+'qty_bo' => '%s items are backordered.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

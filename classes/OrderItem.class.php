@@ -735,7 +735,7 @@ class OrderItem
      */
     public function getPrice()
     {
-        return $this->price;
+        return (float)$this->price;
     }
 
 
@@ -746,7 +746,7 @@ class OrderItem
      */
     public function getQuantity()
     {
-        return $this->quantity;
+        return (float)$this->quantity;
     }
 
 
