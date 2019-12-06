@@ -1,6 +1,7 @@
 {# begin {templatelocation} #}
 {!if form_url}
-<form id="add_cart_{item_number}" style="display:inline;" action="{action_url}" method="post">
+<form id="add_cart_{item_number}" style="display:inline;" action="{action_url}" method="post"
+  class="uk-form">
 {!endif}
   <input type="hidden" name="item_name" value="{item_name}" />
   <input type="hidden" name="item_number" value="{item_number}" />
@@ -19,7 +20,11 @@
       <input type="hidden" name="quantity" value="{quantity}" />
       {$LANG_SHOP['qty']}: {quantity}
 {!else}
-      <input type="text" name="quantity" size="3" maxlength="5" value="1" />
+      <input name="quantity" type="number" min="{min_ord_qty}"
+{!if max_ord_qty}
+        max="{max_ord_qty}"
+{!endif}
+        value="{min_ord_qty}" class="uk-form-width-small" />
 {!endif}
       &nbsp;&nbsp;<button type="submit" class="shopButton orange"
         onclick='shopAddToCart("add_cart_{item_number}");return false;'>

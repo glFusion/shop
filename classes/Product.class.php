@@ -31,7 +31,7 @@ class Product
      * @const integer */
     const OVERSELL_ALLOW = 0;
 
-    /** Out-of-stock items appear in the catalot but can't be sold.
+    /** Out-of-stock items appear in the catalog but can't be sold.
      * @const integer */
     const OVERSELL_DENY = 1;
 
@@ -112,6 +112,14 @@ class Product
     /** OrderItem ID to get previously-ordered options.
      * @var integer */
     private $oi_id;
+
+    /** Minimum allowed quantity per order.
+     * @var integer */
+    private $min_ord_qty = 1;
+
+    /** Maximum allowed quantity per order.
+     * @var integer */
+    private $max_ord_qty = 0;
 
 
     /**
@@ -501,6 +509,8 @@ class Product
         $this->avail_beg = $row['avail_beg'];
         $this->avail_end = $row['avail_end'];
         $this->brand = $row['brand'];
+        $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
+        $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -718,7 +728,9 @@ class Product
                 avail_beg='" . DB_escapeString($this->avail_beg) . "',
                 avail_end='" . DB_escapeString($this->avail_end) . "',
                 brand ='" . DB_escapeString($this->brand) . "',
-                buttons= '" . DB_escapeString($this->btn_type) . "'";
+                buttons= '" . DB_escapeString($this->btn_type) . "',
+                min_ord_qty = '" . (int)$this->min_ord_qty . "',
+                max_ord_qty = '" . (int)$this->max_ord_qty . "'";
                 //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -967,6 +979,8 @@ class Product
             'option_list'   => ProductOptionValue::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
+            'min_ord_qty'   => $this->min_ord_qty,
+            'max_ord_qty'   => $this->max_ord_qty,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1536,7 +1550,8 @@ class Product
         // and cart is enabled, and product is not a donation. Donations
         // can't be mixed with products, so don't allow adding to the cart.
         if (
-            $add_cart && $this->btn_type != 'donation' &&
+            $add_cart &&
+            $this->btn_type != 'donation' &&
             ($this->price > 0 || !$this->canBuyNow())
         ) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
@@ -1556,6 +1571,8 @@ class Product
                 'frm_id'    => md5($this->id . rand()),
                 'quantity'  => $this->getFixedQuantity(),
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
+                'max_ord_qty'   => $this->getMaxOrderQty(),
+                'min_ord_qty'   => $this->min_ord_qty,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -2198,6 +2215,80 @@ class Product
 
 
     /**
+     * Get the quantity that would be backordered given an order qty.
+     *
+     * @param   float   $qty    Order quantity
+     * @return  float       Backordered portion
+     */
+    public function getQuantityBO($qty)
+    {
+        if ($this->track_onhand) {
+            $avail = $this->onhand;
+            return max($qty - $avail, 0);
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Get the max allowed order quantity for this item.
+     * If backordering is not allowed, then this is the quantity on hand.
+     * Otherwise the quantit is unlimited.
+     *
+     * @return  integer     Max allowed order quantity
+     */
+    public function getMaxOrderQty()
+    {
+        if ($this->oversell == self::OVERSELL_ALLOW) {
+            return $this->max_ord_qty;
+        } else {
+            // If onhand is zero, the qty shouldn't be shown anyway but
+            // make sure it's not 0.
+            return max($this->onhand, 1);
+        }
+    }
+
+
+    /**
+     * Get the max order quantity for this item.
+     * This may be added as a configuration item.
+     *
+     * @return  integer     Max quantity that can be ordered at once
+     */
+    public function getMinOrderQty()
+    {
+        return (int)$this->min_ord_qty;
+    }
+
+
+    /**
+     * Verify whether a desired quantity can be ordered.
+     * Returns the adjusted quantity if the requested value is not allowed.
+     *
+     * @param   integer $qty    Requested quantity
+     * @return  integer         Max allowed quantity
+     */
+    public function validateOrderQty($qty)
+    {
+        $max = $this->getMaxOrderQty();
+        $min = $this->getMinOrderQty();
+
+        // If in some strage case the max is less than the minimum
+        // due to the onhand value, return zero
+        if ($max < $min) {
+            $qty = 0;
+        } else {
+            // Make sure the qty is at least the minimum amount
+            $qty = max($qty, $min);
+            // Then make sure it doesn't exceed the maximum
+            $qty = min($qty, $max);
+        }
+        return $qty;
+    }
+
+
+    /**
      * Check if tax should be charged on this item.
      * Checks both the product taxable flag and the configured tax rate.
      *
@@ -2781,7 +2872,7 @@ class Product
                 'align' => 'center',
             ),
             array(
-                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' . 
+                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
                 Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
