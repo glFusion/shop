@@ -112,7 +112,7 @@
 <!-- END SpecialFields -->
 
 {!if onhand}
-      <div class="shopOnhand">
+      <div class="uk-form-row shopOnhand">
         {onhand} {$LANG_SHOP['available']}
       </div>
 {!endif}

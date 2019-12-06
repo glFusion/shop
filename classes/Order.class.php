@@ -743,6 +743,19 @@ class Order
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
             }
+            if ($this->status == 'cart') {      // TODO, divorce cart from order
+                $qty_bo = $P->getQuantityBO($item->getQuantity());
+                if ($qty_bo > 0) {
+                    $T->set_var(array(
+                        'msg_bo' => sprintf($LANG_SHOP['qty_bo'], $qty_bo),
+                        'bo_icon' => $LANG_SHOP['backordered'][0],
+                    ) );
+                }
+                $T->set_var(array(
+                    'min_ord_qty' => $P->getMinOrderQty(),
+                    'max_ord_qty' => $P->getMaxOrderQty(),
+                ) );
+            }
             $T->parse('iRow', 'ItemRow', true);
             $T->clear_var('iOpts');
         }
@@ -1652,6 +1665,24 @@ class Order
     public function getItems()
     {
         return $this->items;
+    }
+
+
+    /**
+     * Get a single OrderItem object from this order.
+     * Returns an empty OrderItem object if the product is not found.
+     *
+     * @param   mixed   $item_id    OrderItem product ID
+     * @return  object      OrderItem object
+     */
+    public function getItem($item_id)
+    {
+        foreach ($this->items as $Item) {
+            if ($Item->product_id == $item_id) {
+                return $Item;
+            }
+        }
+        return new OrderItem;
     }
 
 

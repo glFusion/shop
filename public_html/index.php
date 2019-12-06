@@ -365,19 +365,9 @@ case 'checkoutcart':
 
 case 'products':
 default:
-    $cat_id = isset($_REQUEST['category']) ? (int)$_REQUEST['category'] : 0;
-    if (
-        ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
-        $cat_id == 0 &&
-        (!isset($_GET['query']) || isset($_GET['clearsearch']))
-    ) {
-        $content .= Shop\Catalog::Categories();
-    } else {
-        SHOP_setUrl();
-        $content .= Shop\Catalog::Products($cat_id);
-        $menu_opt = $LANG_SHOP['products'];
-        $page_title = $LANG_SHOP['main_title'];
-    }
+    SHOP_setUrl();
+    $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
+    $content .= Shop\Catalog::defaultCatalog($cat_id);
     break;
 
 case 'none':

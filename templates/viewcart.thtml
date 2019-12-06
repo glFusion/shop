@@ -5,7 +5,7 @@
 </a>
 <div style="text-align:center; margin-left:auto;">
   <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
-  <form action="{pi_url}/cart.php" method="post" class="shopViewCart" id="shopCartForm">
+  <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
     <input type="hidden" name="order_id" value="{order_number}" />
 
     <table id="shopViewCartTable" class="shopViewCartTable">
@@ -20,7 +20,7 @@
         <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
         <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
         <th style="width:5%" class="aligncenter"></th>
-        <th style="width:5%;" class="alignleft">
+        <th style="width:5%;" class="aligncenter">
 {!if icon_dscp}
             <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
 {!endif}
@@ -49,15 +49,12 @@
           <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
           {item_quantity}
 {!else}
-          <i class="uk-icon uk-icon-minus-circle uk-text-success tooltip"
-            title="{$LANG_SHOP['change_qty']}"
-            onclick="updateQty('f_qty_{cart_item_id}', -1);"></i>
-          <input style="text-align:right;width:32px;" type="text" id="f_qty_{cart_item_id}"
+          <input style="text-align:right;" type="number" id="f_qty_{cart_item_id}"
                 onchange="mustUpdateCart();return false;"
-                name="quantity[{cart_item_id}]" value="{item_quantity}" size="3" maxlength="3" />
-          <i class="uk-icon uk-icon-plus-circle uk-text-success tooltip"'
-            title="{$LANG_SHOP['change_qty']}"
-            onclick="updateQty('f_qty_{cart_item_id}', 1);"></i>
+{!if max_ord_qty}
+                max="{max_ord_qty}"
+{!endif}
+                name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-small"/>
 {!endif}
         </td>
         <td class="alignright">{item_total}</td>
@@ -65,7 +62,7 @@
           <a href="{del_item_url}"><i
               class="uk-icon uk-icon-remove uk-text-danger  tooltip" title="{$LANG_SHOP['delete']}"></i></a>
         </td>
-        <td class="alignleft">
+        <td class="aligncenter">
 {!if taxable}
           <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
@@ -74,6 +71,9 @@
 {!endif}
 {!if sale_tooltip}
           <span class="tooltip" title="{sale_tooltip}">{sale_icon}</span>
+{!endif}
+{!if msg_bo}
+          <span class="tooltip" title="{msg_bo}">{bo_icon}</span>
 {!endif}
         </td>
       </tr>
@@ -132,10 +132,15 @@
     </div>
     <input type="hidden" name="custom" value='{custom}' />
     <button style="float:none;" type="submit" class="uk-button uk-button-primary" name="update" id="updatebtn">
-      <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
-    <button style="float:none;" type="reset" class="uk-button uk-button-danger" name="emptycart"
-      onclick="document.location.href='{pi_url}/cart.php?empty=x';">
-      <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
+        <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
+{!if gateway_radios}
+    <input type="hidden" name="next_step" value="{next_step}" />
+    <button style="float:none;" id="submit" type="submit" class="uk-button uk-button-success" name="checkout">
+        <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
+{!endif}
+    <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
+        onclick="document.location.href='{pi_url}/cart.php?empty=x';">
+        <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
     <div class="uk-width-1-1 uk-margin">
       <div class="uk-width-2-3 uk-margin floatleft">
         <div class="gwRadiosOuter">
@@ -163,7 +168,8 @@
           <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
         </div>
       </div>
-    
+
+{!if 0}    
       <div class="uk-width-1-4 uk-margin floatright" id="checkoutButtons">
 {!if gateway_radios}
         <input type="hidden" name="next_step" value="{next_step}" />
@@ -171,6 +177,7 @@
           <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
 {!endif}
       </div>
+{!endif}
     </div>
   </form>
 {!if tc_link}
@@ -188,7 +195,7 @@ location.hash = "#anchor_" + focus_element;
 {!endif}
 
 // Update an item's quantity field.
-function updateQty(fld_id, qty, orig_qty)
+function XupdateQty(fld_id, qty, orig_qty)
 {
     fld = document.getElementById(fld_id);
     val = Number(fld.value) + Number(qty);

@@ -21,6 +21,31 @@ namespace Shop;
 class Catalog
 {
     /**
+     * Show the default catalog layout based on plugin configuration.
+     *
+     * @param   integer $cat_id     Selected category ID from the URL, if any
+     * @return  string      HTML for catalog display
+     */
+    public static function defaultCatalog($cat_id)
+    {
+        global $_SHOP_CONF;
+
+        if (
+            ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
+            $cat_id == 0 &&
+            (!isset($_GET['query']) || isset($_GET['clearsearch']))
+        ) {
+            $content .= self::Categories();
+        } else {
+            $content .= self::Products($cat_id);
+            $menu_opt = $LANG_SHOP['products'];
+            $page_title = $LANG_SHOP['main_title'];
+        }
+        return $content;
+    }
+
+
+    /**
      * Diaplay the product catalog items.
      *
      * @param   integer $cat_id     Optional category ID to limit display
