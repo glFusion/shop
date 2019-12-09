@@ -36,7 +36,7 @@ class usps extends \Shop\Shipper
     /** Endpoint for rate and tracking info.
      * private $usps_endpoint = 'http://production.shippingapis.com/ShippingAPI.dll';
      * @var string */
-    private $usps_endpoint = 'https://secure.shippingapis.com/ShippingAPI.dll';
+    protected $usps_endpoint = 'https://secure.shippingapis.com/ShippingAPI.dll';
 
     /** List of possible USPS Services.
      * @var array */
