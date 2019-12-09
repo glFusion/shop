@@ -355,13 +355,14 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     foreach ($uids as $uid) {
         $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
         $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+        $name = COM_getDisplayName($uid);
         $output[$uid] = array(
             'code' => $code,
             'email' => $email,
             'link' => Shop\Products\Coupon::redemptionUrl($code),
         );
         if ($notify && !empty($email)) {
-            Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp);
+            Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp, $name);
         }
     }
     return PLG_RET_OK;

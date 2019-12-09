@@ -2243,9 +2243,7 @@ class Product
         if ($this->oversell == self::OVERSELL_ALLOW) {
             return $this->max_ord_qty;
         } else {
-            // If onhand is zero, the qty shouldn't be shown anyway but
-            // make sure it's not 0.
-            return max($this->onhand, 1);
+            return min($this->onhand, $this->max_ord_qty);
         }
     }
 

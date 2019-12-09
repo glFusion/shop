@@ -394,8 +394,9 @@ case 'sendcards':
         foreach ($uids as $uid) {
             $code = \Shop\Products\Coupon::Purchase($amt, $uid, $exp);
             $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+            $name = COM_getDisplayName($uid);
             if (!empty($email)) {
-                \Shop\Products\Coupon::Notify($code, $email, $amt, '', '', $exp);
+                \Shop\Products\Coupon::Notify($code, $email, $amt, '', '', $exp, $name);
             }
         }
         COM_setMsg(count($uids) . ' coupons sent');
