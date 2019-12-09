@@ -41,7 +41,6 @@ class pendingship extends \Shop\Report
 
         // This report doesn't show shipped or closed statuses.
         $this->allowed_statuses = array(
-            'pending',
             'paid',
             'processing',
         );

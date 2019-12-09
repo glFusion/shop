@@ -331,7 +331,9 @@ class Coupon extends \Shop\Product
      * @param   string  $msg        Optional extra message
      * @param   string  $exp        Expiration Date
      */
-    public static function Notify($gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP)
+    public static function Notify(
+        $gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP, $recip_name=''
+    )
     {
         global $_CONF, $LANG_SHOP_EMAIL;
 
@@ -354,12 +356,26 @@ class Coupon extends \Shop\Product
         ) );
         $T->parse('output', 'message');
         $msg_text = $T->finish($T->get_var('output'));
+        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
+        if (empty($store_name)) {
+            $store_name = $_CONF['site_name'];  // company could be set but empty
+        }
+        if (empty($recip_name)) {
+            $recip_name = $email;
+        }
         COM_emailNotification(array(
-                'to' => array(array('email'=>$recip, 'name' => $recip)),
-                'from' => $_CONF['site_mail'],
-                'htmlmessage' => $msg_text,
-                'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
+            'to' => array(
+                $recip,
+                $recip_name,
+            ),
+            'from' => array(
+                'email' => $_CONF['site_mail'],
+                'name'  => $store_name,
+            ),
+            'htmlmessage' => $msg_text,
+            'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
         ) );
+        SHOP_log("Coupon notification sent to $recip.", SHOP_LOG_DEBUG);
     }
 
 

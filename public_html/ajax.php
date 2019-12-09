@@ -56,6 +56,8 @@ case 'addcartitem':
         exit;
     }
 
+    $req_qty = SHOP_getVar($_POST, 'quantity', 'integer', $P->getMinOrderQty());
+    $exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
     $unique = SHOP_getVar($_POST, '_unique', 'integer', $P->isUnique());
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
@@ -65,18 +67,21 @@ case 'addcartitem':
         'item_number'   => $item_number,     // isset ensured above
         'item_name'     => $item_name,
         'short_dscp'    => SHOP_getVar($_POST, 'short_dscp', 'string', $P->getDscp()),
-        'quantity'      => SHOP_getVar($_POST, 'quantity', 'int', 1),
+        'quantity'      => $req_qty,
         'price'         => $P->getPrice(),
         'options'       => SHOP_getVar($_POST, 'options', 'array'),
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
-    $Cart->addItem($args);
+    $new_qty = $Cart->addItem($args);
+    $msg = $LANG_SHOP['msg_item_added'];
+    if ($new_qty != $exp_qty) {
+        $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
+    }
     $output = array(
         'content' => phpblock_shop_cart_contents(),
-        'statusMessage' => $LANG_SHOP['msg_item_added'],
-        'ret_url' => isset($_POST['_ret_url']) && !empty($_POST['_ret_url']) ?
-                $_POST['_ret_url'] : '',
+        'statusMessage' => $msg,
+        'ret_url' => SHOP_getVar($_POST, '_ret_url', 'string', ''),
         'unique' => $unique ? true : false,
     );
     break;
