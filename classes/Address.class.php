@@ -48,7 +48,7 @@ class Address
      * @var string */
     private $zip;
 
-    /** Country code.
+   /** Country code.
      * @var string */
     private $country;
 
@@ -100,6 +100,7 @@ class Address
         $this->city = SHOP_getVar($data, 'city');
         $this->state = SHOP_getVar($data, 'state');
         $this->zip = SHOP_getVar($data, 'zip');
+        list($this->zip5, $this->zip4) = explode('-', $this->zip);
         $this->country = SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']);
     }
 
@@ -189,7 +190,7 @@ class Address
      */
     public function setName($name)
     {
-        $this->name = $name;
+        $this->name = (string)$name;
         return $this;
     }
 
@@ -213,7 +214,7 @@ class Address
      */
     public function setCompany($name)
     {
-        $this->company = $name;
+        $this->company = (string)$name;
         return $this;
     }
 
@@ -237,7 +238,7 @@ class Address
      */
     public function setAddress1($address)
     {
-        $this->address1 = $address;
+        $this->address1 = (string)ucwords(strtolower($address));
         return $this;
     }
 
@@ -261,7 +262,7 @@ class Address
      */
     public function setAddress2($address)
     {
-        $this->address2 = $address;
+        $this->address2 = (string)ucwords(strtolower($address));
         return $this;
     }
 
@@ -285,7 +286,7 @@ class Address
      */
     public function setCity($city)
     {
-        $this->city = $city;
+        $this->city = ucwords(strtolower($city));
         return $this;
     }
 
@@ -309,7 +310,7 @@ class Address
      */
     public function setState($state)
     {
-        $this->state = $state;
+        $this->state = (string)strtoupper($state);
         return $this;
     }
 
@@ -321,7 +322,7 @@ class Address
      */
     public function getState()
     {
-        return (string)strtoupper($this->state);
+        return (string)$this->state;
     }
 
 
@@ -333,7 +334,7 @@ class Address
      */
     public function setPostal($zip)
     {
-        $this->zip = $zip;
+        $this->zip = (string)$zip;
         return $this;
     }
 
@@ -350,6 +351,36 @@ class Address
 
 
     /**
+     * Get the 5-character main US zip code.
+     *
+     * @return  string      4-character zip code.
+     */
+    public function getZip5()
+    {
+        return substr($this->zip, 0, 5);
+    }
+
+
+    /**
+     * Get the zip+4 digits.
+     *
+     * @return  string      4-character zip+4 code.
+     */
+    public function getZip4()
+    {
+        if ($this->country == 'US') {
+            $pos = strpos($this->zip, '-');
+            if ($pos !== false) {
+                $retval = substr($this->zip, $pos, 4);
+            } else {
+                $retval = '';
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Set the country code.
      *
      * @param   string  $code   2-letter country code
@@ -357,7 +388,7 @@ class Address
      */
     public function setCountry($code)
     {
-        $this->country = $code;
+        $this->country = strtoupper($code);
         return $this;
     }
 
@@ -501,23 +532,37 @@ class Address
      *
      * @return  string  Formatted string for city, state, zip
      */
-    private function getCityLine()
+    private function getCityLine($sep="\n")
     {
         switch($this->country) {
         case 'US':
         case 'CA':
         case 'AU':
         case 'TW':
-            $retval = $this->city . ' ' . $this->state . ' ' . $this->zip;
+            $parts = array(
+                $this->city,
+                $this->state,
+                $this->zip,
+            );
+            $retval = implode(' ', array_filter($parts));
             break;
         case 'GB':
         case 'CO':
         case 'IE':
         case '':        // default if no country code given
-            $retval = $this->city . $sep . $this->zip;
+            $parts = array(
+                $this->city,
+                $this->zip,
+            );
+            $retval = implode($sep, array_filter($parts));
             break;
         default:
-            $retval = trim($this->zip. ' ' . $this->city . ' ' . $this->state);
+            $parts = array(
+                $this->zip,
+                $this->city,
+                $this->state,
+            );
+            $retval = implode(' ', array_filter($parts));
             break;
         }
         return $retval;
@@ -565,7 +610,7 @@ class Address
             }
         }
 
-        $retval .= $this->getCityLine();
+        $retval .= $this->getCityLine($sep);
 
         // Include the country as the last line, unless this is a domestic address.
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
