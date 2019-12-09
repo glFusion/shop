@@ -752,6 +752,65 @@ class Address
         return true;
     }
 
+
+    /**
+     * Check if this address object matches the supplied object.
+     *
+     * @param   object  $Addr   Address to compare to this one
+     * @param   boolean $all    True to include uid, defaults, etc.
+     * @return  boolean     True on match, False if any fields differ
+     */
+    public function Matches($Addr, $all=false)
+    {
+        // Check all address fields, return false if any don't match
+        if (
+            $this->address1 != $Addr->getAddress1() ||
+            $this->address2 != $Addr->getAddress2() ||
+            $this->city     != $Addr->getCity() ||
+            $this->state    != $Addr->getState() ||
+            $this->zip      != $Addr->getPostal() ||
+            $this->country  != $Addr->getCountry()
+        ) {
+            return false;
+        }
+
+        // Examine the non-address fields if checking all
+        if ($all &&
+            (
+                $this->billto_def != $Addr->isDefaultBillto() ||
+                $this->shopto_def != $Addr->isDefaultShipto()
+            )
+        ) {
+            return false;
+        }
+
+        // No inequalitis found, return true
+        return true;
+    }
+
+
+    /**
+     * Copy the contents of another address object into this one.
+     *
+     * @param   object  $Addr   Address to copy to this one
+     * @param   boolean $all    True to include uid, defaults, etc.
+     * @return  object  $this
+     */
+    public function Copy($Addr, $all=false)
+    {
+        $this->setAddress1($Addr->getAddress1())
+            ->setAddress2($Addr->getAddress2())
+            ->setCity($Addr->getCity())
+            ->setState($Addr->getState())
+            ->setPostal($Addr->getPostal())
+            ->setCountry($Addr->getCountry());
+        if ($all) {
+            $this->setDefaultBillto($Addr->isDefaultBillto())
+                ->setDefaultShipto($Addr->isDefaultShipto());
+        }
+        return $this;
+    }
+
 }
 
 ?>
