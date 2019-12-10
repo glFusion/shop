@@ -1,6 +1,6 @@
 <?php
 /**
- * Get tax rates from ServiceObjects' FastTax API.
+ * Use the internally-configured sales tax rate.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
