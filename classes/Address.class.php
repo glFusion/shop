@@ -189,7 +189,7 @@ class Address
      */
     public function setName($name)
     {
-        $this->name = $name;
+        $this->name = (string)$name;
         return $this;
     }
 
@@ -213,7 +213,7 @@ class Address
      */
     public function setCompany($name)
     {
-        $this->company = $name;
+        $this->company = (string)$name;
         return $this;
     }
 
@@ -237,7 +237,7 @@ class Address
      */
     public function setAddress1($address)
     {
-        $this->address1 = $address;
+        $this->address1 = (string)$address;
         return $this;
     }
 
@@ -261,7 +261,7 @@ class Address
      */
     public function setAddress2($address)
     {
-        $this->address2 = $address;
+        $this->address2 = (string)$address;
         return $this;
     }
 
@@ -285,7 +285,7 @@ class Address
      */
     public function setCity($city)
     {
-        $this->city = $city;
+        $this->city = (string)$city;
         return $this;
     }
 
@@ -309,7 +309,7 @@ class Address
      */
     public function setState($state)
     {
-        $this->state = $state;
+        $this->state = (string)$state;
         return $this;
     }
 
@@ -333,7 +333,7 @@ class Address
      */
     public function setPostal($zip)
     {
-        $this->zip = $zip;
+        $this->zip = (string)$zip;
         return $this;
     }
 
@@ -350,6 +350,36 @@ class Address
 
 
     /**
+     * Get the 5-character main US zip code.
+     *
+     * @return  string      4-character zip code.
+     */
+    public function getZip5()
+    {
+        return substr($this->zip, 0, 5);
+    }
+
+
+    /**
+     * Get the zip+4 digits.
+     *
+     * @return  string      4-character zip+4 code.
+     */
+    public function getZip4()
+    {
+        if ($this->country == 'US') {
+            $pos = strpos($this->zip, '-');
+            if ($pos !== false) {
+                $retval = substr($this->zip, $pos, 4);
+            } else {
+                $retval = '';
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Set the country code.
      *
      * @param   string  $code   2-letter country code
@@ -357,7 +387,7 @@ class Address
      */
     public function setCountry($code)
     {
-        $this->country = $code;
+        $this->country = (string)$code;
         return $this;
     }
 
