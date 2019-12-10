@@ -71,18 +71,13 @@ class table extends \Shop\Tax
     private function _getData()
     {
         global $_SHOP_CONF, $LANG_SHOP, $_TABLES;
-        static $data = NULL;
-
-        if (is_array($data)) {
-            return $data;
-        }
 
         if (!$this->haveNexus()) {
             $data = array(
                 'totalRate' => 0,
                 'rates' => array(
                     array(
-                      'rate'  => 0,
+                        'rate'  => 0,
                         'name'  => 'No Nexus',
                         'type'  => 'Total',
                     ),
@@ -90,8 +85,9 @@ class table extends \Shop\Tax
             );
         } else {
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
-                WHERE zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
-            $res = DB_query($sql);
+                WHERE country = '" . DB_escapeString($this->Address->getCountry() . "'
+                AND zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
+            $res = DB_query($sql, 1);
             if ($res) {
                 $A = DB_fetchArray($res, false);
                 $data = array(
