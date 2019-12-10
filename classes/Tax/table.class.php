@@ -85,7 +85,7 @@ class table extends \Shop\Tax
             );
         } else {
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
-                WHERE country = '" . DB_escapeString($this->Address->getCountry() . "'
+                WHERE country = '" . DB_escapeString($this->Address->getCountry()) . "'
                 AND zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
             $res = DB_query($sql, 1);
             if ($res) {
