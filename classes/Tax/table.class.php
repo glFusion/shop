@@ -54,11 +54,6 @@ class table extends \Shop\Tax
             'totalRate' => $data['totalRate'],
             'freightTaxable' => 0,
             'rates' => $data['rates'],
-            /*array(
-                'rate'  => $data['totalRate'],
-                'name'  => $data['rates'][0]['name'],
-                'type'  => 'Total',
-            ),*/
         );
     }
 
@@ -91,25 +86,25 @@ class table extends \Shop\Tax
             if ($res) {
                 $A = DB_fetchArray($res, false);
                 $data = array(
-                    'totalRate' => $A['combined_rate'],
+                    'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
                     'rates' => array(
                         array(
-                            'rate'  => $A['state_rate'],
+                            'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
                             'name'  => $A['state'] .' State',
                             'type'  => 'State',
                         ),
                         array(
-                            'rate'  => $A['county_rate'],
+                            'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
                             'name'  => $A['state'] .' County',
                             'type'  => 'County',
                         ),
                         array(
-                            'rate'  => $A['city_rate'],
+                            'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
                             'name'  => $A['region'] . ', ' . $A['state'] .' City',
                             'type'  => 'City',
                         ),
                         array(
-                            'rate'  => $A['special_rate'],
+                            'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
                             'name'  => $A['region'] . ', ' . $A['state'] .' Special',
                             'type'  => 'Special',
                         ),
