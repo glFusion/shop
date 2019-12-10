@@ -766,7 +766,7 @@ $LANG_configselects['shop'] = array(
         'Avalara Free Api' => 'avatax',
         'Configured Rate' => 'internal',
         'TaxJar SmartCalcs' => 'taxjar',
-        'Internal Tax Table', 'table',
+        'Internal Tax Table' => 'table',
     ),
 );
 
