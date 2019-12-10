@@ -350,6 +350,36 @@ class Address
 
 
     /**
+     * Get the 5-character main US zip code.
+     *
+     * @return  string      4-character zip code.
+     */
+    public function getZip5()
+    {
+        return substr($this->zip, 0, 5);
+    }
+
+
+    /**
+     * Get the zip+4 digits.
+     *
+     * @return  string      4-character zip+4 code.
+     */
+    public function getZip4()
+    {
+        if ($this->country == 'US') {
+            $pos = strpos($this->zip, '-');
+            if ($pos !== false) {
+                $retval = substr($this->zip, $pos, 4);
+            } else {
+                $retval = '';
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Set the country code.
      *
      * @param   string  $code   2-letter country code
