@@ -60,6 +60,7 @@ class table extends \Shop\Tax
 
     /**
      * Get the tax data for the current address.
+     * Returns the "No Nexus" values if an entry is not found in the DB.
      *
      * @return  array   Decoded array of data from the JSON reply
      */
@@ -67,53 +68,58 @@ class table extends \Shop\Tax
     {
         global $_SHOP_CONF, $LANG_SHOP, $_TABLES;
 
-        if (!$this->haveNexus()) {
-            $data = array(
-                'totalRate' => 0,
-                'rates' => array(
-                    array(
-                        'rate'  => 0,
-                        'name'  => 'No Nexus',
-                        'type'  => 'Total',
-                    ),
+        // Default data returned if there is no nexus, or a rate entry
+        // is not found.
+        $data = array(
+            'totalRate' => 0,
+            'rates' => array(
+                array(
+                    'rate'  => 0,
+                    'name'  => 'No Nexus',
+                    'type'  => 'Total',
                 ),
-            );
-        } else {
+            ),
+        );
+
+        if ($this->haveNexus()) {
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
                 WHERE country = '" . DB_escapeString($this->Address->getCountry()) . "'
                 AND zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
             $res = DB_query($sql, 1);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                $data = array(
-                    'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
-                    'rates' => array(
-                        array(
-                            'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
-                            'name'  => $A['state'] .' State',
-                            'type'  => 'State',
+                if ($A) {           // Have to have found a record
+                    $data = array(
+                        'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
+                        'rates' => array(
+                            array(
+                                'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
+                                'name'  => $A['state'] .' State',
+                                'type'  => 'State',
+                            ),
+                            array(
+                                'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
+                                'name'  => $A['state'] .' County',
+                                'type'  => 'County',
+                            ),
+                            array(
+                                'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
+                                'name'  => $A['region'] . ' City',
+                                'type'  => 'City',
+                            ),
+                            array(
+                                'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
+                                'name'  => $A['region'] . ' Special',
+                                'type'  => 'Special',
+                            ),
                         ),
-                        array(
-                            'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
-                            'name'  => $A['state'] .' County',
-                            'type'  => 'County',
-                        ),
-                        array(
-                            'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
-                            'name'  => $A['region'] . ', ' . $A['state'] .' City',
-                            'type'  => 'City',
-                        ),
-                        array(
-                            'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
-                            'name'  => $A['region'] . ', ' . $A['state'] .' Special',
-                            'type'  => 'Special',
-                        ),
-                    ),
-                );
+                    );
+                }
             }
         }
         return $data;
     }
+
 }
 
 ?>
