@@ -127,11 +127,9 @@ class avatax extends \Shop\Tax
             
             if ($status['http_code'] == 200) {
                 $this->setCache($resp);
-                //$taxRate = (float)$decoded['totalRate'];
             } elseif (isset($decoded['error'])) {
                 $err = $decoded['error']['details'][0];
                 SHOP_log("Tax/Avatax {$err['code']}: {$err['message']}, {$err['description']}, {$err['helpLink']}", SHOP_LOG_ERROR);
-                //$taxRate = $_SHOP_CONF['tax_rate'];
                 $decoded = array(
                     'totalRate' => $_SHOP_CONF['tax_rate'],
                     'rates' => array(
@@ -143,7 +141,6 @@ class avatax extends \Shop\Tax
             }
         } else {
             $decoded = json_decode($resp, true);
-            //$taxRate = (float)$decoded['totalRate'];
         }
 
         return $decoded;
