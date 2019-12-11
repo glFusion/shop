@@ -88,7 +88,7 @@ class UploadDownload
     /** Auto-resize images upon upload?
      * @var boolean */
     private $_autoResize = false;
-    
+
     /** Allow any MIME type to be uploaded or downloaded?
      * @var boolean */
     private $_allowAnyType = false;
@@ -462,7 +462,7 @@ class UploadDownload
             $lFilename_large_complete = $this->_filePath . '/' . $lFilename_large;
             if (!copy ($filename, $lFilename_large_complete)) {
                 $this->_addError ("Couldn't copy $filename to $lFilename_large_complete.  You'll need to remove both files.");
-                $this->printErrors();
+                $this->printErrors(true);
                 return false;
             }
         }
@@ -556,7 +556,7 @@ class UploadDownload
             if ($retval !== true) {
                 $this->_addError('Image, ' . $this->_currentFile['name'] . ' ' . $msg);
 
-                $this->printErrors();
+                $this->printErrors(true);
                 exit;
             } else {
                 $this->_addDebugMsg ('Image, ' . $this->_currentFile['name'] . ' was resized from ' . $imageInfo['width'] . 'x' . $imageInfo['height'] . ' to ' . $newsize);
@@ -784,19 +784,16 @@ class UploadDownload
      * @param   boolean     $verbose    whether or not to print immediately or return only a string
      * @return  string  if $verbose is false it returns all errors otherwise just an empty string
      */
-    public function printErrors($verbose=true)
+    public function printErrors($verbose=false)
     {
-        if (isset($this->_errors) AND is_array($this->_errors)) {
+        if (isset($this->_errors) && is_array($this->_errors)) {
             $retval = '';
-            reset($this->_errors);
-            $nerrors = count($this->_errors);
-            for ($i = 1; $i <= $nerrors; $i++) {
+            foreach ($this->_errors as $msg) {
                 if ($verbose) {
-                    print current($this->_errors) . "<br" . XHTML . ">\n";
+                    print "$msg<br />\n";
                 } else {
-                    $retval .= current($this->_errors) . "<br" . XHTML . ">\n";
+                    $retval .= "$msg<br />\n";
                 }
-                next($this->_errors);
             }
             return $retval;
         }
@@ -876,6 +873,11 @@ class UploadDownload
     {
         $arr = array_change_key_case($arr);
         foreach ($arr as $key=>$data) {
+            foreach ($data as $idx=>$ext) {
+                if (strpos($ext, '.') === 0) {
+                    $data[$idx] = substr($ext, 1);
+                }
+            }
             $arr[$key] = array_map('strtolower', $data);
         }
         return $arr;
@@ -1174,9 +1176,10 @@ class UploadDownload
     }
 
 
-
     /**
      * Uploads any posted files.
+     * If `false` is returned the caller should get error messages by calling
+     * getErrors().
      *
      * @uses    self::_uploadCurrentFile()
      * @return  boolean     True if no errors were encountered otherwise false
