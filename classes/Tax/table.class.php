@@ -35,9 +35,16 @@ class table extends \Shop\Tax
         $data = $this->default_rates;
 
         if ($this->hasNexus()) {
+            $country = DB_escapeString($this->Address->getCountry());
+            $zipcode = DB_escapeString($this->Address->getZip5());
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
-                WHERE country = '" . DB_escapeString($this->Address->getCountry()) . "'
-                AND zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
+                WHERE country = '$country'
+                AND (
+                    zip_from = '$zipcode' OR
+                    '$zipcode' BETWEEN zip_from AND zip_to
+                ) ORDER BY zip_from DESC, zip_to ASC
+                LIMIT 1";
+            //echo $sql;die;
             $res = DB_query($sql, 1);
             if ($res) {
                 $A = DB_fetchArray($res, false);
