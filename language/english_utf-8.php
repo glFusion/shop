@@ -569,11 +569,18 @@ $LANG_SHOP = array (
 'qty_adjusted' => 'Quantity was adjusted to stock limits.',
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
+'combined_rate' => 'Combined Rate',
 'state_rate' => 'State Tax',
 'county_rate' => 'County Tax',
 'city_rate' => 'City Tax',
 'special_rate' => 'Special/District Tax',
 'country_rate' => 'Country Tax',
+'import_tax' => 'Edit or Import Tax Tables',
+'dscp_import_tax' => 'Import sales tax tables in CSV format from a provider, e.g. Avalara',
+'zip_from' => 'Zip From',
+'zip_to' => 'Zip To',
+'region' => 'Region',
+'new_rate' => 'New Rate',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

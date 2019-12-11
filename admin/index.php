@@ -52,6 +52,7 @@ $expected = array(
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
+    'importtaxexec', 'savetaxrate', 'deltaxrate',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
@@ -59,6 +60,7 @@ $expected = array(
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
+    'importtaxform', 'taxrates', 'edittaxrate',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -460,6 +462,30 @@ case 'addshipment':
     }
     break;
 
+case 'importtaxexec':
+    $content .= COM_showMessageText(Shop\Tax\table::Import());
+    $view = 'taxrates';
+    break;
+
+case 'savetaxrate':
+    $code = $_POST['old_code'];
+    $status = Shop\Tax\table::Save($_POST);
+    if (!$status) {
+        COM_setMsg("Error Saving tax", true);
+    }
+    if (empty($_POST['old_code'])) {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?edittaxrate');
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?taxrates');
+    }
+    break;
+
+case 'deltaxrate':
+    $code = $_REQUEST['code'];
+    Shop\Tax\table::Delete($code);
+    $view = 'taxrates';
+    break;
+
 default:
     $view = $action;
     break;
@@ -763,6 +789,22 @@ case 'shipment_pl':
         $shipments = $actionval;
     }
     Shop\Views\ShipmentPL::printPDF($shipments, $view);
+    break;
+
+case 'taxrates':
+    $T = SHOP_getTemplate('upload_tax', 'tpl');
+    $T->set_var(array(
+        'admin_url' => SHOP_ADMIN_URL . '/index.php',
+        'can_migrate_pp' => Shop\MigratePP::canMigrate(),
+        'can_purge_trans' => !$_SHOP_CONF['shop_enabled'],
+    ) );
+    $T->parse('output', 'tpl');
+    $content .= $T->finish($T->get_var('output'));
+    $content .= Shop\Tax\table::adminList();
+    break;
+
+case 'edittaxrate':
+    $content .= Shop\Tax\table::Edit($_GET['code']);
     break;
 
 default:
