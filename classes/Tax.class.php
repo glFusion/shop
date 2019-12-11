@@ -166,7 +166,11 @@ class Tax
             if (
                 $this->Address->getCountry() == (string)$country
                 &&
-                $this->Address->getState() == (string)$state
+                (
+                    empty($state)
+                    ||
+                    $this->Address->getState() == (string)$state
+                )
             ) {
                 return true;
             }
