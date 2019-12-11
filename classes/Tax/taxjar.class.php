@@ -107,6 +107,8 @@ class taxjar extends \Shop\Tax
      */
     private function _breakdownUS($data)
     {
+        global $LANG_SHOP;
+
         $retval = array(
             'country' => $data['country'],
             'totalRate' => $data['combined_rate'],
@@ -114,27 +116,27 @@ class taxjar extends \Shop\Tax
             'rates' => array(
                 array(
                     'rate'  => (float)$data['state_rate'],
-                    'name'  => 'State: ' . $data['state'],
+                    'name'  => $data['state'] . ' ' . $LANG_SHOP['state_rate'],
                     'type'  => 'State'
                 ),
                 array(
                     'rate' => (float)$data['county_rate'],
-                    'name' => 'County: ' . $data['county'],
+                    'name' => $data['county'] . ' ' . $LANG_SHOP['county_rate'],
                     'type' => 'County',
                 ),
                 array(
                     'rate' => (float)$data['city_rate'],
-                    'name' => 'City: ' . $data['city'],
+                    'name' => $data['city'] . ' ' . $LANG_SHOP['city_rate'],
                     'type' => 'City',
                 ),
                 array(
                     'rate' => (float)$data['combined_district_rate'],
-                    'name' => 'District Rate',
+                    'name' => $LANG_SHOP['special_rate'],
                     'type' => 'District',
                 ),
                 array(
                     'rate' => (float)$data['country_rate'],
-                    'name' => 'Country: ' . $data['country'],
+                    'name' => $data['country'] . ' ' . $LANG_SHOP['country_rate'],
                     'type' => 'Country',
                 ),
             ),
@@ -269,7 +271,7 @@ class taxjar extends \Shop\Tax
             ),
         );
 
-        if (!$this->haveNexus()) {
+        if (!$this->hasNexus()) {
             return $default;
         }
 
@@ -318,8 +320,10 @@ class taxjar extends \Shop\Tax
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
-    protected function haveNexus()
+    protected function hasNexus()
     {
+        return parent::hasNexus();
+
         $retval = false;
         $decoded = array(
             'regions' => array()
@@ -336,7 +340,7 @@ class taxjar extends \Shop\Tax
                 CURLOPT_HTTPHEADER => array(
                     'Authorization: Bearer ' . $this->api_token,
                 ),
-                //CURLOPT_VERBOSE => true,
+                CURLOPT_VERBOSE => true,
             ) );
             $resp = curl_exec($ch);
             $status = curl_getinfo($ch);

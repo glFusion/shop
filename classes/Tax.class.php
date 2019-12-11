@@ -28,6 +28,19 @@ class Tax
      * @var boolean */
     protected $test_mode = false;
 
+    /** Default tax rates used if _getData() would return nothing.
+     * @var array */
+    protected $default_rates = array(
+        'totalRate' => 0,
+        'rates' => array(
+            array(
+                'rate'  => 0,
+                'name'  => 'No Nexus',
+                'type'  => 'Total',
+            ),
+        ),
+    );
+
 
     /**
      * Get an instance of the tax provider class.
@@ -140,7 +153,7 @@ class Tax
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
-    protected function haveNexus()
+    protected function hasNexus()
     {
         global $_SHOP_CONF;
 
@@ -148,18 +161,53 @@ class Tax
             // No nexus locations configured
             return false;
         }
-
         foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
             list($country, $state) = explode(',', strtoupper($str));
             if (
-                $this->Address->getCountry() == $country
+                $this->Address->getCountry() == (string)$country
                 &&
-                $this->Address->getState() == $state
+                $this->Address->getState() == (string)$state
             ) {
                 return true;
             }
         }
         return false;
+    }
+
+
+    /**
+     * Look up a tax rate for the Address provided in the constructor.
+     *
+     * @return  float   Total tax rate for a location, globally-configurated rate on error.
+     */
+    public function getRate()
+    {
+        if ($this->hasNexus()) {
+            return $this->_getData()['totalRate'];
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Get all the tax elements, e.g. State, County, City, etc.
+     *
+     * @return  array       Array of tax data
+     */
+    public function getRateBreakdown()
+    {
+        if ($this->hasNexus()) {
+            $data = $this->_getData();
+            return array(
+                'country' => $this->Address->getCountry(),
+                'totalRate' => $data['totalRate'],
+                'freightTaxable' => 0,
+                'rates' => $data['rates'],
+            );
+        } else {
+            return $this->default_rates;
+        }
     }
 
 }

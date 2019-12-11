@@ -53,47 +53,16 @@ class avatax extends \Shop\Tax
 
 
     /**
-     * Look up a tax rate for the Address provided in the constructor.
-     *
-     * @return  float   Total tax rate for a location, globally-configurated rate on error.
-     */
-    public function getRate()
-    {
-        return $this->_getData()['totalRate'];
-    }
-
-
-    /**
-     * Get all the tax elements, e.g. State, County, City, etc.
-     *
-     * @return  array       Array of tax data
-     */
-    public function getRateBreakdown()
-    {
-        return $this->_getData()['rates'];
-    }
-
-
-    /**
      * Get tax data from the provider.
      *
      * @return  array   Decoded array of data from the JSON reply
      */
-    private function _getData()
+    protected function _getData()
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        if (!$this->haveNexus()) {
-            return array(
-                'totalRate' => 0,
-                'rates' => array(
-                    array(
-                      'rate'  => 0,
-                        'name'  => 'No Nexus',
-                        'type'  => 'Total',
-                    ),
-                ),
-            );
+        if (!$this->hasNexus()) {
+            return $this->default_rates;
         }
 
         $resp = $this->getCache();      // Try first to read from cache
@@ -130,14 +99,7 @@ class avatax extends \Shop\Tax
             } elseif (isset($decoded['error'])) {
                 $err = $decoded['error']['details'][0];
                 SHOP_log("Tax/Avatax {$err['code']}: {$err['message']}, {$err['description']}, {$err['helpLink']}", SHOP_LOG_ERROR);
-                $decoded = array(
-                    'totalRate' => $_SHOP_CONF['tax_rate'],
-                    'rates' => array(
-                        'rate'  => $_SHOP_CONF['tax_rate'],
-                        'name'  => $LANG_SHOP['sales_tax'],
-                        'type'  => 'Total',
-                    ),
-                );
+                $decoded = $this->default_rates;
             }
         } else {
             $decoded = json_decode($resp, true);

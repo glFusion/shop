@@ -20,68 +20,21 @@ namespace Shop\Tax;
  */
 class table extends \Shop\Tax
 {
-
-    /**
-     * Get the sales tax rate.
-     * The default function only returns the globally-configured rate.
-     *
-     * @return  float   Default configured tax rate.
-     */
-    public function getRate()
-    {
-        global $_SHOP_CONF;
-
-        if ($this->haveNexus()) {
-            return $this->_getData()['totalRate'];
-        } else {
-            return 0;
-        }
-    }
-
-
-    /**
-     * Get all the tax elements, e.g. State, County, City, etc.
-     *
-     * @return  array       Array of tax data
-     */
-    public function getRateBreakdown()
-    {
-        global $LANG_SHOP;
-
-        $data = $this->_getData();
-        return array(
-            'country' => $this->Address->getCountry(),
-            'totalRate' => $data['totalRate'],
-            'freightTaxable' => 0,
-            'rates' => $data['rates'],
-        );
-    }
-
-
     /**
      * Get the tax data for the current address.
      * Returns the "No Nexus" values if an entry is not found in the DB.
      *
      * @return  array   Decoded array of data from the JSON reply
      */
-    private function _getData()
+    protected function _getData()
     {
         global $_SHOP_CONF, $LANG_SHOP, $_TABLES;
 
         // Default data returned if there is no nexus, or a rate entry
         // is not found.
-        $data = array(
-            'totalRate' => 0,
-            'rates' => array(
-                array(
-                    'rate'  => 0,
-                    'name'  => 'No Nexus',
-                    'type'  => 'Total',
-                ),
-            ),
-        );
+        $data = $this->default_rates;
 
-        if ($this->haveNexus()) {
+        if ($this->hasNexus()) {
             $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}
                 WHERE country = '" . DB_escapeString($this->Address->getCountry()) . "'
                 AND zipcode = '" . DB_escapeString($this->Address->getZip5()) . "'";
@@ -94,22 +47,22 @@ class table extends \Shop\Tax
                         'rates' => array(
                             array(
                                 'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
-                                'name'  => $A['state'] .' State',
+                                'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
                                 'type'  => 'State',
                             ),
                             array(
                                 'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
-                                'name'  => $A['state'] .' County',
+                                'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
                                 'type'  => 'County',
                             ),
                             array(
                                 'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
-                                'name'  => $A['region'] . ' City',
+                                'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
                                 'type'  => 'City',
                             ),
                             array(
                                 'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
-                                'name'  => $A['region'] . ' Special',
+                                'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
                                 'type'  => 'Special',
                             ),
                         ),

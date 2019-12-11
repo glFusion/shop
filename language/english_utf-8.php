@@ -569,6 +569,11 @@ $LANG_SHOP = array (
 'qty_adjusted' => 'Quantity was adjusted to stock limits.',
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
+'state_rate' => 'State Tax',
+'county_rate' => 'County Tax',
+'city_rate' => 'City Tax',
+'special_rate' => 'Special/District Tax',
+'country_rate' => 'Country Tax',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
