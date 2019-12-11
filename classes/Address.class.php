@@ -351,12 +351,17 @@ class Address
 
     /**
      * Get the 5-character main US zip code.
+     * For other countries just return the zip code with spaces removed.
      *
      * @return  string      4-character zip code.
      */
     public function getZip5()
     {
-        return substr($this->zip, 0, 5);
+        if ($this->country == 'US') {
+            return substr($this->zip, 0, 5);
+        } else {
+            return str_replace(' ', '', $this->zip);
+        }
     }
 
 
