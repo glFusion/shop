@@ -238,7 +238,7 @@ class Address
      */
     public function setAddress1($address)
     {
-        $this->address1 = (string)ucwords(strtolower($address));
+        $this->address1 = ucwords(strtolower($address));
         return $this;
     }
 
@@ -262,7 +262,7 @@ class Address
      */
     public function setAddress2($address)
     {
-        $this->address2 = (string)ucwords(strtolower($address));
+        $this->address2 = ucwords(strtolower($address));
         return $this;
     }
 
@@ -310,7 +310,7 @@ class Address
      */
     public function setState($state)
     {
-        $this->state = (string)strtoupper($state);
+        $this->state = strtoupper((string)$state);
         return $this;
     }
 
@@ -388,7 +388,7 @@ class Address
      */
     public function setCountry($code)
     {
-        $this->country = strtoupper($code);
+        $this->country = strtoupper((string)$code);
         return $this;
     }
 
