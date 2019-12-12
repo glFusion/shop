@@ -2240,10 +2240,12 @@ class Product
      */
     public function getMaxOrderQty()
     {
-        if ($this->oversell == self::OVERSELL_ALLOW) {
-            return $this->max_ord_qty;
+        $max = $this->max_ord_qty == 0 ? 99999 : $this->max_ord_qty;
+
+        if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
+            return $max;
         } else {
-            return min($this->onhand, $this->max_ord_qty);
+            return min($this->onhand, $max);
         }
     }
 
@@ -2256,7 +2258,7 @@ class Product
      */
     public function getMinOrderQty()
     {
-        return (int)$this->min_ord_qty;
+        return (int)min($this->min_ord_qty, 1);
     }
 
 

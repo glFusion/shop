@@ -210,6 +210,8 @@ class Cart extends Order
             $this->items[$have_id]->quantity += $quantity;
             $new_quantity = $this->items[$have_id]->quantity;
             $need_save = true;      // Need to save the cart
+        } elseif ($quantity == 0) {
+            return false;
         } else {
             //$price = $P->getPrice($attrs, $quantity, array('uid'=>$uid));
             $tmp = array(
