@@ -27,7 +27,14 @@ class Company extends Address
      */
     public function __construct($data=array())
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $_CONF;
+
+        // The store name may be set in the configuration but still be empty.
+        // Use the site name if the store name is empty.
+        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
+        if (empty($store_name)) {
+            $store_name = $_CONF['site_name'];
+        }
 
         // The data variable is disregarded, all values come from the config.
         $this
@@ -35,7 +42,7 @@ class Company extends Address
             ->setID(0)          // not applicable
             ->setBilltoDefault(0)   // not applicable
             ->setShiptoDefault(0)   // not applicable
-            ->setCompany(SHOP_getVar($_SHOP_CONF, 'company'))
+            ->setCompany($store_name)
             ->setAddress1(SHOP_getVar($_SHOP_CONF, 'address1'))
             ->setAddress2(SHOP_getVar($_SHOP_CONF, 'address2'))
             ->setCity(SHOP_getVar($_SHOP_CONF, 'city'))
