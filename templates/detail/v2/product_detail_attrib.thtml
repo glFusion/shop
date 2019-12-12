@@ -117,7 +117,7 @@
       </div>
 {!endif}
 {!if stock_msg}
-      <div class="shopOnhand">
+      <div class="shopOnhand uk-alert uk-alert-danger floatright">
         {$LANG_SHOP['out_of_stock']}
       </div>
 {!endif}

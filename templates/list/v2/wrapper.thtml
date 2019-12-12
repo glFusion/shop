@@ -56,6 +56,9 @@
               <button type="button" class="shopButton black">{$LANG_SHOP['customize']}</button>
             </div>
           </div>
+{!if oos}
+          <span class="shopOnhand sm v2">({$LANG_SHOP['oos_short']})</span>
+{!endif}
 {!if rating_bar}
           <div class="shopRatingBar list v2">{rating_bar}</div>
 {!endif}
