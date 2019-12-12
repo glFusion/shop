@@ -15,16 +15,15 @@ namespace Shop;
 
 
 /**
- * Class to handle address formatting.
+ * Class to handle company address formatting.
  * @package shop
  */
 class Company extends Address
 {
     /**
-     * Load the supplied address values, if any, into the properties.
-     * `$data` may be an array or a json_encoded string.
+     * Load the company address values into the properties.
      *
-     * @param   string|array    $data   Address data
+     * @param   string|array    $data   Address data (not used)
      */
     public function __construct($data=array())
     {
@@ -50,9 +49,10 @@ class Company extends Address
     /**
      * Get an instance of the Company object.
      *
+     * @param   integer $addr_id    Address ID to retrieve (not used)
      * @return  object      Company Address object
      */
-    public static function getInstance()
+    public static function getInstance($addr_id=NULL)
     {
         static $Obj = NULL;
 

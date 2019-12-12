@@ -777,7 +777,7 @@ class Order
             $icon_tooltips = NULL;
         }
         $by_gc = (float)$this->getInfo('apply_gc');
-        $ShopAddr = new Address($_SHOP_CONF);
+        $ShopAddr = new Company($_SHOP_CONF);
 
         // Reload the address objects in case the addresses were updated
         $this->Billto = new Address($this->getAddress('billto'));
