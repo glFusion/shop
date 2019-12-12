@@ -125,7 +125,7 @@ class Product extends \Shop\Image
      * @param   integer $prod_id    Product record ID
      * @return  boolean     True on success, False on error
      */
-    public function setAsDefault($img_id, $prod_id)
+    public static function setAsDefault($img_id, $prod_id)
     {
         global $_TABLES;
 
