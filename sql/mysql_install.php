@@ -524,7 +524,6 @@ $SHOP_UPGRADE['0.7.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `status`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD order_id varchar(40)",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `shipper_id` int(3) UNSIGNED DEFAULT '0' AFTER `order_seq`",
-    "ALTER TABLE {$_TABLES['shop.address']} CHANGE id addr_id int(11) unsigned NOT NULL auto_increment",
 );
 $SHOP_UPGRADE['1.0.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.prod_opt_grps']}` (
@@ -584,6 +583,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`cache_key`),
       KEY (`expires`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.address']} CHANGE id addr_id int(11) unsigned NOT NULL auto_increment",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
