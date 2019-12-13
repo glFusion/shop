@@ -133,13 +133,6 @@ function SHOP_do_upgrade($dvlp = false)
                     }
                 }
             }
-
-            // Leverage this check to see if the gateway keys need to be encrypted.
-            \Shop\Cache::clear();   // extra cache clearing before reading gateways
-            foreach (Shop\Gateway::getAll(false) as $gw) {  // get all
-                $A = $gw->getConfig();
-                $gw->SaveConfig($A);
-            }
         }
 
         if (!SHOP_do_set_version($current_ver)) return false;
