@@ -1318,7 +1318,7 @@ class Gateway
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
      */
-    protected function getConfig($cfgItem = '')
+    public function getConfig($cfgItem = '')
     {
         if ($cfgItem == '') {
             // Get all items at once
