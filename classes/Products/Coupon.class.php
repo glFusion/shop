@@ -362,10 +362,6 @@ class Coupon extends \Shop\Product
         ) );
         $T->parse('output', 'message');
         $msg_text = $T->finish($T->get_var('output'));
-        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
-        if (empty($store_name)) {
-            $store_name = $_CONF['site_name'];  // company could be set but empty
-        }
         if (empty($recip_name)) {
             $recip_name = $email;
         }
@@ -376,7 +372,7 @@ class Coupon extends \Shop\Product
             ),
             'from' => array(
                 'email' => $_CONF['site_mail'],
-                'name'  => $store_name,
+                'name'  => \Shop\Company::getInstance()->getCompany(),
             ),
             'htmlmessage' => $msg_text,
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
