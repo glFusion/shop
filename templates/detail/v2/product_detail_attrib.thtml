@@ -135,14 +135,14 @@
 <!-- BEGIN BtnBlock -->
         <div class="shopDetailBuyNow v2">{buy_now_button}</div>
 <!-- END BtnBlock -->
-        <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
+    </div>
+    <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 
 {!if rating_bar}
-        <div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
+    <div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
 {!endif}
-        <div class="shopComments">
-          {usercomments}
-        </div>
+    <div class="shopComments">
+      {usercomments}
     </div>
 </div>
 {# end {templatelocation} #}
