@@ -413,7 +413,7 @@ class Catalog
                         'track_onhand' => '',   // not available for plugins
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
-                        'nonce'     => $Cart->makeNonce($A['id'] . $item_dscp),
+                        'nonce'     => $Cart->makeNonce($P->id . $P->getName()),
                         'can_add_cart'  => true,
                         'rating_bar' => $P->ratingBar(true),
                     ) );
