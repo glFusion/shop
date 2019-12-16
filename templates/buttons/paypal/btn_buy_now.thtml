@@ -1,8 +1,13 @@
 {# begin {templatelocation} #}
 <form class="frm_buy_now" action="{action_url}" method="{method}">
   {gateway_vars}
-  <button type="submit" class="shopButton blue" border="0" name="submit" alt="{btn_text}">
-    <i class="uk-icon uk-icon-paypal">&nbsp;</i>{btn_text}
-  </button>
+  <img type="submit"
+    src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-small.png"
+    alt="Buy now with PayPal" style="margin-bottom:5px;"/>
+{!if 0}
+    <button type="submit" class="shopButton blue" border="0" name="submit" alt="{btn_text}">
+        <i class="uk-icon uk-icon-paypal">&nbsp;</i>{btn_text}
+    </button>
+{!endif}
 </form>
 {# end {templatelocation} #}
