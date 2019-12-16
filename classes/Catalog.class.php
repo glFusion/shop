@@ -389,18 +389,10 @@ class Catalog
                 foreach ($plugin_data as $A) {
                     // Reset button values
                     $buttons = '';
-                    if (!isset($A['buttons'])) $A['buttons'] = array();
-
-                    // If the plugin has a getDetailPage service function, use it
-                    // to wrap the item's detail page in the catalog page.
-                    // Otherwise just use a link to the product's url.
-                    if (isset($A['have_detail_svc'])) {
-                        $item_url = SHOP_URL . '/index.php?pidetail=' . $A['id'];
-                    } elseif (isset($A['url'])) {
-                        $item_url = $A['url'];
-                    } else {
-                        $item_url = '';
+                    if (!isset($A['buttons'])) {
+                        $A['buttons'] = array();
                     }
+
                     $P = \Shop\Product::getByID($A['id']);
                     $price = $P->getPrice();
                     $T->set_var(array(
@@ -409,7 +401,7 @@ class Catalog
                         'name'      => $P->short_description,
                         'short_description' => $P->short_description,
                         'encrypted' => '',
-                        'item_url'  => $item_url,
+                        'item_url'  => $P->getLink(0, $query_str),
                         'track_onhand' => '',   // not available for plugins
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
