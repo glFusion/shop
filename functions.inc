@@ -128,22 +128,6 @@ spl_autoload_register(function ($class)
     }
 });
 
-/**
- * Import a specific report class.
- *
- * @param   string  $name   Report class basename
- */
-function USES_shop_class_report($name='')
-{
-    $classfile = __DIR__ . '/classes/reports/' . $name . '.class.php';
-    if (is_file($classfile)) {
-        require_once $classfile;
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 /**
  * Show the product catalog in the centerblock.
@@ -969,7 +953,6 @@ function phpblock_shop_cart_contents()
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
-        //SHOP_log("Cart disabled or there is no cart", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -980,7 +963,6 @@ function phpblock_shop_cart_contents()
     }
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) {
-        //SHOP_log("Cart {$cart->order_id} has no items", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -1861,8 +1843,6 @@ function plugin_profilesave_shop($uid=0)
 }
 
 
-
-
 /**
  * Get all parent categories and a product count.
  * Recurses through all child categories.
@@ -1939,22 +1919,6 @@ function SHOP_now()
 {
     global $_CONF;
     return $_CONF['_now'];
-}
-
-
-/**
- * Get a DateTimeZone object for the current timezone.
- *
- * @return  object  DateTimeZone object
- */
-function SHOP_timezone()
-{
-    global $_CONF;
-    static $tz = NULL;
-    if ($tz === NULL) {
-        $tz = new DateTimeZone($_CONF['timezone']);
-    }
-    return $tz;
 }
 
 
