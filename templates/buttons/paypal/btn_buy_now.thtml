@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <form class="frm_buy_now" action="{action_url}" method="{method}">
   {gateway_vars}
-  <img type="submit"
+  <input type="image"
     src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-small.png"
     alt="Buy now with PayPal" style="margin-bottom:5px;"/>
 {!if 0}
