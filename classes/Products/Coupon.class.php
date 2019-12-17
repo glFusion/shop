@@ -336,6 +336,7 @@ class Coupon extends \Shop\Product
      * @param   string  $sender     Optional sender, from the custom text field
      * @param   string  $msg        Optional extra message
      * @param   string  $exp        Expiration Date
+     * @param   string  $recip_name Name of recipient
      */
     public static function Notify(
         $gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP, $recip_name=''
