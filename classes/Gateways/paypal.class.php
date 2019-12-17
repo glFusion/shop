@@ -13,6 +13,7 @@
  */
 namespace Shop\Gateways;
 
+use Shop\Company;
 use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
@@ -963,7 +964,7 @@ class paypal extends \Shop\Gateway
      */
     public function createInvoice($order_num)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF, $LANG_SHOP;
 
         $access_token = $this->getBearerToken();
         if (!$access_token) {
@@ -972,6 +973,7 @@ class paypal extends \Shop\Gateway
         }
         echo "Token: $access_token\n";
 
+        $Shop = new Company();
         $Order = Order::getInstance($order_num);
         $Currency = Currency::getInstance($Order->currency);
         $Billto = new Address($Order->getAddress('billto'));
@@ -988,15 +990,15 @@ class paypal extends \Shop\Gateway
             ),
             'invoicer' => array(
                 'name' => array(
-                    'business_name' => $_SHOP_CONF['company'],
+                    'business_name' => $Shop->getCompany(),
                 ),
                 'address' => array(
-                    'address_line_1' => $_SHOP_CONF['address1'],
-                    'address_line_2' => $_SHOP_CONF['address2'],
-                    'admin_area_2' => $_SHOP_CONF['city'],
-                    'admin_area_1' => $_SHOP_CONF['state'],
-                    'postal_code' => $_SHOP_CONF['zip'],
-                    'country_code' => $_SHOP_CONF['country'],
+                    'address_line_1' => $Shop->getAddress1(),
+                    'address_line_2' => $Shop->getAddress2(),
+                    'admin_area_2' => $Shop->getCity(),
+                    'admin_area_1' => $Shop->getState(),
+                    'postal_code' => $Shop->getPostal(),
+                    'country_code' => $Shop->getCountry(),
                 ),
                 'website' => $_CONF['site_url'],
             ),
@@ -1004,8 +1006,8 @@ class paypal extends \Shop\Gateway
                 array(
                     'billing_info' => array(
                         'name' => array(
-                            'given_name' => $Billto->getNamePart('fname'),
-                            'surname' => $Billto->getNamePart('lname'),
+                            'given_name' => $Billto->parseName('fname'),
+                            'surname' => $Billto->parseName('lname'),
                         ),
                         'address' => array(
                             'address_line_1'    => $Order->billto_address1,
@@ -1019,8 +1021,8 @@ class paypal extends \Shop\Gateway
                     ),
                     'shipping_info' => array(
                         'name' => array(
-                            'given_name' => $Shipto->getNamePart('fname'),
-                            'surname' => $Shipto->getNamePart('lname'),
+                            'given_name' => $Shipto->parseName('fname'),
+                            'surname' => $Shipto->parseName('lname'),
                         ),
                         'address' => array(
                             'address_line_1'    => $Order->shipto_address1,
@@ -1072,6 +1074,7 @@ class paypal extends \Shop\Gateway
             }
             $A['items'][] = $item;
         }
+        var_dump($A);die;
 
         // Create the draft invoice
         $ch = curl_init();
