@@ -2,156 +2,147 @@
 {javascript}
 <div style="clear:both;"></div>
 <div class="shopProductDetail v2" style="width: 50%;" id="shopShortDesc">
-  <h1>{short_description}</h1>
-  {name}
+    <h1>{short_description}</h1>
+    {name}
 </div>
 {!if can_edit}
 <div class="floatright">
-  <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}">
-    <i class="uk-icon uk-icon-pencil uk-icon-small"></i>
-  </a>
+    <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}">
+        <i class="uk-icon uk-icon-pencil uk-icon-small"></i>
+    </a>
 </div>
 {!endif}
 
-<div class="uk-grid" style="clear:both;margin-top:20px;">
-<div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
+<div class="uk-grid" style="clear:both;margin-top:20px;width:100%;">
+    <div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
 {!if main_img}
-  <div class="main_img uk-hidden-small">
-    <img id="disp_img" class="uk-responsive-width uk-responsive-height"
-        alt="Product Image"
-        src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
-  </div>
+        <div class="main_img uk-hidden-small">
+            <img id="disp_img" class="uk-responsive-width uk-responsive-height"
+                alt="Product Image"
+                src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
+        </div>
+        <div class="shopProductThumbWrapper v2">
+<!-- BEGIN Thumbnail -->
+            <div class="shopProductThumb v2">
+{!if thumb_url}
+                <a href="{img_url}" data-uk-lightbox="{group:'product'}">
+                    <img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}"
+                        title="{$LANG_SHOP[click_to_enlarge]}"
+                        class="tooltip" style="border:0px;"
+                        onmouseover="javascript:SHOPupdateImage('{img_file}','{img_url}');" />
+                </a>
+{!endif}
+            </div>
+<!-- END Thumbnail -->
+        </div>
 {!else}
-<div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
-{!endif}
-</div>
-
-<div class="shopDetailAttrib v2 uk-width-large-1-3 uk-width-medium-1-2 uk-width-small-1-1">
-  <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
-{!if 0}
-    action="{site_url}/shop/index.php" method="post">
-{!endif}
-    <div class="shopDetailPrice v2">
-{!if on_sale}
-      <span class="shopPrice was">{price_prefix}</span>
-      <span class="shopPrice was" id="price_was">{orig_price}</span>
-      <span class="shopPrice sale">{price_postfix}</span>
-      <div class="shopPrice sale">{sale_name}</div>
-      <div>
-        <span class="shopPrice sale">{price_prefix}</span>
-        <span class="shopPrice sale" id="price">{init_price}</span>
-        <span class="shopPrice sale">{price_postfix}</span>
-      </div>
-{!else}
-      <div>
-      <span class="shopPrice normal">{price_prefix}</span>
-      <span class="shopPrice normal" id="price">{init_price}</span>
-      <span class="shopPrice normal">{price_postfix}</span>
-      </div>
-{!endif}
-{!if Xshipping_txt}
-        <div class="shopPlusShipping">{shipping_txt}</div>
-{!endif}
-<!-- BEGIN qtyDiscTxt -->
-        <div class="shopQtyDisc">{qty_disc}</div>
-<!-- END qtyDiscTxt -->
-{!if qty_disc}
-        <div class="shopQtyDiscText">{$LANG_SHOP['qty_disc_text']}</div>
+        <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 {!endif}
     </div>
 
-    <div id="shopProductAttrib" class="shopDetailAddCart v2">
+    <div class="shopDetailAttrib v2 uk-width-large-1-3 uk-width-medium-1-2 uk-width-small-1-1">
+        <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
+            <div class="shopDetailPrice v2">
+{!if on_sale}
+                <span class="shopPrice was">{price_prefix}</span>
+                <span class="shopPrice was" id="price_was">{orig_price}</span>
+                <span class="shopPrice sale">{price_postfix}</span>
+                <div class="shopPrice sale">{sale_name}</div>
+                <div>
+                    <span class="shopPrice sale">{price_prefix}</span>
+                    <span class="shopPrice sale" id="price">{init_price}</span>
+                    <span class="shopPrice sale">{price_postfix}</span>
+                </div>
+{!else}
+                <div>
+                    <span class="shopPrice normal">{price_prefix}</span>
+                    <span class="shopPrice normal" id="price">{init_price}</span>
+                    <span class="shopPrice normal">{price_postfix}</span>
+                </div>
+{!endif}
+<!-- BEGIN qtyDiscTxt -->
+                <div class="shopQtyDisc">{qty_disc}</div>
+<!-- END qtyDiscTxt -->
+{!if qty_disc}
+                <div class="shopQtyDiscText">{$LANG_SHOP['qty_disc_text']}</div>
+{!endif}
+            </div>
+
+            <div id="shopProductAttrib" class="shopDetailAddCart v2">
 <!-- BEGIN OptionGroup -->
-      <div class="uk-form-row">
-        <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
-        <div class="uk-form-controls">
+                <div class="uk-form-row">
+                    <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
+                    <div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-          <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm();">
+                        <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm();">
 <!-- BEGIN Optionselect -->
-            <option value="{opt_id}" {select_selected}>{opt_str}</option>
+                            <option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
-          </select>
+                        </select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm();"/>&nbsp;{opt_str}<br />
+                        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm();"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
-        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{opt_str}<br />
+                        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{opt_str}<br />
 <!-- END Optionradio -->
 {!endif}
-        </div>
-      </div>
+                    </div>
+                </div>
 <!-- END OptionGroup -->
 
 <!-- BEGIN CustAttrib -->
-      <div class=uk-form-row>
-        <label class="uk-form-label" for="{fld_id}">{fld_name}:</label>
-        <div class="uk-form-controls">
-          <input type="text" class="shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" size="40" />
-        </div>
-      </div>
+                <div class=uk-form-row>
+                    <label class="uk-form-label" for="{fld_id}">{fld_name}:</label>
+                    <div class="uk-form-controls">
+                        <input type="text" class="shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" size="40" />
+                    </div>
+                </div>
 <!-- END CustAttrib -->
 
 <!-- BEGIN SpecialFields -->
-      <div class=uk-form-row>
-        <label class="uk-form-label" for="{sf_name}">{sf_text}:
+                <div class=uk-form-row>
+                    <label class="uk-form-label" for="{sf_name}">{sf_text}:
 {!if sf_help}
-           <i class="uk-icon uk-icon-question-circle tooltip" title="{sf_help}"></i>
+                        <i class="uk-icon uk-icon-question-circle tooltip" title="{sf_help}"></i>
 {!endif} 
-        </label>
-        <div class="uk-form-controls">
+                    </label>
+                    <div class="uk-form-controls">
 {!!if {sf_type} == "textarea" !!}
-          <textarea name="extras[special][{sf_name}]" id="{sf_name}"
-            style="width:100%;height:100px;"></textarea>
+                        <textarea name="extras[special][{sf_name}]" id="{sf_name}"
+                            style="width:100%;height:100px;"></textarea>
 {!else}
-          <input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
+                        <input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
 {!endif}
-        </div>
-      </div>
+                    </div>
+                </div>
 <!-- END SpecialFields -->
 
 {!if onhand}
-      <div class="uk-form-row shopOnhand">
-        {onhand} {$LANG_SHOP['available']}
-      </div>
+                <div class="uk-form-row shopOnhand">
+                    {onhand} {$LANG_SHOP['available']}
+                </div>
 {!endif}
 {!if stock_msg}
-      <div class="shopOnhand">
-        {$LANG_SHOP['out_of_stock']}
-      </div>
+                <div class="shopOnhand uk-alert uk-alert-danger floatright">
+                    {$LANG_SHOP['out_of_stock']}
+                </div>
 {!endif}
-      {add_cart_button}
-    </div>
-  </form>
+                {add_cart_button}
+            </div>
+        </form>
 <!-- BEGIN BtnBlock -->
-  <div class="shopDetailBuyNow v2">{buy_now_button}</div>
+        <div class="shopDetailBuyNow v2">{buy_now_button}</div>
 <!-- END BtnBlock -->
-</div>
-
-{!if main_img}
-  <div class="shopProductThumbWrapper">
-<!-- BEGIN Thumbnail -->
-    <div class="shopProductThumb v2">
-{!if thumb_url}
-      <a href="{img_url}" data-uk-lightbox="{group:'product'}">
-        <img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}"
-            title="{$LANG_SHOP[click_to_enlarge]}"
-            class="tooltip" style="border:0px;"
-            onmouseover="javascript:SHOPupdateImage('{img_file}','{img_url}');" />
-      </a>
-{!endif}
     </div>
-<!-- END Thumbnail -->
-  </div>
-</div>
-<div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
-{!endif}
+    <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 
 {!if rating_bar}
-<div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
+    <div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
 {!endif}
-<div class="shopComments">
-  {usercomments}
+    <div class="shopComments">
+      {usercomments}
+    </div>
 </div>
 {# end {templatelocation} #}

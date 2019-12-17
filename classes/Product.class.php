@@ -1189,15 +1189,13 @@ class Product
         // create an empty object for later use.
         // $this->sel_opts may also be set in getInstance()if an option
         // string is provided in the item number.
+        $this->sel_opts = array();
         if ($this->oi_id > 0) {
             $OI = new OrderItem($this->oi_id);
-            if ($OI->canView()) {
-                $this->sel_opts = array();
-                foreach ($OI->getOptions() as $OIO) {
-                    if ($OIO->getID() > 0) {    // not a custom text field
-                        $this->sel_opts[] = $OIO->getID();
+            foreach ($OI->getOptions() as $OIO) {
+                if ($OIO->getOptionID() > 0) {    // not a custom text field
+                    $this->sel_opts[] = $OIO->getOptionID();
                     }
-                }
             }
         } else {
             $OI = NULL;

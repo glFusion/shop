@@ -450,6 +450,7 @@ $LANG_SHOP = array (
 'exclude' => 'Exclude',
 'buy_x_save' => 'Buy %1$d, save %2$s%%',
 'out_of_stock' => 'This item is currently out of stock.',
+'oos_short' => 'Out of Stock',
 'shipping_method' => 'Shipping Method',
 'shipping_units' => 'Shipping Units',
 'min_ship_units' => 'Min Shipping Units',

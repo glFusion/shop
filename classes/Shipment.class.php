@@ -292,11 +292,6 @@ class Shipment
                     $SI->Save();
                 }
             }
-            if ($this->Order->isShippedComplete()) {
-                $this->Order->updateStatus('shipped');
-            } else {
-                $this->Order->updateStatus('processing');
-            }
             if (isset($form['tracking']) && is_array($form['tracking'])) {
                 foreach ($form['tracking'] as $id=>$data) {
                     $this->addPackage(
@@ -305,6 +300,11 @@ class Shipment
                         $data['tracking_num']
                     );
                 }
+            }
+            if ($this->Order->isShippedComplete()) {
+                $this->Order->updateStatus('shipped');
+            } else {
+                $this->Order->updateStatus('processing');
             }
             return true;
         } else {

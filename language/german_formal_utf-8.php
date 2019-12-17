@@ -573,6 +573,7 @@ $LANG_SHOP = array (
 'qty_adjusted' => 'Quantity was adjusted to stock limits.',
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
+'oos_short' => 'Out of Stock',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

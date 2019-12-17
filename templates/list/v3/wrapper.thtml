@@ -62,6 +62,9 @@
 {!endif}
             </figcaption>
           </figure>
+{!if oos}
+          <span class="shopOnhand sm v3">({$LANG_SHOP['oos_short']})</span>
+{!endif}
 {!if rating_bar}
           <div class="shopRatingBar list v3">{rating_bar}</div>
 {!endif}

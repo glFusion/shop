@@ -25,7 +25,6 @@ require_once __DIR__  . '/../shop.php';
  */
 class MigratePP
 {
-
     /**
      * Perform all data migrations and copy data files from Paypal to Shop.
      *
@@ -214,7 +213,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.products']}",
             "INSERT INTO {$_TABLES['shop.products']}
-                SELECT *, '' as brand
+                SELECT *, '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
                 FROM {$_TABLES['paypal.products']}",
         ) );
     }

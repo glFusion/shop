@@ -97,7 +97,7 @@ class paypal extends \Shop\IPN
         case 'send_money':
             $this
                 ->setPmtShipping(SHOP_getVar($A, 'shipping', 'float'))
-                ->setPmtHangling(SHOP_getVar($A, 'handling', 'float'));
+                ->setPmtHandling(SHOP_getVar($A, 'handling', 'float'));
             break;
         case 'cart':
             $this

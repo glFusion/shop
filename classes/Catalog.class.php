@@ -332,6 +332,7 @@ class Catalog
                 'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(),
                 'rating_bar'    => $P->ratingBar(true),
+                'oos'           => !$P->isInStock(),
             ) );
 
             if ($isAdmin) {

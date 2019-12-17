@@ -107,6 +107,12 @@ class Coupon extends \Shop\Product
         }
         $charcount = strlen($characters);
 
+        if (function_exists('random_int')) {
+            $rand_func = 'random_int';
+        } else {
+            $rand_func = 'mt_rand';
+        }
+
         // If a mask is specified, use it and substitute 'X' for coupon chars.
         // Otherwise use the specified length.
         if ($options['mask'] != '') {
@@ -114,7 +120,7 @@ class Coupon extends \Shop\Product
             $len = strlen($mask);
             for ($i = 0; $i < $len; $i++) {
                 if ($mask[$i] === 'X') {
-                    $coupon .= $characters[mt_rand(0, $charcount - 1)];
+                    $coupon .= $characters[$rand_func(0, $charcount - 1)];
                 } else {
                     $coupon .= $mask[$i];
                 }
@@ -125,7 +131,7 @@ class Coupon extends \Shop\Product
                 $options['length'] = 16;
             }
             for ($i = 0; $i < $options['length']; $i++) {
-                $coupon .= $characters[mt_rand(0, $charcount - 1)];
+                $coupon .= $characters[$rand_func(0, $charcount - 1)];
             }
         }
         return $options['prefix'] . $coupon . $options['suffix'];
@@ -356,10 +362,6 @@ class Coupon extends \Shop\Product
         ) );
         $T->parse('output', 'message');
         $msg_text = $T->finish($T->get_var('output'));
-        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
-        if (empty($store_name)) {
-            $store_name = $_CONF['site_name'];  // company could be set but empty
-        }
         if (empty($recip_name)) {
             $recip_name = $email;
         }
@@ -370,7 +372,7 @@ class Coupon extends \Shop\Product
             ),
             'from' => array(
                 'email' => $_CONF['site_mail'],
-                'name'  => $store_name,
+                'name'  => \Shop\Company::getInstance()->getCompany(),
             ),
             'htmlmessage' => $msg_text,
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],

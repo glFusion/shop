@@ -563,7 +563,13 @@ div.ItemOptions {
     font-size: 120%;
     font-style:italic;
 }
-
+.shopOnhand.sm {
+    font-size: initial;
+}
+.shopOnhand.sm.v3,
+.shopOnhand.sm.v2 {
+    text-align:center;
+}
 .shopProductLgImg {
     /*max-width: 460px;
     max-height: 400px;*/

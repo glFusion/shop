@@ -177,21 +177,6 @@ function plugin_install_shop()
 {
     global $INSTALL_plugin, $_SHOP_CONF, $_PLUGIN_INFO, $_PLUGINS;
 
-    // If Paypal is enabled, then it must be version 0.6.1 to avoid potential
-    // function name conflicts with the Shop wrapper functions.
-    if (in_array('paypal', $_PLUGINS)) {
-        $ver = $_PLUGIN_INFO['paypal']['pi_version'];
-        if (!COM_checkVersion($ver, '0.6.1')) {
-            $msg = sprintf(
-                'Paypal Plugin must be version 0.6.1 or greater, version %s installed.',
-                $ver
-            ) . ' Please upgrade or disable the Paypal plugin to install the Shop plugin.';
-            COM_setMsg($msg, 'error');
-            COM_errorLog($msg);
-            return false;
-        }
-    }
-
     $pi_name            = $_SHOP_CONF['pi_name'];
     $pi_display_name    = $_SHOP_CONF['pi_display_name'];
 

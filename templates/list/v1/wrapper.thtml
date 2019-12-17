@@ -9,6 +9,9 @@
 {!else}
       {short_description}
 {!endif}
+{!if oos}
+    <span class="shopOnhand sm v1 floatright">({$LANG_SHOP['oos_short']})</span>
+{!endif}
     </div>
   <div class="ItemImage">
 {!if small_pic}
@@ -23,7 +26,6 @@
       &nbsp;
 {!endif}
   </div>
-
 
 {!if rating_bar}
     <div class="uk-hidden-small ppRatingBar list v1">{rating_bar}</div>
