@@ -157,7 +157,7 @@ function SHOP_do_upgrade($dvlp = false)
         // Start by putting the address line into the first element in case
         // no delimiters are found.
         $addr_parts = array($shop_addr);
-        foreach (array(', ', ',', '<br />', '<br/>', '<br>') as $sep) {
+        foreach (array(',', '<br />', '<br/>', '<br>') as $sep) {
             if (strpos($shop_addr, $sep) > 0) {
                 $addr_parts = explode($sep, $shop_addr);
                 break;
