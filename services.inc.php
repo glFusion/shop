@@ -6,7 +6,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -309,6 +310,8 @@ function service_formatAmount_shop($args, &$output, &$svc_msg)
 
 /**
  * Send gift cards to one or more site members.
+ * This is to allow other plugins to send coupons as rewards for filling out
+ * a quiz, for instance.
  * Args should contain:
  *   - amount - required
  *   - members - array of user IDs, and/or
@@ -326,17 +329,21 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
     global $_TABLES, $_SHOP_CONF;
 
     $output = array();
-
+    $svc_msg = array();
     if (!$_SHOP_CONF['gc_enabled'] || !$_SHOP_CONF['shop_enabled']) {
+        $svc_msg[] = 'Shop or Gift Cards not enabled';
         return PLG_RET_PERMISSION_DENIED;
     }
 
     $amt = SHOP_getVar($args, 'amount', 'float');
-    $uids = SHOP_getVar($args, 'members', 'array');
+    $uids = SHOP_getVar($args, 'members', 'mixed');
     $gid = SHOP_getVar($args, 'group_id', 'int');
     $exp = SHOP_getVar($args, 'expires', 'string');
     $msg = SHOP_getVar($args, 'message', 'string');
-    $notify = SHOP_getVar($args, 'notify', 'boolean');
+    $notify = SHOP_getVar($args, 'notify', 'boolean', false);
+    if (is_string($uids)) {
+        $uids = explode('|', $uids);
+    }
     if (is_numeric($exp)) {
         $exp = (int)$exp;
         $dt = new \Date('+' . $exp. ' days', $_CONF['timezone']);
@@ -350,22 +357,31 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
             $uids[] = $A['ug_uid'];
         }
     }
-    if ($amt < .01) return PLG_RET_ERROR;
-    if (empty($uids)) return PLG_RET_ERROR;
-    foreach ($uids as $uid) {
-        $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
-        $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
-        $name = COM_getDisplayName($uid);
-        $output[$uid] = array(
-            'code' => $code,
-            'email' => $email,
-            'link' => Shop\Products\Coupon::redemptionUrl($code),
-        );
-        if ($notify && !empty($email)) {
-            Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp, $name);
-        }
+    if (empty($uids)) {
+        $svc_msg[] = $LANG_SHOP['err_gc_nousers'];
     }
-    return PLG_RET_OK;
+    if ($amt < .01) {
+        $svc_msg[] = $LANG_SHOP['err_gc_amt'];
+    }
+    if (empty($svc_msg)) {
+        $uids = array_filter(array_unique($uids));
+        foreach ($uids as $uid) {
+            $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
+            $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+            $name = COM_getDisplayName($uid);
+            $output[$uid] = array(
+                'code' => $code,
+                'email' => $email,
+                'link' => Shop\Products\Coupon::redemptionUrl($code),
+            );
+            if ($notify && !empty($email)) {
+                Shop\Products\Coupon::Notify($code, $email, $amt, '', $msg, $exp, $name);
+            }
+        }
+        return PLG_RET_OK;
+    } else {
+        return PLG_RET_ERROR;
+    }
 }
 
 

@@ -2235,6 +2235,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
         return $val;
         break;
     case 'object':
+    case 'mixed':
         return $val;
     case 'string':
     default:
