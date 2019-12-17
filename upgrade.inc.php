@@ -154,6 +154,9 @@ function SHOP_do_upgrade($dvlp = false)
         $c->set('company', $shop_name, $_SHOP_CONF['pi_name']);
         $c->set('country', $shop_country, $_SHOP_CONF['pi_name']);
         // Try breaking up the address by common separators
+        // Start by putting the address line into the first element in case
+        // no delimiters are found.
+        $addr_parts = array($shop_addr);
         foreach (array(', ', ',', '<br />', '<br/>', '<br>') as $sep) {
             if (strpos($shop_addr, $sep) > 0) {
                 $addr_parts = explode($sep, $shop_addr);
