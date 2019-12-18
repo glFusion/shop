@@ -45,7 +45,9 @@
             <span class="shopOnhand sm v1 floatright">({$LANG_SHOP['oos_short']})</span>
 {!endif}
 <!-- BEGIN BtnBlock -->
+            <div style="clear:right;overflow:auto;padding-bottom:2px;padding-top:2px;">
             {button}
+            </div>
 <!-- END BtnBlock -->
         </div>
     </div>
