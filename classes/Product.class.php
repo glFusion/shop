@@ -2373,14 +2373,15 @@ class Product
      * Determine if the current user has access to view this product.
      * Checks the related category for access.
      *
-     * @param   array|null  $groups     Optional group override to pass to Cat
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess($groups = NULL)
+    public function hasAccess()
     {
+        global $_GROUPS;
+
         // Make sure the category is set
         if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess($groups);
+        return $this->Cat->hasAccess($_GROUPS);
     }
 
 
