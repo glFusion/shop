@@ -150,10 +150,12 @@ class orderlist extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $sql = "SELECT ord.*, sum(itm.price * itm.quantity) as sales_amt
-            FROM {$_TABLES['shop.orders']} ord
-            LEFT JOIN {$_TABLES['shop.orderitems']} itm
-                ON itm.order_id = ord.order_id";
+        $sql = "SELECT ord.*, (
+                SELECT sum(itm.price * itm.quantity)
+                FROM {$_TABLES['shop.orderitems']} itm
+                WHERE itm.order_id = ord.order_id
+            ) as sales_amt
+            FROM {$_TABLES['shop.orders']} ord ";
         $orderstatus = $this->allowed_statuses;
         if (empty($orderstatus)) {
             $orderstatus = self::_getSessVar('orderstatus');
@@ -186,7 +188,7 @@ class orderlist extends \Shop\Report
                 'phone', 'buyer_email', 'ord.order_id',
             ),
             'default_filter' => "WHERE $where",
-            'group_by' => 'ord.order_id',
+            //'group_by' => 'ord.order_id',
         );
         $text_arr = array(
             'has_extras' => false,
@@ -233,7 +235,6 @@ class orderlist extends \Shop\Report
         case 'csv':
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
-            $sql .= ' GROUP BY ' . $query_arr['group_by'];
             $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
