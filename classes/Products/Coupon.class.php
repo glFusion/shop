@@ -793,10 +793,10 @@ class Coupon extends \Shop\Product
     /**
      * Display the purchase history for coupons.
      *
-     * @param   mixed   $item_id    Numeric or string item ID
+     * @param   integer $cat_id     Category ID to limit listing
      * @return  string      Display HTML
      */
-    public static function adminList()
+    public static function adminList($cat_id=0)
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
