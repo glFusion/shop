@@ -222,6 +222,7 @@ case 'purge_trans':
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
         \Shop\Products\Coupon::Purge();
+        \Shop\Shipment::Purge();
         \Shop\Cache::clear();
         COM_setMsg($LANG_SHOP['trans_purged']);
     }

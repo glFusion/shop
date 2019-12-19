@@ -2177,6 +2177,7 @@ class Order
 
         DB_query("TRUNCATE {$_TABLES['shop.orders']}");
         DB_query("TRUNCATE {$_TABLES['shop.orderitems']}");
+        DB_query("TRUNCATE {$_TABLES['shop.oi_opts']}");
         DB_query("TRUNCATE {$_TABLES['shop.order_log']}");
     }
 

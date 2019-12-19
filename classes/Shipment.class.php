@@ -601,6 +601,21 @@ class Shipment
         return $retval;
     }
 
+
+    /**
+     * Purge all shipments from the database.
+     * No safety check or confirmation is done; that should be done before
+     * calling this function.
+     */
+    public static function Purge()
+    {
+        global $_TABLES;
+
+        DB_query("TRUNCATE {$_TABLES['shop.shipments']}");
+        DB_query("TRUNCATE {$_TABLES['shop.shipment_items']}");
+        DB_query("TRUNCATE {$_TABLES['shop.shipment_packages']}");
+    }
+
 }
 
 ?>
