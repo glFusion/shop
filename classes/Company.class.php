@@ -15,20 +15,26 @@ namespace Shop;
 
 
 /**
- * Class to handle address formatting.
+ * Class to handle company address formatting.
  * @package shop
  */
 class Company extends Address
 {
     /**
-     * Load the supplied address values, if any, into the properties.
-     * `$data` may be an array or a json_encoded string.
+     * Load the company address values into the properties.
      *
-     * @param   string|array    $data   Address data
+     * @param   string|array    $data   Address data (not used)
      */
     public function __construct($data=array())
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $_CONF;
+
+        // The store name may be set in the configuration but still be empty.
+        // Use the site name if the store name is empty.
+        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
+        if (empty($store_name)) {
+            $store_name = $_CONF['site_name'];
+        }
 
         // The data variable is disregarded, all values come from the config.
         $this
@@ -36,7 +42,7 @@ class Company extends Address
             ->setID(0)          // not applicable
             ->setBilltoDefault(0)   // not applicable
             ->setShiptoDefault(0)   // not applicable
-            ->setCompany(SHOP_getVar($_SHOP_CONF, 'company'))
+            ->setCompany($store_name)
             ->setAddress1(SHOP_getVar($_SHOP_CONF, 'address1'))
             ->setAddress2(SHOP_getVar($_SHOP_CONF, 'address2'))
             ->setCity(SHOP_getVar($_SHOP_CONF, 'city'))
@@ -50,9 +56,10 @@ class Company extends Address
     /**
      * Get an instance of the Company object.
      *
+     * @param   integer $addr_id    Address ID to retrieve (not used)
      * @return  object      Company Address object
      */
-    public static function getInstance()
+    public static function getInstance($addr_id=NULL)
     {
         static $Obj = NULL;
 

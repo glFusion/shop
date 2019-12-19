@@ -774,24 +774,22 @@ class Order
             $T->clear_var('iOpts');
         }
 
-        if ($discount_items > 0) {
-            $icon_tooltips[] = $LANG_SHOP['discount'][0] . ' = Includes discount';
-        }
-        if ($this->tax_items > 0) {
-            $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
-        }
-        if ($has_sale_items) {
-            $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
-        }
-        $this->total = $this->getTotal();     // also calls calcTax()
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
+            if ($discount_items > 0) {
+                $icon_tooltips[] = $LANG_SHOP['discount'][0] . ' = ' . $LANG_SHOP['price_incl_disc'];
+            }
+            if ($this->tax_items > 0) {
+                $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
+            }
+            if ($has_sale_items) {
+                $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
+            }
             $icon_tooltips = implode('<br />', $icon_tooltips);
-        } else {
-            $icon_tooltips = NULL;
         }
+        $this->total = $this->getTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
-        $ShopAddr = new Address($_SHOP_CONF);
+        $ShopAddr = new Company;
 
         // Reload the address objects in case the addresses were updated
         $this->Billto = new Address($this->getAddress('billto'));
@@ -1087,10 +1085,7 @@ class Order
             return;
         }
 
-        $store_name = SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']);
-        if (empty($store_name)) {
-            $store_name = $_CONF['site_name'];  // company could be set but empty
-        }
+        $Shop = new Company;
         $Cust = Customer::getInstance($this->uid);
         if ($notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
@@ -1120,13 +1115,13 @@ class Order
                 'string',
                 $LANG_SHOP['subj_email']
             );
-            $subject = sprintf($subject, $store_name);
+            $subject = sprintf($subject, $Shop->getCompany());
             if ($this->buyer_email != '') {
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
                     'from' => array(
                         'email' => $_CONF['site_mail'],
-                        'name'  => $store_name,
+                        'name'  => $Shop->getCompany(),
                     ),
                     'htmlmessage' => $text,
                     'subject' => htmlspecialchars($subject),
@@ -1163,7 +1158,7 @@ class Order
                 COM_emailNotification(array(
                     'to' => array(
                         'email' => $email_addr,
-                        'name'  => $store_name,
+                        'name'  => $Shop->getCompany(),
                     ),
                     'from' => SHOP_getVar($_CONF, 'noreply_mail', 'string', $_CONF['site_mail']),
                     'htmlmessage' => $text,
@@ -1194,6 +1189,7 @@ class Order
         $dl_links = '';         // Start with empty download links
         $email_extras = array();
         $Cur = Currency::getInstance($this->curency);   // get currency object for formatting
+        $Shop = new Company;
 
         foreach ($this->items as $id=>$item) {
             $P = $item->getProduct();
@@ -1274,7 +1270,7 @@ class Order
             'payment_date'      => SHOP_now()->toMySQL(true),
             'payer_email'       => $this->buyer_email,
             'payer_name'        => $this->billto_name,
-            'site_name'         => SHOP_getVar($_SHOP_CONF, 'company', 'string', $_CONF['site_name']),
+            'store_name'        => $Shop->getCompany(),
             'txn_id'            => $this->pmt_txn_id,
             'pi_url'            => SHOP_URL,
             'pi_admin_url'      => SHOP_ADMIN_URL,

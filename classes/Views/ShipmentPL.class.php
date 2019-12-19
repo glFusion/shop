@@ -90,6 +90,7 @@ class ShipmentPL
             $T->parse('TP', 'trackingPackages', true);
         }
 
+        $Shop = \Shop\Company::getInstance();
         $T->set_var(array(
             'shipment_id'        => $this->shipment_id,
             'pi_url'        => SHOP_URL,
@@ -99,8 +100,8 @@ class ShipmentPL
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_id'      => $this->Order->order_id,
             'order_instr'   => htmlspecialchars($this->instructions),
-            'shop_name'     => $_SHOP_CONF['shop_name'],
-            'shop_addr'     => $_SHOP_CONF['shop_addr'],
+            'shop_name'     => $Shop->getCompany(),
+            'shop_addr'     => $Shop->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),

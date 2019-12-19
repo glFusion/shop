@@ -165,8 +165,9 @@ div.shopDetailAttrib.v2 {
     margin-top: 2em;
     font-size: 1.2em;
 }
-.shopProductDesc.v2 {
+div.shopProductDesc.v2 {
     margin-bottom: 2em;
+    width:100%;
 }
 div.shopProductThumbWrapper {
     clear: both;
@@ -202,7 +203,7 @@ div.shopProductListOuter {
 .shopProductListItem.v1 {
   border-bottom-style: solid;
   border-bottom-width: thin;
-  padding-top: 20px;
+  margin-top: 10px; /* override uk-grid */
   padding-bottom: 10px;
   clear: both;
 }
@@ -311,7 +312,7 @@ div.shopProductListItem.v3 div.ItemImage img {
 
 div.shopProductListItem.v1 div.ItemUrl {
     float: left;
-    width: 60%;
+    /*width: 60%;*/
     font-weight: bold;
 }
 
@@ -563,7 +564,13 @@ div.ItemOptions {
     font-size: 120%;
     font-style:italic;
 }
-
+.shopOnhand.sm {
+    font-size: initial;
+}
+.shopOnhand.sm.v3,
+.shopOnhand.sm.v2 {
+    text-align:center;
+}
 .shopProductLgImg {
     /*max-width: 460px;
     max-height: 400px;*/

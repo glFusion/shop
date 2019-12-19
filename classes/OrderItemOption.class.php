@@ -348,6 +348,16 @@ class OrderItemOption
         return $this->oio_value;
     }
 
+    /**
+     * Get the product option value ID for this opton.
+     *
+     * @return  integer     Product Option Value ID
+     */
+    public function getOptionID()
+    {
+        return $this->pov_id;
+    }
+
 }
 
 ?>

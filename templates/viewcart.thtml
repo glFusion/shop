@@ -150,8 +150,8 @@
           {gateway_radios}
 {!if allow_gc}
           <div class="enterGC shopGatewayRadios">{$LANG_SHOP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
-            <input type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem" value="{$LANG_SHOP['apply']}"
-              onclick="shopApplyGC('shopCartForm');return false;" />
+            <button type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem"
+                onclick="shopApplyGC('shopCartForm');return false;">{$LANG_SHOP['apply']}</button>
             <input type="hidden" name="refresh" value="viewcart" />
           </div>
 {!endif}

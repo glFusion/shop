@@ -382,8 +382,9 @@ class Product
 
         case 'avail_end':
             // available to end of time by default
-            if (empty($value) || $value == '0000-00-00')
+            if ($value < '1970-01-02') {
                 $value = self::MAX_DATE;
+            }
             $this->properties[$var] = trim($value);
             break;
 
@@ -1189,15 +1190,13 @@ class Product
         // create an empty object for later use.
         // $this->sel_opts may also be set in getInstance()if an option
         // string is provided in the item number.
+        $this->sel_opts = array();
         if ($this->oi_id > 0) {
             $OI = new OrderItem($this->oi_id);
-            if ($OI->canView()) {
-                $this->sel_opts = array();
-                foreach ($OI->getOptions() as $OIO) {
-                    if ($OIO->getID() > 0) {    // not a custom text field
-                        $this->sel_opts[] = $OIO->getID();
+            foreach ($OI->getOptions() as $OIO) {
+                if ($OIO->getOptionID() > 0) {    // not a custom text field
+                    $this->sel_opts[] = $OIO->getOptionID();
                     }
-                }
             }
         } else {
             $OI = NULL;
@@ -2240,10 +2239,12 @@ class Product
      */
     public function getMaxOrderQty()
     {
-        if ($this->oversell == self::OVERSELL_ALLOW) {
-            return $this->max_ord_qty;
+        $max = $this->max_ord_qty == 0 ? 99999 : $this->max_ord_qty;
+
+        if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
+            return $max;
         } else {
-            return min($this->onhand, $this->max_ord_qty);
+            return min($this->onhand, $max);
         }
     }
 
@@ -2256,7 +2257,7 @@ class Product
      */
     public function getMinOrderQty()
     {
-        return (int)$this->min_ord_qty;
+        return (int)min($this->min_ord_qty, 1);
     }
 
 
@@ -2306,10 +2307,11 @@ class Product
      */
     private static function _InputDtFormat($str)
     {
-        if ($str == '0000-00-00' || $str == self::MAX_DATE || $str == self::MIN_DATE)
+        if ($str < '1970-01-02' || $str == self::MAX_DATE) {
             return '';
-        else
+        } else {
             return $str;
+        }
     }
 
 
@@ -2373,14 +2375,15 @@ class Product
      * Determine if the current user has access to view this product.
      * Checks the related category for access.
      *
-     * @param   array|null  $groups     Optional group override to pass to Cat
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess($groups = NULL)
+    public function hasAccess()
     {
+        global $_GROUPS;
+
         // Make sure the category is set
         if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess($groups);
+        return $this->Cat->hasAccess($_GROUPS);
     }
 
 

@@ -766,11 +766,6 @@ class IPN
 
             $this->Order->pmt_method = $this->gw_id;
             $this->Order->pmt_txn_id = $this->txn_id;
-            if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
-                // If this paid order has only downloadable items, them mark
-                // it closed since there's no further action needed.
-                $this->status = 'closed';
-            }
             $this->Order->Save();
 
             // Handle the purchase for each order item
@@ -794,6 +789,14 @@ class IPN
 
         // Update the status last since it sends the notification.
         $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp());
+        if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
+            // If this paid order has only downloadable items, them mark
+            // it closed since there's no further action needed.
+            // Notification should have been done above, set notify to false to
+            // avoid duplicates.
+            $this->setStatus(self::CLOSED);
+            $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp(), false);
+        }
         return true;
     }  // function handlePurchase
 

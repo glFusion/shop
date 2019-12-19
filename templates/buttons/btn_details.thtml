@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<a href="{pi_url}/detail.php?id={id}" class="shopButton orange">
+<a href="{item_url}" class="shopButton orange">
   {$LANG_SHOP['customize']}
 </a>
 <div style="clear:both;"></div>

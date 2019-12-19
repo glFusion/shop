@@ -25,7 +25,6 @@ require_once __DIR__  . '/../shop.php';
  */
 class MigratePP
 {
-
     /**
      * Perform all data migrations and copy data files from Paypal to Shop.
      *
@@ -214,7 +213,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.products']}",
             "INSERT INTO {$_TABLES['shop.products']}
-                SELECT *, '' as brand
+                SELECT *, '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
                 FROM {$_TABLES['paypal.products']}",
         ) );
     }
@@ -233,12 +232,13 @@ class MigratePP
         global $_TABLES, $_PP_CONF, $_SHOP_CONF;
 
         COM_errorLog("Migrating Orders ...");
-        $add_flds = ',0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
+        $add_flds = '';
         // If not at Paypal 0.6.1, add a dummy order sequence value
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
             // Needed for Paypal 0.6.0 only
-            $add_flds .= ",NULL as order_seq, '{$_SHOP_CONF['currency']}' as currency";
+            $add_flds .= ", '{$_SHOP_CONF['currency']}' as currency, NULL as order_seq";
         }
+        $add_flds .= ', 0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
         $sql = array(
             "TRUNCATE {$_TABLES['shop.orders']}",
             "INSERT INTO {$_TABLES['shop.orders']} SELECT * $add_flds FROM {$_TABLES['paypal.orders']}",

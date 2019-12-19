@@ -83,7 +83,7 @@ if (is_array($A) && !empty($A['file'])) {
         echo COM_refresh($_CONF['site_url']);
     }
 
-    $DL->_logItem('Download Success',
+    $DL->logItem('Download Success',
             "{$_USER['username']} successfully downloaded "
             . "the file with id {$id}.");
 } else {

@@ -462,7 +462,7 @@ $LANG_SHOP = array (
 'migrate_pp_error' => 'There was an error migrating from Paypal. Check the system log.',
 'q_purge_trans'  => '**WARNING** Are you sure you want to purge ALL transactions and gift cards?',
 'purge_trans'    => 'Purge All Transactions',
-'dscp_purge_trans' => 'Purge <b>ALL</b> Orders, Payments and Gift Cards from the database. This is intended <b>ONLY</b> to remove test orders and payments after your testing period, before your store goes live. <span class="uk-text-danger"><b>ALL GIFT CARDS AND TRANSACTIONS WILL BE DELETED!</b></span>. Back up your database before running this function!',
+'dscp_purge_trans' => 'Purge <b>ALL</b> Orders, Payments and Gift Cards from the database. This is intended <b>ONLY</b> to remove test orders and payments after your testing period, before your store goes live. <span class="uk-text-danger"><b>ALL GIFT CARDS AND TRANSACTIONS WILL BE DELETED!</b></span>. Back up your database before running this function! <i>Public access to the Shop must be disabled.</i>',
 'trans_purged' => 'All transactions have been removed.',
 'orderhist' => 'Purchase History',
 'categories' => 'Categories',
@@ -569,6 +569,7 @@ $LANG_SHOP = array (
 'qty_adjusted' => 'Quantity was adjusted to stock limits.',
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
+'oos_short' => 'Out of Stock',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

@@ -287,13 +287,14 @@ class Plugin extends \Shop\Product
     public function getLink($oi_id=0, $q='')
     {
         if ($this->_have_detail_svc) {
-            $url = SHOP_URL . '/index.php?pidetail=' . $this->item_id;
+            $url = SHOP_URL . '/detail.php?id=' . $this->item_id;
             if ($oi_id > 0 || $q != '') {
                 $url .= '&oi_id=' . (int)$oi_id;
                 if ($q != '') {
                     $url .= '&query=' . $q;
                 }
             }
+            return $url;
         } else {
             return $this->url;
         }
@@ -356,6 +357,21 @@ class Plugin extends \Shop\Product
     {
         return $this->isUnique;;
     }
+
+
+    /**
+     * Verify that the product ID matches the specified value.
+     * Used to ensure that the correct product was retrieved.
+     *
+     * @param   integer|string  $id     Expected product ID or name
+     * @return  boolean     True if product matches.
+     */
+    public function verifyID($id)
+    {
+        $parts = explode(':', $id);
+        return $parts[1] == $this->pi_info['item_id'][0];
+    }
+
 
 }   // class Plugin
 

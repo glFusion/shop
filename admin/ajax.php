@@ -277,22 +277,31 @@ case 'del_tracking':
 case 'void':
     $item_id = $_POST['item_id'];
     $newval = $_POST['newval'];     // should be "void" or "valid"
-    COM_errorLog(print_r($_POST,true));
     switch ($_POST['component']) {
     case 'coupon':
         $status = Shop\Products\Coupon::Void($item_id, $newval);
         break;
     }
     if ($status) {
-        $next_val = $newval == 'void' ? 'valid' : 'void';
-        $confirm_txt = $next_val == 'valid' ? $LANG_SHOP['q_confirm_unvoid'] : $LANG_SHOP['q_confirm_void'];
+        if ($newval == Shop\Products\Coupon::VOID) {
+            $next_val = Shop\Products\Coupon::VALID;
+            $confirm_txt = $LANG_SHOP['q_confirm_unvoid'];
+            $title = $LANG_SHOP['unvoid_item'];
+            $btn_cls = 'uk-button-danger';
+        } else {
+            $next_val = Shop\Products\Coupon::VOID;
+            $confirm_txt = $LANG_SHOP['q_confirm_void'];
+            $title = $LANG_SHOP['void_item'];
+            $btn_cls = 'uk-button-success';
+        }
         $retval = array(
-            'status' => $status,
+            'status'        => $status,
             'statusMessage' => $LANG_SHOP['msg_updated'],
-            'text' => SHOP_getVar($LANG_SHOP, $newval, 'string', 'Unknown'),
-            'newclass' => $newval == 'void' ? 'uk-button-danger' : 'uk-button-success',
-            'onclick_val' => $next_val,
-            'confirm_txt' => $confirm_txt,
+            'text'          => SHOP_getVar($LANG_SHOP, $newval, 'string', 'Unknown'),
+            'newclass'      => $btn_cls,
+            'onclick_val'   => $next_val,
+            'confirm_txt'   => $confirm_txt,
+            'title'         => $title,
         );
     } else {
         $retval = array(

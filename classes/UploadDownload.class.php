@@ -234,7 +234,7 @@ class UploadDownload
      * @param   string      $text       Text to log to log file
      * @return  boolean     Whether or not we successfully logged an item
      */
-    private function _logItem($logtype, $text)
+    public function logItem($logtype, $text)
     {
         $timestamp = strftime("%c");
         if (!$file = fopen($this->_logFile, 'a')) {

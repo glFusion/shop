@@ -376,32 +376,20 @@ case 'sendcards':
     if ($no_exp == 1) {
         $exp = \Shop\Products\Coupon::MAX_EXP;
     }
-    if (!empty($uids)) {
-        $uids = explode('|', $uids);
-    } else {
-        $uids = array();
-    }
-    if ($gid > 0) {
-        $sql = "SELECT ug_uid FROM {$_TABLES['group_assignments']}
-                WHERE ug_main_grp_id = $gid AND ug_uid > 1";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $uids[] = $A['ug_uid'];
-        }
-    }
-    $errs = array();
-    if ($amt < .01) $errs[] = $LANG_SHOP['err_gc_amt'];
-    if (empty($uids)) $errs[] = $LANG_SHOP['err_gc_nousers'];
+    $status = PLG_invokeService('shop', 'sendcards',
+        array(
+            'amount'    => $amt,
+            'members'   => $uids,
+            'group_id'  => $gid,
+            'exp'       => $exp,
+            'notify'    => true,
+        ),
+        $output,
+        $errs
+    );
+
     if (empty($errs)) {
-        foreach ($uids as $uid) {
-            $code = \Shop\Products\Coupon::Purchase($amt, $uid, $exp);
-            $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
-            $name = COM_getDisplayName($uid);
-            if (!empty($email)) {
-                \Shop\Products\Coupon::Notify($code, $email, $amt, '', '', $exp, $name);
-            }
-        }
-        COM_setMsg(count($uids) . ' coupons sent');
+        COM_setMsg(count($output) . ' coupons sent');
     } else {
         $msg = '<ul><li>' . implode('</li><li>', $errs) . '</li></ul>';
         COM_setMsg($msg, 'error', true);
