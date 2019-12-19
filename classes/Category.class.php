@@ -740,16 +740,17 @@ class Category
                 $between = " AND parent.lft BETWEEN {$Root->lft} AND {$Root->rgt}";
             }
             $prefix = DB_escapeString($prefix);
-            $sql = "SELECT node.*, CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
+            $sql = "SELECT node.cat_id, node.cat_name,
+                    CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
                 FROM {$_TABLES['shop.categories']} AS node,
                     {$_TABLES['shop.categories']} AS parent
                 WHERE node.lft BETWEEN parent.lft AND parent.rgt
                 $between
-                GROUP BY node.cat_name
+                GROUP BY node.cat_id, node.cat_name
                 ORDER BY node.lft";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $All[$A['cat_id']] = new self($A);
+                $All[$A['cat_id']] = new self($A['cat_id']);
             }
             Cache::set($cache_key, $All, 'categories');
         }

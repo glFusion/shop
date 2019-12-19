@@ -24,7 +24,7 @@
 {!if max_ord_qty}
         max="{max_ord_qty}"
 {!endif}
-        value="{min_ord_qty}" class="uk-form-width-small" />
+        value="{min_ord_qty}" style="width:80px;"/>
 {!endif}
       &nbsp;&nbsp;<button type="submit" class="shopButton orange"
         onclick='shopAddToCart("add_cart_{item_number}");return false;'>

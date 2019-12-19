@@ -44,6 +44,7 @@ Release TBD
   * Download all product files as attachments.
   * Key fields in gateways configurations are encrypted at rest.
   * Add `max_order_qty` field to products, use number input field to limit qty.
+  * Refactor SQL queries to work with MySQL `strict mode`.
 
 ## v0.7.1
 Release 2019-08-02

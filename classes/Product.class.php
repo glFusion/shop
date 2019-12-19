@@ -382,8 +382,9 @@ class Product
 
         case 'avail_end':
             // available to end of time by default
-            if (empty($value) || $value == '0000-00-00')
+            if ($value < '1970-01-02') {
                 $value = self::MAX_DATE;
+            }
             $this->properties[$var] = trim($value);
             break;
 
@@ -2306,10 +2307,11 @@ class Product
      */
     private static function _InputDtFormat($str)
     {
-        if ($str == '0000-00-00' || $str == self::MAX_DATE || $str == self::MIN_DATE)
+        if ($str < '1970-01-02' || $str == self::MAX_DATE) {
             return '';
-        else
+        } else {
             return $str;
+        }
     }
 
 
@@ -2373,14 +2375,15 @@ class Product
      * Determine if the current user has access to view this product.
      * Checks the related category for access.
      *
-     * @param   array|null  $groups     Optional group override to pass to Cat
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess($groups = NULL)
+    public function hasAccess()
     {
+        global $_GROUPS;
+
         // Make sure the category is set
         if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess($groups);
+        return $this->Cat->hasAccess($_GROUPS);
     }
 
 

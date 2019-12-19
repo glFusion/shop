@@ -139,10 +139,6 @@ class pendingship_item extends pendingship
             'query_fields' => array(),
             'default_filter' => "WHERE ord.status IN ($nonshipped)
                 AND itm.product_id = '{$Item->id}'",
-            /*'default_filter' => "WHERE itm.product_id = '{$Item->id}'
-                AND ord.order_id IS NOT NULL
-                GROUP BY itm.id
-                HAVING (ifnull(qty_shipped,0)) < itm.quantity",*/
         );
         //echo $this->sql . ' ' . $query_arr['default_filter'];die;
 

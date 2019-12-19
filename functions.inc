@@ -128,22 +128,6 @@ spl_autoload_register(function ($class)
     }
 });
 
-/**
- * Import a specific report class.
- *
- * @param   string  $name   Report class basename
- */
-function USES_shop_class_report($name='')
-{
-    $classfile = __DIR__ . '/classes/reports/' . $name . '.class.php';
-    if (is_file($classfile)) {
-        require_once $classfile;
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 /**
  * Show the product catalog in the centerblock.
@@ -969,7 +953,6 @@ function phpblock_shop_cart_contents()
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
-        //SHOP_log("Cart disabled or there is no cart", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -980,7 +963,6 @@ function phpblock_shop_cart_contents()
     }
     // If the cart is empty, the block isn't shown
     if (!$cart->hasItems()) {
-        //SHOP_log("Cart {$cart->order_id} has no items", SHOP_LOG_DEBUG);
         return '';
     }
 
@@ -1116,17 +1098,17 @@ function phpblock_shop_categories()
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $parents = '0, ' . Shop\Category::getRoot()->cat_id;
-    $sql = "SELECT c.*, count(p.id) AS cnt
-            FROM {$_TABLES['shop.categories']} c
-            LEFT JOIN {$_TABLES['shop.products']} p
-                ON p.cat_id = c.cat_id
-            WHERE c.cat_id > 0
-            AND c.enabled = 1
-            AND p.enabled = 1
-            AND c.parent_id IN ($parents) " .
-            SEC_buildAccessSql('AND', 'c.grp_access') .
-            " GROUP BY c.cat_id
-            ORDER BY c.cat_name";
+    $sql = "SELECT c.*, (
+        SELECT count(p.id)
+        FROM {$_TABLES['shop.products']} p
+        WHERE p.cat_id = c.cat_id AND p.enabled = 1
+        ) AS cnt
+        FROM {$_TABLES['shop.categories']} c
+        WHERE c.cat_id > 0
+        AND c.enabled = 1
+        AND c.parent_id IN ($parents) " .
+        SEC_buildAccessSql('AND', 'c.grp_access') .
+        " ORDER BY c.cat_name";
     //echo $sql;die;
     $cache_key = md5($sql);
     $Cats = Shop\Cache::get($cache_key);
@@ -1861,8 +1843,6 @@ function plugin_profilesave_shop($uid=0)
 }
 
 
-
-
 /**
  * Get all parent categories and a product count.
  * Recurses through all child categories.
@@ -1877,16 +1857,17 @@ function SHOP_child_cat_product_count($p_cat)
     $parent_total = 0;
     $lft = (int)$p_cat['lft'];
     $rgt = (int)$p_cat['rgt'];
-    $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['shop.categories']} c
-            LEFT JOIN {$_TABLES['shop.products']} p
-                ON p.cat_id = c.cat_id
-            WHERE c.lft BETWEEN $lft AND $rgt
-            AND c.enabled = 1 " .
-            SEC_buildAccessSql('AND', 'c.grp_access') .
-            " GROUP BY c.cat_id
-            ORDER BY c.cat_name";
-            //AND c.parent_id = $parent_cat " .
+    $sql = "SELECT c.cat_id, c.cat_name, (
+        SELECT count(p.id)
+        FROM {$_TABLES['shop.products']} p
+        WHERE p.cat_id = c.cat_id
+        ) AS cnt
+        FROM {$_TABLES['shop.categories']} c
+        WHERE c.lft BETWEEN $lft AND $rgt
+        AND c.enabled = 1 " .
+        SEC_buildAccessSql('AND', 'c.grp_access') .
+        " ORDER BY c.cat_name";
+        //AND c.parent_id = $parent_cat " .
     //echo $sql;die;
     $result = DB_query($sql);
     while ($A = DB_fetchArray($result, false)) {
@@ -1939,22 +1920,6 @@ function SHOP_now()
 {
     global $_CONF;
     return $_CONF['_now'];
-}
-
-
-/**
- * Get a DateTimeZone object for the current timezone.
- *
- * @return  object  DateTimeZone object
- */
-function SHOP_timezone()
-{
-    global $_CONF;
-    static $tz = NULL;
-    if ($tz === NULL) {
-        $tz = new DateTimeZone($_CONF['timezone']);
-    }
-    return $tz;
 }
 
 
@@ -2235,6 +2200,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
         return $val;
         break;
     case 'object':
+    case 'mixed':
         return $val;
     case 'string':
     default:

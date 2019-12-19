@@ -174,15 +174,17 @@ function SHOP_voidItem(component, item_id, newval, elem)
         url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
+            console.log(result);
             try {
                 if (result.status) {
                     elem.innerHTML = result.text;
-                    elem.className = 'tooltip uk-button uk-button-mini ' + result.newclass;
+                    elem.className = 'uk-button uk-button-mini ' + result.newclass;
                     elem.setAttribute('onclick',
                         "if (confirm('" + result.confirm_txt + "')) {" +
-                        "voidItem('" + component + "','" + item_id + "','" + result.onclick_val + "', this);}" +
+                        "SHOP_voidItem('" + component + "','" + item_id + "','" + result.onclick_val + "', this);}" +
                         "return false;"
                     );
+                    elem.setAttribute('title', result.title);
                 }
                 if (result.msg != '') {
                     $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});

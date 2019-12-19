@@ -319,7 +319,7 @@ $_SQL = array(
   `name` varchar(40) DEFAULT NULL,
   `item_type` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
   `item_id` int(11) unsigned NOT NULL,
-  `start` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
   `end` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
   `discount_type` varchar(10) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL,
   `amount` decimal(6,4) DEFAULT NULL,
@@ -583,6 +583,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`cache_key`),
       KEY (`expires`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.sales']} CHANGE `start` `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00'",
     "ALTER TABLE {$_TABLES['shop.address']} CHANGE id addr_id int(11) unsigned NOT NULL auto_increment",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",

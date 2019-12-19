@@ -640,12 +640,12 @@ class ProductOptionGroup
         $grps = Cache::get($cache_key);
         if ($grps === NULL) {
             $grps = array();
-            $sql = "SELECT pog.* FROM {$_TABLES['shop.prod_opt_grps']} pog
+            $sql = "SELECT distinct(pog.pog_id), pog.pog_type, pog.pog_name, pog.pog_orderby
+                FROM {$_TABLES['shop.prod_opt_grps']} pog
                 LEFT JOIN {$_TABLES['shop.prod_opt_vals']} pov
                     ON pov.pog_id = pog.pog_id
                 WHERE pov.item_id = '$prod_id'
                 AND pov.enabled = 1
-                GROUP BY pog.pog_id
                 ORDER by pog.pog_orderby ASC";
             //echo $sql;die;
             $res = DB_query($sql);

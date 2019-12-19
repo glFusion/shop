@@ -136,7 +136,9 @@
         <div class="shopDetailBuyNow v2">{buy_now_button}</div>
 <!-- END BtnBlock -->
     </div>
+{!if main_img}
     <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
+{!endif}
 
 {!if rating_bar}
     <div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>

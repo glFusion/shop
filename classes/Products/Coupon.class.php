@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.0.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -24,6 +24,15 @@ class Coupon extends \Shop\Product
      * Used as a default for purchased coupons.
      * @const string */
     const MAX_EXP = '9999-12-31';
+
+    /** Valid status.
+     * @const string */
+    const VALID =  'valid';
+
+    /** Voided status.
+     * @const string */
+    const VOID = 'void';
+
 
     /**
      * Constructor. Set up local variables.
@@ -336,6 +345,7 @@ class Coupon extends \Shop\Product
      * @param   string  $sender     Optional sender, from the custom text field
      * @param   string  $msg        Optional extra message
      * @param   string  $exp        Expiration Date
+     * @param   string  $recip_name Name of recipient
      */
     public static function Notify(
         $gc_code, $recip, $amount, $sender='', $msg='', $exp=self::MAX_EXP, $recip_name=''
@@ -454,11 +464,12 @@ class Coupon extends \Shop\Product
             // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
-                WHERE status='valid' AND redeemer = '$uid'";
+                WHERE status='" . self::VALID . "' AND redeemer = '$uid'";
             if (!$all) {
                 $sql .= " AND expires >= '$today' AND balance > 0";
             }
             $sql .= " ORDER BY redeemed ASC";
+            //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $coupons[] = $A;
@@ -660,16 +671,17 @@ class Coupon extends \Shop\Product
      * @param   string  $newstatus  New status to set
      * @return  boolean     True on success, False on failure
      */
-    public static function Void($code, $newstatus='void')
+    public static function Void($code, $newstatus=self::VOID)
     {
         global $_TABLES, $_USER;;
+        COM_errorLog("Setting $code as $newstatus");
 
         $code = DB_escapeString($code);
         $newstatus = DB_escapeString($newstatus);
         $sql = "UPDATE {$_TABLES['shop.coupons']}
             SET status = '$newstatus'
             WHERE code = '$code'";
-        if ($newestatus == 'void') {
+        if ($newestatus == self::VOID) {
             $log_code = 'gc_voided';
             $sql .= ' AND balance > 0';
         } else {
@@ -782,10 +794,10 @@ class Coupon extends \Shop\Product
     /**
      * Display the purchase history for coupons.
      *
-     * @param   mixed   $item_id    Numeric or string item ID
+     * @param   integer $cat_id     Category ID to limit listing
      * @return  string      Display HTML
      */
-    public static function adminList()
+    public static function adminList($cat_id=0)
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
@@ -904,16 +916,18 @@ class Coupon extends \Shop\Product
         switch($fieldname) {
         case 'buyer':
         case 'redeemer':
-            if (!isset($username[$fieldvalue])) {
-                $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
+            if ($fieldvalue > 0) {
+                if (!isset($username[$fieldvalue])) {
+                    $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
+                }
+                $retval = COM_createLink($username[$fieldvalue],
+                    SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
+                    array(
+                        'title' => 'Click to filter by ' . $fieldname,
+                        'class' => 'tooltip',
+                    )
+                );
             }
-            $retval = COM_createLink($username[$fieldvalue],
-                SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
-                array(
-                    'title' => 'Click to filter by ' . $fieldname,
-                    'class' => 'tooltip',
-                )
-            );
             break;
 
         case 'amount':
@@ -929,22 +943,23 @@ class Coupon extends \Shop\Product
 
         case 'status':
             $btn_txt = SHOP_getVar($LANG_SHOP, $A['status'], 'string', 'Valid');
-            if ($A['status'] == 'void' && $A['balance'] > 0) {
-                $conf_txt = $LANG_SHOP['q_confirm_unvoid'];
-                $newval = 'valid';
-                $title = $LANG_SHOP['unvoid_item'];
-                $btn_class = 'danger';
-            } elseif ($A['status'] == 'valid' && $A['balance'] > 0) {
-                $conf_txt = $LANG_SHOP['q_confirm_void'];
-                $newval = 'void';
-                $title = $LANG_SHOP['void_item'];
-                $btn_class = 'success';
-            } else {
-                $newval = NULL;
+            $newval = NULL;
+            if ($A['balance'] > 0) {
+                if ($A['status'] == self::VOID && $A['balance'] > 0) {
+                    $conf_txt = $LANG_SHOP['q_confirm_unvoid'];
+                    $newval = self::VALID;
+                    $title = $LANG_SHOP['unvoid_item'];
+                    $btn_class = 'danger';
+                } elseif ($A['status'] == self::VALID && $A['balance'] > 0) {
+                    $conf_txt = $LANG_SHOP['q_confirm_void'];
+                    $newval = self::VOID;
+                    $title = $LANG_SHOP['void_item'];
+                    $btn_class = 'success';
+                }
             }
             if ($newval) {
-                $retval .= "<button class=\"uk-button uk-button-mini uk-button-{$btn_class} tooltip\"
-                    title=\"{$title}\"
+                $retval .= "<button class=\"uk-button uk-button-mini uk-button-{$btn_class}\"
+                    title=\"{$title}\" data-uk-tooltip
                     onclick=\"if (confirm('{$conf_txt}')) {
                         SHOP_voidItem('coupon','{$A['code']}','$newval',this);
                         }return false;\">{$btn_txt}</button>";
