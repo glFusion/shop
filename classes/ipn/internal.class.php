@@ -56,8 +56,8 @@ class internal extends \Shop\IPN
             ->setPmtShipping(SHOP_getVar($this->ipn_data, 'shipping', 'float'))
             ->setPmtHandling(SHOP_getVar($this->ipn_data, 'handling', 'float'))
             ->setCurrency();
-        $this->gw_name = $this->gw->Name();
-        $this->gw_desc = $this->gw->Description();
+        $this->gw_name = $this->GW->getName();
+        $this->gw_desc = $this->GW->getDscp();
 
         // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.

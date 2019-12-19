@@ -223,9 +223,8 @@ class Catalog
         $cache_key = Cache::makeKey('prod_cnt_' . $sql_key);
         $count = Cache::get($cache_key);
         if ($count === NULL) {
-            $res = DB_query('SELECT COUNT(*) as cnt ' . $sql);
-            $x = DB_fetchArray($res, false);
-            $count = SHOP_getVar($x, 'cnt', 'integer');
+            $res = DB_query('SELECT p.id ' . $sql);
+            $count = DB_numRows($res);
             Cache::set($cache_key, $count, array('products', 'categories'));
         }
 

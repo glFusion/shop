@@ -1098,17 +1098,17 @@ function phpblock_shop_categories()
     if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
 
     $parents = '0, ' . Shop\Category::getRoot()->cat_id;
-    $sql = "SELECT c.*, count(p.id) AS cnt
-            FROM {$_TABLES['shop.categories']} c
-            LEFT JOIN {$_TABLES['shop.products']} p
-                ON p.cat_id = c.cat_id
-            WHERE c.cat_id > 0
-            AND c.enabled = 1
-            AND p.enabled = 1
-            AND c.parent_id IN ($parents) " .
-            SEC_buildAccessSql('AND', 'c.grp_access') .
-            " GROUP BY c.cat_id
-            ORDER BY c.cat_name";
+    $sql = "SELECT c.*, (
+        SELECT count(p.id)
+        FROM {$_TABLES['shop.products']} p
+        WHERE p.cat_id = c.cat_id AND p.enabled = 1
+        ) AS cnt
+        FROM {$_TABLES['shop.categories']} c
+        WHERE c.cat_id > 0
+        AND c.enabled = 1
+        AND c.parent_id IN ($parents) " .
+        SEC_buildAccessSql('AND', 'c.grp_access') .
+        " ORDER BY c.cat_name";
     //echo $sql;die;
     $cache_key = md5($sql);
     $Cats = Shop\Cache::get($cache_key);
@@ -1857,16 +1857,17 @@ function SHOP_child_cat_product_count($p_cat)
     $parent_total = 0;
     $lft = (int)$p_cat['lft'];
     $rgt = (int)$p_cat['rgt'];
-    $sql = "SELECT c.cat_id, c.cat_name, count(p.id) AS cnt
-            FROM {$_TABLES['shop.categories']} c
-            LEFT JOIN {$_TABLES['shop.products']} p
-                ON p.cat_id = c.cat_id
-            WHERE c.lft BETWEEN $lft AND $rgt
-            AND c.enabled = 1 " .
-            SEC_buildAccessSql('AND', 'c.grp_access') .
-            " GROUP BY c.cat_id
-            ORDER BY c.cat_name";
-            //AND c.parent_id = $parent_cat " .
+    $sql = "SELECT c.cat_id, c.cat_name, (
+        SELECT count(p.id)
+        FROM {$_TABLES['shop.products']} p
+        WHERE p.cat_id = c.cat_id
+        ) AS cnt
+        FROM {$_TABLES['shop.categories']} c
+        WHERE c.lft BETWEEN $lft AND $rgt
+        AND c.enabled = 1 " .
+        SEC_buildAccessSql('AND', 'c.grp_access') .
+        " ORDER BY c.cat_name";
+        //AND c.parent_id = $parent_cat " .
     //echo $sql;die;
     $result = DB_query($sql);
     while ($A = DB_fetchArray($result, false)) {
