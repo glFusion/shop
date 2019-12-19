@@ -60,6 +60,12 @@ class Shipment extends Order
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        // Safety valve if order is invalid
+        if ($this->Order === NULL) {
+            COM_setMsg($LANG_SHOP['item_not_found']);
+            return '';
+        }
+
         $oi_shipped = array();
         if ($this->shipment_id > 0) {
             $Shp = new \Shop\Shipment($this->shipment_id);
