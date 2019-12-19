@@ -469,6 +469,7 @@ class Coupon extends \Shop\Product
                 $sql .= " AND expires >= '$today' AND balance > 0";
             }
             $sql .= " ORDER BY redeemed ASC";
+            //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $coupons[] = $A;
@@ -915,16 +916,18 @@ class Coupon extends \Shop\Product
         switch($fieldname) {
         case 'buyer':
         case 'redeemer':
-            if (!isset($username[$fieldvalue])) {
-                $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
+            if ($fieldvalue > 0) {
+                if (!isset($username[$fieldvalue])) {
+                    $username[$fieldvalue] = COM_getDisplayName($fieldvalue);
+                }
+                $retval = COM_createLink($username[$fieldvalue],
+                    SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
+                    array(
+                        'title' => 'Click to filter by ' . $fieldname,
+                        'class' => 'tooltip',
+                    )
+                );
             }
-            $retval = COM_createLink($username[$fieldvalue],
-                SHOP_ADMIN_URL . "/index.php?coupons=x&filter=$fieldname&value=$fieldvalue",
-                array(
-                    'title' => 'Click to filter by ' . $fieldname,
-                    'class' => 'tooltip',
-                )
-            );
             break;
 
         case 'amount':
