@@ -18,7 +18,7 @@ namespace Shop;
  * Retrieve and cache sales tax information.
  * @package shop
  */
-class Tax
+abstract class Tax
 {
     /** Address object used for rate lookup.
      * @var object */
