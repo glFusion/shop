@@ -602,6 +602,14 @@ class Order
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
+        // Safety valve in case an invalid order is requested.
+        // This is for administrators, the canView() function will trap this
+        // for regular users.
+        if ($this->isNew) {
+            COM_setMsg($LANG_SHOP['item_not_found']);
+            return '';
+        }
+
         $this->isFinalView = false;
         $is_invoice = true;    // normal view/printing view
         $icon_tooltips = array();
