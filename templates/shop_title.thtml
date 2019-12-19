@@ -9,7 +9,7 @@
   </a>
 {!endif}
 {!if link_catalog}
-  <a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']</a>
+  <a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</a>
 {!endif}
 {!if link_account}
   <a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}<//>
