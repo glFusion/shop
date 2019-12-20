@@ -227,6 +227,7 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
                 'text' => $LANG_SHOP['shippers'],
                 'active' => $view == 'shipping' ? true : false,
+                'help'  => $LANG_SHOP_HELP['shipping_methods'],
             ),
             /*array(
                 'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',

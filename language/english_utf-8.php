@@ -539,7 +539,7 @@ $LANG_SHOP = array (
 'destination' => 'Destination',
 'service' => 'Service',
 'expected_dely' => 'Expected Delivery',
-'shippers' => 'Shippers',
+'shippers' => 'Methods',
 'shipments' => 'Shipments',
 'order_seq' => 'Sequence',
 'action' => 'Action',
@@ -595,6 +595,7 @@ $LANG_SHOP_HELP = array(
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
+'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
