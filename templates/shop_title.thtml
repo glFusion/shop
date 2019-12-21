@@ -14,12 +14,14 @@
 {!if link_account}
   <a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</a>
 {!endif}
-{!if link_cart}
   <a class="uk-button uk-button-success uk-button-mini"
-    id="link_cart" href="{site_url}/shop/cart.php">
-      <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
-  </a>
+    id="link_cart" href="{site_url}/shop/cart.php"
+{!if link_cart}
+{!else}
+    style="display:none;"
 {!endif}
+    ><i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
+  </a>
 </div>
 {!if icon}
 <div style="float:left;margin-right:10px;">
