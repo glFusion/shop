@@ -4,7 +4,7 @@
   {$LANG_SHOP['continue_shopping']}
 </a>
 <div style="text-align:center; margin-left:auto;">
-  <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
+    <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
   <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
     <input type="hidden" name="order_id" value="{order_number}" />
 
@@ -85,10 +85,10 @@
         <td></td>
       </tr>
 {!endif}
-{!if cart_tax}
+{!if tax_items}
       <tr>
         <td colspan="4" class="alignright">{lang_tax_on_items}</td>
-        <td colspan="1" class="alignright">{cart_tax}</td>
+        <td colspan="1" class="alignright">TBD</td>
         <td></td>
       </tr>
 {!endif}
@@ -115,6 +115,7 @@
         <td></td>
       </tr>
 {!endif}
+{!if 0}
       <tr>
         <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
         <td colspan="1" class="alignright"><b>
@@ -126,6 +127,7 @@
         </b></td>
         <td></td>
       </tr>
+{!endif}
     </table>
     <div id="orderInstructions">{$LANG_SHOP['order_instr']}:<br />
       <textarea name="order_instr" rows="4" cols="80">{order_instr}</textarea>

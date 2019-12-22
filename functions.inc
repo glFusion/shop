@@ -2211,20 +2211,6 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
 
 
 /**
- * Get the sales tax rate to charge.
- * Currently just returns the globally-configured rate.
- *
- * @return  float   Tax Rate
- */
-function SHOP_getTaxRate()
-{
-    global $_SHOP_CONF;
-
-    return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
-}
-
-
-/**
  * Helper function to get a template object.
  * If a name is supplied as a string with no ID, an empty template
  * object will be returned with the default path set.

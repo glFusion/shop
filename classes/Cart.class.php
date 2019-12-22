@@ -819,7 +819,6 @@ class Cart extends Order
         //$oldstatus = $Order->status;
         //$newstatus = $status ? 'pending' : 'cart';
         //$Order->status = $newstatus;
-        $Order->tax_rate = SHOP_getTaxRate();
         $Order->order_date->setTimestamp(time());
         $Order->Save();
         self::setSession('order_id', $cart_id);

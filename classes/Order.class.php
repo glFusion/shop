@@ -112,7 +112,6 @@ class Order
         $this->isNew = true;
         $this->uid = (int)$_USER['uid'];
         $this->instructions = '';
-        $this->tax_rate = SHOP_getTaxRate();
         $this->currency = $_SHOP_CONF['currency'];
         if (!empty($id)) {
             $this->order_id = $id;
@@ -362,7 +361,6 @@ class Order
     {
         global $_TABLES;
 
-        $tax_rate = $this->tax_rate;    // just keep the same
         $tax = $this->tax;
         if ($A === NULL) {
             // Clear out the shipping address
@@ -394,12 +392,9 @@ class Order
                 $this->shipto_state     = SHOP_getVar($A, 'state');
                 $this->shipto_country   = SHOP_getVar($A, 'country');
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
-                $Address = new Address($A);
-                $new_tax_rate = Tax::getProvider()->withAddress($Address)->getRate();
-                if ($new_tax_rate != $tax_rate) {
-                    $this->tax_rate = $new_tax_rate;
-                    $this->calcTax();
-                }
+                $this->Shipto = new Address($A);
+                $new_tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
+                $this->setTaxRate($new_tax_rate);
             }
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET
@@ -636,6 +631,7 @@ class Order
             $tplname = 'order';
             break;
         case 'viewcart':
+            $this->tax_rate = 0;
             $tplname = 'viewcart';
             break;
         case 'packinglist':
@@ -732,9 +728,6 @@ class Order
 
             $item_total = $item->getPrice() * $item->getQuantity();
             $this->subtotal += $item_total;
-            if ($P->taxable) {
-                $this->tax_items++;       // count the taxable items for display
-            }
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
                 'fixed_q'       => $P->getFixedQuantity(),
@@ -797,6 +790,12 @@ class Order
         }
         $this->total = $this->getTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
+        if ($this->tax_rate > 0) {
+            $lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
+        } else {
+            $lang_tax_on_items = $LANG_SHOP['sales_tax'];
+        }
+
         $ShopAddr = new Company;
 
         // Reload the address objects in case the addresses were updated
@@ -823,7 +822,7 @@ class Order
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items),
+            'lang_tax_on_items'  => $lang_tax_on_items,
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -846,6 +845,7 @@ class Order
             'shipment_block' => $this->getShipmentBlock(),
             'itemsToShip'   => $this->itemsToShip(),
             'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
+            'tax_items'     => $this->tax_items,
         ) );
 
         if (!$this->no_shipping) {
@@ -1415,22 +1415,17 @@ class Order
             return 0;
         }
         //$this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
-        if ($this->tax_rate == 0) {
-            $this->tax_items = 0;
-            $this->tax = 0;
-        } else {
-            $tax = 0;
-            $this->tax_items = 0;
-            foreach ($this->items as $item) {
-                if ($item->getProduct()->isTaxable()) {
-                    $tax += Currency::getInstance($this->currency)
-                        ->RoundVal($this->tax_rate * $item->getQuantity() * $item->getPrice());
-                    $this->tax_items++;
-                }
+        $tax = 0;
+        $this->tax_items = 0;
+        foreach ($this->items as $item) {
+            if ($item->getProduct()->isTaxable()) {
+                $tax += Currency::getInstance($this->currency)
+                    ->RoundVal($this->tax_rate * $item->getQuantity() * $item->getPrice());
+                $this->tax_items++;
             }
-            //$this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);
-            $this->tax = $tax;
         }
+        //$this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);
+        $this->tax = $tax;
         return $this->tax;
     }
 
@@ -2485,6 +2480,24 @@ class Order
     public function setStatus($newstatus)
     {
         $this->status = $newstatus;
+        return $this;
+    }
+
+
+    public function setTaxRate($new_rate)
+    {
+        global $_TABLES;
+
+        $new_rate = (float)$new_rate;
+        if ($this->tax_rate != $new_rate) {
+            $this->tax_rate = (float)$new_rate;
+            $this->calcTax();
+            DB_query(
+                "UPDATE {$_TABLES['shop.orders']}
+                SET tax_rate = {$this->tax_rate}
+                WHERE order_id = '{$this->order_id}'"
+            );
+        }
         return $this;
     }
 
