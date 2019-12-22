@@ -3007,7 +3007,7 @@ class Product
 
         case 'availability':
             if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
-                $icon = 'avail-unavail';
+                $icon = 'avail-expired';
                 $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
             } elseif ($A['track_onhand'] == 1 && $A['onhand'] < 1) {
                 $icon = $A['oversell'] > 0 ? 'avail-unavail' : 'avail-nostock';
