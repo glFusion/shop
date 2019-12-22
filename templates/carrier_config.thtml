@@ -8,7 +8,9 @@
     </label>
     <div class="uk-form-controls">
       {input_field}
-<!--      <input id="f_{field_name}" type="text" name="{field_name}" value="{field_value}" />-->
+{!if required}
+      <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
+{!endif}
     </div>
   </div>
 <!-- END ItemRow -->

@@ -145,7 +145,7 @@ class usps extends \Shop\Shipper
         $this->cfgFields = array(
             'user_id' => 'password',
             'password' => 'password',
-            'origin_zip' => 'string',
+            //'origin_zip' => 'string',     // future use for quotes
         );
         parent::__construct($A);
     }

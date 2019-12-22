@@ -4,28 +4,23 @@
 {!endif}
 <div style="float:right;">
 {!if link_admin}
-  <a href="{site_admin_url}/plugins/shop/index.php">
-    <button class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</button>
+  <a href="{site_admin_url}/plugins/shop/index.php"
+    class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</a>
   </a>
 {!endif}
 {!if link_catalog}
-  <a href="{site_url}/shop/index.php">
-    <button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</button>
-  </a>
+  <a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</a>
 {!endif}
 {!if link_account}
-  <a href="{site_url}/shop/account.php">
-    <button class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</button>
-  </a>
+  <a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</a>
 {!endif}
+  <a class="uk-button uk-button-success uk-button-mini"
+    id="link_cart" href="{site_url}/shop/cart.php"
 {!if link_cart}
-  <a
 {!else}
-  <a style="display:none;"
+    style="display:none;"
 {!endif}
-  id="link_cart" href="{site_url}/shop/cart.php">
-    <button class="uk-button uk-button-success uk-button-mini">
-      <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}</button>
+    ><i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
   </a>
 </div>
 {!if icon}
