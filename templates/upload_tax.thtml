@@ -1,6 +1,7 @@
 {# begin {templatelocation} #}
 <form action="" method="post" enctype="multipart/form-data"
-    class="uk-form uk-form-horizontal">
+    class="uk-form uk-form-horizontal"
+    style="margin-bottom:10px;">
 {!if 0}
     <!-- Reserved in case there are multiple tax table providers -->
     <div class="uk-form-row">

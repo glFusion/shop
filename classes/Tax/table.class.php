@@ -81,6 +81,11 @@ class table extends \Shop\Tax
     }
 
 
+    /**
+     * Display the admin list of tax table rates and allow uploading new rates.
+     *
+     * @return  string      HTML for admin list
+     */
     public static function adminList()
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
@@ -316,6 +321,7 @@ class table extends \Shop\Tax
             'county_rate' => $A['county_rate'],
             'city_rate' => $A['city_rate'],
             'special_rate' => $A['special_rate'],
+            'doc_url' => SHOP_getDocUrl('edit_tax'),
          ) );
         $retval .= $T->parse('output', 'form');
         return $retval;
