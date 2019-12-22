@@ -733,6 +733,8 @@ $LANG_fs['shop'] = array(
     'fs_gc_format' => 'Gift Card Format',
     'fs_feeds'  => 'Feeds',
     'fs_tax'    => 'Taxes',
+    'fs_tax_avatax' => 'Avatax Settings',
+    'fs_tax_taxjar' => 'Taxjar Settings',
 );
 
 /**

@@ -1,7 +1,7 @@
 <?php
 /**
  * Configuration Defaults Shop plugin for glFusion.
- * Based on the gl-shop Plugin for Geeklog CMS.
+ * Based on the Paypal Plugin for Geeklog CMS.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
@@ -766,17 +766,6 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'tax_rate',
-        'default_value' => '',
-        'type' => 'text',
-        'subgroup' => 10,
-        'fieldset' => 0,
-        'selection_array' => 0,
-        'sort' => 110,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
         'name' => 'purge_sale_prices',
         'default_value' => '1',
         'type' => 'select',
@@ -945,7 +934,6 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
-
     array(
         'name' => 'tax_nexuses',
         'default_value' => '',
@@ -969,13 +957,36 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
+        'name' => 'tax_rate',
+        'default_value' => '',
+        'type' => 'text',
+        'subgroup' => 30,
+        'fieldset' => 10,
+        'selection_array' => 0,
+        'sort' => 30,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
         'name' => 'tax_test_mode',
         'default_value' => '1',
         'type' => 'select',
         'subgroup' => 30,
         'fieldset' => 10,
         'selection_array' => 2,
-        'sort' => 30,
+        'sort' => 40,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    // Avatax configuration
+    array(
+        'name' => 'fs_tax_avatax',
+        'default_value' => NULL,
+        'type' => 'fieldset',
+        'subgroup' => 30,
+        'fieldset' => 20,
+        'selection_array' => NULL,
+        'sort' => 0,
         'set' => true,
         'group' => 'shop',
     ),
@@ -984,7 +995,7 @@ $shopConfigData = array(
         'default_value' => '',
         'type' => 'passwd',
         'subgroup' => 30,
-        'fieldset' => 10,
+        'fieldset' => 20,
         'selection_array' => 0,
         'sort' => 40,
         'set' => true,
@@ -995,9 +1006,21 @@ $shopConfigData = array(
         'default_value' => '',
         'type' => 'passwd',
         'subgroup' => 30,
-        'fieldset' => 10,
+        'fieldset' => 20,
         'selection_array' => 0,
         'sort' => 50,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    // TaxJar configuration
+    array(
+        'name' => 'fs_tax_taxjar',
+        'default_value' => NULL,
+        'type' => 'fieldset',
+        'subgroup' => 30,
+        'fieldset' => 30,
+        'selection_array' => NULL,
+        'sort' => 0,
         'set' => true,
         'group' => 'shop',
     ),
@@ -1006,7 +1029,7 @@ $shopConfigData = array(
         'default_value' => '',
         'type' => 'passwd',
         'subgroup' => 30,
-        'fieldset' => 10,
+        'fieldset' => 30,
         'selection_array' => 0,
         'sort' => 60,
         'set' => true,
