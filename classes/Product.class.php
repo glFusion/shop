@@ -1802,23 +1802,6 @@ class Product
 
 
     /**
-     * Get the sales tax for this item based on the configured tax rate.
-     *
-     * @param   float   $price  Unit price
-     * @param   integer $qty    Item quantity
-     * @return  float           Sales tax ammount
-     */
-    public function getTax($price, $qty = 1)
-    {
-        if ($this->taxable) {
-            return round(SHOP_getTaxRate() * $price * $qty, 2);
-        } else {
-            return 0;
-        }
-    }
-
-
-    /**
      * Create and return a SKU for this product and the selected options.
      *
      * @param   object  $item   OrderItem object
@@ -2295,7 +2278,7 @@ class Product
      */
     public function isTaxable()
     {
-        return $this->taxable && (SHOP_getTaxRate() > 0);
+        return $this->taxable;
     }
 
 
