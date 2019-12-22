@@ -179,6 +179,43 @@ class _internal extends \Shop\Gateway
         return $retval;
     }
 
+
+    /**
+     * Get the invoice terms string for simple invoicing.
+     *
+     * @param   integer $due_days   Due days (terms)
+     * @return  string      Proper terms string for Paypal
+     */
+    private function getInvoiceTerms($due_days=0)
+    {
+        $due_days = (int)$due_days;
+        if ($due_days == 0) {
+            $retval = 'Due Upon Receipt';
+        } else {
+            $day_arr = array(10, 15, 30, 45, 60, 90);
+            $retval = 90;
+            foreach ($day_arr as $days) {
+                if ($due_days <= $days) {
+                    $retval = $days;
+                    break;
+                }
+            }
+            $retval = 'Net ' . $retval . ' Days';
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Check if the gateway supports invoicing. Default is false.
+     *
+     * @return  boolean True if invoicing is supported, False if not.
+     */
+    public function supportsInvoicing()
+    {
+        return true;
+    }
+
 }
 
 ?>

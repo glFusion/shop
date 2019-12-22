@@ -1152,6 +1152,18 @@ class paypal extends \Shop\Gateway
         }
     }
 
+
+    /**
+     * Check if the gateway supports invoicing. Default is false.
+     *
+     * @return  boolean True if invoicing is supported, False if not.
+     */
+    public function supportsInvoicing()
+    {
+        return true;
+    }
+
+
 }   // class paypal
 
 ?>
