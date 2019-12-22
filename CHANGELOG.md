@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.0.0
-Release TBD
+Release 2019-12-22
 
   * Install the Square SDK from composer
   * Use an OrderLineItem for tax with Square so it shows on the order form.
