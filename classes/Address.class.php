@@ -52,6 +52,10 @@ class Address
      * @var string */
     private $country;
 
+    /** Phone number.
+     * @var string */
+    private $phone;
+
     /** User ID.
      * @var integer */
     private $uid;
@@ -409,6 +413,30 @@ class Address
 
 
     /**
+     * Set the phone number.
+     *
+     * @param   string  $phone  Telephone number
+     * @return  object  $this
+     */
+    public function setPhone($phone)
+    {
+        $this->phone = (string)$phone;
+        return $this;
+    }
+
+
+    /**
+     * Get the phone number.
+     *
+     * @return  string      Telephone number
+     */
+    public function getPhone()
+    {
+        return (string)$this->phone;
+    }
+
+
+    /**
      * Check if this is the default billing or shipping address.
      * Returns an integer to be compatible with the database field.
      *
@@ -606,6 +634,9 @@ class Address
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
             $retval .=  $sep . Country::getInstance($this->country)->getName();
         }
+        if ($this->phone != '') {
+            $retval .= $sep . $this->phone;
+        }
         return $retval;
     }
 
@@ -677,6 +708,7 @@ class Address
                 city = '" . DB_escapeString($this->city) . "',
                 state = '" . DB_escapeString($this->state) . "',
                 country = '" . DB_escapeString($this->country) . "',
+                phone = '" . $this->getPhone() . "',
                 zip = '" . DB_escapeString($this->zip) . "',
                 billto_def = '" . $this->isDefaultBillto() . "',
                 shipto_def = '" . $this->isDefaultShipto() . "'";
@@ -838,10 +870,12 @@ class Address
             ->setCity($Addr->getCity())
             ->setState($Addr->getState())
             ->setPostal($Addr->getPostal())
-            ->setCountry($Addr->getCountry());
+            ->setCountry($Addr->getCountry())
+            ->setPhone($Addr->getPhone());
         if ($all) {
             $this->setDefaultBillto($Addr->isDefaultBillto())
-                ->setDefaultShipto($Addr->isDefaultShipto());
+                ->setDefaultShipto($Addr->isDefaultShipto())
+                ->setUid($Addr->getUid());
         }
         return $this;
     }

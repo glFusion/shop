@@ -611,6 +611,10 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.images']} ADD `orderby` int(3) NOT NULL default 999 AFTER `product_id`",
 );
 
+$SHOP_UPGRADE['1.1.0'] = array(
+    "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
+);
+
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
 $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
 $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];

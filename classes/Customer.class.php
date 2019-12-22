@@ -418,6 +418,7 @@ class Customer
                 'ad_state'  => $address->getState(),
                 'ad_country' => $address->getCountry(),
                 'ad_zip'    => $address->getPostal(),
+                'ad_phone'  => $address->getPhone(),
                 'ad_checked' => $ad_checked,
                 'del_icon'  => Icon::getHTML(
                     'delete', 'tooltip',
@@ -460,11 +461,13 @@ class Customer
             'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',
             'req_country'   => $_SHOP_CONF['get_country'] == 2 ? 'true' : '',
             'req_postal'    => $_SHOP_CONF['get_postal'] == 2 ? 'true' : '',
+            'req_phone'     => $_SHOP_CONF['get_phone'] == 2 ? 'true' : '',
             'get_street'    => $_SHOP_CONF['get_street'] > 0 ? 'true' : '',
             'get_city'      => $_SHOP_CONF['get_city'] > 0 ? 'true' : '',
             'get_state'     => $_SHOP_CONF['get_state'] > 0 ? 'true' : '',
             'get_country'   => $_SHOP_CONF['get_country'] > 0 ? 'true' : '',
             'get_postal'    => $_SHOP_CONF['get_postal'] > 0 ? 'true' : '',
+            'get_phone'     => $_SHOP_CONF['get_phone'] > 0 ? 'true' : '',
 
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,

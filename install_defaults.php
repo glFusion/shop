@@ -608,6 +608,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'get_phone',
+        'default_value' => '1',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 50,
+        'selection_array' => 14,
+        'sort' => 60,
+        'set' => true,
+        'group' => 'shop',
+    ),
     // Feeds FS
     array(
         'name' => 'fs_feeds',
