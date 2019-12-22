@@ -12,16 +12,15 @@
   <a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</a>
 {!endif}
 {!if link_account}
-  <a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}<//>
+  <a href="{site_url}/shop/account.php" class="uk-button uk-button-primary uk-button-mini">{$LANG01[47]}</a>
 {!endif}
+  <a class="uk-button uk-button-success uk-button-mini"
+    id="link_cart" href="{site_url}/shop/cart.php"
 {!if link_cart}
-  <a
 {!else}
-  <a style="display:none;"
+    style="display:none;"
 {!endif}
-    class="uk-button uk-button-success uk-button-mini"
-    id="link_cart" href="{site_url}/shop/cart.php">
-      <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
+    ><i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
   </a>
 </div>
 {!if icon}
