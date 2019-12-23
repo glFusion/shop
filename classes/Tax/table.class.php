@@ -422,13 +422,23 @@ class table extends \Shop\Tax
             'text/plain' => array('txt', 'csv'),
             'application/octet-stream' => array('txt', 'csv'),
         ) );
-        $upload->setFileNames('taxrate_upl.csv');
+        // allow uploading all 50 states. May still fail due to ovarall size.
+        $upload->setMaxFileUploads(50);
         $upload->setFieldName('importfile');
+        $filenames = array();
+        for ($i = 0; $i < $upload->numFiles(); $i++) {
+            $filenames[] =  uniqid('_' . rand(100,999)) . '.csv';
+        }
+        $upload->setFileNames($filenames);
+
         if ($upload->uploadFiles()) {
-            // Good, file got uploaded
-            $filename = $_CONF['path_data'] . 'taxrate_upl.csv';
-            if (!is_file($filename)) { // empty upload form
-                echo COM_refresh(SHOP_ADMIN_URL . '/index.php?taximport');
+            // Good, files got uploaded
+            foreach ($upload->getFilenames() as $fname) {
+                $filename = $_CONF['path_data'] . $fname;
+                if (!is_file($filename)) { // empty upload form
+                    SHOP_log("Tax upload file $filename not found");
+                    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?taximport');
+                }
             }
         } else {
             // A problem occurred, print debug information
@@ -444,58 +454,61 @@ class table extends \Shop\Tax
         $failures = 0;
         $sql_values = array();
 
-        switch($_POST['provider']) {
-        case 'avalara':
-        default:
-            $fh = fopen($filename, "r");
-            fgetcsv($fh, 1500, ",");    // Eat the first line
-            while ($data = fgetcsv($fh, 1500, ",")) {
-                $num = count($data);
-                if ($num < 9) {
-                    $failures++;
-                    continue;
-                }
-                $country = 'US';
-                $code = DB_escapeString($country . $data[0] . $data[1]);
-                $state = DB_escapeString($data[0]);
-                $zip = DB_escapeString($data[1]);
-                $region = DB_escapeString($data[2]);
-                $state_rate = (float)$data[3];
-                $combined_rate = (float)$data[4];
-                $county_rate = (float)$data[5];
-                $city_rate = (float)$data[6];
-                $special_rate = (float)$data[7];
-                $risk_level = (int)$data[8];
+        foreach ($upload->getFilenames() as $fname) {
+            $filename = $_CONF['path_data'] . $fname;
+            switch($_POST['provider']) {
+            case 'avalara':
+            default:
+                $fh = fopen($filename, "r");
+                $l = fgetcsv($fh, 1500, ",");    // Eat the first line
+                while ($data = fgetcsv($fh, 1500, ",")) {
+                    $num = count($data);
+                    if ($num < 9) {
+                        $failures++;
+                        continue;
+                    }
+                    $country = 'US';
+                    $code = DB_escapeString($country . $data[0] . $data[1]);
+                    $state = DB_escapeString($data[0]);
+                    $zip = DB_escapeString($data[1]);
+                    $region = DB_escapeString($data[2]);
+                    $state_rate = (float)$data[3];
+                    $combined_rate = (float)$data[4];
+                    $county_rate = (float)$data[5];
+                    $city_rate = (float)$data[6];
+                    $special_rate = (float)$data[7];
+                    $risk_level = (int)$data[8];
 
-                $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
-                    code = '$code',
-                    country = '$country',
-                    state = '$state',
-                    zip_from = '$zip',
-                    region = '$region',
-                    combined_rate = $combined_rate,
-                    state_rate = $state_rate,
-                    county_rate = $county_rate,
-                    city_rate = $city_rate,
-                    special_rate = $special_rate
+                    $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
+                        code = '$code',
+                        country = '$country',
+                        state = '$state',
+                        zip_from = '$zip',
+                        region = '$region',
+                        combined_rate = $combined_rate,
+                        state_rate = $state_rate,
+                        county_rate = $county_rate,
+                        city_rate = $city_rate,
+                        special_rate = $special_rate
                     ON DUPLICATE KEY UPDATE
-                    region = '$region',
-                    combined_rate = $combined_rate,
-                    state_rate = $state_rate,
-                    county_rate = $county_rate,
-                    city_rate = $city_rate,
-                    special_rate = $special_rate";
+                        region = '$region',
+                        combined_rate = $combined_rate,
+                        state_rate = $state_rate,
+                        county_rate = $county_rate,
+                        city_rate = $city_rate,
+                        special_rate = $special_rate";
 
-                $result = DB_query($sql);
-                if (!$result) {
-                    $failures++;
-                } else {
-                    $successes++;
+                    $result = DB_query($sql);
+                    if (!$result) {
+                        $failures++;
+                    } else {
+                        $successes++;
+                    }
                 }
+                break;
             }
-            break;
+            unlink ($filename);
         }
-        unlink ($filename);
         $retval .= '<p>' . sprintf ($LANG28[32], $successes, $failures);
         return $retval;
     }

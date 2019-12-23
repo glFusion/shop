@@ -1,5 +1,11 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.1.0
+Release TBD
+
+  * Add sales tax calculation based on shipping address.
+  * Add phone number field to addresses.
+
 ## v1.0.0
 Release 2019-12-22
 

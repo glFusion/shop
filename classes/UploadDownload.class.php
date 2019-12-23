@@ -1426,7 +1426,7 @@ class UploadDownload
      *
      * @return  array   Array of filenames (base names)
      */
-    public function getFilenames()
+    public function getFileNames()
     {
         return $this->_fileNames;
     }
