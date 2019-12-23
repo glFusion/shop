@@ -317,10 +317,11 @@ class taxjar extends \Shop\Tax
      * Determine if the shop has a nexus in the destination state/province.
      * Retrieves the nexus locations saved at taxjar.com and compares the
      * state and country to the destination.
+     * @TODO: Maybe use this function, or internal nexus settings.
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
-    protected function hasNexus()
+    protected function XhasNexus()
     {
         return parent::hasNexus();
 
