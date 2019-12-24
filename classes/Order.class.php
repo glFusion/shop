@@ -99,6 +99,14 @@ class Order
      * @var object */
     protected $Shipto;
 
+    /** Discount code applied.
+     * @var string */
+    protected $discount_code;
+
+    /** Discount percentage applied.
+     * @var float */
+    protected $discount_pct;
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -452,6 +460,7 @@ class Order
         $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
         $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
         $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer');
+        $this->setDiscountPct(SHOP_getVar($A, 'discount_pct', 'float'));
         //if ($this->status != 'cart') {
             $this->tax_rate = SHOP_getVar($A, 'tax_rate');
         //}
@@ -681,6 +690,8 @@ class Order
         $item_qty = array();        // array to track quantity by base item ID
         $have_images = false;
         $has_sale_items = false;
+        $dc_amt = 0;
+        $item_net = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             if ($is_invoice) {
@@ -727,7 +738,9 @@ class Order
             }
 
             $item_total = $item->getPrice() * $item->getQuantity();
+            $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->subtotal += $item_total;
+            $dc_amt += ($item_total - $item_net);
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
                 'fixed_q'       => $P->getFixedQuantity(),
@@ -741,7 +754,7 @@ class Order
                 'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'sale_icon'     => $LANG_SHOP['sale_price'][0],
-                'discount_icon' => 'D',
+                'discount_icon' => $LANG_SHOP['discount'][0],
                 'discount_tooltip' => $price_tooltip,
                 'sale_tooltip'  => $sale_tooltip,
                 'token'         => $item->getToken(),
@@ -846,6 +859,9 @@ class Order
             'itemsToShip'   => $this->itemsToShip(),
             'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
             'tax_items'     => $this->tax_items,
+            'discount_code_fld' => $this->canShowDiscountEntry(),
+            'dc_row_vis'    => $this->getDiscountAmount() ? '' : 'hidden',
+            'dc_amt'        => $Currency->FormatValue($dc_amt * -1),
         ) );
 
         if (!$this->no_shipping) {
@@ -1551,6 +1567,8 @@ class Order
         foreach ($this->items as $id => $item) {
             $total += ($item->getPrice() * $item->getQuantity());
         }
+        // Remove any discount amount.
+        $total -= $this->getDiscountAmount();
         if ($this->status == 'cart') {
             $total += $this->calcTotalCharges();
         } else {
@@ -2484,6 +2502,13 @@ class Order
     }
 
 
+    /**
+     * Set the sales tax rate for this order.
+     * No action is the new rate is the same as the existing rate.
+     *
+     * @param   float   $new_rate   New tax rate
+     * @return  object  $this
+     */
     public function setTaxRate($new_rate)
     {
         global $_TABLES;
@@ -2499,6 +2524,74 @@ class Order
             );
         }
         return $this;
+    }
+
+
+    /**
+     * Set the discount code applied to this order.
+     *
+     * @param   string  $code   Discount code
+     * @return  object  $this
+     */
+    public function setDiscountCode($code)
+    {
+        $this->discount_code = $code;
+        return $this;
+    }
+
+
+    /**
+     * Get the discount code applied to this order, if any.
+     *
+     * @return  string      Discount code
+     */
+    public function getDiscountCode()
+    {
+        return $this->discount_code;
+    }
+
+
+    /**
+     * Set the discount percentage applied from a discount code.
+     *
+     * @param   float   $pct    Discount percentage
+     * @return  object  $this
+     */
+    public function setDiscountPct($pct)
+    {
+        $this->discount_pct = (float)$pct;
+        return $this;
+    }
+
+
+    /**
+     * Get the discount percentage applied from a discount code.
+     *
+     * @return  float   $pct    Discount percentage
+     */
+    public function getDiscountPct()
+    {
+        return $this->discount_pct;
+    }
+
+
+    /**
+     * Determine if the discount code entry field can be shown.
+     * This wrapper allows for future conditions based on group menbership,
+     * existence of sale prices, etc. but currently just shows the field if
+     * there are any active codes.
+     *
+     * @return  boolean     True if the field can be shown, False if not.
+     */
+    private function canShowDiscountEntry()
+    {
+        return DiscountCode::countCurrent() > 0 ? true : false;
+    }
+
+
+    public function getDiscountAmount()
+    {
+        return (float)$this->discount_pct / 100 * $this->subtotal;
     }
 
 }

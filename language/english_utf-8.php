@@ -400,7 +400,10 @@ $LANG_SHOP = array (
 ),
 'sub_email' => 'Order Update',
 'sale_prices' => 'Sale Prices',
+'codes' => 'Discount Codes',
+'disc_code' => 'Discount Code',
 'new_sale' => 'New Sale',
+'new_discount' => 'New Code',
 'apply_disc_to' => 'Apply Discount To',
 'disc_type' => 'Discount Type',
 'percent' => 'Percent',
@@ -609,6 +612,7 @@ $LANG_SHOP_HELP = array(
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
+'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

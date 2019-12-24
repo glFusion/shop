@@ -206,6 +206,11 @@ class Menu
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
             ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?codes=x',
+                'text' => $LANG_SHOP['codes'],
+                'active' => $view == 'codes' ? true : false,
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }

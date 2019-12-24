@@ -90,6 +90,7 @@ $_SQL = array(
   `base_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `dc_price` decimal(5,2) NOT NULL DEFAULT '0.00',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -632,7 +633,8 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `zip_from` (`zip_from`),
       KEY `zip_to` (`zip_to`)
     ) ENGINE=MyISAM",
-    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''"
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];

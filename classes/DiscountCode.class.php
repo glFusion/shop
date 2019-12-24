@@ -1,0 +1,630 @@
+<?php
+/**
+ * Class to manage multi-use discount codes.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v1.1.0
+ * @since       v1.1.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
+namespace Shop;
+
+/**
+ * Class for multi-use discount codes.
+ * Discount codes are strings that can be entered at checkout to get a discount.
+ * These may be for seasonal discounts, online specials, etc.
+ * @package shop
+ */
+class DiscountCode
+{
+    /** Minimum possible date.*/
+    const MIN_DATE = '1970-01-01';
+
+    /** Minimum possible time. */
+    const MIN_TIME = '00:00:00';
+
+    /** Maximum possible date. */
+    const MAX_DATE = '9999-12-31';
+
+    /** Maximum possible time. */
+    const MAX_TIME = '23:59:59';
+
+    /** Indicate whether the current object is a new entry or not.
+     * @var boolean */
+    public $isNew;
+
+    /** DB Record ID.
+     * @var string */
+    private $code_id;
+
+    /** Actual code string.
+     * @var string */
+    private $code;
+
+    /** Percentage discount when the code is used.
+     * @var float */
+    private $percent;
+
+    /** Starting date/time. Date object.
+     * @var object */
+    private $start;
+
+    /** Expiration date/time. Date object.
+     * @var object */
+    private $end;
+
+
+    /**
+     * Constructor. Sets variables from the provided array.
+     *
+     * @param   array   DB record
+     */
+    public function __construct($A=array())
+    {
+        // New entry, set defaults
+        $this->code_id = 0;
+        $this->percent = 0;
+        $this->code = '';
+        if (is_array($A) && !empty($A)) {
+            $this->setVars($A);
+        } elseif (is_numeric($A) && $A > 0) {
+            // single ID passed in, e.g. from admin form
+            $this->Read($A);
+        } else {
+            // New entry, set defaults
+            $this->code_id = 0;
+            $this->percent = 0;
+            $this->code = '';
+        }
+    }
+
+
+    /**
+     * Get a discount code record.
+     *
+     * @param   string  $code   Discount code string
+     * @return  object  $this
+     */
+    public static function getInstance($code)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
+            WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            $retval = new self($A);
+        } else {
+            $retval = new self;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Read a single record based on the record ID.
+     *
+     * @param   integer $id     DB record ID
+     * @return  boolean     True on success, False on failure
+     */
+    public function Read($id)
+    {
+        global $_TABLES;
+
+        $id = (int)$id;
+        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
+                WHERE code_id = $id";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            $this->setVars($A);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Set the variables from a DB record into object properties.
+     *
+     * @param   array   $A      Array of properties
+     * @param   boolean $fromDB True if reading from DB, False if from a form
+     */
+    public function setVars($A, $fromDB=true)
+    {
+        if (!$fromDB) {
+            // If coming from the form, convert individual fields to a datetime.
+            // Use the minimum start date if none provided.
+            if (empty($A['start'])) {
+                $A['start'] = self::MIN_DATE;
+            }
+            // Use the minimum start time if none provided.
+            if (isset($A['start_allday']) || empty($A['start_time'])) {
+                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
+            } else {
+                $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
+            }
+            // Use the maximum date if none is provided.
+            if (empty($A['end'])) {
+                $A['end'] = self::MAX_DATE;
+            }
+            // Use tme maximum time if none is provided.
+            if (isset($A['end_allday']) || empty($A['end_time'])) {
+                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+            } else {
+                $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
+            }
+        }
+        $this->setCodeID(SHOP_getVar($A, 'code_id', 'integer'))
+            ->setCode(SHOP_getVar($A, 'code'))
+            ->setPercent(SHOP_getVar($A, 'percent', 'float'))
+            ->setStart(SHOP_getVar($A, 'start'))
+            ->setEnd(SHOP_getVar($A, 'end'));
+        return $this;;
+    }
+
+
+    /**
+     * Set the discount code record ID.
+     *
+     * @param   string  $code_id    DB Record ID
+     * @return  object  $this
+     */
+    public function setCodeID($code_id)
+    {
+        $this->code_id = (int)$code_id;
+        return $this;
+    }
+
+
+    /**
+     * Set the code value.
+     *
+     * @param   string  $code       Discount code string
+     * @return  object  $this
+     */
+    public function setCode($code)
+    {
+        $this->code = strtoupper($code);
+        return $this;
+    }
+
+
+    /**
+     * Get the code string.
+     *
+     * @return  string      Discount code
+     */
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+
+    /**
+     * Set the discount percentage.
+     *
+     * @param   float   $percent    Percentage amount
+     * @return  object  $this
+     */
+    public function setPercent($percent)
+    {
+        $this->percent = (float)$percent;
+        return $this;
+    }
+
+
+    /**
+     * Get the expiration date/time object.
+     *
+     * @return  object      Date object
+     */
+    public function getPercent()
+    {
+        return $this->percent;
+    }
+
+
+    /**
+     * Set the starting date object.
+     *
+     * @param   string  $dt_time    Datetime string.
+     * @return  object  $this
+     */
+    public function setStart($dt_time)
+    {
+        global $_CONF;
+
+        $this->start = new \Date($dt_time, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the starting date/time object.
+     *
+     * @return  object      Date object
+     */
+    public function getStart()
+    {
+        return $this->start;
+    }
+
+
+    /**
+     * Set the expiration date object.
+     *
+     * @param   string  $dt_time    Datetime string.
+     * @return  object  $this
+     */
+    public function setEnd($dt_time)
+    {
+        global $_CONF;
+
+        $this->end = new \Date($dt_time, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the expiration date/time object.
+     *
+     * @return  object      Date object
+     */
+    public function getEnd()
+    {
+        return $this->end;
+    }
+
+
+    /**
+     * Save the current values to the database.
+     *
+     * @param   array   $A      Array of values from $_POST
+     * @return  boolean         True if no errors, False otherwise
+     */
+    public function Save($A = array())
+    {
+        global $_TABLES, $_SHOP_CONF;
+
+        if (is_array($A)) {
+            // Saving from a form
+            $this->setVars($A, false);
+        }
+
+        // Insert or update the record, as appropriate.
+        $sql = "INSERT INTO {$_TABLES['shop.discountcodes']} SET
+            code_id = '" . (int)$this->code_id . "',
+            code = '" . DB_escapeString($this->code) . "',
+            percent = '" . (float)$this->percent . "',
+            start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
+            end = '" . DB_escapeString($this->end->toMySQL(true)) . "'
+            ON DUPLICATE KEY UPDATE
+            code = '" . DB_escapeString($this->code) . "',
+            percent = '" . (float)$this->percent . "',
+            start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
+            end = '" . DB_escapeString($this->end->toMySQL(true)) . "'";
+        //echo $sql;die;
+        DB_query($sql);
+        $err = DB_error();
+        if ($err == '') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Delete a single discount record from the database.
+     *
+     * @param   integer $id     Record ID
+     * @return  boolean     True on success, False on invalid ID
+     */
+    public static function Delete($id)
+    {
+        global $_TABLES;
+
+        if ($id <= 0) {
+            return false;
+        }
+
+        DB_delete($_TABLES['shop.discountcodes'], 'code_id', $id);
+        return true;
+    }
+
+
+    /**
+     * Clean out old discount code records.
+     * Called from runScheduledTask function.
+     */
+    public static function Clean()
+    {
+        global $_CONF, $_TABLES;
+
+        $now = $_CONF['_now']->toMySQL(true);
+        $sql = "DELETE FROM {$_TABLES['shop.discountcodes']}
+                WHERE end < '$now'";
+        DB_query($sql);
+    }
+
+
+    /**
+     * Validate a customer-entered discount code.
+     *
+     * @return  float       Percentage discount, NULL if invalid
+     */
+    public static function Validate()
+    {
+        global $_CONF;
+
+        $now = $_CONF['_now']->toMySQL(true);
+        if (
+            $this-> code_id < 1 ||  // discount code not created yet
+            $now > $this->getEnd()->toMySQL(true) ||
+            $now < $this->getStart()->toMySQL(true)
+        ) {
+            return NULL;
+        } else {
+            return $this->getPercent() / 100;
+        }
+    }
+
+
+    /**
+     * Calculate the discounted price.
+     * Always returns at least zero.
+     *
+     * @param  float   $price      Item base price
+     * @return float               Discounted price
+     */
+    public function calcPrice($price)
+    {
+        $price = $price * (100 - $this->getPercent()) / 100;
+        return max($price, 0);
+    }
+
+
+    /**
+     * Creates the edit form.
+     *
+     * @param   integer $id Attributeal ID, current record used if zero
+     * @return  string      HTML for edit form
+     */
+    public function Edit()
+    {
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        if ($this->end->toMySQL(true) == self::maxDateTime()) {
+            $end_date = '';
+            $end_time = '';
+        } else {
+            $end_date = $this->end->format('Y-m-d', true);
+            $end_time = $this->end->format('H:i', true);
+        }
+        if ($this->start->toMySQL(true) == self::minDateTime()) {
+            $start_date = '';
+            $start_time = '';
+        } else {
+            $start_date = $this->start->format('Y-m-d', true);
+            $start_time = $this->start->format('H:i', true);
+        }
+        $T = SHOP_getTemplate('discount_code', 'form');
+        $retval = '';
+        $T->set_var(array(
+            'code_id'       => $this->id,
+            'action_url'    => SHOP_ADMIN_URL,
+            'pi_url'        => SHOP_URL,
+            'doc_url'       => SHOP_getDocURL('discount_code',
+                                            $_CONF['language']),
+            'percent'       => $this->percent,
+            'code'          => $this->code,
+            'start_date'    => $start_date,
+            'start_time'    => $start_time,
+            'end_date'      => $end_date,
+            'end_time'      => $end_time,
+            'min_date'      => self::MIN_DATE,
+            'min_time'      => '00:00',
+            'max_date'      => self::MAX_DATE,
+            'max_time'      => '23:59',
+        ) );
+        if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
+            $T->set_var(array(
+                'exp_allday_chk' => 'checked="checked"',
+                'end_time_disabled' => 'disabled="disabled"',
+            ) );
+        }
+        $retval .= $T->parse('output', 'form');
+        $retval .= COM_endBlock();
+        return $retval;
+    }
+
+
+    /**
+     * Discount Code Admin List View.
+     *
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList()
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}";
+
+        $header_arr = array(
+            array(
+                'text' => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'align' => 'center',
+            ),
+            array(
+                'text' => 'ID',
+                'field' => 'code_id',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['code'],
+                'field' => 'code',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['percent'],
+                'field' => 'percent',
+                'align' => 'right',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['start'],
+                'field' => 'start',
+                'align' => 'center',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['end'],
+                'field' => 'end',
+                'align' => 'center',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'end',
+            'direction' => 'ASC',
+        );
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $query_arr = array(
+            'table' => 'shop.discountcodes',
+            'sql' => $sql,
+            'query_fields' => array('code'),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?discountcodes',
+        );
+
+        $display .= '<div>' . COM_createLink($LANG_SHOP['new_discount'],
+            SHOP_ADMIN_URL . '/index.php?editcode=x',
+            array('class' => 'uk-button uk-button-success')
+        ) . '</div>';
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_codelist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the Discount Code admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+        switch($fieldname) {
+        case 'edit':
+            $retval = COM_createLink(
+                Icon::getHTML('edit'),
+                SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $A['code_id']
+            );
+            break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                Icon::getHTML('delete'),
+                SHOP_ADMIN_URL . '/index.php?delcode&code_id=' . $A['code_id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
+            break;
+
+        case 'end':
+        case 'start':
+            $Dt = new \Date($fieldvalue, $_CONF['timezone']);
+            $retval = $Dt->toMySQL(true);
+            break;
+
+        case 'percent':
+            $retval = $fieldvalue . ' %';
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the maximum datetime value allowed.
+     *
+     * @return  string  Maximum datetime value
+     */
+    private static function maxDateTime()
+    {
+        return self::MAX_DATE . ' ' . self::MAX_TIME;
+    }
+
+
+    /**
+     * Get the minimum datetime value allowed.
+     *
+     * @return  string  Minimum datetime value
+     */
+    private static function minDateTime()
+    {
+        return self::MIN_DATE . ' ' . self::MIN_TIME;
+    }
+
+
+    /**
+     * See if there are any current discount codes available.
+     * Used in the checkout flow to display the entry field if appropriate.
+     *
+     * @return  integer     Count of discount codes available.
+     */
+    public static function countCurrent()
+    {
+        global $_CONF, $_TABLES;
+
+        $now = $_CONF['_now']->toMySQL(true);
+        $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
+            WHERE '$now' > `start` AND '$now' < `end`";
+        $res = DB_query($sql);
+        return (int)DB_numRows($res);
+    }
+
+}
+
+?>

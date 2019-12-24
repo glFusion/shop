@@ -38,7 +38,7 @@ class OrderItem
         'id', 'order_id', 'product_id',
         'description', 'quantity', 'txn_id', 'txn_type',
         'expiration',
-        'base_price', 'price', 'qty_discount', 'token',
+        'base_price', 'price', 'qty_discount', 'token', 'net_price',
         //'options',
         'options_text', 'extras', 'taxable', 'paid',
         'shipping', 'handling',
@@ -186,6 +186,7 @@ class OrderItem
         case 'paid':
         case 'shipping':
         case 'handling':
+        case 'net_price':
             $this->properties[$key] = (float)$value;
             break;
         case 'qty_discount':
@@ -412,7 +413,12 @@ class OrderItem
             $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
             $sql3 = '';
         }
-
+        $dc_pct = $this->getOrder()->getDiscountPct() / 100;
+        if ($dc_pct > 0) {
+            $this->net_price = $this->price * (1 - $dc_pct);
+        } else {
+            $this->net_price = $this->price;
+        }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
                 description = '" . DB_escapeString($this->description) . "',
@@ -422,6 +428,7 @@ class OrderItem
                 qty_discount = '" . (float)$this->qty_discount. "',
                 base_price = '" . (float)$this->base_price. "',
                 price = '" . (float)$this->price . "',
+                net_price = '" . (float)$this->net_price . "',
                 taxable = '" . (int)$this->taxable. "',
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
@@ -731,11 +738,22 @@ class OrderItem
     /**
      * Just return the item price property.
      *
-     * @return  float       Item price, including all options and discounts.
+     * @return  float       Item price, including all options and qty discounts.
      */
     public function getPrice()
     {
         return (float)$this->price;
+    }
+
+
+    /**
+     * Get the net price after any discount codes.
+     *
+     * @return  float       Item net price.
+     */
+    public function getNetPrice()
+    {
+        return (float)$this->net_price;
     }
 
 
