@@ -21,11 +21,15 @@ class Customer
 {
     /** User ID
     * @var integer */
-    public $uid;
+    private $uid;
 
     /** Addresses stored for this user.
     * @var array */
-    public $addresses = array();
+    private $addresses = array();
+
+    /** Customer's preferred payment gateway ID.
+     * @var string */
+    private $pref_gw;
 
     /**  Flag to indicate that this is a new record.
      * @var boolean */
@@ -150,6 +154,7 @@ class Customer
             $this->email = $A['email'];
             $this->language = $A['language'];
             $this->isNew = false;
+            $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
             /*$res = DB_query(
                 "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
@@ -160,8 +165,9 @@ class Customer
         } else {
             $this->cart = array();
             $this->isNew = true;
-            $this->saveUser();
             $this->addresses = array();
+            $this->pref_gw = '';
+            $this->saveUser();      // create a user record
         }
     }
 
@@ -263,11 +269,18 @@ class Customer
     {
         global $_TABLES;
 
+        if ($this->uid < 2) {
+            // Act as if saving was successful but do nothing.
+            return true;
+        }
+
         $cart = DB_escapeString(@serialize($this->cart));
         $sql = "INSERT INTO {$_TABLES['shop.userinfo']} SET
             uid = {$this->uid},
+            pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart'
             ON DUPLICATE KEY UPDATE
+            pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -569,6 +582,31 @@ class Customer
             'zip',
         );
     }
+
+
+    /**
+     * Set the customer's preferred payment gateway.
+     *
+     * @param   string  $gw     ID of preferred gateway
+     * @return  object  $this
+     */
+    public function setPrefGW($gw)
+    {
+        $this->pref_gw = $gw;
+        return $this;
+    }
+
+
+    /**
+     * Get the customer's preferred payment gateway.
+     *
+     * @return  string      ID of preferred gateway
+     */
+    public function getPrefGW()
+    {
+        return $this->pref_gw;
+    }
+
 
 }   // class Customer
 

@@ -219,6 +219,7 @@ $_SQL = array(
 'shop.userinfo' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
   `uid` int(11) unsigned NOT NULL,
   `cart` text,
+  `pref_gw` varchar(12) NOT NULL DEFAULT '',
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -631,6 +632,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `zip_from` (`zip_from`),
       KEY `zip_to` (`zip_to`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];

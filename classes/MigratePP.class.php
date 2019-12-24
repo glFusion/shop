@@ -91,6 +91,10 @@ class MigratePP
         if (!self::migrateAddress()) {
             return false;
         }
+        if (!self::migrateUserinfo()) {
+            // @since v1.1.0 to get cart info
+            return false;
+        }
         return true;
     }
 
@@ -363,7 +367,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateOptionValues()
+    private static function migrateOptionValues()
     {
         global $_TABLES;
 
@@ -387,7 +391,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateOptionGroups()
+    private static function migrateOptionGroups()
     {
         global $_TABLES;
 
@@ -411,7 +415,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateShipping()
+    private static function migrateShipping()
     {
         global $_TABLES;
 
@@ -445,7 +449,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateGateways()
+    private static function migrateGateways()
     {
         global $_TABLES;
 
@@ -464,7 +468,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateImages()
+    private static function migrateImages()
     {
         global $_TABLES;
 
@@ -483,7 +487,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateIPNLog()
+    private static function migrateIPNLog()
     {
         global $_TABLES;
 
@@ -503,7 +507,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateAddress()
+    private static function migrateAddress()
     {
         global $_TABLES;
 
@@ -518,6 +522,25 @@ class MigratePP
                 city, state, country, zip,
                 billto_def, shipto_def
             FROM {$_TABLES['paypal.address']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate customer information - cart and preferred gateway.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    private static function migrateUserinfo()
+    {
+        global $_TABLES;
+
+        COM_errorLog("Migrating User Information ...");
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.userinfo']}",
+            "INSERT INTO {$_TABLES['shop.userinfo']}
+                (uid, cart, pref_gw)
+            SELECT uid, cart, '' FROM {$_TABLES['paypal.userinfo']}",
         ) );
     }
 

@@ -542,6 +542,9 @@ class Cart extends Order
             } else {
                 // Select the first if there's one, otherwise select none.
                 $gw_sel = Gateway::getSelected();
+                if ($gw_sel == '') {
+                    $gw_sel = Customer::getInstance($this->uid)->getPrefGW();
+                }
             }
             foreach ($gateways as $gw_id=>$gw) {
                 if (is_null($gw) || !$gw->hasAccess()) {

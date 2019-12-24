@@ -96,6 +96,9 @@ case 'checkout':
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
+        Shop\Customer::getInstance($cart->uid)
+            ->setPrefGW($gateway)
+            ->saveUser();
     }
     if (isset($_POST['by_gc'])) {
         // Has some amount paid by coupon
