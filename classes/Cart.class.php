@@ -332,8 +332,8 @@ class Cart extends Order
                     $this->items[$id]->setQuantity($qty);
                 }
             }
+            $this->applyQtyDiscounts($this->items[$id]->product_id);
         }
-        $this->applyQtyDiscounts($this->items[$id]->product_id);
 
         // Now look for a coupon code to redeem against the user's account.
         if ($_SHOP_CONF['gc_enabled']) {
