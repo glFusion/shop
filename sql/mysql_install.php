@@ -579,7 +579,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`code`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.cache']}` (
-      `cache_key` varchar(255) NOT NULL,
+      `cache_key` varchar(127) NOT NULL,
       `expires` int(11) unsigned NOT NULL DEFAULT '0',
       `data` mediumtext,
       PRIMARY KEY (`cache_key`),
