@@ -577,7 +577,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`code`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.cache']}` (
-      `cache_key` varchar(255) NOT NULL,
+      `cache_key` varchar(127) NOT NULL,
       `expires` int(11) unsigned NOT NULL DEFAULT '0',
       `data` mediumtext,
       PRIMARY KEY (`cache_key`),
@@ -613,6 +613,24 @@ $SHOP_UPGRADE['1.0.0'] = array(
 
 $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
+    "CREATE TABLE `{$_TABLES['shop.tax_rates']}` (
+      `code` varchar(25) NOT NULL,
+      `country` varchar(3) DEFAULT NULL,
+      `state` varchar(10) DEFAULT NULL,
+      `zip_from` varchar(10) DEFAULT NULL,
+      `zip_to` varchar(10) DEFAULT NULL,
+      `region` varchar(40) DEFAULT NULL,
+      `combined_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `state_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `county_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `city_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `special_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      PRIMARY KEY (`code`),
+      KEY `country_zipcode` (`country`,`zip_from`),
+      KEY `location` (`country`,`state`,`zip_from`),
+      KEY `zip_from` (`zip_from`),
+      KEY `zip_to` (`zip_to`)
+    ) ENGINE=MyISAM",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
@@ -622,5 +640,6 @@ $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
 $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
+$_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][1];
 
 ?>

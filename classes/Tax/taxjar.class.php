@@ -32,6 +32,9 @@ class taxjar extends \Shop\Tax
      * @var string */
     private $api_token;
 
+    /** Use Taxjar nexus? Fals to use configured nexus setting.
+     * @var boolean */
+    private $use_tj_nexus;
 
     /**
      * Set up local variables and call the parent constructor.
@@ -44,15 +47,13 @@ class taxjar extends \Shop\Tax
 
         $this->api_token= $_SHOP_CONF['tax_taxjar_token'];
         $this->test_mode = (int)$_SHOP_CONF['tax_test_mode'];
+        $this->use_tj_nexus = $_SHOP_CONF['tax_taxjar_nexus'] ? true : false;
         if ($this->test_mode) {
             $this->api_endpoint = $this->api_endpoint_test;     // todo: configure
         } else {
             $this->api_endpoint = $this->api_endpoint_prod;     // todo: configure
         }
         $this->key = 'taxjar';
-        $this->cfgFields = array(
-            'api_token' => 'password',
-        );
     }
 
 
@@ -317,12 +318,16 @@ class taxjar extends \Shop\Tax
      * Determine if the shop has a nexus in the destination state/province.
      * Retrieves the nexus locations saved at taxjar.com and compares the
      * state and country to the destination.
+     * @TODO: Maybe use this function, or internal nexus settings.
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
     protected function hasNexus()
     {
-        return parent::hasNexus();
+        // If not using the Taxjar nexus via API, then use the internal nexus config.
+        if (!$this->use_tj_nexus) {
+            return parent::hasNexus();
+        }
 
         $retval = false;
         $decoded = array(

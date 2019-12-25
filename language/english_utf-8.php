@@ -520,7 +520,7 @@ $LANG_SHOP = array (
 'checkbox' => 'Checkboxes',
 'radio' => 'Radio Buttons',
 'allday' => 'All Day',
-'new_image' => 'Upload New',
+'upload' => 'Upload',
 'google_taxonomy' => 'Google Taxonomy',
 'brand' => 'Brand',
 'ship' => 'Ship',
@@ -709,6 +709,7 @@ $LANG_confignames['shop'] = array(
     'tax_avatax_account' => 'Avalar Avatax Account',
     'tax_avatax_key' => 'Avalar Avatax Access key',
     'tax_taxjar_token' => 'TaxJar API Token',
+    'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
     'tax_nexuses'   => 'Tax Nexuses',
 );
 
