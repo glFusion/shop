@@ -107,6 +107,18 @@ class Order
      * @var float */
     protected $discount_pct;
 
+    /** Item total, i.e. net order amount excluding taxes and fees.
+     * @var float */
+    protected $total_items;
+
+    /** Total nontaxable items.
+     * @var float */
+    protected $total_nontax;
+
+    /** Total taxable items.
+     * @var float */
+    protected $total_taxable;
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -546,8 +558,18 @@ class Order
         if (!SHOP_isMinVersion()) return '';
 
         // Save all the order items
+        $this->total_nontax = $this->total_taxable = $this->total_items = 0;
         foreach ($this->items as $item) {
             $item->Save();
+            $item_total = $item->getPrice() * $item->getQuantity();
+            $this->total_items += $item_total;
+            if ($item->isTaxable()) {
+                echo "$item_total is taxable";
+                $this->total_taxable += $item_total;
+            } else {
+                echo "$item_total is not taxable";
+                $this->total_nontax += $item_total;
+            }
         }
 
         if ($this->isNew) {
@@ -579,6 +601,9 @@ class Order
                 "tax = '{$this->tax}'",
                 "shipping = '{$this->shipping}'",
                 "handling = '{$this->handling}'",
+                "total_items = '{$this->total_items}'",
+                "total_nontax = '{$this->total_nontax}'",
+                "total_taxable = '{$this->total_taxable}'",
                 "instructions = '" . DB_escapeString($this->instructions) . "'",
                 "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
                 "info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
@@ -2592,6 +2617,23 @@ class Order
     public function getDiscountAmount()
     {
         return (float)$this->discount_pct / 100 * $this->subtotal;
+    }
+
+
+    public function validateDiscountCode($code)
+    {
+        global $_CONF;
+
+        $now = $_CONF['_now']->toMySQL(true);
+        if (
+            $this-> code_id < 1 ||  // discount code not created yet
+            $now > $this->getEnd()->toMySQL(true) ||
+            $now < $this->getStart()->toMySQL(true)
+        ) {
+            return NULL;
+        } else {
+            return $this->getPercent() / 100;
+        }
     }
 
 }

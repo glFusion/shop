@@ -800,6 +800,12 @@ class OrderItem
         return $this->token;
     }
 
+
+    public function isTaxable()
+    {
+        return $this->taxable;
+    }
+
 }
 
 ?>
