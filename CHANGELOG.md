@@ -1,5 +1,10 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.0.1
+Release 2019-12-24
+
+  * Fix UTF-8 key length issue for cache table
+
 ## v1.0.0
 Release 2019-12-22
 
