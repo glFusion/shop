@@ -586,6 +586,10 @@ $LANG_SHOP = array (
 'zip_to' => 'Zip To',
 'region' => 'Region',
 'new_rate' => 'New Rate',
+'min_order' => 'Minimum Order',
+'min_order_not_met' => 'The minimum order amount of %s has not been met.',
+'dc_expired' => 'The discount code has expired.',
+'dc_applied' => 'The discount code has been applied successfully.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

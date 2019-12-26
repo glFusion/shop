@@ -57,6 +57,14 @@ class DiscountCode
      * @var object */
     private $end;
 
+    /** Minimum net order value to allow the code to be used.
+     * @var float */
+    private $min_order;
+
+    /** Message text regarding application of a code.
+     * @var string */
+    private $msg_text;
+
 
     /**
      * Constructor. Sets variables from the provided array.
@@ -76,9 +84,12 @@ class DiscountCode
             $this->Read($A);
         } else {
             // New entry, set defaults
-            $this->code_id = 0;
-            $this->percent = 0;
-            $this->code = '';
+            $this->setCodeID(0)
+                ->setPercent(0)
+                ->setCode('')
+                ->setStart(self::minDateTime())
+                ->setEnd(self::maxDateTime())
+                ->setMinOrder(0);
         }
     }
 
@@ -164,7 +175,8 @@ class DiscountCode
             ->setCode(SHOP_getVar($A, 'code'))
             ->setPercent(SHOP_getVar($A, 'percent', 'float'))
             ->setStart(SHOP_getVar($A, 'start'))
-            ->setEnd(SHOP_getVar($A, 'end'));
+            ->setEnd(SHOP_getVar($A, 'end'))
+            ->setMinOrder(SHOP_getVar($A, 'min_order', 'float'));
         return $this;;
     }
 
@@ -283,6 +295,19 @@ class DiscountCode
 
 
     /**
+     * Set the minimum order amount.
+     *
+     * @param   float   $amt    Minimum order amount
+     * @return   object $this
+     */
+    public function setMinOrder($amt)
+    {
+        $this->min_order = (float)$amt;
+        return $this;
+    }
+
+
+    /**
      * Save the current values to the database.
      *
      * @param   array   $A      Array of values from $_POST
@@ -308,7 +333,8 @@ class DiscountCode
             code = '" . DB_escapeString($this->code) . "',
             percent = '" . (float)$this->percent . "',
             start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
-            end = '" . DB_escapeString($this->end->toMySQL(true)) . "'";
+            end = '" . DB_escapeString($this->end->toMySQL(true)) . "',
+            min_order = '" . (float)$this->min_order . "'";
         //echo $sql;die;
         DB_query($sql);
         $err = DB_error();
@@ -357,22 +383,44 @@ class DiscountCode
     /**
      * Validate a customer-entered discount code.
      *
+     * @param   float   $amt    Net order amount, to check min order required
      * @return  float       Percentage discount, NULL if invalid
      */
-    public static function Validate()
+    public function Validate($amt)
     {
-        global $_CONF;
+        global $_CONF, $LANG_SHOP;
 
         $now = $_CONF['_now']->toMySQL(true);
-        if (
-            $this-> code_id < 1 ||  // discount code not created yet
+        if ($this->code_id < 1) {  // discount code not created yet
+            $this->msg_text = sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']);
+            return NULL;
+        } elseif ($this->min_order > (float)$amt) {  // order doesn't meet minimum
+            $this->msg_text = sprintf(
+                $LANG_SHOP['min_order_not_met'],
+                Currency::getInstance()->Format($this->min_order)
+            );
+            return NULL;
+        } elseif (
             $now > $this->getEnd()->toMySQL(true) ||
             $now < $this->getStart()->toMySQL(true)
         ) {
+            $this->msg_text = $LANG_SHOP['dc_expired'];
             return NULL;
         } else {
-            return $this->getPercent() / 100;
+            $this->msg_text = $LANG_SHOP['dc_applied'];
+            return $this->getPercent();
         }
+    }
+
+
+    /**
+     * Get the message indicating why the code was rejected.
+     *
+     * @return  string      Message text
+     */
+    public function getMessage()
+    {
+        return $this->msg_text;
     }
 
 
@@ -432,6 +480,7 @@ class DiscountCode
             'min_time'      => '00:00',
             'max_date'      => self::MAX_DATE,
             'max_time'      => '23:59',
+            'min_order'     => $this->min_order,
         ) );
         if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
             $T->set_var(array(
@@ -491,6 +540,12 @@ class DiscountCode
                 'sort' => true,
             ),
             array(
+                'text' => $LANG_SHOP['min_order'],
+                'field' => 'min_order',
+                'align' => 'right',
+                'sort' => true,
+            ),
+            array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'align' => 'center',
@@ -547,6 +602,9 @@ class DiscountCode
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
+        static $Cur = NULL;
+        if ($Cur === NULL) $Cur = Currency::getInstance();
+
         $retval = '';
         switch($fieldname) {
         case 'edit':
@@ -576,6 +634,10 @@ class DiscountCode
 
         case 'percent':
             $retval = $fieldvalue . ' %';
+            break;
+
+        case 'min_order':
+            $retval = $Cur->formatValue($fieldvalue);
             break;
 
         default:
