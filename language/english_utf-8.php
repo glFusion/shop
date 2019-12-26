@@ -587,8 +587,9 @@ $LANG_SHOP = array (
 'region' => 'Region',
 'new_rate' => 'New Rate',
 'min_order' => 'Minimum Order',
-'min_order_not_met' => 'The minimum order amount of %s has not been met.',
+'min_order_not_met' => 'The minimum order amount of %s has not been met for the discount code.',
 'dc_expired' => 'The discount code has expired.',
+'dc_removed' => 'The discount has been removed.',
 'dc_applied' => 'The discount code has been applied successfully.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {

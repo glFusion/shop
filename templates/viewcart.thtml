@@ -85,7 +85,13 @@
         <td></td>
       </tr>
 {!endif}
-{!if tax_items}
+{!if dc_row_vis}
+        <tr>
+            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']} ({discount_code})</td>
+            <td colspan="1" class="alignright">{dc_amt}</td>
+        </tr>
+{!endif}
+{!if Xtax_items}
       <tr>
         <td colspan="4" class="alignright">{lang_tax_on_items}</td>
         <td colspan="1" class="alignright">TBD</td>
@@ -115,11 +121,6 @@
         <td></td>
       </tr>
 {!endif}
-        <tr id="disc_code_row" style="visibility:{dc_row_vis};">
-            <td colspan="4" class="alignright">{$LANG_SHOP['discount']}</td>
-            <td colspan="1" class="alignright">{dc_amt}</td>
-        </tr>
-{!if 0}
       <tr>
         <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
         <td colspan="1" class="alignright"><b>
@@ -131,14 +132,14 @@
         </b></td>
         <td></td>
       </tr>
-{!endif}
+
     </table>
     <div class="uk-grid orderInstructions">
         <div class="uk-width-1-2 orderInstructions">
 {!if discount_code_fld}
             {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
                 oninput="updateDCButton();return false;" />
-            <button id="dc_validate" name="dc_validate" 
+            <button id="dc_validate" name="update"
                 class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
 {!endif}
         </div>
@@ -185,7 +186,7 @@
         </div>
       </div>
 
-{!if 0}    
+{!if 0}
       <div class="uk-width-1-4 uk-margin floatright" id="checkoutButtons">
 {!if gateway_radios}
         <input type="hidden" name="next_step" value="{next_step}" />

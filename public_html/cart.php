@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @varsion     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -55,7 +56,7 @@ if ($action == '') {
 }
 switch ($action) {
 case 'update':
-    \Shop\Cart::getInstance()->Update($_POST);
+    Shop\Cart::getInstance()->Update($_POST);
     COM_refresh(SHOP_URL . '/cart.php');
     break;
 
@@ -77,6 +78,7 @@ case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
+    $Cart->validateDiscountCode();
 
     // Validate the cart items
     $invalid = $Cart->updateItems();

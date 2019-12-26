@@ -3176,6 +3176,17 @@ class Product
         return $this->shipping_units;
     }
 
+
+    /**
+     * Get the DB record ID for the product.
+     *
+     * @return  integer     DB record ID.
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
 }
 
 ?>
