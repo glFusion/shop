@@ -791,6 +791,19 @@ class OrderItem
 
 
     /**
+     * Set the net price for the item.
+     *
+     * @param   float   $price  New net price
+     * @return  object  $this
+     */
+    public function setNetPrice($price)
+    {
+        $this->net_price = $price;
+        return $this;
+    }
+
+
+    /**
      * Get the random token for this item.
      *
      * @return  string      Token string
@@ -806,6 +819,13 @@ class OrderItem
         return $this->taxable;
     }
 
+
+    public function applyDiscountPct($pct)
+    {
+        $price = $this->getPrice() * (100 - $pct) / 100;
+        $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+        return $this;
+    }
 }
 
 ?>

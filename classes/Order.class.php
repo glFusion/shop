@@ -119,6 +119,10 @@ class Order
      * @var float */
     protected $net_taxable;
 
+    /** Experimental flag to mark whether an order needs to be saved.
+     * @var boolean */
+    protected $tainted = false;
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -254,6 +258,7 @@ class Order
     {
         global $_TABLES;
 
+        $this->tainted = false;
         if ($id != '') {
             $this->order_id = $id;
         }
@@ -559,20 +564,11 @@ class Order
         if (!SHOP_isMinVersion()) return '';
 
         // Save all the order items
+        /*$this->net_nontax = $this->net_taxable = $this->gross_items = 0;*/
         $this->calcItemTotals();
-        /*$this->net_nontax = $this->net_taxable = $this->gross_items = 0;
         foreach ($this->items as $item) {
             $item->Save();
-            $item_total = $item->getPrice() * $item->getQuantity();
-            $this->gross_items += $item_total;
-            if ($item->isTaxable()) {
-                echo "$item_total is taxable";
-                $this->net_taxable += $item_total;
-            } else {
-                echo "$item_total is not taxable";
-                $this->net_nontax += $item_total;
-            }
-        }*/
+        }
 
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -614,7 +610,7 @@ class Order
                 "shipper_id = '{$this->shipper_id}'",
                 "discount_code = '" . DB_escapeString($this->discount_code) . "'",
                 "discount_pct = '{$this->discount_pct}'",
-        );
+            );
         foreach (array('billto', 'shipto') as $type) {
             $fld = $type . '_id';
             $fields[] = "$fld = " . (int)$this->$fld;
@@ -844,7 +840,6 @@ class Order
         $this->Billto = new Address($this->getAddress('billto'));
         $this->Shipto = new Address($this->getAddress('shipto'));
 
-        //$dc_amt = $this->getDiscountAmount();
         // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
         $T->set_var(array(
@@ -1803,7 +1798,10 @@ class Order
             $gc_bal = \Shop\Products\Coupon::getUserBalance();
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
-        $this->setInfo('apply_gc', $amt);
+        if ($amt != $this->getInfo('apply_gc')) {
+            $this->setInfo('apply_gc', $amt);
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -1818,7 +1816,10 @@ class Order
      */
     public function setGateway($gw_name)
     {
-        $this->setInfo('gateway', $gw_name);
+        if ($gw_name != $this->getInfo('gateway')) {
+            $this->setInfo('gateway', $gw_name);
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -2632,6 +2633,30 @@ class Order
 
 
     /**
+     * Apply a discount code to the order and all items.
+     * The discount code and discount percent must be set in the order first.
+     *
+     * @return  object  $this
+     */
+    protected function applyDiscountCode()
+    {
+        global $_TABLES;
+
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            discount_code = '" . DB_escapeString($this->discount_code) . "',
+            discount_pct = '" . (float)$this->discount_pct . "'
+            WHERE order_id = '" . (int)$this->order_id . "'";
+        DB_query($sql);
+        if (!DB_error()) {
+            foreach ($this->items as $id=>$Item) {
+                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+            }
+        }
+        return $this;
+    }
+
+
+    /**
      * Validate a discount code. If valid, save the elements in the order.
      * Doesn't update the order if the code is valid, in case a valid code
      * was previously entered.
@@ -2641,16 +2666,17 @@ class Order
      */
     public function validateDiscountCode($code='')
     {
+        // Get the existing values to see if either has changed.
         $have_code = $this->getDiscountCode();
         $have_pct = $this->getDiscountPct();
 
         // If no code is supplied, check the existing discount code.
-        // If still none, return false as there's nothing to do but make
-        // sure the discount percent is empty.
         if (empty($code)) {         // could be null or empty string
             $code = $have_code;
         }
 
+        // Now check that the code is valid. It may have expired, or the order
+        // total may have changed.
         if (!empty($code)) {
             $DC = DiscountCode::getInstance($code);
             $this->calcItemTotals();
@@ -2658,29 +2684,31 @@ class Order
         }
 
         // If the code and percentage have not changed, just return true.
-        // Otherwise apply the code as a new code and re-save the order to
-        // update the item prices.
+        // Otherwise update the discount in the order and items.
         if ($pct == $have_pct && $code == $have_code) {
             return true;
         }
 
         if ($pct > 0) {
+            // Valid code, set the new values.
             $this->setDiscountCode($code);
             $this->setDiscountPct($pct);
-            COM_setMsg($DC->getMessage());
-            $this->Save();
-            return true;
+            $msg = $DC->getMessage();
+            $status = true;
         } else {
+            // Invalid code, remove it from the order.
             $this->setDiscountCode('');
             $this->setDiscountPct(0);
             $msg = $DC->getMessage();
             if ($have_code) {
+                // If there was a valid code, indicate that it has been removed
                 $msg .= ' ' . $LANG_SHOP['dc_removed'];
             }
-            COM_setMsg($msg, 'error', false);
-            $this->Save();
-            return false;
+            $status = false;
         }
+        $this->applyDiscountCode();      // apply code to order and items
+        COM_setMsg($msg, $status ? 'info' : 'error', $status);
+        return $status;
     }
 
 
@@ -2690,16 +2718,16 @@ class Order
     protected function calcItemTotals()
     {
         $this->net_nontax = $this->net_taxable = $this->gross_items = $this->net_items = 0;
-        foreach ($this->items as $item) {
-            $item->Save();
-            $item_gross = $item->getPrice() * $item->getQuantity();
-            $item_net = $item->getNetPrice() * $item->getQuantity();
+        foreach ($this->items as $Item) {
+            //$Item->Save();
+            $item_gross = $Item->getPrice() * $Item->getQuantity();
+            $item_net = $Item->getNetPrice() * $Item->getQuantity();
             $this->gross_items += $item_gross;
             $this->net_items += $item_net;
-            if ($item->isTaxable()) {
+            if ($Item->isTaxable()) {
                 $this->net_taxable += $item_net;
             } else {
-                $this->net_nontax += $item_met;
+                $this->net_nontax += $item_net;
             }
         }
     }

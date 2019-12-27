@@ -316,6 +316,7 @@ class Cart extends Order
             if (array_key_exists($id, $this->items)) {
                 $qty = (float)$qty;
                 $item_id = $this->items[$id]->getProductId();
+                $old_qty = $this->items[$id]->getQuantity();
                 // Check that the order hasn't exceeded the max allowed qty.
                 $max = Product::getById($item_id)->getMaxOrderQty();
                 if ($qty > $max) {
@@ -326,12 +327,17 @@ class Cart extends Order
                     // Save the item ID to update any affected qty-based
                     // discounts.
                     $this->Remove($id);
-                } else {
+                    // Re-apply qty discounts in case there are other items
+                    // with the same base ID
+                    $this->applyQtyDiscounts($item_id);
+                    $this->tainted = true;
+                } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
                     $this->items[$id]->setQuantity($qty);
+                    $this->applyQtyDiscounts($item_id);
+                    $this->tainted = true;
                 }
-                $this->applyQtyDiscounts($item_id);
             }
         }
         $this->calcItemTotals();
@@ -342,6 +348,7 @@ class Cart extends Order
             if (!empty($gc)) {
                 if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
+                    $this->tainted = true;
                 }
             }
         }
@@ -357,7 +364,12 @@ class Cart extends Order
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
-        $this->validateDiscountCode(SHOP_getVar($A, 'discount_code'));
+        if (isset($A['discount_code']) && !empty($A['discount_code'])) {
+            $dc = $A['discount_code'];
+        } else {
+            $dc = $this->getDiscountCode();
+        }
+        $this->validateDiscountCode($dc);
 
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this->m_cart;
