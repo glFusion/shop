@@ -5,6 +5,8 @@ Release TBD
 
   * Add sales tax calculation based on shipping address.
   * Add phone number field to addresses.
+  * Add discount codes.
+  * Allow products to be related to multiple categories.
 
 ## v1.0.1
 Release 2019-12-24
