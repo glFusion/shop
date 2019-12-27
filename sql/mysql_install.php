@@ -650,7 +650,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `bydate` (`start`,`end`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
-    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''"
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
     "ALTER TALBE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
     "ALTER TALBE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
