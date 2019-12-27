@@ -173,6 +173,14 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.1.0')) {
         $current_ver = '1.1.0';
+
+        if (_SHOPtableHasColumn('shop.products', 'cat_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                (product_id, cat_id) VALUES (
+                    SELECT id, cat_id FROM {$_TABLES['shop.products']}";
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.products']}
+                DROP cat_id";
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!SHOP_do_set_version($current_ver)) return false;
     }
