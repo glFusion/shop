@@ -5,7 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -649,6 +650,12 @@ $SHOP_UPGRADE['1.1.0'] = array(
       UNIQUE KEY `code` (`code`),
       KEY `bydate` (`start`,`end`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['prodXcat']}` (
+      `product_id` int(11) unsigned NOT NULL,
+      `cat_id` int(11) unsigned NOT NULL,
+      PRIMARY KEY (`product_id`,`cat_id`),
+      KEY `cat_id` (`cat_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
@@ -658,7 +665,6 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TALBE {$_TABLES['shop.orders']} ADD `order_total` decimal(12,4) unsigned DEFAULT '0.0000' AFTER net_taxable",
     "ALTER TALBE {$_TABLES['shop.orders']} ADD `discount_code` varchar(20) DEFAULT NULL AFTER shipper_id",
     "ALTER TALBE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
-
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
@@ -670,5 +676,6 @@ $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
 $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
+$_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 
 ?>
