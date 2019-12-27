@@ -814,12 +814,23 @@ class OrderItem
     }
 
 
+    /**
+     * Return taxable status of this item.
+     *
+     * @return  integer     1 if item is taxable, 0 if not
+     */
     public function isTaxable()
     {
         return $this->taxable;
     }
 
 
+    /**
+     * Apply a discount percentage to this item.
+     *
+     * @param   float   $pct    Discount percent, as a whole number
+     * @return  object  $this
+     */
     public function applyDiscountPct($pct)
     {
         $price = $this->getPrice() * (100 - $pct) / 100;
