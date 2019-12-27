@@ -599,7 +599,7 @@ div.shopProductSort {
 div.shopProductSearch {
     float: right;
 }
-#orderInstructions {
+div.orderInstructions {
     clear: both;
     margin-top: 15px;
     padding-top:10px;

@@ -128,6 +128,16 @@
           <td></td>
         </tr>
 {!endif}
+{!if dc_row_vis}
+        <tr>
+            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']}</td>
+            <td colspan="1" class="alignright">{dc_amt}</td>
+        </tr>
+        <tr>
+            <td colspan="4" class="alignright">Net Items</td>
+            <td colspan="1" class="alignright">{net_items}</td>
+        </tr>
+{!endif}
 {!if cart_tax}
         <tr>
           <td colspan="4" class="alignright">{lang_tax_on_items}</td>

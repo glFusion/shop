@@ -817,6 +817,9 @@ function plugin_autouninstall_shop()
             'shop.shipment_packages',
             'shop.carrier_config',
             'shop.cache',
+            'shop.tax_rates',
+            'shop.discountcodes',
+            'shop.prodXcat',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

@@ -50,6 +50,7 @@ $expected = array(
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
+    'delcode', 'savecode',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate',
@@ -59,6 +60,7 @@ $expected = array(
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
+    'codes', 'editcode',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate',
 );
@@ -416,12 +418,32 @@ case 'savesale':
     exit;
     break;
 
+case 'savecode':
+    $C = new \Shop\DiscountCode($_POST['code_id']);
+    if (!$C->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&icode_d=' . $C->code_id);
+    } else {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
+    }
+    exit;
+    break;
+
 case 'delsale':
     $id = SHOP_getVar($_REQUEST, 'id', 'integer', 0);
     if ($id > 0) {
         \Shop\Sales::Delete($id);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
+    break;
+
+case 'delcode':
+    $id = SHOP_getVar($_REQUEST, 'code_id', 'integer', 0);
+    if ($id > 0) {
+        \Shop\DiscountCode::Delete($id);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
     break;
 
 case 'updateshipment':
@@ -580,6 +602,12 @@ case 'sales':
     $view = 'products';   // cheating, to get the active menu set
     break;
 
+case 'codes':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\DiscountCode::adminList();
+    $view = 'products';   // cheating, to get the active menu set
+    break;
+
 case 'options':
     $content .= Shop\Menu::adminCatalog('options');
     if (isset($_POST['delbutton_x']) && is_array($_POST['delitem'])) {
@@ -636,6 +664,12 @@ case 'editsale':
     $id = SHOP_getVar($_GET, 'id', 'integer', 0);
     $D = new \Shop\Sales($id);
     $content .= $D->Edit();
+    break;
+
+case 'editcode':
+    $id = SHOP_getVar($_GET, 'code_id', 'integer', 0);
+    $C = new \Shop\DiscountCode($id);
+    $content .= $C->Edit();
     break;
 
 case 'other':

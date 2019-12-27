@@ -275,7 +275,7 @@ class Cart extends Order
      * @param   integer $step   Step in the checkout process (not used)
      * @return  string      HTML for cart view
      */
-    public function View($view = 'order', $step = 0)
+    public function XXView($view = 'order', $step = 0)
     {
         foreach ($this->items as $key=>$Item) {
             $prod_price = $Item->getItemPrice();
@@ -307,7 +307,7 @@ class Cart extends Order
         $items = $A['quantity'];
         if (!is_array($items)) {
             // No items in the cart?
-            return;
+            return $this->m_cart;
         }
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
@@ -315,25 +315,33 @@ class Cart extends Order
             // browser window.
             if (array_key_exists($id, $this->items)) {
                 $qty = (float)$qty;
+                $item_id = $this->items[$id]->getProductId();
+                $old_qty = $this->items[$id]->getQuantity();
+                // Check that the order hasn't exceeded the max allowed qty.
+                $max = Product::getById($item_id)->getMaxOrderQty();
+                if ($qty > $max) {
+                    $qty = $max;
+                }
                 if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
                     // Save the item ID to update any affected qty-based
                     // discounts.
-                    $item_id = $this->items[$id]->product_id;
                     $this->Remove($id);
+                    // Re-apply qty discounts in case there are other items
+                    // with the same base ID
                     $this->applyQtyDiscounts($item_id);
-                } else {
+                    $this->tainted = true;
+                } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
-                    $max = Product::getById($this->items[$id]->getProductId())->getMaxOrderQty();
-                    if ($qty > $max) {
-                        $qty = $max;
-                    }
                     $this->items[$id]->setQuantity($qty);
+                    $this->applyQtyDiscounts($item_id);
+                    $this->tainted = true;
                 }
             }
             $this->applyQtyDiscounts($this->items[$id]->product_id);
         }
+        $this->calcItemTotals();
 
         // Now look for a coupon code to redeem against the user's account.
         if ($_SHOP_CONF['gc_enabled']) {
@@ -341,6 +349,7 @@ class Cart extends Order
             if (!empty($gc)) {
                 if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
+                    $this->tainted = true;
                 }
             }
         }
@@ -356,6 +365,13 @@ class Cart extends Order
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
+        if (isset($A['discount_code']) && !empty($A['discount_code'])) {
+            $dc = $A['discount_code'];
+        } else {
+            $dc = $this->getDiscountCode();
+        }
+        $this->validateDiscountCode($dc);
+
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this->m_cart;
     }
@@ -866,6 +882,7 @@ class Cart extends Order
         } else {
             $wf_name = 'viewcart';
         }
+
         switch($wf_name) {
         case 'viewcart':
             // Initial cart view. Check here and populate the billing and
@@ -1017,6 +1034,8 @@ class Cart extends Order
                 $this->Remove($id);
                 $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
                 $invalid['removed'][] = $P;
+            } else {
+                $this->applyQtyDiscounts($P->getId());
             }
         }
         if (!empty($msg)) {

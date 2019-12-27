@@ -75,10 +75,6 @@ class Product
      * @var integer */
     protected $_fixed_q = 0;
 
-    /** Category object related to this product.
-     * @var object */
-    public $Cat;
-
     /** Indicate that the price can be overridden during purchase.
      * Typically used by plugin items.
      * @var boolean */
@@ -121,6 +117,10 @@ class Product
      * @var integer */
     private $max_ord_qty = 0;
 
+    /** Related category objects.
+     * @var array */
+    private $Categories = array();
+
 
     /**
      * Constructor.
@@ -138,11 +138,10 @@ class Product
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
         $this->cancel_url = SHOP_URL . '/index.php';
-
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
-            $this->Cat = Category::getInstance($this->cat_id);
+            $this->Categories = Category::getByProductId($this->id);
         } elseif ($id == 0) {
             $this->item_id = '';
             $this->id = 0;
@@ -175,7 +174,7 @@ class Product
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
             $this->custom = '';
-            $this->Cat = NULL;
+            $this->Categories = array();
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -477,6 +476,7 @@ class Product
      *
      * @param   array   $row        Array of values, from DB or $_POST
      * @param   boolean $fromDB     True if read from DB, false if from $_POST
+     * @return  object  $this
      */
     public function setVars($row, $fromDB=false)
     {
@@ -533,12 +533,6 @@ class Product
             $this->qty_discounts = $qty_discounts;
         }
 
-        if (isset($row['categories'])) {
-            $this->categories = $row['categories'];
-        } else {
-            $this->categories = array();
-        }
-
         $this->votes = isset($row['votes']) ? $row['votes'] : 0;
         $this->rating = isset($row['rating']) ? $row['rating'] : 0;
         $this->comments_enabled = $row['comments_enabled'];
@@ -547,6 +541,7 @@ class Product
         if ($fromDB) {
             $this->views = $row['views'];
         }
+        return $this;
     }
 
 
@@ -580,9 +575,10 @@ class Product
             }
         }
         if (!empty($row)) {
-            $this->setVars($row, true);
             $this->isNew = false;
-            $this->loadOptions();
+            $this->setVars($row, true)
+                ->loadOptions()
+                ->loadCategories();
             return true;
         } else {
             return false;
@@ -592,6 +588,8 @@ class Product
 
     /**
      * Load the product attributs into the options array.
+     *
+     * @return  object  $this
      */
     protected function loadOptions()
     {
@@ -611,6 +609,7 @@ class Product
                 }
             }
         }
+        return $this;
     }
 
 
@@ -643,6 +642,7 @@ class Product
                 $this->deleteImage($img_id);
             }
         }
+        $this->updateCategories($A['selected_cats']);
 
         // Handle file uploads.
         // This is done first so we know whether there is a valid filename
@@ -933,6 +933,19 @@ class Product
 
         }
 
+        // Get the category selections.
+        $allcats = Category::getAll();
+        $selcats = Category::getByProductID($this->id);
+        $allcats_sel = '';
+        $selcats_sel = '';
+        foreach ($allcats as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $selcats)) {
+                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+            }
+        }
+        foreach ($selcats as $cat_id=>$Cat) {
+            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+        }
         $T->set_var(array(
             //'post_options'  => $post_options,
             'product_id'    => $this->id,
@@ -982,6 +995,8 @@ class Product
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
             'max_ord_qty'   => $this->max_ord_qty,
+            'available_cats' => $allcats_sel,
+            'selected_cats' => $selcats_sel,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -2356,7 +2371,7 @@ class Product
 
     /**
      * Determine if the current user has access to view this product.
-     * Checks the related category for access.
+     * If the user has access to at least one parent category, return true.
      *
      * @return  boolean     True if access and purchase is allowed.
      */
@@ -2365,8 +2380,12 @@ class Product
         global $_GROUPS;
 
         // Make sure the category is set
-        if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess($_GROUPS);
+        foreach ($this->Categories as $Cat) {
+            if ($Cat->hasAccess($_GROUPS)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -3174,6 +3193,108 @@ class Product
     public function getShippingUnits()
     {
         return $this->shipping_units;
+    }
+
+
+    /**
+     * Get the DB record ID for the product.
+     *
+     * @return  integer     DB record ID.
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+
+    /**
+     * Update the category cross-reference table.
+     * TODO: update in-memory categories property.
+     *
+     * @param   array|string    $cats   String from form or array of cat IDs
+     * @return  object  $this
+     */
+    private function updateCategories($cats)
+    {
+        global $_TABLES;
+
+        if (is_string($cats)) {
+            $cats = explode('|', $cats);
+        }
+        $add = array();
+        $rem = array();
+        foreach ($cats as $cat_id) {
+            if (!array_key_exists($cat_id, $this->Categories)) {
+                $add[] = "({$this->id}, $cat_id)";
+            }
+        }
+        foreach ($this->Categories as $cat_id=>$cat) {
+            if (!in_array($cat_id, $cats)) {
+                $rem[] = $cat_id;
+            }
+        }
+        if (!empty($add)) {
+            $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} VALUES " .
+                implode(',', $add);
+            COM_errorLog($sql);
+            DB_query($sql);
+        }
+        if (!empty($rem)) {
+            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
+                product_id = '{$this->id}' AND
+                cat_id in (" . implode(',', $rem) . ')';
+            COM_errorLog($sql);
+            DB_query($sql);
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the array of related category objects.
+     *
+     * 2return  array       Array of category objects
+     */
+    public function getCategories()
+    {
+        return $this->Categories;
+    }
+
+
+    /**
+     * Load the related categories from the database into the object variable.
+     *
+     * @return  object  $this
+     */
+    private function loadCategories()
+    {
+        $this->Categories = Category::getByProductId($this->id);
+        return $this;
+    }
+
+
+    /**
+     * Get the first category for the product.
+     * Used where only one category's information can be used.
+     * Currently indeterminate.
+     *
+     * @return  object      First category object
+     */
+    public function getFirstCategory()
+    {
+        return reset($this->Categories);
+    }
+
+
+    /**
+     * Create the breadcrumb links at the top of the detail page.
+     * TODO: know which category list page we came from and use that category.
+     *
+     * @return  string      HTML for breadcrumbs
+     */
+    public function Breadcrumbs()
+    {
+        return $this->getFirstCategory->Breadcrumbs();
     }
 
 }

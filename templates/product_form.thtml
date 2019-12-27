@@ -1,4 +1,5 @@
 {# begin {templatelocation} #}
+<script src="{site_url}/javascript/moveusers.js"></script>
 {!if show_htmleditor}
 {wysiwyg}
 {!endif}
@@ -7,7 +8,7 @@
 {!endif}
 <form action="{action_url}" method="post" id="shopProductForm"
     class="uk-form uk-form-horizontal"
-    enctype="multipart/form-data" onsubmit='set_postcontent();'>
+    enctype="multipart/form-data" onsubmit='handleSubmit(this);'>
   <input type="hidden" name="id" value="{product_id}" />
   <input type="hidden" name="nonce" value="{nonce}" />
   <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
@@ -64,9 +65,36 @@
         <span id="cat_id" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <select name="cat_id" id="cat_id">
-          {cat_select}
-        </select>
+        <input type="hidden" name="selected_cats" />
+        <table width="59%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td class="blocktitle aligncenter" style="padding:5px 40px 5px 5px;">{$LANG_SHOP['available']}</td>
+          <td>&nbsp;</td>
+          <td class="blocktitle aligncenter" style="padding:5px 5px 5px 40px;">{$LANG28[94]}</td>
+        </tr>
+        <tr>
+          <td width="40%" class="alignright" style="padding-left:5px;">
+            <select multiple name="catAvailable"
+                style="width: 15em; height: 10em; padding: 2px;float:right;"
+                ondblclick="moveSelectedOptions(this.form['catAvailable'],this.form['catSelected']);">
+              {available_cats}
+            </select>
+          <td class="aligncenter">
+            <button class="uk-button uk-button-mini uk-button-primary" name="right" type="submit"
+              onclick="moveSelectedOptions(this.form['catAvailable'],this.form['catSelected'],false);return false;">{$LANG_SHOP['include']}&nbsp;&gt;&gt;</button>
+            <br /><br />
+            <button class="uk-button uk-button-mini uk-button-primary" name="left" type="submit"
+              onclick="moveSelectedOptions(this.form['catSelected'],this.form['catAvailable'],false);return false;">&lt;&lt;&nbsp;{$LANG_SHOP['exclude']}</button>
+          </td>
+          <td width="40%" class="alignleft" style="padding-left:5px;">
+            <select multiple="multiple" size="10" name="catSelected"
+              style="width: 15em; height: 10em; padding: 2px;"
+              ondblclick="moveSelectedOptions(this.form['catSelected'],this.form['catAvailable'],false)">
+              {selected_cats}
+            </select>
+          </td>
+        </tr>
+        </table>
         <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
       </div>
     </div>
@@ -695,5 +723,18 @@ function disc_removeRow(elem)
     return false;
 }
 
+function handleSubmit(f)
+{
+    var destVals = new Array(), opt = 0, separator = "|", d = f.catSelected;
+    while (d[opt]) {
+        destVals[opt] = d[opt++].value;
+    }
+    if (d[opt] > 1) {
+        f.selected_cats.value = separator + destVals.join(separator);
+    } else {
+        f.selected_cats.value = destVals.join(separator);
+    }
+    return true;
+}
 </script>
 {# end {templatelocation} #}
