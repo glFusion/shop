@@ -2681,6 +2681,11 @@ class Order
             $code = $have_code;
         }
 
+        // Still empty? Then the order has no code.
+        if (empty($code)) {
+            return true;
+        }
+
         // Now check that the code is valid. It may have expired, or the order
         // total may have changed.
         if (!empty($code)) {

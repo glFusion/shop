@@ -216,6 +216,7 @@ default:
 
     // Validate the cart items
     $invalid = $Cart->updateItems();
+    $Cart->validateDiscountCode();
     if (!empty($invalid)) {
         // Items have been removed, refresh to update and view the info msg.
         COM_refresh(SHOP_URL . '/cart.php');
