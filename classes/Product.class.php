@@ -2852,11 +2852,11 @@ class Product
                 'field' => 'short_description',
                 'sort' => true,
             ),
-            array(
+            /*array(
                 'text'  => $LANG_SHOP['category'],
                 'field' => 'cat_name',
                 'sort' => true,
-            ),
+            ),*/
             array(
                 'text'  => $LANG_SHOP['price'],
                 'field' => 'price',
