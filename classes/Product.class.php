@@ -3294,7 +3294,7 @@ class Product
      */
     public function Breadcrumbs()
     {
-        return $this->getFirstCategory->Breadcrumbs();
+        return $this->getFirstCategory()->Breadcrumbs();
     }
 
 }
