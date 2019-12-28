@@ -54,7 +54,7 @@ class Company extends Address
             ->setPostal(SHOP_getVar($_SHOP_CONF, 'zip'))
             ->setCountry(SHOP_getVar($_SHOP_CONF, 'country'))
             ->setName(SHOP_getVar($_SHOP_CONF, 'remit_to'))
-            ->setEmail(SHOP_getVar($email));
+            ->setEmail($email);
     }
 
 
