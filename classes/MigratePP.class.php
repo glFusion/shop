@@ -219,6 +219,9 @@ class MigratePP
             "INSERT INTO {$_TABLES['shop.products']}
                 SELECT *, '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
                 FROM {$_TABLES['paypal.products']}",
+            "TRUNCATE {$_TABLES['shop.prodXcat']}",
+            "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} (product_id, cat_id)
+                SELECT id, cat_id FROM {$_TABLES['shop.products']}",
         ) );
     }
 

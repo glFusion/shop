@@ -37,7 +37,6 @@ $_SQL = array(
 'shop.products' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
-  `cat_id` int(11) unsigned NOT NULL DEFAULT '0',
   `short_description` varchar(255) DEFAULT NULL,
   `description` text,
   `keywords` varchar(255) DEFAULT '',
