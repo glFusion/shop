@@ -1170,7 +1170,7 @@ class Category
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}";
+        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
