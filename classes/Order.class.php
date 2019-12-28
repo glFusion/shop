@@ -247,7 +247,6 @@ class Order
     }
 
 
-
     /**
      * Load the order information from the database.
      *
@@ -1124,10 +1123,17 @@ class Order
      *
      * @param   string  $status     Order status (pending, paid, etc.)
      * @param   string  $gw_msg     Optional gateway message to include with email
+     * @param   boolean $force      True to force notification
      */
-    public function Notify($status='', $gw_msg='')
+    public function Notify($status='', $gw_msg='', $force=false)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        // Nothing to do if the status hasn't changed and we're not
+        // forcing a notification.
+        if (!$force && $status == $this->getStatus()) {
+            return;
+        }
 
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
@@ -1138,7 +1144,7 @@ class Order
 
         $Shop = new Company;
         $Cust = Customer::getInstance($this->uid);
-        if ($notify_buyer) {
+        if ($force || $notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
             $save_userlang = $_CONF['language'];
             $_CONF['language'] = $Cust->getLanguage(true);
@@ -1182,7 +1188,7 @@ class Order
             $LANG_SHOP = $save_language;    // Restore the default language
         }
 
-        if ($notify_admin) {
+        if ($notify_admin) {        // never forced
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
             // This uses the site default language.
@@ -2673,6 +2679,11 @@ class Order
         // If no code is supplied, check the existing discount code.
         if (empty($code)) {         // could be null or empty string
             $code = $have_code;
+        }
+
+        // Still empty? Then the order has no code.
+        if (empty($code)) {
+            return true;
         }
 
         // Now check that the code is valid. It may have expired, or the order

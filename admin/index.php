@@ -53,7 +53,7 @@ $expected = array(
     'delcode', 'savecode',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
-    'importtaxexec', 'savetaxrate', 'deltaxrate',
+    'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
@@ -80,6 +80,26 @@ $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
 switch ($action) {
+case 'statcomment':         // update comment and status
+    $order_id = SHOP_getVar($_POST, 'order_id');
+    $notify = SHOP_getVar($_POST, 'notify', 'integer', 0);
+    $comment = SHOP_getVar($_POST, 'comment');
+    $newstatus = SHOP_getVar($_POST, 'newstatus');
+    if (!empty($order_id)) {
+        $Ord = Shop\Order::getInstance($order_id);
+        $Ord->updateStatus($newstatus, true, false);
+        $Ord->Log($comment);
+        if (!$notify) {
+            // The Notify function will send the update if notifications are
+            // set for the new status. Only include the comment if specifically
+            // requested.
+            $comment = '';
+        }
+        $Ord->Notify($newstatus, $comment, $notify);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
+    break;
+
 case 'dup_product':
     $P = new \Shop\Product($_REQUEST['id']);
     $P->Duplicate();

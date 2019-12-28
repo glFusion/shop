@@ -224,19 +224,27 @@
 {!endif}
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
-  {$LANG_SHOP['status']}: <select id="statSelect_{order_number}" name="newstatus[{order_number}]">
+  <p>
+  <form action="{site_admin_url}/plugins/shop/index.php" method="post">
+    <input type="hidden" name="order_id" value="{order_number}" />
+    <input type="hidden" name="oldstatus" value="{oldstatus}" />
+  {$LANG_SHOP['status']}: <select name="newstatus">
 <!-- BEGIN StatusSelect -->
     <option value="{stat_key}" {selected}>{stat_descr}</option>
 <!-- END StatusSelect -->
   </select>
+  <input type="checkbox" name="notify" value="1" />Send update to buyer
   <br />
   <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
   <br />
-  <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip"
-    title="{$LANG_SHOP['update_status']}"
-    onclick='SHOP_updateOrderStatus("{order_number}", "{order_status}", document.getElementById("statSelect_{order_number}").value, 1, document.getElementById("order_comment").value); return false;'>
+  <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip" name="statcomment"
+    title="{$LANG_SHOP['update_status']}">
     {$LANG_SHOP['upd_stat_cmt']}
   </button>
+{!if 0}
+    onclick='SHOP_updateOrderStatus("{order_number}", "{order_status}", document.getElementById("statSelect_{order_number}").value, 1, document.getElementById("order_comment").value); return false;'>
+{!endif}
+  </form>
   </p>
 {!else}
   <p>{$LANG_SHOP['status']}: {status}</p>
