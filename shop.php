@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.0.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -23,7 +23,7 @@ global $_SHOP_CONF;
 
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
-$_SHOP_CONF['pi_version']         = '1.0.0';
+$_SHOP_CONF['pi_version']         = '1.0.1';
 $_SHOP_CONF['gl_version']         = '1.7.0';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
