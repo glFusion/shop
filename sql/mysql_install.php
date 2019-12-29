@@ -655,6 +655,28 @@ $SHOP_UPGRADE['1.1.0'] = array(
       PRIMARY KEY (`product_id`,`cat_id`),
       KEY `cat_id` (`cat_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.product_variants']}` (
+      `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned NOT NULL,
+      `sku` varchar(64) DEFAULT NULL,
+      `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
+      `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `onhand` int(10) NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pv_id`),
+      KEY `prod_id` (`item_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.varintXopt']}` (
+      `pv_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pv_id`,`pov_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.prodXvariant']}` (
+      `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pv_id`,`item_id`),
+      KEY `item_id` (`item_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
@@ -676,5 +698,8 @@ $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
+$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3]
+$_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4]
+$_SQL['shop.prodXvariant'] = $SHOP_UPGRADE['1.1.0'][5]
 
 ?>
