@@ -19,10 +19,6 @@ namespace Shop;
  */
 class ProductOptionValue
 {
-    /** Property fields accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties;
-
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
     private $isNew;
@@ -30,6 +26,31 @@ class ProductOptionValue
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
     private $Errors = array();
+
+
+    /** Record ID.
+     * @var integer */
+    private $pov_id;
+
+    /** Option Group record ID.
+     * @var integer */
+    private $pog_id;
+
+    /** Option value.
+     * @var string */
+    private $pov_value;
+
+    /** Option price impact.
+     * @var float */
+    private $pov_price;
+
+    /** Orderby option for selection.
+     * @var integer */
+    private $orderby;
+
+    /** SKU component for this option.
+     * @var string */
+    private $sku;
 
 
     /**
@@ -42,7 +63,6 @@ class ProductOptionValue
      */
     public function __construct($id=0)
     {
-        $this->properties = array();
         $this->isNew = true;
 
         if (is_array($id)) {
@@ -58,70 +78,14 @@ class ProductOptionValue
                 $this->pov_value = '';
                 $this->pov_price = 0;
                 $this->item_id = 0;
-                $this->enabled = 1;
                 $this->orderby = 9999;
+                $this->sku = '';
             } else {
                 $this->pov_id =  $id;
                 if (!$this->Read()) {
                     $this->pov_id = 0;
                 }
             }
-        }
-    }
-
-
-    /**
-     * Set a property's value.
-     *
-     * @param   string  $var    Name of property to set.
-     * @param   mixed   $value  New value for property.
-     */
-    public function __set($var, $value='')
-    {
-        switch ($var) {
-        case 'pov_id':
-        case 'item_id':
-        case 'orderby':
-        case 'pog_id':
-            // Integer values
-            $this->properties[$var] = (int)$value;
-            break;
-
-        case 'pov_value':
-        case 'sku':
-            // String values
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'enabled':
-            // Boolean values
-            $this->properties[$var] = $value == 1 ? 1 : 0;
-            break;
-
-        case 'pov_price':
-            // Floating-point values
-            $this->properties[$var] = (float)$value;
-            break;
-
-        default:
-            // Undefined values (do nothing)
-            break;
-        }
-    }
-
-
-    /**
-     * Get the value of a property.
-     *
-     * @param   string  $var    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
-     */
-    public function __get($var)
-    {
-        if (array_key_exists($var, $this->properties)) {
-            return $this->properties[$var];
-        } else {
-            return NULL;
         }
     }
 
@@ -134,13 +98,11 @@ class ProductOptionValue
     public function setVars($row)
     {
         if (!is_array($row)) return;
-        $this->pov_id = $row['pov_id'];
-        $this->item_id = $row['item_id'];
-        $this->pog_id = $row['pog_id'];
+        $this->pov_id = (int)$row['pov_id'];
+        $this->pog_id = (int)$row['pog_id'];
         $this->pov_value = $row['pov_value'];
         $this->pov_price = $row['pov_price'];
-        $this->enabled = $row['enabled'];
-        $this->orderby = $row['orderby'];
+        $this->orderby = (int)$row['orderby'];
         $this->sku = $row['sku'];
     }
 
@@ -162,9 +124,10 @@ class ProductOptionValue
             return;
         }
 
-        $result = DB_query("SELECT *
-                    FROM {$_TABLES['shop.prod_opt_vals']}
-                    WHERE pov_id='$id'");
+        $result = DB_query(
+            "SELECT * FROM {$_TABLES['shop.prod_opt_vals']}
+            WHERE pov_id='$id'"
+        );
         if (!$result || DB_numRows($result) != 1) {
             return false;
         } else {
@@ -222,13 +185,12 @@ class ProductOptionValue
             $sql3 = " WHERE pov_id={$this->pov_id}";
         }
 
-        $sql2 = " SET item_id='{$this->item_id}',
-                pog_id = {$this->pog_id},
+        $sql2 = " SET 
+                pog_id = " . (int)$this->pog_id . ",
                 pov_value='" . DB_escapeString($this->pov_value) . "',
                 sku = '" . DB_escapeString($this->sku) . "',
-                orderby='{$this->orderby}',
-                pov_price='" . number_format($this->pov_price, 2, '.', '') . "',
-                enabled='{$this->enabled}'";
+                orderby='" . (int)$this->orderby . "',
+                pov_price='" . (float)$this->pov_price . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql);
@@ -237,7 +199,7 @@ class ProductOptionValue
             if ($this->isNew) {
                 $this->pov_id = DB_insertID();
             }
-            self::reOrder($this->item_id);
+            self::reOrder($this-pog_id);
             //Cache::delete('options_' . $this->item_id);
             Cache::clear('products');
             Cache::clear('options');
@@ -259,8 +221,10 @@ class ProductOptionValue
     {
         global $_TABLES;
 
-        if ($opt_id <= 0)
+        $opt_id = (int)$opt_id;
+        if ($opt_id <= 0) {
             return false;
+        }
 
         DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
         Cache::clear('products');
@@ -277,7 +241,6 @@ class ProductOptionValue
     {
         // Check that basic required fields are filled in
         if (
-            $this->item_id == 0 ||
             $this->pog_id == 0 ||
             $this->pov_value == ''
         ) {
@@ -297,12 +260,6 @@ class ProductOptionValue
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        // If there are no products defined, return a formatted error message
-        // instead of the form.
-        if (DB_count($_TABLES['shop.products']) == 0) {
-            return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
-        }
-
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('optform', 'option_val_form.thtml');
         $id = $this->pov_id;
@@ -313,20 +270,15 @@ class ProductOptionValue
         if ($id > 0) {
             $retval = COM_startBlock($LANG_SHOP['edit_opt'] . ': ' . $this->pov_value);
             $T->set_var('pov_id', $id);
-            $init_item_id = $this->item_id;
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
             $this->og_id = ProductOptionGroup::getFirst()->getID();
             $T->set_var('pov_id', '');
-            $init_item_id = Product::getFirst();
         }
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('option_form', $_CONF['language']),
-            'item_id'       => $this->item_id,
-            'init_item_id'  => $init_item_id,
-            'item_name'     => Product::getByID($this->item_id)->name,
             'pog_id'        => $this->pog_id,
             'pog_name'      => ProductOptionGroup::getInstance($this->pog_id)->getName(),
             'pov_value'     => $this->pov_value,
@@ -339,10 +291,10 @@ class ProductOptionValue
                         $this->pog_id,
                         0
                     ),
-            'orderby_opts'  => self::getOrderbyOpts($init_item_id, $this->pog_id, $this->orderby),
+            'orderby_opts'  => self::getOrderbyOpts($this->pog_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
-            'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
+            //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
         $retval .= $T->parse('output', 'optform');
         $retval .= COM_endBlock();
@@ -358,7 +310,7 @@ class ProductOptionValue
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    private static function _toggle($oldvalue, $varname, $id)
+    private static function XX_toggle($oldvalue, $varname, $id)
     {
         global $_TABLES;
 
@@ -390,7 +342,7 @@ class ProductOptionValue
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-     public static function toggleEnabled($oldvalue, $id=0)
+     public static function XXtoggleEnabled($oldvalue, $id=0)
      {
          return self::_toggle($oldvalue, 'enabled', $id);
      }
@@ -410,15 +362,17 @@ class ProductOptionValue
 
     /**
      * Reorder all attribute items with the same product ID and attribute name.
+     *
+     * @param   integer $pog_id     Option Group ID (to allow static usage)
      */
-    private function reOrder()
+    public static function reOrder($pog_id)
     {
         global $_TABLES;
 
+        $pog_id = (int)$pog_id;
         $sql = "SELECT pov_id, orderby
                 FROM {$_TABLES['shop.prod_opt_vals']}
-                WHERE item_id = '{$this->item_id}'
-                AND pog_id= '{$this->pog_id}'
+                WHERE pog_id= {$pog_id}
                 ORDER BY orderby ASC;";
         //echo $sql;die;
         $result = DB_query($sql);
@@ -427,8 +381,6 @@ class ProductOptionValue
         $stepNumber = 10;   // Increment amount
         $changed = false;   // Assume no changes
         while ($A = DB_fetchArray($result, false)) {
-            SHOP_log("checking item {$A['pov_id']}", SHOP_LOG_DEBUG);
-            SHOP_log("Order by is {$A['orderby']}, should be $order", SHOP_LOG_DEBUG);
             if ($A['orderby'] != $order) {  // only update incorrect ones
                 $changed = true;
                 $sql = "UPDATE {$_TABLES['shop.prod_opt_vals']}
@@ -472,7 +424,7 @@ class ProductOptionValue
                     WHERE pov_id = '{$this->pov_id}'";
             //echo $sql;die;
             DB_query($sql);
-            $this->reOrder();
+            self::reOrder($this->pog_id);
         }
     }
 
@@ -491,14 +443,12 @@ class ProductOptionValue
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
-        $sql = "SELECT pog.pog_name, pov.*, p.name AS prod_name
+        $sql = "SELECT pog.pog_name, pov.*
             FROM {$_TABLES['shop.prod_opt_vals']} pov
             LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
-            ON pov.pog_id = pog.pog_id
-            LEFT JOIN {$_TABLES['shop.products']} p
-            ON pov.item_id = p.id";
+            ON pov.pog_id = pog.pog_id";
 
-        if ($prod_id == 0) {
+/*        if ($prod_id == 0) {
             return '';
         } elseif ($prod_id > 0) {
             $sel_prod_id = (int)$prod_id;
@@ -510,7 +460,7 @@ class ProductOptionValue
         } else {
             $sel_prod_id = 0;
         }
-
+ */
         $header_arr = array(
             array(
                 'text' => 'ID',
@@ -529,11 +479,11 @@ class ProductOptionValue
                 'sort' => false,
                 'align' => 'center',
             ),
-            array(
+/*            array(
                 'text' => $LANG_SHOP['product'],
                 'field' => 'prod_name',
                 'sort' => true,
-            ),
+            ),*/
             array(
                 'text' => $LANG_SHOP['opt_name'],
                 'field' => 'pog_name',
@@ -574,7 +524,7 @@ class ProductOptionValue
         );
 
         $defsort_arr = array(
-            'field' => 'prod_name,pog_orderby,orderby',
+            'field' => 'pog_orderby,orderby',
             'direction' => 'ASC',
         );
 
@@ -598,7 +548,7 @@ class ProductOptionValue
             'default_filter' => $def_filter,
         );
 
-        if ($prod_id == -1) {
+        /*if ($prod_id == -1) {
         $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
             onchange=\"this.form.submit();\">
             <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
@@ -609,12 +559,12 @@ class ProductOptionValue
             'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
         );
         $options = array('chkdelete' => true, 'chkfield' => 'pov_id');
-        } else {
+        } else {*/
             $text_arr = array();
             $filter = '';
             $options = array();
-            $query_arr['sql'] .= " WHERE item_id = '$prod_id'";
-        }
+            //$query_arr['sql'] .= " WHERE item_id = '$prod_id'";
+        //}
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_attrlist',
             array(__CLASS__,  'getAdminField'),
@@ -623,7 +573,7 @@ class ProductOptionValue
         );
 
         // Create the "copy "options" form at the bottom
-        if ($sel_prod_id == 0) {
+        /*if ($sel_prod_id == 0) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
             $T->set_file('copy_opt_form', 'copy_options_form.thtml');
             $T->set_var(array(
@@ -632,7 +582,7 @@ class ProductOptionValue
                 'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
             ) );
             $display .= $T->parse('output', 'copy_opt_form');
-        }
+        }*/
 
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -718,16 +668,14 @@ class ProductOptionValue
      * Create the selection list for the `orderby` value.
      * Used here and from admin/ajax.php.
      *
-     * @param   integer $item_id    Current product ID
      * @param   integer $og_id      Current Option Group ID
      * @param   integer $sel        Currently-selection option
      * @return  string      Option elements for a selection list
      */
-    public static function getOrderbyOpts($item_id=0, $og_id=0, $sel=0)
+    public static function getOrderbyOpts($og_id=0, $sel=0)
     {
         global $_TABLES, $LANG_SHOP;
 
-        $item_id = (int)$item_id;
         $og_id = (int)$og_id;
         $sel = (int)$sel;
         $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
@@ -736,7 +684,29 @@ class ProductOptionValue
             'orderby,pov_value',
             $sel - 10,
             0,
-            "pog_id = '$og_id' AND item_id = '$item_id' AND orderby <> '$sel'"
+            "pog_id = '$og_id' AND orderby <> '$sel'"
+        );
+        return $retval;
+    }
+
+
+    /**
+     * Get the option selection for one option group.
+     *
+     * @param   integer     $pog_id     Option Group ID
+     * @return  string      Option list for options under the group
+     */
+    public static function getSelectionByGroup($pog_id)
+    {
+        global $_TABLES;
+
+        $pog_id = (int)$pog_id;
+        $retval .= COM_optionList(
+            $_TABLES['shop.prod_opt_vals'],
+            'pov_value,pov_name',
+            '',
+            1,
+            "pog_id = '$pog_id'"
         );
         return $retval;
     }
@@ -760,15 +730,21 @@ class ProductOptionValue
         $opts = Cache::get($cache_key);
         if ($opts === NULL) {
             $opts = array();
-            $sql = "SELECT pog.pog_name, pov.*
+            $sql = "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
+                LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
+                LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
+                LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = vxo.pv_id
+                WHERE pv.item_id = $prod_id AND pov.pog_id = $og_id";
+            /*$sql = "SELECT pog.pog_name, pov.*
                 FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
                     ON pov.pog_id = pog.pog_id
-                WHERE pov.item_id = '{$prod_id}' AND pov.enabled = 1";
+                    WHERE pov.item_id = '{$prod_id}' AND pov.enabled = 1";*/
             if ($og_id > 0) {
                 $sql .= " AND pov.pog_id = '$og_id'";
             }
             $sql .= " ORDER BY pog.pog_orderby, pov.orderby ASC";
+            //echo $sql;die;
             $result = DB_query($sql);
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);

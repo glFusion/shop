@@ -121,6 +121,10 @@ class Product
      * @var array */
     private $Categories = array();
 
+    /** Product variants for this product. Null to load only once.
+     * @var array */
+    private $Variants = NULL;
+
 
     /**
      * Constructor.
@@ -587,12 +591,52 @@ class Product
 
 
     /**
+     * Get all the variants related to this product.
+     * Sets the local Variants property for later use.
+     *
+     * @return  array   Array of ProductVariant objects
+     */
+    private function getVariants()
+    {
+        if ($this->Variants === NULL) {
+            $this->Variants = ProductVariant::getByProduct($this->id);
+        }
+        return $this->Variants;
+    }
+
+
+    /**
      * Load the product attributs into the options array.
      *
      * @return  object  $this
      */
     protected function loadOptions()
     {
+        global $_TABLES;
+
+    /*    $sql = "SELECT DISTINCT pov.pov_id, pov.pov_value, pog.pog_id, pog.pog_name, pv.sku,
+                pov.pov_price
+            FROM {$_TABLES['shop.prod_opt_vals']} pov
+            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
+                ON pog.pog_id =.pov.pog_id
+            LEFT JOIN {$_TABLES['shop.variantXopt']} vxo
+                ON vxo.pov_id = pov.pov_id
+            LEFT JOIN {$_TABLES['shop.product_variants']} pv
+                ON pv.pv_id = vxo.pv_id
+            WHERE pv.item_id = {$this->id}
+            ORDER BY pog.pog_orderby, pov.orderby ASC";
+        $res = DB_query($sql);
+        $ctlbk = 0;
+        $Grps = array();
+        while ($A = DB_fetchArray($res, false)) {
+            if ($A['pog_id'] != $ctlbk) {
+                $Grps[$A['pog_id']] = new ProductOptionGroup($A['pog_id']);
+            }
+            //$Grps[$A['pog_id']]->addOption(new \StdClass
+            echo "{$A['pog_name']} - {$A['pov_value']}\n";
+        }
+        var_dump($Grps);
+        return;*/
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {
@@ -874,9 +918,10 @@ class Product
      * @uses    SHOP_getDocUrl()
      * @uses    SHOP_errorMessage()
      * @param   integer $id     Optional ID, current record used if zero
+     * @param   string  $tab    Name of tab to set as active
      * @return  string          HTML for edit form
      */
-    public function showForm($id = 0)
+    public function showForm($id = 0, $tab='')
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
@@ -990,13 +1035,15 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
-            'option_list'   => ProductOptionValue::adminList($this->id),
+            //'option_list'   => ProductOptionValue::adminList($this->id),
+            'option_list'   => ProductVariant::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
             'max_ord_qty'   => $this->max_ord_qty,
             'available_cats' => $allcats_sel,
             'selected_cats' => $selcats_sel,
+            'tabactive_' . $tab => 'class="uk-active"',
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1290,6 +1337,7 @@ class Product
 
         // Get the product options, if any, and set them into the form
         $json_opts = array();
+        $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
@@ -1327,6 +1375,7 @@ class Product
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
+                $pv_opts[] = $sel_opt;
                 break;
             case 'checkbox':
                 foreach ($OG->Options as $Opt) {
@@ -1361,7 +1410,12 @@ class Product
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
-
+        $PV = ProductVariant::getByAttributes($this->id, $pv_opts);
+        if ($PV->getID() > 0) {
+            $this->onhand = $PV->getOnHand();
+        } else {
+            $this->onhand = 0;
+        }
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1370,6 +1424,7 @@ class Product
         } else {
             $shipping_txt = '';
         }
+
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
@@ -1386,11 +1441,11 @@ class Product
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
-            'onhand'            => $this->track_onhand ? $this->onhand : '',
+            'avail_msg'         => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
-            'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
+            //'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
             'rating_bar'        => $this->ratingBar(),
         ) );
 
@@ -1572,6 +1627,14 @@ class Product
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
+            $btn_class = 'uk-button uk-button-small uk-button-success';
+            if ($this->track_onhand) {
+                $this->getVariants();
+                if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
+                    $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                }
+            }
+
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
@@ -1587,6 +1650,7 @@ class Product
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
+                'btn_cls'   => $btn_class,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -2012,6 +2076,30 @@ class Product
             }
         }
         return false;
+    }
+
+
+    /**
+     * Get all the options for this product.
+     *
+     * @todo determine if this still works
+     * @deprecate
+     * @return  array       Array of options
+     */
+    public function getOptions()
+    {
+        return $this->Options;
+    }
+
+
+    /**
+     * Get all the option groups related to this product.
+     *
+     * @return  array       Array of OptionGroup objects
+     */
+    public function getOptionGroups()
+    {
+        return $this->OptionGroups;
     }
 
 
@@ -2505,14 +2593,19 @@ class Product
      */
     private function _OutOfStock()
     {
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
-            // Return zero, act normally.
-            return 0;
-        } else {
+        $retval = 0;
+        if ($this->track_onhand != 0) {
             // Return the oversell setting for the caller to act accordingly
             // when out of stock
-            return $this->oversell;
+            $retval = $this->oversell;
+            foreach ($this->getVariants() as $Var) {
+                if ($Var->getOnhand() > 0) {
+                    $retval = 0;
+                    break;
+                }
+            }
         }
+        return $retval;
     }
 
 
@@ -3296,6 +3389,67 @@ class Product
     {
         return $this->getFirstCategory()->Breadcrumbs();
     }
+
+
+    /**
+     * Get the track_onhand property value.
+     *
+     * @return  boolean     TrackOnhand setting
+     */
+    public function getTrackOnhand()
+    {
+        return $this->track_onhand;
+    }
+
+
+    /**
+     * Get the value of the oversell property.
+     *
+     * @return  integer     Oversell setting
+     */
+    public function getOversell()
+    {
+        return $this->oversell;
+    }
+
+
+        /*
+         * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
+    ->         FROM `ps_attribute` a
+    ->         LEFT JOIN `ps_attribute_lang` al
+    ->             ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = 1)
+    ->         LEFT JOIN `ps_attribute_group_lang` agl
+    ->             ON (a.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = 1)
+    ->         LEFT JOIN `ps_product_attribute_combination` pac
+    ->             ON (a.`id_attribute` = pac.`id_attribute`)
+    ->         LEFT JOIN `ps_product_attribute` pa
+    ->             ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
+    ->          INNER JOIN ps_product_attribute_shop product_attribute_shop
+    ->         ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
+    ->          INNER JOIN ps_attribute_shop attribute_shop
+    ->         ON (attribute_shop.id_attribute = pac.id_attribute AND attribute_shop.id_shop = 1)
+    ->         WHERE pa.`id_product` = 9;
+         */
+/*SELECT ag.`id_attribute_group`, ag.`is_color_group`, agl.`name` AS group_name, agl.`public_name` AS public_group_name,
+                                        a.`id_attribute`, al.`name` AS attribute_name, a.`color` AS attribute_color, product_attribute_shop.`id_product_attribute`,
+                                        IFNULL(stock.quantity, 0) as quantity, product_attribute_shop.`price`, product_attribute_shop.`ecotax`, product_attribute_shop.`weight`,
+                                        product_attribute_shop.`default_on`, pa.`reference`, product_attribute_shop.`unit_price_impact`,
+                                        product_attribute_shop.`minimal_quantity`, product_attribute_shop.`available_date`, ag.`group_type`
+                                FROM `ps_product_attribute` pa
+                                 INNER JOIN ps_product_attribute_shop product_attribute_shop
+        ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
+                                 LEFT JOIN ps_stock_available stock
+                        ON (stock.id_product = `pa`.id_product AND stock.id_product_attribute = IFNULL(`pa`.id_product_attribute, 0) AND stock.id_shop = 1  AND stock.id_shop_group = 0  )
+                                LEFT JOIN `ps_product_attribute_combination` pac ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
+                                LEFT JOIN `ps_attribute` a ON (a.`id_attribute` = pac.`id_attribute`)
+                                LEFT JOIN `ps_attribute_group` ag ON (ag.`id_attribute_group` = a.`id_attribute_group`)
+                                LEFT JOIN `ps_attribute_lang` al ON (a.`id_attribute` = al.`id_attribute`)
+                                LEFT JOIN `ps_attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group`)
+                                 INNER JOIN ps_attribute_shop attribute_shop*/
+
+/*
+select distinct pov.pov_id, pog.pog_id, pog.pog_name, pov.pov_value, pv.sku from gl_shop_product_option_value pov left join gl_shop_product_option_groups pog on pog.pog_id =pov.pog_id left join gl_shop_variantXopt vxo on vxo.pov_id = pov.pov_id left join gl_shop_product_variants pv on pv.pv_id = vxo.pv_id where pv.item_id = 5 order by pog.pog_orderby, pov.pov_orderby asc;
+*/
 
 }
 

@@ -25,8 +25,39 @@ function isValidField(obj)
     return true;
 }
 
-function ProcessForm()
+function ProcessForm(form)
 {
+    if (typeof(form) == 'undefined') {
+        return;
+    }
+    var dataS = {
+        "action": "validateOpts",
+    };
+    data = $("#" + form.id).serialize() + '&' + $.param(dataS);
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+console.log(result);
+                $("div#avail_msg").text(result.msg);
+                // Enable or disable the purchase buttons
+                if (result.allowed) {
+                    $("button#btn_add_cart_{id}").prop("disabled", false);
+                    $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-success");
+                } else {
+                    $("button#btn_add_cart_{id}").prop("disabled", true);
+                    $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-disabled");
+
+                }
+            } catch(err) {
+            }
+        }
+    });
+    return status;
+
     var opt_price, i;
     var price, frm;
     var price_was;  // used if item is on sale

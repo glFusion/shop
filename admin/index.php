@@ -46,7 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'carrier_save',
+    'carrier_save', 'pv_save', 'pv_del', 'pv_savenew',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
@@ -56,11 +56,12 @@ $expected = array(
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
+    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'codes', 'editcode',
+    'codes', 'editcode', 'pv_edit',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate',
 );
@@ -177,6 +178,21 @@ case 'pog_save':
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
+    break;
+
+case 'pv_save':
+    $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
+    if ($pv_id > 0) {
+        Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
+    break;
+
+case 'pv_savenew':
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
+    Shop\ProductVariant::saveNew($_POST);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
     break;
 
 case 'pov_save':
@@ -591,13 +607,14 @@ case 'ipnlog':
     break;
 
 case 'editproduct':
-    $id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
+    $id = SHOP_getVar($_REQUEST, 'id', 'integer');
+    $tab = SHOP_getVar($_GET, 'tab');
     $P = new \Shop\Product($id);
     if ($id == 0 && isset($_POST['short_description'])) {
         // Pick a field.  If it exists, then this is probably a rejected save
         $P->SetVars($_POST);
     }
-    $content .= $P->showForm();
+    $content .= $P->showForm(0, $tab);
     break;
 
 case 'editcat':
@@ -662,14 +679,25 @@ case 'carriers':
     $content .= Shop\Shipper::carrierLIst();
     break;
 
+case 'pv_edit':
+    $pv_id = SHOP_getVar($_GET, 'pv_id', 'integer');
+    $content .= Shop\Menu::adminCatalog($view);
+    $Var = new Shop\ProductVariant($pv_id);
+    if ($pv_id > 0) {
+        $content .= $Var->Edit();
+    } else {
+        $item_id = SHOP_getVar($_GET, 'item_id', 'integer');
+        if ($item_id > 0) {
+            $content .= $Var->Create($item_id);
+        }
+    }
+    break;
+
 case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
-    if ($opt_id == 0) {
-        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
-        $Opt->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
-    }
+    //$Opt = new Shop\ProductVariantOption($opt_id);
     $content .= $Opt->Edit();
     break;
 

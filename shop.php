@@ -61,7 +61,6 @@ $_TABLES['shop.discountcodes'] = $_SHOP_table_prefix . 'discountcodes';
 $_TABLES['shop.prodXcat'] = $_SHOP_table_prefix . 'prodXcat';
 $_TABLES['shop.product_variants'] = $_SHOP_table_prefix . 'product_variants';
 $_TABLES['shop.variantXopt'] = $_SHOP_table_prefix . 'variantXopt';
-$_TABLES['shop.prodXvariant'] = $_SHOP_table_prefix . 'prodXvariant';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

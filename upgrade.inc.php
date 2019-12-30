@@ -181,7 +181,21 @@ function SHOP_do_upgrade($dvlp = false)
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.products']}
                 DROP cat_id";
         }
+        if (_SHOPtableHasIndex('shop.product_option_vals') != 2) {
+            // Upgrades to use the new product variants.
+            // TODO: drop item_id column, after creating Variant records
+            $SHOP_UPGRADE[$current_ver][] = "ALTER IGNORE TABLE {$_TABLES['shop.prod_opt_vals']}
+                ADD UNIQUE `pog_value` (`pog_id`, `pov_value`)";
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        // Reorder the product options since there may now be duplicate orderby values
+        $sql = "SELECT pog_id FROM {$_TABLES['shop.prod_opt_grps']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            Shop\ProductOptionValue::reOrder($A['pog_id']);
+        }
+
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -386,6 +400,23 @@ function _SHOPcolumnType($table, $col_name)
         $retval = $A['DATA_TYPE'];
     }
     return $retval;
+}
+
+
+/**
+ * Check if a table has a specific index defined.
+ *
+ * @param   string  $idx_name   Index name
+ * @return  integer     Number of rows (fields) in the index
+ */
+function _SHOPtableHasIndex($table, $idx_name)
+{
+    global $_TABLES;
+
+    $sql = "SHOW INDEX FROM {$_TABLES[$table]}
+        WHERE key_name = '" . DB_escapeString($idx_name) . "'";
+    $res = DB_query($sql);
+    return DB_numRows($res);
 }
 
 ?>

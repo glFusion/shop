@@ -820,6 +820,8 @@ function plugin_autouninstall_shop()
             'shop.tax_rates',
             'shop.discountcodes',
             'shop.prodXcat',
+            'shop.product_variants',
+            'shop.variantXopt',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

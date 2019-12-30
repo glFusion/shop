@@ -134,9 +134,8 @@ case 'opt_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\ProductOptionValue::getOrderbyOpts($item_id, $og_id, $selected);
+    $retval = Shop\ProductOptionValue::getOrderbyOpts($og_id, $selected);
     echo $retval;
     exit;
 
