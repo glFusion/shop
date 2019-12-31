@@ -117,6 +117,10 @@ class Product
      * @var integer */
     private $max_ord_qty = 0;
 
+    /** Reorder quantity. Overridden by variants if any exist.
+     * @var integer */
+    private $reorder;
+
     /** Related category objects.
      * @var array */
     private $Categories = array();
@@ -179,6 +183,7 @@ class Product
             $this->qty_discounts = array();
             $this->custom = '';
             $this->Categories = array();
+            $this->reorder = 0;
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -516,6 +521,7 @@ class Product
         $this->brand = $row['brand'];
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
+        $this->reorder = (int)$row['reorder'];
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -1044,6 +1050,7 @@ class Product
             'available_cats' => $allcats_sel,
             'selected_cats' => $selcats_sel,
             'tabactive_' . $tab => 'class="uk-active"',
+            'reorder'       => $this->reorder,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1804,6 +1811,17 @@ class Product
 
 
     /**
+     * Get the base price for this item.
+     *
+     * @return  float       Base item price
+     */
+    public function getBasePrice()
+    {
+        return (float)$this->price;
+    }
+
+
+    /**
      * Get the discounted price for the product, including options.
      *
      * @param   integer $qty            Quantity purchased
@@ -2498,6 +2516,17 @@ class Product
     public function getDscp($override = '')
     {
         return $override == '' ? $this->short_description : $override;
+    }
+
+
+    /**
+     * Get the reorder quantity set for this product.
+     *
+     * @return  float   Reorder quantity
+     */
+    public function getReorder()
+    {
+        return (float)$this->reorder;
     }
 
 

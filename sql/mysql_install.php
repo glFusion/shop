@@ -663,6 +663,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
       `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
       `onhand` int(10) NOT NULL DEFAULT '0',
+      `reorder` int(10) NOT NULL DEFAULT '0',
       PRIMARY KEY (`pv_id`),
       KEY `prod_id` (`item_id`)
     ) ENGINE=MyISAM",

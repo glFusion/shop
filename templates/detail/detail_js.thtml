@@ -41,8 +41,11 @@ function ProcessForm(form)
         data: data,
         success: function(result) {
             try {
-console.log(result);
                 $("div#avail_msg").text(result.msg);
+                orig_price = result.orig_price.toFixed({cur_decimals});
+                sale_price = result.sale_price.toFixed({cur_decimals});
+                $("#price").html(sale_price);
+                $("#price_was").html( orig_price);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
                     $("button#btn_add_cart_{id}").prop("disabled", false);
@@ -56,69 +59,6 @@ console.log(result);
             }
         }
     });
-    return status;
-
-    var opt_price, i;
-    var price, frm;
-    var price_was;  // used if item is on sale
-
-    frm = document.getElementById("add_cart_{id}");
-    if (frm === null) return;
-
-    price = {price};
-    price_was = {orig_price_val};
-
-    options = frm.elements['options[]'];
-    if (typeof(options) == "undefined") {
-        return;
-    }
-
-    // If there's only one option selection, then 'options' will be an array
-    // of all it's option items.  We need to handle them differently than if
-    // there are multiple option selections.
-    if (NodeList.prototype.isPrototypeOf(options)) {
-        // There are multiple options
-        for (i = 0; i < options.length; i++) {
-            if (!isValidField(options[i])) {
-                continue;
-            }
-            if (
-                options[i].type == "select-one" ||
-                (options[i].type == "checkbox" && options[i].checked) ||
-                (options[i].type == "radio" && options[i].checked)
-            ) {
-                opt_price = opt_prices[options[i].value] * 1;
-                price += opt_price;
-                price_was += opt_price;
-            }
-        }
-    } else {
-        // There is a single option, check the value.
-        // Checkboxes are individual options.
-        if (
-            options.type == "select-one" ||
-            (options.type == "checkbox" && options[i].checked)
-        ) {
-            opt_price = opt_prices[options.value] * 1;
-            price += opt_price;
-            price_was += opt_price;
-        }
-    }
-console.log(price);
-
-    // Update the dispayed price on the form
-    price = price.toFixed({cur_decimals});
-    if (typeof(frm.price) != "undefined") {
-        frm.price.value = price;
-    }
-    document.getElementById('price').innerHTML = price;
-
-    // Update the original pre-sale price, if displayed.
-    var x = document.getElementById('price_was');
-    if (x != null) {
-        price_was = price_was.toFixed({cur_decimals});
-        x.innerHTML = price_was;
-    }
     return;
 }
 
@@ -131,7 +71,7 @@ function checkForJavascript()
 
 $(document).ready(function() {
     checkForJavascript();
-    ProcessForm();
+    //ProcessForm();
 });
 </script>
 {!endif}
