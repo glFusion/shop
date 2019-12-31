@@ -516,12 +516,14 @@ class ProductOptionValue
                 'align' => 'right',
                 'sort' => true,
         );
-        $header_arr[] = array(
+        /*
+         * Deletion disabled.
+         * $header_arr[] = array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
-        );
+            );*/
 
         $defsort_arr = array(
             'field' => 'pog_orderby,orderby',

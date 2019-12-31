@@ -215,7 +215,8 @@ case 'pog_del':
 
 case 'pov_del':
     // opt_id could be via $_GET or $_POST
-    Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
+    // TODO: determine effect on product variants and existing orders
+    //Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
     $view = 'options';
     break;
 

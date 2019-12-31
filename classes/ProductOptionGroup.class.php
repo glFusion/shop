@@ -290,12 +290,15 @@ class ProductOptionGroup
     /**
      * Delete the current attrribute group record from the database.
      *
+     * @todo    Determine the effect on variants and orders
      * @param   integer $og_id    Option Group ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
      */
     public static function Delete($og_id)
     {
         global $_TABLES;
+
+        return true;        // stub until function works properly or is removed
 
         if ($og_id <= 0) {
             return false;

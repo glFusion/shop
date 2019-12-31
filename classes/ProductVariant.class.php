@@ -14,7 +14,9 @@
 namespace Shop;
 
 /**
- * Class for order line items.
+ * Class for product variants.
+ * Variants are combinations of options represented by a single sku, such as 
+ * color, size and style.
  * @package shop
  */
 class ProductVariant
@@ -662,7 +664,6 @@ class ProductVariant
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
-            //Cache::deleteOrder($this->order_id);
             if ($this->pv_id == 0) {
                 $this->pv_id = DB_insertID();
             }
@@ -674,10 +675,10 @@ class ProductVariant
 
 
     /**
-     * Delete an order item and related options from the database.
+     * Delete a product variant.
+     * TODO: not implemented, need to determine effects on existing orders.
      *
-     * @see     Cart::Remove()
-     * @param   integer $id     Order item record ID
+     * @param   integer $id     Variant record ID
      */
     public static function Delete($id)
     {
