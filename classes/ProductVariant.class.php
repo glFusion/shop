@@ -53,6 +53,10 @@ class ProductVariant
      * @var float */
     private $onhand;
 
+    /** Reorder quantity. Overrides the product reorder setting.
+     * @var integer */
+    private $reorder;
+
     /** OptionValue items associated with this variant.
      * @var array */
     private $Options = NULL;
@@ -143,7 +147,8 @@ class ProductVariant
                 ->setWeight(SHOP_getVar($A, 'weight', 'float'))
                 ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
-                ->setOnhand(SHOP_getVar($A, 'onhand', 'float'));
+                ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
+                ->setReorder(SHOP_getVar($A, 'reorder', 'float'));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
             }
@@ -338,6 +343,30 @@ class ProductVariant
 
 
     /**
+     * Set the reorder quantity.
+     *
+     * @param   float   $reorder    Reorder quantity
+     * @return  object  $this
+     */
+    public function setReorder($reorder)
+    {
+        $this->reorder = (float)$reorder;
+        return $this;
+    }
+
+
+    /**
+     * Get the quantity on hand for this variant.
+     *
+     * @return  float       Quantity onhand
+     */
+    public function getReorder()
+    {
+        return (float)$this->reorder;
+    }
+
+
+    /**
      * Set the SKU field.
      *
      * @param   string  $sku        SKU for this variant
@@ -481,16 +510,20 @@ class ProductVariant
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('form', 'variant_new.thtml');
 
+        // Default to the item's reorder quantity
+        $P = Product::getById($item_id);
+        $this->setReorder($P->getReorder());
         $T->set_var(array(
             'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
             'item_id'       => $item_id,
-            'item_name'     => Product::getByID($item_id)->name,
+            'item_name'     => $P->getName(),
             'pv_id'         => $this->getId(),
             'price'         => $this->getPrice(),
             'weight'        => $this->getWeight(),
             'onhand'        => $this->getOnhand(),
             'shipping_units' => $this->getShippingUnits(),
             'sku'           => $this->getSku(),
+            'reorder'       => $this->getReorder(),
             //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
         $Groups = ProductOptionGroup::getAll();
@@ -543,6 +576,7 @@ class ProductVariant
             'shipping_units' => $this->getShippingUnits(),
             'sku'           => $this->getSku(),
             'dscp'          => $this->getDscpString(),
+            'reorder'       => $this->getReorder(),
             //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
         $retval .= $T->parse('output', 'form');
@@ -949,10 +983,14 @@ class ProductVariant
                 'msg'       => 'Invalid',
             );
         } else {
+            $price = ($P->getBasePrice() + $this->getPrice());
+            $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
                 'allowed'   => true,
+                'orig_price' => Currency::getInstance()->RoundVal($price),
+                'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
             );
         }
         if ($P->getTrackOnhand()) {
@@ -969,7 +1007,6 @@ class ProductVariant
         }
         return $retval;
     }
-
 
 }
 
