@@ -129,6 +129,7 @@ class Cart extends Order
             }
             $args = array(
                 'item_number'   => $Item->product_id,
+                'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
                 'extras'        => $Item->extras,
                 'description'   => $Item->description,
@@ -177,6 +178,7 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
+        $Var        = ProductVariant::getByAttributes($P->getID(), $options);
         if (!is_array($this->items)) {
             $this->items = array();
         }
@@ -191,11 +193,12 @@ class Cart extends Order
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
-            $opt_str = implode(',', $options);
-            $item_id .= '|' . $opt_str;
+            //$opt_str = implode(',', $options);
+            //$item_id .= '|' . $opt_str;
         } else {
             $opts = array();
         }
+        $item_id .= '|' . $Var->getID();
 
         // Look for identical items, including options (to catch
         // attributes). If found, just update the quantity.
@@ -213,13 +216,12 @@ class Cart extends Order
         } elseif ($quantity == 0) {
             return false;
         } else {
-            //$price = $P->getPrice($attrs, $quantity, array('uid'=>$uid));
             $tmp = array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
-                //'price'     => sprintf("%.2f", $price),
+                'variant'   => $Var->getID(),
                 'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,

@@ -32,6 +32,10 @@ class OrderItem
      * @var object */
     private $product = NULL;
 
+    /** Product variant ID.
+     * @var integer */
+    private $variant_id;
+
     /** Fields for an OrderItem record.
      * @var array */
     private static $fields = array(
@@ -61,6 +65,7 @@ class OrderItem
             } else {
                 $this->options = $this->getOptions();
             }
+            $this->product = $this->getProduct();
         } elseif (is_array($oi_id) && isset($oi_id['product_id'])) {
             // Got an item record, just set the variables
             $this->setVars($oi_id);
@@ -68,11 +73,17 @@ class OrderItem
             $this->base_price = $this->product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['options'])) {
-                    $this->options = $this->setOptions($oi_id['options']);
+                if (isset($oi_id['variant'])) {
+                    $Var = ProductVariant::getInstance($oi_id['variant']);
+                    if ($Var->getID() > 0) {
+                        $this->variant_id = $Var->getID();
+                        $this->setOptions($Var->getOptions());
+                    }
+                } elseif (isset($oi_id['options'])) {
+                    $this->setOptions($oi_id['options']);
                 } elseif (isset($oi_id['attributes'])) {
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
-                    $this->options = $this->setOptions($oi_id['attributes']);
+                    $this->setOptions($oi_id['attributes']);
                 }
             } else {
                 // Existing orderitem record, get the existing options
@@ -156,6 +167,7 @@ class OrderItem
                 $this->$field = $A[$field];
             }
         }
+        $this->variant_id = (int)$A['variant_id'];
         return true;
     }
 
@@ -218,6 +230,17 @@ class OrderItem
         } else {
             return NULL;
         }
+    }
+
+
+    /**
+     * Get the variant ID for this item.
+     *
+     * @return  integer     Product Variant ID
+     */
+    function getVariantId()
+    {
+        return (int)$this->variant_id;
     }
 
 
@@ -320,11 +343,12 @@ class OrderItem
         if (is_string($opts)) {
             $opts = explode(',', $opts);
         }
-        foreach ($opts as $opt_id) {
-            if (isset($this->product->options[$opt_id])) {
-                $retval[] = $this->product->options[$opt_id]['attr_name'] . ': ' .
-                    $this->product->options[$opt_id]['attr_value'];
-            }
+        foreach ($opts as $opt_id=>$OIO) {
+            $retval[] = $OIO->oio_name . ': ' . $OIO->oio_value;
+            /*if (isset($this->getProduct()->Options[$opt_id])) {
+                $retval[] = $this->product->Options[$opt_id]['attr_name'] . ': ' .
+                    $this->product->Options[$opt_id]['attr_value'];
+            }*/
         }
 
         // Add custom text strings
@@ -421,6 +445,7 @@ class OrderItem
         }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
+                variant_id = '" . (int)$this->variant_id . "',
                 description = '" . DB_escapeString($this->description) . "',
                 quantity = '" . (float)$this->quantity. "',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
@@ -591,7 +616,7 @@ class OrderItem
      * Set the provided array of options into the private var.
      *
      * @param   array   $opts   Array of ProductOptionValues
-     * @return  array       Contents of $this->options
+     * @return  object  $this
      */
     public function setOptions($opts)
     {
@@ -617,7 +642,7 @@ class OrderItem
                 //}
             }
         }
-        return $this->options;
+        return $this;
     }
 
 
