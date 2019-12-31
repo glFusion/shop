@@ -47,8 +47,10 @@
                 <span class="shopPrice was">{price_prefix}</span>
                 <span class="shopPrice was" id="price_was">{orig_price}</span>
                 <span class="shopPrice sale">{price_postfix}</span>
-                <div class="shopPrice sale">{sale_name}</div>
                 <div>
+{!if sale_name}
+                    <span class="shopPrice sale">{sale_name}: </span>
+{!endif}
                     <span class="shopPrice sale">{price_prefix}</span>
                     <span class="shopPrice sale" id="price">{init_price}</span>
                     <span class="shopPrice sale">{price_postfix}</span>
