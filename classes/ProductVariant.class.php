@@ -15,7 +15,7 @@ namespace Shop;
 
 /**
  * Class for product variants.
- * Variants are combinations of options represented by a single sku, such as 
+ * Variants are combinations of options represented by a single sku, such as
  * color, size and style.
  * @package shop
  */
@@ -190,6 +190,17 @@ class ProductVariant
 
 
     /**
+     * Get the internal Options property.
+     *
+     * @return  array   Array of ProductOptionValue objects
+     */
+    public function getOptions()
+    {
+        return $this->Options;
+    }
+
+
+    /**
      * Get the option selections for a product's variants.
      *
      * @deprecated
@@ -233,6 +244,16 @@ class ProductVariant
             }
         }
         return $this;
+    }
+
+
+    private function _optsInUse()
+    {
+        $retval = array();
+        foreach ($this->Options as $Opt) {
+            $retval [] = $Opt->getID();
+        }
+        return $retval;
     }
 
 
@@ -419,7 +440,18 @@ class ProductVariant
      */
     public function getDscp()
     {
-        return $this->dscp;
+        static $POGS = NULL;
+        if ($POGS === NULL) {
+            $POGS = ProductOptionGroup::getAll();
+        }
+        $retval = array();
+        foreach ($this->Options as $Opt) {
+            $retval[] = array(
+                'naem' => $POGS[$Opt->getGroupID()]->getName(),
+                'value' => $Opt->getValue(),
+            );
+        }
+        return $retval;
     }
 
 
@@ -524,7 +556,6 @@ class ProductVariant
             'shipping_units' => $this->getShippingUnits(),
             'sku'           => $this->getSku(),
             'reorder'       => $this->getReorder(),
-            //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
         $Groups = ProductOptionGroup::getAll();
         $T->set_block('form', 'OptionGroups', 'Grps');
@@ -577,9 +608,31 @@ class ProductVariant
             'sku'           => $this->getSku(),
             'dscp'          => $this->getDscpString(),
             'reorder'       => $this->getReorder(),
-            //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
-        $retval .= $T->parse('output', 'form');
+        $Groups = ProductOptionGroup::getAll();
+        $optsInUse = $this->_optsInUse();
+        $T->set_block('form', 'OptionGroups', 'Grps');
+        foreach ($Groups as $gid=>$Grp) {
+            $T->set_var(array(
+                'pog_id'    => $gid,
+                'pog_name'  => $Grp->getName(),
+            ) );
+            $T->set_block('Grps', 'OptionValues', 'Vals');
+            $Opts = ProductOptionValue::getByProduct(0, $Grp->getID());
+            foreach ($Opts as $pov_id=>$Opt) {
+                $T->set_var(array(
+                    'opt_id'    => $Opt->getID(),
+                    'opt_val'   => $Opt->getValue(),
+                    'opt_sel'   => in_array($Opt->getID(), $optsInUse) ? 'selected="selected"' : '',
+                ) );
+                $T->parse('Vals', 'OptionValues', true);
+            }
+            $T->parse('Grps', 'OptionGroups', true);
+            //var_dump($T);die;
+            $T->clear_var('Vals');
+        }
+        $T->parse('output', 'form');
+        $retval .= $T->finish($T->get_var('output'));
         $retval .= COM_endBlock();
         return $retval;
     }
@@ -674,10 +727,6 @@ class ProductVariant
             $this->setVars($A);
         }
 
-        if (empty($this->dscp)) {
-            $this->makeDscp();
-        }
-
         if ($this->pv_id > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.product_variants']} ";
             $sql3 = " WHERE pv_id = '{$this->pv_id}'";
@@ -691,8 +740,7 @@ class ProductVariant
                 price = '" . (float)$this->price . "',
                 weight = '" . (float)$this->weight . "',
                 shipping_units = '" . (float)$this->shipping_units . "',
-                onhand = " . (float)$this->onhand . ",
-                dscp = '" . DB_escapeString(json_encode($this->dscp)) . "'";
+                onhand = " . (float)$this->onhand;
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -701,10 +749,41 @@ class ProductVariant
             if ($this->pv_id == 0) {
                 $this->pv_id = DB_insertID();
             }
-            return true;
+            $retval = true;
         } else {
-            return false;
+            $retval = false;;
         }
+
+        // Create two standardized arrays to detect new and removed option vals
+        $old_opts = array();
+        $new_opts = array();
+        foreach ($this->Options as $Opt) {
+            $old_opts[] = $Opt->getID();
+        }
+        foreach ($A['groups'] as $opt) {
+            if ($opt > 0) {
+                $new_opts[] = (int)$opt;
+            }
+        }
+        $removed = array_diff($old_opts, $new_opts);
+        $added = array_diff($new_opts, $old_opts);
+        if (!empty($added)) {
+            foreach ($added as $opt_id) {
+                $vals[] = '(' . $this->getID() . ',' . $opt_id . ')';
+            }
+            $sql_vals = implode(',', $vals);
+            $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
+                (pv_id, pov_id) VALUES $sql_vals";
+            DB_query($sql);
+        }
+        if (!empty($removed)) {
+            $removed = implode(',', $removed);
+            $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
+                WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
+            DB_query($sql);
+        }
+
+        return $retval;
     }
 
 
@@ -718,7 +797,22 @@ class ProductVariant
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.product_variants'], 'pv_id', (int)$pv_id);
+        $id = (int)$id;
+        DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
+        DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
+    }
+
+
+    /**
+     * Delete all references to an option value when that value is deleted.
+     *
+     * @param   integer $opt_id     Option value record ID
+     */
+    public static function deleteOptionValue($opt_id)
+    {
+        global $_TABLES;
+
+        DB_delete($_TABLES['shop.variantXopt'], 'pov_id', (int)$opt_id);
     }
 
 
@@ -814,11 +908,6 @@ class ProductVariant
                 'sort' => false,
                 'align' => 'center',
             ),
-            /*array(
-                'text' => $LANG_SHOP['enabled'],
-                'field' => 'enabled',
-                'sort' => false,
-            ),*/
             array(
                 'text'  => 'SKU',
                 'field' => 'sku',
@@ -911,6 +1000,14 @@ class ProductVariant
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
+        static $POGS = NULL;
+        $retval = '';
+
+        if ($POGS === NULL) {
+            $POGS = ProductOptionGroup::getAll();
+        }
+        $Var = self::getInstance($A['pv_id']);
+
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
@@ -922,29 +1019,18 @@ class ProductVariant
             break;
 
         case 'dscp':
-            if ($fieldvalue != '') {
-                $retval = self::jsonToString($fieldvalue);
+            $Opts = $Var->getOptions();
+            $tmp = array();
+            foreach ($Opts as $Opt) {
+                $tmp[] = $POGS[$Opt->getGroupID()]->getName() . ':' . $Opt->getValue();
             }
-            break;
-
-        case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['pv_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['pv_id']}\",\"enabled\",".
-                "\"option\");' />" . LB;
+            $retval = implode('; ', $tmp);
             break;
 
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;opt_id=' . $A['pv_id'],
+                SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;pv_id=' . $A['pv_id'] . '&item_id=' . $A['item_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
@@ -955,6 +1041,10 @@ class ProductVariant
 
         case 'price':
             $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
+            break;
+
+        case 'onhand':
+            $retval = (float)$A['onhand'];
             break;
 
         default:

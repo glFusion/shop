@@ -22,7 +22,7 @@ class ProductOptionGroup
 {
     /** Tag array used with caching, for consistency.
      * @var array */
-    static $TAGS = array('products', 'attributes');
+    static $TAGS = array('products', 'options');
 
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
@@ -304,7 +304,7 @@ class ProductOptionGroup
             return false;
         }
 
-        DB_delete($_TABLES['shop.prod_opt_vals'], 'pog_id', $og_id);
+        ProductOptionValue::deleteOptionGroup($og_id);
         DB_delete($_TABLES['shop.prod_opt_grps'], 'pog_id', $og_id);
         self::clearCache();
         return true;
@@ -643,7 +643,7 @@ class ProductOptionGroup
 
         $prod_id = (int)$prod_id;
         $cache_key = 'og_prod_' . $prod_id;
-        $grps = Cache::get($cache_key);
+//        $grps = Cache::get($cache_key);
         if ($grps === NULL) {
             $grps = array();
             $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov

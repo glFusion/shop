@@ -212,7 +212,8 @@ class ProductOptionValue
 
 
     /**
-     * Delete the current category record from the database.
+     * Delete the current option value record from the database.
+     * The value will also be removed from any related product variants.
      *
      * @param   integer $opt_id    Option ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
@@ -226,9 +227,29 @@ class ProductOptionValue
             return false;
         }
 
+        ProductVariant::deleteOptionValue($opt_id);
         DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
         Cache::clear('products');
+        Cache::clear('options');
         return true;
+    }
+
+
+    /**
+     * Delete all option values related to a deleted option group.
+     *
+     * @param   integer $og_id      Option Group ID
+     */
+    public static function deleteOptionGroup($og_id)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT pov_id FROM {$_TABLES['shop.prod_opt_vals']}
+            WHERE pog_id = " . (int)$og_id;
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($sql, false)) {
+            self::Delete($A['pov_id']);
+        }
     }
 
 
@@ -301,51 +322,6 @@ class ProductOptionValue
         return $retval;
     }   // function Edit()
 
-
-    /**
-     * Sets a boolean field to the specified value.
-     *
-     * @param   integer $oldvalue   Original value of field
-     * @param   integer $varname    Name of field to change
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-    private static function XX_toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.prod_opt_vals']}
-                SET $varname=$newvalue
-                WHERE pov_id=$id";
-        //echo $sql;die;
-        DB_query($sql);
-        if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
-            Cache::clear('products');
-            Cache::clear('options');
-            return $newvalue;
-        }
-    }
-
-
-    /**
-     * Toggles the "enabled" field value.
-     *
-     * @uses    self::_toggle()
-     * @param   integer $oldvalue   Original field value
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-     public static function XXtoggleEnabled($oldvalue, $id=0)
-     {
-         return self::_toggle($oldvalue, 'enabled', $id);
-     }
 
 
     /**
@@ -430,16 +406,11 @@ class ProductOptionValue
 
 
     /**
-     * Product Option List View.
-     * Values for `$prod_id`:
-     * - -1 : Default, display a normal attribute admin list
-     * - 0 : Invalid product, return nothing
-     * - >0 : Display only for the product ID, no embedded form
+     * Product Option Value list view.
      *
-     * @param   integer $prod_id    Optional product ID to limit listing
      * @return  string      HTML for the attribute list.
      */
-    public static function adminList($prod_id=-1)
+    public static function adminList()
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
@@ -448,19 +419,6 @@ class ProductOptionValue
             LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
             ON pov.pog_id = pog.pog_id";
 
-/*        if ($prod_id == 0) {
-            return '';
-        } elseif ($prod_id > 0) {
-            $sel_prod_id = (int)$prod_id;
-        } elseif (isset($_POST['product_id'])) {
-            $sel_prod_id = (int)$_POST['product_id'];
-            SESS_setVar('shop.opt_prod_id', $sel_prod_id);
-        } elseif (SESS_isSet('shop.opt_prod_id')) {
-            $sel_prod_id = (int)SESS_getVar('shop.opt_prod_id');
-        } else {
-            $sel_prod_id = 0;
-        }
- */
         $header_arr = array(
             array(
                 'text' => 'ID',
@@ -479,11 +437,6 @@ class ProductOptionValue
                 'sort' => false,
                 'align' => 'center',
             ),
-/*            array(
-                'text' => $LANG_SHOP['product'],
-                'field' => 'prod_name',
-                'sort' => true,
-            ),*/
             array(
                 'text' => $LANG_SHOP['opt_name'],
                 'field' => 'pog_name',
@@ -500,30 +453,25 @@ class ProductOptionValue
                 'align' => 'center',
                 'sort'  => true,
             ),
-        );
-        if ($prod_id == -1) {
-            // No changing the order when shown as part of the product edit form
-            $header_arr[] = array(
+            array(
                 'text'  => $LANG_SHOP['orderby'],
                 'field' => 'orderby',
                 'align' => 'center',
                 'sort'  => true,
-            );
-        }
-        $header_arr[] = array(
+            ),
+            array(
                 'text' => $LANG_SHOP['opt_price'],
                 'field' => 'pov_price',
                 'align' => 'right',
                 'sort' => true,
-        );
-        /*
-         * Deletion disabled.
-         * $header_arr[] = array(
+            ),
+            array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
                 'align' => 'center',
-            );*/
+            ),
+        );
 
         $defsort_arr = array(
             'field' => 'pog_orderby,orderby',
@@ -538,11 +486,7 @@ class ProductOptionValue
                 'class' => 'uk-button uk-button-success',
             )
         );
-        if ($sel_prod_id > 0) {
-            $def_filter = "WHERE item_id = '$sel_prod_id'";
-        } else {
-            $def_filter = '';
-        }
+        $def_filter = '';
         $query_arr = array(
             'table' => 'shop.prod_opt_values',
             'sql' => $sql,
@@ -550,23 +494,9 @@ class ProductOptionValue
             'default_filter' => $def_filter,
         );
 
-        /*if ($prod_id == -1) {
-        $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
-            onchange=\"this.form.submit();\">
-            <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
-            COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id) .
-            "</select>&nbsp;\n";
-        $text_arr = array(
-            'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
-        );
-        $options = array('chkdelete' => true, 'chkfield' => 'pov_id');
-        } else {*/
-            $text_arr = array();
-            $filter = '';
-            $options = array();
-            //$query_arr['sql'] .= " WHERE item_id = '$prod_id'";
-        //}
+        $text_arr = array();
+        $filter = '';
+        $options = array();
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_attrlist',
             array(__CLASS__,  'getAdminField'),
@@ -646,7 +576,7 @@ class ProductOptionValue
                 Icon::getHTML('delete'),
                 SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
                 array(
-                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_pov'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
                 )
@@ -736,12 +666,10 @@ class ProductOptionValue
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
                 LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = vxo.pv_id
-                WHERE pv.item_id = $prod_id AND pov.pog_id = $og_id";
-            /*$sql = "SELECT pog.pog_name, pov.*
-                FROM {$_TABLES['shop.prod_opt_vals']} pov
-                LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
-                    ON pov.pog_id = pog.pog_id
-                    WHERE pov.item_id = '{$prod_id}' AND pov.enabled = 1";*/
+                WHERE 1=1";
+            if ($prod_id > 0) {
+                $sql .= " AND pv.item_id = $prod_id";
+            }
             if ($og_id > 0) {
                 $sql .= " AND pov.pog_id = '$og_id'";
             }

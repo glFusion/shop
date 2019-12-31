@@ -129,6 +129,10 @@ class Product
      * @var array */
     private $Variants = NULL;
 
+    /** A single product variant attached to this product.
+     * @var object */
+    private $Variant;
+
 
     /**
      * Constructor.
@@ -1349,6 +1353,10 @@ class Product
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
         foreach ($this->OptionGroups as $OG) {
+            if (count($OG->Options) < 1) {
+                // Could happen if options are removed leaving an empty option group.
+                continue;
+            }
             // Most options use the option group name as the prompt
             $display_name = $OG->getName();
             $T->set_block('product', 'Option' . $OG->getType(), 'optSel');
@@ -1637,8 +1645,10 @@ class Product
             $btn_class = 'uk-button uk-button-small uk-button-success';
             if ($this->track_onhand) {
                 $this->getVariants();
-                if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
-                    $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                if (count($this->Variants) > 0) {
+                    if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
+                        $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                    }
                 }
             }
 
@@ -3282,6 +3292,23 @@ class Product
             $opts = explode(',', $opts);
         }
         $this->sel_opts = $opts;
+    }
+
+
+    /**
+     * Set the variant for this product.
+     *
+     * @param   integer|object  $variant    Variant ID or object
+     * @return  object  $this
+     */
+    public function setVariant($variant)
+    {
+        if (is_integer($variant)) {
+            $this->Variant = ProductVariant::getInstane($variant);
+        } elseif (is_object($variant)) {
+            $this->Variant = $variant;
+        }
+        return $this;
     }
 
 

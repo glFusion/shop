@@ -146,6 +146,7 @@ $LANG_SHOP = array (
 'maintenance'       => 'Maintenance',
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Are you sure you want to delete this item?',
+'q_del_pov'         => 'Are you sure you want to delete this option or group? All related product variants and options will be deleted as well.',
 'clearform'         => 'Reset Form',
 'del_item_instr'    => 'Items that have no purchases can be deleted. If an item has been purchased it can only be disabled.',
 'del_cat_instr'     => 'Categories containing products cannot be deleted.',

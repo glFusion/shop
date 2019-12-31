@@ -46,7 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'carrier_save', 'pv_save', 'pv_del', 'pv_savenew',
+    'carrier_save', 'pv_save', 'pv_del',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
@@ -183,15 +183,7 @@ case 'pog_save':
 case 'pv_save':
     $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
-    if ($pv_id > 0) {
-        Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
-    break;
-
-case 'pv_savenew':
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
-    Shop\ProductVariant::saveNew($_POST);
+    Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
     break;
 
@@ -208,6 +200,12 @@ case 'pov_save':
     }
     break;
 
+case 'pv_del':
+    Shop\ProductVariant::Delete($_REQUEST['pv_id']);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $_REQUEST['item_id']);
+    exit;
+    break;
+
 case 'pog_del':
     Shop\ProductOptionGroup::Delete($_REQUEST['og_id']);
     $view = 'opt_grp';
@@ -215,8 +213,7 @@ case 'pog_del':
 
 case 'pov_del':
     // opt_id could be via $_GET or $_POST
-    // TODO: determine effect on product variants and existing orders
-    //Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
+    Shop\ProductOptionValue::Delete($_REQUEST['opt_id']);
     $view = 'options';
     break;
 
