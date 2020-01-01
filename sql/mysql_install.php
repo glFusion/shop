@@ -695,7 +695,7 @@ $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
-$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3]
-$_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4]
+$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
+$_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 
 ?>
