@@ -169,6 +169,9 @@ class ProductVariant
         global $_TABLES;
 
         $item_id = (int)$item_id;
+        if (!is_array($attribs) || empty($attribs)) {
+            return new self;
+        }
         $count = count($attribs);
         $attr_sql = implode(',', $attribs);
         $sql = "SELECT vxo.pv_id FROM {$_TABLES['shop.variantXopt']} vxo
@@ -616,6 +619,7 @@ class ProductVariant
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
+                'multiple'  => $this->pv_id == 0 ? 'multiple' : '',
             ) );
             $T->set_block('Grps', 'OptionValues', 'Vals');
             $Opts = ProductOptionValue::getByProduct(0, $Grp->getID());
@@ -649,6 +653,18 @@ class ProductVariant
     {
         global $_TABLES;
 
+        // Clean out any zero (not selected) options for groups
+        foreach ($A['groups'] as $id=>&$grp) {
+            foreach ($grp as $gid=>$val) {
+                if ($val == 0) {
+                    unset($grp[$gid]);
+                }
+            }
+            if (empty($grp)) {
+                unset($A['groups'][$id]);
+            }
+        }
+
         $item_id = (int)$A['item_id'];
         if ($item_id < 1) {
             return false;
@@ -656,55 +672,63 @@ class ProductVariant
         $price = 0;
         $weight = 0;
         $shipping = 0;
-        $sku_parts = array();
-        $dscp = array();
-        $opt_ids = array();
-        foreach($A['groups'] as $name=>$pov_id) {
-            if ($pov_id == 0) {
-                continue;
-            }
-            $opt_ids[] = $pov_id;   // save for the variant->opt table
-            $Opt = new ProductOptionValue($pov_id);
-
-            if ($A['price'] === '') {   // Zero is valid
-                $price += $Opt->getPrice();
-            }
-            $dscp[] = array(
-                'name' => $name,
-                'value' => $Opt->getValue(),
-            );
-            if (empty($A['sku'])) {
-                if ($Opt->getSku() != '') {
-                    $sku_parts[] = $Opt->getSku();
-                }
-            }
-        }
-        if (empty($A['sku'])) {
-            $P = Product::getInstance($item_id);
-            if (!empty($sku_parts)) {
-                $sku = $P->getName() . '-' . implode('-', $sku_parts);
-            }
-        } else {
-            $sku = $A['sku'];
-        }
         if ($A['price'] !== '') {
             $price = $A['price'];
         }
         $args = array(
             'pv_id' => 0,
             'item_id' => $item_id,
-            'dscp' => json_encode($dscp),
             'price' => $price,
             'sku' => $sku,
             'weight' => (float)$A['weight'],
             'shipping_units' => (float)$A['shipping'],
             'onhand' => (float)$A['onhand'],
         );
-        $Var = new self($args);
-        $Var->Save();
-        $vals = array();
-        foreach ($opt_ids as $opt_id) {
-            $vals[] = '(' . $Var->getID() . ',' . $opt_id . ')';
+
+        $matrix = self::_cartesian($A['groups']);
+        foreach ($matrix as $groups) {
+            $opt_ids = array();
+            $sku_parts = array();
+            foreach($groups as $pog=>$pov_id) {
+                if ($pov_id == 0) {
+                    continue;
+                }
+                $opt_ids[] = $pov_id;   // save for the variant->opt table
+                $Opt = new ProductOptionValue($pov_id);
+
+                if ($A['price'] === '') {   // Zero is valid
+                    $price += $Opt->getPrice();
+                }
+                if (empty($A['sku'])) {
+                    if ($Opt->getSku() != '') {
+                        $sku_parts[] = $Opt->getSku();
+                    }
+                }
+            }
+            if (empty($A['sku'])) {
+                $P = Product::getInstance($item_id);
+                if (!empty($sku_parts)) {
+                    $sku = $P->getName() . '-' . implode('-', $sku_parts);
+                }
+            } else {
+                $sku = $A['sku'];
+            }
+            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
+                item_id = '" . (int)$item_id . "',
+                sku = '" . DB_escapeString($sku) . "',
+                price = '" . (float)$price . "',
+                weight = '" . (float)$weight . "',
+                shipping_units = '" . (float)$shipping_units . "',
+                onhand = " . (float)$onhand;
+            //echo $sql;die;
+            SHOP_log($sql, SHOP_LOG_DEBUG);
+            DB_query($sql);
+            if (!DB_error()) {
+                $pv_id = DB_insertID();
+                foreach ($opt_ids as $opt_id) {
+                    $vals[] = '(' . $pv_id . ',' . $opt_id . ')';
+                }
+            }
         }
         $sql_vals = implode(',', $vals);
         $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
@@ -719,12 +743,15 @@ class ProductVariant
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save($A= NULL, $savenow=false)
     {
         global $_TABLES;
 
         if (is_array($A)) {
             $this->setVars($A);
+        }
+        if ($this->pv_id == 0) {
+            return $this->saveNew($A);
         }
 
         if ($this->pv_id > 0) {
@@ -742,7 +769,7 @@ class ProductVariant
                 shipping_units = '" . (float)$this->shipping_units . "',
                 onhand = " . (float)$this->onhand;
         $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
+        echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
@@ -1096,6 +1123,32 @@ class ProductVariant
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Create a cartesian product of arrays to map option combinations.
+     * Thanks to Sergiy Sokolenko
+     * (https://stackoverflow.com/users/131337/sergiy-sokolenko)
+     *
+     * @param   array   $input  Array of arrays
+     * @return  array   Array of cartesian products
+     */
+    private static function _cartesian($input)
+    {
+        $result = array(array());
+
+        foreach ($input as $key => $values) {
+            $append = array();
+            foreach($result as $product) {
+                foreach($values as $item) {
+                    $product[$key] = $item;
+                    $append[] = $product;
+                }
+            }
+            $result = $append;
+        }
+        return $result;
     }
 
 }

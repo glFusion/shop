@@ -681,14 +681,11 @@ case 'pv_edit':
     $pv_id = SHOP_getVar($_GET, 'pv_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Var = new Shop\ProductVariant($pv_id);
-    if ($pv_id > 0) {
-        $content .= $Var->Edit();
-    } else {
-        $item_id = SHOP_getVar($_GET, 'item_id', 'integer');
-        if ($item_id > 0) {
-            $content .= $Var->Create($item_id);
-        }
+    if ($Var->getID() == 0) {
+        // For a new variant, force the item ID to be set
+        $Var->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
     }
+    $content .= $Var->Edit();
     break;
 
 case 'pov_edit':
