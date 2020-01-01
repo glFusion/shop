@@ -2932,11 +2932,12 @@ class Product
         $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
-                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell,
-                c.cat_id, c.cat_name
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON p.cat_id = c.cat_id";
+                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell
+            FROM {$_TABLES['shop.products']} p";
+        if ($cat_id > 0) {
+            $sql .= " LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id";
+        }
 
         $header_arr = array(
             array(
@@ -2978,11 +2979,6 @@ class Product
                 'field' => 'short_description',
                 'sort' => true,
             ),
-            /*array(
-                'text'  => $LANG_SHOP['category'],
-                'field' => 'cat_name',
-                'sort' => true,
-            ),*/
             array(
                 'text'  => $LANG_SHOP['price'],
                 'field' => 'price',
@@ -3026,7 +3022,7 @@ class Product
         );
 
         if ($cat_id > 0) {
-            $def_filter = "WHERE c.cat_id='$cat_id'";
+            $def_filter = "WHERE pxc.cat_id='$cat_id'";
         } else {
             $def_filter = 'WHERE 1=1';
         }
@@ -3037,7 +3033,6 @@ class Product
                 'p.name',
                 'p.short_description',
                 'p.description',
-                'c.cat_name',
             ),
             'default_filter' => $def_filter,
         );
@@ -3050,7 +3045,7 @@ class Product
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
-                '/index.php?view=prodcts&amp;cat_id=\'+' .
+                '/index.php?products&amp;cat_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
