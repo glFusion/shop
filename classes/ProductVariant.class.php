@@ -674,16 +674,6 @@ class ProductVariant
         if ($A['price'] !== '') {
             $price = $A['price'];
         }
-        $args = array(
-            'pv_id' => 0,
-            'item_id' => $item_id,
-            'price' => $price,
-            'sku' => $sku,
-            'weight' => (float)$A['weight'],
-            'shipping_units' => (float)$A['shipping'],
-            'onhand' => (float)$A['onhand'],
-        );
-
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
             $opt_ids = array();
@@ -705,8 +695,8 @@ class ProductVariant
                 }
             }
             if (empty($A['sku'])) {
-                $P = Product::getInstance($item_id);
-                if (!empty($sku_parts)) {
+                $P = Product::getById($item_id);
+                if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
                 }
             } else {
@@ -729,10 +719,12 @@ class ProductVariant
                 }
             }
         }
-        $sql_vals = implode(',', $vals);
-        $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
-            (pv_id, pov_id) VALUES $sql_vals";
-        DB_query($sql);
+        if (!empty($vals)) {
+            $sql_vals = implode(',', $vals);
+            $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
+                (pv_id, pov_id) VALUES $sql_vals";
+            DB_query($sql);
+        }
     }
 
 
