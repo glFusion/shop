@@ -643,7 +643,7 @@ class ProductOptionGroup
 
         $prod_id = (int)$prod_id;
         $cache_key = 'og_prod_' . $prod_id;
-//        $grps = Cache::get($cache_key);
+        $grps = Cache::get($cache_key);
         if ($grps === NULL) {
             $grps = array();
             $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov

@@ -769,7 +769,7 @@ class ProductVariant
                 shipping_units = '" . (float)$this->shipping_units . "',
                 onhand = " . (float)$this->onhand;
         $sql = $sql1 . $sql2 . $sql3;
-        echo $sql;die;
+        //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
