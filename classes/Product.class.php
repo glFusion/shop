@@ -1425,12 +1425,7 @@ class Product
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
-        $PV = ProductVariant::getByAttributes($this->id, $pv_opts);
-        if ($PV->getID() > 0) {
-            $this->onhand = $PV->getOnHand();
-        } else {
-            $this->onhand = 0;
-        }
+        $this->setVariant(ProductVariant::getByAttributes($this->id, $pv_opts));
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1456,11 +1451,10 @@ class Product
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
-            'avail_msg'         => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
+            'avail_msg'         => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
-            //'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
             'rating_bar'        => $this->ratingBar(),
         ) );
 
@@ -2051,7 +2045,7 @@ class Product
         $status = 0;
 
         // update the qty on hand, if tracking and not already zero
-        if ($this->track_onhand && $this->onhand > 0) {
+        if ($this->track_onhand && $this->getOnhand() > 0) {
             $sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->quantity})
                     WHERE id = '{$this->id}'";
@@ -2282,7 +2276,7 @@ class Product
     public function isInStock()
     {
         // Not tracking stock, or have stock on hand, return true
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
+        if ($this->track_onhand == 0 || $this->getOnhand() > 0) {
             return true;
         } else {
             return false;
@@ -3304,7 +3298,7 @@ class Product
     public function setVariant($variant)
     {
         if (is_integer($variant)) {
-            $this->Variant = ProductVariant::getInstane($variant);
+            $this->Variant = ProductVariant::getInstance($variant);
         } elseif (is_object($variant)) {
             $this->Variant = $variant;
         }
@@ -3468,6 +3462,22 @@ class Product
         return $this->oversell;
     }
 
+
+    /**
+     * Get the quantity on hand.
+     * If there are variants, get the variant onhand value, otherwise use the
+     * product's value.
+     *
+     * @return  float   Quantity on hand
+     */
+    public function getOnhand()
+    {
+        if ($this->Variant !== NULL) {
+            return $this->Variant->getOnhand();
+        } else {
+            return $this->onhand;
+        }
+    }
 
         /*
          * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
