@@ -619,7 +619,6 @@ class ProductVariant
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
-                'multiple'  => $this->pv_id == 0 ? 'multiple' : '',
             ) );
             $T->set_block('Grps', 'OptionValues', 'Vals');
             $Opts = ProductOptionValue::getByProduct(0, $Grp->getID());
@@ -753,22 +752,14 @@ class ProductVariant
         if ($this->pv_id == 0) {
             return $this->saveNew($A);
         }
-
-        if ($this->pv_id > 0) {
-            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} ";
-            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
-        } else {
-            $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} ";
-            $sql3 = '';
-        }
-
-        $sql2 = "SET item_id = '" . (int)$this->item_id . "',
-                sku = '" . DB_escapeString($this->sku) . "',
-                price = '" . (float)$this->price . "',
-                weight = '" . (float)$this->weight . "',
-                shipping_units = '" . (float)$this->shipping_units . "',
-                onhand = " . (float)$this->onhand;
-        $sql = $sql1 . $sql2 . $sql3;
+        $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
+            item_id = '" . (int)$this->item_id . "',
+            sku = '" . DB_escapeString($this->sku) . "',
+            price = '" . (float)$this->price . "',
+            weight = '" . (float)$this->weight . "',
+            shipping_units = '" . (float)$this->shipping_units . "',
+            onhand = " . (float)$this->onhand . "
+            WHERE pv_id = '{$this->pv_id}'";
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
