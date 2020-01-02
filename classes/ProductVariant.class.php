@@ -57,6 +57,10 @@ class ProductVariant
      * @var integer */
     private $reorder;
 
+    /** Flag to incidate that orders can be accepted for this variant.
+     * @var integer */
+    private $enabled = 1;
+
     /** OptionValue items associated with this variant.
      * @var array */
     private $Options = NULL;
@@ -149,7 +153,8 @@ class ProductVariant
                 ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
-                ->setReorder(SHOP_getVar($A, 'reorder', 'float'));
+                ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
+                ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
             }
@@ -392,6 +397,19 @@ class ProductVariant
 
 
     /**
+     * Set the `enabled` flag.
+     *
+     * @param   integer $enabled    0 for disabled, nonzero for enabled
+     * @return  object  $this
+     */
+    public function setEnabled($enabled)
+    {
+        $this->enabled = $enabled == 0 ? 0 : 1;
+        return $this;
+    }
+
+
+    /**
      * Set the SKU field.
      *
      * @param   string  $sku        SKU for this variant
@@ -603,6 +621,7 @@ class ProductVariant
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
+            'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
             'item_id'       => $this->getItemId(),
             'item_name'     => Product::getByID($this->item_id)->name,
             'pv_id'         => $this->getId(),
@@ -667,7 +686,7 @@ class ProductVariant
         }
 
         $item_id = (int)$A['item_id'];
-        if ($item_id < 1) {
+        if ($item_id < 1 || empty($A['groups'])) {
             return false;
         }
         $price = 0;
