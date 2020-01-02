@@ -3,9 +3,9 @@
  * Migrate data from the Paypal plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -93,6 +93,10 @@ class MigratePP
         }
         if (!self::migrateUserinfo()) {
             // @since v1.1.0 to get cart info
+            return false;
+        }
+        if (!self::createVariants()) {
+            // @since v1.1.0 to create variants from option groups and values
             return false;
         }
         return true;
@@ -379,12 +383,80 @@ class MigratePP
             "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+            // Drop key so duplicate values can be created, it will be
+            // replaced in createVariants()
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `pog_value`",
             "INSERT INTO {$_TABLES['shop.prod_opt_vals']}
                 SELECT  attr_id as pov_id, 0 as pog_id, item_id, attr_value as pov_value,
                 orderby, attr_price as pov_price, enabled, '' as sku, attr_name
                 FROM {$_TABLES['paypal.prod_attr']}"
         ) );
     }
+
+
+    /**
+     * Create product variants based on the option values.
+     * Public so it can be called from upgrade.php.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function createVariants()
+    {
+        global $_TABLES;
+
+        COM_errorLog("Creating product variants and trimming option Values ...");
+        // Upgrades to use the new product variants.
+        // TODO: drop item_id column, after creating Variant records
+        $r_allvals = DB_query("SELECT * FROM {$_TABLES['shop.prod_opt_vals']}");
+        $allvals = array();
+        while ($A = DB_fetchArray($r_allvals, false)) {
+            if (!isset($allvals[$A['pog_id']][$A['pov_value']])) {
+                $allvals[$A['pog_id']][$A['pov_value']] = array(
+                    'items' => array(),
+                    'ids' => array(),
+                    'new_id' => 0,
+                );
+            }
+            $allvals[$A['pog_id']][$A['pov_value']]['ids'][] = $A['pov_id'];
+            $allvals[$A['pog_id']][$A['pov_value']]['items'][] = $A['item_id'];
+        }
+        DB_query("TRUNCATE {$_TABLES['shop.product_variants']}");
+        DB_query("TRUNCATE {$_TABLES['shop.variantXopt']}");
+        DB_query("ALTER IGNORE TABLE {$_TABLES['shop.prod_opt_vals']}
+            ADD UNIQUE `pog_value` (`pog_id`, `pov_value`)");
+        foreach ($allvals as $pog_id=>$vals) {
+            foreach ($vals as $val=>$info) {
+                $pov_ids = implode(',', $info['ids']);
+                $allvals[$pog_id][$val]['new_id'] = DB_getItem(
+                    $_TABLES['shop.prod_opt_vals'],
+                    'pov_id',
+                    "pog_id = {$pog_id} AND pov_id IN ($pov_ids)"
+                );
+            }
+        }
+        // Cycle through again with the new IDs, collect the items
+        // and create the variants.
+        $items = array();
+        foreach ($allvals as $pog_id=>$vals) {
+            foreach ($vals as $val) {
+                foreach ($val['items'] as $item_id) {
+                    if (!isset($items[$item_id])) {
+                        $items[$item_id] = array(
+                            'item_id' => $item_id,
+                            'groups' => array(),
+                        );
+                    }
+                    $items[$item_id]['groups'][$pog_id][] = $val['new_id'];
+                }
+            }
+        }
+
+        // Now create the variants
+        foreach ($items as $item_id=>$opts) {
+            $PV = new ProductVariant;
+            $PV->saveNew($opts);
+        }
+     }
 
 
     /**

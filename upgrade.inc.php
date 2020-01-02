@@ -3,9 +3,9 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -184,56 +184,7 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (_SHOPtableHasIndex('shop.prod_opt_vals', 'pog_value') != 2) {
             // Upgrades to use the new product variants.
-            // TODO: drop item_id column, after creating Variant records
-            $r_allvals = DB_query("SELECT * FROM {$_TABLES['shop.prod_opt_vals']}");
-            $allvals = array();
-            while ($A = DB_fetchArray($r_allvals, false)) {
-                if (!isset($allvals[$A['pog_id']][$A['pov_value']])) {
-                    $allvals[$A['pog_id']][$A['pov_value']] = array(
-                        'items' => array(),
-                        'ids' => array(),
-                        'new_id' => 0,
-                    );
-                }
-                $allvals[$A['pog_id']][$A['pov_value']]['ids'][] = $A['pov_id'];
-                $allvals[$A['pog_id']][$A['pov_value']]['items'][] = $A['item_id'];
-            }
-            DB_query("TRUNCATE {$_TABLES['shop.product_variants']}");
-            DB_query("TRUNCATE {$_TABLES['shop.variantXopt']}");
-            DB_query("ALTER IGNORE TABLE {$_TABLES['shop.prod_opt_vals']}
-                    ADD UNIQUE `pog_value` (`pog_id`, `pov_value`)");
-            foreach ($allvals as $pog_id=>$vals) {
-                foreach ($vals as $val=>$info) {
-                    $pov_ids = implode(',', $info['ids']);
-                    $allvals[$pog_id][$val]['new_id'] = DB_getItem(
-                        $_TABLES['shop.prod_opt_vals'],
-                        'pov_id',
-                        "pog_id = {$pog_id} AND pov_id IN ($pov_ids)"
-                    );
-                }
-            }
-            // Cycle through again with the new IDs, collect the items
-            // and create the variants.
-            $items = array();
-            foreach ($allvals as $pog_id=>$vals) {
-                foreach ($vals as $val) {
-                    foreach ($val['items'] as $item_id) {
-                        if (!isset($items[$item_id])) {
-                            $items[$item_id] = array(
-                                'item_id' => $item_id,
-                                'groups' => array(),
-                            );
-                        }
-                        $items[$item_id]['groups'][$pog_id][] = $val['new_id'];
-                    }
-                }
-            }
-
-            // Now create the variants
-            foreach ($items as $item_id=>$opts) {
-                $PV = new Shop\ProductVariant;
-                $PV->saveNew($opts);
-            }
+            Shop\MigratePP::createVariants();
         }
 
         // Reorder the product options since there may now be duplicate orderby values
