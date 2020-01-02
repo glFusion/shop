@@ -676,13 +676,12 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD variant_id` int(11) unsigned NOT NULL DEFAULT '0' AFTER product_id",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER net_nontax",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `order_total` decimal(12,4) unsigned DEFAULT '0.0000' AFTER net_taxable",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `discount_code` varchar(20) DEFAULT NULL AFTER shipper_id",
-    "ALTER TALBE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER net_nontax",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `order_total` decimal(12,4) unsigned DEFAULT '0.0000' AFTER net_taxable",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_code` varchar(20) DEFAULT NULL AFTER shipper_id",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
