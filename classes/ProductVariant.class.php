@@ -61,6 +61,7 @@ class ProductVariant
      * @var array */
     private $Options = NULL;
 
+
     /**
      * Constructor.
      * Initializes the variant variables
@@ -955,6 +956,30 @@ class ProductVariant
             'direction' => 'ASC',
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $view = SESS_getVar('shop.pv_view');
+        if ($view === 'pv_bulk') {
+            $display .= COM_createLink(
+                Icon::getHTML('arrow-left') . '&nbsp;Back to Product',
+                SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $prod_id,
+                array(
+                    'style' => 'float:left;margin-right:10px;',
+                    'class' => 'uk-button',
+                )
+            );
+            $options = array(
+                'chkdelete' => true,
+                'chkall' => true,
+                'chkfield' => 'pv_id',
+                'chkname' => 'pv_del_bulk',
+            );
+            $text_arr = array(
+                'has_extras' => true,
+                'form_url' => SHOP_ADMIN_URL . '/index.php?options=x&item_id=' . $prod_id,
+            );
+        } else {
+            $options = array();
+            $text_arr = array();
+        }
         $display .= COM_createLink($LANG_SHOP['new_opt'],
             SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
             array(
@@ -962,30 +987,23 @@ class ProductVariant
                 'class' => 'uk-button uk-button-success',
             )
         );
+        if ($view !== 'pv_bulk') {
+            $display .= COM_createLink('Bulk Admin',
+                SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
+                array(
+                    'style' => 'float:left;margin-left:10px;',
+                    'class' => 'uk-button uk-button-primary',
+                )
+            );
+        }
         $query_arr = array(
             'table' => 'shop.product_variants',
             'sql' => $sql,
-            'query_fields' => array('dscp', 'sku'),
-            //'default_filter' => $def_filter,
+            'query_fields' => array('sku'),
+            'default_filter' => " WHERE item_id = '$prod_id'",
         );
 
-        /*if ($prod_id == -1) {
-        $filter = "{$LANG_SHOP['product']}: <select name=\"product_id\"
-            onchange=\"this.form.submit();\">
-            <option value=\"0\">-- {$LANG_SHOP['any']} --</option>\n" .
-            COM_optionList($_TABLES['shop.products'], 'id, name', $sel_prod_id) .
-            "</select>&nbsp;\n";
-        $text_arr = array(
-            'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
-        );
-        $options = array('chkdelete' => true, 'chkfield' => 'pv_id');
-        } else {*/
-            $text_arr = array();
-            $filter = '';
-            $options = array();
-            $query_arr['sql'] .= " WHERE item_id = '$prod_id'";
-        //}
+        $query_arr['sql'] .= " WHERE item_id = '$prod_id'";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
@@ -1111,6 +1129,8 @@ class ProductVariant
 
     /**
      * Create a cartesian product of arrays to map option combinations.
+     * Used during creation to create the variants from the select-multiple
+     * options.
      * Thanks to Sergiy Sokolenko
      * (https://stackoverflow.com/users/131337/sergiy-sokolenko)
      *

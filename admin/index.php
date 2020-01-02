@@ -46,7 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'carrier_save', 'pv_save', 'pv_del',
+    'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
@@ -61,7 +61,7 @@ $expected = array(
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'codes', 'editcode', 'pv_edit',
+    'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate',
 );
@@ -181,10 +181,15 @@ case 'pog_save':
     break;
 
 case 'pv_save':
+    $from = SESS_getVar('shop.pv_view');
     $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
     $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
     Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
+    if ($from == 'pv_bulkedit') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
+    }
     break;
 
 case 'pov_save':
@@ -200,9 +205,22 @@ case 'pov_save':
     }
     break;
 
+case 'pv_del_bulk':
+    $ids = SHOP_getVar($_POST, 'pv_del_bulk', 'array');
+    foreach ($ids as $id) {
+        Shop\ProductVariant::Delete($id);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
+    break;
+
 case 'pv_del':
+    $from = SESS_getVar('shop.pv_view');
     Shop\ProductVariant::Delete($_REQUEST['pv_id']);
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $_REQUEST['item_id']);
+    if ($from === 'pv_bulk') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['item_id']);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $_REQUEST['item_id']);
+    }
     exit;
     break;
 
@@ -605,6 +623,7 @@ case 'ipnlog':
     break;
 
 case 'editproduct':
+    SESS_setVar('shop.pv_view', 'editproduct');
     $id = SHOP_getVar($_REQUEST, 'id', 'integer');
     $tab = SHOP_getVar($_GET, 'tab');
     $P = new \Shop\Product($id);
@@ -675,6 +694,12 @@ case 'shipping':
 case 'carriers':
     $content .= Shop\Menu::adminShipping($view);
     $content .= Shop\Shipper::carrierLIst();
+    break;
+
+case 'pv_bulk':
+    SESS_setVar('shop.pv_view', $view);
+    $prod_id = SHOP_getVar($_GET, 'item_id', 'integer');
+    $content = Shop\ProductVariant::adminList($prod_id, true);
     break;
 
 case 'pv_edit':
