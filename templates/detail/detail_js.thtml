@@ -13,7 +13,6 @@ function SHOPupdateImage(img_file, lg_img)
 </script>
 {!if have_attributes}
 <script type="text/javascript">
-var opt_prices = {opt_prices};
 function isValidField(obj)
 {
     if (null == obj) {
@@ -71,7 +70,7 @@ function checkForJavascript()
 
 $(document).ready(function() {
     checkForJavascript();
-    //ProcessForm();
+    ProcessForm(document.getElementById("add_cart_{id}"));
 });
 </script>
 {!endif}

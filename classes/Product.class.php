@@ -1347,7 +1347,6 @@ class Product
         }
 
         // Get the product options, if any, and set them into the form
-        $json_opts = array();
         $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
@@ -1374,17 +1373,9 @@ class Product
                     $sel_opt = reset($OG->Options)->getID();
                 }
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
                         'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
@@ -1394,18 +1385,10 @@ class Product
                 break;
             case 'checkbox':
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'checked'   => $checked,
                     ) );
                     $T->parse('optSel', 'Option' . $OG->og_type, true);
@@ -1513,7 +1496,6 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
-            'opt_prices'        => json_encode($json_opts),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
