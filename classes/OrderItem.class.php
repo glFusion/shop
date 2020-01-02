@@ -73,7 +73,7 @@ class OrderItem
             $this->base_price = $this->product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['variant'])) {
+                if (isset($oi_id['variant']) && $oi_id['variant'] > 0) {
                     $Var = ProductVariant::getInstance($oi_id['variant']);
                     if ($Var->getID() > 0) {
                         $this->variant_id = $Var->getID();
@@ -352,7 +352,7 @@ class OrderItem
         }
 
         // Add custom text strings
-        $cust = explode('|', $this->product->custom);
+        /*$cust = explode('|', $this->product->custom);
         foreach ($cust as $id=>$str) {
             if (
                 isset($this->extras['custom'][$id]) &&
@@ -360,7 +360,7 @@ class OrderItem
             ) {
                 $retval[] = $str . ': ' . $this->extras['custom'][$id];
             }
-        }
+        }*/
         return $retval;
     }
 
