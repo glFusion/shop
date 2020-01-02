@@ -206,7 +206,7 @@ function SHOP_do_upgrade($dvlp = false)
                 foreach ($vals as $val=>$info) {
                     $pov_ids = implode(',', $info['ids']);
                     $allvals[$pog_id][$val]['new_id'] = DB_getItem(
-                        $_TABLES['shop.prod_opt_vals']
+                        $_TABLES['shop.prod_opt_vals'],
                         'pov_id',
                         "pog_id = {$pog_id} AND pov_id IN ($pov_ids)"
                     );
