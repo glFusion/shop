@@ -692,11 +692,13 @@ class ProductVariant
         $price = 0;
         $weight = 0;
         $shipping = 0;
-        if ($A['price'] !== '') {
-            $price = $A['price'];
-        }
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
+            if ($A['price'] !== '') {
+                $price = (float)$A['price'];
+            } else  {
+                $price = 0;
+            }
             $opt_ids = array();
             $sku_parts = array();
             foreach($groups as $pog=>$pov_id) {
@@ -706,7 +708,7 @@ class ProductVariant
                 $opt_ids[] = $pov_id;   // save for the variant->opt table
                 $Opt = new ProductOptionValue($pov_id);
 
-                if ($A['price'] === '') {   // Zero is valid
+                if (!isset($A['price']) || $A['price'] === '') {   // Zero is valid
                     $price += $Opt->getPrice();
                 }
                 if (empty($A['sku'])) {
@@ -715,6 +717,7 @@ class ProductVariant
                     }
                 }
             }
+            echo "Price fo roption is $price\n";
             if (empty($A['sku'])) {
                 $P = Product::getById($item_id);
                 if (!empty($sku_parts) && !empty($P->getName())) {
