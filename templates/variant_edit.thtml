@@ -12,14 +12,16 @@
         </div>
     </div>
 
-{!if pv_id}
     <div class="uk-form-row">
-        <label class="uk-form-label">SKU:</label>
+        <label class="uk-form-label">SKU:
+            <span id="sku" class="tooltip_cfg tooltipstered"></span>
+        </label>
         <div class="uk-form-controls">
-            <input type="text" name="sku" value="{sku}" />
+            <input type="text" name="sku" value="{sku}" size="48" placeholder="{$LANG_SHOP['empty_to_gen']}" />
         </div>
     </div>
 
+{!if pv_id}
     <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['description']}:</label>
         <div class="uk-form-controls">
@@ -33,7 +35,7 @@
             <span id="price" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="price" value="{price}" size="32" maxlength="32" />
+            <input type="text" name="price" value="{price}" size="12" maxlength="32" />
         </div>
     </div>
 
@@ -42,7 +44,7 @@
             <span id="weight" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="weight" value="{weight}" size="32" maxlength="32" />
+            <input type="text" name="weight" value="{weight}" size="12" maxlength="32" />
         </div>
     </div>
 
@@ -51,7 +53,7 @@
             <span id="shipping" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="shipping_units" value="{shipping_units}" size="32" maxlength="32" />
+            <input type="text" name="shipping_units" value="{shipping_units}" size="12" maxlength="32" />
         </div>
     </div>
 
@@ -60,7 +62,16 @@
             <span id="onhand" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="onhand" value="{onhand}" size="32" maxlength="32" />
+            <input type="text" name="onhand" value="{onhand}" size="12" maxlength="32" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['enabled']}:
+            <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input type="checkbox" name="enabled" value="1" {ena_chk} />
         </div>
     </div>
 

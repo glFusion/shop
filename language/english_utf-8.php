@@ -595,6 +595,7 @@ $LANG_SHOP = array (
 'dc_expired' => 'The discount code has expired.',
 'dc_removed' => 'The discount has been removed.',
 'dc_applied' => 'The discount code has been applied successfully.',
+'empty_to_gen' => 'Leave empty to create automatically',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
