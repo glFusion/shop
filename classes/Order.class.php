@@ -782,7 +782,6 @@ class Order
                 'discount_tooltip' => $price_tooltip,
                 'sale_tooltip'  => $sale_tooltip,
                 'token'         => $item->getToken(),
-                //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink($item->getID()),
@@ -1666,7 +1665,7 @@ class Order
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
             'product_id'    => $id_parts[0],
-            'options'       => $id_parts[1],
+            'variant'       => $id_parts[1],
             'extras'        => $extras,
         );
         $Item2 = new OrderItem($args);

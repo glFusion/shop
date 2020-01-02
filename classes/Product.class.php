@@ -117,9 +117,21 @@ class Product
      * @var integer */
     private $max_ord_qty = 0;
 
+    /** Reorder quantity. Overridden by variants if any exist.
+     * @var integer */
+    private $reorder;
+
     /** Related category objects.
      * @var array */
     private $Categories = array();
+
+    /** Product variants for this product. Null to load only once.
+     * @var array */
+    private $Variants = NULL;
+
+    /** A single product variant attached to this product.
+     * @var object */
+    private $Variant;
 
 
     /**
@@ -175,6 +187,7 @@ class Product
             $this->qty_discounts = array();
             $this->custom = '';
             $this->Categories = array();
+            $this->reorder = 0;
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -512,6 +525,7 @@ class Product
         $this->brand = $row['brand'];
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
+        $this->reorder = (int)$row['reorder'];
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -587,12 +601,52 @@ class Product
 
 
     /**
+     * Get all the variants related to this product.
+     * Sets the local Variants property for later use.
+     *
+     * @return  array   Array of ProductVariant objects
+     */
+    private function getVariants()
+    {
+        if ($this->Variants === NULL) {
+            $this->Variants = ProductVariant::getByProduct($this->id);
+        }
+        return $this->Variants;
+    }
+
+
+    /**
      * Load the product attributs into the options array.
      *
      * @return  object  $this
      */
     protected function loadOptions()
     {
+        global $_TABLES;
+
+    /*    $sql = "SELECT DISTINCT pov.pov_id, pov.pov_value, pog.pog_id, pog.pog_name, pv.sku,
+                pov.pov_price
+            FROM {$_TABLES['shop.prod_opt_vals']} pov
+            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
+                ON pog.pog_id =.pov.pog_id
+            LEFT JOIN {$_TABLES['shop.variantXopt']} vxo
+                ON vxo.pov_id = pov.pov_id
+            LEFT JOIN {$_TABLES['shop.product_variants']} pv
+                ON pv.pv_id = vxo.pv_id
+            WHERE pv.item_id = {$this->id}
+            ORDER BY pog.pog_orderby, pov.orderby ASC";
+        $res = DB_query($sql);
+        $ctlbk = 0;
+        $Grps = array();
+        while ($A = DB_fetchArray($res, false)) {
+            if ($A['pog_id'] != $ctlbk) {
+                $Grps[$A['pog_id']] = new ProductOptionGroup($A['pog_id']);
+            }
+            //$Grps[$A['pog_id']]->addOption(new \StdClass
+            echo "{$A['pog_name']} - {$A['pov_value']}\n";
+        }
+        var_dump($Grps);
+        return;*/
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {
@@ -874,9 +928,10 @@ class Product
      * @uses    SHOP_getDocUrl()
      * @uses    SHOP_errorMessage()
      * @param   integer $id     Optional ID, current record used if zero
+     * @param   string  $tab    Name of tab to set as active
      * @return  string          HTML for edit form
      */
-    public function showForm($id = 0)
+    public function showForm($id = 0, $tab='')
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
@@ -990,13 +1045,16 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
-            'option_list'   => ProductOptionValue::adminList($this->id),
+            //'option_list'   => ProductOptionValue::adminList($this->id),
+            'variant_list'  => ProductVariant::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
             'max_ord_qty'   => $this->max_ord_qty,
             'available_cats' => $allcats_sel,
             'selected_cats' => $selcats_sel,
+            'tabactive_' . $tab => 'class="uk-active"',
+            'reorder'       => $this->reorder,
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -1289,11 +1347,15 @@ class Product
         }
 
         // Get the product options, if any, and set them into the form
-        $json_opts = array();
+        $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
         foreach ($this->OptionGroups as $OG) {
+            if (count($OG->Options) < 1) {
+                // Could happen if options are removed leaving an empty option group.
+                continue;
+            }
             // Most options use the option group name as the prompt
             $display_name = $OG->getName();
             $T->set_block('product', 'Option' . $OG->getType(), 'optSel');
@@ -1311,37 +1373,22 @@ class Product
                     $sel_opt = reset($OG->Options)->getID();
                 }
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
                         'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
+                $pv_opts[] = $sel_opt;
                 break;
             case 'checkbox':
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'checked'   => $checked,
                     ) );
                     $T->parse('optSel', 'Option' . $OG->og_type, true);
@@ -1361,7 +1408,7 @@ class Product
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
-
+        $this->setVariant(ProductVariant::getByAttributes($this->id, $pv_opts));
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1370,6 +1417,7 @@ class Product
         } else {
             $shipping_txt = '';
         }
+
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
@@ -1386,11 +1434,10 @@ class Product
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
-            'onhand'            => $this->track_onhand ? $this->onhand : '',
+            'avail_msg'         => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
-            'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
             'rating_bar'        => $this->ratingBar(),
         ) );
 
@@ -1449,7 +1496,6 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
-            'opt_prices'        => json_encode($json_opts),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
@@ -1572,6 +1618,16 @@ class Product
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
+            $btn_class = 'uk-button uk-button-small uk-button-success';
+            if ($this->track_onhand) {
+                $this->getVariants();
+                if (count($this->Variants) > 0) {
+                    if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
+                        $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                    }
+                }
+            }
+
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
@@ -1587,6 +1643,7 @@ class Product
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
+                'btn_cls'   => $btn_class,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -1736,6 +1793,17 @@ class Product
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the base price for this item.
+     *
+     * @return  float       Base item price
+     */
+    public function getBasePrice()
+    {
+        return (float)$this->price;
     }
 
 
@@ -1959,7 +2027,7 @@ class Product
         $status = 0;
 
         // update the qty on hand, if tracking and not already zero
-        if ($this->track_onhand && $this->onhand > 0) {
+        if ($this->track_onhand && $this->getOnhand() > 0) {
             $sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->quantity})
                     WHERE id = '{$this->id}'";
@@ -2012,6 +2080,30 @@ class Product
             }
         }
         return false;
+    }
+
+
+    /**
+     * Get all the options for this product.
+     *
+     * @todo determine if this still works
+     * @deprecate
+     * @return  array       Array of options
+     */
+    public function getOptions()
+    {
+        return $this->Options;
+    }
+
+
+    /**
+     * Get all the option groups related to this product.
+     *
+     * @return  array       Array of OptionGroup objects
+     */
+    public function getOptionGroups()
+    {
+        return $this->OptionGroups;
     }
 
 
@@ -2166,7 +2258,7 @@ class Product
     public function isInStock()
     {
         // Not tracking stock, or have stock on hand, return true
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
+        if ($this->track_onhand == 0 || $this->getOnhand() > 0) {
             return true;
         } else {
             return false;
@@ -2414,6 +2506,17 @@ class Product
 
 
     /**
+     * Get the reorder quantity set for this product.
+     *
+     * @return  float   Reorder quantity
+     */
+    public function getReorder()
+    {
+        return (float)$this->reorder;
+    }
+
+
+    /**
      * Get the URL to the item detail page.
      *
      * @param   integer $oi_id  Order Item ID
@@ -2505,14 +2608,19 @@ class Product
      */
     private function _OutOfStock()
     {
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
-            // Return zero, act normally.
-            return 0;
-        } else {
+        $retval = 0;
+        if ($this->track_onhand != 0) {
             // Return the oversell setting for the caller to act accordingly
             // when out of stock
-            return $this->oversell;
+            $retval = $this->oversell;
+            foreach ($this->getVariants() as $Var) {
+                if ($Var->getOnhand() > 0) {
+                    $retval = 0;
+                    break;
+                }
+            }
         }
+        return $retval;
     }
 
 
@@ -2806,11 +2914,12 @@ class Product
         $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
-                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell,
-                c.cat_id, c.cat_name
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON p.cat_id = c.cat_id";
+                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell
+            FROM {$_TABLES['shop.products']} p";
+        if ($cat_id > 0) {
+            $sql .= " LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id";
+        }
 
         $header_arr = array(
             array(
@@ -2852,11 +2961,6 @@ class Product
                 'field' => 'short_description',
                 'sort' => true,
             ),
-            /*array(
-                'text'  => $LANG_SHOP['category'],
-                'field' => 'cat_name',
-                'sort' => true,
-            ),*/
             array(
                 'text'  => $LANG_SHOP['price'],
                 'field' => 'price',
@@ -2900,7 +3004,7 @@ class Product
         );
 
         if ($cat_id > 0) {
-            $def_filter = "WHERE c.cat_id='$cat_id'";
+            $def_filter = "WHERE pxc.cat_id='$cat_id'";
         } else {
             $def_filter = 'WHERE 1=1';
         }
@@ -2911,7 +3015,6 @@ class Product
                 'p.name',
                 'p.short_description',
                 'p.description',
-                'c.cat_name',
             ),
             'default_filter' => $def_filter,
         );
@@ -2924,7 +3027,7 @@ class Product
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
-                '/index.php?view=prodcts&amp;cat_id=\'+' .
+                '/index.php?products&amp;cat_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
@@ -3164,6 +3267,23 @@ class Product
 
 
     /**
+     * Set the variant for this product.
+     *
+     * @param   integer|object  $variant    Variant ID or object
+     * @return  object  $this
+     */
+    public function setVariant($variant)
+    {
+        if (is_integer($variant)) {
+            $this->Variant = ProductVariant::getInstance($variant);
+        } elseif (is_object($variant)) {
+            $this->Variant = $variant;
+        }
+        return $this;
+    }
+
+
+    /**
      * Set the query string to be highlighted in the Detail view.
      *
      * @param   string  $query  Query string
@@ -3296,6 +3416,83 @@ class Product
     {
         return $this->getFirstCategory()->Breadcrumbs();
     }
+
+
+    /**
+     * Get the track_onhand property value.
+     *
+     * @return  boolean     TrackOnhand setting
+     */
+    public function getTrackOnhand()
+    {
+        return $this->track_onhand;
+    }
+
+
+    /**
+     * Get the value of the oversell property.
+     *
+     * @return  integer     Oversell setting
+     */
+    public function getOversell()
+    {
+        return $this->oversell;
+    }
+
+
+    /**
+     * Get the quantity on hand.
+     * If there are variants, get the variant onhand value, otherwise use the
+     * product's value.
+     *
+     * @return  float   Quantity on hand
+     */
+    public function getOnhand()
+    {
+        if ($this->Variant !== NULL) {
+            return $this->Variant->getOnhand();
+        } else {
+            return $this->onhand;
+        }
+    }
+
+        /*
+         * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
+    ->         FROM `ps_attribute` a
+    ->         LEFT JOIN `ps_attribute_lang` al
+    ->             ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = 1)
+    ->         LEFT JOIN `ps_attribute_group_lang` agl
+    ->             ON (a.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = 1)
+    ->         LEFT JOIN `ps_product_attribute_combination` pac
+    ->             ON (a.`id_attribute` = pac.`id_attribute`)
+    ->         LEFT JOIN `ps_product_attribute` pa
+    ->             ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
+    ->          INNER JOIN ps_product_attribute_shop product_attribute_shop
+    ->         ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
+    ->          INNER JOIN ps_attribute_shop attribute_shop
+    ->         ON (attribute_shop.id_attribute = pac.id_attribute AND attribute_shop.id_shop = 1)
+    ->         WHERE pa.`id_product` = 9;
+         */
+/*SELECT ag.`id_attribute_group`, ag.`is_color_group`, agl.`name` AS group_name, agl.`public_name` AS public_group_name,
+                                        a.`id_attribute`, al.`name` AS attribute_name, a.`color` AS attribute_color, product_attribute_shop.`id_product_attribute`,
+                                        IFNULL(stock.quantity, 0) as quantity, product_attribute_shop.`price`, product_attribute_shop.`ecotax`, product_attribute_shop.`weight`,
+                                        product_attribute_shop.`default_on`, pa.`reference`, product_attribute_shop.`unit_price_impact`,
+                                        product_attribute_shop.`minimal_quantity`, product_attribute_shop.`available_date`, ag.`group_type`
+                                FROM `ps_product_attribute` pa
+                                 INNER JOIN ps_product_attribute_shop product_attribute_shop
+        ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
+                                 LEFT JOIN ps_stock_available stock
+                        ON (stock.id_product = `pa`.id_product AND stock.id_product_attribute = IFNULL(`pa`.id_product_attribute, 0) AND stock.id_shop = 1  AND stock.id_shop_group = 0  )
+                                LEFT JOIN `ps_product_attribute_combination` pac ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
+                                LEFT JOIN `ps_attribute` a ON (a.`id_attribute` = pac.`id_attribute`)
+                                LEFT JOIN `ps_attribute_group` ag ON (ag.`id_attribute_group` = a.`id_attribute_group`)
+                                LEFT JOIN `ps_attribute_lang` al ON (a.`id_attribute` = al.`id_attribute`)
+                                LEFT JOIN `ps_attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group`)
+                                 INNER JOIN ps_attribute_shop attribute_shop*/
+
+/*
+select distinct pov.pov_id, pog.pog_id, pog.pog_name, pov.pov_value, pv.sku from gl_shop_product_option_value pov left join gl_shop_product_option_groups pog on pog.pog_id =pov.pog_id left join gl_shop_variantXopt vxo on vxo.pov_id = pov.pov_id left join gl_shop_product_variants pv on pv.pv_id = vxo.pv_id where pv.item_id = 5 order by pog.pog_orderby, pov.pov_orderby asc;
+*/
 
 }
 

@@ -39,18 +39,18 @@
         <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
         <div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-          <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm();">
+          <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm(this.form);">
 <!-- BEGIN Optionselect -->
             <option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
           </select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm();"/>&nbsp;{opt_str}<br />
+        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
-        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{opt_str}<br />
+        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm(this.form);">&nbsp;{opt_str}<br />
 <!-- END Optionradio -->
 !!elseif {og_type == "text" !!}
         <input type="text" name="extras[custom][{og_id}]" value="{attr_str}" size="40" />
@@ -94,9 +94,9 @@
         {buy_now_button}<br />
       <!-- END BtnBlock -->
         </div>
-{!if onhand}
-      <div class="shopOnhand">
-        {onhand} {$LANG_SHOP['available']}
+{!if avail_msg}
+      <div id="avail_msg" class="shopOnhand">
+        {avail_msg}
       </div>
 {!endif}
 {!if stock_msg}

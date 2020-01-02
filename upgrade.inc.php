@@ -3,9 +3,9 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -176,12 +176,16 @@ function SHOP_do_upgrade($dvlp = false)
 
         if (_SHOPtableHasColumn('shop.products', 'cat_id')) {
             $SHOP_UPGRADE[$current_ver][] = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
-                (product_id, cat_id) VALUES (
-                    SELECT id, cat_id FROM {$_TABLES['shop.products']}";
+                (product_id, cat_id)
+                SELECT id, cat_id FROM {$_TABLES['shop.products']}";
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.products']}
                 DROP cat_id";
         }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (_SHOPtableHasIndex('shop.prod_opt_vals', 'pog_value') != 2) {
+            // Upgrades to use the new product variants.
+            Shop\MigratePP::createVariants();
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -386,6 +390,23 @@ function _SHOPcolumnType($table, $col_name)
         $retval = $A['DATA_TYPE'];
     }
     return $retval;
+}
+
+
+/**
+ * Check if a table has a specific index defined.
+ *
+ * @param   string  $idx_name   Index name
+ * @return  integer     Number of rows (fields) in the index
+ */
+function _SHOPtableHasIndex($table, $idx_name)
+{
+    global $_TABLES;
+
+    $sql = "SHOW INDEX FROM {$_TABLES[$table]}
+        WHERE key_name = '" . DB_escapeString($idx_name) . "'";
+    $res = DB_query($sql);
+    return DB_numRows($res);
 }
 
 ?>

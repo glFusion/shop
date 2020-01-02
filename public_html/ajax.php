@@ -117,6 +117,13 @@ case 'redeem_gc':
     }
     break;
 
+case 'validateOpts':
+    $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
+    $output = $PV->Validate(array(
+        'quantity' => $_GET['quantity'],
+    ) );
+    break;
+
 default:
     // Missing action, nothing to do
     break;

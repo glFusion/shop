@@ -46,7 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'carrier_save',
+    'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
@@ -56,11 +56,12 @@ $expected = array(
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
+    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
-    'codes', 'editcode',
+    'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate',
 );
@@ -179,6 +180,18 @@ case 'pog_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
     break;
 
+case 'pv_save':
+    $from = SESS_getVar('shop.pv_view');
+    $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
+    Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
+    if ($from == 'pv_bulkedit') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $item_id);
+    }
+    break;
+
 case 'pov_save':
     $Opt = new \Shop\ProductOptionValue($_POST['pov_id']);
     if (!$Opt->Save($_POST)) {
@@ -190,6 +203,25 @@ case 'pov_save':
     } else {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&item_id=' . $_POST['item_id'] . '&pog_id=' . $Opt->getGroupID());
     }
+    break;
+
+case 'pv_del_bulk':
+    $ids = SHOP_getVar($_POST, 'pv_del_bulk', 'array');
+    foreach ($ids as $id) {
+        Shop\ProductVariant::Delete($id);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
+    break;
+
+case 'pv_del':
+    $from = SESS_getVar('shop.pv_view');
+    Shop\ProductVariant::Delete($_REQUEST['pv_id']);
+    if ($from === 'pv_bulk') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['item_id']);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
+    }
+    exit;
     break;
 
 case 'pog_del':
@@ -591,13 +623,15 @@ case 'ipnlog':
     break;
 
 case 'editproduct':
-    $id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
+    SESS_setVar('shop.pv_view', 'editproduct');
+    $id = SHOP_getVar($_REQUEST, 'id', 'integer');
+    $tab = SHOP_getVar($_GET, 'tab');
     $P = new \Shop\Product($id);
     if ($id == 0 && isset($_POST['short_description'])) {
         // Pick a field.  If it exists, then this is probably a rejected save
         $P->SetVars($_POST);
     }
-    $content .= $P->showForm();
+    $content .= $P->showForm(0, $tab);
     break;
 
 case 'editcat':
@@ -662,14 +696,27 @@ case 'carriers':
     $content .= Shop\Shipper::carrierLIst();
     break;
 
+case 'pv_bulk':
+    SESS_setVar('shop.pv_view', $view);
+    $prod_id = SHOP_getVar($_GET, 'item_id', 'integer');
+    $content = Shop\ProductVariant::adminList($prod_id, true);
+    break;
+
+case 'pv_edit':
+    $pv_id = SHOP_getVar($_GET, 'pv_id', 'integer');
+    $content .= Shop\Menu::adminCatalog($view);
+    $Var = new Shop\ProductVariant($pv_id);
+    if ($Var->getID() == 0) {
+        // For a new variant, force the item ID to be set
+        $Var->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
+    }
+    $content .= $Var->Edit();
+    break;
+
 case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
-    if ($opt_id == 0) {
-        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
-        $Opt->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
-    }
     $content .= $Opt->Edit();
     break;
 

@@ -3,7 +3,7 @@
  * Database creation and update statements for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.1.0
  * @since       v0.7.0
@@ -82,6 +82,7 @@ $_SQL = array(
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,
+  `variant_id` int(11) unsigned NOT NULL DEFAULT '0',
   `description` varchar(255) DEFAULT NULL,
   `quantity` int(11) NOT NULL DEFAULT '1',
   `txn_id` varchar(128) DEFAULT '',
@@ -143,7 +144,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `item_id` (`item_id`,`pog_id`,`pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`, `pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -610,7 +611,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `pov_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",
-    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
     "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
@@ -620,7 +621,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
 );
 
 $SHOP_UPGRADE['1.1.0'] = array(
-    "CREATE TABLE `{$_TABLES['shop.tax_rates']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
       `code` varchar(25) NOT NULL,
       `country` varchar(3) DEFAULT NULL,
       `state` varchar(10) DEFAULT NULL,
@@ -638,7 +639,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `zip_from` (`zip_from`),
       KEY `zip_to` (`zip_to`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.discountcodes']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.discountcodes']}` (
       `code_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `code` varchar(80) NOT NULL DEFAULT '',
       `percent` decimal(4,2) unsigned NOT NULL DEFAULT '0.00',
@@ -649,15 +650,35 @@ $SHOP_UPGRADE['1.1.0'] = array(
       UNIQUE KEY `code` (`code`),
       KEY `bydate` (`start`,`end`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['prodXcat']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prodXcat']}` (
       `product_id` int(11) unsigned NOT NULL,
       `cat_id` int(11) unsigned NOT NULL,
       PRIMARY KEY (`product_id`,`cat_id`),
       KEY `cat_id` (`cat_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.product_variants']}` (
+      `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned NOT NULL,
+      `sku` varchar(64) DEFAULT NULL,
+      `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
+      `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `onhand` int(10) NOT NULL DEFAULT '0',
+      `reorder` int(10) NOT NULL DEFAULT '0',
+      `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`pv_id`),
+      KEY `prod_id` (`item_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.variantXopt']}` (
+      `pv_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pv_id`,`pov_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `variant_id` int(11) unsigned NOT NULL DEFAULT '0' AFTER product_id",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000' AFTER qty_discount",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER net_nontax",
@@ -676,5 +697,7 @@ $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
+$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
+$_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 
 ?>

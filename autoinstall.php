@@ -158,6 +158,7 @@ $tables = array(
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
     'shipping', 'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
     'shipment_packages', 'carrier_config', 'cache', 'tax_rates', 'prodXcat',
+    'product_variants', 'variantXopt',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
