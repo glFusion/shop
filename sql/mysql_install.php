@@ -621,7 +621,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
 );
 
 $SHOP_UPGRADE['1.1.0'] = array(
-    "CREATE TABLE `{$_TABLES['shop.tax_rates']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
       `code` varchar(25) NOT NULL,
       `country` varchar(3) DEFAULT NULL,
       `state` varchar(10) DEFAULT NULL,
@@ -639,7 +639,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `zip_from` (`zip_from`),
       KEY `zip_to` (`zip_to`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.discountcodes']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.discountcodes']}` (
       `code_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `code` varchar(80) NOT NULL DEFAULT '',
       `percent` decimal(4,2) unsigned NOT NULL DEFAULT '0.00',
@@ -650,13 +650,13 @@ $SHOP_UPGRADE['1.1.0'] = array(
       UNIQUE KEY `code` (`code`),
       KEY `bydate` (`start`,`end`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['prodXcat']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prodXcat']}` (
       `product_id` int(11) unsigned NOT NULL,
       `cat_id` int(11) unsigned NOT NULL,
       PRIMARY KEY (`product_id`,`cat_id`),
       KEY `cat_id` (`cat_id`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.product_variants']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.product_variants']}` (
       `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `item_id` int(11) unsigned NOT NULL,
       `sku` varchar(64) DEFAULT NULL,
@@ -669,14 +669,14 @@ $SHOP_UPGRADE['1.1.0'] = array(
       PRIMARY KEY (`pv_id`),
       KEY `prod_id` (`item_id`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.variantXopt']}` (
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.variantXopt']}` (
       `pv_id` int(11) unsigned NOT NULL DEFAULT '0',
       `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`pv_id`,`pov_id`)
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAUTL 0 after qty_discount",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER net_nontax",
