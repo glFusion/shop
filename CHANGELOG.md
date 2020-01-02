@@ -7,6 +7,7 @@ Release TBD
   * Add phone number field to addresses.
   * Add discount codes.
   * Allow products to be related to multiple categories.
+  * Create product variants for specific option combinations.
 
 ## v1.0.1
 Release 2019-12-24
