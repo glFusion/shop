@@ -3,7 +3,7 @@
  * Class to manage product variants.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.1.0
  * @since       v1.1.0
@@ -920,6 +920,12 @@ class ProductVariant
                 'align' => 'center',
             ),
             array(
+                'text'  => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+             array(
                 'text'  => 'SKU',
                 'field' => 'sku',
                 'sort'  => true,
@@ -1003,7 +1009,6 @@ class ProductVariant
             'default_filter' => " WHERE item_id = '$prod_id'",
         );
 
-        $query_arr['sql'] .= " WHERE item_id = '$prod_id'";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
@@ -1044,6 +1049,20 @@ class ProductVariant
                 ) ),
                 SHOP_ADMIN_URL . "/index.php?pv_edit=x&amp;pv_id={$A['pv_id']}"
             );
+            break;
+
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = 'checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                    id=\"togenabled{$A['pv_id']}\"
+                    onclick='SHOP_toggle(this,\"{$A['pv_id']}\",\"enabled\",".
+                    "\"variant\");' />" . LB;
             break;
 
         case 'dscp':
@@ -1152,6 +1171,38 @@ class ProductVariant
             $result = $append;
         }
         return $result;
+    }
+
+
+    /**
+     * Toggles the Enabled field.
+     *
+     * @param   integer $oldvalue   Old (current) value
+     * @param   integer $id         ID number of element to modify
+     * @return  integer     New value, or old value upon failure
+     */
+    public static function toggleEnabled($oldvalue, $id)
+    {
+        global $_TABLES;
+
+        $id = (int)$id;
+
+        // Determing the new value (opposite the old)
+        $oldvalue = $oldvalue == 1 ? 1 : 0;
+        $newvalue = $oldvalue == 1 ? 0 : 1;
+
+        $sql = "UPDATE {$_TABLES['shop.product_variants']}
+                SET enabled = $newvalue
+                WHERE pv_id = $id";
+        DB_query($sql, 1);
+        if (DB_error()) {
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+            return $oldvalue;
+        } else {
+            Cache::clear('products');
+            Cache::clear('options');
+            return $newvalue;
+        }
     }
 
 }

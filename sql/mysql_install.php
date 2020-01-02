@@ -3,7 +3,7 @@
  * Database creation and update statements for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.1.0
  * @since       v0.7.0
@@ -665,6 +665,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
       `onhand` int(10) NOT NULL DEFAULT '0',
       `reorder` int(10) NOT NULL DEFAULT '0',
+      `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       PRIMARY KEY (`pv_id`),
       KEY `prod_id` (`item_id`)
     ) ENGINE=MyISAM",

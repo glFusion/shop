@@ -3,9 +3,9 @@
  * Class to manage product option groups.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2010-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -650,7 +650,7 @@ class ProductOptionGroup
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
                 LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = vxo.pv_id
-                WHERE pv.item_id = $prod_id
+                WHERE pv.item_id = $prod_id AND pv.enabled = 1
                 ORDER BY pog.pog_orderby, pov.orderby asc";
             //echo $sql;die;
             $res = DB_query($sql);

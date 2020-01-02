@@ -3,9 +3,9 @@
  * Common admistrative AJAX functions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -346,6 +346,16 @@ case 'toggle':
         switch ($_POST['type']) {
         case 'enabled':
             $newval = \Shop\ProductOptionValue::toggleEnabled($_POST['oldval'], $_POST['id']);
+            break;
+         default:
+            exit;
+        }
+       break;
+
+    case 'variant':
+        switch ($_POST['type']) {
+        case 'enabled':
+            $newval = \Shop\ProductVariant::toggleEnabled($_POST['oldval'], $_POST['id']);
             break;
          default:
             exit;
