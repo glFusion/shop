@@ -906,7 +906,6 @@ class ProductVariant
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
 
         $prod_id = (int)$prod_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.product_variants']}";
 
         $header_arr = array(
             array(
@@ -979,12 +978,14 @@ class ProductVariant
                 'chkname' => 'pv_del_bulk',
             );
             $text_arr = array(
-                'has_extras' => true,
+                'has_limit' => true,
                 'form_url' => SHOP_ADMIN_URL . '/index.php?options=x&item_id=' . $prod_id,
             );
         } else {
             $options = array();
-            $text_arr = array();
+            $text_arr = array(
+                'has_limit' => true,
+            );
         }
         $display .= COM_createLink($LANG_SHOP['new_opt'],
             SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
@@ -1004,11 +1005,10 @@ class ProductVariant
         }
         $query_arr = array(
             'table' => 'shop.product_variants',
-            'sql' => $sql,
             'query_fields' => array('sku'),
+            'sql' => "SELECT * FROM {$_TABLES['shop.product_variants']}",
             'default_filter' => " WHERE item_id = '$prod_id'",
         );
-
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
