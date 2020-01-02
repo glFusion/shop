@@ -717,7 +717,6 @@ class ProductVariant
                     }
                 }
             }
-            echo "Price fo roption is $price\n";
             if (empty($A['sku'])) {
                 $P = Product::getById($item_id);
                 if (!empty($sku_parts) && !empty($P->getName())) {
