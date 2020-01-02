@@ -186,14 +186,6 @@ function SHOP_do_upgrade($dvlp = false)
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
         }
-
-        // Reorder the product options since there may now be duplicate orderby values
-        $sql = "SELECT pog_id FROM {$_TABLES['shop.prod_opt_grps']}";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            Shop\ProductOptionValue::reOrder($A['pog_id']);
-        }
-
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
