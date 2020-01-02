@@ -14,7 +14,7 @@
   <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
-    <li id="tab-options" {tabactive_options}><a href="#">{$LANG_SHOP['options']}</a></li>
+    <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
     <li id="tab-discounts" {tabactive_discounts}><a href="#">{$LANG_SHOP['qty_discounts']}</a></li>
   </ul>
 
@@ -381,7 +381,7 @@
     </div>
   </li>
 
-  <li>{option_list}</li>
+  <li>{variant_list}</li>
 
   <li>
     <div class="uk-form-row" id="qty_discounts">

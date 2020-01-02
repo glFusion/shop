@@ -1,4 +1,5 @@
 {# begin {templatelocation} #}
+<h2>{title}</h2>
 <form class="uk-form uk-form-horizontal" action="{action_url}/index.php" method="post">
     <input type="hidden" name="pv_id" value="{pv_id}" />
     <input type="hidden" name="item_id" value="{item_id}" />
@@ -28,7 +29,7 @@
 {!endif}
 
     <div class="uk-form-row">
-        <label class="uk-form-label">{$LANG_SHOP['opt_price']}:
+        <label class="uk-form-label">{$LANG_SHOP['var_price']}:
             <span id="price" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
@@ -85,7 +86,7 @@
         <button class="uk-button uk-button-success" type="submit" name="pv_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
         <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
         <button class="uk-button uk-button-primary" type="reset"
-            onclick="document.location='{action_url}/index.php?editproduct&id={item_id}&tab=options';">{$LANG_ADMIN['cancel']}</button>
+            onclick="document.location='{action_url}/index.php?editproduct&id={item_id}&tab=variants';">{$LANG_ADMIN['cancel']}</button>
         <button style="float:right;" class="uk-button uk-button-danger" type="submit" name="pv_del" value="{$LANG_SHOP['deleteopt']}"
             onclick="return confirm('{$LANG_SHOP['q_del_pov']}');">{$LANG_SHOP['deleteopt']}</button>
   </div>

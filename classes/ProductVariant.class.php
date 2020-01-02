@@ -602,6 +602,7 @@ class ProductVariant
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
+            'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'item_id'       => $this->getItemId(),
             'item_name'     => Product::getByID($this->item_id)->name,
             'pv_id'         => $this->getId(),
@@ -965,7 +966,7 @@ class ProductVariant
         if ($view === 'pv_bulk') {
             $display .= COM_createLink(
                 Icon::getHTML('arrow-left') . '&nbsp;Back to Product',
-                SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $prod_id,
+                SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
                 array(
                     'style' => 'float:left;margin-right:10px;',
                     'class' => 'uk-button',
@@ -987,7 +988,7 @@ class ProductVariant
                 'has_limit' => true,
             );
         }
-        $display .= COM_createLink($LANG_SHOP['new_opt'],
+        $display .= COM_createLink($LANG_SHOP['new_variant'],
             SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
             array(
                 'style' => 'float:left;',

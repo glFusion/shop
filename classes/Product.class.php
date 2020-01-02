@@ -1046,7 +1046,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
             //'option_list'   => ProductOptionValue::adminList($this->id),
-            'option_list'   => ProductVariant::adminList($this->id),
+            'variant_list'  => ProductVariant::adminList($this->id),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,

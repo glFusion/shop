@@ -188,7 +188,7 @@ case 'pv_save':
     if ($from == 'pv_bulkedit') {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $item_id);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $item_id);
     }
     break;
 
@@ -219,7 +219,7 @@ case 'pv_del':
     if ($from === 'pv_bulk') {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['item_id']);
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=options&id=' . $_REQUEST['item_id']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
     }
     exit;
     break;
@@ -717,7 +717,6 @@ case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
-    //$Opt = new Shop\ProductVariantOption($opt_id);
     $content .= $Opt->Edit();
     break;
 
