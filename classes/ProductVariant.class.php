@@ -256,6 +256,11 @@ class ProductVariant
     }
 
 
+    /**
+     * Get the option IDs for all options in use by this variant.
+     *
+     * @return  array       Array of Option Value record IDs.
+     */
     private function _optsInUse()
     {
         $retval = array();
@@ -757,7 +762,7 @@ class ProductVariant
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL, $savenow=false)
+    public function Save($A= NULL)
     {
         global $_TABLES;
 
