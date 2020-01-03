@@ -50,7 +50,7 @@ $expected = array(
     'attrcopy', 'pov_move',
     'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
-    'delcode', 'savecode',
+    'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
@@ -63,7 +63,7 @@ $expected = array(
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
-    'importtaxform', 'taxrates', 'edittaxrate',
+    'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -468,6 +468,18 @@ case 'savesale':
         COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
     }
     exit;
+    break;
+
+case 'save_sup':
+    // Save a supplier/brand record
+    $Sup = new Shop\Supplier($_POST['sup_id']);
+    if ($Sup->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?suppliers');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $Sup->getID());
+    }
     break;
 
 case 'savecode':
@@ -895,6 +907,18 @@ case 'taxrates':
 
 case 'edittaxrate':
     $content .= Shop\Tax\table::Edit($_GET['code']);
+    break;
+
+case 'suppliers':
+    // Display an admin list of supplier/brand records
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Supplier::adminList();
+    break;
+
+case 'edit_sup':
+    // Edit a supplier or brand record
+    $Sup = new Shop\Supplier($_GET['id']);
+    $content .= $Sup->Edit();
     break;
 
 default:

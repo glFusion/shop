@@ -211,6 +211,11 @@ class Menu
                 'text' => $LANG_SHOP['codes'],
                 'active' => $view == 'codes' ? true : false,
             ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?suppliers',
+                'text' => $LANG_SHOP['suppliers'],
+                'active' => $view == 'suppliers' ? true : false,
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }

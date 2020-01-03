@@ -597,6 +597,9 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0",
+    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
@@ -674,6 +677,23 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`pv_id`,`pov_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.suppliers']}` (
+      `sup_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `name` varchar(127) DEFAULT NULL,
+      `company` varchar(127) NOT NULL DEFAULT '',
+      `address1` varchar(127) NOT NULL DEFAULT '',
+      `address2` varchar(127) NOT NULL DEFAULT '',
+      `city` varchar(127) NOT NULL DEFAULT '',
+      `state` varchar(127) NOT NULL DEFAULT '',
+      `country` varchar(127) NOT NULL DEFAULT '',
+      `zip` varchar(40) NOT NULL DEFAULT '',
+      `phone` varchar(40) NOT NULL DEFAULT '',
+      `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`sup_id`)
+      KEY `is_supplier` (`is_supplier`,`name`),
+      KEY `is_brand` (`is_brand`,`name`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
@@ -699,5 +719,6 @@ $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
+$_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
 
 ?>

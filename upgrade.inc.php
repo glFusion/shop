@@ -182,6 +182,47 @@ function SHOP_do_upgrade($dvlp = false)
                 DROP cat_id";
         }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        if (_SHOPtableHasColumn('shop.products', 'brand')) {
+            // Update brand_id and supplier_id fields, and drop brand field
+            // Must be done after other SQL updates to the products table.
+            $brands = array();
+            $sql = "SELECT id, brand FROM {$_TABLES['shop.products']} WHERE brand <> ''";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                if (!isset($brands[$A['brand']])) {
+                    $brands[$A['brand']] = array(
+                        'sup_id' => 0,
+                        'items' => array(),
+                    );
+                }
+                $brands[$A['brand']]['items'][] = (int)$A['id'];
+            }
+            foreach ($brands as $brand=>$items) {
+                $Sup = new Shop\Supplier;
+                if ($Sup->setCompany($brand)
+                    ->setIsBrand(1)
+                    ->setIsSupplier(0)
+                    ->Save()) {
+                    $brands[$brand]['sup_id'] = $Sup->getID();
+                }
+            }
+            // update schema
+            foreach ($brands as $brand=>$data) {
+                if ($data['sup_id'] == 0) {
+                    // Saving the supplier failed
+                    continue;
+                }
+                $sup_id = (int)$data['sup_id'];
+                $prod_ids = implode(',', $data['items']);
+                $sql = "UPDATE {$_TABLES['shop.products']}
+                    SET brand_id = $sup_id
+                    WHERE id in ($prod_ids)";
+                DB_query($sql);
+            }
+            DB_query("ALTER TABLE {$_TABLES['shop.products']} DROP `brand`");
+        }
+
         if (_SHOPtableHasIndex('shop.prod_opt_vals', 'pog_value') != 2) {
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
@@ -396,6 +437,7 @@ function _SHOPcolumnType($table, $col_name)
 /**
  * Check if a table has a specific index defined.
  *
+ * @param   string  $table      Key into `$_TABLES` array
  * @param   string  $idx_name   Index name
  * @return  integer     Number of rows (fields) in the index
  */

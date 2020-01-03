@@ -416,6 +416,10 @@ case 'toggle':
         }
         break;
 
+    case 'supplier':
+        $newval = Shop\Supplier::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
     default:
         exit;
     }

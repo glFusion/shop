@@ -121,6 +121,14 @@ class Product
      * @var integer */
     private $reorder;
 
+    /** Supplier ID.
+     * @var integer */
+    private $supplier_id = 0;
+
+    /** Brand ID.
+     * @var integer */
+    private $brand_id = 0;
+
     /** Related category objects.
      * @var array */
     private $Categories = array();
@@ -522,7 +530,6 @@ class Product
         $this->custom = $row['custom'];
         $this->avail_beg = $row['avail_beg'];
         $this->avail_end = $row['avail_end'];
-        $this->brand = $row['brand'];
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
         $this->reorder = (int)$row['reorder'];
@@ -552,6 +559,9 @@ class Product
         $this->comments_enabled = $row['comments_enabled'];
         $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
         $this->btn_type = $row['buttons'];
+        $this->setSupplierID($row['supplier_id'])
+            ->setBrandID($row['brand_id']);
+
         if ($fromDB) {
             $this->views = $row['views'];
         }
@@ -755,7 +765,6 @@ class Product
         }
         //$options = DB_escapeString(@serialize($this->options));
         $sql2 = "name='" . DB_escapeString($this->name) . "',
-                cat_id='" . (int)$this->cat_id . "',
                 short_description='" . DB_escapeString($this->short_description) . "',
                 description='" . DB_escapeString($this->description) . "',
                 keywords='" . DB_escapeString($this->keywords) . "',
@@ -782,7 +791,8 @@ class Product
                 custom='" . DB_escapeString($this->custom) . "',
                 avail_beg='" . DB_escapeString($this->avail_beg) . "',
                 avail_end='" . DB_escapeString($this->avail_end) . "',
-                brand ='" . DB_escapeString($this->brand) . "',
+                brand_id ='" . $this->getBrandID() . "',
+                supplier_id ='" . $this->getSupplierID() . "',
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
@@ -1055,6 +1065,8 @@ class Product
             'selected_cats' => $selcats_sel,
             'tabactive_' . $tab => 'class="uk-active"',
             'reorder'       => $this->reorder,
+            'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
+            'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
         ) );
 
@@ -3455,6 +3467,55 @@ class Product
             return $this->onhand;
         }
     }
+
+
+    /**
+     * Set the supplier ID for this product.
+     *
+     * @param   integer $id     Supplier record ID
+     * @return  object  $this
+     */
+    private function setBrandID($id)
+    {
+        $this->brand_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the supplier ID for this product.
+     *
+     * @return  integer     Supplier record ID
+     */
+    private function getBrandID()
+    {
+        return (int)$this->brand_id;
+    }
+
+
+    /**
+     * Set the supplier ID for this product.
+     *
+     * @param   integer $id     Supplier record ID
+     * @return  object  $this
+     */
+    private function setSupplierID($id)
+    {
+        $this->supplier_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the supplier ID for this product.
+     *
+     * @return  integer     Supplier record ID
+     */
+    private function getSupplierID()
+    {
+        return (int)$this->supplier_id;
+    }
+
 
         /*
          * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
