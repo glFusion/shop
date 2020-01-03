@@ -5,10 +5,10 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net>
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -54,6 +54,7 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
+    'prod_bulk_save',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -64,6 +65,7 @@ $expected = array(
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
+    'prod_bulk_frm',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -561,6 +563,15 @@ case 'deltaxrate':
     $view = 'taxrates';
     break;
 
+case 'prod_bulk_save':
+    if (Shop\Product::BulkUpdateDo($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['error']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
 default:
     $view = $action;
     break;
@@ -919,6 +930,12 @@ case 'edit_sup':
     // Edit a supplier or brand record
     $Sup = new Shop\Supplier($_GET['id']);
     $content .= $Sup->Edit();
+    break;
+
+case 'prod_bulk_frm':
+    // Bulk update product attributes
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
     break;
 
 default:

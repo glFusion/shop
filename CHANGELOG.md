@@ -9,6 +9,7 @@ Release TBD
   * Allow products to be related to multiple categories.
   * Create product variants for specific option combinations.
   * Implement table to store saved supplier and brand information.
+  * Implement bulk updates for some product fields.
 
 ## v1.0.1
 Release 2019-12-24

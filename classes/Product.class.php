@@ -2913,6 +2913,69 @@ class Product
 
 
     /**
+     * Render the form for updating product attributes in bulk.
+     *
+     * @param   array   $ids    Array of product IDs
+     * @return  string      HTML form for update.
+     */
+    public static function BulkUpdateForm($ids=array())
+    {
+        if (empty($ids)) {
+            COM_setMsg("No products selected");
+            COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+        }
+
+        $ids = implode(',', $ids);
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'prod_bulk_form.thtml');
+        $T->set_var(array(
+            'prod_ids'  => $ids,
+            'currency'  => Currency::getInstance(),
+            'brand_select' => Supplier::getBrandSelection(),
+            'supplier_select' => Supplier::getSupplierSelection(),
+        ) );
+        return $T->parse('output', 'form');
+    }
+
+ 
+    /**
+     * Perform the bulk update of multiple products at once.
+     *
+     * @param   array   $A      Values from $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public static function BulkUpdateDo($A)
+    {
+        global $_TABLES;
+
+        $sql_vals  = array();
+
+        if (isset($A['supplier_id']) && $A['supplier_id'] > -1) {
+            $sql_vals[] = "supplier_id = " . (int)$A['supplier_id'];
+        }
+        if (isset($A['brand_id']) && $A['brand_id'] > -1) {
+            $sql_vals[] = "brand_id = " . (int)$A['brand_id'];
+        }
+        if (isset($A['price']) && $A['price'] !== '') {
+            $sql_vals[] = "price = " . (float)$A['price'];
+        }
+        if (isset($A['taxable']) && $A['taxable'] > -1) {
+            $sql_vals[] = 'taxable = ' . ($A['taxable'] == 1 ? 1 : 0);
+        }
+        if (!empty($sql_vals)) {
+            $sql_vals = implode(', ', $sql_vals);
+            $ids = DB_escapeString($A['prod_ids']);
+            DB_query("UPDATE {$_TABLES['shop.products']} SET " . $sql_vals .
+                " WHERE id IN ($ids)");
+            if (DB_error()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    /**
      * Product Admin List View.
      *
      * @param   integer $cat_id     Optional category ID to limit listing
@@ -3036,6 +3099,21 @@ class Product
             'form_url' => SHOP_ADMIN_URL . '/index.php',
         );
         $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+
+        // Print selected packing lists
+        $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
+            'title="' . $LANG_SHOP['bulk_update'] . 'xxx">' .
+            'Bulk Update' .
+            '</button>';
+
+        $options = array(
+            'chkselect' => true,
+            'chkall' => true,
+            'chkfield' => 'id',
+            'chkname' => 'prod_bulk',
+            'chkactions' => $bulk_update,
+        );
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
@@ -3051,7 +3129,7 @@ class Product
             $_SHOP_CONF['pi_name'] . '_productlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', '', ''
+            $filter, '', $options, ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
