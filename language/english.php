@@ -146,6 +146,7 @@ $LANG_SHOP = array (
 'maintenance'       => 'Maintenance',
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Are you sure you want to delete this item?',
+'q_del_pov'         => 'Are you sure you want to delete this option or group? All related product variants and options will be deleted as well.',
 'clearform'         => 'Reset Form',
 'del_item_instr'    => 'Items that have no purchases can be deleted. If an item has been purchased it can only be disabled.',
 'del_cat_instr'     => 'Categories containing products cannot be deleted.',
@@ -172,15 +173,18 @@ $LANG_SHOP = array (
 'storefront'        => 'Go to Store',
 'options_msg'       => 'Adding attributes will prevent encrypted buttons from being created.',
 'new_opt'           => 'New Option Value',
+'new_variant'       => 'New Variant',
 'edit_opt'          => 'Edit Option',
 'new_og'            => 'New Option Group',
 'edit_og'           => 'Edit Option Group',
 'attributes'        => 'Attributes',
 'options'           => 'Options',
+'variants'          => 'Variants',
 'opt_grps'          => 'Option Groups',
 'opt_name'          => 'Option Name',
 'opt_value'         => 'Option Value',
 'opt_price'         => 'Option Price',
+'var_price'         => 'Variant Price Impact',
 'order'             => 'Order',
 'err_missing_name'  => 'Missing product name',
 'err_missing_desc'  => 'Missing product description',
@@ -219,6 +223,7 @@ $LANG_SHOP = array (
 'city'          => 'City',
 'state'         => 'State',
 'zip'           => 'Postal Code',
+'phone'         => 'Phone Number',
 'name_or_company' => 'Name or Company',
 'make_def_addr' => 'Make default address',
 'sel_shipto_addr' => 'Please select the shipping address from your address book, or enter a new one below.',
@@ -399,7 +404,10 @@ $LANG_SHOP = array (
 ),
 'sub_email' => 'Order Update',
 'sale_prices' => 'Sale Prices',
+'codes' => 'Discount Codes',
+'disc_code' => 'Discount Code',
 'new_sale' => 'New Sale',
+'new_discount' => 'New Code',
 'apply_disc_to' => 'Apply Discount To',
 'disc_type' => 'Discount Type',
 'percent' => 'Percent',
@@ -519,9 +527,13 @@ $LANG_SHOP = array (
 'checkbox' => 'Checkboxes',
 'radio' => 'Radio Buttons',
 'allday' => 'All Day',
-'new_image' => 'Upload New',
+'upload' => 'Upload',
 'google_taxonomy' => 'Google Taxonomy',
 'brand' => 'Brand',
+'supplier' => 'Supplier',
+'suppliers' => 'Suppliers',
+'edit_supplier' => 'Edit Supplier',
+'new_supplier' => 'New Supplier',
 'ship' => 'Ship',
 'shiporder' => 'Ship Order',
 'editshipment' => 'Edit Order Shipment',
@@ -570,6 +582,25 @@ $LANG_SHOP = array (
 'qty_adjusted' => 'Quantity was adjusted to stock limits.',
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
+'combined_rate' => 'Combined Rate',
+'state_rate' => 'State Tax',
+'county_rate' => 'County Tax',
+'city_rate' => 'City Tax',
+'special_rate' => 'Special/District Tax',
+'country_rate' => 'Country Tax',
+'import_tax' => 'Edit or Import Tax Tables',
+'dscp_import_tax' => 'Import sales tax tables in CSV format from a provider, e.g. Avalara',
+'zip_from' => 'Zip From',
+'zip_to' => 'Zip To',
+'region' => 'Region',
+'new_rate' => 'New Rate',
+'min_order' => 'Minimum Order',
+'min_order_not_met' => 'The minimum order amount of %s has not been met for the discount code.',
+'dc_expired' => 'The discount code has expired.',
+'dc_removed' => 'The discount has been removed.',
+'dc_applied' => 'The discount code has been applied successfully.',
+'empty_to_gen' => 'Leave empty to create automatically',
+'leave_as_is' => 'Leave As-Is',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -596,6 +627,7 @@ $LANG_SHOP_HELP = array(
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
+'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -645,6 +677,7 @@ $LANG_confignames['shop'] = array(
     'get_city'  => 'City',
     'get_state' => 'State',
     'get_postal' => 'Postal Code',
+    'get_phone' => 'Phone Number',
     'get_country' => 'Country',
     'ena_cart' => 'Enable shopping cart?',
     'weight_unit' => 'Unit of Weight Measurement',
@@ -690,6 +723,13 @@ $LANG_confignames['shop'] = array(
     'remit_to'      => 'Remit To (Attn)',
     'adm_def_view'  => 'Default Admin View',
     'def_prod_type' => 'Default Product Type',
+    'tax_provider'  => 'Sales Tax Calculation Provider',
+    'tax_test_mode' => 'Test Mode?',
+    'tax_avatax_account' => 'Avalar Avatax Account',
+    'tax_avatax_key' => 'Avalar Avatax Access key',
+    'tax_taxjar_token' => 'TaxJar API Token',
+    'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
+    'tax_nexuses'   => 'Tax Nexuses',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -697,6 +737,7 @@ $LANG_configsubgroups['shop'] = array(
     'sg_main'   => 'Main Settings',
     'sg_shop'   => 'Shop Information',
     'sg_gc'     => 'Gift Cards',
+    'sg_tax'    => 'Sales Tax',
 );
 
 /** Language strings for the field set names in the config section */
@@ -713,6 +754,9 @@ $LANG_fs['shop'] = array(
     'fs_gc'     => 'Gift Card Configuration',
     'fs_gc_format' => 'Gift Card Format',
     'fs_feeds'  => 'Feeds',
+    'fs_tax'    => 'Taxes',
+    'fs_tax_avatax' => 'Avatax Settings',
+    'fs_tax_taxjar' => 'Taxjar Settings',
 );
 
 /**
@@ -755,6 +799,12 @@ $LANG_configselects['shop'] = array(
         'Product List' => 'products',
         'Category List' => 'categories',
         'Order List' => 'orders',
+    ),
+    21 => array(
+        'Avalara Free Api' => 'avatax',
+        'Configured Rate' => 'internal',
+        'TaxJar SmartCalcs' => 'taxjar',
+        'Internal Tax Table' => 'table',
     ),
 );
 

@@ -574,6 +574,38 @@ $LANG_SHOP = array (
 'backordered' => 'Backordered',
 'qty_bo' => '%s items are backordered.',
 'oos_short' => 'Out of Stock',
+'q_del_pov' => 'Are you sure you want to delete this option or group? All related product variants and options will be deleted as well.',
+'new_variant' => 'New Variant',
+'variants' => 'Variants',
+'var_price' => 'Variant Price Impact',
+'phone' => 'Phone Number',
+'codes' => 'Discount Codes',
+'disc_code' => 'Discount Code',
+'new_discount' => 'New Code',
+'upload' => 'Upload',
+'supplier' => 'Supplier',
+'suppliers' => 'Suppliers',
+'edit_supplier' => 'Edit Supplier',
+'new_supplier' => 'New Supplier',
+'combined_rate' => 'Combined Rate',
+'state_rate' => 'State Tax',
+'county_rate' => 'County Tax',
+'city_rate' => 'City Tax',
+'special_rate' => 'Special/District Tax',
+'country_rate' => 'Country Tax',
+'import_tax' => 'Edit or Import Tax Tables',
+'dscp_import_tax' => 'Import sales tax tables in CSV format from a provider, e.g. Avalara',
+'zip_from' => 'Zip From',
+'zip_to' => 'Zip To',
+'region' => 'Region',
+'new_rate' => 'New Rate',
+'min_order' => 'Minimum Order',
+'min_order_not_met' => 'The minimum order amount of %s has not been met for the discount code.',
+'dc_expired' => 'The discount code has expired.',
+'dc_removed' => 'The discount has been removed.',
+'dc_applied' => 'The discount code has been applied successfully.',
+'empty_to_gen' => 'Leave empty to create automatically',
+'leave_as_is' => 'Leave As-Is',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -600,6 +632,7 @@ $LANG_SHOP_HELP = array(
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
+'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -695,6 +728,14 @@ $LANG_confignames['shop'] = array(
 'adm_def_view' => 'Default Admin View',
 'remit_to' => 'Remit To (Attn)',
 'def_prod_type' => 'Default Product Type',
+'get_phone' => 'Phone Number',
+'tax_provider' => 'Sales Tax Calculation Provider',
+'tax_test_mode' => 'Test Mode?',
+'tax_avatax_account' => 'Avalar Avatax Account',
+'tax_avatax_key' => 'Avalar Avatax Access key',
+'tax_taxjar_token' => 'TaxJar API Token',
+'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
+'tax_nexuses' => 'Tax Nexuses',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -718,6 +759,9 @@ $LANG_fs['shop'] = array(
     'fs_gc'     => 'Gift Card Configuration',
     'fs_gc_format' => 'Gift Card Format',
     'fs_feeds' => 'Feeds',
+'fs_tax' => 'Taxes',
+'fs_tax_avatax' => 'Avatax Settings',
+'fs_tax_taxjar' => 'Taxjar Settings',
 );
 
 /**
