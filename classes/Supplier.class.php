@@ -148,6 +148,18 @@ class Supplier extends Address
 
 
     /**
+     * Get the display name.
+     * If the company is provided, return it. Otherwise return the name.
+     *
+     * @return  string  Company or Individual name.
+     */
+    public function getDisplayName()
+    {
+        return empty($this->getCompany()) ? $this->getName() : $this->getCompany();
+    }
+
+
+    /**
      * Get a selection list for brand, supplier, or all records.
      *
      * @param   integer $sel    Selected record ID
@@ -167,7 +179,7 @@ class Supplier extends Address
         }
         $sel = (int)$sel;
         $where = empty($wheres) ? '' : ' WHERE ' . implode(' AND ', $wheres);
-        $sql = "SELECT sup_id,IF(name IS NULL or name = '', company, name) as name
+        $sql = "SELECT sup_id,IF(company IS NULL or company = '', name, company) as name
             FROM {$_TABLES['shop.suppliers']}
             $where ORDER BY name ASC";
         $res = DB_query($sql);

@@ -3517,6 +3517,16 @@ class Product
     }
 
 
+    /**
+     * Get the brand name for the product,
+     *
+     * @return  string  Brand name
+     */
+    public function getBrandName()
+    {
+        return Supplier::getInstance($this->getBrandID())->getDisplayName();
+    }
+
         /*
          * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
     ->         FROM `ps_attribute` a
