@@ -15,7 +15,9 @@
 <g:condition>new</g:condition>
 <g:availability>{availability}</g:availability>
 <g:price>{price}</g:price>
+{!if google_taxonomy}
 <g:google_product_category>{google_taxonomy}</g:google_product_category>
+{!endif}
 <g:product_type>{cat_name}</g:product_type>
 </item>
 <!-- END itemRow -->

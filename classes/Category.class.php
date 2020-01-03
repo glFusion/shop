@@ -148,7 +148,7 @@ class Category
         $this->enabled = $row['enabled'];
         $this->cat_name = $row['cat_name'];
         $this->grp_access = $row['grp_access'];
-        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['description'];
+        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['cat_name'];
         $this->lft = isset($row['lft']) ? $row['lft'] : 0;
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
@@ -543,7 +543,7 @@ class Category
     {
         global $_TABLES;
 
-        return DB_count($_TABLES['shop.products'], 'cat_id', (int)$cat_id);
+        return DB_count($_TABLES['shop.prodXcat'], 'cat_id', (int)$cat_id);
     }
 
 

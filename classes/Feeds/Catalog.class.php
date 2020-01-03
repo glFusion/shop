@@ -95,20 +95,21 @@ class Catalog
                 $img = 'notavailable.jpg';
             }
             $img_link = $P->getImage($img, 480, 480)['url'];
+            $Cat = array_pop($P->getCategories());  // get the first category (random)
             $T->set_var(array(
                 'product_id'    => $P->id,
                 'short_dscp'    => $title,
                 'long_dscp'     => $dscp,
-                'cat_name'      => self::_fixText($P->Cat->cat_name),
+                'cat_name'      => self::_fixText($Cat->getName()),
                 'product_url'   => $P->getLink(),
-                'product_img_url' => $img_link['url'],
+                'product_img_url' => $img_link,
                 'availability'  => $P->isInStock() ? 'in stock' : 'preorder',
                 'price'         => $Cur->Format($base_price, false),
                 'sale_price'    => $sale_price,
                 'sale_eff_dt'   => $sale_eff_dt,
                 //'brand'         => self::_fixText($P->getBrand()),
                 'brand'         => self::_fixText($P->brand, 'None'),
-                'google_taxonomy' => htmlspecialchars($P->Cat->getGoogleTaxonomy()),
+                'google_taxonomy' => htmlspecialchars($Cat->getGoogleTaxonomy()),
                 'lb'            => "\n",
                 'availability'  => $availability,
             ) );
