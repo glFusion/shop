@@ -150,6 +150,7 @@ class Supplier extends Address
     /**
      * Get the display name.
      * If the company is provided, return it. Otherwise return the name.
+     * The company name should always be available.
      *
      * @return  string  Company or Individual name.
      */
@@ -170,25 +171,22 @@ class Supplier extends Address
     {
         global $_TABLES;
 
-        $wheres = array();
         switch ($type) {
         case 'brand':
         case 'supplier':
-            $wheres[] = "is_{$type} = 1";
+            $where = "is_{$type} = 1";
+            break;
+        default:
+            $where = '';
             break;
         }
-        $sel = (int)$sel;
-        $where = empty($wheres) ? '' : ' WHERE ' . implode(' AND ', $wheres);
-        $sql = "SELECT sup_id,IF(company IS NULL or company = '', name, company) as name
-            FROM {$_TABLES['shop.suppliers']}
-            $where ORDER BY name ASC";
-        $res = DB_query($sql);
-        $retval = '';
-        while ($A = DB_fetchArray($res, false)) {
-            $selected = $sel == $A['sup_id'] ? 'selected="selected"' : '';
-            $retval .= '<option value="' . $A['sup_id'] . '" ' . $selected . '>' . $A['name'] . "</option>\n";
-        }
-        return $retval;
+        return COM_optionList(
+            $_TABLES['shop.suppliers'],
+            'sup_id,company',
+            (int)$sel,
+            1,
+            $where
+        );
     }
 
 
@@ -294,7 +292,7 @@ class Supplier extends Address
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T->set_file('form', 'supplier.thtml');
+        $T->set_file('form', 'supplier_form.thtml');
         $T->set_var(array(
             'entry_id'  => $this->getID(),
             'name'      => $this->getName(),
@@ -308,6 +306,7 @@ class Supplier extends Address
             'phone'     => $this->getPhone(),
             'brand_chk' => $this->getIsBrand() ? 'checked="checked"' : '',
             'supplier_chk' => $this->getIsSupplier() ? 'checked="checked"' : '',
+            'doc_url'   => SHOP_getDocURL('supplier_form'),
         ) );
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
