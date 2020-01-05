@@ -827,7 +827,6 @@ class ProductVariant
 
     /**
      * Delete a product variant.
-     * TODO: not implemented, need to determine effects on existing orders.
      *
      * @param   integer $id     Variant record ID
      */
@@ -866,7 +865,7 @@ class ProductVariant
 
 
     /**
-     * Just return the weithg property.
+     * Just return the weight property.
      *
      * @return  float       Weight impact
      */
@@ -888,7 +887,7 @@ class ProductVariant
 
 
     /**
-     * Get the product ID for this order item.
+     * Get the product ID for this variant.
      *
      * @return  string      Product ID
      */
@@ -1178,7 +1177,7 @@ class ProductVariant
      * Used during creation to create the variants from the select-multiple
      * options.
      * Thanks to Sergiy Sokolenko
-     * (https://stackoverflow.com/users/131337/sergiy-sokolenko)
+     * @link https://stackoverflow.com/a/15973172
      *
      * @param   array   $input  Array of arrays
      * @return  array   Array of cartesian products
