@@ -2930,6 +2930,8 @@ class Product
      */
     public static function BulkUpdateForm($ids=array())
     {
+        global $LANG_SHOP, $_SHOP_CONF;
+
         if (empty($ids)) {
             COM_setMsg("No products selected");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
@@ -2944,6 +2946,17 @@ class Product
             'brand_select' => Supplier::getBrandSelection(),
             'supplier_select' => Supplier::getSupplierSelection(),
         ) );
+        $T->set_block('form', 'ProdTypeRadio', 'ProdType');
+        foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
+            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+                continue;
+            }
+            $T->set_var(array(
+                'type_val'  => $value,
+                'type_txt'  => $text,
+            ));
+            $T->parse('ProdType', 'ProdTypeRadio', true);
+        }
         return $T->parse('output', 'form');
     }
 
@@ -2971,6 +2984,9 @@ class Product
         }
         if (isset($A['taxable']) && $A['taxable'] > -1) {
             $sql_vals[] = 'taxable = ' . ($A['taxable'] == 1 ? 1 : 0);
+        }
+        if (isset($A['prod_type']) && $A['prod_type'] > -1) {
+            $sql_vals[] = "prod_type = " . (int)$A['prod_type'];
         }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
