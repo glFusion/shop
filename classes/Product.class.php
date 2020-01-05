@@ -2141,6 +2141,16 @@ class Product
         }
     }
 
+    /**
+     * Get the shipping weight for one unit of this product.
+     *
+     * @return  float   Item weight
+     */
+    public function getWeight()
+    {
+        return $this->weight;
+    }
+
 
     /**
      * Duplicate this product.
