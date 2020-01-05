@@ -658,9 +658,9 @@ class Order
         case 'adminview';
             $this->isFinalView = true;
         case 'checkout':
-            /*$this->tax_rate = Tax::getProvider()
+            $this->tax_rate = Tax::getProvider()
                 ->withAddress($this->Shipto)
-                ->getRate();*/
+                ->getRate();
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -2598,6 +2598,28 @@ class Order
     {
         $this->discount_pct = (float)$pct;
         return $this;
+    }
+
+
+    /**
+     * Get the total shipping charge for this order.
+     *
+     * @return  float       Shipping charge
+     */
+    public function getShipping()
+    {
+        return $this->shipping;
+    }
+
+
+    /**
+     * Get the total sales tax for this order.
+     *
+     * @return  float       Sales Tax
+     */
+    public function getTax()
+    {
+        return $this->tax;
     }
 
 
