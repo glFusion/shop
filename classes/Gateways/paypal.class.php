@@ -251,9 +251,7 @@ class paypal extends \Shop\Gateway
                     $fields['shipping_' . $i] = $item->getShipping();
                     $shipping += $item->shipping;
                 }
-                if ($P->getWeight() > 0) {
-                    $weight += $item->getWeight();
-                }
+                $weight += $item->getWeight();
                 $i++;
             }
 

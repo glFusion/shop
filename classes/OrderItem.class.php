@@ -535,6 +535,22 @@ class OrderItem
 
 
     /**
+     * Get the total shipping weight for this item.
+     *
+     * @return  float   Total weight for this line item
+     */
+    public function getWeight()
+    {
+        $weight = $this->product->getWeight();
+        if ($this->variant_id > 0) {
+            $weight += ProductVariant::getInstance($this->variant_id)->getWeight();
+        }
+        $weight *= $this->quantity;
+        return $weight;
+    }
+
+
+    /**
      * Check if the buyer can download a file from the order view.
      */
     public function canDownload()
@@ -561,7 +577,12 @@ class OrderItem
      */
     public function getShippingUnits()
     {
-        return $this->product->shipping_units * $this->quantity;
+        $units = $this->product->shipping_units;
+        if ($this->variant_id > 0) {
+            $units += ProductVariant::getInstance($this->variant_id)->getShippingUnits();
+        }
+        $units *= $this->quantity;
+        return $units;
     }
 
 
