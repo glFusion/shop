@@ -812,6 +812,7 @@ function plugin_autouninstall_shop()
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
+            // v1.0.0
             'shop.prod_opt_grps',
             'shop.prod_opt_vals',
             'shop.shipments',
@@ -819,11 +820,13 @@ function plugin_autouninstall_shop()
             'shop.shipment_packages',
             'shop.carrier_config',
             'shop.cache',
+            // v1.1.0
             'shop.tax_rates',
             'shop.discountcodes',
             'shop.prodXcat',
             'shop.product_variants',
             'shop.variantXopt',
+            'shop.suppliers',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

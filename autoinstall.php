@@ -156,9 +156,12 @@ $tables = array(
     'products', 'categories', 'orderitems', 'ipnlog', 'orders', 'sales',
     'prod_opt_vals', 'images', 'gateways', 'address', 'userinfo', 'workflows',
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
-    'shipping', 'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
-    'shipment_packages', 'carrier_config', 'cache', 'tax_rates', 'prodXcat',
-    'product_variants', 'variantXopt',
+    'shipping',
+    // v1.0.0
+    'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
+    'shipment_packages', 'carrier_config', 'cache',
+    // v1.1.0
+    'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
@@ -229,6 +232,7 @@ function plugin_postinstall_shop()
         $_SHOP_CONF['download_path'],
         $_SHOP_CONF['image_dir'],
         $_SHOP_CONF['catimgpath'],
+        $_SHOP_CONF['tmpdir'] . '/images/brands',
     );
     foreach ($paths as $path) {
         COM_errorLog("Creating $path", 1);
