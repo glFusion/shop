@@ -61,17 +61,6 @@ class Supplier extends \Shop\Image
 
 
     /**
-     * Get the URL to a brand logo.
-     *
-     * @return  string      URL to image, empty string if not found.
-     */
-    public static function xgetUrl($filename, $width=0, $height=0)
-    {
-        return parent::getUrl($filename, $width, $height);
-    }
-
-
-    /**
      * Delete a category image from disk and the table.
      * Intended to be called from ajax.php.
      *

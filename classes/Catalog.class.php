@@ -23,7 +23,8 @@ class Catalog
     /**
      * Show the default catalog layout based on plugin configuration.
      *
-     * @param   integer $cat_id     Selected category ID from the URL, if any
+     * @param   integer $cat_id     Optional category ID from the URL
+     * @param   integer $brand_id   Optional brand ID to filter results
      * @return  string      HTML for catalog display
      */
     public static function defaultCatalog($cat_id=0, $brand_id=0)
