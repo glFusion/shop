@@ -630,7 +630,7 @@ class ProductVariant
             'item_id'       => $this->getItemId(),
             'item_name'     => Product::getByID($this->item_id)->name,
             'pv_id'         => $this->getId(),
-            'price'         => $this->getPrice(),
+            'price'         => $this->getID() ? $this->getPrice() : '',
             'weight'        => $this->getWeight(),
             'onhand'        => $this->getOnhand(),
             'shipping_units' => $this->getShippingUnits(),
@@ -647,7 +647,7 @@ class ProductVariant
                 'pog_name'  => $Grp->getName(),
             ) );
             $T->set_block('Grps', 'OptionValues', 'Vals');
-            $Opts = ProductOptionValue::getByProduct(0, $Grp->getID());
+            $Opts = ProductOptionValue::getByGroup($Grp->getID());
             foreach ($Opts as $pov_id=>$Opt) {
                 $T->set_var(array(
                     'opt_id'    => $Opt->getID(),

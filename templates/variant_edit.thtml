@@ -35,7 +35,7 @@
             <span id="price" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="price" value="{price}" size="12" maxlength="32" />
+            <input type="text" name="price" value="{price}" placeholder="{$LANG_SHOP['use_opt_price']}" size="20" maxlength="32" />
         </div>
     </div>
 
@@ -82,7 +82,7 @@
 {!if pv_id}
             <select name="groups[{pog_id}]">
 {!else}
-            <select name="groups[{pog_id}][]">
+            <select multiple name="groups[{pog_id}][]">
 {!endif}
                 <option value="0">-- n/a --</option>
 <!-- BEGIN OptionValues -->

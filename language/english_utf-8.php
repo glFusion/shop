@@ -602,6 +602,7 @@ $LANG_SHOP = array (
 'empty_to_gen' => 'Leave empty to create automatically',
 'leave_as_is' => 'Leave As-Is',
 'logo_img' => 'Logo Image',
+'use_opt_price' => 'Use Option Prices',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

@@ -645,6 +645,34 @@ class ProductOptionValue
 
 
     /**
+     * Get all the available option values for a specific option group.
+     *
+     * @param   integer $pog_id     ProductOptionGroup ID
+     * @return  array       Array of ProductOptionValue objects
+     */
+    public static function getByGroup($pog_id)
+    {
+        global $_TABLES;
+
+        $pog_id = (int)$pog_id;
+        $cache_key = 'options_' . $pog_id;
+        $opts = Cache::get($cache_key);
+        if ($opts === NULL) {
+            $opts = array();
+            $sql = "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
+                WHERE pov.pog_id = $pog_id
+                ORDER BY pov.orderby ASC";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $opts[$A['pov_id']] = new self($A);
+            }
+            Cache::set($cache_key, $opts, array('products', 'options'));
+        }
+        return $opts;
+    }
+
+
+    /**
      * Get all options for a product, optionally limited by group.
      * Attempts to retrieve first from cache, then reads from the DB.
      *
@@ -674,7 +702,6 @@ class ProductOptionValue
                 $sql .= " AND pov.pog_id = '$og_id'";
             }
             $sql .= " ORDER BY pog.pog_orderby, pov.orderby ASC";
-            //echo $sql;die;
             $result = DB_query($sql);
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);
