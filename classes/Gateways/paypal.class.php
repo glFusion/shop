@@ -198,7 +198,6 @@ class paypal extends \Shop\Gateway
         $i = 1;     // Item counter for paypal variables
         $total_amount = 0;
         $shipping = 0;
-        $weight = 0;
         $handling = 0;
         $fields['tax_cart'] = 0;
 
@@ -251,7 +250,6 @@ class paypal extends \Shop\Gateway
                     $fields['shipping_' . $i] = $item->getShipping();
                     $shipping += $item->shipping;
                 }
-                $weight += $item->getWeight();
                 $i++;
             }
 
@@ -264,11 +262,6 @@ class paypal extends \Shop\Gateway
             $fields['tax_cart'] = (float)$cart->getTax();
             $total_amount += $cart->getTax();
             if ($shipping > 0) $total_amount += $shipping;
-            if ($weight > 0) {
-                $fields['weight_cart'] = $weight;
-                $fields['weight_unit'] = $_SHOP_CONF['weight_unit'] == 'kgs' ?
-                            'kgs' : 'lbs';
-            }
         }
 
         // Set the business e-mail address based on the total puchase amount
