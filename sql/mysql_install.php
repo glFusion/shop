@@ -690,7 +690,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `phone` varchar(40) NOT NULL DEFAULT '',
       `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
       `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-      PRIMARY KEY (`sup_id`)
+      PRIMARY KEY (`sup_id`),
       KEY `is_supplier` (`is_supplier`,`name`),
       KEY `is_brand` (`is_brand`,`name`)
     ) ENGINE=MyISAM",
