@@ -1148,10 +1148,15 @@ class ProductVariant
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
+            if ($this->onhand > 0) {
+                $allowed = true;
+            } else {
+                $allowed = $P->getOversell() == 0 ? true : false;
+            }
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
-                'allowed'   => true,
+                'allowed'   =>  $allowed,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
             );

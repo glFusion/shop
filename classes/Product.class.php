@@ -611,6 +611,20 @@ class Product
 
 
     /**
+     * Check if this product has variants.
+     *
+     * @return  integer     Number of variants
+     */
+    public function hasVariants()
+    {
+        if ($this->Variants === NULL) {
+            $this->Variants = ProductVariant::getByProduct($this->id);
+        }
+        return count($this->Variants);
+    }
+
+
+    /**
      * Get all the variants related to this product.
      * Sets the local Variants property for later use.
      *
@@ -1597,9 +1611,6 @@ class Product
             $T->set_var('action_url', SHOP_URL . '/download.php');
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
-            $add_cart = false;
-        } elseif ($this->_OutOfStock() > 0) {
-            // If out of stock, display but deny purchases
             $add_cart = false;
         } elseif (
             $_USER['uid'] == 1 &&
@@ -2633,19 +2644,22 @@ class Product
      */
     private function _OutOfStock()
     {
-        $retval = 0;
         if ($this->track_onhand != 0) {
-            // Return the oversell setting for the caller to act accordingly
-            // when out of stock
-            $retval = $this->oversell;
-            foreach ($this->getVariants() as $Var) {
-                if ($Var->getOnhand() > 0) {
-                    $retval = 0;
-                    break;
+            if ($this->hasVariants()) {
+                // Return the oversell setting for the caller to act accordingly
+                // when out of stock
+                foreach ($this->getVariants() as $Var) {
+                    if ($Var->getOnhand() >  0) {
+                        return 0;
+                        break;
+                    }
                 }
+                return $this->oversell;
+            } elseif ($this->onhand == 0) {
+                return $this->oversell;
             }
         }
-        return $retval;
+        return 0;
     }
 
 
@@ -3475,14 +3489,12 @@ class Product
         if (!empty($add)) {
             $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} VALUES " .
                 implode(',', $add);
-            COM_errorLog($sql);
             DB_query($sql);
         }
         if (!empty($rem)) {
             $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
                 product_id = '{$this->id}' AND
                 cat_id in (" . implode(',', $rem) . ')';
-            COM_errorLog($sql);
             DB_query($sql);
         }
         return $this;
