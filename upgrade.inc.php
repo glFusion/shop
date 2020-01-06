@@ -227,6 +227,7 @@ function SHOP_do_upgrade($dvlp = false)
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
         }
+        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 

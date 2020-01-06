@@ -27,6 +27,10 @@ class Supplier extends Address
      * @var integer */
     private $is_brand = 0;
 
+    /** Description field.
+     * @var string */
+    private $dscp = '';
+
 
     /**
      * Constructor. Reads in the specified record,
@@ -92,8 +96,33 @@ class Supplier extends Address
             ->setPostal(SHOP_getVar($data, 'zip'))
             ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']))
             ->setPhone(SHOP_getVar($data, 'phone', 'string'))
+            ->setDscp(SHOP_getVar($data, 'dscp', 'string'))
             ->setIsSupplier(SHOP_getVar($data, 'is_supplier', 'integer', 1))
             ->setIsBrand(SHOP_getVar($data, 'is_brand', 'integer', 0));
+    }
+
+
+    /**
+     * Set the description text.
+     *
+     * @param   string  $dscp   Description text
+     * @return  object  $this
+     */
+    public function setDscp($dscp)
+    {
+        $this->dscp = $dscp;
+        return $this;
+    }
+
+
+    /**
+     * Get the description text.
+     *
+     * @rturn   string      Description text
+     */
+    public function getDscp()
+    {
+        return $this->dscp;
     }
 
 
@@ -229,7 +258,6 @@ class Supplier extends Address
         if (is_array($A)) {
             $this->setAddress($A);
         }
-
         if ($this->getID() > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.suppliers']} SET ";
             $sql3 = " WHERE sup_id='" . $this->getID() . "'";
@@ -246,6 +274,7 @@ class Supplier extends Address
                 country = '" . DB_escapeString($this->getCountry()) . "',
                 phone = '" . DB_escapeString($this->getPhone()) . "',
                 zip = '" . DB_escapeString($this->getPostal()) . "',
+                dscp = '" . DB_escapeString($this->getDscp()) . "',
                 is_supplier = {$this->getIsSupplier()},
                 is_brand = {$this->getIsBrand()}";
         $sql = $sql1 . $sql2 . $sql3;
@@ -257,10 +286,15 @@ class Supplier extends Address
             if ($this->getID() == 0) {
                 $this->setID(DB_insertID());
             }
-            return true;
+            $status = true;
         } else {
-            return false;
+            $status = false;
         }
+        if (!empty($_FILES)) {
+            $Img = new Images\Supplier($this->getID(), 'logofile');
+            $Img->uploadFiles();
+        }
+        return $status;
     }
 
 
@@ -279,6 +313,18 @@ class Supplier extends Address
 
 
     /**
+     * Get the URL to the brand logo.
+     * Returns an empty string if no image defined or found.
+     *
+     * @return  string  URL of image, empty string if file not found
+     */
+    public function getImage()
+    {
+        return Images\Supplier::getUrl($this->getID() . '.jpg');
+    }
+
+
+    /**
      * Creates the address edit form.
      * Pre-fills values from another address if supplied
      *
@@ -293,6 +339,24 @@ class Supplier extends Address
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('form', 'supplier_form.thtml');
+        $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
+        switch (PLG_getEditorType()) {
+        case 'ckeditor':
+            $T->set_var('show_htmleditor', true);
+            PLG_requestEditor($_SHOP_CONF['pi_name'], $tpl_var, 'ckeditor_shop.thtml');
+            PLG_templateSetVars($tpl_var, $T);
+            break;
+        case 'tinymce' :
+            $T->set_var('show_htmleditor',true);
+            PLG_requestEditor($_SHOP_CONF['pi_name'], $tpl_var, 'tinymce_shop.thtml');
+            PLG_templateSetVars($tpl_var, $T);
+            break;
+        default :
+            // don't support others right now
+            $T->set_var('show_htmleditor', false);
+            break;
+        }
+
         $T->set_var(array(
             'entry_id'  => $this->getID(),
             'name'      => $this->getName(),
@@ -307,6 +371,8 @@ class Supplier extends Address
             'brand_chk' => $this->getIsBrand() ? 'checked="checked"' : '',
             'supplier_chk' => $this->getIsSupplier() ? 'checked="checked"' : '',
             'doc_url'   => SHOP_getDocURL('supplier_form'),
+            'logo_img'  => $this->getImage()['url'],
+            'dscp'      => $this->getDscp(),
         ) );
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
@@ -362,6 +428,12 @@ class Supplier extends Address
                 'text' => $LANG_ADMIN['edit'],
                 'field' => 'edit',
                 'align' => 'center',
+            ),
+            array(
+                'text' => $LANG_SHOP['logo_img'],
+                'field' => 'logo',
+                'align' => 'center',
+                'sort' => false,
             ),
             array(
                 'text' => $LANG_SHOP['name'],
@@ -466,6 +538,14 @@ class Supplier extends Address
             );
             break;
 
+        case 'logo':
+            $url = Images\Supplier::getUrl($A['sup_id'] . '.jpg')['url'];
+            if ($url != '') {
+                $retval = COM_createImage($url, '', array(
+                    'class' => 'shopLogoImage small',
+                ) );
+            }
+            break;
         case 'delete':
             $retval = COM_createLink(
                 Icon::getHTML('delete'),

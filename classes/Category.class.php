@@ -637,8 +637,6 @@ class Category
      */
     public function getImage()
     {
-        global $_SHOP_CONF;
-
         return Images\Category::getUrl($this->image);
     }
 
