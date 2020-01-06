@@ -26,7 +26,7 @@ class Catalog
      * @param   integer $cat_id     Selected category ID from the URL, if any
      * @return  string      HTML for catalog display
      */
-    public static function defaultCatalog($cat_id)
+    public static function defaultCatalog($cat_id=0, $brand_id=0)
     {
         global $_SHOP_CONF;
 
@@ -37,7 +37,7 @@ class Catalog
         ) {
             $content .= self::Categories();
         } else {
-            $content .= self::Products($cat_id);
+            $content .= self::Products($cat_id, $brand_id);
             $menu_opt = $LANG_SHOP['products'];
             $page_title = $LANG_SHOP['main_title'];
         }
@@ -49,9 +49,10 @@ class Catalog
      * Diaplay the product catalog items.
      *
      * @param   integer $cat_id     Optional category ID to limit display
+     * @param   integer $brand_id   Optional brand ID. Overrides $cat_id
      * @return  string      HTML for product catalog.
      */
-    public static function Products($cat_id = 0)
+    public static function Products($cat_id=0, $brand_id=0)
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
@@ -72,19 +73,27 @@ class Catalog
 
         // Get the root category and see if the requested category is root.
         $RootCat = Category::getRoot();
-        $cat_name = $Cat->cat_name;
-        $cat_desc = $Cat->description;
-        $cat_img_url = $Cat->getImage()['url'];
-        if ($Cat->parent_id > 0) {
-            // Get the sql to limit by category
-            $tmp = Category::getTree($Cat->cat_id);
-            $cats = array();
-            foreach ($tmp as $xcat_id=>$info) {
-                $cats[] = $xcat_id;
+        if ($brand_id == 0) {       // no brand limit, check for a category ID
+            $cat_name = $Cat->cat_name;
+            $cat_desc = $Cat->description;
+            $cat_img_url = $Cat->getImage()['url'];
+            if ($Cat->parent_id > 0) {
+                // Get the sql to limit by category
+                $tmp = Category::getTree($Cat->cat_id);
+                $cats = array();
+                foreach ($tmp as $xcat_id=>$info) {
+                    $cats[] = $xcat_id;
+                }
+                if (!empty($cats)) {
+                    $cat_sql = implode(',', $cats);
+                    $cat_sql = " AND c.cat_id IN ($cat_sql)";
+                }
             }
-            if (!empty($cats)) {
-                $cat_sql = implode(',', $cats);
-                $cat_sql = " AND c.cat_id IN ($cat_sql)";
+        } else {
+            $Sup = Supplier::getInstance($brand_id);
+            if ($Sup->getID() > 0) {
+                // Just borrow $cat_sql for this limit
+                $cat_sql = " AND p.brand_id = {$Sup->getID()}";
             }
         }
 

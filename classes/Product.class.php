@@ -1451,6 +1451,9 @@ class Product
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
             'rating_bar'        => $this->ratingBar(),
+            'brand_id'          => $this->getBrandID(),
+            'brand_name'        => $this->getBrandName(),
+            'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');

@@ -367,7 +367,8 @@ case 'products':
 default:
     SHOP_setUrl();
     $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
-    $content .= Shop\Catalog::defaultCatalog($cat_id);
+    $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
+    $content .= Shop\Catalog::defaultCatalog($cat_id, $brand_id);
     break;
 
 case 'none':
