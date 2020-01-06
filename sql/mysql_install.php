@@ -71,6 +71,8 @@ $_SQL = array(
   `brand` varchar(255) NOT NULL DEFAULT '',
   `min_ord_qty` int(3) NOT NULL DEFAULT 1,
   `max_ord_qty` int(3) NOT NULL DEFAULT 0,
+  `brand_id` int(11) unsigned NOT NULL DFAULT 0,
+  `supplier_id` int(11) unsigned NOT NULL DFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -690,6 +692,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `phone` varchar(40) NOT NULL DEFAULT '',
       `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
       `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      `dscp` text,
       PRIMARY KEY (`sup_id`),
       KEY `is_supplier` (`is_supplier`,`name`),
       KEY `is_brand` (`is_brand`,`name`)
@@ -707,6 +710,8 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DFAULT 0 AFTER `max_ord_qty`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DFAULT 0 AFTER `brand_id`",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
