@@ -100,11 +100,11 @@
     </div>
 
     <div class="uk-form-row">
-      <label class="uk-form-label" for="cat_id">{$LANG_SHOP['brand']}:
+      <label class="uk-form-label" for="f_brand">{$LANG_SHOP['brand']}:
         <span id="brand" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <select name="brand_id">
+        <select name="brand_id" id="f_brand">
             <option vlaue="0">--{$LANG_SHOP['none']}--</option>
             {brand_select}
         </select>
