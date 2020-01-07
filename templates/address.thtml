@@ -61,8 +61,9 @@ function removeAddress(addr_id)
 </script>
 
 <h2>{addr_type}</h2>
-<form action="{pi_url}/cart.php" method="post" class="uk-form uk-form-horizontal">
+<form id="cust_addr_frm" action="{pi_url}/cart.php" method="post" class="uk-form uk-form-horizontal">
   <input type="hidden" name="order_id" value="{order_id}" />
+  <input type="hidden" name="ad_type" value="{ad_type}" />
   {# This is recruited for the country and State Field #}
   <input type="hidden" value="countrySelect" name="cs_config_country_field" id="cs_config_country_field">
   <input type="hidden" value="stateSelect" name="cs_config_state_field" id="cs_config_state_field">
@@ -257,7 +258,9 @@ function removeAddress(addr_id)
   <div class="uk-form-row" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls" style="text-align:center;">
-      <button class="uk-button uk-button-success" type="submit" name="{action}">{$LANG_ADMIN['submit']}</button>
+      <button class="uk-button uk-button-success" type="submit" name="{action}"
+        onclick="javascript:validateAddress(this.form);return false;"
+        >{$LANG_ADMIN['submit']}</button>
       <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
       <button class="uk-button" type="submit" name="nextstep">{$LANG_ADMIN['cancel']}</button>
     </div>
@@ -268,5 +271,38 @@ function removeAddress(addr_id)
         updateForm({addr_id});
     {!endif}
     initCountry();
+
+function validateAddress(form)
+{
+console.log(form);
+    if (typeof(form) == 'undefined') {
+        return;
+    }
+    data = $("#" + form.id).serialize();
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
+        data: data,
+        success: function(result) {
+console.log(result);
+            try {
+                if (result.status != true) {
+                    modal = UIkit.modal.blockUI(result.form);
+                } else {
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "{action}";
+                    input.value = "x";;
+                    form.appendChild(input);
+                    form.submit();
+                }
+            }
+            catch(err) {
+            }
+        }
+    });
+    return;
+}
 </script>
  {# begin {templatelocation} #}

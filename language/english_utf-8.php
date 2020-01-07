@@ -3,9 +3,9 @@
  * English language file for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -604,6 +604,8 @@ $LANG_SHOP = array (
 'logo_img' => 'Logo Image',
 'use_opt_price' => 'Use Option Prices',
 'reorder' => 'Reorder Qty',
+'select_addr' => 'Address Selection',
+'use_this_addr' => 'Use This Address',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -734,6 +736,9 @@ $LANG_confignames['shop'] = array(
     'tax_taxjar_token' => 'TaxJar API Token',
     'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
     'tax_nexuses'   => 'Tax Nexuses',
+    'address_validator' => 'Address Validator',
+    'smartystreets_id' => 'SmartyStreets ID',
+    'smartystreets_token' => 'SmartyStreets Token',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -809,6 +814,11 @@ $LANG_configselects['shop'] = array(
         'Configured Rate' => 'internal',
         'TaxJar SmartCalcs' => 'taxjar',
         'Internal Tax Table' => 'table',
+    ),
+    22 => array(
+        '-- None --' => 0,
+        'SmartyStreets' => 'smartystreets',
+        'USPS' => 'usps',
     ),
 );
 

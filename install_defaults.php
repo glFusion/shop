@@ -4,10 +4,10 @@
  * Based on the Paypal Plugin for Geeklog CMS.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (C) 2005-2006 Vincent Furia <vinny01@users.sourceforge.net>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -619,6 +619,40 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'address_validator',
+        'default_value' => '0',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 50,
+        'selection_array' => 22,
+        'sort' => 70,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'smartystreets_id',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 0,
+        'fieldset' => 50,
+        'selection_array' => 0,
+        'sort' => 80,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'smartystreets_token',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 0,
+        'fieldset' => 50,
+        'selection_array' => 0,
+        'sort' => 90,
+        'set' => true,
+        'group' => 'shop',
+    ),
+
     // Feeds FS
     array(
         'name' => 'fs_feeds',

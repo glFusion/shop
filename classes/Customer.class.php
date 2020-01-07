@@ -3,9 +3,9 @@
  * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -433,6 +433,7 @@ class Customer
 
             $T->set_var(array(
                 'id'        => $address->getID(),
+                'ad_type'   => $type,
                 'ad_name'   => $address->getName(),
                 'ad_company' => $address->getCompany(),
                 'ad_addr_1' => $address->getAddress1(),

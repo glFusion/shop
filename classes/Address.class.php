@@ -3,9 +3,9 @@
  * Class to handle billing and shipping addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -880,6 +880,26 @@ class Address
                 ->setUid($Addr->getUid());
         }
         return $this;
+    }
+
+
+    /**
+     * Use an address validation service to verify an address.
+     *
+     */
+    public function Validate()
+    {
+        global $_SHOP_CONF;
+
+        if (SHOP_getVar($_SHOP_CONF, 'address_validator') != '') {
+            $cls = 'Shop\\Validators\\' . $_SHOP_CONF['address_validator'];
+            if (class_exists($cls)) {
+                $AV = new $cls($this);
+                $AV->Validate();
+                return $AV->getAddress();
+            }
+        }
+        return $this;       // default if no validator used
     }
 
 }

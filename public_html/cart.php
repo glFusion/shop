@@ -3,7 +3,7 @@
  * Access to shopping cart - view, update, delete, etc.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner
+ * @copyright   Copyright (c) 2019-2020 Lee Garner
  * @package     shop
  * @varsion     v1.1.0
  * @since       v0.7.0
@@ -158,15 +158,20 @@ case 'checkout':
 case 'savebillto':
 case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
-    $status = \Shop\Customer::isValidAddress($_POST);
+    if ($actionval == 1 || $actionval == 2) {
+        $addr = json_decode($_POST['addr'][$actionval], true);
+    } else {
+        $addr = $_POST;
+    }
+    $status = \Shop\Customer::isValidAddress($addr);
     if ($status != '') {
         $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
     $U = \Shop\Customer::getInstance();
-    if ($U->uid > 1) {      // only save addresses for logged-in users
-        $addr_id = $U->saveAddress($_POST, $addr_type);
+    if ($U->getUid() > 1) {      // only save addresses for logged-in users
+        $addr_id = $U->saveAddress($addr, $addr_type);
         if ($addr_id[0] < 0) {
             if (!empty($addr_id[1]))
                 $content .= SHOP_errorMessage($addr_id[1], 'alert',
@@ -178,7 +183,7 @@ case 'saveshipto':
         }
     }
     $Cart = \Shop\Cart::getInstance();
-    $Cart->setAddress($_POST, $addr_type);
+    $Cart->setAddress($addr, $addr_type);
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     $content = $Cart->getView($next_step);
     $view = 'none';
