@@ -62,7 +62,8 @@ $_SQL = array(
   `show_popular` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `options` text,
   `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `onhand` int(10) unsigned DEFAULT '0',
+  `onhand` int(10) unsigned NOT NULL DEFAULT '0',
+  `reorder` int(10) unsigned NOT NULL DEFAULT '0',
   `oversell` tinyint(1) NOT NULL DEFAULT '0',
   `qty_discounts` text,
   `custom` varchar(255) NOT NULL DEFAULT '',
@@ -710,8 +711,9 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DFAULT 0 AFTER `max_ord_qty`",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DFAULT 0 AFTER `brand_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `max_ord_qty`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `brand_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];

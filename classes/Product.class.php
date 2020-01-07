@@ -799,6 +799,7 @@ class Product
                 show_random='" . (int)$this->show_random . "',
                 show_popular='" . (int)$this->show_popular . "',
                 onhand='{$this->onhand}',
+                reorder = '{$this->reorder}',
                 track_onhand='{$this->track_onhand}',
                 oversell = '{$this->oversell}',
                 qty_discounts = '{$qty_discounts}',

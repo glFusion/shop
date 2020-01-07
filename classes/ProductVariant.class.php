@@ -621,6 +621,9 @@ class ProductVariant
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('form', 'variant_edit.thtml');
 
+        if ($this->pv_id == 0) {
+            $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
+        }
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -713,6 +716,9 @@ class ProductVariant
         }
         if (isset($A['onhand']) && $A['onhand'] !== '') {
             $sql_vals[] = 'onhand = ' . (float)$A['onhand'];
+        }
+        if (isset($A['reorder']) && $A['reorder'] !== '') {
+            $sql_vals[] = 'reorder = ' . (float)$A['reorder'];
         }
         if (isset($A['enabled']) && $A['enabled'] > -1) {
             $sql_vals[] = "enabled = " . ($A['enabled'] == 1 ? 1 : 0);
@@ -843,7 +849,8 @@ class ProductVariant
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
-            onhand = " . (float)$this->onhand . "
+            onhand = " . (float)$this->onhand . ",
+            reorder = " . (float)$this->reorder . "
             WHERE pv_id = '{$this->pv_id}'";
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -1040,6 +1047,11 @@ class ProductVariant
                 'align' => 'right',
             ),
             array(
+                'text' => $LANG_SHOP['reorder'],
+                'field' => 'reorder',
+                'align' => 'right',
+            ),
+            array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => 'false',
@@ -1212,8 +1224,12 @@ class ProductVariant
             $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
             break;
 
+        case 'reorder':
         case 'onhand':
-            $retval = (float)$A['onhand'];
+            $retval = (float)$fieldvalue;
+            if ((float)$A['onhand'] <= (float)$A['reorder']) {
+                $retval = '<span class="uk-text-danger">' . $retval . '</span>';
+            }
             break;
 
         default:

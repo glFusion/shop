@@ -67,6 +67,15 @@
     </div>
 
     <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['reorder']}:
+            <span id="reorder" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input type="text" name="reorder" value="{reorder}" size="12" maxlength="32" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['enabled']}:
             <span id="enabled" class="tooltip_cfg tooltipstered"></span>
         </label>
