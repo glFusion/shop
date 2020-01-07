@@ -202,6 +202,11 @@ class Menu
                 'active' => $view == 'options' ? true : false,
             ),
             array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?variants=x',
+                'text' => $LANG_SHOP['variants'],
+                'active' => $view == 'variants' ? true : false,
+            ),
+            array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
