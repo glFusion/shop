@@ -344,9 +344,9 @@ $LANG_SHOP = array (
 ),
 'my_orders' => 'My Orders',
 'no_products_match' => 'No products match your search parameters',
-'msg_updated' => 'Item has been updated',
-'msg_deleted' => 'Item has been deleted',
-'msg_nochange' => 'Item is unchanged',
+'msg_updated' => 'Item(s) have been updated',
+'msg_deleted' => 'Item(s) have been deleted',
+'msg_nochange' => 'Item(s) are unchanged',
 'msg_item_added' => 'Item has been added to your cart',
 'all' => 'All',
 'print' => 'Print',
@@ -630,6 +630,7 @@ $LANG_SHOP_HELP = array(
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
 'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
+'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

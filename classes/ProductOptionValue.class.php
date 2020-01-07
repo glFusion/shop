@@ -788,45 +788,6 @@ class ProductOptionValue
         $this->item_id = $item_id;
     }
 
-
-    /**
-     * Delete the option values related to a specific product.
-     * Called when deleting the product.
-     *
-     * @param   integer $item_id    Product ID
-     */
-    public static function deleteProduct($item_id)
-    {
-        global $_TABLES;
-
-        $item_id = (int)$item_id;
-        DB_delete($_TABLES['shop.prod_opt_vals'], 'item_id', $item_id);
-    }
-
-
-    /**
-     * Clone a product's option values to another product.
-     *
-     * @param   integer $src    Source product ID
-     * @param   integer $dst    Destination product ID
-     * @param   boolean $del_existing   True to remove existing values in dst
-     */
-    public static function cloneProduct($src, $dst, $del_existing=true)
-    {
-        global $_TABLES;
-
-        $src = (int)$src;
-        $dst = (int)$dst;
-        if ($del_existing) {
-            self::deleteProduct($dst);
-        }
-        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prod_opt_vals']}
-            SELECT NULL, $dst, pog_id, pov_name, pov_value, orderby, pov_price, enabled
-            FROM {$_TABLES['shop.prod_opt_vals']}
-            WHERE item_id = $src";
-        DB_query($sql);
-    }
-
 }
 
 ?>

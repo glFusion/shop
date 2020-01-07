@@ -667,6 +667,71 @@ class ProductVariant
     }
 
 
+    /**
+     * Create the form to edit certain variant attributes in bulk.
+     *
+     * @param   array   $pv_ids     Array of variant IDs
+     * @return  string      HTML for edit form
+     */
+    public static function bulkEdit($pv_ids)
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'var_bulk_form.thtml');
+        $T->set_var(array(
+            'pv_ids'    => implode(',', $pv_ids),
+        ) );
+        $T->set_block('form', 'skuList', 'sk');
+        foreach ($pv_ids as $pv_id) {
+            $T->set_var('sku', self::getInstance($pv_id)->getSku());
+            $T->parse('sk', 'skuList', true);
+        }
+        $T->parse('output', 'form');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Perform the bulk update of multiple variants at once.
+     *
+     * @param   array   $A      Values from $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public static function BulkUpdateDo($A)
+    {
+        global $_TABLES;
+
+        $sql_vals  = array();
+
+        if (isset($A['price']) && $A['price'] !== '') {
+            $sql_vals[] = "price = " . (float)$A['price'];
+        }
+        if (isset($A['weight']) && $A['weight'] !== '') {
+            $sql_vals[] = "weight = " . (float)$A['weight'];
+        }
+        if (isset($A['shipping_units']) && $A['shipping_units'] !== '') {
+            $sql_vals[] = "shipping_units = " . (float)$A['shipping_units'];
+        }
+        if (isset($A['onhand']) && $A['onhand'] !== '') {
+            $sql_vals[] = 'onhand = ' . (float)$A['onhand'];
+        }
+        if (isset($A['enabled']) && $A['enabled'] > -1) {
+            $sql_vals[] = "enabled = " . ($A['enabled'] == 1 ? 1 : 0);
+        }
+        if (!empty($sql_vals)) {
+            $sql_vals = implode(', ', $sql_vals);
+            $ids = DB_escapeString($A['pv_ids']);
+            DB_query(
+                "UPDATE {$_TABLES['shop.product_variants']} SET
+                $sql_vals
+                WHERE pv_id IN ($ids)"
+            );
+            if (DB_error()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     /**
      * Save a new product variant.
@@ -988,7 +1053,8 @@ class ProductVariant
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $view = SESS_getVar('shop.pv_view');
-        if ($view === 'pv_bulk') {
+        switch ($view) {
+        case 'pv_bulk':
             $display .= COM_createLink(
                 Icon::getHTML('arrow-left') . '&nbsp;Back to Product',
                 SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
@@ -997,50 +1063,80 @@ class ProductVariant
                     'class' => 'uk-button',
                 )
             );
+        case 'variants':
             $options = array(
+                'chkselect' => true,
                 'chkdelete' => true,
                 'chkall' => true,
                 'chkfield' => 'pv_id',
-                'chkname' => 'pv_del_bulk',
+                'chkname' => 'pv_bulk_id',
+                'chkactions' => '<button name="pv_del_bulk" ' .
+                    'style="vertical-align:text-bottom;" ' .
+                    'class="uk-button uk-button-mini uk-button-danger" ' .
+                    'onclick="return confirm(\'' . $LANG01[125] . '\');">' . $LANG_ADMIN['delete'] . '</button>'.
+                    '&nbsp;&nbsp;<button name="pv_edit_bulk" ' .
+                    'style="vertical-align:text-bottom;" ' .
+                    'class="uk-button uk-button-mini uk-button-primary">' .
+                    $LANG_SHOP['update'] . '</button>',
             );
             $text_arr = array(
                 'has_limit' => true,
-                'form_url' => SHOP_ADMIN_URL . '/index.php?options=x&item_id=' . $prod_id,
+                'has_search' => true,
+                'form_url' => SHOP_ADMIN_URL . '/index.php?variants=x',
             );
-        } else {
+            break;
+        default:
             $options = array();
             $text_arr = array(
                 'has_limit' => true,
             );
+            break;
         }
-        $display .= COM_createLink($LANG_SHOP['new_variant'],
-            SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
-        if ($view !== 'pv_bulk') {
-            $display .= COM_createLink('Bulk Admin',
-                SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
+        if ($prod_id > 0) {
+            $display .= COM_createLink($LANG_SHOP['new_variant'],
+                SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
                 array(
-                    'style' => 'float:left;margin-left:10px;',
-                    'class' => 'uk-button uk-button-primary',
+                    'style' => 'float:left;',
+                    'class' => 'uk-button uk-button-success',
                 )
             );
+            if ($view !== 'pv_bulk') {
+                $display .= COM_createLink('Bulk Admin',
+                    SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
+                    array(
+                        'style' => 'float:left;margin-left:10px;',
+                        'class' => 'uk-button uk-button-primary',
+                    )
+                );
+            }
         }
         $query_arr = array(
             'table' => 'shop.product_variants',
             'query_fields' => array('sku'),
             'sql' => "SELECT * FROM {$_TABLES['shop.product_variants']}",
-            'default_filter' => " WHERE item_id = '$prod_id'",
         );
+        if ($prod_id > 0) {
+            $query_arr['default_filter'] = "WHERE item_id = '$prod_id'";
+        } else {
+            $query_arr['default_filter'] = 'WHERE 1=1';
+        }
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
         );
+        // Create the "copy "options" form at the bottom
+        if ($prod_id == 0) {
+            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T->set_file('copy_opt_form', 'copy_options_form.thtml');
+            $T->set_var(array(
+                //'src_product'       => COM_optionList($_TABLES['shop.products'], 'id, name'),
+                'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
+                'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
+            ) );
+            $display .= $T->parse('output', 'copy_opt_form');
+        }
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
     }
@@ -1233,6 +1329,78 @@ class ProductVariant
             Cache::clear('products');
             Cache::clear('options');
             return $newvalue;
+        }
+    }
+
+
+    /**
+     * Delete the variants related to a specific product.
+     * Called when deleting the product.
+     *
+     * @param   integer $item_id    Product ID
+     */
+    public static function deleteByProduct($item_id)
+    {
+        global $_TABLES;
+
+        $item_id = (int)$item_id;
+        $sql = "SELECT pv_id FROM {$_TABLES['shop.product_variants']}
+            WHERE item_id = $item_id";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            DB_delete($_TABLES['shop.variantXopt'], 'pv_id', (int)$A['pv_id']);
+        }
+        DB_delete($_TABLES['shop.product_variants'], 'item_id', $item_id);
+    }
+
+
+    /**
+     * Clone a product's variants to another product.
+     * All fields are duplicated except the SKU which is created from the item
+     * and option values.
+     *
+     * @param   integer $src    Source product ID
+     * @param   integer $dst    Destination product ID
+     * @param   boolean $del_existing   True to remove existing values in dst
+     */
+    public static function cloneProduct($src, $dst, $del_existing=false)
+    {
+        global $_TABLES;
+
+        $src = (int)$src;
+        $dst = (int)$dst;
+        $P = Product::getById($dst);
+        if ($P->getID() == 0) {
+            // Invalid target product specified
+            return;
+        }
+        if ($del_existing) {
+            self::deleteByProduct($dst);
+        }
+        $PVs = self::getByProduct($src);
+        foreach ($PVs as $PV) { 
+            $PV->loadOptions();
+            $sku_parts = array();
+            foreach($PV->getOptions() as $pog=>$Opt) {
+                if ($Opt->getSku() != '') {
+                    $sku_parts[] = $Opt->getSku();
+                }
+            }
+            if (!empty($sku_parts) && !empty($P->getName())) {
+                $sku = DB_escapeString($P->getName() . '-' . implode('-', $sku_parts));
+            } else {
+                $sku = '';
+            }
+            $sql = "INSERT INTO {$_TABLES['shop.product_variants']}
+                (item_id, sku, price, weight, shipping_units, onhand, reorder, enabled)
+                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled
+                FROM {$_TABLES['shop.product_variants']}
+                WHERE pv_id = {$PV->getID()}";
+            DB_query($sql);
+            $pv_id = DB_insertID();
+            $sql = "INSERT INTO {$_TABLES['shop.variantXopt']} (pv_id, pov_id)
+                SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
+            DB_query($sql);
         }
     }
 

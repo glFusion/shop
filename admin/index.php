@@ -54,10 +54,10 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
-    'prod_bulk_save',
+    'prod_bulk_save', 'pv_bulk_save',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -65,7 +65,7 @@ $expected = array(
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
-    'prod_bulk_frm',
+    'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -208,7 +208,7 @@ case 'pov_save':
     break;
 
 case 'pv_del_bulk':
-    $ids = SHOP_getVar($_POST, 'pv_del_bulk', 'array');
+    $ids = SHOP_getVar($_POST, 'pv_bulk_id', 'array');
     foreach ($ids as $id) {
         Shop\ProductVariant::Delete($id);
     }
@@ -389,7 +389,9 @@ case 'attrcopy':
     $done_prods = array();
 
     // Nothing to do if no source product selected
-    if ($src_prod < 1) break;
+    if ($src_prod < 1) {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
+    }
 
     // Copy product options to all products in a category.
     // Ignore the source product, which may or may not be in the category.
@@ -401,17 +403,17 @@ case 'attrcopy':
                 continue;
             }
             $done_prods[] = $dst_id;    // track for later
-            Shop\ProductOptionValue::cloneProduct($src_prod, $dst_id, $del_existing);
+            Shop\ProductVariant::cloneProduct($src_prod, $dst_id, $del_existing);
         }
     }
 
     // If a target product was selected, it's not the same as the source, and hasn't
     // already been done as part of the category, then update the target product also.
     if ($dest_prod > 0 && $dest_prod != $src_prod && !in_array($dest_prod, $done_prods)) {
-        Shop\ProductOptionValue::cloneProduct($src_prod, $dest_prod, $del_existing);
+        Shop\ProductVariant::cloneProduct($src_prod, $dest_prod, $del_existing);
     }
     \Shop\Cache::clear();
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
 case 'runreport':
@@ -572,6 +574,15 @@ case 'prod_bulk_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
+case 'pv_bulk_save':
+    if (Shop\ProductVariant::BulkUpdateDo($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['error']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
+    break;
+
 default:
     $view = $action;
     break;
@@ -719,10 +730,12 @@ case 'carriers':
     $content .= Shop\Shipper::carrierLIst();
     break;
 
+case 'variants':
+    $content .= Shop\Menu::adminCatalog('variants');
 case 'pv_bulk':
     SESS_setVar('shop.pv_view', $view);
     $prod_id = SHOP_getVar($_GET, 'item_id', 'integer');
-    $content = Shop\ProductVariant::adminList($prod_id, true);
+    $content .= Shop\ProductVariant::adminList($prod_id, true);
     break;
 
 case 'pv_edit':
@@ -930,6 +943,14 @@ case 'edit_sup':
     // Edit a supplier or brand record
     $Sup = new Shop\Supplier($_GET['id']);
     $content .= $Sup->Edit();
+    break;
+
+case 'pv_edit_bulk':
+    // Bulk update variants - price, weight, shipping, etc.
+    $pv_ids = SHOP_getVar($_POST, 'pv_bulk_id', 'array');
+    if (!empty($pv_ids)) {
+        $content .= Shop\ProductVariant::bulkEdit($pv_ids);
+    }
     break;
 
 case 'prod_bulk_frm':
