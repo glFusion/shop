@@ -173,6 +173,17 @@ class Customer
 
 
     /**
+     * Get the glFusion user ID for this customer
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
+    }
+
+
+    /**
      * Get an address.
      *
      * @param   integer $add_id     DB Id of address
@@ -180,7 +191,7 @@ class Customer
      */
     public function getAddress($add_id)
     {
-        global $_TABLES, $_USER;
+        global $_TABLES;
 
         $add_id = (int)$add_id;
         if (array_key_exists($add_id, $this->addresses)) {
@@ -238,10 +249,10 @@ class Customer
      */
     public function saveAddress($A, $type='')
     {
-        global $_TABLES, $_USER;
+        global $_TABLES;
 
         // Don't save invalid addresses, or anonymous
-        if ($_USER['uid'] < 2 || !is_array($A)) {
+        if ($this->uid < 2 || !is_array($A)) {
             return array(-1, '');
         }
         $type = $type == 'billto' ? 'billto' : 'shipto';
@@ -378,8 +389,7 @@ class Customer
      */
     public function AddressForm($type='billto', $A=array(), $step)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
-
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
