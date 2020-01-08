@@ -179,7 +179,7 @@ abstract class Tax
 
         if (empty($_SHOP_CONF['tax_nexuses'])) {
             // No nexus locations configured
-            return false;
+            return true;
         }
         foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
             list($country, $state) = explode(',', strtoupper($str));

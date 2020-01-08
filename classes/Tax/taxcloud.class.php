@@ -183,6 +183,20 @@ class taxcloud extends \Shop\Tax
         }
         return $default;
     }
+
+
+    /**
+     * Determine if the shop has a nexus in the destination state/province.
+     * Taxcloud requires nexuses to be configured on their site and will
+     * calculate tax accordingly. Therefore, do not use the internal table.
+     *
+     * @return  boolean     True always
+     */
+    protected function hasNexus()
+    {
+        return true;
+    }
+
 }
 
 ?>
