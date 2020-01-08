@@ -8,7 +8,7 @@
         <div class="uk-width-1-2" style="float:left;">
             <p>{address1_html}</p>
             <p style="text-align:center">
-                <button class="uk-button uk-button-success" name="save{ad_type}" value="2">{$LANG_SHOP['use_this_addr']}</button>
+                <button class="uk-button uk-button-success" name="save{ad_type}" value="1">{$LANG_SHOP['use_this_addr']}</button>
             </p>
         </div
         <div class="uk-width-1-2" style="float:left;">
