@@ -14,6 +14,7 @@
 namespace Shop\Tax;
 use Shop\Address;
 use Shop\Company;
+use Shop\Validators\taxcloud as Validator;
 
 /**
  * Get tax rates from ServiceObjects' FastTax API.
@@ -44,8 +45,8 @@ class taxcloud extends \Shop\Tax
     {
         global $_SHOP_CONF;
 
-        $this->api_key = $_SHOP_CONF['taxcloud_key'];
-        $this->api_id = $_SHOP_CONF['taxcloud_id'];
+        $this->api_key = $_SHOP_CONF['tax_taxcloud_key'];
+        $this->api_id = $_SHOP_CONF['tax_taxcloud_id'];
         $this->endpoint = 'https://api.taxcloud.net/1.0/TaxCloud/Lookup';
     }
 
@@ -76,27 +77,28 @@ class taxcloud extends \Shop\Tax
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        // Validate the destination address first
+        $Validator = new Validator($this->Address);
+        $Validator->Validate();
+        $Address = $Validator->getAddress();
+
         // Default return value if no rate returned or no nexus
         $default = array(
             'rate' => array(
-                'zip'   => $this->Address->getPostal(),
+                'zip'   => $Address->getPostal(),
                 'state_rate' => 0,
-                'state' => $this->Address->getState(),
+                'state' => $Address->getState(),
                 'freight_taxable'  => false,
                 'county_rate' => 0,
                 'county' => 'Undefined',
                 'country_rate' => 0,
-                'country' => $this->Address->getCountry(),
+                'country' => $Address->getCountry(),
                 'combined_rate' => 0,
                 'combined_district_rate' => 0,
                 'city_rate' => 0,
-                'city' => $this->Address->getCity(),
+                'city' => $Address->getCity(),
             ),
         );
-
-        if (!$this->hasNexus()) {
-            return $default;
-        }
 
         $Company = Company::getInstance();
         $req = array(
@@ -106,12 +108,12 @@ class taxcloud extends \Shop\Tax
             'customerID' => $this->Order->getUid(),
             'deliveredBySeller' => false,
             'destination' => array(
-                'Address1' => $this->Address->getAddress1(),
-                'Address2' => $this->Address->getAddress2(),
-                'City' => $this->Address->getCity(),
-                'State' => $this->Address->getState(),
-                'Zip5' => $this->Address->getZip5(),
-                'Zip4' => $this->Address->getZip4(),
+                'Address1' => $Address->getAddress1(),
+                'Address2' => $Address->getAddress2(),
+                'City' => $Address->getCity(),
+                'State' => $Address->getState(),
+                'Zip5' => $Address->getZip5(),
+                'Zip4' => $Address->getZip4(),
             ),
             'origin' => array(
                 'Address1' => $Company->getAddress1(),

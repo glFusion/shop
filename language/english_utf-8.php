@@ -739,6 +739,8 @@ $LANG_confignames['shop'] = array(
     'address_validator' => 'Address Validator',
     'smartystreets_id' => 'SmartyStreets ID',
     'smartystreets_token' => 'SmartyStreets Token',
+    'tax_taxcloud_id' => 'TaxCloud Login ID',
+    'tax_taxcloud_key' => 'TaxCloud API Key',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -766,6 +768,7 @@ $LANG_fs['shop'] = array(
     'fs_tax'    => 'Taxes',
     'fs_tax_avatax' => 'Avatax Settings',
     'fs_tax_taxjar' => 'Taxjar Settings',
+    'fs_tax_taxcloud' => 'TaxCloud Settings',
 );
 
 /**
@@ -814,11 +817,13 @@ $LANG_configselects['shop'] = array(
         'Configured Rate' => 'internal',
         'TaxJar SmartCalcs' => 'taxjar',
         'Internal Tax Table' => 'table',
+        'TaxCloud API' => 'taxcloud',
     ),
     22 => array(
         '-- None --' => 0,
         'SmartyStreets' => 'smartystreets',
         'USPS' => 'usps',
+        'TaxCoud' => 'taxcloud',
     ),
 );
 

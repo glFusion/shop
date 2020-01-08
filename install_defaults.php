@@ -1091,6 +1091,40 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    // TaxCloud configuration
+    array(
+        'name' => 'fs_tax_taxcloud',
+        'default_value' => NULL,
+        'type' => 'fieldset',
+        'subgroup' => 30,
+        'fieldset' => 40,
+        'selection_array' => NULL,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'tax_taxcloud_id',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 30,
+        'fieldset' => 40,
+        'selection_array' => 0,
+        'sort' => 10,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'tax_taxcloud_key',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 30,
+        'fieldset' => 40,
+        'selection_array' => 0,
+        'sort' => 20,
+        'set' => true,
+        'group' => 'shop',
+    ),
 );
 
 
