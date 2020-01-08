@@ -381,7 +381,7 @@ class Address
         if ($this->country == 'US') {
             $pos = strpos($this->zip, '-');
             if ($pos !== false) {
-                $retval = substr($this->zip, $pos, 4);
+                $retval = substr($this->zip, $pos+1, 4);
             } else {
                 $retval = '';
             }
