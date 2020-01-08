@@ -24,6 +24,10 @@ abstract class Tax
      * @var object */
     protected $Address;
 
+    /** Order object used for tax calculations.
+     * @var object */
+    protected $Order;
+
     /** Use test endpoints.
      * @var boolean */
     protected $test_mode = false;
@@ -70,6 +74,22 @@ abstract class Tax
     public function withAddress($Addr)
     {
         $this->Address = $Addr;
+        return $this;
+    }
+
+
+    /**
+     * Set the Order object to use for calculations.
+     *
+     * @param   object  $Order  Order object
+     * @return  object  $this
+     */
+    public function withOrder($Order)
+    {
+        $this->Order = $Order;
+        if ($this->Address == NULL) {
+            $this->Address = $this->Order->getShipto();
+        }
         return $this;
     }
 
@@ -187,10 +207,17 @@ abstract class Tax
     public function getRate()
     {
         if ($this->hasNexus()) {
-            return $this->_getData()['totalRate'];
+            $rate = $this->_getData()['totalRate'];
         } else {
-            return 0;
+            $rate = 0;;
         }
+        foreach ($this->Order->getItems() as &$Item) {
+            if ($Item->isTaxable()) {
+                $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                $Item->setTotalTax($tax)->setTaxRate($rate);
+            }
+        }
+        return $rate;
     }
 
 

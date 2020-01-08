@@ -36,6 +36,14 @@ class OrderItem
      * @var integer */
     private $variant_id;
 
+    /** Sales tax charged for this item.
+     * @var float */
+    private $tax;
+
+    /** Sales tax rate for this item.
+     * @var float */
+    private $tax_rate;
+
     /** Fields for an OrderItem record.
      * @var array */
     private static $fields = array(
@@ -45,7 +53,7 @@ class OrderItem
         'base_price', 'price', 'qty_discount', 'token', 'net_price',
         //'options',
         'options_text', 'extras', 'taxable', 'paid',
-        'shipping', 'handling',
+        'shipping', 'handling', 'tax', 'tax_rate',
     );
 
     /**
@@ -457,7 +465,9 @@ class OrderItem
                 taxable = '" . (int)$this->taxable. "',
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
-                extras = '" . DB_escapeString(json_encode($this->extras)) . "'";
+                extras = '" . DB_escapeString(json_encode($this->extras)) . "',
+                tax = {$this->getTotalTax()},
+                tax_rate = {$this->getTaxRate()}";
                 //options = '" . DB_escapeString($this->options) . "',
                 //shipping = {$shipping},
                 //handling = {$handling},
@@ -883,6 +893,55 @@ class OrderItem
         $this->setNetPrice(Currency::getInstance()->RoundVal($price));
         return $this;
     }
+
+
+    /**
+     * Set the total sales tax amount for this item.
+     *
+     * @param   float   $tax    Tax amount
+     * @return  object  $this
+     */
+    public function setTotalTax($tax)
+    {
+        $this->tax = (float)$this->getOrder()->getCurrency()->formatValue($tax);
+        return $this;
+    }
+
+
+    /**
+     * Get the total tax amount for this line item.
+     *
+     * @return  float       Total sales tax for the item
+     */
+    public function getTotalTax()
+    {
+        return (float)$this->tax;
+    }
+
+
+    /**
+     * Set the sales tax rate charged for this item.
+     *
+     * @param   float   $rate   Sales tax rate
+     * @return  object  $this
+     */
+    public function setTaxRate($rate)
+    {
+        $this->tax_rate = (float)$rate;
+        return $this;
+    }
+
+
+    /**
+     * Get the sales tax rate applied to this item.
+     *
+     * @return  float       Sales tax rate
+     */
+    public function getTaxRate()
+    {
+        return (float)$this->tax_rate;
+    }
+
 }
 
 ?>

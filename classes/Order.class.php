@@ -417,8 +417,11 @@ class Order
                 $this->shipto_country   = SHOP_getVar($A, 'country');
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
                 $this->Shipto = new Address($A);
-                $new_tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
-                $this->setTaxRate($new_tax_rate);
+                $this->setTaxRate(
+                    Tax::getProvider()
+                    ->withOrder($this)
+                    ->getRate()
+                );
             }
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET
@@ -564,10 +567,10 @@ class Order
 
         // Save all the order items
         /*$this->net_nontax = $this->net_taxable = $this->gross_items = 0;*/
-        $this->calcItemTotals();
         foreach ($this->items as $item) {
             $item->Save();
         }
+        $order_total = $this->getOrderTotal();
 
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -586,7 +589,6 @@ class Order
             $sql1 = "UPDATE {$_TABLES['shop.orders']} SET ";
             $sql2 = " WHERE order_id = '{$this->order_id}'";
         }
-        $this->calcTotalCharges();
 
         $fields = array(
                 "order_date = '{$this->order_date->toUnix()}'",
@@ -609,6 +611,7 @@ class Order
                 "shipper_id = '{$this->shipper_id}'",
                 "discount_code = '" . DB_escapeString($this->discount_code) . "'",
                 "discount_pct = '{$this->discount_pct}'",
+                "order_total = {$order_total}",
             );
         foreach (array('billto', 'shipto') as $type) {
             $fld = $type . '_id';
@@ -658,9 +661,13 @@ class Order
         case 'adminview';
             $this->isFinalView = true;
         case 'checkout':
-            $this->tax_rate = Tax::getProvider()
-                ->withAddress($this->Shipto)
-                ->getRate();
+            $this->setTaxRate(
+                Tax::getProvider()
+                    ->withOrder($this)
+                    ->getRate()
+                )
+                ->calcTotalCharges()
+                ->Save();
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -1462,18 +1469,13 @@ class Order
             $this->tax = 0;
             return 0;
         }
-        //$this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
         $tax = 0;
         $this->tax_items = 0;
-        foreach ($this->items as $item) {
-            if ($item->getProduct()->isTaxable()) {
-                $tax += Currency::getInstance($this->currency)
-                    ->RoundVal($this->tax_rate * $item->getQuantity() * $item->getNetPrice());
-                $this->tax_items++;
-            }
+        foreach ($this->items as &$Item) {
+            $tax += $Item->getTotalTax();
         }
         $this->tax = $tax;
-        return $this->tax;
+        return $this;
     }
 
 
@@ -1511,6 +1513,7 @@ class Order
         } else {
             $this->shipping = 0;
         }
+        return $this;
     }
 
 
@@ -1530,9 +1533,9 @@ class Order
             $this->handling += $P->getHandling($item->getQuantity());
         }
 
-        $this->calcTax();   // Tax calculation is slightly more complex
-        $this->calcShipping();
-        return $this->tax + $this->shipping + $this->handling;
+        $this->calcTax()   // Tax calculation is slightly more complex
+            ->calcShipping();
+        return $this;
     }
 
 
@@ -2375,6 +2378,28 @@ class Order
 
 
     /**
+     * Get the customer (user) ID
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
+    }
+
+
+    /**
+     * Get the order ID.
+     *
+     * @return  string  Order ID
+     */
+    public function getOrderID()
+    {
+        return $this->order_id;
+    }
+
+
+    /**
      * Get the order date.
      *
      * @return  object  Date object
@@ -2541,7 +2566,7 @@ class Order
 
     /**
      * Set the sales tax rate for this order.
-     * No action is the new rate is the same as the existing rate.
+     * No action if the new rate is the same as the existing rate.
      *
      * @param   float   $new_rate   New tax rate
      * @return  object  $this
@@ -2660,6 +2685,17 @@ class Order
 
 
     /**
+     * Get the currency object for this order.
+     *
+     * @return  object      Currency object
+     */
+    public function getCurrency()
+    {
+        return Currency::getInstance($this->currency);
+    }
+
+
+    /**
      * Apply a discount code to the order and all items.
      * The discount code and discount percent must be set in the order first.
      *
@@ -2762,6 +2798,22 @@ class Order
                 $this->net_nontax += $item_net;
             }
         }
+        return $this;
+    }
+
+
+    /**
+     * Get the total order value including miscellaneous charges.
+     * Also calls functions to set internal values.
+     *
+     * @uses    self::calcItemTotals()
+     * @uses    self::calcTax()
+     * @return  float   Total order amount
+     */
+    protected function getOrderTotal()
+    {
+        $this->calcItemTotals()->calcTax();
+        return (float)$this->gross_items + $this->shipping + $this->tax + $this->handling;
     }
 
 }
