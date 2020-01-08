@@ -824,6 +824,7 @@ class ProductVariant
                 (pv_id, pov_id) VALUES $sql_vals";
             DB_query($sql);
         }
+        Cache::clear(ProductOptionGroup::$TAGS);
     }
 
 
