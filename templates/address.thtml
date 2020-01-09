@@ -274,7 +274,6 @@ function removeAddress(addr_id)
 
 function validateAddress(form)
 {
-console.log(form);
     if (typeof(form) == 'undefined') {
         return;
     }
@@ -285,7 +284,6 @@ console.log(form);
         url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
         data: data,
         success: function(result) {
-console.log(result);
             try {
                 if (result.status != true) {
                     modal = UIkit.modal.blockUI(result.form);
