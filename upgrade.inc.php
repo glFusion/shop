@@ -231,6 +231,12 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.2.0')) {
+        $current_ver = '1.2.0';
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     // Copy the "not available" image if not already in place.
     if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
         COM_errorLog("Copying missing not-available image");

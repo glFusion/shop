@@ -1716,12 +1716,13 @@ function plugin_configmanager_select_def_prod_type_shop()
 
 /**
  * Select the country code for the shop.
+ * Allows selection from all countries, not just enabled ones.
  *
  * @return  array   $option => path
  */
 function plugin_configmanager_select_country_shop()
 {
-    return Shop\Country::makeConfigSelection();
+    return Shop\Country::makeConfigSelection(false);
 }
 
 
