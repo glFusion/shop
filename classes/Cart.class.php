@@ -166,7 +166,6 @@ class Cart extends Order
         ) {
             return false;
         }
-        COM_errorLog("adding item: " . print_r($args,true));
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
