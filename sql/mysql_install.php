@@ -3,9 +3,10 @@
  * Database creation and update statements for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -36,7 +37,6 @@ $_SQL = array(
 'shop.products' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(128) NOT NULL,
-  `cat_id` int(11) unsigned NOT NULL DEFAULT '0',
   `short_description` varchar(255) DEFAULT NULL,
   `description` text,
   `keywords` varchar(255) DEFAULT '',
@@ -62,7 +62,8 @@ $_SQL = array(
   `show_popular` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `options` text,
   `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `onhand` int(10) unsigned DEFAULT '0',
+  `onhand` int(10) unsigned NOT NULL DEFAULT '0',
+  `reorder` int(10) unsigned NOT NULL DEFAULT '0',
   `oversell` tinyint(1) NOT NULL DEFAULT '0',
   `qty_discounts` text,
   `custom` varchar(255) NOT NULL DEFAULT '',
@@ -71,6 +72,8 @@ $_SQL = array(
   `brand` varchar(255) NOT NULL DEFAULT '',
   `min_ord_qty` int(3) NOT NULL DEFAULT 1,
   `max_ord_qty` int(3) NOT NULL DEFAULT 0,
+  `brand_id` int(11) unsigned NOT NULL DFAULT 0,
+  `supplier_id` int(11) unsigned NOT NULL DFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -82,6 +85,7 @@ $_SQL = array(
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,
+  `variant_id` int(11) unsigned NOT NULL DEFAULT '0',
   `description` varchar(255) DEFAULT NULL,
   `quantity` int(11) NOT NULL DEFAULT '1',
   `txn_id` varchar(128) DEFAULT '',
@@ -90,6 +94,7 @@ $_SQL = array(
   `base_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
+  `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -98,6 +103,7 @@ $_SQL = array(
   `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `handling` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `tax` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `tax_rate` decimal(6,4) NOT NULL DEFAULT  '0.0000',
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`),
@@ -142,7 +148,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `item_id` (`item_id`,`pog_id`,`pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`, `pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -180,6 +186,10 @@ $_SQL = array(
   `shipto_zip` varchar(40) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `buyer_email` varchar(255) DEFAULT NULL,
+  `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `order_total` decimal(12,4) unsigned DEFAULT '0.0000',
   `tax` decimal(9,4) unsigned DEFAULT NULL,
   `shipping` decimal(9,4) unsigned DEFAULT NULL,
   `handling` decimal(9,4) unsigned DEFAULT NULL,
@@ -192,11 +202,13 @@ $_SQL = array(
   `tax_rate` decimal(7,5) NOT NULL DEFAULT '0.00000',
   `info` text,
   `currency` varchar(5) NOT NULL DEFAULT 'USD',
-  `order_seq` int(11) UNSIGNED,
-  `shipper_id` int(3) UNSIGNED DEFAULT '0',
+  `order_seq` int(11) unsigned DEFAULT NULL,
+  `shipper_id` int(3) unsigned DEFAULT '0',
+  `discount_code` varchar(20) DEFAULT NULL,
+  `discount_pct` decimal(4,2) DEFAULT '0.00',
   PRIMARY KEY (`order_id`),
-  KEY (`order_date`),
-  UNIQUE (`order_seq`)
+  UNIQUE KEY `order_seq` (`order_seq`),
+  KEY `order_date` (`order_date`)
 ) ENGINE=MyISAM",
 
 'shop.address' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.address']}` (
@@ -219,6 +231,7 @@ $_SQL = array(
 'shop.userinfo' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
   `uid` int(11) unsigned NOT NULL,
   `cart` text,
+  `pref_gw` varchar(12) NOT NULL DEFAULT '',
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -577,7 +590,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       PRIMARY KEY (`code`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.cache']}` (
-      `cache_key` varchar(255) NOT NULL,
+      `cache_key` varchar(127) NOT NULL,
       `expires` int(11) unsigned NOT NULL DEFAULT '0',
       `data` mediumtext,
       PRIMARY KEY (`cache_key`),
@@ -588,6 +601,9 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0",
+    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
@@ -602,13 +618,104 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `pov_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",
-    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
     "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `status` varchar(10) NOT NULL DEFAULT 'valid'",
     "ALTER TABLE {$_TABLES['shop.gateways']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.images']} ADD `orderby` int(3) NOT NULL default 999 AFTER `product_id`",
+);
+
+$SHOP_UPGRADE['1.1.0'] = array(
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
+      `code` varchar(25) NOT NULL,
+      `country` varchar(3) DEFAULT NULL,
+      `state` varchar(10) DEFAULT NULL,
+      `zip_from` varchar(10) DEFAULT NULL,
+      `zip_to` varchar(10) DEFAULT NULL,
+      `region` varchar(40) DEFAULT NULL,
+      `combined_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `state_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `county_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `city_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      `special_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+      PRIMARY KEY (`code`),
+      KEY `country_zipcode` (`country`,`zip_from`),
+      KEY `location` (`country`,`state`,`zip_from`),
+      KEY `zip_from` (`zip_from`),
+      KEY `zip_to` (`zip_to`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.discountcodes']}` (
+      `code_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `code` varchar(80) NOT NULL DEFAULT '',
+      `percent` decimal(4,2) unsigned NOT NULL DEFAULT '0.00',
+      `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
+      `end` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
+          `min_order` decimal(9,4) unsigned NOT NULL DEFAULT '0.0000',
+      PRIMARY KEY (`code_id`),
+      UNIQUE KEY `code` (`code`),
+      KEY `bydate` (`start`,`end`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.prodXcat']}` (
+      `product_id` int(11) unsigned NOT NULL,
+      `cat_id` int(11) unsigned NOT NULL,
+      PRIMARY KEY (`product_id`,`cat_id`),
+      KEY `cat_id` (`cat_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.product_variants']}` (
+      `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned NOT NULL,
+      `sku` varchar(64) DEFAULT NULL,
+      `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
+      `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `onhand` int(10) NOT NULL DEFAULT '0',
+      `reorder` int(10) NOT NULL DEFAULT '0',
+      `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`pv_id`),
+      KEY `prod_id` (`item_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.variantXopt']}` (
+      `pv_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pv_id`,`pov_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.suppliers']}` (
+      `sup_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `name` varchar(127) DEFAULT NULL,
+      `company` varchar(127) NOT NULL DEFAULT '',
+      `address1` varchar(127) NOT NULL DEFAULT '',
+      `address2` varchar(127) NOT NULL DEFAULT '',
+      `city` varchar(127) NOT NULL DEFAULT '',
+      `state` varchar(127) NOT NULL DEFAULT '',
+      `country` varchar(127) NOT NULL DEFAULT '',
+      `zip` varchar(40) NOT NULL DEFAULT '',
+      `phone` varchar(40) NOT NULL DEFAULT '',
+      `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      `dscp` text,
+      PRIMARY KEY (`sup_id`),
+      KEY `is_supplier` (`is_supplier`,`name`),
+      KEY `is_brand` (`is_brand`,`name`)
+    ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `variant_id` int(11) unsigned NOT NULL DEFAULT '0' AFTER product_id",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000' AFTER qty_discount",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `tax_rate` decimal(6,4) NOT NULL DEFAULT  '0.0000' AFTER `tax`",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER buyer_email",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER gross_items",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000' AFTER net_nontax",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `order_total` decimal(12,4) unsigned DEFAULT '0.0000' AFTER net_taxable",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_code` varchar(20) DEFAULT NULL AFTER shipper_id",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `max_ord_qty`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `brand_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
 );
 
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
@@ -618,5 +725,11 @@ $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
 $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
+$_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
+$_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
+$_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
+$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
+$_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
+$_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
 
 ?>

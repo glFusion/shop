@@ -290,6 +290,26 @@ When buttons are encrypted, several temporary files are created and then deleted
         <dd>At checkout, the Postal Code field can be Required, Optional, or Not Available for the Billing and Shipping addresses (whichever are used).</dd>
       </dl>
 
+      <dl id="desc_get_phone">
+        <dt>Phone Number</dt>
+        <dd>Indicate if the buyer must enter a telephone number at checkout. Entry may be required, optional, or not available.</dd>
+      </dl>
+
+      <dl id="desc_address_validator">
+          <dt>Address Validator</dt>
+          <dd>Select an available API to validate user-entered addresses. You will need to set up an acount with the provider and enter credentials. The USPS provider credentials are configured through the Shipping module.</dd>
+      </dl>
+
+      <dl id="desc_smartystreets_id">
+          <dt>SmartyStreets ID</dt>
+          <dd>If you elect to use smartystreets.com as your address validator, enter your user ID here.</dd>
+      </dl>
+
+      <dl id="desc_smartystreets_token">
+          <dt>SmartyStreets ID</dt>
+          <dd>If you elect to use smartystreets.com as your address validator, enter your tokn here.</dd>
+      </dl>
+
       <h2>Shop Information</h2>
 
       <dl id="desc_name">
@@ -342,11 +362,6 @@ When buttons are encrypted, several temporary files are created and then deleted
           <dd>Select the primary country code for the shop&apos;s location. This is used to format international addresses.</dd>
       </dl>
 
-      <dl id="desc_tax_rate">
-        <dt>Tax Rate</dt>
-        <dd>Enter the percentage charged by your shop as sales tax, or zero if you do not charge tax. This will be calculated and added to orders for taxable items. Enter the rate as a decimal, e.g. &quot;.085&quot; for 8.5%.</dd>
-      </dl>
-
       <dl id="desc_purge_sale_prices">
         <dt>Purge Sale Prices?</dt>
         <dd>Select &quot;Yes&quot; to purge a sale price from the table as soon as the sale has expired to keep the table clean. Select &quot;No&quot; to keep old sale prices around so they can be re-activated by changing the dates.</dd>
@@ -395,6 +410,56 @@ When buttons are encrypted, several temporary files are created and then deleted
       <dl id="desc_gc_mask">
         <dt>Mask for Coupon Codes</dt>
         <dd>Enter an optional mask for the coupon code format. The letter &quot;X&quot; will be replaced with a generated character while any other character will be include as-is. Example: XXX-XXX-XXX.</dd>
+      </dl>
+
+      <dl id="desc_tax_nexuses">
+          <dt>Sales Tax Nexuses</dt>
+          <dd>Create elements for each location where you have a nexus for sales tax purposes. Enter values as &quot;CC,SS&quot; where &quot;CC&quot; is the country code and &quot;SS&quot; is the state or region. For example, use &quot;US,CA&quot; for California. If the state/region is omitted then the nexus will apply to the country.</dd>
+      </dl>
+
+      <dl id="desc_tax_provider">
+          <dt>Sales Tax Provider</dt>
+          <dd>Select the provider for sales tax calculations. &quot;Internal&quot; uses the internal tax tables, &quot;Configured Rate&quot; applies the rate set below to all taxable items. The others require you to create accounts with the tax providers and configure them on the other tabs.</dd>
+      </dl>
+
+      <dl id="desc_tax_rate">
+        <dt>Tax Rate</dt>
+        <dd>Enter the percentage charged by your shop as sales tax, or zero if you do not charge tax. This will be calculated and added to orders for taxable items. Enter the rate as a decimal, e.g. &quot;.085&quot; for 8.5%.</dd>
+      </dl>
+
+      <dl id="desc_tax_test_mode">
+          <dt>Tax Test Mode?</dt>
+          <dd>Select whether the tax calculations are using the provider&apos;s &quot;test&quot; or &quot;sandbox&quot; mode. Not all providers support this and it has no effect if the &quot;Configured&quot; or &quot;Internal&quot; providers are used.
+      </dl>
+
+      <dl id="desc_tax_avatax_key">
+          <dt>Avatax Key</dt>
+          <dd>Enter the key for your Avalara &quot;Avatax&quot; account.</dd>
+      </dl>
+
+      <dl id="desc_tax_avatax_account">
+          <dt>Avatax Account</dt>
+          <dd>Enter the account ID for your Avalara &quot;Avatax&quot; account.</dd>
+      </dl>
+
+      <dl id="desc_tax_taxjar_token">
+          <dt>Taxjar API Token</dt>
+          <dd>Enter the API Token for your Taxjar account.</dd>
+      </dl>
+
+      <dl id="desc_tax_taxjar_nexus">
+          <dt>Use TaxJar Nexus API</dt>
+          <dd>Select Yes to check the TaxJar API for a nexus. Select No to use the configured nexus settings above.</dd>
+      </dl>
+
+      <dl id="desc_tax_taxcloud_id">
+          <dt>TaxCloud Login ID</dt>
+          <dd>Enter the Login ID that you receive from taxcloud.com.</dd>
+      </dl>
+
+      <dl id="desc_tax_taxcloud_key">
+          <dt>TaxCloud API Key</dt>
+          <dd>Enter the API key that you receive from taxcloud.com.</dd>
       </dl>
 
     </div>

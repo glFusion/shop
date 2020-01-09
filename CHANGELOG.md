@@ -1,5 +1,22 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.1.0
+Release TBD
+
+  * Add sales tax calculation based on shipping address.
+  * Add phone number field to addresses.
+  * Add discount codes.
+  * Allow products to be related to multiple categories.
+  * Create product variants for specific option combinations.
+  * Implement table to store saved supplier and brand information.
+  * Implement bulk updates for some product fields.
+  * Implement address validation for user-entered addresses.
+
+## v1.0.1
+Release 2019-12-24
+
+  * Fix UTF-8 key length issue for cache table
+
 ## v1.0.0
 Release 2019-12-22
 

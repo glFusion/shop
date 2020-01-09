@@ -211,7 +211,6 @@ class paypal extends \Shop\Gateway
         $i = 1;     // Item counter for paypal variables
         $total_amount = 0;
         $shipping = 0;
-        $weight = 0;
         $handling = 0;
         $fields['tax_cart'] = 0;
 
@@ -235,7 +234,7 @@ class paypal extends \Shop\Gateway
                 $P = \Shop\Product::getByID($item->product_id, $custom_arr);
                 $db_item_id = DB_escapeString($item->product_id);
                 $oc = 0;
-                $pov_arr = array();
+                $oio_arr = array();
                 foreach ($item->options as $OIO) {
                     $oio_arr[] = $OIO;
                     $fields['on'.$oc.'_'.$i] = $OIO->getName();
@@ -243,47 +242,39 @@ class paypal extends \Shop\Gateway
                     $oc++;
                 }
                 $overrides = array(
-                    'price' => $item->price,
+                    'price' => $item->getPrice(),
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($oio_arr, $item->quantity, $overrides);
+                $item_amount = $P->getPrice($oio_arr, $item->getQuantity(), $overrides);
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
-                $total_amount += $item->price;
-                if (isset($itemi->extras['custom']) && is_array($itemi->extras['custom'])) {
+                $total_amount += $item->getPrice();
+                if (isset($item->extras['custom']) && is_array($item->extras['custom'])) {
                     foreach ($item->extras['custom'] as $id=>$val) {
                         $fields['on'.$oc.'_'.$i] = $P->getCustom($id);
                         $fields['os'.$oc.'_'.$i] = $val;
                         $oc++;
                     }
                 }
-                $fields['quantity_' . $i] = $item->quantity;
+                $fields['quantity_' . $i] = $item->getQuantity();
 
                 if ($item->shipping > 0) {
-                    $fields['shipping_' . $i] = $item->shipping;
+                    $fields['shipping_' . $i] = $item->getShipping();
                     $shipping += $item->shipping;
-                }
-                if (isset($item->weight) && $item->weight > 0) {
-                    $weight += $item->weight;
                 }
                 $i++;
             }
 
-            if ($cart->shipping > 0) {
-                $fields['shipping_1'] = $cart->shipping;
-                $shipping += $cart->shipping;
+            if ($cart->getShipping() > 0) {
+                $fields['shipping_1'] = $cart->getShipping();
+                $shipping += $cart->getShipping();
             }
 
             //$fields['tax_cart'] = (float)$cart->getInfo('tax');
-            $fields['tax_cart'] = (float)$cart->tax;
-            $total_amount += $cart->tax;
+            $fields['tax_cart'] = (float)$cart->getTax();
+            $total_amount += $cart->getTax();
             if ($shipping > 0) $total_amount += $shipping;
-            if ($weight > 0) {
-                $fields['weight_cart'] = $weight;
-                $fields['weight_unit'] = $_SHOP_CONF['weight_unit'] == 'kgs' ?
-                            'kgs' : 'lbs';
-            }
         }
 
         // Set the business e-mail address based on the total puchase amount
@@ -524,9 +515,9 @@ class paypal extends \Shop\Gateway
                 break;
             }
 
-            if ($P->taxable) {
+            /*if ($P->taxable) {
                 $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
-            }
+            }*/
 
             // Buy-now product button, set default billing/shipping addresses
             $U = self::Customer();

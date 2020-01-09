@@ -113,7 +113,7 @@
             {st_time_disabled}
             data-uk-tooltip />
       &nbsp;<input type="checkbox" name="start_allday" value="1" {st_allday_chk} onclick="setAllday(this,'start');"/>&nbsp;{$LANG_SHOP['allday']}
-      &nbsp;<i class="uk-icon uk-icon-remove-o uk-text-danger tooltip"
+      &nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("start");'></i>&nbsp;{$LANG_SHOP['reset']}
     </div>
@@ -134,7 +134,7 @@
             {end_time_disabled}
             data-uk-tooltip />
       &nbsp;<input type="checkbox" name="end_allday" value="1" {end_allday_chk} onclick="setAllday(this,'end');"/>&nbsp;{$LANG_SHOP['allday']}
-      &nbsp;<i class="uk-icon uk-icon-remove-o uk-text-danger tooltip"
+      &nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
         onclick='SHOP_resetSaleDates("end");'></i>&nbsp;{$LANG_SHOP['reset']}
     </div>

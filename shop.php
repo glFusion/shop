@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -23,7 +23,7 @@ global $_SHOP_CONF;
 
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
-$_SHOP_CONF['pi_version']         = '1.0.0';
+$_SHOP_CONF['pi_version']         = '1.1.0';
 $_SHOP_CONF['gl_version']         = '1.7.0';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
@@ -57,6 +57,12 @@ $_TABLES['shop.shipment_packages']   = $_SHOP_table_prefix . 'shipment_packages'
 $_TABLES['shop.carrier_config'] = $_SHOP_table_prefix . 'carrier_config';
 $_TABLES['shop.cache'] = $_SHOP_table_prefix . 'cache';
 $_TABLES['shop.payments'] = $_SHOP_table_prefix . 'payments';
+$_TABLES['shop.tax_rates'] = $_SHOP_table_prefix . 'tax_rates';
+$_TABLES['shop.discountcodes'] = $_SHOP_table_prefix . 'discountcodes';
+$_TABLES['shop.prodXcat'] = $_SHOP_table_prefix . 'prodXcat';
+$_TABLES['shop.product_variants'] = $_SHOP_table_prefix . 'product_variants';
+$_TABLES['shop.variantXopt'] = $_SHOP_table_prefix . 'variantXopt';
+$_TABLES['shop.suppliers'] = $_SHOP_table_prefix . 'suppliers';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

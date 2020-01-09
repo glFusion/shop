@@ -3,9 +3,9 @@
  * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -21,11 +21,15 @@ class Customer
 {
     /** User ID
     * @var integer */
-    public $uid;
+    private $uid;
 
     /** Addresses stored for this user.
     * @var array */
-    public $addresses = array();
+    private $addresses = array();
+
+    /** Customer's preferred payment gateway ID.
+     * @var string */
+    private $pref_gw;
 
     /**  Flag to indicate that this is a new record.
      * @var boolean */
@@ -150,6 +154,7 @@ class Customer
             $this->email = $A['email'];
             $this->language = $A['language'];
             $this->isNew = false;
+            $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
             /*$res = DB_query(
                 "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
@@ -160,9 +165,21 @@ class Customer
         } else {
             $this->cart = array();
             $this->isNew = true;
-            $this->saveUser();
             $this->addresses = array();
+            $this->pref_gw = '';
+            $this->saveUser();      // create a user record
         }
+    }
+
+
+    /**
+     * Get the glFusion user ID for this customer
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
     }
 
 
@@ -174,7 +191,7 @@ class Customer
      */
     public function getAddress($add_id)
     {
-        global $_TABLES, $_USER;
+        global $_TABLES;
 
         $add_id = (int)$add_id;
         if (array_key_exists($add_id, $this->addresses)) {
@@ -232,10 +249,10 @@ class Customer
      */
     public function saveAddress($A, $type='')
     {
-        global $_TABLES, $_USER;
+        global $_TABLES;
 
         // Don't save invalid addresses, or anonymous
-        if ($_USER['uid'] < 2 || !is_array($A)) {
+        if ($this->uid < 2 || !is_array($A)) {
             return array(-1, '');
         }
         $type = $type == 'billto' ? 'billto' : 'shipto';
@@ -263,11 +280,18 @@ class Customer
     {
         global $_TABLES;
 
+        if ($this->uid < 2) {
+            // Act as if saving was successful but do nothing.
+            return true;
+        }
+
         $cart = DB_escapeString(@serialize($this->cart));
         $sql = "INSERT INTO {$_TABLES['shop.userinfo']} SET
             uid = {$this->uid},
+            pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart'
             ON DUPLICATE KEY UPDATE
+            pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -365,8 +389,7 @@ class Customer
      */
     public function AddressForm($type='billto', $A=array(), $step)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
-
+        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
@@ -410,6 +433,7 @@ class Customer
 
             $T->set_var(array(
                 'id'        => $address->getID(),
+                'ad_type'   => $type,
                 'ad_name'   => $address->getName(),
                 'ad_company' => $address->getCompany(),
                 'ad_addr_1' => $address->getAddress1(),
@@ -418,6 +442,7 @@ class Customer
                 'ad_state'  => $address->getState(),
                 'ad_country' => $address->getCountry(),
                 'ad_zip'    => $address->getPostal(),
+                'ad_phone'  => $address->getPhone(),
                 'ad_checked' => $ad_checked,
                 'del_icon'  => Icon::getHTML(
                     'delete', 'tooltip',
@@ -460,11 +485,13 @@ class Customer
             'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',
             'req_country'   => $_SHOP_CONF['get_country'] == 2 ? 'true' : '',
             'req_postal'    => $_SHOP_CONF['get_postal'] == 2 ? 'true' : '',
+            'req_phone'     => $_SHOP_CONF['get_phone'] == 2 ? 'true' : '',
             'get_street'    => $_SHOP_CONF['get_street'] > 0 ? 'true' : '',
             'get_city'      => $_SHOP_CONF['get_city'] > 0 ? 'true' : '',
             'get_state'     => $_SHOP_CONF['get_state'] > 0 ? 'true' : '',
             'get_country'   => $_SHOP_CONF['get_country'] > 0 ? 'true' : '',
             'get_postal'    => $_SHOP_CONF['get_postal'] > 0 ? 'true' : '',
+            'get_phone'     => $_SHOP_CONF['get_phone'] > 0 ? 'true' : '',
 
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,
@@ -566,6 +593,31 @@ class Customer
             'zip',
         );
     }
+
+
+    /**
+     * Set the customer's preferred payment gateway.
+     *
+     * @param   string  $gw     ID of preferred gateway
+     * @return  object  $this
+     */
+    public function setPrefGW($gw)
+    {
+        $this->pref_gw = $gw;
+        return $this;
+    }
+
+
+    /**
+     * Get the customer's preferred payment gateway.
+     *
+     * @return  string      ID of preferred gateway
+     */
+    public function getPrefGW()
+    {
+        return $this->pref_gw;
+    }
+
 
 }   // class Customer
 

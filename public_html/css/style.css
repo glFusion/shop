@@ -599,7 +599,7 @@ div.shopProductSort {
 div.shopProductSearch {
     float: right;
 }
-#orderInstructions {
+div.orderInstructions {
     clear: both;
     margin-top: 15px;
     padding-top:10px;
@@ -781,4 +781,8 @@ div#orderShipmentBlock {
 }
 .shopDetailAddCart.v2 .uk-form-controls {
     margin-left:120px;
+}
+
+.shopLogoImage.small {
+    height:40px;
 }

@@ -3,9 +3,9 @@
  * Migrate data from the Paypal plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -44,7 +44,6 @@ class MigratePP
         $tables = array(
             'coupon_log',
             'order_log', 'orderstatus',
-            'userinfo',
             'workflows', 'currency',
         );
         foreach ($tables as $table) {
@@ -89,6 +88,14 @@ class MigratePP
             return false;
         }
         if (!self::migrateAddress()) {
+            return false;
+        }
+        if (!self::migrateUserinfo()) {
+            // @since v1.1.0 to get cart info
+            return false;
+        }
+        if (!self::createVariants()) {
+            // @since v1.1.0 to create variants from option groups and values
             return false;
         }
         return true;
@@ -212,9 +219,28 @@ class MigratePP
         COM_errorLog("Migrating Products ...");
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.products']}",
-            "INSERT INTO {$_TABLES['shop.products']}
-                SELECT *, '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
-                FROM {$_TABLES['paypal.products']}",
+            "INSERT INTO {$_TABLES['shop.products']} (
+                `id`, `name`, `short_description`, `description`, `keywords`,
+                `price`, `prod_type`, `file`, `expiration`, `enabled`,
+                `featured`, `dt_add`, `views`, `comments_enabled`, `rating_enabled`,
+                `buttons`, `rating`, `votes`, `weight`, `taxable`, `shipping_type`,
+                `shipping_amt`, `shipping_units`, `show_random`, `show_popular`,
+                `options`, `track_onhand`, `onhand`, `oversell`, `qty_discounts`,
+                `custom`, `avail_beg`, `avail_end`,
+                `brand`, `min_ord_qty`, `max_ord_qty`
+            ) SELECT
+                `id`, `name`, `short_description`, `description`, `keywords`,
+                `price`, `prod_type`, `file`, `expiration`, `enabled`,
+                `featured`, `dt_add`, `views`, `comments_enabled`, `rating_enabled`,
+                `buttons`, `rating`, `votes`, `weight`, `taxable`, `shipping_type`,
+                `shipping_amt`, `shipping_units`, `show_random`, `show_popular`,
+                `options`, `track_onhand`, `onhand`, `oversell`, `qty_discounts`,
+                `custom`, `avail_beg`, `avail_end`,
+                '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
+            FROM {$_TABLES['paypal.products']}",
+            "TRUNCATE {$_TABLES['shop.prodXcat']}",
+            "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} (product_id, cat_id)
+                SELECT id, cat_id FROM {$_TABLES['paypal.products']}",
         ) );
     }
 
@@ -233,15 +259,38 @@ class MigratePP
 
         COM_errorLog("Migrating Orders ...");
         $add_flds = '';
-        // If not at Paypal 0.6.1, add a dummy order sequence value
+        // If not at Paypal 0.6.1, add dummy currency and order sequence values
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
-            // Needed for Paypal 0.6.0 only
-            $add_flds .= ", '{$_SHOP_CONF['currency']}' as currency, NULL as order_seq";
+            $currency = "'{$_SHOP_CONF['currency']}'";
+            $order_seq = "NULL";
+        } else {
+            $currency = '`currency`';
+            $order_seq = '`order_seq`';
         }
-        $add_flds .= ', 0 as shipper_id'; // Needed for both Paypal 0.6.0 and 0.6.1
         $sql = array(
             "TRUNCATE {$_TABLES['shop.orders']}",
-            "INSERT INTO {$_TABLES['shop.orders']} SELECT * $add_flds FROM {$_TABLES['paypal.orders']}",
+            "INSERT INTO {$_TABLES['shop.orders']} (
+                order_id, uid, order_date, last_mod, billto_id,
+                billto_name, billto_company, billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip,
+                shipto_id, shipto_name, shipto_company, shipto_address1,
+                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
+                phone, buyer_email, gross_items, net_nontax, net_taxable, order_total,
+                tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
+                instructions, token, tax_rate, info, currency, order_seq,
+                shipper_id, discount_code, discount_pct
+            ) SELECT
+                order_id, uid, order_date, last_mod, billto_id,
+                billto_name, billto_company, billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip,
+                shipto_id, shipto_name, shipto_company, shipto_address1,
+                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
+                phone, buyer_email,
+                0 as gross_items, 0 as net_nontax, 0 as net_taxable, 0 as order_total,
+                tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
+                instructions, token, tax_rate, info, $currency, $order_seq,
+                0 as shipper_id, '' as discount_code, 0 as discount_pct
+            FROM {$_TABLES['paypal.orders']}",
         );
         // If not at paypal 0.6.1, then create the order sequence values.
         if (!COM_checkVersion($_PP_CONF['pi_version'], '0.6.1')) {
@@ -251,7 +300,6 @@ class MigratePP
         }
         return self::_dbExecute($sql);
     }
-
 
     /**
      * Migrate Order Items. Adds the qty_discount field not found in Paypal.
@@ -363,7 +411,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateOptionValues()
+    private static function migrateOptionValues()
     {
         global $_TABLES;
 
@@ -371,7 +419,10 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
-            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
+            // Drop key so duplicate values can be created, it will be
+            // replaced in createVariants()
+            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `pog_value`",
             "INSERT INTO {$_TABLES['shop.prod_opt_vals']}
                 SELECT  attr_id as pov_id, 0 as pog_id, item_id, attr_value as pov_value,
                 orderby, attr_price as pov_price, enabled, '' as sku, attr_name
@@ -381,13 +432,90 @@ class MigratePP
 
 
     /**
+     * Create product variants based on the option values.
+     * Public so it can be called from upgrade.php.
+     * This function will always return true since creating the variants is
+     * convenient but not critical.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    public static function createVariants()
+    {
+        global $_TABLES;
+
+        COM_errorLog("Creating product variants and trimming option Values ...");
+        // Upgrades to use the new product variants.
+        // TODO: drop item_id column, after creating Variant records
+        $r_allvals = self::_dbExecute("SELECT * FROM {$_TABLES['shop.prod_opt_vals']}");
+        $allvals = array();
+        while ($A = DB_fetchArray($r_allvals, false)) {
+            if (!isset($allvals[$A['pog_id']][$A['pov_value']])) {
+                $allvals[$A['pog_id']][$A['pov_value']] = array(
+                    'items' => array(),
+                    'ids' => array(),
+                    'new_id' => 0,
+                );
+            }
+            $allvals[$A['pog_id']][$A['pov_value']]['ids'][] = $A['pov_id'];
+            $allvals[$A['pog_id']][$A['pov_value']]['items'][] = $A['item_id'];
+        }
+        self::_dbExecute("TRUNCATE {$_TABLES['shop.product_variants']}");
+        self::_dbExecute("TRUNCATE {$_TABLES['shop.variantXopt']}");
+        self::_dbExecute("ALTER IGNORE TABLE {$_TABLES['shop.prod_opt_vals']}
+            ADD UNIQUE `pog_value` (`pog_id`, `pov_value`)");
+        foreach ($allvals as $pog_id=>$vals) {
+            foreach ($vals as $val=>$info) {
+                $pov_ids = implode(',', $info['ids']);
+                $allvals[$pog_id][$val]['new_id'] = DB_getItem(
+                    $_TABLES['shop.prod_opt_vals'],
+                    'pov_id',
+                    "pog_id = {$pog_id} AND pov_id IN ($pov_ids)"
+                );
+            }
+        }
+        // Cycle through again with the new IDs, collect the items
+        // and create the variants.
+        $items = array();
+        foreach ($allvals as $pog_id=>$vals) {
+            foreach ($vals as $val) {
+                foreach ($val['items'] as $item_id) {
+                    if (!isset($items[$item_id])) {
+                        $items[$item_id] = array(
+                            'item_id' => $item_id,
+                            'groups' => array(),
+                        );
+                    }
+                    $items[$item_id]['groups'][$pog_id][] = $val['new_id'];
+                }
+            }
+        }
+
+        // Now create the variants
+        foreach ($items as $item_id=>$opts) {
+            $PV = new ProductVariant;
+            $PV->saveNew($opts);
+        }
+
+        // Now reorder the option values since there may be duplicate
+        // orderby values due to table reduction.
+        $sql = "SELECT pog_id FROM {$_TABLES['shop.prod_opt_grps']}";
+        $res = self::_dbExecute($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            ProductOptionValue::reOrder($A['pog_id']);
+        }
+        return true;
+
+     }
+
+
+    /**
      * Create the option groups from the names of existing product options.
      * Uses the `attr_name` column to get the option group for each option value,
      * then drops that column.
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateOptionGroups()
+    private static function migrateOptionGroups()
     {
         global $_TABLES;
 
@@ -411,7 +539,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateShipping()
+    private static function migrateShipping()
     {
         global $_TABLES;
 
@@ -445,7 +573,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateGateways()
+    private static function migrateGateways()
     {
         global $_TABLES;
 
@@ -464,7 +592,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateImages()
+    private static function migrateImages()
     {
         global $_TABLES;
 
@@ -483,7 +611,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateIPNLog()
+    private static function migrateIPNLog()
     {
         global $_TABLES;
 
@@ -503,7 +631,7 @@ class MigratePP
      *
      * @return  boolean     True on success, False on failure
      */
-    public function migrateAddress()
+    private static function migrateAddress()
     {
         global $_TABLES;
 
@@ -518,6 +646,25 @@ class MigratePP
                 city, state, country, zip,
                 billto_def, shipto_def
             FROM {$_TABLES['paypal.address']}",
+        ) );
+    }
+
+
+    /**
+     * Migrate customer information - cart and preferred gateway.
+     *
+     * @return  boolean     True on success, False on failure
+     */
+    private static function migrateUserinfo()
+    {
+        global $_TABLES;
+
+        COM_errorLog("Migrating User Information ...");
+        return self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.userinfo']}",
+            "INSERT INTO {$_TABLES['shop.userinfo']}
+                (uid, cart, pref_gw)
+            SELECT uid, cart, '' FROM {$_TABLES['paypal.userinfo']}",
         ) );
     }
 
@@ -575,21 +722,23 @@ class MigratePP
     /**
      * Execute one or more database queries.
      * Sets the return to False if any query fails but continues with others.
+     * Returns the last query result otherwise, so call this with a single
+     * query to get the resource for further use.
      *
      * @param   array       $sql_arr    Array of sql statements
      * @return  boolean     True on success, False on failure
      */
     private static function _dbExecute($sql_arr)
     {
-        $retval = true;     // assume success
         if (!is_array($sql_arr)) {
             $sql_arr = array($sql_arr);
         }
         foreach ($sql_arr as $sql) {
             COM_errorLog(".... executing sql: $sql");
-            DB_query($sql, 1);
+            $retval = DB_query($sql, 1);
             if (DB_error()) {
                 $retval = false;
+                break;
             }
         }
         return $retval;

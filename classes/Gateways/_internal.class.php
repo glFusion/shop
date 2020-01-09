@@ -114,9 +114,9 @@ class _internal extends \Shop\Gateway
                 break;
             }
 
-            if ($P->taxable) {
+            /*if ($P->taxable) {
                 $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
-            }
+            }*/
 
             // Buy-now product button, set default billing/shipping addresses
             $U = self::Customer();

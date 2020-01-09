@@ -22,7 +22,7 @@ class Category extends \Shop\Image
 {
     /** Key into $_SHOP_CONF where the image path can be found.
      * @var string */
-    protected static $pathkey = 'catimgpath';
+    protected static $pathkey = 'categories';
 
     /** Maximum width, in pixels. Used if no width is given in getImage functions.
      * @var integer */
@@ -38,14 +38,14 @@ class Category extends \Shop\Image
      * @param   integer $record_id Product ID number
      * @param   string  $varname    Name of form field
      */
-    public function __construct($record_id, $varname='photo')
+/*    public function __construct($record_id, $varname='photo')
     {
         global $_SHOP_CONF;
 
         $this->pathImage = $_SHOP_CONF[self::$pathkey];
         parent::__construct($record_id, $varname);
     }
-
+ */
 
     /**
      * Perform the file upload.

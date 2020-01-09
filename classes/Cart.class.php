@@ -129,6 +129,7 @@ class Cart extends Order
             }
             $args = array(
                 'item_number'   => $Item->product_id,
+                'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
                 'extras'        => $Item->extras,
                 'description'   => $Item->description,
@@ -177,6 +178,7 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
+        $Var        = ProductVariant::getByAttributes($P->getID(), $options);
         if (!is_array($this->items)) {
             $this->items = array();
         }
@@ -191,11 +193,12 @@ class Cart extends Order
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
-            $opt_str = implode(',', $options);
-            $item_id .= '|' . $opt_str;
+            //$opt_str = implode(',', $options);
+            //$item_id .= '|' . $opt_str;
         } else {
             $opts = array();
         }
+        $item_id .= '|' . $Var->getID();
 
         // Look for identical items, including options (to catch
         // attributes). If found, just update the quantity.
@@ -213,13 +216,12 @@ class Cart extends Order
         } elseif ($quantity == 0) {
             return false;
         } else {
-            //$price = $P->getPrice($attrs, $quantity, array('uid'=>$uid));
             $tmp = array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
-                //'price'     => sprintf("%.2f", $price),
+                'variant'   => $Var->getID(),
                 'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
@@ -275,7 +277,7 @@ class Cart extends Order
      * @param   integer $step   Step in the checkout process (not used)
      * @return  string      HTML for cart view
      */
-    public function View($view = 'order', $step = 0)
+    public function XXView($view = 'order', $step = 0)
     {
         foreach ($this->items as $key=>$Item) {
             $prod_price = $Item->getItemPrice();
@@ -307,7 +309,7 @@ class Cart extends Order
         $items = $A['quantity'];
         if (!is_array($items)) {
             // No items in the cart?
-            return;
+            return $this->m_cart;
         }
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
@@ -315,25 +317,33 @@ class Cart extends Order
             // browser window.
             if (array_key_exists($id, $this->items)) {
                 $qty = (float)$qty;
+                $item_id = $this->items[$id]->getProductId();
+                $old_qty = $this->items[$id]->getQuantity();
+                // Check that the order hasn't exceeded the max allowed qty.
+                $max = Product::getById($item_id)->getMaxOrderQty();
+                if ($qty > $max) {
+                    $qty = $max;
+                }
                 if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
                     // Save the item ID to update any affected qty-based
                     // discounts.
-                    $item_id = $this->items[$id]->product_id;
                     $this->Remove($id);
+                    // Re-apply qty discounts in case there are other items
+                    // with the same base ID
                     $this->applyQtyDiscounts($item_id);
-                } else {
+                    $this->tainted = true;
+                } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
-                    $max = Product::getById($this->items[$id]->getProductId())->getMaxOrderQty();
-                    if ($qty > $max) {
-                        $qty = $max;
-                    }
                     $this->items[$id]->setQuantity($qty);
+                    $this->applyQtyDiscounts($item_id);
+                    $this->tainted = true;
                 }
             }
+            $this->applyQtyDiscounts($this->items[$id]->product_id);
         }
-        $this->applyQtyDiscounts($this->items[$id]->product_id);
+        $this->calcItemTotals();
 
         // Now look for a coupon code to redeem against the user's account.
         if ($_SHOP_CONF['gc_enabled']) {
@@ -341,6 +351,7 @@ class Cart extends Order
             if (!empty($gc)) {
                 if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
+                    $this->tainted = true;
                 }
             }
         }
@@ -356,6 +367,13 @@ class Cart extends Order
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
+        if (isset($A['discount_code']) && !empty($A['discount_code'])) {
+            $dc = $A['discount_code'];
+        } else {
+            $dc = $this->getDiscountCode();
+        }
+        $this->validateDiscountCode($dc);
+
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this->m_cart;
     }
@@ -542,6 +560,9 @@ class Cart extends Order
             } else {
                 // Select the first if there's one, otherwise select none.
                 $gw_sel = Gateway::getSelected();
+                if ($gw_sel == '') {
+                    $gw_sel = Customer::getInstance($this->uid)->getPrefGW();
+                }
             }
             foreach ($gateways as $gw_id=>$gw) {
                 if (is_null($gw) || !$gw->hasAccess()) {
@@ -819,7 +840,6 @@ class Cart extends Order
         //$oldstatus = $Order->status;
         //$newstatus = $status ? 'pending' : 'cart';
         //$Order->status = $newstatus;
-        $Order->tax_rate = SHOP_getTaxRate();
         $Order->order_date->setTimestamp(time());
         $Order->Save();
         self::setSession('order_id', $cart_id);
@@ -864,6 +884,7 @@ class Cart extends Order
         } else {
             $wf_name = 'viewcart';
         }
+
         switch($wf_name) {
         case 'viewcart':
             // Initial cart view. Check here and populate the billing and
@@ -1015,6 +1036,8 @@ class Cart extends Order
                 $this->Remove($id);
                 $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
                 $invalid['removed'][] = $P;
+            } else {
+                $this->applyQtyDiscounts($P->getId());
             }
         }
         if (!empty($msg)) {

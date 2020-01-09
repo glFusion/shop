@@ -4,7 +4,7 @@
   {$LANG_SHOP['continue_shopping']}
 </a>
 <div style="text-align:center; margin-left:auto;">
-  <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
+    <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
   <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
     <input type="hidden" name="order_id" value="{order_number}" />
 
@@ -85,10 +85,16 @@
         <td></td>
       </tr>
 {!endif}
-{!if cart_tax}
+{!if dc_row_vis}
+        <tr>
+            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']} ({discount_code})</td>
+            <td colspan="1" class="alignright">{dc_amt}</td>
+        </tr>
+{!endif}
+{!if Xtax_items}
       <tr>
         <td colspan="4" class="alignright">{lang_tax_on_items}</td>
-        <td colspan="1" class="alignright">{cart_tax}</td>
+        <td colspan="1" class="alignright">TBD</td>
         <td></td>
       </tr>
 {!endif}
@@ -126,9 +132,20 @@
         </b></td>
         <td></td>
       </tr>
+
     </table>
-    <div id="orderInstructions">{$LANG_SHOP['order_instr']}:<br />
-      <textarea name="order_instr" rows="4" cols="80">{order_instr}</textarea>
+    <div class="uk-grid orderInstructions">
+        <div class="uk-width-1-2 orderInstructions">
+{!if discount_code_fld}
+            {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
+                oninput="updateDCButton();return false;" />
+            <button id="dc_validate" name="update"
+                class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
+{!endif}
+        </div>
+        <div class="uk-width-1-2 orderInstructions">{$LANG_SHOP['order_instr']}:<br />
+            <textarea name="order_instr" rows="4" cols="80">{order_instr}</textarea>
+        </div>
     </div>
     <input type="hidden" name="custom" value='{custom}' />
     <button style="float:none;" type="submit" class="uk-button uk-button-primary" name="update" id="updatebtn">
@@ -169,7 +186,7 @@
         </div>
       </div>
 
-{!if 0}    
+{!if 0}
       <div class="uk-width-1-4 uk-margin floatright" id="checkoutButtons">
 {!if gateway_radios}
         <input type="hidden" name="next_step" value="{next_step}" />
@@ -225,5 +242,11 @@ function SHOP_updateShipping(e)
     document.getElementById("ord_total_span").innerHTML = obj[newship].total;
     document.getElementById("shipping_cell").innerHTML = obj[newship].amount;
 }
+function updateDCButton()
+{
+    document.getElementById("dc_validate").disabled =
+        !(document.getElementById("discount_code").value != '');
+}
+
 </script>
 {# end {templatelocation} #}

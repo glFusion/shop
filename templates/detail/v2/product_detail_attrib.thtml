@@ -41,14 +41,17 @@
     </div>
 
     <div class="shopDetailAttrib v2 uk-width-large-1-3 uk-width-medium-1-2 uk-width-small-1-1">
+      <div>
         <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
             <div class="shopDetailPrice v2">
 {!if on_sale}
                 <span class="shopPrice was">{price_prefix}</span>
                 <span class="shopPrice was" id="price_was">{orig_price}</span>
                 <span class="shopPrice sale">{price_postfix}</span>
-                <div class="shopPrice sale">{sale_name}</div>
                 <div>
+{!if sale_name}
+                    <span class="shopPrice sale">{sale_name}: </span>
+{!endif}
                     <span class="shopPrice sale">{price_prefix}</span>
                     <span class="shopPrice sale" id="price">{init_price}</span>
                     <span class="shopPrice sale">{price_postfix}</span>
@@ -74,18 +77,18 @@
                     <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
                     <div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-                        <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm();">
+                        <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm(this.form);">
 <!-- BEGIN Optionselect -->
                             <option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
                         </select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-                        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm();"/>&nbsp;{opt_str}<br />
+                        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
-                        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm();">&nbsp;{opt_str}<br />
+                        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm(this.form);">&nbsp;{opt_str}<br />
 <!-- END Optionradio -->
 {!endif}
                     </div>
@@ -119,9 +122,9 @@
                 </div>
 <!-- END SpecialFields -->
 
-{!if onhand}
-                <div class="uk-form-row shopOnhand">
-                    {onhand} {$LANG_SHOP['available']}
+{!if avail_msg}
+                <div id="avail_msg" class="uk-form-row shopOnhand">
+                    {avail_msg}
                 </div>
 {!endif}
 {!if stock_msg}
@@ -135,6 +138,17 @@
 <!-- BEGIN BtnBlock -->
         <div class="shopDetailBuyNow v2">{buy_now_button}</div>
 <!-- END BtnBlock -->
+      </div>
+      <div style="clear:right;padding-top:25px;">
+{!if brand_id}
+        <b>Brand:</b>
+        <a href="{site_url}/shop/index.php?products&brand={brand_id}">{brand_name}
+{!if brand_logo_url}
+        &nbsp;&nbsp;<img class="shopLogoImage small" src="{brand_logo_url}" />
+{!endif}
+        </a>
+{!endif}
+      </div>
     </div>
 {!if main_img}
     <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>

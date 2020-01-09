@@ -23,10 +23,11 @@ class Catalog
     /**
      * Show the default catalog layout based on plugin configuration.
      *
-     * @param   integer $cat_id     Selected category ID from the URL, if any
+     * @param   integer $cat_id     Optional category ID from the URL
+     * @param   integer $brand_id   Optional brand ID to filter results
      * @return  string      HTML for catalog display
      */
-    public static function defaultCatalog($cat_id)
+    public static function defaultCatalog($cat_id=0, $brand_id=0)
     {
         global $_SHOP_CONF;
 
@@ -37,7 +38,7 @@ class Catalog
         ) {
             $content .= self::Categories();
         } else {
-            $content .= self::Products($cat_id);
+            $content .= self::Products($cat_id, $brand_id);
             $menu_opt = $LANG_SHOP['products'];
             $page_title = $LANG_SHOP['main_title'];
         }
@@ -49,9 +50,10 @@ class Catalog
      * Diaplay the product catalog items.
      *
      * @param   integer $cat_id     Optional category ID to limit display
+     * @param   integer $brand_id   Optional brand ID. Overrides $cat_id
      * @return  string      HTML for product catalog.
      */
-    public static function Products($cat_id = 0)
+    public static function Products($cat_id=0, $brand_id=0)
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
@@ -72,19 +74,27 @@ class Catalog
 
         // Get the root category and see if the requested category is root.
         $RootCat = Category::getRoot();
-        $cat_name = $Cat->cat_name;
-        $cat_desc = $Cat->description;
-        $cat_img_url = $Cat->getImage()['url'];
-        if ($Cat->parent_id > 0) {
-            // Get the sql to limit by category
-            $tmp = Category::getTree($Cat->cat_id);
-            $cats = array();
-            foreach ($tmp as $xcat_id=>$info) {
-                $cats[] = $xcat_id;
+        if ($brand_id == 0) {       // no brand limit, check for a category ID
+            $cat_name = $Cat->cat_name;
+            $cat_desc = $Cat->description;
+            $cat_img_url = $Cat->getImage()['url'];
+            if ($Cat->parent_id > 0) {
+                // Get the sql to limit by category
+                $tmp = Category::getTree($Cat->cat_id);
+                $cats = array();
+                foreach ($tmp as $xcat_id=>$info) {
+                    $cats[] = $xcat_id;
+                }
+                if (!empty($cats)) {
+                    $cat_sql = implode(',', $cats);
+                    $cat_sql = " AND c.cat_id IN ($cat_sql)";
+                }
             }
-            if (!empty($cats)) {
-                $cat_sql = implode(',', $cats);
-                $cat_sql = " AND c.cat_id IN ($cat_sql)";
+        } else {
+            $Sup = Supplier::getInstance($brand_id);
+            if ($Sup->getID() > 0) {
+                // Just borrow $cat_sql for this limit
+                $cat_sql = " AND p.brand_id = {$Sup->getID()}";
             }
         }
 
@@ -174,7 +184,22 @@ class Catalog
         // Get products from database. "c.enabled is null" is to allow products
         // with no category defined
         $today = $_CONF['_now']->format('Y-m-d', true);
-        $sql = " FROM {$_TABLES['shop.products']} p
+        $sql = " FROM {$_TABLES['shop.categories']} c
+            INNER JOIN {$_TABLES['shop.prodXcat']} x
+                ON x.cat_id = c.cat_id
+            INNER JOIN {$_TABLES['shop.products']} p
+                ON p.id = x.product_id
+                WHERE p.enabled=1
+                AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
+                AND (
+                    (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
+                    OR c.enabled IS NULL
+                    )
+                AND (
+                    p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
+                    ) $cat_sql";
+
+/*        $sql = " FROM {$_TABLES['shop.products']} p
                 LEFT JOIN {$_TABLES['shop.categories']} c
                     ON p.cat_id = c.cat_id
                 WHERE p.enabled=1
@@ -186,7 +211,7 @@ class Catalog
                 AND (
                     p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
                     ) $cat_sql";
-
+ */
         $search = '';
         // Add search query, if any
         if (
@@ -223,7 +248,7 @@ class Catalog
         $cache_key = Cache::makeKey('prod_cnt_' . $sql_key);
         $count = Cache::get($cache_key);
         if ($count === NULL) {
-            $res = DB_query('SELECT p.id ' . $sql);
+            $res = DB_query('SELECT DISTINCT p.id ' . $sql);
             $count = DB_numRows($res);
             Cache::set($cache_key, $count, array('products', 'categories'));
         }
@@ -251,10 +276,10 @@ class Catalog
         $cache_key = Cache::makeKey('prod_list_' . $sql_key);
         $Products = Cache::get($cache_key);
         if ($Products === NULL) {
-            $res = DB_query('SELECT p.* ' . $sql);
+            $res = DB_query('SELECT DISTINCT p.id, p.short_description ' . $sql);
             $Products = array();
             while ($A = DB_fetchArray($res, false)) {
-                $Products[] = Product::getInstance($A);
+                $Products[] = Product::getById($A['id']);
             }
             Cache::set($cache_key, $Products, array('products', 'categories'));
         }
@@ -309,7 +334,6 @@ class Catalog
             if (!$P->canDisplay()) {
                 continue;
             }
-
             $prodrows++;
             $T->set_var(array(
                 'item_id'       => $P->id,

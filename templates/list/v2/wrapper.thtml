@@ -37,9 +37,6 @@
           <div class="ItemUrl">
             <div class="shortdescription">{short_description}</div>
 {!if price}
-{!if track_onhand}
-            ({qty_onhand} {$LANG_SHOP['available']})<br />
-{!endif}
             <div class="shopPrice list normal v2">
 {!if on_sale}
               <span class="shopPrice list was v2">{orig_price}</span><br />

@@ -230,7 +230,8 @@ class Coupon extends \Shop\Product
         $res = DB_query($sql);
         if (DB_numRows($res) == 0) {
             SHOP_log("Attempting to redeem coupon $code, not found in database", SHOP_LOG_ERROR);
-            return array(3, sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']));;
+            return array(3, sprintf(
+                $LANG_SHOP['coupon_apply_msg3'], \Shop\Company::getInstance()->getEmail()));
         } else {
             $A = DB_fetchArray($res, false);
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
@@ -381,7 +382,7 @@ class Coupon extends \Shop\Product
                 $recip_name,
             ),
             'from' => array(
-                'email' => $_CONF['site_mail'],
+                'email' => \Shop\Company::getInstance()->getEmail(),
                 'name'  => \Shop\Company::getInstance()->getCompany(),
             ),
             'htmlmessage' => $msg_text,

@@ -106,7 +106,8 @@
     <div class="uk-form-controls">
       <button class="uk-button uk-button-success" type="submit" name="savecat" value="{$LANG_SHOP['savecat']}" />{$LANG_SHOP['savecat']}</button>
       <button class="uk-button uk-button-primary" type="reset" name="reset" value="{$LANG_SHOP['clearform']}" />{$LANG_SHOP['clearform']}</button>
-      <button type="submit"  class="uk-button" name="categories" value="{$LANG_ADMIN['cancel']}" />{$LANG_ADMIN['cancel']}</button>
+      <button type="reset"  class="uk-button" name="categories"
+            onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?categories';" />{$LANG_ADMIN['cancel']}</button>
 {!if can_delete}
       <div style="display:inline; float:right;">
         <button style="align:right;" type="submit" class="uk-button uk-button-danger" name="deletecat" value="{$LANG_SHOP['deletecat']}"

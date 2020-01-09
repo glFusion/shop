@@ -1,0 +1,79 @@
+{# begin {templatelocation} #}
+<div class="uk-alert">{$LANG_SHOP_HELP['hlp_var_bulk_edit']}</div>
+<div class="uk-width-1-1" style="margin-top:15px;">
+    <div class="uk-width-1-2" style="float:left;">
+        <form class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
+            <input type="hidden" name="pv_ids" value="{pv_ids}" />
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['var_price']}:
+                    <span id="price" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="text" name="price" value="" placeholder="{$LANG_SHOP['leave_as_is']}" size="12" maxlength="32" />
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['weight']}:
+                    <span id="weight" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="text" name="weight" value="" placeholder="{$LANG_SHOP['leave_as_is']}" size="12" maxlength="32" />
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['shipping']}:
+                    <span id="shipping" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="text" name="shipping_units" value="" placeholder="{$LANG_SHOP['leave_as_is']}" size="12" maxlength="32" />
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['onhand']}:
+                    <span id="onhand" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="text" name="onhand" value="" placeholder="{$LANG_SHOP['leave_as_is']}" size="12" maxlength="32" />
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['reorder']}:
+                    <span id="reorder" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="text" name="reorder" value="" placeholder="{$LANG_SHOP['leave_as_is']}" size="12" maxlength="32" />
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label">{$LANG_SHOP['enabled']}:
+                    <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+                </label>
+                <div class="uk-form-controls">
+                    <input type="radio" name="enabled" value="1" />&nbsp;{$LANG_SHOP['yes']}&nbsp;&nbsp;
+                    <input type="radio" name="enabled" value="0" />&nbsp;{$LANG_SHOP['no']}&nbsp;&nbsp;
+                    <input type="radio" name="enabled" value="-1" checked="checked" />&nbsp;{$LANG_SHOP['leave_as_is']}
+                </div>
+            </div>
+
+            <div class="uk-form-row">
+                <label class="uk-form-label"></label>
+                <div class="uk-form-controls">
+                    <button class="uk-button uk-button-success" name="pv_bulk_save">{$LANG_ADMIN['save']}</button>
+                    <button class="uk-button" name="variants">{$LANG_ADMIN['cancel']}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="uk-width-1-2" style="float:left;">
+        <h2>Items to be Updated:</h2>
+<!-- BEGIN skuList -->
+            {sku}<br />
+<!-- END skuList -->
+    </div>
+</div>
+{# end {templatelocation} #}

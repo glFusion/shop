@@ -5,10 +5,10 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -666,8 +666,10 @@ function plugin_dopluginsearch_shop(
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['prodXcat']} pxc
+                ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
-                ON p.cat_id=c.cat_id
+                ON pxc.cat_id=c.cat_id
             WHERE p.enabled = 1
             AND (c.enabled=1 OR c.enabled IS NULL)";
 
@@ -810,6 +812,7 @@ function plugin_autouninstall_shop()
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
+            // v1.0.0
             'shop.prod_opt_grps',
             'shop.prod_opt_vals',
             'shop.shipments',
@@ -817,6 +820,14 @@ function plugin_autouninstall_shop()
             'shop.shipment_packages',
             'shop.carrier_config',
             'shop.cache',
+            // v1.1.0
+            'shop.tax_rates',
+            'shop.discountcodes',
+            'shop.prodXcat',
+            'shop.product_variants',
+            'shop.variantXopt',
+            'shop.suppliers',
+            'shop.discountcodes',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -1101,7 +1112,9 @@ function phpblock_shop_categories()
     $sql = "SELECT c.*, (
         SELECT count(p.id)
         FROM {$_TABLES['shop.products']} p
-        WHERE p.cat_id = c.cat_id AND p.enabled = 1
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        WHERE pxc.cat_id = c.cat_id AND p.enabled = 1
         ) AS cnt
         FROM {$_TABLES['shop.categories']} c
         WHERE c.cat_id > 0
@@ -1298,8 +1311,10 @@ function SHOP_phpblock_product_sql($where, $limit=1)
     // no category record, as long as the product is enabled.
     $sql = "SELECT  id
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON p.cat_id=c.cat_id
+                ON pxc.cat_id=c.cat_id
             WHERE
                 p.enabled=1 AND (c.enabled=1 OR c.enabled IS NULL) " .
             SEC_buildAccessSql('AND', 'c.grp_access') . "
@@ -1860,7 +1875,9 @@ function SHOP_child_cat_product_count($p_cat)
     $sql = "SELECT c.cat_id, c.cat_name, (
         SELECT count(p.id)
         FROM {$_TABLES['shop.products']} p
-        WHERE p.cat_id = c.cat_id
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        WHERE pxc.cat_id = c.cat_id
         ) AS cnt
         FROM {$_TABLES['shop.categories']} c
         WHERE c.lft BETWEEN $lft AND $rgt
@@ -2011,9 +2028,11 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 
     $retval = array();
     $sql = "SELECT $fields
-             FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON c.cat_id = p.cat_id ";
+        FROM {$_TABLES['shop.products']} p
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        LEFT JOIN {$_TABLES['shop.categories']} c
+            ON c.cat_id = pxc.cat_id ";
     $today = SHOP_now()->format('Y-m-d');
     if ($id == '*') {
         $where = ' WHERE 1 = 1 ';
@@ -2023,7 +2042,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     $where .= " AND p.enabled = 1 AND c.enabled = 1 AND avail_beg <= '$today' AND avail_end >= '$today' ";
     $where .= $cat_where;   // set above during check for shop_enabled setting
     if (isset($options['cat_id'])) {
-        $where .= ' AND p.cat_id = ' . (int)$options['cat_id'];
+        $where .= ' AND c.cat_id = ' . (int)$options['cat_id'];
     }
     $sql .= $where;
     $res = DB_query($sql);
@@ -2207,20 +2226,6 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
         return (string)$val;
         break;
     }
-}
-
-
-/**
- * Get the sales tax rate to charge.
- * Currently just returns the globally-configured rate.
- *
- * @return  float   Tax Rate
- */
-function SHOP_getTaxRate()
-{
-    global $_SHOP_CONF;
-
-    return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
 }
 
 

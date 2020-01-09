@@ -3,9 +3,9 @@
  * Class to manage product option groups.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2010-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -22,7 +22,7 @@ class ProductOptionGroup
 {
     /** Tag array used with caching, for consistency.
      * @var array */
-    static $TAGS = array('products', 'attributes');
+    static $TAGS = array('products', 'options');
 
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
@@ -290,6 +290,7 @@ class ProductOptionGroup
     /**
      * Delete the current attrribute group record from the database.
      *
+     * @todo    Determine the effect on variants and orders
      * @param   integer $og_id    Option Group ID, empty for current object
      * @return  boolean     True on success, False on invalid ID
      */
@@ -297,11 +298,13 @@ class ProductOptionGroup
     {
         global $_TABLES;
 
+        return true;        // stub until function works properly or is removed
+
         if ($og_id <= 0) {
             return false;
         }
 
-        DB_delete($_TABLES['shop.prod_opt_vals'], 'pog_id', $og_id);
+        ProductOptionValue::deleteOptionGroup($og_id);
         DB_delete($_TABLES['shop.prod_opt_grps'], 'pog_id', $og_id);
         self::clearCache();
         return true;
@@ -609,7 +612,10 @@ class ProductOptionGroup
 
         $grps = self::getAll();
         reset($grps);
-        $retval = array_pop($grps);
+        $retval = array_shift($grps);
+        if ($retval === NULL) {
+            $retval = new self;
+        }
         return $retval;
     }
 
@@ -640,17 +646,16 @@ class ProductOptionGroup
         $grps = Cache::get($cache_key);
         if ($grps === NULL) {
             $grps = array();
-            $sql = "SELECT distinct(pog.pog_id), pog.pog_type, pog.pog_name, pog.pog_orderby
-                FROM {$_TABLES['shop.prod_opt_grps']} pog
-                LEFT JOIN {$_TABLES['shop.prod_opt_vals']} pov
-                    ON pov.pog_id = pog.pog_id
-                WHERE pov.item_id = '$prod_id'
-                AND pov.enabled = 1
-                ORDER by pog.pog_orderby ASC";
+            $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov
+                LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
+                LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
+                LEFT JOIN {$_TABLES['shop.product_variants']} pv ON pv.pv_id = vxo.pv_id
+                WHERE pv.item_id = $prod_id AND pv.enabled = 1
+                ORDER BY pog.pog_orderby, pov.orderby asc";
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $grps[$A['pog_id']] = new self($A);
+                $grps[$A['pog_id']] = new self($A['pog_id']);
             }
             Cache::set($cache_key, $grps, self::$TAGS);
         }

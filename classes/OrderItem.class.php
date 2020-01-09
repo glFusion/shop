@@ -32,16 +32,28 @@ class OrderItem
      * @var object */
     private $product = NULL;
 
+    /** Product variant ID.
+     * @var integer */
+    private $variant_id;
+
+    /** Sales tax charged for this item.
+     * @var float */
+    private $tax;
+
+    /** Sales tax rate for this item.
+     * @var float */
+    private $tax_rate;
+
     /** Fields for an OrderItem record.
      * @var array */
     private static $fields = array(
         'id', 'order_id', 'product_id',
         'description', 'quantity', 'txn_id', 'txn_type',
         'expiration',
-        'base_price', 'price', 'qty_discount', 'token',
+        'base_price', 'price', 'qty_discount', 'token', 'net_price',
         //'options',
         'options_text', 'extras', 'taxable', 'paid',
-        'shipping', 'handling',
+        'shipping', 'handling', 'tax', 'tax_rate',
     );
 
     /**
@@ -61,6 +73,7 @@ class OrderItem
             } else {
                 $this->options = $this->getOptions();
             }
+            $this->product = $this->getProduct();
         } elseif (is_array($oi_id) && isset($oi_id['product_id'])) {
             // Got an item record, just set the variables
             $this->setVars($oi_id);
@@ -68,11 +81,17 @@ class OrderItem
             $this->base_price = $this->product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['options'])) {
-                    $this->options = $this->setOptions($oi_id['options']);
+                if (isset($oi_id['variant']) && $oi_id['variant'] > 0) {
+                    $Var = ProductVariant::getInstance($oi_id['variant']);
+                    if ($Var->getID() > 0) {
+                        $this->variant_id = $Var->getID();
+                        $this->setOptions($Var->getOptions());
+                    }
+                } elseif (isset($oi_id['options'])) {
+                    $this->setOptions($oi_id['options']);
                 } elseif (isset($oi_id['attributes'])) {
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
-                    $this->options = $this->setOptions($oi_id['attributes']);
+                    $this->setOptions($oi_id['attributes']);
                 }
             } else {
                 // Existing orderitem record, get the existing options
@@ -156,6 +175,7 @@ class OrderItem
                 $this->$field = $A[$field];
             }
         }
+        $this->variant_id = (int)$A['variant_id'];
         return true;
     }
 
@@ -186,6 +206,7 @@ class OrderItem
         case 'paid':
         case 'shipping':
         case 'handling':
+        case 'net_price':
             $this->properties[$key] = (float)$value;
             break;
         case 'qty_discount':
@@ -217,6 +238,17 @@ class OrderItem
         } else {
             return NULL;
         }
+    }
+
+
+    /**
+     * Get the variant ID for this item.
+     *
+     * @return  integer     Product Variant ID
+     */
+    function getVariantId()
+    {
+        return (int)$this->variant_id;
     }
 
 
@@ -319,15 +351,16 @@ class OrderItem
         if (is_string($opts)) {
             $opts = explode(',', $opts);
         }
-        foreach ($opts as $opt_id) {
-            if (isset($this->product->options[$opt_id])) {
-                $retval[] = $this->product->options[$opt_id]['attr_name'] . ': ' .
-                    $this->product->options[$opt_id]['attr_value'];
-            }
+        foreach ($opts as $opt_id=>$OIO) {
+            $retval[] = $OIO->oio_name . ': ' . $OIO->oio_value;
+            /*if (isset($this->getProduct()->Options[$opt_id])) {
+                $retval[] = $this->product->Options[$opt_id]['attr_name'] . ': ' .
+                    $this->product->Options[$opt_id]['attr_value'];
+            }*/
         }
 
         // Add custom text strings
-        $cust = explode('|', $this->product->custom);
+        /*$cust = explode('|', $this->product->custom);
         foreach ($cust as $id=>$str) {
             if (
                 isset($this->extras['custom'][$id]) &&
@@ -335,7 +368,7 @@ class OrderItem
             ) {
                 $retval[] = $str . ': ' . $this->extras['custom'][$id];
             }
-        }
+        }*/
         return $retval;
     }
 
@@ -412,9 +445,15 @@ class OrderItem
             $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
             $sql3 = '';
         }
-
+        $dc_pct = $this->getOrder()->getDiscountPct() / 100;
+        if ($dc_pct > 0) {
+            $this->net_price = $this->price * (1 - $dc_pct);
+        } else {
+            $this->net_price = $this->price;
+        }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
+                variant_id = '" . (int)$this->variant_id . "',
                 description = '" . DB_escapeString($this->description) . "',
                 quantity = '" . (float)$this->quantity. "',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
@@ -422,10 +461,13 @@ class OrderItem
                 qty_discount = '" . (float)$this->qty_discount. "',
                 base_price = '" . (float)$this->base_price. "',
                 price = '" . (float)$this->price . "',
+                net_price = '" . (float)$this->net_price . "',
                 taxable = '" . (int)$this->taxable. "',
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
-                extras = '" . DB_escapeString(json_encode($this->extras)) . "'";
+                extras = '" . DB_escapeString(json_encode($this->extras)) . "',
+                tax = {$this->getTotalTax()},
+                tax_rate = {$this->getTaxRate()}";
                 //options = '" . DB_escapeString($this->options) . "',
                 //shipping = {$shipping},
                 //handling = {$handling},
@@ -503,6 +545,22 @@ class OrderItem
 
 
     /**
+     * Get the total shipping weight for this item.
+     *
+     * @return  float   Total weight for this line item
+     */
+    public function getWeight()
+    {
+        $weight = $this->product->getWeight();
+        if ($this->variant_id > 0) {
+            $weight += ProductVariant::getInstance($this->variant_id)->getWeight();
+        }
+        $weight *= $this->quantity;
+        return $weight;
+    }
+
+
+    /**
      * Check if the buyer can download a file from the order view.
      */
     public function canDownload()
@@ -529,7 +587,12 @@ class OrderItem
      */
     public function getShippingUnits()
     {
-        return $this->product->shipping_units * $this->quantity;
+        $units = $this->product->shipping_units;
+        if ($this->variant_id > 0) {
+            $units += ProductVariant::getInstance($this->variant_id)->getShippingUnits();
+        }
+        $units *= $this->quantity;
+        return $units;
     }
 
 
@@ -584,7 +647,7 @@ class OrderItem
      * Set the provided array of options into the private var.
      *
      * @param   array   $opts   Array of ProductOptionValues
-     * @return  array       Contents of $this->options
+     * @return  object  $this
      */
     public function setOptions($opts)
     {
@@ -610,7 +673,7 @@ class OrderItem
                 //}
             }
         }
-        return $this->options;
+        return $this;
     }
 
 
@@ -731,11 +794,22 @@ class OrderItem
     /**
      * Just return the item price property.
      *
-     * @return  float       Item price, including all options and discounts.
+     * @return  float       Item price, including all options and qty discounts.
      */
     public function getPrice()
     {
         return (float)$this->price;
+    }
+
+
+    /**
+     * Get the net price after any discount codes.
+     *
+     * @return  float       Item net price.
+     */
+    public function getNetPrice()
+    {
+        return (float)$this->net_price;
     }
 
 
@@ -773,6 +847,19 @@ class OrderItem
 
 
     /**
+     * Set the net price for the item.
+     *
+     * @param   float   $price  New net price
+     * @return  object  $this
+     */
+    public function setNetPrice($price)
+    {
+        $this->net_price = $price;
+        return $this;
+    }
+
+
+    /**
      * Get the random token for this item.
      *
      * @return  string      Token string
@@ -780,6 +867,79 @@ class OrderItem
     public function getToken()
     {
         return $this->token;
+    }
+
+
+    /**
+     * Return taxable status of this item.
+     *
+     * @return  integer     1 if item is taxable, 0 if not
+     */
+    public function isTaxable()
+    {
+        return $this->taxable;
+    }
+
+
+    /**
+     * Apply a discount percentage to this item.
+     *
+     * @param   float   $pct    Discount percent, as a whole number
+     * @return  object  $this
+     */
+    public function applyDiscountPct($pct)
+    {
+        $price = $this->getPrice() * (100 - $pct) / 100;
+        $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+        return $this;
+    }
+
+
+    /**
+     * Set the total sales tax amount for this item.
+     *
+     * @param   float   $tax    Tax amount
+     * @return  object  $this
+     */
+    public function setTotalTax($tax)
+    {
+        $this->tax = (float)$this->getOrder()->getCurrency()->formatValue($tax);
+        return $this;
+    }
+
+
+    /**
+     * Get the total tax amount for this line item.
+     *
+     * @return  float       Total sales tax for the item
+     */
+    public function getTotalTax()
+    {
+        return (float)$this->tax;
+    }
+
+
+    /**
+     * Set the sales tax rate charged for this item.
+     *
+     * @param   float   $rate   Sales tax rate
+     * @return  object  $this
+     */
+    public function setTaxRate($rate)
+    {
+        $this->tax_rate = (float)$rate;
+        return $this;
+    }
+
+
+    /**
+     * Get the sales tax rate applied to this item.
+     *
+     * @return  float       Sales tax rate
+     */
+    public function getTaxRate()
+    {
+        return (float)$this->tax_rate;
     }
 
 }

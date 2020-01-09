@@ -1,0 +1,79 @@
+{# begin {templatelocation} #}
+<h2>Product Bulk Update</h2>
+<form action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal">
+    <input type="hidden" name="prod_ids" value="{prod_ids}" />
+
+    <div class="uk-form-row">
+        <label class="uk-form-label" for="price">{$LANG_SHOP['price']}:
+            <span id="price" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input type="text" id="price" name="price" value="" size="12"
+                placeholder="{$LANG_SHOP['leave_as_is']}" maxlength="20" />&nbsp;{currency}
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label" for="taxable">{$LANG_SHOP['taxable']}?
+            <span id="taxable" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input type="radio" name="taxable" value="1"/>&nbsp;{$LANG_SHOP['yes']}&nbsp;&nbsp;
+            <input type="radio" name="taxable" value="0"/>&nbsp;{$LANG_SHOP['no']}&nbsp;&nbsp;
+            <input type="radio" name="taxable" value="-1" checked="checked""/>&nbsp;{$LANG_SHOP['leave_as_is']}
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label" for="cat_id">{$LANG_SHOP['supplier']}:
+            <span id="supplier" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="supplier_id">
+                <option value="-1" selected="selected">--{$LANG_SHOP['leave_as_is']}--</option>
+                <option value="0">--{$LANG_SHOP['none']}--</option>
+                {supplier_select}
+            </select>
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label" for="cat_id">{$LANG_SHOP['brand']}:
+            <span id="brand" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="brand_id">
+                <option value="-1" selected="selected">--{$LANG_SHOP['leave_as_is']}--</option>
+                <option value="0">--{$LANG_SHOP['none']}--</option>
+                {brand_select}
+            </select>
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['prod_type']}:
+            <span id="prod_type" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="prod_type" onchange="SHOP_changeProdType(this.value);">
+                <option value="-1" selected="selected">--{$LANG_SHOP['leave_as_is']}--</option>
+<!-- BEGIN ProdTypeRadio -->
+                <option value="{type_val}" {type_sel}>{type_txt}</option>
+<!-- END ProdTypeRadio -->
+            </select>
+        </div>
+    </div>
+
+    <div class="uk-form-row" style="margin-top:10px;">
+        <label class="uk-form-label">&nbsp;</label>
+        <div class="uk-form-controls" style="text-align:center;">
+            <button class="uk-button uk-button-success" type="submit" name="prod_bulk_save">{$LANG_ADMIN['submit']}</button>
+            <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
+            <button class="uk-button" type="submit" name="products">{$LANG_ADMIN['cancel']}</button>
+        </div>
+    </div>
+</form>
+<script type="text/javascript">
+    initCountry();
+</script>
+ {# begin {templatelocation} #}

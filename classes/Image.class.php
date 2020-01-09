@@ -46,8 +46,11 @@ class Image extends UploadDownload
      */
     public function __construct($record_id, $varname='photo')
     {
+        global $_SHOP_CONF;
+
         $this->record_id = trim($record_id);
         $this->setFieldName($varname);
+        $this->pathImage = $_SHOP_CONF['tmpdir'] . '/images/' . static::$pathkey;
     }
 
 
@@ -82,12 +85,23 @@ class Image extends UploadDownload
 
         $filenames = array();
         for ($i = 0; $i < $this->numFiles(); $i++) {
-            $filenames[] =  uniqid($this->record_id . '_' . rand(100,999)) . '.jpg';
+            $filenames[] =  $this->makeFileName();
         }
         $this->setFileNames($filenames);
 
         // Perform the actual upload
         parent::uploadFiles();
+    }
+
+
+    /**
+     * Create the target filename for the image file.
+     *
+     * @return  string      File name
+     */
+    protected function makeFileName()
+    {
+        return uniqid($this->record_id . '_' . rand(100,999)) . '.jpg';
     }
 
 
@@ -215,7 +229,7 @@ class Image extends UploadDownload
             $height = $width;
         }
         $args = array(
-            'filepath'  => $_SHOP_CONF[static::$pathkey] . DIRECTORY_SEPARATOR . $filename,
+            'filepath'  => $_SHOP_CONF['tmpdir'] . '/images/' . static::$pathkey . '/' . $filename,
             'width'     => $width,
             'height'    => $height,
         );

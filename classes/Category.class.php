@@ -148,7 +148,7 @@ class Category
         $this->enabled = $row['enabled'];
         $this->cat_name = $row['cat_name'];
         $this->grp_access = $row['grp_access'];
-        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['description'];
+        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['cat_name'];
         $this->lft = isset($row['lft']) ? $row['lft'] : 0;
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
@@ -543,7 +543,7 @@ class Category
     {
         global $_TABLES;
 
-        return DB_count($_TABLES['shop.products'], 'cat_id', (int)$cat_id);
+        return DB_count($_TABLES['shop.prodXcat'], 'cat_id', (int)$cat_id);
     }
 
 
@@ -637,8 +637,6 @@ class Category
      */
     public function getImage()
     {
-        global $_SHOP_CONF;
-
         return Images\Category::getUrl($this->image);
     }
 
@@ -1136,6 +1134,57 @@ class Category
             }
         }
         return '';
+    }
+
+
+    /**
+     * Get all categories that are related to a given product ID.
+     *
+     * @param   integer $prod_id    Product ID
+     * @return  array       Array of Category objexts
+     */
+    public static function getByProductId($prod_id)
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
+            WHERE product_id = '" . (int)$prod_id . "'";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Load all categories from the database into an array.
+     *
+     * @return  array       Array of category objects
+     */
+    public static function getAll()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the category name.
+     *
+     * @return  string  Category name
+     */
+    public function getName()
+    {
+        return $this->cat_name;
     }
 
 }

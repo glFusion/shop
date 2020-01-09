@@ -3,9 +3,9 @@
  * Common admistrative AJAX functions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -134,9 +134,8 @@ case 'opt_orderby_opts':
     // Get the attrubute "orderby" options when the attribute group or item ID
     // is changed.
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
-    $retval = Shop\ProductOptionValue::getOrderbyOpts($item_id, $og_id, $selected);
+    $retval = Shop\ProductOptionValue::getOrderbyOpts($og_id, $selected);
     echo $retval;
     exit;
 
@@ -353,6 +352,16 @@ case 'toggle':
         }
        break;
 
+    case 'variant':
+        switch ($_POST['type']) {
+        case 'enabled':
+            $newval = \Shop\ProductVariant::toggleEnabled($_POST['oldval'], $_POST['id']);
+            break;
+         default:
+            exit;
+        }
+       break;
+
     case 'shipping':
         switch ($_POST['type']) {
         case 'enabled':
@@ -405,6 +414,10 @@ case 'toggle':
         default:
             exit;
         }
+        break;
+
+    case 'supplier':
+        $newval = Shop\Supplier::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
     default:

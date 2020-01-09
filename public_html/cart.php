@@ -3,9 +3,10 @@
  * Access to shopping cart - view, update, delete, etc.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner
+ * @copyright   Copyright (c) 2019-2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @varsion     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -55,7 +56,7 @@ if ($action == '') {
 }
 switch ($action) {
 case 'update':
-    \Shop\Cart::getInstance()->Update($_POST);
+    Shop\Cart::getInstance()->Update($_POST);
     COM_refresh(SHOP_URL . '/cart.php');
     break;
 
@@ -77,6 +78,7 @@ case 'checkout':
     // Set the gift card amount first as it will be overridden
     // if the _coupon gateway is selected
     $Cart = \Shop\Cart::getInstance();
+    $Cart->validateDiscountCode();
 
     // Validate the cart items
     $invalid = $Cart->updateItems();
@@ -96,6 +98,9 @@ case 'checkout':
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
+        Shop\Customer::getInstance($cart->uid)
+            ->setPrefGW($gateway)
+            ->saveUser();
     }
     if (isset($_POST['by_gc'])) {
         // Has some amount paid by coupon
@@ -153,15 +158,20 @@ case 'checkout':
 case 'savebillto':
 case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
-    $status = \Shop\Customer::isValidAddress($_POST);
+    if ($actionval == 1 || $actionval == 2) {
+        $addr = json_decode($_POST['addr'][$actionval], true);
+    } else {
+        $addr = $_POST;
+    }
+    $status = \Shop\Customer::isValidAddress($addr);
     if ($status != '') {
         $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
     $U = \Shop\Customer::getInstance();
-    if ($U->uid > 1) {      // only save addresses for logged-in users
-        $addr_id = $U->saveAddress($_POST, $addr_type);
+    if ($U->getUid() > 1) {      // only save addresses for logged-in users
+        $addr_id = $U->saveAddress($addr, $addr_type);
         if ($addr_id[0] < 0) {
             if (!empty($addr_id[1]))
                 $content .= SHOP_errorMessage($addr_id[1], 'alert',
@@ -173,7 +183,7 @@ case 'saveshipto':
         }
     }
     $Cart = \Shop\Cart::getInstance();
-    $Cart->setAddress($_POST, $addr_type);
+    $Cart->setAddress($addr, $addr_type);
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     $content = $Cart->getView($next_step);
     $view = 'none';
@@ -211,6 +221,7 @@ default:
 
     // Validate the cart items
     $invalid = $Cart->updateItems();
+    $Cart->validateDiscountCode();
     if (!empty($invalid)) {
         // Items have been removed, refresh to update and view the info msg.
         COM_refresh(SHOP_URL . '/cart.php');

@@ -3,9 +3,9 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -135,41 +135,100 @@ function SHOP_do_upgrade($dvlp = false)
             }
         }
 
+        $update_addr = !array_key_exists('address1', $_SHOP_CONF);
+        if ($update_addr) {
+            // If the shop address hasn't been split into parts, save the current
+            // values. They'll be deleted during SHOP_update_config()
+            $shop_name = $_SHOP_CONF['shop_name'];
+            $shop_addr = $_SHOP_CONF['shop_addr'];
+            $shop_country = $_SHOP_CONF['shop_country'];
+        }
+        SHOP_update_config();
+        // After the config is updated, we have to split up the old single-line
+        // shop address into reasonable components.
+        if ($update_addr) {
+            $c = config::get_instance();
+            $c->set('company', $shop_name, $_SHOP_CONF['pi_name']);
+            $c->set('country', $shop_country, $_SHOP_CONF['pi_name']);
+            // Try breaking up the address by common separators
+            // Start by putting the address line into the first element in case
+            // no delimiters are found.
+            $addr_parts = array($shop_addr);
+            foreach (array(',', '<br />', '<br/>', '<br>') as $sep) {
+                if (strpos($shop_addr, $sep) > 0) {
+                    $addr_parts = explode($sep, $shop_addr);
+                    break;
+                }
+            }
+            $c->set('address1', trim($addr_parts[0]), $_SHOP_CONF['pi_name']);
+            if (isset($addr_parts[1])) {
+                $c->set('city', trim($addr_parts[1]), $_SHOP_CONF['pi_name']);
+            }
+            if (isset($addr_parts[2])) {
+                $c->set('state', trim($addr_parts[2]), $_SHOP_CONF['pi_name']);
+            }
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
-    $update_addr = !array_key_exists('address1', $_SHOP_CONF);
-    if ($update_addr) {
-        // If the shop address hasn't been split into parts, save the current
-        // values. They'll be deleted during SHOP_update_config()
-        $shop_name = $_SHOP_CONF['shop_name'];
-        $shop_addr = $_SHOP_CONF['shop_addr'];
-        $shop_country = $_SHOP_CONF['shop_country'];
-    }
-    SHOP_update_config();
-    // After the config is updated, we have to split up the old single-line
-    // shop address into reasonable components.
-    if ($update_addr) {
-        $c = config::get_instance();
-        $c->set('company', $shop_name, $_SHOP_CONF['pi_name']);
-        $c->set('country', $shop_country, $_SHOP_CONF['pi_name']);
-        // Try breaking up the address by common separators
-        // Start by putting the address line into the first element in case
-        // no delimiters are found.
-        $addr_parts = array($shop_addr);
-        foreach (array(',', '<br />', '<br/>', '<br>') as $sep) {
-            if (strpos($shop_addr, $sep) > 0) {
-                $addr_parts = explode($sep, $shop_addr);
-                break;
+    if (!COM_checkVersion($current_ver, '1.1.0')) {
+        $current_ver = '1.1.0';
+
+        if (_SHOPtableHasColumn('shop.products', 'cat_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                (product_id, cat_id)
+                SELECT id, cat_id FROM {$_TABLES['shop.products']}";
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.products']}
+                DROP cat_id";
+        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        if (_SHOPtableHasColumn('shop.products', 'brand')) {
+            // Update brand_id and supplier_id fields, and drop brand field
+            // Must be done after other SQL updates to the products table.
+            $brands = array();
+            $sql = "SELECT id, brand FROM {$_TABLES['shop.products']} WHERE brand <> ''";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                if (!isset($brands[$A['brand']])) {
+                    $brands[$A['brand']] = array(
+                        'sup_id' => 0,
+                        'items' => array(),
+                    );
+                }
+                $brands[$A['brand']]['items'][] = (int)$A['id'];
             }
+            foreach ($brands as $brand=>$items) {
+                $Sup = new Shop\Supplier;
+                if ($Sup->setCompany($brand)
+                    ->setIsBrand(1)
+                    ->setIsSupplier(0)
+                    ->Save()) {
+                    $brands[$brand]['sup_id'] = $Sup->getID();
+                }
+            }
+            // update schema
+            foreach ($brands as $brand=>$data) {
+                if ($data['sup_id'] == 0) {
+                    // Saving the supplier failed
+                    continue;
+                }
+                $sup_id = (int)$data['sup_id'];
+                $prod_ids = implode(',', $data['items']);
+                $sql = "UPDATE {$_TABLES['shop.products']}
+                    SET brand_id = $sup_id
+                    WHERE id in ($prod_ids)";
+                DB_query($sql);
+            }
+            DB_query("ALTER TABLE {$_TABLES['shop.products']} DROP `brand`");
         }
-        $c->set('address1', trim($addr_parts[0]), $_SHOP_CONF['pi_name']);
-        if (isset($addr_parts[1])) {
-            $c->set('city', trim($addr_parts[1]), $_SHOP_CONF['pi_name']);
+
+        if (_SHOPtableHasIndex('shop.prod_opt_vals', 'pog_value') != 2) {
+            // Upgrades to use the new product variants.
+            Shop\MigratePP::createVariants();
         }
-        if (isset($addr_parts[2])) {
-            $c->set('state', trim($addr_parts[2]), $_SHOP_CONF['pi_name']);
-        }
+        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
+        if (!SHOP_do_set_version($current_ver)) return false;
     }
 
     // Copy the "not available" image if not already in place.
@@ -184,6 +243,8 @@ function SHOP_do_upgrade($dvlp = false)
         }
     }
 
+    // Check and set the version if not already up to date.
+    // For updates with no SQL changes
     if (!COM_checkVersion($current_ver, $installed_ver)) {
         if (!SHOP_do_set_version($installed_ver)) return false;
         $current_ver = $installed_ver;
@@ -371,6 +432,24 @@ function _SHOPcolumnType($table, $col_name)
         $retval = $A['DATA_TYPE'];
     }
     return $retval;
+}
+
+
+/**
+ * Check if a table has a specific index defined.
+ *
+ * @param   string  $table      Key into `$_TABLES` array
+ * @param   string  $idx_name   Index name
+ * @return  integer     Number of rows (fields) in the index
+ */
+function _SHOPtableHasIndex($table, $idx_name)
+{
+    global $_TABLES;
+
+    $sql = "SHOW INDEX FROM {$_TABLES[$table]}
+        WHERE key_name = '" . DB_escapeString($idx_name) . "'";
+    $res = DB_query($sql);
+    return DB_numRows($res);
 }
 
 ?>

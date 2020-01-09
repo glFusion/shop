@@ -462,6 +462,17 @@ class usps extends \Shop\Shipper
         }
     }
 
+
+    /**
+     * Get the USPS web endpoint.
+     *
+     * @return   string     Endpoint URL
+     */
+    public function getEndpoint()
+    {
+        return $this->usps_endpoint;
+    }
+
 }
 
 ?>
