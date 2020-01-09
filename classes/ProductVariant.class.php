@@ -766,8 +766,10 @@ class ProductVariant
             return false;
         }
         $price = 0;
-        $weight = 0;
-        $shipping = 0;
+        $weight = SHOP_getVar($A, 'weight', 'float', 0);
+        $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
+        $onhand = SHOP_getVar($A, 'onhand', 'float', 0);
+        $reorder = SHOP_getVar($A, 'reorder', 'float', 0);
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
             if ($A['price'] !== '') {
@@ -802,12 +804,13 @@ class ProductVariant
                 $sku = $A['sku'];
             }
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
-                item_id = '" . (int)$item_id . "',
+                item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
-                price = '" . (float)$price . "',
-                weight = '" . (float)$weight . "',
-                shipping_units = '" . (float)$shipping_units . "',
-                onhand = " . (float)$onhand;
+                price = " . (float)$price . ",
+                weight = $weight,
+                shipping_units = $shipping_units,
+                reorder = $reorder,
+                onhand = $onhand";
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
