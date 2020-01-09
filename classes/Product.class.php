@@ -1303,8 +1303,14 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = new \Template(__DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
-        $T->set_file('product', 'product_detail_attrib.thtml');
+        $T = new \Template(array(
+            __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
+            __DIR__ . '/../templates/detail',
+        ) );
+        $T->set_file(array(
+            'product'   => 'product_detail_attrib.thtml',
+            'prod_info' => 'details_blk.thtml',
+        ) );
         // Set up the template containing common javascript
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
@@ -1469,6 +1475,12 @@ class Product
             'brand_id'          => $this->getBrandID(),
             'brand_name'        => $this->getBrandName(),
             'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
+            'is_physical'       => $this->isPhysical(),
+            'onhand'            => $this->getOnhand(),
+            'sku'               => $this->getName(),
+        ) );
+        $T->set_var(array(
+            'prod_det_blk'      => $T->parse('product', 'prod_info'),
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');

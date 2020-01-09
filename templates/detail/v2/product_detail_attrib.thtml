@@ -122,7 +122,7 @@
                 </div>
 <!-- END SpecialFields -->
 
-{!if avail_msg}
+{!if Xavail_msg}
                 <div id="avail_msg" class="uk-form-row shopOnhand">
                     {avail_msg}
                 </div>
@@ -140,14 +140,7 @@
 <!-- END BtnBlock -->
       </div>
       <div style="clear:right;padding-top:25px;">
-{!if brand_id}
-        <b>Brand:</b>
-        <a href="{site_url}/shop/index.php?products&brand={brand_id}">{brand_name}
-{!if brand_logo_url}
-        &nbsp;&nbsp;<img class="shopLogoImage small" src="{brand_logo_url}" />
-{!endif}
-        </a>
-{!endif}
+        {prod_det_blk}
       </div>
     </div>
 {!if main_img}

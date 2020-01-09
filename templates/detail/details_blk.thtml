@@ -1,0 +1,32 @@
+{# begin {templatelocation} #}
+<ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#prod_details'}">
+    <li class="uk-active"><a href="#">{$LANG_SHOP['product_info']}</a></li>
+</ul>
+<ul id="prod_details" class="uk-switcher uk-margin">
+    <li>
+{!if brand_id}
+        <p>
+        <label class="prod_det_blk">{$LANG_SHOP['brand']}:</label>
+        <a href="{site_url}/shop/index.php?products&brand={brand_id}">
+{!if brand_logo_url}
+        <img class="shopLogoImage small" src="{brand_logo_url}" />
+{!else}
+        {brand_name}
+{!endif}
+        </a>
+        </p>
+{!endif}
+{!if is_physical}
+        <p>
+        <label>{$LANG_SHOP['onhand']}:</label>
+        <span id="onhand">{onhand}</span>
+        </p>
+{!endif}
+        <p>
+        <label>SKU:</label>
+        <span id="sku">{sku}</span>
+        </p>
+    </li>
+</ul>
+{# end {templatelocation} #}
+

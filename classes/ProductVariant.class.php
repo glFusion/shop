@@ -785,7 +785,6 @@ class ProductVariant
                 }
                 $opt_ids[] = $pov_id;   // save for the variant->opt table
                 $Opt = new ProductOptionValue($pov_id);
-
                 if (!isset($A['price']) || $A['price'] === '') {   // Zero is valid
                     $price += $Opt->getPrice();
                 }
@@ -1260,9 +1259,11 @@ class ProductVariant
             $retval = array(
                 'status'    => 9,
                 'msg'       => 'Invalid',
+                'onhand'    => 0,
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
+            COM_errorLog("price: $price");
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             if ($this->onhand > 0) {
                 $allowed = true;
@@ -1275,6 +1276,8 @@ class ProductVariant
                 'allowed'   =>  $allowed,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
+                'onhand'    => $this->onhand,
+                'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
             );
         }
         if ($P->getTrackOnhand()) {

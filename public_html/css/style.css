@@ -786,3 +786,12 @@ div#orderShipmentBlock {
 .shopLogoImage.small {
     height:40px;
 }
+
+ul#prod_details label {
+    /*width:80px;*/
+    padding-right:10px;
+    float:left;
+}
+ul#prod_details p {
+    margin-top:8px;
+}
