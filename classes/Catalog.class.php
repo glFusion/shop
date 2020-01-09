@@ -394,6 +394,7 @@ class Catalog
         if (
             $_SHOP_CONF['show_plugins']&&
             $page == 1 &&
+            $brand_id == 0 &&
             ( $cat_id == 0 || $cat_id == $RootCat->cat_id ) &&
             empty($search)
         ) {
