@@ -16,6 +16,7 @@
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
     <li id="tab-discounts" {tabactive_discounts}><a href="#">{$LANG_SHOP['qty_discounts']}</a></li>
+    <li id="tab-supplier" {tabactive_supplier}><a href="#">{$LANG_SHOP['supplier']}</a></li>
   </ul>
 
   <div class="uk-panel uk-panel-box uk-margin">
@@ -96,30 +97,6 @@
         </tr>
         </table>
         <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-      </div>
-    </div>
-
-    <div class="uk-form-row">
-      <label class="uk-form-label" for="f_brand">{$LANG_SHOP['brand']}:
-        <span id="brand" class="tooltip_cfg tooltipstered"></span>
-      </label>
-      <div class="uk-form-controls">
-        <select name="brand_id" id="f_brand">
-            <option vlaue="0">--{$LANG_SHOP['none']}--</option>
-            {brand_select}
-        </select>
-      </div>
-    </div>
-
-    <div class="uk-form-row">
-      <label class="uk-form-label" for="cat_id">{$LANG_SHOP['supplier']}:
-        <span id="supplier" class="tooltip_cfg tooltipstered"></span>
-      </label>
-      <div class="uk-form-controls">
-        <select name="supplier_id">
-            <option vlaue="0">--{$LANG_SHOP['none']}--</option>
-            {supplier_select}
-        </select>
       </div>
     </div>
 
@@ -433,6 +410,33 @@
     </div>
 
     {sale_prices}
+  </li>
+
+{# Supplier information #}
+  <li>
+    <div class="uk-form-row">
+      <label class="uk-form-label" for="f_brand">{$LANG_SHOP['brand']}:
+        <span id="brand" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <select name="brand_id" id="f_brand">
+            <option vlaue="0">--{$LANG_SHOP['none']}--</option>
+            {brand_select}
+        </select>
+      </div>
+    </div>
+
+    <div class="uk-form-row">
+      <label class="uk-form-label" for="f_supplier">{$LANG_SHOP['supplier']}:
+        <span id="supplier" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+        <select name="supplier_id" id="f_supplier">
+            <option vlaue="0">--{$LANG_SHOP['none']}--</option>
+            {supplier_select}
+        </select>
+      </div>
+    </div>
   </li>
 
   </ul>
