@@ -313,15 +313,21 @@ class Country
     {
         global $_TABLES;
 
-        $retval = array();
-        $sql = "SELECT * FROM gl_shop_countries";
-        if ($enabled) {
-            $sql .= ' WHERE country_enabled = 1';
-        }
-        $sql .= ' ORDER BY country_name ASC';
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['iso_code']] = new self($A);
+        $enabled = $enabled ? 1 : 0;
+        $cache_key = 'shop.countries_all_' . $enabled;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT * FROM gl_shop_countries";
+            if ($enabled) {
+                $sql .= ' WHERE country_enabled = 1';
+            }
+            $sql .= ' ORDER BY country_name ASC';
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['iso_code']] = new self($A);
+            }
+            // Cache for a month, this doesn't change often
+            Cache::set($cache_key, $retval, 'regions', 43200);
         }
         return $retval;
     }
