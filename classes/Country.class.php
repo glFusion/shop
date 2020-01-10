@@ -343,7 +343,7 @@ class Country
         $C = self::getAll($enabled);
         $retval = array();
         foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $code;
+            $retval[$data->getName()] = $data->getID();
         }
         return $retval;
     }

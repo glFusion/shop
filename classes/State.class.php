@@ -247,42 +247,42 @@ class State
      * @param   string  $code       Country Code
      * @return  array       Array of state data (name and dialing code)
      */
-    public static function getAll()
+    public static function getAll($country, $enabled=true)
     {
         global $_TABLES;
 
-        $retval = array();
-        $sql = "SELECT * FROM gl_shop_countries";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['iso_code']] = new self($A);
+        $country = (int)$country;
+        $enabled = $enabled ? 1 : 0;
+        $cache_key = 'shop.states.' . $country . '_' . $enabled;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT * FROM gl_shop_states
+                WHERE country_id = $country";
+            if ($enabled) {
+                $sql .= " AND state_enabled = 1";
+            }
+            $sql .= " ORDER BY iso_code ASC";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['iso_code']] = new self($A);
+            }
+            Cache::set($cache_key, $retval, 'regions', 43200);
         }
         return $retval;
-//        $code = strtoupper($code);
-/*        if (empty($code)) {
-            // Nothing requested, return all counries
-            return self::$_countries;
-        } elseif (isset(self::$_countries[$code])) {
-            // Found the requestd state ID, return the state name
-            return self::$_countries[$code];
-        } else {
-            // Country ID not found, return false
-            return array('name' => '', 'code' => '');
-        }*/
     }
 
 
     /**
-     * Make a name=>code selection for the plugin configuration.
+     * Make a name=>code selection for all states under a country.
      *
      * @return  array   Array of state_name=>state_code
      */
-    public static function makeConfigSelection()
+    public static function makeSelection($country, $enabled=true)
     {
-        $C = self::getAll();
+        $C = self::getAll($country, $enabled);
         $retval = array();
         foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $code;
+            $retval[$data->getName()] = $data->getID();
         }
         return $retval;
     }
