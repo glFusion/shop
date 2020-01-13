@@ -336,9 +336,10 @@ class Country
     /**
      * Make a name=>code selection for the plugin configuration.
      *
+     * @param   boolean $enabled    True to only show enabled countries
      * @return  array   Array of country_name=>country_code
      */
-    public static function makeConfigSelection($enabled = true)
+    public static function makeSelection($enabled = true)
     {
         $C = self::getAll($enabled);
         $retval = array();
@@ -350,11 +351,45 @@ class Country
 
 
     /**
-     * Product Admin List View.
+     * Sets a boolean field to the opposite of the supplied value.
+     *
+     * @param   integer $oldvalue   Old (current) value
+     * @param   string  $varname    Name of DB field to set
+     * @param   integer $id         ID number of element to modify
+     * @return  integer     New value, or old value upon failure
+     */
+    public static function Toggle($oldvalue, $varname, $id)
+    {
+        global $_TABLES;
+
+        $id = (int)$id;
+        switch ($varname) {     // allow only valid field names
+        case 'country_enabled':
+            // Determing the new value (opposite the old)
+            $oldvalue = $oldvalue == 1 ? 1 : 0;
+            $newvalue = $oldvalue == 1 ? 0 : 1;
+
+            $sql = "UPDATE {$_TABLES['shop.countries']}
+                SET $varname=$newvalue
+                WHERE country_id=$id";
+            // Ignore SQL errors since varname is indeterminate
+            DB_query($sql, 1);
+            if (DB_error()) {
+                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+                return $oldvalue;
+            } else {
+                return $newvalue;
+            }
+        }
+    }
+
+
+    /**
+     * Country Admin List View.
      *
      * @return  string      HTML for the product list.
      */
-    public static function adminList()
+    public static function adminList($region_id=0)
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
@@ -363,7 +398,7 @@ class Country
         $header_arr = array(
             array(
                 'text'  => 'ID',
-                'field' => 'id',
+                'field' => 'country_id',
                 'sort'  => true,
             ),
             array(
@@ -375,23 +410,62 @@ class Country
                 'text'  => 'ISO Code',
                 'field' => 'iso_code',
                 'sort'  => true,
+                'align' => 'center',
             ),
             array(
                 'text'  => 'Dialing Code',
-                'field' => 'diaing_code',
+                'field' => 'dial_code',
                 'sort'  => true,
+                'align' => 'right',
             ),
             array(
                 'text'  => 'Enabled',
                 'field' => 'country_enabled',
                 'sort'  => true,
+                'align' => 'center',
             ),
         );
+
+        $defsort_arr = array(
+            'field' => 'iso_code',
+            'direction' => 'asc',
+        );
+
+        $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $display .= COM_createLink(
+            $LANG_SHOP['new_country'],
+            SHOP_ADMIN_URL . '/index.php?editcountry=x',
+            array(
+                'class' => 'uk-button uk-button-success',
+                'style' => 'float:left',
+            )
+        );
+
+        $query_arr = array(
+            'table' => 'shop.countries',
+            'sql' => $sql,
+            'query_fields' => array('iso_code', 'country_name'),
+            'default_filter' => $region_id > 0 ? "WHERE region_id=$region_id" : 'WHERE 1=1',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?countries=x&region_id=' . $region_id,
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_countrylist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
     }
 
 
     /**
-     * Get an individual field for the history screen.
+     * Get an individual field for the country admin list.
      *
      * @param   string  $fieldname  Name of field (from the array, not the db)
      * @param   mixed   $fieldvalue Value of the field
@@ -406,7 +480,7 @@ class Country
         $retval = '';
 
         switch($fieldname) {
-        case 'enabled':
+        case 'country_enabled':
             if ($fieldvalue == '1') {
                 $switch = 'checked="checked"';
                 $enabled = 1;
@@ -416,9 +490,17 @@ class Country
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
                     id=\"togenabled{$A['country_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['country_id']}\",\"enabled\",".
+                    onclick='SHOP_toggle(this,\"{$A['country_id']}\",\"country_enabled\",".
                     "\"country\");' />" . LB;
             break;
+
+        case 'country_name':
+            $retval .= COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . $A['country_id']
+            );
+            break;
+
         default:
             $retval = $fieldvalue;
             break;

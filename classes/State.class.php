@@ -275,6 +275,8 @@ class State
     /**
      * Make a name=>code selection for all states under a country.
      *
+     * @param   integer $country    Country ID to limit selection
+     * @param   boolean $enable     True to limit to only enabled states
      * @return  array   Array of state_name=>state_code
      */
     public static function makeSelection($country, $enabled=true)
@@ -283,6 +285,158 @@ class State
         $retval = array();
         foreach ($C as $code=>$data) {
             $retval[$data->getName()] = $data->getID();
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Sets a boolean field to the opposite of the supplied value.
+     *
+     * @param   integer $oldvalue   Old (current) value
+     * @param   string  $varname    Name of DB field to set
+     * @param   integer $id         ID number of element to modify
+     * @return  integer     New value, or old value upon failure
+     */
+    public static function Toggle($oldvalue, $varname, $id)
+    {
+        global $_TABLES;
+
+        $id = (int)$id;
+        switch ($varname) {     // allow only valid field names
+        case 'state_enabled':
+            // Determing the new value (opposite the old)
+            $oldvalue = $oldvalue == 1 ? 1 : 0;
+            $newvalue = $oldvalue == 1 ? 0 : 1;
+
+            $sql = "UPDATE {$_TABLES['shop.states']}
+                SET $varname=$newvalue
+                WHERE state_id=$id";
+            // Ignore SQL errors since varname is indeterminate
+            DB_query($sql, 1);
+            if (DB_error()) {
+                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+                return $oldvalue;
+            } else {
+                return $newvalue;
+            }
+        }
+    }
+
+
+    /**
+     * State Admin List View.
+     *
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList($country_id = 0)
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+
+        $display = '';
+        $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code, c.country_name FROM gl_shop_states s
+            LEFT JOIN gl_shop_countries c
+                ON c.country_id = s.country_id";
+        $header_arr = array(
+            array(
+                'text'  => 'ID',
+                'field' => 'state_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => 'State Name',
+                'field' => 'state_name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => 'Country Name',
+                'field' => 'country_name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => 'ISO Code',
+                'field' => 'iso_code',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => 'Enabled',
+                'field' => 'state_enabled',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 's.iso_code',
+            'direction' => 'asc',
+        );
+
+        $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
+        $display .= COM_createLink(
+            $LANG_SHOP['new_state'],
+            SHOP_ADMIN_URL . '/index.php?editstate=x',
+            array(
+                'class' => 'uk-button uk-button-success',
+                'style' => 'float:left',
+            )
+        );
+
+        $query_arr = array(
+            'table' => 'shop.states',
+            'sql' => $sql,
+            'query_fields' => array('s.iso_code', 's.state_name'),
+            'default_filter' => $country_id > 0 ? "WHERE s.country_id=$country_id" : 'WHERE 1=1',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?stats=x',
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_statelist',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', '', '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the state admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        $retval = '';
+
+        switch($fieldname) {
+        case 'state_enabled':
+            if ($fieldvalue == '1') {
+                $switch = 'checked="checked"';
+                $enabled = 1;
+            } else {
+                $switch = '';
+                $enabled = 0;
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                    id=\"togenabled{$A['state_id']}\"
+                    onclick='SHOP_toggle(this,\"{$A['state_id']}\",\"state_enabled\",".
+                    "\"state\");' />" . LB;
+            break;
+        default:
+            $retval = $fieldvalue;
+            break;
         }
         return $retval;
     }

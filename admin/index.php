@@ -66,6 +66,7 @@ $expected = array(
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
+    'countries', 'states', 'regions',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -957,6 +958,23 @@ case 'prod_bulk_frm':
     // Bulk update product attributes
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
+    break;
+
+case 'countries':
+    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Country::adminList($region_id);
+    break;
+
+case 'states':
+    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\State::adminList($country_id);
+    break;
+
+case 'regions':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Region::adminList();
     break;
 
 default:

@@ -420,6 +420,18 @@ case 'toggle':
         $newval = Shop\Supplier::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
+    case 'region':
+        $newval = \Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
+    case 'country':
+        $newval = \Shop\Country::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
+    case 'state':
+        $newval = \Shop\State::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
     default:
         exit;
     }
