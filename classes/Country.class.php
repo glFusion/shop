@@ -42,7 +42,7 @@ class Country
 
     /** Country Dialing Code.
      * @var string */
-    private $dialing_code;
+    private $dial_code;
 
     /** Sales are allowed to this country?
      * @var integer */
@@ -56,7 +56,7 @@ class Country
     /**
      * Create an object and set the variables.
      *
-     * 
+     * @param   array   $A      Array from form or DB record 
      */
     public function __construct($A)
     {
@@ -101,7 +101,7 @@ class Country
                     'iso_code'      => '',
                     'country_name'  => '',
                     'dial_code'     => '',
-                    'country_enabled' => 0,
+                    'country_enabled' => 1,
                 );
             }
             return new self($A);
@@ -184,7 +184,7 @@ class Country
     /**
      * Set the Region record ID.
      * 
-     * @param   integer $id     DB record ID for the region
+     * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
     private function setEnabled($enabled)
@@ -242,7 +242,7 @@ class Country
      */
     private function setDialingCode($code)
     {
-        $this->dialing_code = (int)$code;;
+        $this->dial_code = (int)$code;;
         return $this;
     }
 
@@ -253,12 +253,12 @@ class Country
      * @param   boolean $format     True to format with leading zeroes
      * @return  string      Country dialing code, empty string if not found
      */
-    public function getDialingCode($format=false)
+    public function getDialCode($format=false)
     {
         if ($format) {
-            return sprintf('%03d', $this->dialing_code);
+            return sprintf('%03d', $this->dial_code);
         } else {
-            return (int)$this->dialing_code;
+            return (int)$this->dial_code;
         }
     }
 
@@ -302,12 +302,10 @@ class Country
 
 
     /**
-     * Get data for a country from the static array.
-     * Return array with empty values for unknown countries.
-     * Returns all countries if no ID is provided.
+     * Get all country objects into an array.
      *
-     * @param   string  $code       Country Code
-     * @return  array       Array of country data (name and dialing code)
+     * @param   string  $enabled    True to get only enabled countries
+     * @return  array       Array of Country objects
      */
     public static function getAll($enabled=true)
     {
@@ -317,11 +315,14 @@ class Country
         $cache_key = 'shop.countries_all_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT * FROM gl_shop_countries";
+            $sql = "SELECT c.* FROM {$_TABLES['shop.countries']} c";
             if ($enabled) {
-                $sql .= ' WHERE country_enabled = 1';
+                $sql .= " LEFT JOIN {$_TABLES['shop.regions']} r
+                    ON c.region_id = r.region_id
+                    WHERE c.country_enabled = 1
+                    AND r.region_enabled =1";
             }
-            $sql .= ' ORDER BY country_name ASC';
+            $sql .= ' ORDER BY c.country_name ASC';
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $retval[$A['iso_code']] = new self($A);
@@ -344,7 +345,27 @@ class Country
         $C = self::getAll($enabled);
         $retval = array();
         foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $data->getID();
+            $retval[$data->getName()] = $data->getISO();
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Create the option tags for a country selection list.
+     *
+     * @uses    self::makeSelection()
+     * @param   string  $sel    Currently-selected ISO code
+     * @param   boolean $enabled    True for only enabled countries
+     * @return  string      Option tags for selection list
+     */
+    public static function optionList($sel = '', $enabled = true)
+    {
+        $retval = '';
+        $arr = self::makeSelection($enabled);
+        foreach ($arr as $name=>$iso) {
+            $selected = $sel == $iso ? 'selected="selected"' : '';
+            $retval .= "<option $selected value=\"$iso\">{$name}</option>";
         }
         return $retval;
     }
@@ -378,6 +399,7 @@ class Country
                 SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
                 return $oldvalue;
             } else {
+                Cache::clear('regions');
                 return $newvalue;
             }
         }
@@ -385,8 +407,86 @@ class Country
 
 
     /**
+     * Edit a country record.
+     *
+     * @return  string      HTML for editing form
+     */
+    public function Edit()
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file(array(
+            'form' => 'country.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
+        $T->set_var(array(
+            'country_id'    => $this->getID(),
+            'iso_code'      => $this->getISO(),
+            'country_name'  => $this->getName(),
+            'currency_options' => Currency::optionList($this->getCurrencyCode()),
+            'dial_code'     => $this->getDialCode(),
+            'region_options' => Region::optionLIst($this->region_id, false),
+            'ena_chk'       => $this->country_enabled ? 'checked="checked"' : '',
+            'doc_url'       => SHOP_getDocUrl('country_form'),
+        ) );
+        $T->parse('tooltipster_js', 'tips');
+        $T->parse('output','form');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Save the country information.
+     *
+     * @param   array   $A  Optional data array from $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public function Save($A=NULL)
+    {
+        global $_TABLES;
+
+        if (is_array($A)) {
+            $this->setID($A['country_id'])
+                ->setISO($A['iso_code'])
+                ->setRegionID($A['region_id'])
+                ->setName($A['country_name'])
+                ->setCurrencyCode($A['currency_code'])
+                ->setEnabled($A['country_enabled'])
+                ->setDialingCode($A['dial_code']);
+        }
+        if ($this->getID() > 0) {
+            $sql1 = "UPDATE {$_TABLES['shop.countries']} SET ";
+            $sql3 = " WHERE country_id ='" . $this->getID() . "'";
+        } else {
+            $sql1 = "INSERT INTO {$_TABLES['shop.countries']} SET ";
+            $sql3 = '';
+        }
+        $sql2 = "iso_code = '" . DB_escapeString($this->getISO()) . "',
+                region_id = {$this->getRegionID()},
+                country_name = '" . DB_escapeString($this->country_name) . "',
+                currency_code = '" . DB_escapeString($this->currency_code) . "',
+                dial_code = '" . DB_escapeString($this->dial_code) . "',
+                country_enabled = " . (int)$this->country_enabled;
+        $sql = $sql1 . $sql2 . $sql3;
+        //var_dump($this);die;
+        //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
+        DB_query($sql);
+        if (!DB_error()) {
+            if ($this->getID() == 0) {
+                $this->setID(DB_insertID());
+            }
+            $status = true;
+        } else {
+            $status = false;
+        }
+        return $status;
+    }
+
+
+    /**
      * Country Admin List View.
      *
+     * @param   integer $region_id  Optional region ID to limit list
      * @return  string      HTML for the product list.
      */
     public static function adminList($region_id=0)
@@ -394,32 +494,39 @@ class Country
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $display = '';
+        $region_id = (int)$region_id;
         $sql = "SELECT * FROM gl_shop_countries";
         $header_arr = array(
+            array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
             array(
                 'text'  => 'ID',
                 'field' => 'country_id',
                 'sort'  => true,
             ),
             array(
-                'text'  => 'Country Name',
-                'field' => 'country_name',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => 'ISO Code',
+                'text'  => $LANG_SHOP['iso_code'],
                 'field' => 'iso_code',
                 'sort'  => true,
                 'align' => 'center',
             ),
             array(
-                'text'  => 'Dialing Code',
+                'text'  => $LANG_SHOP['name'],
+                'field' => 'country_name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['dial_code'],
                 'field' => 'dial_code',
                 'sort'  => true,
                 'align' => 'right',
             ),
             array(
-                'text'  => 'Enabled',
+                'text'  => $LANG_SHOP['enabled'],
                 'field' => 'country_enabled',
                 'sort'  => true,
                 'align' => 'center',
@@ -434,7 +541,7 @@ class Country
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_country'],
-            SHOP_ADMIN_URL . '/index.php?editcountry=x',
+            SHOP_ADMIN_URL . '/index.php?editcountry=0',
             array(
                 'class' => 'uk-button uk-button-success',
                 'style' => 'float:left',
@@ -453,11 +560,22 @@ class Country
             'form_url' => SHOP_ADMIN_URL . '/index.php?countries=x&region_id=' . $region_id,
         );
 
+        $filter = $LANG_SHOP['region'] . ': <select name="region_id"
+            onchange="javascript: document.location.href=\'' .
+                SHOP_ADMIN_URL .
+                '/index.php?countries&amp;region_id=\'+' .
+                'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.regions'], 'region_id,region_name', $region_id, 1
+            ) .
+            "</select>" . LB;
+
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_countrylist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            $filter, '', '', ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -480,6 +598,13 @@ class Country
         $retval = '';
 
         switch($fieldname) {
+        case 'edit':
+            $retval = COM_createLink(
+                Icon::getHTML('edit'),
+                SHOP_ADMIN_URL . '/index.php?editcountry=' . $A['country_id']
+            );
+            break;
+
         case 'country_enabled':
             if ($fieldvalue == '1') {
                 $switch = 'checked="checked"';

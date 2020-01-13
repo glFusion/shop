@@ -55,6 +55,7 @@ $expected = array(
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     'prod_bulk_save', 'pv_bulk_save',
+    'saveregion', 'savecountry', 'savestate',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -66,7 +67,8 @@ $expected = array(
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
-    'countries', 'states', 'regions',
+    'editregion', 'editcountry', 'editstate',
+    'regions', 'countries', 'states',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -584,6 +586,42 @@ case 'pv_bulk_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
+case 'saveregion':
+    // Save a region record
+    $R = Shop\Region::getInstance($_POST['region_id']);
+    if ($R->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editregion=' . $R->getID());
+    }
+    break;
+
+case 'savecountry':
+    // Save a country record
+    $C = Shop\Country::getInstance($_POST['country_id']);
+    if ($C->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcountry=' . $C->getID());
+    }
+    break;
+
+case 'savestate':
+    // Save a state record
+    $S = Shop\State::getInstance((int)$_POST['state_id']);
+    if ($S->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editstate=' . $S->getID());
+    }
+    break;
+
 default:
     $view = $action;
     break;
@@ -960,20 +998,38 @@ case 'prod_bulk_frm':
     $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
     break;
 
+case 'editregion':
+    $region_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('regions');
+    $content .= Shop\Region::getInstance($region_id)->Edit();
+    break;
+
+case 'editcountry':
+    $country_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('countries');
+    $content .= Shop\Country::getInstance($country_id)->Edit();
+    break;
+
+case 'editstate':
+    $state_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('states');
+    $content .= Shop\State::getInstance($state_id)->Edit();
+    break;
+
 case 'countries':
     $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
-    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
     $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
-    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\State::adminList($country_id);
     break;
 
 case 'regions':
-    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Region::adminList();
     break;
 

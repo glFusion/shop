@@ -36,7 +36,7 @@ class Region
     /**
      * Create an object and set the variables.
      *
-     * 
+     * @param   array   $A      Array from form or DB record 
      */
     public function __construct($A)
     {
@@ -68,7 +68,7 @@ class Region
                 $A = array(
                     'region_id'     => 0,
                     'region_name'  => '',
-                    'region_enabled' => 0,
+                    'region_enabled' => 1,
                 );
             }
             return new self($A);
@@ -103,7 +103,7 @@ class Region
     /**
      * Set the Region record ID.
      * 
-     * @param   integer $id     DB record ID for the region
+     * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
     private function setEnabled($enabled)
@@ -113,6 +113,11 @@ class Region
     }
 
 
+    /**
+     * Check if this region is enabled for sales.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
     public function isEnabled()
     {
         return (int)$this->region_enabled;
@@ -140,7 +145,7 @@ class Region
      */
     public function getName()
     {
-        return $this->data['region_name'];
+        return $this->region_name;
     }
 
 
@@ -172,9 +177,143 @@ class Region
                 SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
                 return $oldvalue;
             } else {
+                Cache::clear('regions');
                 return $newvalue;
             }
         }
+    }
+
+
+    /**
+     * Get all regions into an array of objects.
+     *
+     * @param   string  $enabled    True to only include enabled regions
+     * @return  array       Array of Region objects
+     */
+    public static function getAll($enabled=true)
+    {
+        global $_TABLES;
+
+        $enabled = $enabled ? 1 : 0;
+        $cache_key = 'shop.regions_all_' . $enabled;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['shop.regions']}";
+            if ($enabled) {
+                $sql .= ' WHERE region_enabled =1';
+            }
+            $sql .= ' ORDER BY region_name ASC';
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['region_id']] = new self($A);
+            }
+            // Cache for a month, this doesn't change often
+            Cache::set($cache_key, $retval, 'regions', 43200);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Make a name=>id selection for the region selection.
+     *
+     * @param   boolean $enabled    True to only show enabled regions
+     * @return  array   Array of country_name=>country_code
+     */
+    public static function makeSelection($enabled = true)
+    {
+        $C = self::getAll($enabled);
+        $retval = array();
+        foreach ($C as $code=>$data) {
+            $retval[$data->getName()] = $data->getID();
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Create the option tags for a region selection list.
+     *
+     * @uses    self::makeSelection()
+     * @param   string  $sel    Currently-selected region ID
+     * @param   boolean $enabled    True for only enabled regions
+     * @return  string      Option tags for selection list
+     */
+    public static function optionList($sel = 0, $enabled = true)
+    {
+        $retval = '';
+        $arr = self::makeSelection($enabled);
+        foreach ($arr as $name=>$id) {
+            $selected = $sel == $id ? 'selected="selected"' : '';
+            $retval .= "<option $selected value=\"$id\">{$name}</option>";
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Edit a region record.
+     *
+     * @return  string      HTML for editing form
+     */
+    public function Edit()
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file(array(
+            'form' => 'region.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
+
+        $T->set_var(array(
+            'region_id'     => $this->getID(),
+            'region_name'   => $this->getName(),
+            'ena_chk'       => $this->region_enabled ? 'checked="checked"' : '',
+            'doc_url'       => SHOP_getDocUrl('region_form'),
+        ) );
+        $T->parse('tooltipster_js', 'tips');
+        $T->parse('output','form');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Save the region information.
+     *
+     * @param   array   $A  Optional data array from $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public function Save($A=NULL)
+    {
+        global $_TABLES;
+
+        if (is_array($A)) {
+            $this->setID($A['region_id'])
+                ->setName($A['region_name'])
+                ->setEnabled($A['region_enabled']);
+        }
+        if ($this->getID() > 0) {
+            $sql1 = "UPDATE {$_TABLES['shop.regions']} SET ";
+            $sql3 = " WHERE region_id ='" . $this->getID() . "'";
+        } else {
+            $sql1 = "INSERT INTO {$_TABLES['shop.regions']} SET ";
+            $sql3 = '';
+        }
+        $sql2 = "region_name = '" . DB_escapeString($this->getName()) . "',
+                region_enabled = {$this->isEnabled()}";
+        $sql = $sql1 . $sql2 . $sql3;
+        //var_dump($this);die;
+        //echo $sql;die;
+        SHOP_log($sql, SHOP_LOG_DEBUG);
+        DB_query($sql);
+        if (!DB_error()) {
+            if ($this->getID() == 0) {
+                $this->setID(DB_insertID());
+            }
+            $status = true;
+        } else {
+            $status = false;
+        }
+        return $status;
     }
 
 
@@ -190,6 +329,12 @@ class Region
         $display = '';
         $sql = "SELECT * FROM gl_shop_regions";
         $header_arr = array(
+            array(
+                'text'  => $LANG_SHOP['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
             array(
                 'text'  => 'ID',
                 'field' => 'region_id',
@@ -224,15 +369,15 @@ class Region
         );
 
         $query_arr = array(
-            'table' => 'shop.countries',
+            'table' => 'shop.regions',
             'sql' => $sql,
-            'query_fields' => array('iso_code', 'country_name'),
+            'query_fields' => array('region_name'),
             'default_filter' => 'WHERE 1=1',
         );
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?countries=x',
+            'form_url' => SHOP_ADMIN_URL . '/index.php?regions=x',
         );
 
         $display .= ADMIN_list(
@@ -262,6 +407,13 @@ class Region
         $retval = '';
 
         switch($fieldname) {
+        case 'edit':
+            $retval = COM_createLink(
+                Icon::getHTML('edit'),
+                SHOP_ADMIN_URL . '/index.php?editregion=' . $A['region_id']
+            );
+            break;
+
         case 'region_enabled':
             if ($fieldvalue == '1') {
                 $switch = 'checked="checked"';
@@ -277,6 +429,7 @@ class Region
             break;
 
         case 'region_name':
+            // Drill down to the countries in this region
             $retval = COM_createLink(
                 $fieldvalue,
                 SHOP_ADMIN_URL . "/index.php?countries&region_id={$A['region_id']}"

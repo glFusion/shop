@@ -131,6 +131,7 @@ $LANG_SHOP = array (
     8 => 'Gift Card',
 ),
 'edit'              => 'Edit',
+'new'               => 'New',
 'create_category'   => 'Create a New Category',
 'cat_name'          => 'Category Name',
 'parent_cat'        => 'Parent Category',
@@ -606,6 +607,15 @@ $LANG_SHOP = array (
 'reorder' => 'Reorder Qty',
 'select_addr' => 'Address Selection',
 'use_this_addr' => 'Use This Address',
+'new_country' => 'New Country',
+'new_state' => 'New State',
+'new_region' => 'New Region',
+'iso_code' => 'ISO Code',
+'dial_code' => 'Dialing Code',
+'currency_code' => 'Currency Code',
+'regions' => 'Regions',
+'countries' => 'Countries',
+'states' => 'States',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
