@@ -49,9 +49,9 @@ class ipnlog extends \Shop\Report
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {
             $T->set_var(array(
-                'gw_name'   => $GW->Name(),
-                'gw_dscp'   => $GW->DisplayName(),
-                'sel'       => $gateway == $GW->Name() ? 'selected="selected"' : '',
+                'gw_name'   => $GW->getName(),
+                'gw_dscp'   => $GW->getDisplayName(),
+                'sel'       => $gateway == $GW->getName() ? 'selected="selected"' : '',
             ) );
             $T->parse('opt', 'gw_opts', true);
         }

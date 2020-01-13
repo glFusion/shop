@@ -311,7 +311,7 @@ class Order
                 $T->set_var(array(
                     'gateway_vars'  => $this->checkoutButton($gw),
                     'checkout'      => 'true',
-                    'pmt_method'    => $gw->Description(),
+                    'pmt_method'    => $gw->getDscp(),
                 ) );
             }
         default:
@@ -322,7 +322,7 @@ class Order
         if ($this->pmt_method != '') {
             $gw = Gateway::getInstance($this->pmt_method);
             if ($gw !== NULL) {
-                $pmt_method = $gw->Description();
+                $pmt_method = $gw->getDscp();
             } else {
                 $pmt_method = $this->pmt_method;
             }

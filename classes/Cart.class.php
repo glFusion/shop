@@ -568,10 +568,10 @@ class Cart extends Order
                     continue;
                 }
                 if ($gw->Supports('checkout')) {
-                    if ($gw_sel == '') $gw_sel = $gw->Name();
+                    if ($gw_sel == '') $gw_sel = $gw->getName();
                     $T->set_var(array(
-                        'gw_id' => $gw->Name(),
-                        'radio' => $gw->checkoutRadio($gw_sel == $gw->Name()),
+                        'gw_id' => $gw->getName(),
+                        'radio' => $gw->checkoutRadio($gw_sel == $gw->getName()),
                     ) );
                     $T->parse('row', 'Radios', true);
                 }
