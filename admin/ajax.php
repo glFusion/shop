@@ -38,6 +38,7 @@ if (isset($_POST['action'])) {
 } else {
     $action = '';
 }
+$title = NULL;      // title attribute to be set
 switch ($action) {
 case 'dropupload_cat':
     // Handle a drag-and-drop image upload for categories
@@ -376,6 +377,11 @@ case 'toggle':
         switch ($_POST['type']) {
         case 'enabled':
             $newval = \Shop\Gateway::toggleEnabled($_POST['oldval'], $_POST['id']);
+            if ($newval == 1) {
+                $title = $LANG_SHOP['ck_to_disable'];
+            } else {
+                $title = $LANG_SHOP['ck_to_enable'];
+            }
             break;
         case 'buy_now':
             $newval = \Shop\Gateway::toggleBuyNow($_POST['oldval'], $_POST['id']);
@@ -431,7 +437,8 @@ case 'toggle':
         'component' => $_POST['component'],
         'newval'    => $newval,
         'statusMessage' => $newval != $_POST['oldval'] ?
-                $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
+            $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
+        'title' => $title,
     );
     header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
