@@ -606,6 +606,10 @@ $LANG_SHOP = array (
 'reorder' => 'Reorder Qty',
 'select_addr' => 'Address Selection',
 'use_this_addr' => 'Use This Address',
+'control' => 'Control',
+'ck_to_install' => 'Install this item',
+'ck_to_enable' => 'Click to enable',
+'ck_to_disable' => 'Click to disable',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
