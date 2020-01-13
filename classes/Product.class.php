@@ -1639,7 +1639,7 @@ class Product
                 // Gateway buy-now buttons only used if no options
                 foreach (Gateway::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {
-                        $buttons[$gw->Name()] = $gw->ProductButton($this);
+                        $buttons[$gw->getName()] = $gw->ProductButton($this);
                     }
                 }
             }
