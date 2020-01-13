@@ -131,7 +131,7 @@ class Product
 
     /** Related category objects.
      * @var array */
-    private $Categories = array();
+    private $Categories = NULL;
 
     /** Product variants for this product. Null to load only once.
      * @var array */
@@ -161,7 +161,6 @@ class Product
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
-            $this->Categories = Category::getByProductId($this->id);
         } elseif ($id == 0) {
             $this->item_id = '';
             $this->id = 0;
@@ -194,7 +193,6 @@ class Product
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
             $this->custom = '';
-            $this->Categories = array();
             $this->reorder = 0;
         } else {
             $this->id = $id;
@@ -3490,11 +3488,11 @@ class Product
         $add = array();
         $rem = array();
         foreach ($cats as $cat_id) {
-            if (!array_key_exists($cat_id, $this->Categories)) {
+            if (!array_key_exists($cat_id, $this->getCategories())) {
                 $add[] = "({$this->id}, $cat_id)";
             }
         }
-        foreach ($this->Categories as $cat_id=>$cat) {
+        foreach ($this->getCategories() as $cat_id=>$cat) {
             if (!in_array($cat_id, $cats)) {
                 $rem[] = $cat_id;
             }
@@ -3521,6 +3519,9 @@ class Product
      */
     public function getCategories()
     {
+        if ($this->Categories == NULL) {
+            $this->Categories = Category::getByProductId($this->id);
+        }
         return $this->Categories;
     }
 
