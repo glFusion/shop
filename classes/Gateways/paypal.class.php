@@ -67,9 +67,9 @@ class paypal extends \Shop\Gateway
             'pub_key'           => 'string',
             'prod_url'          => 'string',
             'sandbox_url'       => 'string',
-            'api_username'      => 'password',
+            /*'api_username'      => 'password',
             'api_password'      => 'password',
-            'api_sig'           => 'password',
+            'api_sig'           => 'password',*/
         );
 
         // Set defaults
@@ -88,7 +88,7 @@ class paypal extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
-            'terms'     => 0,
+            //'terms'     => 0,
         );
 
         // Call the parent constructor to initialize the common variables.
