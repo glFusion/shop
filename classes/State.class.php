@@ -83,7 +83,7 @@ class State
         if (isset($instances[$code])) {
             return $instances[$code];
         } elseif (is_integer($code)) {
-            $sql = "SELECT s.*, c.iso_code as country_iso
+            $sql = "SELECT s.*, c.alpha2 as country_iso
                     FROM {$_TABLES['shop.states']} s
                     LEFT JOIN {$_TABLES['shop.countries']} c
                         ON c.country_id = s.country_id
