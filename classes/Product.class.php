@@ -2519,7 +2519,7 @@ class Product
         global $_GROUPS;
 
         // Make sure the category is set
-        foreach ($this->Categories as $Cat) {
+        foreach ($this->getCategories() as $Cat) {
             if ($Cat->hasAccess($_GROUPS)) {
                 return true;
             }
