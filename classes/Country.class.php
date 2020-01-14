@@ -28,6 +28,10 @@ class Country
      * @var integer */
     private $region_id;
 
+    /** Numeric UN country code
+     * @var integer */
+    private $country_code;
+
     /** Country Name.
      * @var string */
     private $country_name;
@@ -36,9 +40,13 @@ class Country
      * @var string */
     private $currency_code;
 
-    /** Country ISO code.
+    /** Country 2-character ISO code.
      * @var string */
-    private $iso_code;
+    private $alpha2;
+
+    /** Country 3-character ISO code.
+     * @var string */
+    private $alpha3;
 
     /** Country Dialing Code.
      * @var string */
@@ -56,17 +64,19 @@ class Country
     /**
      * Create an object and set the variables.
      *
-     * @param   array   $A      Array from form or DB record 
+     * @param   array   $A      Array from form or DB record
      */
     public function __construct($A)
     {
         $this->setID($A['country_id'])
-            ->setISO($A['iso_code'])
+            ->setAlpha2($A['alpha2'])
+            ->setAlpha3($A['alpha3'])
             ->setRegionID($A['region_id'])
+            ->setCode($A['country_code'])
             ->setName($A['country_name'])
             ->setCurrencyCode($A['currency_code'])
             ->setEnabled($A['country_enabled'])
-            ->setDialingCode($A['dial_code']);
+            ->setDialCode($A['dial_code']);
     }
 
 
@@ -88,7 +98,7 @@ class Country
             if (is_integer($code)) {
                 $sql .= "country_id = $code";
             } else {
-                $sql .= "iso_code = '" . DB_escapeString($code) . "'";
+                $sql .= "alpha2 = '" . DB_escapeString($code) . "'";
             }
             $res = DB_query($sql);
             if ($res && DB_numRows($res) == 1) {
@@ -97,8 +107,10 @@ class Country
                 $A = array(
                     'country_id'    => 0,
                     'region_id'     => 0,
+                    'country_code'  => 0,
                     'currency_code' => '',
-                    'iso_code'      => '',
+                    'alpha2'      => '',
+                    'alpha3'      => '',
                     'country_name'  => '',
                     'dial_code'     => '',
                     'country_enabled' => 1,
@@ -110,32 +122,56 @@ class Country
 
 
     /**
-     * Set the record ID.
-     * 
+     * Set the 2-letter UN Alpha code
+     *
      * @param   string  $code   2-letter ISO code
      * @return  object  $this
      */
-    private function setISO($code)
+    private function setAlpha2($code)
     {
-        $this->iso_code = $code;
+        $this->alpha2 = $code;
         return $this;
     }
 
 
     /**
-     * Return the DB record ID for the country.
+     * Return the 2-letter UN Alpha code
      *
      * @return  string      ISO code
      */
-    public function getISO()
+    public function getAlpha2()
     {
-        return $this->iso_code;
+        return $this->alpha2;
+    }
+
+
+    /**
+     * Set the 2-letter UN Alpha code
+     *
+     * @param   string  $code   2-letter ISO code
+     * @return  object  $this
+     */
+    private function setAlpha3($code)
+    {
+        $this->alpha3 = $code;
+        return $this;
+    }
+
+
+    /**
+     * Return the 3-letter UN Alpha code
+     *
+     * @return  string      ISO code
+     */
+    public function getAlpha3()
+    {
+        return $this->alpha3;
     }
 
 
     /**
      * Set the record ID.
-     * 
+     *
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
@@ -159,7 +195,7 @@ class Country
 
     /**
      * Set the Region record ID.
-     * 
+     *
      * @param   integer $id     DB record ID for the region
      * @return  object  $this
      */
@@ -182,8 +218,32 @@ class Country
 
 
     /**
+     * Set the numeric UN country code.
+     *
+     * @param   integer $$code  Country code
+     * @return  object  $this
+     */
+    private function setCode($code)
+    {
+        $this->country_code = (int)$code;
+        return $this;
+    }
+
+
+    /**
+     * Return the numeric UN country code.
+     *
+     * @return  integer     Record ID
+     */
+    public function getCode()
+    {
+        return (int)$this->country_code;
+    }
+
+
+    /**
      * Set the Region record ID.
-     * 
+     *
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
@@ -211,7 +271,7 @@ class Country
 
     /**
      * Set the Country Name.
-     * 
+     *
      * @param   string  $name   Name of country
      * @return  object  $this
      */
@@ -236,11 +296,11 @@ class Country
 
     /**
      * Set the dialing code.
-     * 
+     *
      * @param   integer $code   Numeric dialing code
      * @return  object  $this
      */
-    private function setDialingCode($code)
+    private function setDialCode($code)
     {
         $this->dial_code = (int)$code;;
         return $this;
@@ -265,7 +325,7 @@ class Country
 
     /**
      * Set the currency code.
-     * 
+     *
      * @param   string  $code   Currency code
      * @return  object  $this
      */
@@ -325,7 +385,7 @@ class Country
             $sql .= ' ORDER BY c.country_name ASC';
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['iso_code']] = new self($A);
+                $retval[$A['alpha2']] = new self($A);
             }
             // Cache for a month, this doesn't change often
             Cache::set($cache_key, $retval, 'regions', 43200);
@@ -346,7 +406,7 @@ class Country
         $C = self::getAll($enabled);
         $retval = array();
         foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $data->getISO();
+            $retval[$data->getName()] = $data->getAlpha2();
         }
         return $retval;
     }
@@ -421,8 +481,10 @@ class Country
         ) );
         $T->set_var(array(
             'country_id'    => $this->getID(),
-            'iso_code'      => $this->getISO(),
-            'country_name'  => $this->getName(),
+            'alpha2'      => $this->getAlpha2(),
+            'alpha3'      => $this->getAlpha3(),
+            'country_code' => $this->getCode(),
+            'country_name' => $this->getName(),
             'currency_options' => Currency::optionList($this->getCurrencyCode()),
             'dial_code'     => $this->getDialCode(),
             'region_options' => Region::optionLIst($this->region_id, false),
@@ -447,12 +509,14 @@ class Country
 
         if (is_array($A)) {
             $this->setID($A['country_id'])
-                ->setISO($A['iso_code'])
+                ->setAlpha2($A['alpha2'])
+                ->setAlpha3($A['alpha3'])
                 ->setRegionID($A['region_id'])
+                ->setCode($A['country_code'])
                 ->setName($A['country_name'])
                 ->setCurrencyCode($A['currency_code'])
                 ->setEnabled($A['country_enabled'])
-                ->setDialingCode($A['dial_code']);
+                ->setDialCode($A['dial_code']);
         }
         if ($this->getID() > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.countries']} SET ";
@@ -461,12 +525,14 @@ class Country
             $sql1 = "INSERT INTO {$_TABLES['shop.countries']} SET ";
             $sql3 = '';
         }
-        $sql2 = "iso_code = '" . DB_escapeString($this->getISO()) . "',
-                region_id = {$this->getRegionID()},
-                country_name = '" . DB_escapeString($this->country_name) . "',
-                currency_code = '" . DB_escapeString($this->currency_code) . "',
-                dial_code = '" . DB_escapeString($this->dial_code) . "',
-                country_enabled = " . (int)$this->country_enabled;
+        $sql2 = "alpha2 = '" . DB_escapeString($this->getAlpha2()) . "',
+            alpha3 = '" . DB_escapeString($this->getAlpha3()) . "',
+            region_id = {$this->getRegionID()},
+            country_code = {$this->getCode()},
+            country_name = '" . DB_escapeString($this->country_name) . "',
+            currency_code = '" . DB_escapeString($this->currency_code) . "',
+            dial_code = '" . DB_escapeString($this->dial_code) . "',
+            country_enabled = " . (int)$this->country_enabled;
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -510,8 +576,8 @@ class Country
                 'sort'  => true,
             ),
             array(
-                'text'  => $LANG_SHOP['iso_code'],
-                'field' => 'iso_code',
+                'text'  => $LANG_SHOP['alpha2'],
+                'field' => 'alpha2',
                 'sort'  => true,
                 'align' => 'center',
             ),
@@ -535,7 +601,7 @@ class Country
         );
 
         $defsort_arr = array(
-            'field' => 'iso_code',
+            'field' => 'alpha2',
             'direction' => 'asc',
         );
 
@@ -552,7 +618,7 @@ class Country
         $query_arr = array(
             'table' => 'shop.countries',
             'sql' => $sql,
-            'query_fields' => array('iso_code', 'country_name'),
+            'query_fields' => array('alpha2', 'country_name'),
             'default_filter' => $region_id > 0 ? "WHERE region_id=$region_id" : 'WHERE 1=1',
         );
 

@@ -15,7 +15,7 @@ namespace Shop;
 
 
 /**
- * Class to handle country information.
+ * Class to handle UN subregion information.
  * @package shop
  */
 class Region
@@ -23,6 +23,10 @@ class Region
     /** Region DB record ID.
      * @var integer */
     private $region_id;
+
+    /** UN Region Code.
+     * @var integer */
+    private $region_code;
 
     /** Region Name.
      * @var string */
@@ -36,35 +40,40 @@ class Region
     /**
      * Create an object and set the variables.
      *
-     * @param   array   $A      Array from form or DB record 
+     * @param   array   $A      Array from form or DB record
      */
     public function __construct($A)
     {
         $this->setID($A['region_id'])
+            ->setCode($A['region_code'])
             ->setName($A['region_name'])
             ->setEnabled($A['region_enabled']);
     }
 
 
     /**
-     * Get an instance of a country object.
+     * Get an instance of a Region object.
      *
-     * @param   string  $code   2-letter country code
+     * @param   integer $id     Region DB record ID
      * @return  object  Country object
      */
-    public static function getInstance($code)
+    public static function getInstance($id)
     {
         global $_TABLES;
         static $instances = array();
 
-        if (isset($instances[$code])) {
-            return $instances[$code];
+        $id = (int)$id;
+        if (isset($instances[$id])) {
+            return $instances[$id];
         } else {
-            $sql = "SELECT * FROM gl_shop_regions WHERE region_id = " . (int)$code;
+            $sql = "SELECT * FROM gl_shop_regions WHERE region_id = $id";;
             $res = DB_query($sql);
             if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);
             } else {
+                // Create an empty region.
+                // Set enabled to true so isEnabled() will return true
+                // when there is no region assigned (e.g. Antarctica)
                 $A = array(
                     'region_id'     => 0,
                     'region_name'  => '',
@@ -78,7 +87,7 @@ class Region
 
     /**
      * Set the record ID.
-     * 
+     *
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
@@ -101,8 +110,31 @@ class Region
 
 
     /**
-     * Set the Region record ID.
-     * 
+     * Set the UN region code.
+     *
+     * @param   $code   integer     Region code
+     */
+    private function setCode($code)
+    {
+        $this->region_code = (int)$code;
+        return $this;
+    }
+
+
+    /**
+     * Get the UN region code.
+     *
+     * @return  integer     Region code
+     */
+    public function getCode()
+    {
+        return (int)$this->region_code;
+    }
+
+
+    /**
+     * Set the Enabled flag to one or zero.
+     *
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
@@ -125,9 +157,9 @@ class Region
 
 
     /**
-     * Set the Country Name.
-     * 
-     * @param   string  $name   Name of country
+     * Set the Region name.
+     *
+     * @param   string  $name   Name of region
      * @return  object  $this
      */
     private function setName($name)
@@ -138,8 +170,7 @@ class Region
 
 
     /**
-     * Return USPS country name by country ISO 3166-1-alpha-2 code.
-     * Return empty string for unknown countries.
+     * Get the region name.
      *
      * @return  string      Country name, empty string if not found
      */
@@ -271,6 +302,7 @@ class Region
 
         if (is_array($A)) {
             $this->setID($A['region_id'])
+                ->setCode($A['region_code'])
                 ->setName($A['region_name'])
                 ->setEnabled($A['region_enabled']);
         }
@@ -282,7 +314,8 @@ class Region
             $sql3 = '';
         }
         $sql2 = "region_name = '" . DB_escapeString($this->getName()) . "',
-                region_enabled = {$this->isEnabled()}";
+            'region_code = {$this->getCode()},
+            region_enabled = {$this->isEnabled()}";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -425,7 +458,6 @@ class Region
         }
         return $retval;
     }
-
 
 }
 

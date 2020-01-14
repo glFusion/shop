@@ -51,7 +51,7 @@ class State
 
     /**
      * Create an object and set the variables.
-     * 
+     *
      * @param   array   $A  DB record array
      */
     public function __construct($A)
@@ -67,6 +67,10 @@ class State
 
     /**
      * Get an instance of a state object.
+     * The code may be a combination of country and state ISO, such as
+     * `US,CA`, or a DB record ID for the state, or just a state ISO.
+     * This is experimental, the state ISO isn't unique.
+     * The state ISO alone shouldn't be used since it may not be unique.
      *
      * @param   string  $code   State iso_code and country iso_code
      * @return  object  Country object
@@ -124,7 +128,7 @@ class State
 
     /**
      * Set the ISO code.
-     * 
+     *
      * @param   string  $code   2-letter ISO code
      * @return  object  $this
      */
@@ -148,7 +152,7 @@ class State
 
     /**
      * Set the record ID.
-     * 
+     *
      * @param   integer $id     DB record ID
      * @return  object  $this
      */
@@ -172,7 +176,7 @@ class State
 
     /**
      * Set the Country record ID.
-     * 
+     *
      * @param   integer $id     DB record ID for the parent country
      * @return  object  $this
      */
@@ -185,7 +189,8 @@ class State
 
     /**
      * Set the Country ISO code.
-     * 
+     * This is not set in the DB, just used as needed.
+     *
      * @param   string  $iso    Country ISO code
      * @return  object  $this
      */
@@ -209,7 +214,7 @@ class State
 
     /**
      * Set the Enabled flag for the state.
-     * 
+     *
      * @param   integer $enabled    Zero to disable, nonzero to enable
      * @return  object  $this
      */
@@ -247,8 +252,8 @@ class State
 
 
     /**
-     * Set the Country Name.
-     * 
+     * Set the State full name.
+     *
      * @param   string  $name   Name of state
      * @return  object  $this
      */
