@@ -1148,11 +1148,17 @@ class Category
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
-            WHERE product_id = '" . (int)$prod_id . "'";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+        $prod_id = (int)$prod_id;
+        $cache_key = 'shop.categories_' . $prod_id;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
+                WHERE product_id = $prod_id";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+            }
+            Cache::set($cache_key, $retval, array('products', 'categories'));
         }
         return $retval;
     }
