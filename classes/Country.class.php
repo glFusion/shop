@@ -337,10 +337,11 @@ class Country
     /**
      * Make a name=>code selection for the plugin configuration.
      *
+     * @uses    self::getAll()
      * @param   boolean $enabled    True to only show enabled countries
      * @return  array   Array of country_name=>country_code
      */
-    public static function makeSelection($enabled = true)
+    public static function makeConfigSelection($enabled = true)
     {
         $C = self::getAll($enabled);
         $retval = array();
@@ -354,7 +355,7 @@ class Country
     /**
      * Create the option tags for a country selection list.
      *
-     * @uses    self::makeSelection()
+     * @uses    self::getAll()
      * @param   string  $sel    Currently-selected ISO code
      * @param   boolean $enabled    True for only enabled countries
      * @return  string      Option tags for selection list
@@ -362,10 +363,10 @@ class Country
     public static function optionList($sel = '', $enabled = true)
     {
         $retval = '';
-        $arr = self::makeSelection($enabled);
-        foreach ($arr as $name=>$iso) {
+        $arr = self::getAll($enabled);
+        foreach ($arr as $iso=>$C) {
             $selected = $sel == $iso ? 'selected="selected"' : '';
-            $retval .= "<option $selected value=\"$iso\">{$name}</option>";
+            $retval .= "<option $selected value=\"{$iso}\">{$C->getName()}</option>";
         }
         return $retval;
     }

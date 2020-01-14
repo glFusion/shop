@@ -325,24 +325,6 @@ class State
 
 
     /**
-     * Make a name=>code selection for all states under a country.
-     *
-     * @param   integer $country    Country ID to limit selection
-     * @param   boolean $enabled    True to limit to only enabled states
-     * @return  array   Array of state_name=>state_code
-     */
-    public static function makeSelection($country, $enabled=true)
-    {
-        $C = self::getAll($country, $enabled);
-        $retval = array();
-        foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $data->getISO();
-        }
-        return $retval;
-    }
-
-
-    /**
      * Return option list elements to select a state.
      *
      * @param   string  $country    Country code
@@ -353,10 +335,10 @@ class State
     public static function optionList($country='', $state='', $enabled=true)
     {
         $retval = '';
-        $arr = self::makeSelection($country, $enabled);
-        foreach ($arr as $name=>$iso) {
+        $arr = self::getAll($country, $enabled);
+        foreach ($arr as $iso=>$S) {
             $selected = $state == $iso ? 'selected="selected"' : '';
-            $retval .= "<option $selected value=\"$iso\">{$name}</option>";
+            $retval .= "<option $selected value=\"$iso\">{$S->getName()}</option>";
         }
         return $retval;
     }

@@ -215,26 +215,9 @@ class Region
 
 
     /**
-     * Make a name=>id selection for the region selection.
-     *
-     * @param   boolean $enabled    True to only show enabled regions
-     * @return  array   Array of country_name=>country_code
-     */
-    public static function makeSelection($enabled = true)
-    {
-        $C = self::getAll($enabled);
-        $retval = array();
-        foreach ($C as $code=>$data) {
-            $retval[$data->getName()] = $data->getID();
-        }
-        return $retval;
-    }
-
-
-    /**
      * Create the option tags for a region selection list.
      *
-     * @uses    self::makeSelection()
+     * @uses    self::getAll()
      * @param   string  $sel    Currently-selected region ID
      * @param   boolean $enabled    True for only enabled regions
      * @return  string      Option tags for selection list
@@ -242,10 +225,10 @@ class Region
     public static function optionList($sel = 0, $enabled = true)
     {
         $retval = '';
-        $arr = self::makeSelection($enabled);
-        foreach ($arr as $name=>$id) {
+        $arr = self::getAll($enabled);
+        foreach ($arr as $id=>$R) {
             $selected = $sel == $id ? 'selected="selected"' : '';
-            $retval .= "<option $selected value=\"$id\">{$name}</option>";
+            $retval .= "<option $selected value=\"$id\">{$R->getName()}</option>";
         }
         return $retval;
     }
