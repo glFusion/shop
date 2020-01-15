@@ -90,12 +90,20 @@ class Catalog
                     $cat_sql = " AND c.cat_id IN ($cat_sql)";
                 }
             }
+            $brand_logo_url = '';
+            $prod_by_brand = '';
+            $brand_name = '';
+            $brand_dscp = '';
         } else {
             $Sup = Supplier::getInstance($brand_id);
             if ($Sup->getID() > 0) {
                 // Just borrow $cat_sql for this limit
                 $cat_sql = " AND p.brand_id = {$Sup->getID()}";
             }
+            $brand_logo_url = $Sup->getImage()['url'];
+            $prod_by_brand = sprintf($LANG_SHOP['prod_by_brand'], $Sup->getName());
+            $brand_name = $Sup->getName();
+            $brand_dscp = $Sup->getDscp();
         }
 
         // Display top-level categories
@@ -306,6 +314,11 @@ class Catalog
             'sortby'        => $sortby,
             'table_columns' => $_SHOP_CONF['catalog_columns'],
             'cat_id'        => $cat_id == 0 ? '' : $cat_id,
+            'brand_id'      => $brand_id,
+            'prod_by_brand' => $prod_by_brand,
+            'brand_logo_url' => $brand_logo_url,
+            'brand_dscp'    => $brand_dscp,
+            'brand_name'    => $brand_name,
             'query'         => $query_str,
         ) );
 

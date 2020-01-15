@@ -623,6 +623,7 @@ $LANG_SHOP = array (
 'alpha2' => '2-letter Country Code',
 'alpha3' => '3-letter Country Code',
 'country_code' => 'Numeric Country Code',
+'prod_by_brand' => 'Products by %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
