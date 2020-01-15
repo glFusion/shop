@@ -98,7 +98,7 @@ class State
                     LEFT JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
                     WHERE s.iso_code = '$s_iso'
-                    AND c.iso_code = '$c_iso'";
+                    AND c.alpha2 = '$c_iso'";
             } else {
                 $s_iso = DB_escapeString($parts[0]);
                 $c_iso = '';
@@ -312,7 +312,7 @@ class State
                     ON c.country_id = s.country_id
                 LEFT JOIN {$_TABLES['shop.regions']} r
                     ON r.region_id = c.region_id
-                WHERE c.iso_code = '$country'";
+                WHERE c.alpha2 = '$country'";
             if ($enabled) {
                 $sql .= " AND s.state_enabled = 1
                     AND c.country_enabled = 1
