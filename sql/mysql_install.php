@@ -1325,7 +1325,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `dial_code` int(4) unsigned NOT NULL DEFAULT '0',
       `country_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       PRIMARY KEY (`country_id`),
-      KEY `iso_code` (`alpha2`),
+      UNIQUE KEY `alpha2` (`alpha2`),
       KEY `zone_id` (`region_id`)
     ) ENGINE=MyISAM",
     "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (

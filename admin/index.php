@@ -605,8 +605,8 @@ case 'savecountry':
         COM_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
     } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcountry=' . $C->getID());
+        COM_setMsg($C->getErrors());
+        $content = $C->Edit($_POST);
     }
     break;
 

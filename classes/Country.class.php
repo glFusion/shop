@@ -56,6 +56,10 @@ class Country
      * @var integer */
     private $country_enabled;
 
+    /** Error message array.
+     * @var array */
+    private $messages = array();
+
     /** Region object.
      * @var object */
     private $Region;
@@ -68,15 +72,39 @@ class Country
      */
     public function __construct($A)
     {
-        $this->setID($A['country_id'])
-            ->setAlpha2($A['alpha2'])
-            ->setAlpha3($A['alpha3'])
-            ->setRegionID($A['region_id'])
-            ->setCode($A['country_code'])
-            ->setName($A['country_name'])
-            ->setCurrencyCode($A['currency_code'])
-            ->setEnabled($A['country_enabled'])
-            ->setDialCode($A['dial_code']);
+        $this->setVars($A);
+    }
+
+
+    private function setVars($A)
+    {
+        if (isset($A['country_id'])) {
+            $this->setID($A['country_id']);
+        }
+        if (isset($A['alpha2'])) {
+            $this->setAlpha2($A['alpha2']);
+        }
+        if (isset($A['alpha3'])) {
+            $this->setAlpha3($A['alpha3']);
+        }
+        if (isset($A['reguib)ud'])) {
+            $this->setRegionID($A['region_id']);
+        }
+        if (isset($A['country_code'])) {
+            $this->setCode($A['country_code']);
+        }
+        if (isset($A['country_name'])) {
+            $this->setName($A['country_name']);
+        }
+        if (isset($A['currency_code'])) {
+            $this->setCurrencyCode($A['currency_code']);
+        }
+        if (isset($A['country_enabled'])) {
+            $this->setEnabled($A['country_enabled']);
+        }
+        if (isset($A['dial_code'])) {
+            $this->setDialCode($A['dial_code']);
+        }
     }
 
 
@@ -472,8 +500,11 @@ class Country
      *
      * @return  string      HTML for editing form
      */
-    public function Edit()
+    public function Edit($A=NULL)
     {
+        if (is_array($A)) {
+            $this->setVars($A);
+        }
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file(array(
             'form' => 'country.thtml',
@@ -537,16 +568,49 @@ class Country
         //var_dump($this);die;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        DB_query($sql, 1);  // suppress errors, show nice error message instead
         if (!DB_error()) {
             if ($this->getID() == 0) {
                 $this->setID(DB_insertID());
             }
             $status = true;
         } else {
+            $this->addError('An error occurred. Check that the 2-letter code is unique.');
             $status = false;
         }
         return $status;
+    }
+
+
+    /**
+     * Add an error message into the message array.
+     *
+     * @param   string  $msg    Message to add
+     * @param   boolean $clear  Clear array first?
+     */
+    private function addError($msg, $clear=false)
+    {
+        if ($clear) {
+            $this->messages = array();
+        }
+        $this->messages[] = $msg;
+    }
+
+
+    public function getErrors($list=true)
+    {
+        if ($list) {
+            if (empty($this->messages)) {
+                $retval = '';
+            } else {
+                $retval = '<ul><li>';
+                $retval .= implode('</li><li>', $this->messages);
+                $retval .= '</li></ul>';
+            }
+        } else {
+            $retval = $this->messages;
+        }
+        return $retval;
     }
 
 
