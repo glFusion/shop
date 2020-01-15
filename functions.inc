@@ -828,6 +828,9 @@ function plugin_autouninstall_shop()
             'shop.variantXopt',
             'shop.suppliers',
             'shop.discountcodes',
+            'shop.regions',
+            'shop.countries',
+            'shop.states',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
