@@ -6,7 +6,7 @@
  * glFusion configuration system, such as allowed file types.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -62,6 +62,9 @@ $_TABLES['shop.prodXcat'] = $_SHOP_table_prefix . 'prodXcat';
 $_TABLES['shop.product_variants'] = $_SHOP_table_prefix . 'product_variants';
 $_TABLES['shop.variantXopt'] = $_SHOP_table_prefix . 'variantXopt';
 $_TABLES['shop.suppliers'] = $_SHOP_table_prefix . 'suppliers';
+$_TABLES['shop.regions'] = $_SHOP_table_prefix . 'regions';
+$_TABLES['shop.countries'] = $_SHOP_table_prefix . 'countries';
+$_TABLES['shop.states'] = $_SHOP_table_prefix . 'states';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

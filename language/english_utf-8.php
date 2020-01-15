@@ -131,6 +131,7 @@ $LANG_SHOP = array (
     8 => 'Gift Card',
 ),
 'edit'              => 'Edit',
+'new'               => 'New',
 'create_category'   => 'Create a New Category',
 'cat_name'          => 'Category Name',
 'parent_cat'        => 'Parent Category',
@@ -610,6 +611,18 @@ $LANG_SHOP = array (
 'ck_to_install' => 'Install this item',
 'ck_to_enable' => 'Click to enable',
 'ck_to_disable' => 'Click to disable',
+'new_country' => 'New Country',
+'new_state' => 'New State',
+'new_region' => 'New Region',
+'iso_code' => 'ISO Code',
+'dial_code' => 'Dialing Code',
+'currency_code' => 'Currency Code',
+'regions' => 'Regions',
+'countries' => 'Countries',
+'states' => 'States',
+'alpha2' => '2-letter Country Code',
+'alpha3' => '3-letter Country Code',
+'country_code' => 'Numeric Country Code',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

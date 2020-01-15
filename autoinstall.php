@@ -162,7 +162,7 @@ $tables = array(
     'shipment_packages', 'carrier_config', 'cache',
     // v1.1.0
     'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
-    'discountcodes',
+    'discountcodes', 'regions', 'countries', 'states',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(

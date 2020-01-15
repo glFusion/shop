@@ -129,18 +129,15 @@ class Menu
                 'text' => $LANG_SHOP['reports'],
                 'active' => $view == 'reports' ? true : false,
             ),
-        );
-        if ($_SHOP_CONF['gc_enabled']) {
-            // Show the Coupons menu option only if enabled
-            $menu_arr[] = array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?coupons=x',
-                'text' => $LANG_SHOP['coupons'],
-                'active' => $view == 'coupons' ? true : false,
-            );
-        }
-        $menu_arr[] = array(
-            'url'  => $_CONF['site_admin_url'],
-            'text' => $LANG_ADMIN['admin_home'],
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?regions',
+                'text' => $LANG_SHOP['regions'],
+                'active' => $view == 'regions' ? true : false,
+            ),
+            array(
+                'url'  => $_CONF['site_admin_url'],
+                'text' => $LANG_ADMIN['admin_home'],
+            ),
         );
 
         $T = new \Template(__DIR__ . '/../templates');
@@ -171,6 +168,37 @@ class Menu
 
 
     /**
+     * Create the administrator sub-menu for the Region option.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminRegions($view='')
+    {
+        global $LANG_SHOP, $_SHOP_CONF;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?regions=x',
+                'text' => $LANG_SHOP['regions'],
+                'active' => $view == 'regions' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?countries=x',
+                'text' => $LANG_SHOP['countries'],
+                'active' => $view == 'countries' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?states=x',
+                'text' => $LANG_SHOP['states'],
+                'active' => $view == 'states' ? true : false,
+            ),
+        );
+        return self::_makeSubMenu($menu_arr);
+    }
+
+
+    /**
      * Create the administrator sub-menu for the Catalog option.
      *
      * @param   string  $view   View being shown, so set the help text
@@ -178,7 +206,7 @@ class Menu
      */
     public static function adminCatalog($view='')
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_SHOP_CONF;
 
         $menu_arr = array(
             array(
@@ -222,6 +250,14 @@ class Menu
                 'active' => $view == 'suppliers' ? true : false,
             ),
         );
+        if ($_SHOP_CONF['gc_enabled']) {
+            // Show the Coupons menu option only if enabled
+            $menu_arr[] = array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?coupons=x',
+                'text' => $LANG_SHOP['coupons'],
+                'active' => $view == 'coupons' ? true : false,
+            );
+        }
         return self::_makeSubMenu($menu_arr);
     }
 

@@ -149,6 +149,15 @@ case 'validateAddress':
         }
     break;
 
+case 'getStateOpts':
+    $output = array(
+        'status' => true,
+        'opts' => Shop\State::optionList(
+            SHOP_getVar($_GET, 'country_iso', 'string', '')
+        ),
+    );
+    break;
+
 default:
     // Missing action, nothing to do
     break;

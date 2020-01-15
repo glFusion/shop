@@ -13,14 +13,8 @@
     enctype="multipart/form-data"
     class="uk-form uk-form-horizontal">
     <input type="hidden" name="sup_id" value="{entry_id}" />
-    {# This is recruited for the country and State Field #}
-    <input type="hidden" value="countrySelect" name="cs_config_country_field" id="cs_config_country_field">
-    <input type="hidden" value="stateSelect" name="cs_config_state_field" id="cs_config_state_field">
-    <input type="hidden" value="countryDefault" name="cs_config_country_default" id="cs_config_country_default">
-    <input type="hidden" value="stateDefault" name="cs_config_state_default" id="cs_config_state_default">
     <input type="hidden" value="{country}" name="countryDefault" id="countryDefault">
     <input type="hidden" value="{state}" name="stateDefault" id="stateDefault">
-    <script type="text/javascript" src="{site_url}/shop/js/country_state.js"></script>
 
     <div class="uk-form-row">
         <label class="uk-form-label" for="f_company">{$LANG_SHOP['company']}:
@@ -76,7 +70,19 @@
         </label>
         <div class="uk-form-controls">
             <select id="countrySelect" name="country"
-                onchange='updateState(this.id)' class="shopStateSelect">
+                onchange='chgCountrySel(this.value)' class="shopStateSelect">
+                {country_options}
+            </select>
+        </div>
+    </div>
+
+    <div class="uk-form-row" id="stateSelectDiv" style="display:{state_sel_vis};">
+        <label class="uk-form-label">{$LANG_SHOP['state']}:
+            <span id="state" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select id="stateSelect" name="state" class="shopStateSelect">
+                {state_options}
             </select>
         </div>
     </div>
@@ -87,15 +93,6 @@
         </label>
         <div class="uk-form-controls">
             <input type="text" id="f_city" name="city" size="60" value="{city}" />
-        </div>
-    </div>
-
-    <div class="uk-form-row">
-        <label class="uk-form-label">{$LANG_SHOP['state']}:
-            <span id="state" class="tooltip_cfg tooltipstered"></span>
-        </label>
-        <div class="uk-form-controls">
-            <select id="stateSelect" name="state" class="shopStateSelect"></select>
         </div>
     </div>
 

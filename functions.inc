@@ -828,6 +828,9 @@ function plugin_autouninstall_shop()
             'shop.variantXopt',
             'shop.suppliers',
             'shop.discountcodes',
+            'shop.regions',
+            'shop.countries',
+            'shop.states',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -1716,12 +1719,13 @@ function plugin_configmanager_select_def_prod_type_shop()
 
 /**
  * Select the country code for the shop.
+ * Allows selection from all countries, not just enabled ones.
  *
  * @return  array   $option => path
  */
 function plugin_configmanager_select_country_shop()
 {
-    return Shop\Country::makeConfigSelection();
+    return Shop\Country::makeConfigSelection(false);
 }
 
 
