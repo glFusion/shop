@@ -1307,6 +1307,35 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `is_supplier` (`is_supplier`,`name`),
       KEY `is_brand` (`is_brand`,`name`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.regions']}` (
+      `region_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `region_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `region_name` varchar(64) NOT NULL DEFAULT '',
+      `region_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`region_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.countries']}` (
+      `country_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `region_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `country_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `currency_code` varchar(4) NOT NULL DEFAULT '',
+      `alpha2` varchar(2) NOT NULL DEFAULT '',
+      `alpha3` varchar(3) NOT NULL DEFAULT '',
+      `country_name` varchar(127) NOT NULL DEFAULT '',
+      `dial_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `country_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`country_id`),
+      KEY `iso_code` (`alpha2`),
+      KEY `zone_id` (`region_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
+      `state_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `country_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `state_name` varchar(64) NOT NULL DEFAULT '',
+      `iso_code` varchar(10) NOT NULL DEFAULT '',
+      `state_enabled` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`state_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
@@ -1324,37 +1353,6 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `max_ord_qty`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `brand_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
-);
-$SHOP_UPGRADE['1.2.0'] = array(
-    "CREATE TABLE `{$_TABLES['shop.countries']}` (
-      `country_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `region_id` int(11) unsigned NOT NULL DEFAULT '0',
-      `country_code` int(4) unsigned NOT NULL DEFAULT '0',
-      `currency_code` varchar(4) NOT NULL DEFAULT '',
-      `alpha2` varchar(2) NOT NULL DEFAULT '',
-      `alpha3` varchar(3) NOT NULL DEFAULT '',
-      `country_name` varchar(127) NOT NULL DEFAULT '',
-      `dial_code` int(4) unsigned NOT NULL DEFAULT '0',
-      `country_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
-      PRIMARY KEY (`country_id`),
-      KEY `iso_code` (`alpha2`),
-      KEY `zone_id` (`region_id`)
-    ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.regions']}` (
-      `region_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `region_code` int(4) unsigned NOT NULL DEFAULT '0',
-      `region_name` varchar(64) NOT NULL DEFAULT '',
-      `region_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
-      PRIMARY KEY (`region_id`)
-    ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.states']}` (
-      `state_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `country_id` int(11) unsigned NOT NULL DEFAULT '0',
-      `state_name` varchar(64) NOT NULL DEFAULT '',
-      `iso_code` varchar(10) NOT NULL DEFAULT '',
-      `state_enabled` tinyint(1) unsigned NOT NULL DEFAULT '0',
-      PRIMARY KEY (`state_id`)
-    ) ENGINE=MyISAM",
     $_SHOP_SAMPLEDATA[5],       // these may need to change if data changes
     $_SHOP_SAMPLEDATA[6],
     $_SHOP_SAMPLEDATA[7],
@@ -1394,5 +1392,8 @@ $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
+$_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
+$_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
+$_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
 
 ?>
