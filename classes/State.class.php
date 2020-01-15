@@ -68,9 +68,7 @@ class State
     /**
      * Get an instance of a state object.
      * The code may be a combination of country and state ISO, such as
-     * `US,CA`, or a DB record ID for the state, or just a state ISO.
-     * This is experimental, the state ISO isn't unique.
-     * The state ISO alone shouldn't be used since it may not be unique.
+     * `US-CA`, or a DB record ID for the state.
      *
      * @param   string  $code   State iso_code and country iso_code
      * @return  object  Country object
@@ -89,7 +87,7 @@ class State
                         ON c.country_id = s.country_id
                     WHERE s.state_id = $code";
         } else {
-            $parts = explode(',', $code);
+            $parts = explode('-', $code);
             if (count($parts) == 2) {
                 $s_iso = DB_escapeString($parts[1]);
                 $c_iso = DB_escapeString($parts[0]);
@@ -100,6 +98,7 @@ class State
                     WHERE s.iso_code = '$s_iso'
                     AND c.alpha2 = '$c_iso'";
             } else {
+                // Try with just the state, but this is unpredictable
                 $s_iso = DB_escapeString($parts[0]);
                 $c_iso = '';
                 $sql = "SELECT s.*, s.iso_code as country_iso
@@ -406,7 +405,7 @@ class State
             'doc_url'       => SHOP_getDocUrl('state_form'),
         ) );
         $T->parse('tooltipster_js', 'tips');
-        $T->parse('output','form');
+        $T->parse('output', 'form');
         return $T->finish($T->get_var('output'));
     }
 
