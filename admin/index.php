@@ -607,6 +607,7 @@ case 'savecountry':
     } else {
         COM_setMsg($C->getErrors());
         $content = $C->Edit($_POST);
+        $view = 'none';
     }
     break;
 
@@ -627,7 +628,6 @@ default:
     break;
 }
 
-//SHOP_log('Admin view: ' . $action, SHOP_LOG_DEBUG);
 switch ($view) {
 case 'history':
     $content .= \Shop\history(true);
@@ -1031,6 +1031,10 @@ case 'states':
 case 'regions':
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Region::adminList();
+    break;
+
+case 'none':
+    // Content provided by an action above, don't show anything here
     break;
 
 default:
