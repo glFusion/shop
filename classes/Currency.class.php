@@ -389,8 +389,10 @@ class Currency
         $currencies = Cache::get('shop.currencies');
         if ($currencies === NULL) {
             $currencies = array();
-            $res = DB_query("SELECT * FROM {$_TABLES['shop.currency']}
-                ORDER BY code ASC");
+            $res = DB_query(
+                "SELECT * FROM {$_TABLES['shop.currency']}
+                ORDER BY code ASC"
+            );
             while ($A = DB_fetchArray($res, false)) {
                 $currencies[$A['code']] = new self($A);
             }
@@ -438,7 +440,7 @@ class Currency
         $retval = '';
         foreach ($currencies as $Cur) {
             $selected = $sel == $Cur->getCode() ? 'selected="selected"' : '';
-            $retval .= "<option $selected value=\"{$Cur->getCode()}\">{$Cur->getName()}</option>";
+            $retval .= "<option $selected value=\"{$Cur->getCode()}\">{$Cur->getCode()} - {$Cur->getName()}</option>";
         }
         return $retval;
     }
