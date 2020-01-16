@@ -1473,8 +1473,11 @@ class Product
             'brand_id'          => $this->getBrandID(),
             'brand_name'        => $this->getBrandName(),
             'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
+            'brand_dscp'        => Supplier::getInstance($this->getBrandID())->getDscp(),
             'is_physical'       => $this->isPhysical(),
             'onhand'            => $this->getOnhand(),
+            'weight'            => $this->weight + $this->Variant->getWeight(),
+            'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
         ) );
         $T->set_var(array(

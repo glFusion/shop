@@ -1,6 +1,9 @@
 {# begin {templatelocation} #}
 <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#prod_details'}">
     <li class="uk-active"><a href="#">{$LANG_SHOP['product_info']}</a></li>
+{!if brand_dscp}
+    <li class="uk-active"><a href="#">{$LANG_SHOP['brand']}</a></li>
+{!endif}
 </ul>
 <ul id="prod_details" class="uk-switcher uk-margin">
     <li>
@@ -21,11 +24,23 @@
         <label>{$LANG_SHOP['onhand']}:</label>
         <span id="onhand">{onhand}</span>
         </p>
+        <p>
+        <label>{$LANG_SHOP['weight']}:</label>
+        <span id="weight">{weight}</span> {weight_unit}
+        </p>
 {!endif}
         <p>
         <label>SKU:</label>
         <span id="sku">{sku}</span>
         </p>
+    </li>
+
+{# Brand info, if available #}
+    <li>
+{!if brand_logo_url}
+    <img class="shopLogoImage medium floatleft" src="{brand_logo_url}" />
+{!endif}
+    {brand_dscp}
     </li>
 </ul>
 {# end {templatelocation} #}

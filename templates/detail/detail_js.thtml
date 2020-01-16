@@ -39,10 +39,10 @@ function ProcessForm(form)
         url: glfusionSiteUrl + "/shop/ajax.php",
         data: data,
         success: function(result) {
-console.log(result);
             try {
                 $("div#avail_msg").text(result.msg);
                 $("span#onhand").text(result.onhand);
+                $("span#weight").text(result.weight);
                 $("span#sku").text(result.sku);
                 orig_price = result.orig_price.toFixed({cur_decimals});
                 sale_price = result.sale_price.toFixed({cur_decimals});

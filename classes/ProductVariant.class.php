@@ -1277,6 +1277,7 @@ class ProductVariant
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
                 'onhand'    => $this->onhand,
+                'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
             );
         }
