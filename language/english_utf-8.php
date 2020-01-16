@@ -652,6 +652,7 @@ $LANG_SHOP_HELP = array(
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
 'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
+'hlp_var_after_item' => 'Variants must be added after the item is created.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
