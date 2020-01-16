@@ -3,7 +3,6 @@
 <div style="clear:both;"></div>
 <div class="shopProductDetail v2" style="width: 50%;" id="shopShortDesc">
     <h1>{short_description}</h1>
-    {name}
 </div>
 {!if can_edit}
 <div class="floatright">
@@ -13,7 +12,7 @@
 </div>
 {!endif}
 
-<div class="uk-grid" style="clear:both;margin-top:20px;width:100%;">
+<div class="uk-grid" style="clear:both;margin-top:20px;">
     <div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
 {!if main_img}
         <div class="main_img uk-hidden-small">
