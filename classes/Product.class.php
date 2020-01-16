@@ -3,9 +3,9 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -718,7 +718,6 @@ class Product
                 $this->deleteImage($img_id);
             }
         }
-        $this->updateCategories($A['selected_cats']);
 
         // Handle file uploads.
         // This is done first so we know whether there is a valid filename
@@ -820,7 +819,8 @@ class Product
                     Images\Product::setProductID($nonce, $this->id);
                 }
             }
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            $this->updateCategories($A['selected_cats']);
+            //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {
             SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
@@ -956,7 +956,7 @@ class Product
      */
     public function showForm($id = 0, $tab='')
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP;
 
         $id = (int)$id;
         if ($id > 0) {
@@ -1069,7 +1069,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
             //'option_list'   => ProductOptionValue::adminList($this->id),
-            'variant_list'  => ProductVariant::adminList($this->id),
+            'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : $LANG_SHOP_HELP['hlp_var_after_item'],
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
@@ -2521,7 +2521,7 @@ class Product
     {
         global $_GROUPS;
 
-        // Make sure the category is set
+        $Cats = $this->getCategories();
         foreach ($this->getCategories() as $Cat) {
             if ($Cat->hasAccess($_GROUPS)) {
                 return true;
@@ -3348,7 +3348,6 @@ class Product
     public function verifyID($id)
     {
         global $_SHOP_CONF;
-
         $parts = explode('|', $id);
         if ($_SHOP_CONF['use_sku']) {
             return $this->name == $parts[0];
@@ -3485,6 +3484,10 @@ class Product
     {
         global $_TABLES;
 
+        if (empty($cats)) {
+            // If no categories specified, use root category automatically
+            $cats = (string)Category::getRoot()->getID();
+        }
         if (is_string($cats)) {
             $cats = explode('|', $cats);
         }
@@ -3550,7 +3553,7 @@ class Product
      */
     public function getFirstCategory()
     {
-        return reset($this->Categories);
+        return reset($this->getCategories());
     }
 
 
