@@ -92,7 +92,7 @@ class Country
         if (isset($A['alpha3'])) {
             $this->setAlpha3($A['alpha3']);
         }
-        if (isset($A['reguib)ud'])) {
+        if (isset($A['region_id'])) {
             $this->setRegionID($A['region_id']);
         }
         if (isset($A['country_code'])) {
@@ -638,7 +638,10 @@ class Country
 
         $display = '';
         $region_id = (int)$region_id;
-        $sql = "SELECT * FROM {$_TABLES['_shop_countries']}";
+        $sql = "SELECT c.*, r.region_name
+            FROM {$_TABLES['shop.countries']} c
+            LEFT JOIN {$_TABLES['shop.regions']} r
+            ON c.region_id = r.region_id";
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['edit'],
@@ -652,15 +655,20 @@ class Country
                 'sort'  => true,
             ),
             array(
+                'text'  => $LANG_SHOP['name'],
+                'field' => 'country_name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['region'],
+                'field' => 'region_name',
+                'sort'  => true,
+            ),
+            array(
                 'text'  => $LANG_SHOP['alpha2'],
                 'field' => 'alpha2',
                 'sort'  => true,
                 'align' => 'center',
-            ),
-            array(
-                'text'  => $LANG_SHOP['name'],
-                'field' => 'country_name',
-                'sort'  => true,
             ),
             array(
                 'text'  => $LANG_SHOP['dial_code'],
@@ -695,7 +703,7 @@ class Country
             'table' => 'shop.countries',
             'sql' => $sql,
             'query_fields' => array('alpha2', 'country_name'),
-            'default_filter' => $region_id > 0 ? "WHERE region_id=$region_id" : 'WHERE 1=1',
+            'default_filter' => $region_id > 0 ? "WHERE c.region_id=$region_id" : 'WHERE 1=1',
         );
 
         $text_arr = array(
@@ -766,6 +774,13 @@ class Country
             $retval .= COM_createLink(
                 $fieldvalue,
                 SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . $A['country_id']
+            );
+            break;
+
+        case 'region_name':
+            $retval .= COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?countries=x&region_id=' . $A['region_id']
             );
             break;
 
