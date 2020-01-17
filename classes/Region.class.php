@@ -66,7 +66,7 @@ class Region
         if (isset($instances[$id])) {
             return $instances[$id];
         } else {
-            $sql = "SELECT * FROM gl_shop_regions WHERE region_id = $id";;
+            $sql = "SELECT * FROM {$_TABLES['_shop.regions']} WHERE region_id = $id";;
             $res = DB_query($sql);
             if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);
@@ -343,7 +343,7 @@ class Region
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $display = '';
-        $sql = "SELECT * FROM gl_shop_regions";
+        $sql = "SELECT * FROM {$_TABLES['shop.regions']}";
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['edit'],

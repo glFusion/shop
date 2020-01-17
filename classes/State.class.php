@@ -470,8 +470,9 @@ class State
 
         $display = '';
         $country_id = (int)$country_id;
-        $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code, c.country_name FROM gl_shop_states s
-            LEFT JOIN gl_shop_countries c
+        $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code, c.country_name
+            FROM {$_TABLES['shop_states']} s
+            LEFT JOIN {$_TABLES['shop_countries']} c
                 ON c.country_id = s.country_id";
         $header_arr = array(
             array(

@@ -76,6 +76,11 @@ class Country
     }
 
 
+    /**
+     * Set variables from a DB record or form into local variables.
+     *
+     * @param   array   $A      Array from $_POST or DB
+     */
     private function setVars($A)
     {
         if (isset($A['country_id'])) {
@@ -122,7 +127,7 @@ class Country
         if (isset($instances[$code])) {
             return $instances[$code];
         } else {
-            $sql = "SELECT * FROM gl_shop_countries WHERE ";
+            $sql = "SELECT * FROM {$_TABLES['shop.countries']} WHERE ";
             if (is_integer($code)) {
                 $sql .= "country_id = $code";
             } else {
@@ -248,7 +253,7 @@ class Country
     /**
      * Set the numeric UN country code.
      *
-     * @param   integer $$code  Country code
+     * @param   integer $code  Country code
      * @return  object  $this
      */
     private function setCode($code)
@@ -498,6 +503,7 @@ class Country
     /**
      * Edit a country record.
      *
+     * @param   array   $A  $_POST values, if re-editing due to an error
      * @return  string      HTML for editing form
      */
     public function Edit($A=NULL)
@@ -597,6 +603,12 @@ class Country
     }
 
 
+    /**
+     * Get the errors that were encountered when saving.
+     *
+     * @param   boolean $list   True to get as a list, False for a raw array
+     * @return  array|string    Array of errors, or HTML list
+     */
     public function getErrors($list=true)
     {
         if ($list) {
@@ -626,7 +638,7 @@ class Country
 
         $display = '';
         $region_id = (int)$region_id;
-        $sql = "SELECT * FROM gl_shop_countries";
+        $sql = "SELECT * FROM {$_TABLES['_shop_countries']}";
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['edit'],
