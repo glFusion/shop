@@ -307,10 +307,6 @@ class Gateway
     {
         return $this->gw_desc;
     }
-    public function Description()       // deprecate
-    {
-        return $this->gw_desc;
-    }
 
 
     /**
