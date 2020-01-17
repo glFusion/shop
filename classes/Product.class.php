@@ -292,7 +292,8 @@ class Product
         $A = Cache::get($cache_key);
         if (!is_array($A)) {
             $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                    WHERE name = '$item_id'";
+                WHERE name = '$item_id'
+                LIMIT 1";
             $res = DB_query($sql);
             $A = DB_fetchArray($res, false);
             if (isset($A['id'])) {
@@ -324,7 +325,8 @@ class Product
             $A = Cache::get($cache_key);
             if (!is_array($A)) {
                 $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                        WHERE id  = '$id'";
+                    WHERE id  = $id
+                    LIMIT 1";
                 $res = DB_query($sql);
                 $A = DB_fetchArray($res, false);
                 if (isset($A['id'])) {
