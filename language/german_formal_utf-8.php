@@ -658,6 +658,7 @@ $LANG_SHOP_HELP = array(
 'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',
+'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

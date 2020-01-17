@@ -1013,19 +1013,7 @@ class Product
 
         }
 
-        // Get the category selections.
-        $allcats = Category::getAll();
-        $selcats = Category::getByProductID($this->id);
-        $allcats_sel = '';
-        $selcats_sel = '';
-        foreach ($allcats as $cat_id=>$Cat) {
-            if (!array_key_exists($cat_id, $selcats)) {
-                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
-            }
-        }
-        foreach ($selcats as $cat_id=>$Cat) {
-            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
-        }
+        list($allcats_sel, $selcats_sel) = $this->getCatSelections($this->id);
         $T->set_var(array(
             //'post_options'  => $post_options,
             'product_id'    => $this->id,
@@ -2970,7 +2958,6 @@ class Product
             COM_setMsg("No products selected");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
-
         $ids = implode(',', $ids);
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('form', 'prod_bulk_form.thtml');
@@ -2979,6 +2966,7 @@ class Product
             'currency'  => Currency::getInstance(),
             'brand_select' => Supplier::getBrandSelection(),
             'supplier_select' => Supplier::getSupplierSelection(),
+            'available_cats' => self::getCatSelections(0)[0],
         ) );
         $T->set_block('form', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
@@ -3006,6 +2994,7 @@ class Product
         global $_TABLES;
 
         $sql_vals  = array();
+        $ids = DB_escapeString($A['prod_ids']);
 
         if (isset($A['supplier_id']) && $A['supplier_id'] > -1) {
             $sql_vals[] = "supplier_id = " . (int)$A['supplier_id'];
@@ -3024,13 +3013,38 @@ class Product
         }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
-            $ids = DB_escapeString($A['prod_ids']);
             DB_query("UPDATE {$_TABLES['shop.products']} SET " . $sql_vals .
                 " WHERE id IN ($ids)");
             if (DB_error()) {
                 return false;
             }
         }
+
+        // If any categories were supplied, use them to replace any existing
+        // ones for all submitted products.
+        if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
+            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id in ($ids)";
+            COM_errorLog($sql);
+            $res = DB_query($sql, 1);
+            if (!DB_error()) {
+                $prod_ids = explode(',', $A['prod_ids']);
+                $cat_ids = explode('|', $A['selected_cats']);
+                $vals = array();
+                foreach ($prod_ids as $prod_id) {
+                    $prod_id = (int)$prod_id;
+                    foreach ($cat_ids as $cat_id) {
+                        $cat = (int)$cat_id;
+                        $vals[] = "($prod_id, $cat_id)";
+                    }
+                }
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                    (product_id, cat_id) VALUES " . implode(',', $vals);
+                COM_errorLog($sql);
+                DB_query($sql, 1);
+            }
+        }
+
+        Cache::clear('products');
         return true;
     }
 
@@ -3669,43 +3683,36 @@ class Product
         return Supplier::getInstance($this->getBrandID())->getDisplayName();
     }
 
-        /*
-         * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
-    ->         FROM `ps_attribute` a
-    ->         LEFT JOIN `ps_attribute_lang` al
-    ->             ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = 1)
-    ->         LEFT JOIN `ps_attribute_group_lang` agl
-    ->             ON (a.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = 1)
-    ->         LEFT JOIN `ps_product_attribute_combination` pac
-    ->             ON (a.`id_attribute` = pac.`id_attribute`)
-    ->         LEFT JOIN `ps_product_attribute` pa
-    ->             ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
-    ->          INNER JOIN ps_product_attribute_shop product_attribute_shop
-    ->         ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
-    ->          INNER JOIN ps_attribute_shop attribute_shop
-    ->         ON (attribute_shop.id_attribute = pac.id_attribute AND attribute_shop.id_shop = 1)
-    ->         WHERE pa.`id_product` = 9;
-         */
-/*SELECT ag.`id_attribute_group`, ag.`is_color_group`, agl.`name` AS group_name, agl.`public_name` AS public_group_name,
-                                        a.`id_attribute`, al.`name` AS attribute_name, a.`color` AS attribute_color, product_attribute_shop.`id_product_attribute`,
-                                        IFNULL(stock.quantity, 0) as quantity, product_attribute_shop.`price`, product_attribute_shop.`ecotax`, product_attribute_shop.`weight`,
-                                        product_attribute_shop.`default_on`, pa.`reference`, product_attribute_shop.`unit_price_impact`,
-                                        product_attribute_shop.`minimal_quantity`, product_attribute_shop.`available_date`, ag.`group_type`
-                                FROM `ps_product_attribute` pa
-                                 INNER JOIN ps_product_attribute_shop product_attribute_shop
-        ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
-                                 LEFT JOIN ps_stock_available stock
-                        ON (stock.id_product = `pa`.id_product AND stock.id_product_attribute = IFNULL(`pa`.id_product_attribute, 0) AND stock.id_shop = 1  AND stock.id_shop_group = 0  )
-                                LEFT JOIN `ps_product_attribute_combination` pac ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
-                                LEFT JOIN `ps_attribute` a ON (a.`id_attribute` = pac.`id_attribute`)
-                                LEFT JOIN `ps_attribute_group` ag ON (ag.`id_attribute_group` = a.`id_attribute_group`)
-                                LEFT JOIN `ps_attribute_lang` al ON (a.`id_attribute` = al.`id_attribute`)
-                                LEFT JOIN `ps_attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group`)
-                                 INNER JOIN ps_attribute_shop attribute_shop*/
 
-/*
-select distinct pov.pov_id, pog.pog_id, pog.pog_name, pov.pov_value, pv.sku from gl_shop_product_option_value pov left join gl_shop_product_option_groups pog on pog.pog_id =pov.pog_id left join gl_shop_variantXopt vxo on vxo.pov_id = pov.pov_id left join gl_shop_product_variants pv on pv.pv_id = vxo.pv_id where pv.item_id = 5 order by pog.pog_orderby, pov.pov_orderby asc;
-*/
+    /**
+     * Get the category selection lists.
+     * Returns 2 arrays, available category options and selected ones.
+     * If `$prod_id` is empty then no selected categories are returned. This
+     * is used in the bulk update form.
+     *
+     * @param   integer $prod_id    Product ID, zero if no selected cats needed.
+     * @return  array   Array of (available options, selected options)
+     */
+    private static function getCatSelections($prod_id)
+    {
+        $allcats = Category::getAll();
+        if ($prod_id > 0) {
+            $selcats = Category::getByProductID($prod_id);
+        } else {
+            $selcats = array();
+        }
+        $allcats_sel = '';
+        $selcats_sel = '';
+        foreach ($allcats as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $selcats)) {
+                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+            }
+        }
+        foreach ($selcats as $cat_id=>$Cat) {
+            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+        }
+        return array($allcats_sel, $selcats_sel);
+    }
 
 }
 
