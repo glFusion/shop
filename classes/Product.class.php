@@ -3174,7 +3174,7 @@ class Product
         );
         $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
 
-        // Print selected packing lists
+        // Update certain product properties in bulk
         $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
             'title="' . $LANG_SHOP['bulk_update'] . 'xxx">' .
