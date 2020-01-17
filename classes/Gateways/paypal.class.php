@@ -232,7 +232,8 @@ class paypal extends \Shop\Gateway
                     'price' => $item->getPrice(),
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($oio_arr, $item->getQuantity(), $overrides);
+                //$item_amount = $P->getPrice($oio_arr, $item->getQuantity(), $overrides);
+                $item_amount = $item->getNetPrice();
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
