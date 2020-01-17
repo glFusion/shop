@@ -66,7 +66,7 @@ class Region
         if (isset($instances[$id])) {
             return $instances[$id];
         } else {
-            $sql = "SELECT * FROM {$_TABLES['_shop.regions']} WHERE region_id = $id";;
+            $sql = "SELECT * FROM {$_TABLES['shop.regions']} WHERE region_id = $id";;
             $res = DB_query($sql);
             if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);

@@ -471,8 +471,8 @@ class State
         $display = '';
         $country_id = (int)$country_id;
         $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code, c.country_name
-            FROM {$_TABLES['shop_states']} s
-            LEFT JOIN {$_TABLES['shop_countries']} c
+            FROM {$_TABLES['shop.states']} s
+            LEFT JOIN {$_TABLES['shop.countries']} c
                 ON c.country_id = s.country_id";
         $header_arr = array(
             array(
@@ -534,7 +534,7 @@ class State
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?stats=x',
+            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x',
         );
 
         $filter = $LANG_SHOP['country'] . ': <select name="country_id"
