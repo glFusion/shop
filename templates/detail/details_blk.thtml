@@ -19,7 +19,7 @@
         </a>
         </p>
 {!endif}
-{!if is_physical}
+{!if track_onhand}
         <p>
         <label>{$LANG_SHOP['onhand']}:</label>
         <span id="onhand">{onhand}</span>

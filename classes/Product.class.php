@@ -1477,6 +1477,7 @@ class Product
             'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
             'brand_dscp'        => Supplier::getInstance($this->getBrandID())->getDscp(),
             'is_physical'       => $this->isPhysical(),
+            'track_onhand'      => $this->getTrackOnhand(),
             'onhand'            => $this->getOnhand(),
             'weight'            => $this->weight + $this->Variant->getWeight(),
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
