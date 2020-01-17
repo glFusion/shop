@@ -1470,7 +1470,7 @@ class Order
     {
         if ($this->Shipto === NULL) {
             $this->tax = 0;
-            return 0;
+            return $this;
         }
         $tax = 0;
         $this->tax_items = 0;
