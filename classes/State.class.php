@@ -18,8 +18,20 @@ namespace Shop;
  * Class to handle state information.
  * @package shop
  */
-class State
+class State extends RegionBase
 {
+    /** Table key.
+     * @var string */
+    protected static $TABLE = 'shop.states';
+
+    /** Cache tag.
+     * @var string */
+    protected static $TAG = 'states';
+
+    /** Table type, used to create variable names.
+     * .@var string */
+    protected static $KEY = 'state';
+
     /** State DB record ID.
      * @var integer */
     private $state_id;
@@ -349,41 +361,6 @@ class State
 
 
     /**
-     * Sets a boolean field to the opposite of the supplied value.
-     *
-     * @param   integer $oldvalue   Old (current) value
-     * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function Toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        $id = (int)$id;
-        switch ($varname) {     // allow only valid field names
-        case 'state_enabled':
-            // Determing the new value (opposite the old)
-            $oldvalue = $oldvalue == 1 ? 1 : 0;
-            $newvalue = $oldvalue == 1 ? 0 : 1;
-
-            $sql = "UPDATE {$_TABLES['shop.states']}
-                SET $varname=$newvalue
-                WHERE state_id=$id";
-            // Ignore SQL errors since varname is indeterminate
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-                return $oldvalue;
-            } else {
-                Cache::clear('regions');
-                return $newvalue;
-            }
-        }
-    }
-
-
-    /**
      * Edit a state record.
      *
      * @return  string      HTML for editing form
@@ -485,6 +462,7 @@ class State
                 'text'  => 'ID',
                 'field' => 'state_id',
                 'sort'  => true,
+                'align' => 'right',
             ),
             array(
                 'text'  => 'State Name',
@@ -537,6 +515,13 @@ class State
             'form_url' => SHOP_ADMIN_URL . '/index.php?states=x',
         );
 
+        /*$options = array(
+            'chkdelete' => 'true',
+            'chkfield' => 'state_id',
+            'chkname' => 'state_id',
+            'chkactions' => self::getBulkActionButtons(),
+        );*/
+
         $filter = $LANG_SHOP['country'] . ': <select name="country_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
@@ -552,7 +537,9 @@ class State
             $_SHOP_CONF['pi_name'] . '_statelist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', '', ''
+            $filter, '',
+            self::getAdminListOptions(),
+            ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;

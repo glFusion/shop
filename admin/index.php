@@ -56,6 +56,9 @@ $expected = array(
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     'prod_bulk_save', 'pv_bulk_save',
     'saveregion', 'savecountry', 'savestate',
+    'ena_region', 'disa_region', 'del_region',
+    'ena_country', 'disa_country', 'del_country',
+    'ena_state', 'disa_state', 'del_state',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -621,6 +624,55 @@ case 'savestate':
         COM_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editstate=' . $S->getID());
     }
+    break;
+
+case 'ena_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(0, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+case 'disa_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(1, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+
+case 'ena_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(0, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'disa_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(1, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'ena_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(0, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    break;
+
+case 'disa_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(1, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
     break;
 
 default:

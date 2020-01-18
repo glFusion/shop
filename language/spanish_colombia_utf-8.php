@@ -134,6 +134,7 @@ $LANG_SHOP = array (
 'other_func'        => 'Mantenimiento',
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Are you sure you want to delete this item?',
+'q_del_items'       => 'Are you sure you want to delete all selected items?',
 'clearform'         => 'Reiniciar',
 'delivery_info'     => 'Delivery Information',
 'product_info'      => 'Product Information',

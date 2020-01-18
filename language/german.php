@@ -131,6 +131,7 @@ $LANG_SHOP = array (
 'other_func'        => 'Instandhaltung',
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Bist Du sicher, dass Du dieses Produkt löschen möchtest?',
+'q_del_items'       => 'Are you sure you want to delete all selected items?',
 'clearform'         => 'Zurücksetzen',
 'del_item_instr'    => 'Produkte, die keine Käufe haben, können gelöscht werden. Wenn ein Produkt bereits gekauft wurde, kann es nur deaktiviert werden.',
 'del_cat_instr'     => 'Kategorien, die Produkte enthalten, können nicht gelöscht werden.',

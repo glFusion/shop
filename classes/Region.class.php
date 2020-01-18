@@ -18,8 +18,20 @@ namespace Shop;
  * Class to handle UN subregion information.
  * @package shop
  */
-class Region
+class Region extends RegionBase
 {
+    /** Table key.
+     * @var string */
+    protected static $TABLE = 'shop.regions';
+
+    /** Cache tag.
+     * @var string */
+    protected static $TAG = 'regions';
+
+    /** Table type, used to create variable names.
+     * .@var string */
+    protected static $KEY = 'region';
+
     /** Region DB record ID.
      * @var integer */
     private $region_id;
@@ -181,41 +193,6 @@ class Region
 
 
     /**
-     * Sets a boolean field to the opposite of the supplied value.
-     *
-     * @param   integer $oldvalue   Old (current) value
-     * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function Toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        $id = (int)$id;
-        switch ($varname) {     // allow only valid field names
-        case 'region_enabled':
-            // Determing the new value (opposite the old)
-            $oldvalue = $oldvalue == 1 ? 1 : 0;
-            $newvalue = $oldvalue == 1 ? 0 : 1;
-
-            $sql = "UPDATE {$_TABLES['shop.regions']}
-                SET $varname=$newvalue
-                WHERE region_id=$id";
-            // Ignore SQL errors since varname is indeterminate
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-                return $oldvalue;
-            } else {
-                Cache::clear('regions');
-                return $newvalue;
-            }
-        }
-    }
-
-
-    /**
      * Get all regions into an array of objects.
      *
      * @param   string  $enabled    True to only include enabled regions
@@ -355,6 +332,7 @@ class Region
                 'text'  => 'ID',
                 'field' => 'region_id',
                 'sort'  => true,
+                'align' => 'right',
             ),
             array(
                 'text'  => 'Region Name',
@@ -400,7 +378,9 @@ class Region
             $_SHOP_CONF['pi_name'] . '_regionlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            '', '',
+            self::getAdminListOptions(),
+            ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;

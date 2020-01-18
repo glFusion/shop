@@ -18,8 +18,20 @@ namespace Shop;
  * Class to handle country information.
  * @package shop
  */
-class Country
+class Country extends RegionBase
 {
+    /** Country DB table key.
+     * @var string */
+    protected static $TABLE = 'shop.countries';
+
+    /** Cache tag.
+     * @var string */
+    protected static $TAG = 'countries';
+
+    /** Table type, used to create variable names.
+     * .@var string */
+    protected static $KEY = 'country';
+
     /** Country DB record ID.
      * @var integer */
     private $country_id;
@@ -466,41 +478,6 @@ class Country
 
 
     /**
-     * Sets a boolean field to the opposite of the supplied value.
-     *
-     * @param   integer $oldvalue   Old (current) value
-     * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function Toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        $id = (int)$id;
-        switch ($varname) {     // allow only valid field names
-        case 'country_enabled':
-            // Determing the new value (opposite the old)
-            $oldvalue = $oldvalue == 1 ? 1 : 0;
-            $newvalue = $oldvalue == 1 ? 0 : 1;
-
-            $sql = "UPDATE {$_TABLES['shop.countries']}
-                SET $varname=$newvalue
-                WHERE country_id=$id";
-            // Ignore SQL errors since varname is indeterminate
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-                return $oldvalue;
-            } else {
-                Cache::clear('regions');
-                return $newvalue;
-            }
-        }
-    }
-
-
-    /**
      * Edit a country record.
      *
      * @param   array   $A  $_POST values, if re-editing due to an error
@@ -626,6 +603,18 @@ class Country
     }
 
 
+    public static function Enable($countries)
+    {
+        self::bulkEnaDisa($countries, 1);
+    }
+
+
+    public static function Disable($countries)
+    {
+        self::bulkEnaDisa($countries, 0);
+    }
+
+
     /**
      * Country Admin List View.
      *
@@ -653,6 +642,7 @@ class Country
                 'text'  => 'ID',
                 'field' => 'country_id',
                 'sort'  => true,
+                'align' => 'right',
             ),
             array(
                 'text'  => $LANG_SHOP['name'],
@@ -726,7 +716,9 @@ class Country
             $_SHOP_CONF['pi_name'] . '_countrylist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', '', ''
+            $filter, '',
+            self::getAdminListOptions(),
+            ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
