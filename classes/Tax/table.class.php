@@ -207,7 +207,7 @@ class table extends \Shop\Tax
             'chkname' => 'code',
             'chkactions' => '<button type="submit" name="deltaxrate" value="x" ' .
             'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
+            'title="' . $LANG_SHOP['delete'] . '" ' .
             '><i name="deltax" class="uk-icon uk-icon-remove"></i>' .
             '</button>',
         );
