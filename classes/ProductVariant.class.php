@@ -623,6 +623,7 @@ class ProductVariant
 
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
+            $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
         }
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
@@ -765,11 +766,10 @@ class ProductVariant
         if ($item_id < 1 || empty($A['groups'])) {
             return false;
         }
+        $P = Product::getById($item_id);
         $price = 0;
         $weight = SHOP_getVar($A, 'weight', 'float', 0);
         $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
-        $onhand = SHOP_getVar($A, 'onhand', 'float', 0);
-        $reorder = SHOP_getVar($A, 'reorder', 'float', 0);
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
             if ($A['price'] !== '') {
@@ -795,13 +795,23 @@ class ProductVariant
                 }
             }
             if (empty($A['sku'])) {
-                $P = Product::getById($item_id);
                 if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
                 }
             } else {
                 $sku = $A['sku'];
             }
+            if ($A['onhand'] === '') {
+                $onhand = $P->getOnhand();
+            } else {
+                $onhand = (float)$A['onhand'];
+            }
+            if ($A['reorder'] === '') {
+                $reorder = $P->getReorder();
+            } else {
+                $reorder = (float)$A['reorder'];
+            }
+
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
                 item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
@@ -1004,7 +1014,7 @@ class ProductVariant
      */
     public static function adminList($prod_id)
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM, $LANG01;
 
         $prod_id = (int)$prod_id;
 
@@ -1263,7 +1273,6 @@ class ProductVariant
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
-            COM_errorLog("price: $price");
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             if ($this->onhand > 0) {
                 $allowed = true;
