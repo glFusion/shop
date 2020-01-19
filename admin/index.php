@@ -54,7 +54,7 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
-    'prod_bulk_save', 'pv_bulk_save',
+    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
     'saveregion', 'savecountry', 'savestate',
     'ena_region', 'disa_region', 'del_region',
     'ena_country', 'disa_country', 'del_country',
@@ -577,6 +577,18 @@ case 'prod_bulk_save':
     } else {
         COM_setMsg($LANG_SHOP['error']);
     }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
+case 'prod_bulk_del':
+    $prod_ids = SHOP_getVar($_POST, 'prod_bulk', 'array', array());
+    $mag = $LANG_SHOP['msg_updated'];   // assume success
+    foreach ($prod_ids as $id) {
+        if (!Shop\Product::getById($id)->Delete()) {
+            $msg = $LANG_SHOP['msg_some_not_del'];
+        }
+    }
+    COM_setMsg($msg);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 

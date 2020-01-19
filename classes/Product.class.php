@@ -709,7 +709,6 @@ class Product
             $this->setVars($A);
         }
         $nonce = SHOP_getVar($A, 'nonce');
-
         $errs = $this->_Validate();
         if (!empty($errs)) {
             $this->Errors = $errs;
@@ -821,6 +820,9 @@ class Product
                     Images\Product::setProductID($nonce, $this->id);
                 }
             }
+            // Clear categories for new products so the new cats get updated
+            // correcly.
+            $this->Categories = array();
             $this->updateCategories($A['selected_cats']);
             //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
@@ -888,8 +890,7 @@ class Product
             $this->deleteImage($prow['img_id']);
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
-        Option::deleteProduct($this->id);
-        //DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
+        ProductVariant::deleteByProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -2982,7 +2983,7 @@ class Product
         return $T->parse('output', 'form');
     }
 
- 
+
     /**
      * Perform the bulk update of multiple products at once.
      *
@@ -3024,7 +3025,6 @@ class Product
         // ones for all submitted products.
         if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
             $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id in ($ids)";
-            COM_errorLog($sql);
             $res = DB_query($sql, 1);
             if (!DB_error()) {
                 $prod_ids = explode(',', $A['prod_ids']);
@@ -3039,7 +3039,6 @@ class Product
                 }
                 $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
                     (product_id, cat_id) VALUES " . implode(',', $vals);
-                COM_errorLog($sql);
                 DB_query($sql, 1);
             }
         }
@@ -3152,11 +3151,21 @@ class Product
             )
         );
 
+        // Filter on category, brand and supplier
+        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
+        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
+        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $def_filter = 'WHERE 1=1';
         if ($cat_id > 0) {
-            $def_filter = "WHERE pxc.cat_id='$cat_id'";
-        } else {
-            $def_filter = 'WHERE 1=1';
+            $def_filter .= " AND pxc.cat_id= $cat_id";
         }
+        if ($brand_id > 0) {
+            $def_filter .= " AND p.brand_id = $brand_id";
+        }
+        if ($supplier_id > 0) {
+            $def_filter .= " AND p.supplier_id = $supplier_id";
+        }
+
         $query_arr = array(
             'table' => 'shop.products',
             'sql'   => $sql,
@@ -3170,19 +3179,24 @@ class Product
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php',
+            'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
-        $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
 
         // Update certain product properties in bulk
         $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
-            'title="' . $LANG_SHOP['bulk_update'] . 'xxx">' .
-            'Bulk Update' .
+            'title="' . $LANG_SHOP['bulk_update'] . '">' .
+            $LANG_SHOP['update'] .
+            '</button>&nbsp;' .
+            '<button type="submit" name="prod_bulk_del" value="x" ' .
+            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
+            'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
+            'title="' . $LANG_SHOP['bulk_delete'] . '">' .
+            $LANG_SHOP['delete'] .
             '</button>';
 
         $options = array(
-            'chkselect' => true,
+            'chkdelete' => true,
             'chkall' => true,
             'chkfield' => 'id',
             'chkname' => 'prod_bulk',
@@ -3190,14 +3204,49 @@ class Product
         );
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/index.php?products&amp;cat_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;supplier_id=' . $supplier_id .
+            '&amp;cat_id=\'+' . 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
-                $_TABLES['shop.categories'], 'cat_id, cat_name', $cat_id, 1
+                $_TABLES['shop.categories'],
+                'cat_id,cat_name',
+                $cat_id,
+                1
             ) .
             "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ': <select name="brand_id"
+            onchange="javascript: document.location.href=\'' .
+                SHOP_ADMIN_URL . '/index.php?products' .
+                '&amp;cat_id=' . $cat_id .
+                '&amp;supplier_id=' . $supplier_id .
+                '&amp;brand_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $brand_id,
+                1,
+                "is_brand=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': <select name="supplier_id"
+            onchange="javascript: document.location.href=\'' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;cat_id=' . $cat_id .
+            '&amp;supplier_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $supplier_id,
+                1,
+                "is_supplier=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '<br />' . LB;
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_productlist',
@@ -3503,9 +3552,8 @@ class Product
 
         if (empty($cats)) {
             // If no categories specified, use root category automatically
-            $cats = (string)Category::getRoot()->getID();
-        }
-        if (is_string($cats)) {
+            $cats = array(Category::getRoot()->getID());
+        } elseif (is_string($cats)) {
             $cats = explode('|', $cats);
         }
         $add = array();
@@ -3542,7 +3590,7 @@ class Product
      */
     public function getCategories()
     {
-        if ($this->Categories == NULL) {
+        if ($this->Categories === NULL) {
             $this->Categories = Category::getByProductId($this->id);
         }
         return $this->Categories;
