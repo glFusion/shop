@@ -44,7 +44,7 @@
             <span id="weight" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="weight" value="{weight}" size="12" maxlength="32" />
+            <input type="text" name="weight" value="{weight}" size="12" maxlength="12" />
         </div>
     </div>
 
@@ -62,7 +62,7 @@
             <span id="onhand" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="onhand" value="{onhand}" size="12" maxlength="32" />
+            <input type="text" name="onhand" value="{onhand}" size="12" maxlength="12" placeholder="{$LANG_SHOP['use_prod_val']}" />
         </div>
     </div>
 
@@ -71,7 +71,7 @@
             <span id="reorder" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="reorder" value="{reorder}" size="12" maxlength="32" />
+            <input type="text" name="reorder" value="{reorder}" size="12" maxlength="32" placeholder="{$LANG_SHOP['use_prod_val']}" />
         </div>
     </div>
 
