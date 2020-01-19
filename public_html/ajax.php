@@ -119,9 +119,22 @@ case 'redeem_gc':
 
 case 'validateOpts':
     $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
-    $output = $PV->Validate(array(
-        'quantity' => $_GET['quantity'],
-    ) );
+    if ($PV->getID() < 1) {
+        $output = array(
+            'status'    => 0,
+            'msg'       => $LANG_SHOP['opts_not_avail'],
+            'allowed'   =>  false,
+            'orig_price' => 0,
+            'sale_price' => 0,
+            'onhand'    => 0,
+            'weight'    => '--',
+            'sku'       => '',
+        );
+    } else {
+        $output = $PV->Validate(array(
+            'quantity' => $_GET['quantity'],
+        ) );
+    }
     break;
 
 case 'validateAddress':
