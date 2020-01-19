@@ -1265,11 +1265,16 @@ class ProductVariant
         global $LANG_SHOP;
 
         $P = Product::getByID($this->item_id);
-        if ($P->isNew) {
+        if ($P->getID() < 1 || $this->getID() < 1) {
             $retval = array(
-                'status'    => 9,
-                'msg'       => 'Invalid',
+                'status'    => 0,
+                'msg'       => $LANG_SHOP['opts_not_avail'],
+                'allowed'   =>  false,
+                'orig_price' => 0,
+                'sale_price' => 0,
                 'onhand'    => 0,
+                'weight'    => '--',
+                'sku'       => '',
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
