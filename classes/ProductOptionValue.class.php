@@ -293,7 +293,7 @@ class ProductOptionValue
             $T->set_var('pov_id', $id);
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->og_id = ProductOptionGroup::getFirst()->getID();
+            $this->pog_id = ProductOptionGroup::getFirst()->getID();
             $T->set_var('pov_id', '');
         }
         $T->set_var(array(
@@ -315,7 +315,6 @@ class ProductOptionValue
             'orderby_opts'  => self::getOrderbyOpts($this->pog_id, $this->orderby),
             'sku'           => $this->sku,
             'orderby'       => $this->orderby,
-            //'ena_chk'       => $this->enabled == 1 ? ' checked="checked"' : '',
         ) );
         $retval .= $T->parse('output', 'optform');
         $retval .= COM_endBlock();
