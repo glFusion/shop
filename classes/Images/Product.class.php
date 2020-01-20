@@ -187,15 +187,13 @@ class Product extends \Shop\Image
     {
         global $_TABLES;
 
-        $ids = explode(',', $img_ids);
-        $orderby = 10;
-        foreach ($ids as $id) {
+        foreach ($img_ids as $id=>$orderby) {
             $id = (int)$id;     // sanitize
+            $orderby = (int)$orderby;
             $sql = "UPDATE {$_TABLES['shop.images']}
                 SET orderby = $orderby
                 WHERE img_id = $id";
             DB_query($sql, 1);
-            $orderby += 10;
         }
     }
 
@@ -236,6 +234,32 @@ class Product extends \Shop\Image
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             self::DeleteImage($A['img_id']);
+        }
+    }
+
+
+    /**
+     * Delete a single product image by ID from disk and DB.
+     *
+     * @param   integer $img_id     Image record ID
+     */
+    public static function deleteById($img_id)
+    {
+        global $_TABLES, $_SHOP_CONF;
+
+        $img_id = (int)$img_id;
+        $sql = "SELECT filename FROM {$_TABLES['shop.images']}
+            WHERE img_id = $img_id";
+        $res = DB_query($sql);
+        if (DB_numRows($res) == 1) {
+            $A = DB_fetchArray($res, false);
+            $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $A['filename'];
+            if (is_file($filespec)) {
+                // Ignore errors due to file permissions, etc. Worst case is
+                // that an image gets left behind on disk
+                @unlink($filespec);
+            }
+            DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
         }
     }
 

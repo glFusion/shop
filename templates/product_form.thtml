@@ -11,7 +11,9 @@
     enctype="multipart/form-data" onsubmit='handleSubmit(this);'>
   <input type="hidden" name="id" value="{product_id}" />
   <input type="hidden" name="nonce" value="{nonce}" />
-  <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form'}">
+  <input type="hidden" id="imgorder" name="imgorder" value="{imgorder}" />
+  <input type="hidden" id="imgdelete" name="imgdelete" value="" />
+  <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form',swiping:false}">
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
@@ -350,15 +352,16 @@
         <div id="progressbar" class="uk-progress uk-hidden">
             <div class="uk-progress-bar" style="width: 0%;">...</div>
         </div>
-        <div id="img-sorter">
-        <ul id="sortable" class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right" id="imagegrid">
+        <div id="img-sorter" style="padding:10px;">
+        <ul class="uk-sortable uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right" id="imagegrid" data-uk-sortable="">
           <!-- BEGIN PhotoRow -->
-          <li id="img_blk_{img_id}" data-img-id="{img_id}">
+          <li id="img_blk_{img_id}" data-id="{img_id}">
             <figure class="uk-overlay uk-overlay-hover">
               <img src="{thumb_url}" />
               <br />
               <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
                 <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage({img_id});">{$LANG_ADMIN['delete']}</button>
+{!if 0}
                 <span class="img_def_btn" id="setDefBtn_{img_id}"
 {!if img_cnt}
 {!else}
@@ -367,7 +370,8 @@
                 >
                     <br /><button class="uk-button uk-button-mini uk-button-primary"
                         onclick="return setDefImg({img_id});">{$LANG_SHOP['set_as_def']}</button>
-                </span>
+                </span>a
+{!endif}
               </figcaption>
             </figure>
           </li>
@@ -632,27 +636,25 @@ function delImage(img_id)
         return false;
     }
 
-    // First check that there is a payer email filled out.
-    var dataS = {
-        "action": "delimage",
-        "img_id": img_id,
-    };
-    data = $.param(dataS);
-    $.ajax({
-        type: "POST",
-        dataType: "json",
-        url: site_admin_url + "/plugins/shop/ajax.php",
-        data: data,
-        success: function(result) {
-            try {
-                if (result.status) {
-                    elem = document.getElementById("img_blk_" + img_id);
-                    elem.style.display = "none";
-                }
-            } catch(err) {
-            }
-        }
-    });
+    // Add the image ID to the imgdelete form var for deletion
+    var deleted = $("#imgdelete").val();
+    if (deleted == "") {
+        deleted = img_id;
+    } else {
+        deleted = deleted + "," + img_id;
+    }
+    $("#imgdelete").val(deleted);
+    elem = document.getElementById("img_blk_" + img_id);
+    elem.style.display = "none";
+
+    // Update the image order to exclude the deleted image
+    var ordered = $("#imgorder").val().split(",");
+    var index = ordered.indexOf(img_id.toString());
+    if (index > -1) {
+       ordered.splice(index, 1);
+    }
+    $("#imgorder").val(ordered.join(","));
+
     return false;
 }
 
@@ -713,23 +715,31 @@ function addImage(tn_url, img_url, img_id)
     // Create the html for the list element
     var html =
         '   <figure class="uk-overlay uk-overlay-hover">' +
-        '       <a href="' + img_url + '" data-uk-lightbox="{group:\'shop\'}">' +
         '       <img src="' + tn_url + '" />' +
-        '     </a><br />' +
-        '   <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">' +
-        '      <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage(' + img_id + ');">' +
-        '    {$LANG_ADMIN['delete']}</button>' +
-        '     <span class="img_def_btn" id="setDefBtn_' + img_id + '">' +
-        '      <br /><button class="uk-button uk-button-mini uk-button-primary" onclick="return setDefImg(' + img_id + ');">' +
-        '    {$LANG_SHOP['set_as_def']}</button>' +
-        '    </span>' +
+        '   <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">';
+    html += '      <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage(' + img_id + ');">' +
+        '    {$LANG_ADMIN['delete']}</button>';
+//    html += '     <span class="img_def_btn" id="setDefBtn_' + img_id + '">' +
+//        '      <br /><button class="uk-button uk-button-mini uk-button-primary" onclick="return setDefImg(' + img_id + ');">' +
+//        '    {$LANG_SHOP['set_as_def']}</button>';
+    html += '    </span>' +
         '   </figcaption></figure>';
     var ul = document.getElementById("imagegrid");
     var li = document.createElement("li");
     li.setAttribute('id', 'img_blk_' + img_id);
-    li.setAttribute('data-img-id', img_id);
+    li.setAttribute('data-id', img_id);
     li.innerHTML = html;
     ul.appendChild(li);
+
+    // Now add the image ID to the imgordered field for submission
+    var ordered = $("#imgorder").val();
+    if (ordered == "") {
+        ordered = img_id;
+    } else {
+        ordered = ordered + "," + img_id;
+    }
+console.log("setting imgorder.val");
+    $("#imgorder").val(ordered);
 }
 
 function disc_insertRow()
@@ -763,22 +773,38 @@ function handleSubmit(f)
     }
     return true;
 }
-$( function() {
-    $( "#sortable" ).sortable( {
-        containment: "#img-sorter",
-        stop: function( event, ui ) {
-            //console.log(event);
-            var articleorder="";
-            $("#sortable li").each(function(i) {
-                if (articleorder=='')
-                    articleorder = $(this).attr('data-img-id');
-                else
-                    articleorder += "," + $(this).attr('data-img-id');
+
+// Gather the images, in order, and set the hidden var "imgorder"
+// to an ordered comma-separated list of image IDs.
+(function ($) {
+    $(document).on('ready', function () {
+        var sortable = $('[data-uk-sortable]');
+        sortable.on('stop.uk.sortable', function (e, el, type) {
+            setOrdering(sortable, el);
+        });
+
+        function setOrdering(sortable, activeEl) {
+            /*data = {
+                action: 'orderImages',
+                ordering: {}
+            };*/
+            var ordering = 10;
+            var ordered = "";
+            sortable.find('>li').each(function () {
+                if (ordered == "") {
+                    ordered = $(this).data('id');
+                } else {
+                    ordered = ordered + "," + $(this).data('id');
+                }
+                //data.ordering[$(this).data('id')] = ordering;
+                //ordering += 10;
             });
-            $.ajax({
+            $("#imgorder").val(ordered);
+
+            /*$.ajax({
                 type: "POST",
                 url: "{site_admin_url}/plugins/shop/ajax.php",
-                data: "action=orderimages&order=" + articleorder,
+                data: data,
                 dataType: "json",
                 success: function(result) {
                     try {
@@ -787,10 +813,9 @@ $( function() {
                     } catch(err) {
                     }
                 }
-            });
+            });*/
         }
-    } );
-    $( "#sortable" ).disableSelection();
-} );
+    });
+})(jQuery);
 </script>
 {# end {templatelocation} #}

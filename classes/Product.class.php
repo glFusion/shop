@@ -714,9 +714,10 @@ class Product
             $this->Errors = $errs;
         }
 
-        if (isset($A['delimg']) && is_array($A['delimg'])) {
-            foreach ($A['delimg'] as $img_id) {
-                $this->deleteImage($img_id);
+        if (isset($A['imgdelete']) && !empty($A['imgdelete'])) {
+            $del_ids = explode(',', $A['imgdelete']);
+            foreach ($del_ids as $img_id) {
+                Images\Product::deleteById($img_id);
             }
         }
 
@@ -819,7 +820,23 @@ class Product
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
+                $this->getImages();     // Load images
             }
+            if (isset($A['imgorder']) && !empty($A['imgorder'])) {
+                $img_ids = explode(',', $A['imgorder']);
+                $orderby = 10;
+                foreach ($img_ids as $img_id) {
+                    $img_id = (int)$img_id;
+                    if ($this->Images[$img_id]['orderby'] != $orderby) {
+                        $this->Images[$img_id]['orderby'] = $orderby;
+                        DB_query("UPDATE {$_TABLES['shop.images']}
+                            SET orderby = $orderby
+                            WHERE img_id = $img_id");
+                    }
+                    $orderby += 10;
+                }
+            }
+
             // Clear categories for new products so the new cats get updated
             // correcly.
             $this->Categories = array();
@@ -926,7 +943,7 @@ class Product
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1 || !array_key_exists($img_id, $this->Images)) {
+        if ($img_id < 1) {
             return;
         }
 
@@ -1117,7 +1134,9 @@ class Product
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize image counter
+        $imgorder = array();     // string to contain image order
         foreach ($this->Images as $id=>$prow) {
+            $imgorder[] = $prow['img_id'];
             $T->set_var(array(
                 'img_url'   => $this->getImage($prow['filename'])['url'],
                 'thumb_url' => $this->getThumb($prow['filename'])['url'],
@@ -1126,6 +1145,8 @@ class Product
             ) );
             $T->parse('PRow', 'PhotoRow', true);
         }
+        $imgorder = implode(',', $imgorder);
+        $T->set_var('imgorder', $imgorder);
 
         $T->set_block('dtable', 'discTable', 'DT');
         foreach ($this->qty_discounts as $qty=>$amt) {
@@ -2719,7 +2740,7 @@ class Product
         $this->Images = Cache::get($cache_key);
         if ($this->Images === NULL) {
             $this->Images = array();
-            $sql = "SELECT img_id, filename
+            $sql = "SELECT img_id, filename, orderby
                 FROM {$_TABLES['shop.images']}
                 WHERE product_id='". $this->id . "'
                 ORDER BY orderby ASC";

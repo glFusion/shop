@@ -40,12 +40,17 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
-case 'orderimages':
+case 'orderImages':
     $retval = array(
+        'status' => false,
+        'statusMessage' => 'Not implemented',
+    );
+    /*$retval = array(
         'status' => true,
     );
-    Shop\Images\Product::updateOrder($_POST['order']);
+    Shop\Images\Product::updateOrder($_POST['ordering']);
     Shop\Cache::clear('products');
+     */
     header('Content-Type: application/json');
     header("Cache-Control: no-cache, must-revalidate");
     //A date in the past
