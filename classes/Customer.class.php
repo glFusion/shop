@@ -611,7 +611,9 @@ class Customer
      */
     public function setPrefGW($gw)
     {
-        $this->pref_gw = $gw;
+        if ($gw != 'free') {
+            $this->pref_gw = $gw;
+        }
         return $this;
     }
 
