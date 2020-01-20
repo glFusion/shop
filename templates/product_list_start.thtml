@@ -14,7 +14,7 @@
     <div style="margin-right:30px;float:left;">
         <img class="shopLogoImage medium" src="{brand_logo_url}" />
     </div>
-    <div>
+    <div class="shopListBrandDscp">
         {brand_dscp}
     </div>
 {!else}
