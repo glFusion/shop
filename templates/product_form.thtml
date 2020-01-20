@@ -11,7 +11,7 @@
     enctype="multipart/form-data" onsubmit='handleSubmit(this);'>
   <input type="hidden" name="id" value="{product_id}" />
   <input type="hidden" name="nonce" value="{nonce}" />
-  <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
+  <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form'}">
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
@@ -350,13 +350,12 @@
         <div id="progressbar" class="uk-progress uk-hidden">
             <div class="uk-progress-bar" style="width: 0%;">...</div>
         </div>
-        <ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right" id="imagegrid">
+        <div id="img-sorter">
+        <ul id="sortable" class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right" id="imagegrid">
           <!-- BEGIN PhotoRow -->
-          <li id="img_blk_{img_id}">
+          <li id="img_blk_{img_id}" data-img-id="{img_id}">
             <figure class="uk-overlay uk-overlay-hover">
-              <a href="{img_url}" data-uk-lightbox="{group:'shop'}">
-                <img src="{thumb_url}" />
-              </a>
+              <img src="{thumb_url}" />
               <br />
               <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
                 <button class="uk-button uk-button-mini uk-button-danger" onclick="return delImage({img_id});">{$LANG_ADMIN['delete']}</button>
@@ -374,6 +373,7 @@
           </li>
           <!-- END PhotoRow -->
         </ul>
+        </div>
       </div>
     </div>
   </li>
@@ -727,6 +727,7 @@ function addImage(tn_url, img_url, img_id)
     var ul = document.getElementById("imagegrid");
     var li = document.createElement("li");
     li.setAttribute('id', 'img_blk_' + img_id);
+    li.setAttribute('data-img-id', img_id);
     li.innerHTML = html;
     ul.appendChild(li);
 }
@@ -762,5 +763,34 @@ function handleSubmit(f)
     }
     return true;
 }
+$( function() {
+    $( "#sortable" ).sortable( {
+        containment: "#img-sorter",
+        stop: function( event, ui ) {
+            //console.log(event);
+            var articleorder="";
+            $("#sortable li").each(function(i) {
+                if (articleorder=='')
+                    articleorder = $(this).attr('data-img-id');
+                else
+                    articleorder += "," + $(this).attr('data-img-id');
+            });
+            $.ajax({
+                type: "POST",
+                url: "{site_admin_url}/plugins/shop/ajax.php",
+                data: "action=orderimages&order=" + articleorder,
+                dataType: "json",
+                success: function(result) {
+                    try {
+                        // Force to stay on the "images" tab
+                        $("#tab-images").trigger("click");
+                    } catch(err) {
+                    }
+                }
+            });
+        }
+    } );
+    $( "#sortable" ).disableSelection();
+} );
 </script>
 {# end {templatelocation} #}

@@ -40,6 +40,19 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
+case 'orderimages':
+    $retval = array(
+        'status' => true,
+    );
+    Shop\Images\Product::updateOrder($_POST['order']);
+    Shop\Cache::clear('products');
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
+
 case 'dropupload_cat':
     // Handle a drag-and-drop image upload for categories
     $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);

@@ -179,6 +179,28 @@ class Product extends \Shop\Image
 
 
     /**
+     * Sort image IDs in the order provided.
+     *
+     * @param   string  $img_ids    Comma-separated list of IDs, in order
+     */
+    public static function updateOrder($img_ids)
+    {
+        global $_TABLES;
+
+        $ids = explode(',', $img_ids);
+        $orderby = 10;
+        foreach ($ids as $id) {
+            $id = (int)$id;     // sanitize
+            $sql = "UPDATE {$_TABLES['shop.images']}
+                SET orderby = $orderby
+                WHERE img_id = $id";
+            DB_query($sql, 1);
+            $orderby += 10;
+        }
+    }
+
+
+    /**
      * Update the image record with the product ID.
      * Used where the ID of a new product is not known until saving
      * so images are identified by a nonce value.
