@@ -1475,6 +1475,7 @@ class Order
         $tax = 0;
         $this->tax_items = 0;
         foreach ($this->items as &$Item) {
+            $this->tax_items += $Item->getTaxable();
             $tax += $Item->getTotalTax();
         }
         $this->tax = $tax;
