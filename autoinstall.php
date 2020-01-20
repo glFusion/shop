@@ -301,6 +301,10 @@ function plugin_postinstall_shop()
         }
     }
 
+    // Install default payment gateways
+    require_once 'functions.inc';       // required for class autoloader
+    Shop\Gateway::getInstance('free')->Install();
+
     // Set the shop Admin ID
     $gid = (int)DB_getItem(
         $_TABLES['groups'],

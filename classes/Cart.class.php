@@ -513,7 +513,7 @@ class Cart extends Order
         $gateway_vars = '';
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             foreach (Gateway::getAll() as $gw) {
-                if ($gw->hasAccess() && $gw->Supports('checkout')) {
+                if ($gw->hasAccess($this->total) && $gw->Supports('checkout')) {
                     $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
                 }
@@ -550,7 +550,11 @@ class Cart extends Order
             }
             $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
             if (empty($gateways)) return NULL;  // no available gateways
-            if (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
+            if ($this->total == 0) {
+                // Automatically select the "free" gateway if appropriate.
+                // Other gateways shouldn't be shown anyway.
+                $gw_sel = 'free';
+            } elseif (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
                 // Select the previously selected gateway
                 $gw_sel = $this->m_info['gateway'];
             } elseif ($gc_bal >= $this->total) {
@@ -564,7 +568,7 @@ class Cart extends Order
                 }
             }
             foreach ($gateways as $gw_id=>$gw) {
-                if (is_null($gw) || !$gw->hasAccess()) {
+                if (is_null($gw) || !$gw->hasAccess($this->total)) {
                     continue;
                 }
                 if ($gw->Supports('checkout')) {

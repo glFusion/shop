@@ -73,7 +73,7 @@ class Gateway
 
     /** Indicator of whether the gateway is enabled at all.
      * @var boolean */
-    protected $enabled;
+    protected $enabled = 0;
 
     /** Order in which the gateway is selected.
      * Gateways are selected from lowest to highest order.
@@ -596,7 +596,7 @@ class Gateway
                 (id, orderby, enabled, description, config, services) VALUES (
                 '" . DB_escapeString($this->gw_name) . "',
                 '990',
-                '0',
+                {$this->getEnabled()},
                 '" . DB_escapeString($this->gw_desc) . "',
                 '" . DB_escapeString($config) . "',
                 '" . DB_escapeString($services) . "')";
@@ -1065,7 +1065,7 @@ class Gateway
     {
         $R = array(
             //'gateway_url'   => Gateway URL for use to check purchase
-            //'gateway_name'  => self::Description(),
+            //'gateway_name'  => self::getDscp(),
         );
         return $R;
     }
@@ -1729,11 +1729,12 @@ class Gateway
      * Check that the current user is allowed to use this gateway.
      * This limits access to special gateways like 'check' or 'terms'.
      *
+     * @param   float   $total  Total order amount
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess()
+    public function hasAccess($total=0)
     {
-        return SEC_inGroup($this->grp_access);
+        return $total > 0 && SEC_inGroup($this->grp_access);
     }
 
 
@@ -1749,6 +1750,17 @@ class Gateway
         return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
             '&o=' . $cart_id .
             '&t=' . $token;
+    }
+
+
+    /**
+     * Get the "enabled" flag value.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
+    protected function getEnabled()
+    {
+        return $this->enabled ? 1 : 0;
     }
 
 }   // class Gateway
