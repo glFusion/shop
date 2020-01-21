@@ -11,7 +11,8 @@
     enctype="multipart/form-data" onsubmit='handleSubmit(this);'>
   <input type="hidden" name="id" value="{product_id}" />
   <input type="hidden" name="nonce" value="{nonce}" />
-  <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
+  <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form',swiping:false}">
+
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
