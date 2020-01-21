@@ -176,7 +176,7 @@ class check extends \Shop\Gateway
      * Get the variables from the return URL to display a "thank-you" message to the buyer.
      *
      * @uses    getMainUrl()
-     * @uses    PaymentGw::Description()
+     * @uses    Gateway::getDscp()
      * @param   array   $A      Optionally override the $_GET parameters
      * @return  array           Array of standard name=>value pairs
      */
@@ -192,7 +192,7 @@ class check extends \Shop\Gateway
             'currency'      => $currency,
             'payment_amount' => $amount,
             'gateway_url'   => self::getMainUrl(),
-            'gateway_name'  => self::Description(),
+            'gateway_name'  => self::getDscp(),
         );
         return $R;
     }

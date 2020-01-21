@@ -461,8 +461,8 @@ class Customer
         }
 
         $state_options = State::optionList(
-            SHOP_getVar($A, 'country', 'string', ''),
-            SHOP_getVar($A, 'state', 'string', '')
+            SHOP_getVar($A, 'country', 'string', $_SHOP_CONF['country'], false),
+            SHOP_getVar($A, 'state', 'string', $_SHOP_CONF['state'], false)
         );
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -611,7 +611,9 @@ class Customer
      */
     public function setPrefGW($gw)
     {
-        $this->pref_gw = $gw;
+        if ($gw != 'free') {
+            $this->pref_gw = $gw;
+        }
         return $this;
     }
 

@@ -205,7 +205,7 @@ $LANG_SHOP = array (
 'paid_by'       => 'Paid by',
 'pmt_method'    => 'Payment Method',
 'pmt_gross'     => 'Gross Payment',
-'billto_info'   => 'Payment Information',
+'billto_info'   => 'Billing Information',
 'shipto_info'   => 'Shipping Information',
 'home'          => 'Home',
 'none'          => 'None',
@@ -625,6 +625,10 @@ $LANG_SHOP = array (
 'alpha3' => '3-letter Country Code',
 'country_code' => 'Numeric Country Code',
 'prod_by_brand' => 'Products by %s',
+'bulk_update' => 'Update All Selected',
+'bulk_delete' => 'Delete All Selected',
+'msg_some_not_del' => 'Some items could not be deleted.',
+'opts_not_avail' => 'Selection option combination is not available.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

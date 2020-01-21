@@ -723,14 +723,14 @@ class paypal extends \Shop\Gateway
      * Get the values to show in the "Thank You" message when a customer returns to our site.
      *
      * @uses    getMainUrl()
-     * @uses    Gateway::Description()
+     * @uses    Gateway::getDscp()
      * @return  array       Array of name=>value pairs
      */
     public function thanksVars()
     {
         $R = array(
             'gateway_url'   => self::getMainUrl(),
-            'gateway_name'  => self::Description(),
+            'gateway_name'  => self::getDscp(),
         );
         return $R;
     }

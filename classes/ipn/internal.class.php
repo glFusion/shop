@@ -55,7 +55,8 @@ class internal extends \Shop\IPN
             ->setPmtTax(SHOP_getVar($this->ipn_data, 'tax', 'float'))
             ->setPmtShipping(SHOP_getVar($this->ipn_data, 'shipping', 'float'))
             ->setPmtHandling(SHOP_getVar($this->ipn_data, 'handling', 'float'))
-            ->setCurrency();
+            ->setCurrency()
+            ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id', 'string'));
         $this->gw_name = $this->GW->getName();
         $this->gw_desc = $this->GW->getDscp();
 
@@ -215,18 +216,18 @@ class internal extends \Shop\IPN
             $shipto = $this->Order->getAddress('shipto');
             if (empty($shipto) && !empty($billto)) $shipto = $billto;
             if (COM_isAnonUser()) $_USER['email'] = '';
-            $this->setEmail(SHOP_getVar($A, 'payer_email', 'string', $_USER['email']));
-            $this->setPayerName(trim(SHOP_getVar($A, 'name') .' '. SHOP_getVar($A, 'last_name')));
+            $this->setEmail(SHOP_getVar($this->ipn_data, 'payer_email', 'string', $_USER['email']));
+            $this->setPayerName(trim(SHOP_getVar($this->ipn_data, 'name') .' '. SHOP_getVar($this->ipn_data, 'last_name')));
             if ($this->getPayerName() == '') {
                 $this->setPayerName($_USER['fullname']);
             }
             $this
                 ->setOrderID($this->Order->order_id)
-                ->setTxnId(SHOP_getVar($A, 'txn_id'))
+                ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id'))
                 ->setPmtTax($this->Order->getInfo('tax'))
-                ->setStatus(SHOP_getVar($A, 'payment_status'));
-            $this->gw_name = 'Internal IPN';
-            $this->gw_desc = 'Internal IPN';
+                ->setStatus(SHOP_getVar($this->ipn_data, 'payment_status'));
+            //$this->gw_name = 'Internal IPN';
+            //$this->gw_desc = 'Internal IPN';
 
             $this->shipto = array(
                 'name'      => SHOP_getVar($shipto, 'name'),

@@ -366,7 +366,7 @@ class Catalog
                 'onhand'        => $P->track_onhand ? $P->onhand : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
                 'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
-                'can_add_cart'  => $P->canBuyNow(),
+                'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
                 'oos'           => !$P->isInStock(),
             ) );
