@@ -458,7 +458,7 @@
         </button>
       </li>
       <li>
-        <button class="uk-button uk-button-primary tm-admin-save-button-width" type="reset" value="{$LANG_SHOP['help']" name="help" data-uk-tooltip="{pos:'left'}" title="{$LANG_SHOP['help']}"
+        <button class="uk-button uk-button-primary tm-admin-save-button-width" type="reset" value="{$LANG_SHOP[clk_'help']" name="help" data-uk-tooltip="{pos:'left'}" title="{$LANG_SHOP['clk_help']}"
         onclick="popupWindow('{doc_url}', 'Help', 640, 480, 1);return false;">
           <i class="uk-icon-question"></i>
         </button>
