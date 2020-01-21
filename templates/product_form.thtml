@@ -11,7 +11,8 @@
     enctype="multipart/form-data" onsubmit='handleSubmit(this);'>
   <input type="hidden" name="id" value="{product_id}" />
   <input type="hidden" name="nonce" value="{nonce}" />
-  <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#product-form'}">
+  <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form',swiping:false}">
+
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
@@ -457,7 +458,7 @@
         </button>
       </li>
       <li>
-        <button class="uk-button uk-button-primary tm-admin-save-button-width" type="reset" value="{$LANG_SHOP['help']" name="help" data-uk-tooltip="{pos:'left'}" title="{$LANG_SHOP['help']}"
+        <button class="uk-button uk-button-primary tm-admin-save-button-width" type="reset" value="{$LANG_SHOP[clk_'help']" name="help" data-uk-tooltip="{pos:'left'}" title="{$LANG_SHOP['clk_help']}"
         onclick="popupWindow('{doc_url}', 'Help', 640, 480, 1);return false;">
           <i class="uk-icon-question"></i>
         </button>

@@ -819,11 +819,16 @@ class Product
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
+                // Clear categories for new products so the new cats get updated
+                // correcly.
+                $this->Categories = array();
             }
-            // Clear categories for new products so the new cats get updated
-            // correcly.
-            $this->Categories = array();
             $this->updateCategories($A['selected_cats']);
+            // Save any variants that were created.
+            // First, set item ID into $_POST var for ProductVariant to use.
+            $A['item_id'] = $this->id;
+            ProductVariant::saveNew($A);
+
             //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {
@@ -1059,8 +1064,7 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
-            //'option_list'   => ProductOptionValue::adminList($this->id),
-            'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : $LANG_SHOP_HELP['hlp_var_after_item'],
+            'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,

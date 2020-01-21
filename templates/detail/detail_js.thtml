@@ -40,7 +40,6 @@ function ProcessForm(form)
         data: data,
         success: function(result) {
             try {
-console.log(result);
                 $("div#avail_msg").text(result.msg);
                 $("span#onhand").text(result.onhand);
                 // Enable or disable the purchase buttons

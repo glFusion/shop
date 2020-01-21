@@ -2189,19 +2189,26 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
 
 /**
  * Get an array variable, first checking whether it's set.
+ * If `$emptyok` is set then the default value is returned when the variable
+ * is found but is empty. Otherwise as long as that variable is found it is
+ * returned, empty or not.
  *
  * @param   array   $A          Array where var should be
  * @param   string  $varname    Name of array element
  * @param   string  $type       Type of return value
  * @param   mixed   $default    Default value, if any
+ * @param   boolean $emptyok    True if return val can be empty
  * @return  array       Array element or NULL, cast to $type
  */
-function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
+function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = false)
 {
     if (!isset($A[$varname])) {
         return $default;
     } else {
         $val = $A[$varname];
+        if (empty($val) && !$emptyok) {
+            return $default;
+        }
     }
     switch ($type) {
     case 'int':
