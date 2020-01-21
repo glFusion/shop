@@ -216,6 +216,20 @@ class _internal extends \Shop\Gateway
         return true;
     }
 
+
+    /**
+     * Check that the current user is allowed to use this gateway.
+     * This limits access to special gateways like 'check' or 'terms'.
+     * The internal gateway can be used by all users if the order value
+     * is zero.
+     *
+     * @return  boolean     True if access is allowed, False if not
+     */
+    public function hasAccess($total=0)
+    {
+        return SEC_inGroup($this->grp_access);
+    }
+
 }
 
 ?>

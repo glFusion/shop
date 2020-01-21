@@ -1,18 +1,20 @@
 <?php
 /**
- * Sitemap driver for the Shop plugin
+ * Sitemap driver for the Shop plugin.
+ * Legacy version for Sitemap plugin < 2.0.3
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2017-2019 Lee Garner
+ * @copyright   Copyright (c) 2017-2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
+ * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 
 /**
- * Sitemap driver class for Shop
+ * Sitemap driver class for Shop.
  * @paackage shop
  */
 class sitemap_shop extends sitemap_base
@@ -59,11 +61,13 @@ class sitemap_shop extends sitemap_base
         if (!$_SHOP_CONF['shop_enabled']) {
             return $entries;
         }
-        $opts = array();
+        $opts = array(
+            'groups' => $this->groups,
+        );
         if ($cat_id > 0) {
             $opts['cat_id'] = $cat_id;
         }
-        $items = PLG_getItemInfo('shop', '*', 'id,introtext,date,url', $_USER['uid'], $opts);
+        $items = PLG_getItemInfo('shop', '*', 'id,introtext,date,url', $this->uid, $opts);
         if (is_array($items)) {
             foreach ($items as $A) {
                 $entries[] = array(
@@ -101,13 +105,15 @@ class sitemap_shop extends sitemap_base
         }
         $cats = $Root->getChildren();
         foreach ($cats as $Cat) {
-            $retval[] = array(
-                'id'        => $Cat->cat_id,
-                'title'     => $Cat->cat_name,
-                'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
-                'date'      => false,
-                'image_uri' => $Cat->ImageUrl(),
-            );
+            if ($Cat->hasAccess($this->groups)) {
+                $retval[] = array(
+                    'id'        => $Cat->getID(),
+                    'title'     => $Cat->getName(),
+                    'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
+                    'date'      => false,
+                    'image_uri' => $Cat->getImage()['url'],
+                );
+            }
         }
         return $retval;
     }

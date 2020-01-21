@@ -490,8 +490,10 @@ class MigratePP
             }
         }
 
-        // Now create the variants
+        // Now create the variants. Set the qty on hand to the item's qty,
+        // otherwise items won't be shown in the catalog at all.
         foreach ($items as $item_id=>$opts) {
+            $opts['onhand'] = Product::getById($item_id)->getOnhand();
             $PV = new ProductVariant;
             $PV->saveNew($opts);
         }

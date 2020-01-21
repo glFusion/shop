@@ -353,9 +353,13 @@ div.shopProductListItem.v1 div.ItemButtons {
     padding-top: .5em;
 }
 .shopListSeparator hr {
+    margin-left: auto;
+    margin-right: auto;
     width: 85%;
 }
-
+.shopListSeparator .shopLogoImage {
+    margin-bottom:10px;
+}
 .shopOrderContainer {
     max-width: 90%;
     margin-left: auto;
@@ -785,4 +789,17 @@ div#orderShipmentBlock {
 
 .shopLogoImage.small {
     height:40px;
+}
+
+.shopLogoImage.medium {
+    height:100px;
+}
+
+ul#prod_details label {
+    /*width:80px;*/
+    padding-right:10px;
+    float:left;
+}
+ul#prod_details p {
+    margin-top:8px;
 }

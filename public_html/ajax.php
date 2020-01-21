@@ -57,7 +57,7 @@ case 'addcartitem':
     }
 
     $req_qty = SHOP_getVar($_POST, 'quantity', 'integer', $P->getMinOrderQty());
-    $exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
+    //$exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
     $unique = SHOP_getVar($_POST, '_unique', 'integer', $P->isUnique());
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
@@ -77,7 +77,7 @@ case 'addcartitem':
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];
-    } elseif ($new_qty != $exp_qty) {
+    } elseif ($new_qty != $req_qty) {
         $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
     }
     $output = array(
@@ -147,6 +147,15 @@ case 'validateAddress':
             $output['status']  = false;
             $output['form'] = $T->parse('output', 'popup');
         }
+    break;
+
+case 'getStateOpts':
+    $output = array(
+        'status' => true,
+        'opts' => Shop\State::optionList(
+            SHOP_getVar($_GET, 'country_iso', 'string', '')
+        ),
+    );
     break;
 
 default:

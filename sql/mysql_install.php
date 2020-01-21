@@ -17,6 +17,8 @@ if (!defined ('GVERSION')) {
 }
 
 global $_TABLES, $_SQL, $SHOP_UPGRADE, $_SHOP_SAMPLEDATA;
+include_once __DIR__ . '/mysql_sample_data.php';
+
 $SHOP_UPGRADE = array();
 
 $_SQL = array(
@@ -72,8 +74,8 @@ $_SQL = array(
   `brand` varchar(255) NOT NULL DEFAULT '',
   `min_ord_qty` int(3) NOT NULL DEFAULT 1,
   `max_ord_qty` int(3) NOT NULL DEFAULT 0,
-  `brand_id` int(11) unsigned NOT NULL DFAULT 0,
-  `supplier_id` int(11) unsigned NOT NULL DFAULT 0,
+  `brand_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `supplier_id` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -353,181 +355,8 @@ $_SQL = array(
   `rates` text,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   PRIMARY KEY (`id`)
-) ENGINE=MyIsam",
-);
+) ENGINE=MyISAM",
 
-// Sample data to load up the Shop gateway configuration
-$_SHOP_SAMPLEDATA = array(
-    "INSERT INTO {$_TABLES['shop.categories']}
-            (cat_id, parent_id, cat_name, description, grp_access, lft, rgt)
-        VALUES
-            (1, 0, 'Home', 'Root Category', 2, 1, 2)",
-    "INSERT INTO {$_TABLES['shop.workflows']}
-            (id, wf_name, orderby, enabled, can_disable)
-        VALUES
-            (1, 'viewcart', 10, 3, 0),
-            (2, 'billto', 20, 0, 1),
-            (3, 'shipto', 30, 2, 1)",
-    "INSERT INTO {$_TABLES['shop.orderstatus']}
-            (id, orderby, enabled, name, notify_buyer, notify_admin)
-        VALUES
-            (1, 10, 1, 'pending', 0, 0),
-            (2, 20, 1, 'paid', 1, 1),
-            (3, 30, 1, 'processing', 1, 0),
-            (4, 40, 1, 'shipped', 1, 0),
-            (5, 50, 1, 'closed', 0, 0),
-            (6, 60, 1, 'refunded', 0, 0)",
-    "INSERT INTO `{$_TABLES['shop.currency']}` VALUES
-        ('AED','?.?','United Arab Emirates Dirham',784,'hidden',' ','before',2,0.00,',','.','Dirham','Fils',1.00000,'2014-01-03 20:51:17'),
-    ('AFN','Af','Afghan Afghani',971,'hidden',' ','after',0,0.00,',','.','Afghani','Pul',1.00000,'2014-01-03 20:54:44'),
-	('ANG','NAf.','Netherlands Antillean Guilder',532,'hidden',' ','after',2,0.00,',','.','Guilder','Cent',1.00000,'2014-01-03 20:54:44'),
-	('AOA','Kz','Angolan Kwanza',973,'hidden',' ','after',2,0.00,',','.','Kwanza','Cêntimo',1.00000,'2014-01-03 20:54:44'),
-	('ARM','m\$n','Argentine Peso Moneda Nacional',NULL,'hidden',' ','after',2,0.00,',','.','Peso','Centavos',1.00000,'2014-01-03 20:54:44'),
-	('ARS','AR$','Argentine Peso',32,'hidden',' ','after',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('AUD','$','Australian Dollar',36,'before',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('AWG','Afl.','Aruban Florin',533,'hidden',' ','after',2,0.00,',','.','Guilder','Cent',1.00000,'2014-01-03 20:54:44'),
-	('AZN','man.','Azerbaijanian Manat',NULL,'hidden',' ','after',2,0.00,',','.','New Manat','Q?pik',1.00000,'2014-01-03 20:54:44'),
-	('BAM','KM','Bosnia-Herzegovina Convertible Mark',977,'hidden',' ','after',2,0.00,',','.','Convertible Marka','Fening',1.00000,'2014-01-03 20:54:44'),
-	('BBD','Bds$','Barbadian Dollar',52,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('BDT','Tk','Bangladeshi Taka',50,'hidden',' ','after',2,0.00,',','.','Taka','Paisa',1.00000,'2014-01-03 20:54:44'),
-	('BGN','??','Bulgarian lev',975,'after',' ','hidden',2,0.00,',',',','Lev','Stotinka',1.00000,'2014-01-03 20:49:55'),
-	('BHD','BD','Bahraini Dinar',48,'hidden',' ','after',3,0.00,',','.','Dinar','Fils',1.00000,'2014-01-03 20:54:44'),
-	('BIF','FBu','Burundian Franc',108,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('BMD','BD$','Bermudan Dollar',60,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('BND','BN$','Brunei Dollar',96,'hidden',' ','after',2,0.00,',','.','Dollar','Sen',1.00000,'2014-01-03 20:54:44'),
-	('BOB','Bs','Bolivian Boliviano',68,'hidden',' ','after',2,0.00,',','.','Bolivianos','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('BRL','R$','Brazilian Real',986,'before',' ','hidden',2,0.00,'.',',','Reais','Centavo',1.00000,'2014-01-03 20:49:55'),
-	('BSD','BS$','Bahamian Dollar',44,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('BTN','Nu.','Bhutanese Ngultrum',64,'hidden',' ','after',2,0.00,',','.','Ngultrum','Chetrum',1.00000,'2014-01-03 20:54:44'),
-	('BWP','BWP','Botswanan Pula',72,'hidden',' ','after',2,0.00,',','.','Pulas','Thebe',1.00000,'2014-01-03 20:54:44'),
-	('BYR','???.','Belarusian ruble',974,'after',' ','hidden',0,0.00,',','.','Ruble',NULL,1.00000,'2014-01-03 20:49:48'),
-	('BZD','BZ$','Belize Dollar',84,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('CAD','CA$','Canadian Dollar',124,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('CDF','CDF','Congolese Franc',976,'hidden',' ','after',2,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('CHF','Fr.','Swiss Franc',756,'hidden',' ','after',2,0.05,',','.','Franc','Rappen',1.00000,'2014-01-03 20:54:44'),
-	('CLP','CL$','Chilean Peso',152,'hidden',' ','after',0,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('CNY','¥','Chinese Yuan Renminbi',156,'before',' ','hidden',2,0.00,',','.','Yuan','Fen',1.00000,'2014-01-03 20:49:55'),
-	('COP','$','Colombian Peso',170,'before',' ','hidden',0,0.00,'.',',','Peso','Centavo',1.00000,'2014-01-03 20:49:48'),
-	('CRC','¢','Costa Rican Colón',188,'hidden',' ','after',0,0.00,',','.','Colón','Céntimo',1.00000,'2014-01-03 20:54:44'),
-	('CUC','CUC$','Cuban Convertible Peso',NULL,'hidden',' ','after',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('CUP','CU$','Cuban Peso',192,'hidden',' ','after',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('CVE','CV$','Cape Verdean Escudo',132,'hidden',' ','after',2,0.00,',','.','Escudo','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('CZK','K?','Czech Republic Koruna',203,'after',' ','hidden',2,0.00,',',',','Koruna','Halé?',1.00000,'2014-01-03 20:49:55'),
-	('DJF','Fdj','Djiboutian Franc',262,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('DKK','kr.','Danish Krone',208,'after',' ','hidden',2,0.00,',',',','Kroner','Øre',1.00000,'2014-01-03 20:49:55'),
-	('DOP','RD$','Dominican Peso',214,'hidden',' ','after',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('DZD','DA','Algerian Dinar',12,'hidden',' ','after',2,0.00,',','.','Dinar','Santeem',1.00000,'2014-01-03 20:54:44'),
-	('EEK','Ekr','Estonian Kroon',233,'hidden',' ','after',2,0.00,',',',','Krooni','Sent',1.00000,'2014-01-03 20:54:44'),
-	('EGP','EG£','Egyptian Pound',818,'hidden',' ','after',2,0.00,',','.','Pound','Piastr',1.00000,'2014-01-03 20:54:44'),
-	('ERN','Nfk','Eritrean Nakfa',232,'hidden',' ','after',2,0.00,',','.','Nakfa','Cent',1.00000,'2014-01-03 20:54:44'),
-	('ETB','Br','Ethiopian Birr',230,'hidden',' ','after',2,0.00,',','.','Birr','Santim',1.00000,'2014-01-03 20:54:44'),
-	('EUR','€','Euro',978,'after',' ','hidden',2,0.00,',',',','Euro','Cent',1.00000,'2014-01-03 20:49:55'),
-	('FJD','FJ$','Fijian Dollar',242,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('FKP','FK£','Falkland Islands Pound',238,'hidden',' ','after',2,0.00,',','.','Pound','Penny',1.00000,'2014-01-03 20:54:44'),
-	('GBP','£','British Pound Sterling',826,'before',' ','hidden',2,0.00,',','.','Pound','Penny',1.00000,'2014-01-03 20:49:55'),
-	('GHS','GH?','Ghanaian Cedi',NULL,'hidden',' ','after',2,0.00,',','.','Cedi','Pesewa',1.00000,'2014-01-03 20:54:44'),
-	('GIP','GI£','Gibraltar Pound',292,'hidden',' ','after',2,0.00,',','.','Pound','Penny',1.00000,'2014-01-03 20:54:44'),
-	('GMD','GMD','Gambian Dalasi',270,'hidden',' ','after',2,0.00,',','.','Dalasis','Butut',1.00000,'2014-01-03 20:54:44'),
-	('GNF','FG','Guinean Franc',324,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('GTQ','GTQ','Guatemalan Quetzal',320,'hidden',' ','after',2,0.00,',','.','Quetzales','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('GYD','GY$','Guyanaese Dollar',328,'hidden',' ','after',0,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('HKD','HK$','Hong Kong Dollar',344,'before',' ','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:49:55'),
-	('HNL','HNL','Honduran Lempira',340,'hidden',' ','after',2,0.00,',','.','Lempiras','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('HRK','kn','Croatian Kuna',191,'hidden',' ','after',2,0.00,',','.','Kuna','Lipa',1.00000,'2014-01-03 20:54:44'),
-	('HTG','HTG','Haitian Gourde',332,'hidden',' ','after',2,0.00,',','.','Gourde','Centime',1.00000,'2014-01-03 20:54:44'),
-	('HUF','Ft','Hungarian Forint',348,'after',' ','hidden',0,0.00,',',',','Forint',NULL,1.00000,'2014-01-03 20:49:48'),
-	('IDR','Rp','Indonesian Rupiah',360,'hidden',' ','after',0,0.00,',','.','Rupiahs','Sen',1.00000,'2014-01-03 20:54:44'),
-	('ILS','?','Israeli New Shekel',376,'before',' ','hidden',2,0.00,',','.','New Shekels','Agora',1.00000,'2014-01-03 20:49:55'),
-	('INR','Rs','Indian Rupee',356,'hidden',' ','after',2,0.00,',','.','Rupee','Paisa',1.00000,'2014-01-03 20:54:44'),
-	('IRR','?','Iranian Rial',364,'after',' ','hidden',2,0.00,',','.','Toman','Rial',1.00000,'2014-01-03 20:49:55'),
-	('ISK','Ikr','Icelandic Króna',352,'hidden',' ','after',0,0.00,',','.','Kronur','Eyrir',1.00000,'2014-01-03 20:54:44'),
-	('JMD','J$','Jamaican Dollar',388,'before',' ','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:49:55'),
-	('JOD','JD','Jordanian Dinar',400,'hidden',' ','after',3,0.00,',','.','Dinar','Piastr',1.00000,'2014-01-03 20:54:44'),
-	('JPY','¥','Japanese Yen',392,'before',' ','hidden',0,0.00,',','.','Yen','Sen',1.00000,'2014-01-03 20:49:48'),
-	('KES','Ksh','Kenyan Shilling',404,'hidden',' ','after',2,0.00,',','.','Shilling','Cent',1.00000,'2014-01-03 20:54:44'),
-	('KGS','???','Kyrgyzstani Som',417,'after',' ','hidden',2,0.00,',','.','Som','Tyiyn',1.00000,'2014-01-03 20:49:55'),
-	('KMF','CF','Comorian Franc',174,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('KRW','?','South Korean Won',410,'hidden',' ','after',0,0.00,',','.','Won','Jeon',1.00000,'2014-01-03 20:54:44'),
-	('KWD','KD','Kuwaiti Dinar',414,'hidden',' ','after',3,0.00,',','.','Dinar','Fils',1.00000,'2014-01-03 20:54:44'),
-	('KYD','KY$','Cayman Islands Dollar',136,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('KZT','??.','Kazakhstani tenge',398,'after',' ','hidden',2,0.00,',',',','Tenge','Tiyn',1.00000,'2014-01-03 20:49:55'),
-	('LAK','?N','Laotian Kip',418,'hidden',' ','after',0,0.00,',','.','Kips','Att',1.00000,'2014-01-03 20:54:44'),
-	('LBP','LB£','Lebanese Pound',422,'hidden',' ','after',0,0.00,',','.','Pound','Piastre',1.00000,'2014-01-03 20:54:44'),
-	('LKR','SLRs','Sri Lanka Rupee',144,'hidden',' ','after',2,0.00,',','.','Rupee','Cent',1.00000,'2014-01-03 20:54:44'),
-	('LRD','L$','Liberian Dollar',430,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('LSL','LSL','Lesotho Loti',426,'hidden',' ','after',2,0.00,',','.','Loti','Sente',1.00000,'2014-01-03 20:54:44'),
-	('LTL','Lt','Lithuanian Litas',440,'hidden',' ','after',2,0.00,',','.','Litai','Centas',1.00000,'2014-01-03 20:54:44'),
-	('LVL','Ls','Latvian Lats',428,'hidden',' ','after',2,0.00,',','.','Lati','Santims',1.00000,'2014-01-03 20:54:44'),
-	('LYD','LD','Libyan Dinar',434,'hidden',' ','after',3,0.00,',','.','Dinar','Dirham',1.00000,'2014-01-03 20:54:44'),
-	('MAD',' Dhs','Moroccan Dirham',504,'after',' ','hidden',2,0.00,',','.','Dirhams','Santimat',1.00000,'2014-01-03 20:49:55'),
-	('MDL','MDL','Moldovan leu',498,'after',' ','hidden',2,0.00,',','.','Lei','bani',1.00000,'2014-01-03 20:49:55'),
-	('MMK','MMK','Myanma Kyat',104,'hidden',' ','after',0,0.00,',','.','Kyat','Pya',1.00000,'2014-01-03 20:54:44'),
-	('MNT','?','Mongolian Tugrik',496,'hidden',' ','after',0,0.00,',','.','Tugriks','Möngö',1.00000,'2014-01-03 20:54:44'),
-	('MOP','MOP$','Macanese Pataca',446,'hidden',' ','after',2,0.00,',','.','Pataca','Avo',1.00000,'2014-01-03 20:54:44'),
-	('MRO','UM','Mauritanian Ouguiya',478,'hidden',' ','after',0,0.00,',','.','Ouguiya','Khoums',1.00000,'2014-01-03 20:54:44'),
-	('MTP','MT£','Maltese Pound',NULL,'hidden',' ','after',2,0.00,',','.','Pound','Shilling',1.00000,'2014-01-03 20:54:44'),
-	('MUR','MURs','Mauritian Rupee',480,'hidden',' ','after',0,0.00,',','.','Rupee','Cent',1.00000,'2014-01-03 20:54:44'),
-	('MXN','$','Mexican Peso',484,'before',' ','hidden',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:49:55'),
-	('MYR','RM','Malaysian Ringgit',458,'before',' ','hidden',2,0.00,',','.','Ringgits','Sen',1.00000,'2014-01-03 20:49:55'),
-	('MZN','MTn','Mozambican Metical',NULL,'hidden',' ','after',2,0.00,',','.','Metical','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('NAD','N$','Namibian Dollar',516,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('NGN','?','Nigerian Naira',566,'hidden',' ','after',2,0.00,',','.','Naira','Kobo',1.00000,'2014-01-03 20:54:44'),
-	('NIO','C$','Nicaraguan Cordoba Oro',558,'hidden',' ','after',2,0.00,',','.','Cordoba','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('NOK','Nkr','Norwegian Krone',578,'hidden',' ','after',2,0.00,',',',','Krone','Øre',1.00000,'2014-01-03 20:54:44'),
-	('NPR','NPRs','Nepalese Rupee',524,'hidden',' ','after',2,0.00,',','.','Rupee','Paisa',1.00000,'2014-01-03 20:54:44'),
-	('NZD','NZ$','New Zealand Dollar',554,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('PAB','B/.','Panamanian Balboa',590,'hidden',' ','after',2,0.00,',','.','Balboa','Centésimo',1.00000,'2014-01-03 20:54:44'),
-	('PEN','S/.','Peruvian Nuevo Sol',604,'before',' ','hidden',2,0.00,',','.','Nuevos Sole','Céntimo',1.00000,'2014-01-03 20:49:55'),
-	('PGK','PGK','Papua New Guinean Kina',598,'hidden',' ','after',2,0.00,',','.','Kina ','Toea',1.00000,'2014-01-03 20:54:44'),
-	('PHP','?','Philippine Peso',608,'hidden',' ','after',2,0.00,',','.','Peso','Centavo',1.00000,'2014-01-03 20:54:44'),
-	('PKR','PKRs','Pakistani Rupee',586,'hidden',' ','after',0,0.00,',','.','Rupee','Paisa',1.00000,'2014-01-03 20:54:44'),
-	('PLN','z?','Polish Z?oty',985,'after',' ','hidden',2,0.00,',',',','Z?otych','Grosz',1.00000,'2014-01-03 20:49:55'),
-	('PYG','?','Paraguayan Guarani',600,'hidden',' ','after',0,0.00,',','.','Guarani','Céntimo',1.00000,'2014-01-03 20:54:44'),
-	('QAR','QR','Qatari Rial',634,'hidden',' ','after',2,0.00,',','.','Rial','Dirham',1.00000,'2014-01-03 20:54:44'),
-	('RHD','RH$','Rhodesian Dollar',NULL,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('RON','RON','Romanian Leu',NULL,'hidden',' ','after',2,0.00,',','.','Leu','Ban',1.00000,'2014-01-03 20:54:44'),
-	('RSD','din.','Serbian Dinar',NULL,'hidden',' ','after',0,0.00,',','.','Dinars','Para',1.00000,'2014-01-03 20:54:44'),
-	('RUB','???.','Russian Ruble',643,'after',' ','hidden',2,0.00,',',',','Ruble','Kopek',1.00000,'2014-01-03 20:49:55'),
-	('SAR','SR','Saudi Riyal',682,'hidden',' ','after',2,0.00,',','.','Riyals','Hallallah',1.00000,'2014-01-03 20:54:44'),
-	('SBD','SI$','Solomon Islands Dollar',90,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SCR','SRe','Seychellois Rupee',690,'hidden',' ','after',2,0.00,',','.','Rupee','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SDD','LSd','Old Sudanese Dinar',736,'hidden',' ','after',2,0.00,',','.','Dinar','None',1.00000,'2014-01-03 20:54:44'),
-	('SEK','kr','Swedish Krona',752,'after',' ','hidden',2,0.00,',',',','Kronor','Öre',1.00000,'2014-01-03 20:49:55'),
-	('SGD','S$','Singapore Dollar',702,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SHP','SH£','Saint Helena Pound',654,'hidden',' ','after',2,0.00,',','.','Pound','Penny',1.00000,'2014-01-03 20:54:44'),
-	('SLL','Le','Sierra Leonean Leone',694,'hidden',' ','after',0,0.00,',','.','Leone','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SOS','Ssh','Somali Shilling',706,'hidden',' ','after',0,0.00,',','.','Shilling','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SRD','SR$','Surinamese Dollar',NULL,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('SRG','Sf','Suriname Guilder',740,'hidden',' ','after',2,0.00,',','.','Guilder','Cent',1.00000,'2014-01-03 20:54:44'),
-	('STD','Db','São Tomé and Príncipe Dobra',678,'hidden',' ','after',0,0.00,',','.','Dobra','Cêntimo',1.00000,'2014-01-03 20:54:44'),
-	('SYP','SY£','Syrian Pound',760,'hidden',' ','after',0,0.00,',','.','Pound','Piastre',1.00000,'2014-01-03 20:54:44'),
-	('SZL','SZL','Swazi Lilangeni',748,'hidden',' ','after',2,0.00,',','.','Lilangeni','Cent',1.00000,'2014-01-03 20:54:44'),
-	('THB','?','Thai Baht',764,'hidden',' ','after',2,0.00,',','.','Baht','Satang',1.00000,'2014-01-03 20:54:44'),
-	('TND','DT','Tunisian Dinar',788,'hidden',' ','after',3,0.00,',','.','Dinar','Millime',1.00000,'2014-01-03 20:54:44'),
-	('TOP','T$','Tongan Pa?anga',776,'hidden',' ','after',2,0.00,',','.','Pa?anga','Senit',1.00000,'2014-01-03 20:54:44'),
-	('TRY','TL','Turkish Lira',949,'after',' ','',2,0.00,'.',',','Lira','Kurus',1.00000,'2014-01-03 20:49:55'),
-	('TTD','TT$','Trinidad and Tobago Dollar',780,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('TWD','NT$','New Taiwan Dollar',901,'hidden',' ','after',2,0.00,',','.','New Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('TZS','TSh','Tanzanian Shilling',834,'hidden',' ','after',0,0.00,',','.','Shilling','Senti',1.00000,'2014-01-03 20:54:44'),
-	('UAH','???.','Ukrainian Hryvnia',980,'after',' ','hidden',2,0.00,',','.','Hryvnia','Kopiyka',1.00000,'2014-01-03 20:49:55'),
-	('UGX','USh','Ugandan Shilling',800,'hidden',' ','after',0,0.00,',','.','Shilling','Cent',1.00000,'2014-01-03 20:54:44'),
-	('USD','$','United States Dollar',840,'before',' ','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:49:55'),
-	('UYU','\$U','Uruguayan Peso',858,'hidden',' ','after',2,0.00,',','.','Peso','Centésimo',1.00000,'2014-01-03 20:54:44'),
-	('VEF','Bs.F.','Venezuelan Bolívar Fuerte',NULL,'hidden',' ','after',2,0.00,',','.','Bolivares Fuerte','Céntimo',1.00000,'2014-01-03 20:54:44'),
-	('VND','?','Vietnamese Dong',704,'after','','hidden',0,0.00,'.','.','Dong','Hà',1.00000,'2014-01-03 20:53:33'),
-	('VUV','VT','Vanuatu Vatu',548,'hidden',' ','after',0,0.00,',','.','Vatu',NULL,1.00000,'2014-01-03 20:54:44'),
-	('WST','WS$','Samoan Tala',882,'hidden',' ','after',2,0.00,',','.','Tala','Sene',1.00000,'2014-01-03 20:54:44'),
-	('XAF','FCFA','CFA Franc BEAC',950,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('XCD','EC$','East Caribbean Dollar',951,'hidden',' ','after',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-03 20:54:44'),
-	('XOF','CFA','CFA Franc BCEAO',952,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('XPF','CFPF','CFP Franc',953,'hidden',' ','after',0,0.00,',','.','Franc','Centime',1.00000,'2014-01-03 20:54:44'),
-	('YER','YR','Yemeni Rial',886,'hidden',' ','after',0,0.00,',','.','Rial','Fils',1.00000,'2014-01-03 20:54:44'),
-	('ZAR','R','South African Rand',710,'before',' ','hidden',2,0.00,',','.','Rand','Cent',1.00000,'2014-01-03 20:49:55'),
-	('ZMK','ZK','Zambian Kwacha',894,'hidden',' ','after',0,0.00,',','.','Kwacha','Ngwee',1.00000,'2014-01-03 20:54:44');",
-        "INSERT INTO `{$_TABLES['shop.shipping']}`
-            (id, module_code, name, min_units, max_units, rates)
-        VALUES
-            (0, 'usps', 'USPS Priority Flat Rate', 0.0001, 50.0000, '[{\"dscp\":\"Small\",\"units\":5,\"rate\":7.2},{\"dscp\":\"Medium\",\"units\":20,\"rate\":13.65},{\"dscp\":\"Large\",\"units\":50,\"rate\":18.9}]')",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -699,6 +528,35 @@ $SHOP_UPGRADE['1.1.0'] = array(
       KEY `is_supplier` (`is_supplier`,`name`),
       KEY `is_brand` (`is_brand`,`name`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.regions']}` (
+      `region_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `region_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `region_name` varchar(64) NOT NULL DEFAULT '',
+      `region_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`region_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.countries']}` (
+      `country_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `region_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `country_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `currency_code` varchar(4) NOT NULL DEFAULT '',
+      `alpha2` varchar(2) NOT NULL DEFAULT '',
+      `alpha3` varchar(3) NOT NULL DEFAULT '',
+      `country_name` varchar(127) NOT NULL DEFAULT '',
+      `dial_code` int(4) unsigned NOT NULL DEFAULT '0',
+      `country_enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      PRIMARY KEY (`country_id`),
+      UNIQUE KEY `alpha2` (`alpha2`),
+      KEY `zone_id` (`region_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
+      `state_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `country_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `state_name` varchar(64) NOT NULL DEFAULT '',
+      `iso_code` varchar(10) NOT NULL DEFAULT '',
+      `state_enabled` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`state_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.address']} ADD phone varchar(20) AFTER zip",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `pref_gw` varchar(12) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount",
@@ -713,11 +571,35 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `discount_pct` decimal(4,2) DEFAULT '0.00' AFTER discount_code",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `max_ord_qty`",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) unsigned NOT NULL DEFAULT 0 AFTER `brand_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
+    $_SHOP_SAMPLEDATA['shop.regions'],       // these may need to change if data changes
+    $_SHOP_SAMPLEDATA['shop.countries'],
+    $_SHOP_SAMPLEDATA['shop.states'],
+    "INSERT IGNORE INTO {$_TABLES['shop.currency']} VALUES
+        ('AMD','֏','Armenian Dram',51,'after','','hidden',2,0.00,',','.','Dram','Luma',1.00000,'2020-01-14 20:55:42'),
+        ('KHR','៛','Cambidian Riel',116,'after','','hidden',0,0.00,',','.','Riel','Sen',1.00000,'2020-01-14 21:35:05'),
+        ('SVC','₡','Colón',222,'after','','hidden',2,0.00,',','.','Colón','Centavo',1.00000,'2020-01-14 21:35:42'),
+        ('GEL','₾','Georgian Lari',981,'after','','hidden',2,0.00,',','.','Lari','Tetri',1.00000,'2020-01-14 21:35:55'),
+        ('GGP','£','Guernsey Pound',0,'after','','hidden',2,0.00,',','.','Pound','Penny',1.00000,'2020-01-14 21:31:50'),
+        ('IQD','ﺩ.ﻉ','Iraqi Dinar',368,'after','','hidden',4,0.00,',','.','Dinar','Fils',1.00000,'2020-01-14 21:38:15'),
+        ('KPW','₩','North Korean Won',408,'after','','hidden',2,0.00,',','.','Won','Chon',1.00000,'2020-01-14 21:35:29'),
+        ('MKD','ден','Macenoaian Denar',807,'after','','hidden',2,0.00,',','.','Denar','Deni',1.00000,'2020-01-14 21:31:50'),
+        ('MGA','Ar','Madagascar Ariary',969,'after','','hidden',2,0.20,',','.','Ariary','Iaimbilanja',1.00000,'2020-01-14 21:39:25'),
+        ('MWK','K','Malawian Kwacha',454,'after','','hidden',2,0.00,',','.','Kwacha','Tambaia',1.00000,'2020-01-14 21:40:06'),
+        ('OMR','R.O.','Omani Rial',512,'after','','hidden',2,0.00,',','.','Rial','Baisa',1.00000,'2020-01-14 21:40:25'),
+        ('MVR','Rf','Maldivian Rufiyaa',462,'after','','hidden',2,0.00,',','.','Rufiyaa','Laari',1.00000,'2020-01-14 21:48:21'),
+        ('MTL','₤','Maltese Lira',470,'after','','hidden',2,0.00,',','.','Lira','Cent',1.00000,'2020-01-14 21:47:43'),
+        ('RWF','FRw','Rwandan franc',646,'after','','hidden',2,0.00,',','.','Franc','Centime',1.00000,'2020-01-14 21:49:47'),
+        ('SDG','ﺝ.ﺱ','Sudanese pound',646,'after','','hidden',2,0.00,',','.','Pound','Qirsh',1.00000,'2020-01-14 21:50:55'),
+        ('TJS','SM','Tajikistani somoni',972,'after','','hidden',2,0.00,',','.','Somoni','Diram',1.00000,'2020-01-14 21:52:24'),
+        ('UZS','s\'om','Uzbekistani Soʻm',860,'after','','hidden',0,0.00,',','.','S\'om','',1.00000,'2020-01-14 21:54:47'),
+        ('ZWB','$','Zimbabwean Bonds',0,'before','','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2020-01-14 21:58:16'),
+        ('TMT','T','Turkmenistan Manat',934,'after','','hidden',2,0.00,',','.','Manat','Teňňe',1.00000,'2020-01-14 22:00:46'),
+        ('ALL','ALL','Albanian Lek',8,'after','','hidden',2,0.00,',','.','Lek','Qindarka',1.00000,'2020-01-14 22:02:28')",
 );
 
+// These tables were added as part of upgrades and can reference the upgrade
+// until the schema changes.
 $_SQL['shop.prod_opt_grps'] = $SHOP_UPGRADE['1.0.0'][0];
 $_SQL['shop.oi_opts'] = $SHOP_UPGRADE['1.0.0'][1];
 $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
@@ -731,5 +613,8 @@ $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
+$_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
+$_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
+$_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
 
 ?>

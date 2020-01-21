@@ -357,6 +357,10 @@ class Supplier extends Address
             break;
         }
 
+        $state_options = State::optionList(
+            SHOP_getVar($A, 'country', 'string', ''),
+            SHOP_getVar($A, 'state', 'string', '')
+        );
         $T->set_var(array(
             'entry_id'  => $this->getID(),
             'name'      => $this->getName(),
@@ -364,15 +368,20 @@ class Supplier extends Address
             'address1'  => $this->getAddress1(),
             'address2'  => $this->getAddress2(),
             'city'      => $this->getCity(),
-            'state'     => $this->getState(),
+            //'state'     => $this->getState(),
             'zip'       => $this->getPostal(),
-            'country'   => $this->getCountry(),
+            //'country'   => $this->getCountry(),
             'phone'     => $this->getPhone(),
             'brand_chk' => $this->getIsBrand() ? 'checked="checked"' : '',
             'supplier_chk' => $this->getIsSupplier() ? 'checked="checked"' : '',
             'doc_url'   => SHOP_getDocURL('supplier_form'),
             'logo_img'  => $this->getImage()['url'],
             'dscp'      => $this->getDscp(),
+            'country_options' => Country::optionList(
+                SHOP_getVar($A, 'country', 'string', '')
+            ),
+            'state_options' => $state_options,
+            'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
         ) );
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));

@@ -301,14 +301,14 @@ class square extends \Shop\Gateway
      * returns to our site.
      *
      * @uses    getMainUrl()
-     * @uses    Gateway::Description()
+     * @uses    Gateway::getDscp()
      * @return  array       Array of name=>value pairs
      */
     public function thanksVars()
     {
         $R = array(
             'gateway_url'   => self::getMainUrl(),
-            'gateway_name'  => self::Description(),
+            'gateway_name'  => self::getDscp(),
         );
         return $R;
     }

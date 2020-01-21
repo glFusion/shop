@@ -11,6 +11,8 @@ Release TBD
   * Implement table to store saved supplier and brand information.
   * Implement bulk updates for some product fields.
   * Implement address validation for user-entered addresses.
+  * Add Brand and Supplier information for products.
+  * Add tables for regions, countries, states and allow sales restrictions.
 
 ## v1.0.1
 Release 2019-12-24

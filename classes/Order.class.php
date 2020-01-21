@@ -837,6 +837,9 @@ class Order
             $lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
         } else {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
+            // Back out sales tax if tax is not charged. This happens when viewing the cart
+            // and a tax amount gets set, but shouldn't be shown in the order yet.
+            $this->total -= $this->tax;
         }
 
         $ShopAddr = new Company;
@@ -961,7 +964,7 @@ class Order
                 $T->set_var(array(
                     'gateway_vars'  => $this->checkoutButton($gw),
                     'checkout'      => 'true',
-                    'pmt_method'    => $gw->Description(),
+                    'pmt_method'    => $gw->getDscp(),
                 ) );
             }
         default:
@@ -972,7 +975,7 @@ class Order
         if ($this->pmt_method != '') {
             $gw = Gateway::getInstance($this->pmt_method);
             if ($gw !== NULL) {
-                $pmt_method = $gw->Description();
+                $pmt_method = $gw->getDscp();
             } else {
                 $pmt_method = $this->pmt_method;
             }
@@ -1467,11 +1470,12 @@ class Order
     {
         if ($this->Shipto === NULL) {
             $this->tax = 0;
-            return 0;
+            return $this;
         }
         $tax = 0;
         $this->tax_items = 0;
         foreach ($this->items as &$Item) {
+            $this->tax_items += $Item->getTaxable();
             $tax += $Item->getTotalTax();
         }
         $this->tax = $tax;
@@ -1532,7 +1536,6 @@ class Order
             $P = $item->getProduct();
             $this->handling += $P->getHandling($item->getQuantity());
         }
-
         $this->calcTax()   // Tax calculation is slightly more complex
             ->calcShipping();
         return $this;
@@ -1604,12 +1607,10 @@ class Order
         // Remove any discount amount.
         $total -= $this->getDiscountAmount();
         if ($this->status == 'cart') {
-            $total += $this->calcTotalCharges();
-        } else {
-            // Already have the amounts calculated, don't do it again
-            // every time the order is viewed since rates may change.
-            $total += $this->shipping + $this->tax + $this->handling;
+            // Re-calculate all charges in case of changes.
+            $this->calcTotalCharges();
         }
+        $total += $this->shipping + $this->tax + $this->handling;
         return Currency::getInstance()->RoundVal($total);
     }
 

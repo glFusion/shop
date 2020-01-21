@@ -3,9 +3,9 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -131,7 +131,7 @@ class Product
 
     /** Related category objects.
      * @var array */
-    private $Categories = array();
+    private $Categories = NULL;
 
     /** Product variants for this product. Null to load only once.
      * @var array */
@@ -161,7 +161,6 @@ class Product
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
-            $this->Categories = Category::getByProductId($this->id);
         } elseif ($id == 0) {
             $this->item_id = '';
             $this->id = 0;
@@ -194,7 +193,6 @@ class Product
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
             $this->custom = '';
-            $this->Categories = array();
             $this->reorder = 0;
         } else {
             $this->id = $id;
@@ -294,7 +292,8 @@ class Product
         $A = Cache::get($cache_key);
         if (!is_array($A)) {
             $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                    WHERE name = '$item_id'";
+                WHERE name = '$item_id'
+                LIMIT 1";
             $res = DB_query($sql);
             $A = DB_fetchArray($res, false);
             if (isset($A['id'])) {
@@ -326,7 +325,8 @@ class Product
             $A = Cache::get($cache_key);
             if (!is_array($A)) {
                 $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                        WHERE id  = '$id'";
+                    WHERE id  = $id
+                    LIMIT 1";
                 $res = DB_query($sql);
                 $A = DB_fetchArray($res, false);
                 if (isset($A['id'])) {
@@ -709,7 +709,6 @@ class Product
             $this->setVars($A);
         }
         $nonce = SHOP_getVar($A, 'nonce');
-
         $errs = $this->_Validate();
         if (!empty($errs)) {
             $this->Errors = $errs;
@@ -720,7 +719,6 @@ class Product
                 $this->deleteImage($img_id);
             }
         }
-        $this->updateCategories($A['selected_cats']);
 
         // Handle file uploads.
         // This is done first so we know whether there is a valid filename
@@ -822,7 +820,11 @@ class Product
                     Images\Product::setProductID($nonce, $this->id);
                 }
             }
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            // Clear categories for new products so the new cats get updated
+            // correcly.
+            $this->Categories = array();
+            $this->updateCategories($A['selected_cats']);
+            //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {
             SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
@@ -888,8 +890,7 @@ class Product
             $this->deleteImage($prow['img_id']);
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
-        Option::deleteProduct($this->id);
-        //DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
+        ProductVariant::deleteByProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -958,7 +959,7 @@ class Product
      */
     public function showForm($id = 0, $tab='')
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP;
 
         $id = (int)$id;
         if ($id > 0) {
@@ -1013,19 +1014,7 @@ class Product
 
         }
 
-        // Get the category selections.
-        $allcats = Category::getAll();
-        $selcats = Category::getByProductID($this->id);
-        $allcats_sel = '';
-        $selcats_sel = '';
-        foreach ($allcats as $cat_id=>$Cat) {
-            if (!array_key_exists($cat_id, $selcats)) {
-                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
-            }
-        }
-        foreach ($selcats as $cat_id=>$Cat) {
-            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
-        }
+        list($allcats_sel, $selcats_sel) = $this->getCatSelections($this->id);
         $T->set_var(array(
             //'post_options'  => $post_options,
             'product_id'    => $this->id,
@@ -1071,7 +1060,7 @@ class Product
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
             //'option_list'   => ProductOptionValue::adminList($this->id),
-            'variant_list'  => ProductVariant::adminList($this->id),
+            'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : $LANG_SHOP_HELP['hlp_var_after_item'],
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
@@ -1303,8 +1292,14 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = new \Template(__DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
-        $T->set_file('product', 'product_detail_attrib.thtml');
+        $T = new \Template(array(
+            __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
+            __DIR__ . '/../templates/detail',
+        ) );
+        $T->set_file(array(
+            'product'   => 'product_detail_attrib.thtml',
+            'prod_info' => 'details_blk.thtml',
+        ) );
         // Set up the template containing common javascript
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
@@ -1469,6 +1464,16 @@ class Product
             'brand_id'          => $this->getBrandID(),
             'brand_name'        => $this->getBrandName(),
             'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
+            'brand_dscp'        => Supplier::getInstance($this->getBrandID())->getDscp(),
+            'is_physical'       => $this->isPhysical(),
+            'track_onhand'      => $this->getTrackOnhand(),
+            'onhand'            => $this->getOnhand(),
+            'weight'            => $this->weight + $this->Variant->getWeight(),
+            'weight_unit'       => $_SHOP_CONF['weight_unit'],
+            'sku'               => $this->getName(),
+        ) );
+        $T->set_var(array(
+            'prod_det_blk'      => $T->parse('product', 'prod_info'),
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');
@@ -1627,7 +1632,7 @@ class Product
                 // Gateway buy-now buttons only used if no options
                 foreach (Gateway::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {
-                        $buttons[$gw->Name()] = $gw->ProductButton($this);
+                        $buttons[$gw->getName()] = $gw->ProductButton($this);
                     }
                 }
             }
@@ -1639,7 +1644,8 @@ class Product
         if (
             $add_cart &&
             $this->btn_type != 'donation' &&
-            ($this->price > 0 || !$this->canBuyNow())
+            $this->canOrder()
+            //($this->price > 0 || !$this->canBuyNow())
         ) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
             $T->set_file(array(
@@ -2508,8 +2514,8 @@ class Product
     {
         global $_GROUPS;
 
-        // Make sure the category is set
-        foreach ($this->Categories as $Cat) {
+        $Cats = $this->getCategories();
+        foreach ($this->getCategories() as $Cat) {
             if ($Cat->hasAccess($_GROUPS)) {
                 return true;
             }
@@ -2954,7 +2960,6 @@ class Product
             COM_setMsg("No products selected");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
-
         $ids = implode(',', $ids);
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('form', 'prod_bulk_form.thtml');
@@ -2963,6 +2968,7 @@ class Product
             'currency'  => Currency::getInstance(),
             'brand_select' => Supplier::getBrandSelection(),
             'supplier_select' => Supplier::getSupplierSelection(),
+            'available_cats' => self::getCatSelections(0)[0],
         ) );
         $T->set_block('form', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
@@ -2978,7 +2984,7 @@ class Product
         return $T->parse('output', 'form');
     }
 
- 
+
     /**
      * Perform the bulk update of multiple products at once.
      *
@@ -2990,6 +2996,7 @@ class Product
         global $_TABLES;
 
         $sql_vals  = array();
+        $ids = DB_escapeString($A['prod_ids']);
 
         if (isset($A['supplier_id']) && $A['supplier_id'] > -1) {
             $sql_vals[] = "supplier_id = " . (int)$A['supplier_id'];
@@ -3008,13 +3015,36 @@ class Product
         }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
-            $ids = DB_escapeString($A['prod_ids']);
             DB_query("UPDATE {$_TABLES['shop.products']} SET " . $sql_vals .
                 " WHERE id IN ($ids)");
             if (DB_error()) {
                 return false;
             }
         }
+
+        // If any categories were supplied, use them to replace any existing
+        // ones for all submitted products.
+        if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
+            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id in ($ids)";
+            $res = DB_query($sql, 1);
+            if (!DB_error()) {
+                $prod_ids = explode(',', $A['prod_ids']);
+                $cat_ids = explode('|', $A['selected_cats']);
+                $vals = array();
+                foreach ($prod_ids as $prod_id) {
+                    $prod_id = (int)$prod_id;
+                    foreach ($cat_ids as $cat_id) {
+                        $cat = (int)$cat_id;
+                        $vals[] = "($prod_id, $cat_id)";
+                    }
+                }
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                    (product_id, cat_id) VALUES " . implode(',', $vals);
+                DB_query($sql, 1);
+            }
+        }
+
+        Cache::clear('products');
         return true;
     }
 
@@ -3122,11 +3152,21 @@ class Product
             )
         );
 
+        // Filter on category, brand and supplier
+        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
+        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
+        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $def_filter = 'WHERE 1=1';
         if ($cat_id > 0) {
-            $def_filter = "WHERE pxc.cat_id='$cat_id'";
-        } else {
-            $def_filter = 'WHERE 1=1';
+            $def_filter .= " AND pxc.cat_id= $cat_id";
         }
+        if ($brand_id > 0) {
+            $def_filter .= " AND p.brand_id = $brand_id";
+        }
+        if ($supplier_id > 0) {
+            $def_filter .= " AND p.supplier_id = $supplier_id";
+        }
+
         $query_arr = array(
             'table' => 'shop.products',
             'sql'   => $sql,
@@ -3140,19 +3180,24 @@ class Product
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php',
+            'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
-        $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
 
-        // Print selected packing lists
+        // Update certain product properties in bulk
         $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
-            'title="' . $LANG_SHOP['bulk_update'] . 'xxx">' .
-            'Bulk Update' .
+            'title="' . $LANG_SHOP['bulk_update'] . '">' .
+            $LANG_SHOP['update'] .
+            '</button>&nbsp;' .
+            '<button type="submit" name="prod_bulk_del" value="x" ' .
+            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
+            'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
+            'title="' . $LANG_SHOP['bulk_delete'] . '">' .
+            $LANG_SHOP['delete'] .
             '</button>';
 
         $options = array(
-            'chkselect' => true,
+            'chkdelete' => true,
             'chkall' => true,
             'chkfield' => 'id',
             'chkname' => 'prod_bulk',
@@ -3160,14 +3205,49 @@ class Product
         );
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/index.php?products&amp;cat_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;supplier_id=' . $supplier_id .
+            '&amp;cat_id=\'+' . 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
-                $_TABLES['shop.categories'], 'cat_id, cat_name', $cat_id, 1
+                $_TABLES['shop.categories'],
+                'cat_id,cat_name',
+                $cat_id,
+                1
             ) .
             "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ': <select name="brand_id"
+            onchange="javascript: document.location.href=\'' .
+                SHOP_ADMIN_URL . '/index.php?products' .
+                '&amp;cat_id=' . $cat_id .
+                '&amp;supplier_id=' . $supplier_id .
+                '&amp;brand_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $brand_id,
+                1,
+                "is_brand=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': <select name="supplier_id"
+            onchange="javascript: document.location.href=\'' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;cat_id=' . $cat_id .
+            '&amp;supplier_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $supplier_id,
+                1,
+                "is_supplier=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '<br />' . LB;
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_productlist',
@@ -3335,7 +3415,6 @@ class Product
     public function verifyID($id)
     {
         global $_SHOP_CONF;
-
         $parts = explode('|', $id);
         if ($_SHOP_CONF['use_sku']) {
             return $this->name == $parts[0];
@@ -3472,17 +3551,20 @@ class Product
     {
         global $_TABLES;
 
-        if (is_string($cats)) {
+        if (empty($cats)) {
+            // If no categories specified, use root category automatically
+            $cats = array(Category::getRoot()->getID());
+        } elseif (is_string($cats)) {
             $cats = explode('|', $cats);
         }
         $add = array();
         $rem = array();
         foreach ($cats as $cat_id) {
-            if (!array_key_exists($cat_id, $this->Categories)) {
+            if (!array_key_exists($cat_id, $this->getCategories())) {
                 $add[] = "({$this->id}, $cat_id)";
             }
         }
-        foreach ($this->Categories as $cat_id=>$cat) {
+        foreach ($this->getCategories() as $cat_id=>$cat) {
             if (!in_array($cat_id, $cats)) {
                 $rem[] = $cat_id;
             }
@@ -3509,6 +3591,9 @@ class Product
      */
     public function getCategories()
     {
+        if ($this->Categories === NULL) {
+            $this->Categories = Category::getByProductId($this->id);
+        }
         return $this->Categories;
     }
 
@@ -3534,7 +3619,7 @@ class Product
      */
     public function getFirstCategory()
     {
-        return reset($this->Categories);
+        return reset($this->getCategories());
     }
 
 
@@ -3647,43 +3732,36 @@ class Product
         return Supplier::getInstance($this->getBrandID())->getDisplayName();
     }
 
-        /*
-         * SELECT DISTINCT a.`id_attribute`, a.`id_attribute_group`, al.`name` as `attribute`, agl.`name` as `group`,pa.`reference`, pa.`ean13`, pa.`isbn`,pa.`upc`
-    ->         FROM `ps_attribute` a
-    ->         LEFT JOIN `ps_attribute_lang` al
-    ->             ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = 1)
-    ->         LEFT JOIN `ps_attribute_group_lang` agl
-    ->             ON (a.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = 1)
-    ->         LEFT JOIN `ps_product_attribute_combination` pac
-    ->             ON (a.`id_attribute` = pac.`id_attribute`)
-    ->         LEFT JOIN `ps_product_attribute` pa
-    ->             ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
-    ->          INNER JOIN ps_product_attribute_shop product_attribute_shop
-    ->         ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
-    ->          INNER JOIN ps_attribute_shop attribute_shop
-    ->         ON (attribute_shop.id_attribute = pac.id_attribute AND attribute_shop.id_shop = 1)
-    ->         WHERE pa.`id_product` = 9;
-         */
-/*SELECT ag.`id_attribute_group`, ag.`is_color_group`, agl.`name` AS group_name, agl.`public_name` AS public_group_name,
-                                        a.`id_attribute`, al.`name` AS attribute_name, a.`color` AS attribute_color, product_attribute_shop.`id_product_attribute`,
-                                        IFNULL(stock.quantity, 0) as quantity, product_attribute_shop.`price`, product_attribute_shop.`ecotax`, product_attribute_shop.`weight`,
-                                        product_attribute_shop.`default_on`, pa.`reference`, product_attribute_shop.`unit_price_impact`,
-                                        product_attribute_shop.`minimal_quantity`, product_attribute_shop.`available_date`, ag.`group_type`
-                                FROM `ps_product_attribute` pa
-                                 INNER JOIN ps_product_attribute_shop product_attribute_shop
-        ON (product_attribute_shop.id_product_attribute = pa.id_product_attribute AND product_attribute_shop.id_shop = 1)
-                                 LEFT JOIN ps_stock_available stock
-                        ON (stock.id_product = `pa`.id_product AND stock.id_product_attribute = IFNULL(`pa`.id_product_attribute, 0) AND stock.id_shop = 1  AND stock.id_shop_group = 0  )
-                                LEFT JOIN `ps_product_attribute_combination` pac ON (pac.`id_product_attribute` = pa.`id_product_attribute`)
-                                LEFT JOIN `ps_attribute` a ON (a.`id_attribute` = pac.`id_attribute`)
-                                LEFT JOIN `ps_attribute_group` ag ON (ag.`id_attribute_group` = a.`id_attribute_group`)
-                                LEFT JOIN `ps_attribute_lang` al ON (a.`id_attribute` = al.`id_attribute`)
-                                LEFT JOIN `ps_attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group`)
-                                 INNER JOIN ps_attribute_shop attribute_shop*/
 
-/*
-select distinct pov.pov_id, pog.pog_id, pog.pog_name, pov.pov_value, pv.sku from gl_shop_product_option_value pov left join gl_shop_product_option_groups pog on pog.pog_id =pov.pog_id left join gl_shop_variantXopt vxo on vxo.pov_id = pov.pov_id left join gl_shop_product_variants pv on pv.pv_id = vxo.pv_id where pv.item_id = 5 order by pog.pog_orderby, pov.pov_orderby asc;
-*/
+    /**
+     * Get the category selection lists.
+     * Returns 2 arrays, available category options and selected ones.
+     * If `$prod_id` is empty then no selected categories are returned. This
+     * is used in the bulk update form.
+     *
+     * @param   integer $prod_id    Product ID, zero if no selected cats needed.
+     * @return  array   Array of (available options, selected options)
+     */
+    private static function getCatSelections($prod_id)
+    {
+        $allcats = Category::getAll();
+        if ($prod_id > 0) {
+            $selcats = Category::getByProductID($prod_id);
+        } else {
+            $selcats = array();
+        }
+        $allcats_sel = '';
+        $selcats_sel = '';
+        foreach ($allcats as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $selcats)) {
+                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+            }
+        }
+        foreach ($selcats as $cat_id=>$Cat) {
+            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+        }
+        return array($allcats_sel, $selcats_sel);
+    }
 
 }
 

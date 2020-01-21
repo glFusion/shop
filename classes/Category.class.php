@@ -3,9 +3,9 @@
  * Class to manage product categories.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -614,13 +614,12 @@ class Category
      * @return  boolean     True if user has access, False if not
      */
     public function hasAccess($groups = NULL)
-     {
-         global $_GROUPS;
+    {
+        global $_GROUPS;
 
         if ($groups === NULL) {
             $groups = $_GROUPS;
         }
-
         if ($this->enabled && in_array($this->grp_access, $groups)) {
             return true;
         } else {
@@ -1148,11 +1147,28 @@ class Category
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
-            WHERE product_id = '" . (int)$prod_id . "'";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+        $prod_id = (int)$prod_id;
+        if ($prod_id < 1) {
+            // No categories selected if this is a new product
+            return array();
+        }
+        $cache_key = 'shop.categories_' . $prod_id;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
+                WHERE product_id = $prod_id";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+            }
+
+            // If no categories are found, add the root category to be sure
+            // there is one category for the product.
+            if (empty($retval)) {
+                $Cat = self::getRoot();
+                $retval[$Cat->getID()] = $Cat;
+            }
+            Cache::set($cache_key, $retval, array('products', 'categories'));
         }
         return $retval;
     }
@@ -1174,6 +1190,17 @@ class Category
             $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the record ID for a category.
+     *
+     * @return  integer     Category DB record ID
+     */
+    public function getID()
+    {
+        return $this->cat_id;
     }
 
 

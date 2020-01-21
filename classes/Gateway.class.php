@@ -73,7 +73,7 @@ class Gateway
 
     /** Indicator of whether the gateway is enabled at all.
      * @var boolean */
-    protected $enabled;
+    protected $enabled = 0;
 
     /** Order in which the gateway is selected.
      * Gateways are selected from lowest to highest order.
@@ -272,10 +272,6 @@ class Gateway
     {
         return $this->gw_name;
     }
-    public function Name()      // deprecate
-    {
-        return $this->gw_name;
-    }
 
 
     /**
@@ -300,10 +296,6 @@ class Gateway
     {
         return $this->gw_provider;
     }
-    public function DisplayName()       // deprecate
-    {
-        return $this->gw_provider;
-    }
 
 
     /**
@@ -312,10 +304,6 @@ class Gateway
     *   @return string      Full name of the gateway
     */
     public function getDscp()
-    {
-        return $this->gw_desc;
-    }
-    public function Description()       // deprecate
     {
         return $this->gw_desc;
     }
@@ -607,8 +595,8 @@ class Gateway
             $sql = "INSERT INTO {$_TABLES['shop.gateways']}
                 (id, orderby, enabled, description, config, services) VALUES (
                 '" . DB_escapeString($this->gw_name) . "',
-                '999',
-                '0',
+                '990',
+                {$this->getEnabled()},
                 '" . DB_escapeString($this->gw_desc) . "',
                 '" . DB_escapeString($config) . "',
                 '" . DB_escapeString($services) . "')";
@@ -1077,7 +1065,7 @@ class Gateway
     {
         $R = array(
             //'gateway_url'   => Gateway URL for use to check purchase
-            //'gateway_name'  => self::Description(),
+            //'gateway_name'  => self::getDscp(),
         );
         return $R;
     }
@@ -1399,17 +1387,15 @@ class Gateway
 
 
     /**
-     * Get an array of uninstalled gateways.
-     * Used to provide a list of links to install the gateway.
+     * Get an array of uninstalled gateways for the admin list.
      *
-     * @return  array   Array of gateways(filename, fullpath)
+     * @param   array   $data_arr   Reference to data array
      */
-    public static function getUninstalled()
+    private static function getUninstalled(&$data_arr)
     {
         global $LANG32;
 
         $installed = self::getAll(false);
-        $available = array();
         $files = glob(__DIR__ . '/Gateways/*.class.php');
         if (is_array($files)) {
             foreach ($files as $fullpath) {
@@ -1419,11 +1405,15 @@ class Gateway
                 if (array_key_exists($class, $installed)) continue; // already installed
                 $gw = self::getInstance($class);
                 if (is_object($gw)) {
-                    $available[$class] = $gw;
+                    $data_arr[] = array(
+                        'id'    => $gw->getName(),
+                        'description' => $gw->getDscp(),
+                        'enabled' => 'na',
+                        'orderby' => 999,
+                    );
                 }
             }
         }
-        return $available;
     }
 
 
@@ -1529,6 +1519,32 @@ class Gateway
 
 
     /**
+     * Get all the installed gateways for the admin list.
+     *
+     * @param   array   $data_arr   Reference to data array
+     */
+    private static function getInstalled(&$data_arr)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT *, g.grp_name
+            FROM {$_TABLES['shop.gateways']} gw
+            LEFT JOIN {$_TABLES['groups']} g
+                ON g.grp_id = gw.grp_access";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $data_arr[] = array(
+                'id'    => $A['id'],
+                'orderby' => $A['orderby'],
+                'enabled' => $A['enabled'],
+                'description' => $A['description'],
+                'grp_name' => $A['grp_name'],
+            );
+        }
+    }
+
+
+    /**
      * Payment Gateway Admin View.
      *
      * @return  string      HTML for the gateway listing
@@ -1538,15 +1554,12 @@ class Gateway
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
             $LANG32;
 
-        $sql = "SELECT *, g.grp_name
-            FROM {$_TABLES['shop.gateways']} gw
-            LEFT JOIN {$_TABLES['groups']} g
-                ON g.grp_id = gw.grp_access";
-        $to_install = \Shop\Gateway::getUninstalled();
-
+        $data_arr = array();
+        self::getInstalled($data_arr);
+        self::getUnInstalled($data_arr);
         $header_arr = array(
             array(
-                'text'  => $LANG_ADMIN['edit'],
+                'text'  => $LANG_SHOP['edit'],
                 'field' => 'edit',
                 'sort'  => false,
                 'align' => 'center',
@@ -1573,7 +1586,7 @@ class Gateway
                 'sort'  => false,
             ),
             array(
-                'text'  => $LANG_SHOP['enabled'],
+                'text'  => $LANG_SHOP['control'],
                 'field' => 'enabled',
                 'sort'  => false,
                 'align' => 'center',
@@ -1600,33 +1613,17 @@ class Gateway
             COM_getBlockTemplate('_admin_block', 'header')
         );
 
-        $query_arr = array(
-            'table' => 'shop.gateways',
-            'sql' => $sql,
-            'query_fields' => array('id', 'description'),
-            'default_filter' => '',
-        );
-
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
         );
 
-        $display .= ADMIN_list(
+        $display .= ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_gwlist',
             array(__CLASS__,  'getAdminField'),
-            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            $header_arr, $text_arr, $data_arr, $defsort_arr,
             '', $extra, '', ''
         );
-
-        if (!empty($to_install)) {
-            $display .= $LANG_SHOP['gw_notinstalled'] . ':<br />';
-            foreach ($to_install as $name=>$gw) {
-                $display .= $gw->Description() . '&nbsp;&nbsp;<a href="' .
-                    SHOP_ADMIN_URL. '/index.php?gwinstall=x&gwname=' .
-                    urlencode($name) . '">' . $LANG32[22] . '</a><br />' . LB;
-            }
-        }
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
     }
@@ -1650,28 +1647,45 @@ class Gateway
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
-            );
+            if ($A['enabled'] !== 'na') {
+                $retval .= COM_createLink(
+                    Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
+                    SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
+                );
+            }
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
+            if ($fieldvalue == 'na') {
+                return COM_createLink(
+                    Icon::getHTML('add'),
+                    SHOP_ADMIN_URL. '/index.php?gwinstall=x&gwname=' . urlencode($A['id']),
+                    array(
+                        'data-uk-tooltip' => '',
+                        'title' => $LANG_SHOP['ck_to_install'],
+                    )
+                );
+            } elseif ($fieldvalue == '1') {
                 $switch = ' checked="checked"';
                 $enabled = 1;
+                $tip = $LANG_SHOP['ck_to_disable'];
             } else {
                 $switch = '';
                 $enabled = 0;
+                $tip = $LANG_SHOP['ck_to_enable'];
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                data-uk-tooltip
                 id=\"togenabled{$A['id']}\"
+                title=\"$tip\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
                 "\"gateway\");' />" . LB;
             break;
 
         case 'orderby':
-            if ($fieldvalue > 10) {
+            if ($fieldvalue == 999) {
+                return '';
+            } elseif ($fieldvalue > 10) {
                 $retval = COM_createLink(
                     Icon::getHTML('arrow-up', 'uk-icon-justify'),
                     SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
@@ -1690,15 +1704,17 @@ class Gateway
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
-                array(
-                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                    'title' => $LANG_SHOP['del_item'],
-                    'class' => 'tooltip',
-                )
-            );
+            if ($A['enabled'] != 'na') {
+                $retval = COM_createLink(
+                    Icon::getHTML('delete'),
+                    SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
+                    array(
+                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                        'title' => $LANG_SHOP['del_item'],
+                        'class' => 'tooltip',
+                    )
+                );
+            }
             break;
 
         default:
@@ -1713,11 +1729,12 @@ class Gateway
      * Check that the current user is allowed to use this gateway.
      * This limits access to special gateways like 'check' or 'terms'.
      *
+     * @param   float   $total  Total order amount
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess()
+    public function hasAccess($total=0)
     {
-        return SEC_inGroup($this->grp_access);
+        return $total > 0 && SEC_inGroup($this->grp_access);
     }
 
 
@@ -1744,6 +1761,17 @@ class Gateway
     public function supportsInvoicing()
     {
         return false;
+    }
+
+
+    /**
+     * Get the "enabled" flag value.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
+    protected function getEnabled()
+    {
+        return $this->enabled ? 1 : 0;
     }
 
 }   // class Gateway

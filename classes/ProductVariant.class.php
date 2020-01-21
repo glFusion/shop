@@ -623,6 +623,7 @@ class ProductVariant
 
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
+            $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
         }
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
@@ -765,9 +766,10 @@ class ProductVariant
         if ($item_id < 1 || empty($A['groups'])) {
             return false;
         }
+        $P = Product::getById($item_id);
         $price = 0;
-        $weight = 0;
-        $shipping = 0;
+        $weight = SHOP_getVar($A, 'weight', 'float', 0);
+        $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
             if ($A['price'] !== '') {
@@ -783,7 +785,6 @@ class ProductVariant
                 }
                 $opt_ids[] = $pov_id;   // save for the variant->opt table
                 $Opt = new ProductOptionValue($pov_id);
-
                 if (!isset($A['price']) || $A['price'] === '') {   // Zero is valid
                     $price += $Opt->getPrice();
                 }
@@ -794,20 +795,31 @@ class ProductVariant
                 }
             }
             if (empty($A['sku'])) {
-                $P = Product::getById($item_id);
                 if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
                 }
             } else {
                 $sku = $A['sku'];
             }
+            if ($A['onhand'] === '') {
+                $onhand = $P->getOnhand();
+            } else {
+                $onhand = (float)$A['onhand'];
+            }
+            if ($A['reorder'] === '') {
+                $reorder = $P->getReorder();
+            } else {
+                $reorder = (float)$A['reorder'];
+            }
+
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
-                item_id = '" . (int)$item_id . "',
+                item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
-                price = '" . (float)$price . "',
-                weight = '" . (float)$weight . "',
-                shipping_units = '" . (float)$shipping_units . "',
-                onhand = " . (float)$onhand;
+                price = " . (float)$price . ",
+                weight = $weight,
+                shipping_units = $shipping_units,
+                reorder = $reorder,
+                onhand = $onhand";
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
@@ -1002,7 +1014,7 @@ class ProductVariant
      */
     public static function adminList($prod_id)
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM, $LANG01;
 
         $prod_id = (int)$prod_id;
 
@@ -1253,10 +1265,16 @@ class ProductVariant
         global $LANG_SHOP;
 
         $P = Product::getByID($this->item_id);
-        if ($P->isNew) {
+        if ($P->getID() < 1 || $this->getID() < 1) {
             $retval = array(
-                'status'    => 9,
-                'msg'       => 'Invalid',
+                'status'    => 0,
+                'msg'       => $LANG_SHOP['opts_not_avail'],
+                'allowed'   =>  false,
+                'orig_price' => 0,
+                'sale_price' => 0,
+                'onhand'    => 0,
+                'weight'    => '--',
+                'sku'       => '',
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
@@ -1272,6 +1290,9 @@ class ProductVariant
                 'allowed'   =>  $allowed,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
+                'onhand'    => $this->onhand,
+                'weight'    => $P->getWeight() + $this->weight,
+                'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
             );
         }
         if ($P->getTrackOnhand()) {

@@ -81,6 +81,7 @@ class paypal extends \Shop\Gateway
             'api_sig'           => 'password',
             'sandbox_webhook_id' => 'string',
             'prod_webhook_id'   => 'string',
+            'api_sig'           => 'password',
         );
 
         // Set defaults
@@ -99,7 +100,7 @@ class paypal extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
-            'terms'     => 0,
+            //'terms'     => 0,
         );
 
         // Call the parent constructor to initialize the common variables.
@@ -245,7 +246,8 @@ class paypal extends \Shop\Gateway
                     'price' => $item->getPrice(),
                     'uid'   => $_USER['uid'],
                 );
-                $item_amount = $P->getPrice($oio_arr, $item->getQuantity(), $overrides);
+                //$item_amount = $P->getPrice($oio_arr, $item->getQuantity(), $overrides);
+                $item_amount = $item->getNetPrice();
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
                 $fields['item_name_' . $i] = htmlspecialchars($item->description);
@@ -735,14 +737,14 @@ class paypal extends \Shop\Gateway
      * Get the values to show in the "Thank You" message when a customer returns to our site.
      *
      * @uses    getMainUrl()
-     * @uses    Gateway::Description()
+     * @uses    Gateway::getDscp()
      * @return  array       Array of name=>value pairs
      */
     public function thanksVars()
     {
         $R = array(
             'gateway_url'   => self::getMainUrl(),
-            'gateway_name'  => self::Description(),
+            'gateway_name'  => self::getDscp(),
         );
         return $R;
     }

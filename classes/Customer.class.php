@@ -460,6 +460,10 @@ class Customer
             $hiddenvars .= $var . LB;
         }
 
+        $state_options = State::optionList(
+            SHOP_getVar($A, 'country', 'string', ''),
+            SHOP_getVar($A, 'state', 'string', '')
+        );
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'billship'      => $type,
@@ -496,8 +500,12 @@ class Customer
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
+            'country_options' => Country::optionList(
+                SHOP_getVar($A, 'country', 'string', '')
+            ),
+            'state_options' => $state_options,
+            'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
         ) );
-
         $T->parse('output','address');
         return $T->finish($T->get_var('output'));
 
@@ -603,7 +611,9 @@ class Customer
      */
     public function setPrefGW($gw)
     {
-        $this->pref_gw = $gw;
+        if ($gw != 'free') {
+            $this->pref_gw = $gw;
+        }
         return $this;
     }
 

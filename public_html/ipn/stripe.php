@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.1
+ * @version     v1.1.0
  * @since       v0.7.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -26,12 +26,15 @@ try {
     $event = \Stripe\Webhook::constructEvent(
         $payload, $sig_header, $GW->getWebhookSecret()
     );
+    COM_errorLog("created event");
 } catch(\UnexpectedValueException $e) {
     // Invalid payload
+    SHOP_log("Unexpected Value received from Stripe");
     http_response_code(400); // PHP 5.4 or greater
     exit();
 } catch(\Stripe\Error\SignatureVerification $e) {
     // Invalid signature
+    SHOP_log("Invalid Stripe signature received");
     http_response_code(400); // PHP 5.4 or greater
     exit();
 }
@@ -40,7 +43,11 @@ try {
 if ($event->type == 'checkout.session.completed') {
     // Fulfill the purchase...
     $ipn = \Shop\IPN::getInstance('stripe', $event);
-    $ipn->Process();
+    if ($ipn) {
+        $ipn->Process();
+    } else {
+        SHOP_log('Stripe IPN processor not found');
+    }
 }
 
 http_response_code(200); // PHP 5.4 or greater

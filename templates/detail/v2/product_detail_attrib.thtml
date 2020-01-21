@@ -3,7 +3,6 @@
 <div style="clear:both;"></div>
 <div class="shopProductDetail v2" style="width: 50%;" id="shopShortDesc">
     <h1>{short_description}</h1>
-    {name}
 </div>
 {!if can_edit}
 <div class="floatright">
@@ -13,7 +12,7 @@
 </div>
 {!endif}
 
-<div class="uk-grid" style="clear:both;margin-top:20px;width:100%;">
+<div class="uk-grid" style="clear:both;margin-top:20px;">
     <div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
 {!if main_img}
         <div class="main_img uk-hidden-small">
@@ -40,8 +39,8 @@
 {!endif}
     </div>
 
-    <div class="shopDetailAttrib v2 uk-width-large-1-3 uk-width-medium-1-2 uk-width-small-1-1">
-      <div>
+    <div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">
+      <div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
         <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
             <div class="shopDetailPrice v2">
 {!if on_sale}
@@ -122,11 +121,6 @@
                 </div>
 <!-- END SpecialFields -->
 
-{!if avail_msg}
-                <div id="avail_msg" class="uk-form-row shopOnhand">
-                    {avail_msg}
-                </div>
-{!endif}
 {!if stock_msg}
                 <div class="shopOnhand uk-alert uk-alert-danger floatright">
                     {$LANG_SHOP['out_of_stock']}
@@ -140,14 +134,7 @@
 <!-- END BtnBlock -->
       </div>
       <div style="clear:right;padding-top:25px;">
-{!if brand_id}
-        <b>Brand:</b>
-        <a href="{site_url}/shop/index.php?products&brand={brand_id}">{brand_name}
-{!if brand_logo_url}
-        &nbsp;&nbsp;<img class="shopLogoImage small" src="{brand_logo_url}" />
-{!endif}
-        </a>
-{!endif}
+        {prod_det_blk}
       </div>
     </div>
 {!if main_img}

@@ -54,7 +54,11 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
-    'prod_bulk_save', 'pv_bulk_save',
+    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
+    'saveregion', 'savecountry', 'savestate',
+    'ena_region', 'disa_region', 'del_region',
+    'ena_country', 'disa_country', 'del_country',
+    'ena_state', 'disa_state', 'del_state',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -66,6 +70,8 @@ $expected = array(
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
+    'editregion', 'editcountry', 'editstate',
+    'regions', 'countries', 'states',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -574,6 +580,18 @@ case 'prod_bulk_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
+case 'prod_bulk_del':
+    $prod_ids = SHOP_getVar($_POST, 'prod_bulk', 'array', array());
+    $mag = $LANG_SHOP['msg_updated'];   // assume success
+    foreach ($prod_ids as $id) {
+        if (!Shop\Product::getById($id)->Delete()) {
+            $msg = $LANG_SHOP['msg_some_not_del'];
+        }
+    }
+    COM_setMsg($msg);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
 case 'pv_bulk_save':
     if (Shop\ProductVariant::BulkUpdateDo($_POST)) {
         COM_setMsg($LANG_SHOP['msg_updated']);
@@ -583,12 +601,97 @@ case 'pv_bulk_save':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
+case 'saveregion':
+    // Save a region record
+    $R = Shop\Region::getInstance($_POST['region_id']);
+    if ($R->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editregion=' . $R->getID());
+    }
+    break;
+
+case 'savecountry':
+    // Save a country record
+    $C = Shop\Country::getInstance($_POST['country_id']);
+    if ($C->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    } else {
+        COM_setMsg($C->getErrors());
+        $content = $C->Edit($_POST);
+        $view = 'none';
+    }
+    break;
+
+case 'savestate':
+    // Save a state record
+    $S = Shop\State::getInstance((int)$_POST['state_id']);
+    if ($S->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editstate=' . $S->getID());
+    }
+    break;
+
+case 'ena_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(0, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+case 'disa_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(1, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+
+case 'ena_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(0, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'disa_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(1, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'ena_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(0, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    break;
+
+case 'disa_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(1, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    break;
+
 default:
     $view = $action;
     break;
 }
 
-//SHOP_log('Admin view: ' . $action, SHOP_LOG_DEBUG);
 switch ($view) {
 case 'history':
     $content .= \Shop\history(true);
@@ -957,6 +1060,45 @@ case 'prod_bulk_frm':
     // Bulk update product attributes
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
+    break;
+
+case 'editregion':
+    $region_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('regions');
+    $content .= Shop\Region::getInstance($region_id)->Edit();
+    break;
+
+case 'editcountry':
+    $country_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('countries');
+    $content .= Shop\Country::getInstance($country_id)->Edit();
+    break;
+
+case 'editstate':
+    $state_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('states');
+    $content .= Shop\State::getInstance($state_id)->Edit();
+    break;
+
+case 'countries':
+    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\Country::adminList($region_id);
+    break;
+
+case 'states':
+    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\State::adminList($country_id);
+    break;
+
+case 'regions':
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\Region::adminList();
+    break;
+
+case 'none':
+    // Content provided by an action above, don't show anything here
     break;
 
 default:

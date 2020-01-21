@@ -942,6 +942,17 @@ class OrderItem
         return (float)$this->tax_rate;
     }
 
+
+    /**
+     * Get the taxable status of the item.
+     *
+     * @return  integer     1 if taxable, 0 if not
+     */
+    public function getTaxable()
+    {
+        return $this->taxable ? 1 : 0;
+    }
+
 }
 
 ?>

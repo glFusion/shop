@@ -3,9 +3,9 @@
  * English language file for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -131,6 +131,7 @@ $LANG_SHOP = array (
     8 => 'Gift Card',
 ),
 'edit'              => 'Edit',
+'new'               => 'New',
 'create_category'   => 'Create a New Category',
 'cat_name'          => 'Category Name',
 'parent_cat'        => 'Parent Category',
@@ -146,6 +147,7 @@ $LANG_SHOP = array (
 'maintenance'       => 'Maintenance',
 'del_item'          => 'Delete this item',
 'q_del_item'        => 'Are you sure you want to delete this item?',
+'q_del_items'       => 'Are you sure you want to delete all selected items?',
 'q_del_pov'         => 'Are you sure you want to delete this option or group? All related product variants and options will be deleted as well.',
 'clearform'         => 'Reset Form',
 'del_item_instr'    => 'Items that have no purchases can be deleted. If an item has been purchased it can only be disabled.',
@@ -344,9 +346,9 @@ $LANG_SHOP = array (
 ),
 'my_orders' => 'My Orders',
 'no_products_match' => 'No products match your search parameters',
-'msg_updated' => 'Item has been updated',
-'msg_deleted' => 'Item has been deleted',
-'msg_nochange' => 'Item is unchanged',
+'msg_updated' => 'Item(s) have been updated',
+'msg_deleted' => 'Item(s) have been deleted',
+'msg_nochange' => 'Item(s) are unchanged',
 'msg_item_added' => 'Item has been added to your cart',
 'all' => 'All',
 'print' => 'Print',
@@ -601,6 +603,28 @@ $LANG_SHOP = array (
 'dc_applied' => 'The discount code has been applied successfully.',
 'empty_to_gen' => 'Leave empty to create automatically',
 'leave_as_is' => 'Leave As-Is',
+'logo_img' => 'Logo Image',
+'use_opt_price' => 'Use Option Prices',
+'reorder' => 'Reorder Qty',
+'select_addr' => 'Address Selection',
+'use_this_addr' => 'Use This Address',
+'control' => 'Control',
+'ck_to_install' => 'Install this item',
+'ck_to_enable' => 'Click to enable',
+'ck_to_disable' => 'Click to disable',
+'new_country' => 'New Country',
+'new_state' => 'New State',
+'new_region' => 'New Region',
+'iso_code' => 'ISO Code',
+'dial_code' => 'Dialing Code',
+'currency_code' => 'Currency Code',
+'regions' => 'Regions',
+'countries' => 'Countries',
+'states' => 'States',
+'alpha2' => '2-letter Country Code',
+'alpha3' => '3-letter Country Code',
+'country_code' => 'Numeric Country Code',
+'prod_by_brand' => 'Products by %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -628,6 +652,9 @@ $LANG_SHOP_HELP = array(
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
 'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
 'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
+'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
+'hlp_var_after_item' => 'Variants must be added after the item is created.',
+'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -730,6 +757,11 @@ $LANG_confignames['shop'] = array(
     'tax_taxjar_token' => 'TaxJar API Token',
     'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
     'tax_nexuses'   => 'Tax Nexuses',
+    'address_validator' => 'Address Validator',
+    'smartystreets_id' => 'SmartyStreets ID',
+    'smartystreets_token' => 'SmartyStreets Token',
+    'tax_taxcloud_id' => 'TaxCloud Login ID',
+    'tax_taxcloud_key' => 'TaxCloud API Key',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -757,6 +789,7 @@ $LANG_fs['shop'] = array(
     'fs_tax'    => 'Taxes',
     'fs_tax_avatax' => 'Avatax Settings',
     'fs_tax_taxjar' => 'Taxjar Settings',
+    'fs_tax_taxcloud' => 'TaxCloud Settings',
 );
 
 /**
@@ -805,6 +838,13 @@ $LANG_configselects['shop'] = array(
         'Configured Rate' => 'internal',
         'TaxJar SmartCalcs' => 'taxjar',
         'Internal Tax Table' => 'table',
+        'TaxCloud API' => 'taxcloud',
+    ),
+    22 => array(
+        '-- None --' => 0,
+        'SmartyStreets' => 'smartystreets',
+        'USPS' => 'usps',
+        'TaxCoud' => 'taxcloud',
     ),
 );
 

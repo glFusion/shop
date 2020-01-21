@@ -3,20 +3,22 @@
  * Sitemap driver for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2017-2019 Lee Garner
+ * @copyright   Copyright (c) 2017-2020 Lee Garner
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
+namespace Sitemap\Drivers;
+use Shop\Category;
 
 /**
  * Sitemap driver class for Shop.
  * @paackage shop
  */
-class sitemap_shop extends sitemap_base
+class shop extends BaseDriver
 {
     /** Plugin name.
      * @var string */
@@ -98,9 +100,9 @@ class sitemap_shop extends sitemap_base
         }
 
         if ($base === false) {
-            $Root = Shop\Category::getRoot();
+            $Root = Category::getRoot();
         } else {
-            $Root = Shop\Category::getInstance((int)$base);
+            $Root = Category::getInstance((int)$base);
         }
         $cats = $Root->getChildren();
         foreach ($cats as $Cat) {
@@ -110,7 +112,7 @@ class sitemap_shop extends sitemap_base
                     'title'     => $Cat->cat_name,
                     'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
                     'date'      => false,
-                    'image_uri' => $Cat->ImageUrl(),
+                    'image_uri' => $Cat->getImage()['url'],
                 );
             }
         }
