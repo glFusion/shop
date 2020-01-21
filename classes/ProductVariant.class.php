@@ -554,35 +554,27 @@ class ProductVariant
 
 
     /**
-     * Creates the edit form for an existing variant.
-     * The component options are set during creation along with calculated
-     * values for sku and price/shipping/weight impacts unless values are set
-     * for these values.
+     * Creates the edit form for a new variant for a new product.
      *
-     * @param   integer $item_id    Product record ID
      * @return  string      HTML for edit form
      */
-    public function Create($item_id)
+    public static function Create()
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = new \Template(__DIR__ . '/../templates');
-        $T->set_file('form', 'variant_new.thtml');
+        $T->set_file('form', 'variant_edit.thtml');
 
         // Default to the item's reorder quantity
-        $P = Product::getById($item_id);
-        $this->setReorder($P->getReorder());
         $T->set_var(array(
-            'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
-            'item_id'       => $item_id,
-            'item_name'     => $P->getName(),
-            'pv_id'         => $this->getId(),
-            'price'         => $this->getPrice(),
-            'weight'        => $this->getWeight(),
-            'onhand'        => $this->getOnhand(),
-            'shipping_units' => $this->getShippingUnits(),
-            'sku'           => $this->getSku(),
-            'reorder'       => $this->getReorder(),
+            'pv_id'         => 0,
+            'price'         => '',
+            'weight'        => '',
+            'onhand'        => '',
+            'shipping_units' => '',
+            'sku'           => '',
+            'reorder'       => '',
+            'is_form'       => false,
         ) );
         $Groups = ProductOptionGroup::getAll();
         $T->set_block('form', 'OptionGroups', 'Grps');
@@ -590,18 +582,21 @@ class ProductVariant
             $T->set_var(array(
                 'pog_id'    => $gid,
                 'pog_name'  => $Grp->getName(),
-                'val_select_opts' => COM_optionList(
-                    $_TABLES['shop.prod_opt_vals'],
-                    'pov_id,pov_value',
-                    '',
-                    1,
-                    "pog_id = '$gid'"
-                ),
             ) );
+            $T->set_block('Grps', 'OptionValues', 'Vals');
+            $Opts = ProductOptionValue::getByGroup($Grp->getID());
+            foreach ($Opts as $pov_id=>$Opt) {
+                $T->set_var(array(
+                    'opt_id'    => $Opt->getID(),
+                    'opt_val'   => $Opt->getValue(),
+                    'opt_sel'   => '',
+                ) );
+                $T->parse('Vals', 'OptionValues', true);
+            }
             $T->parse('Grps', 'OptionGroups', true);
+            $T->clear_var('Vals');
         }
         $retval .= $T->parse('output', 'form');
-        $retval .= COM_endBlock();
         return $retval;
     }
 
@@ -641,6 +636,7 @@ class ProductVariant
             'sku'           => $this->getSku(),
             'dscp'          => $this->getDscpString(),
             'reorder'       => $this->getReorder(),
+            'is_form'       => true,
         ) );
         $Groups = ProductOptionGroup::getAll();
         $optsInUse = $this->_optsInUse();
@@ -661,12 +657,10 @@ class ProductVariant
                 $T->parse('Vals', 'OptionValues', true);
             }
             $T->parse('Grps', 'OptionGroups', true);
-            //var_dump($T);die;
             $T->clear_var('Vals');
         }
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
-        $retval .= COM_endBlock();
         return $retval;
     }
 
@@ -742,6 +736,7 @@ class ProductVariant
 
     /**
      * Save a new product variant.
+     * The `item_id` field needs to be set in the array parameter.
      *
      * @param   array   $A      Form values
      * @return  boolean     True on success, False on failure
@@ -767,6 +762,10 @@ class ProductVariant
             return false;
         }
         $P = Product::getById($item_id);
+        if ($P->getID() == 0) {
+            return false;   // item ID provided but invalid
+        }
+
         $price = 0;
         $weight = SHOP_getVar($A, 'weight', 'float', 0);
         $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
@@ -854,7 +853,7 @@ class ProductVariant
             $this->setVars($A);
         }
         if ($this->pv_id == 0) {
-            return $this->saveNew($A);
+            return self::saveNew($A);
         }
         $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
             item_id = '" . (int)$this->item_id . "',
