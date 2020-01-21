@@ -469,27 +469,7 @@ class Cart extends Order
         $T = SHOP_getTemplate('btn_checkout', 'checkout', 'buttons');
         $by_gc = (float)$this->getInfo('apply_gc');
         $net_total = $this->total - $by_gc;
-        // Special handling if there is a zero total due to discounts
-        // or gift cards
-        if ($net_total < .001) {
-            $this->custom_info['uid'] = $_USER['uid'];
-            $this->custom_info['transtype'] = 'internal';
-            $this->custom_info['cart_id'] = $this->CartID();
-            $gateway_vars = array(
-                '<input type="hidden" name="processorder" value="by_gc" />',
-                '<input type="hidden" name="cart_id" value="' . $this->CartID() . '" />',
-                '<input type="hidden" name="custom" value=\'' . @serialize($this->custom_info) . '\' />',
-            );
-            $T->set_var(array(
-                'action'        => SHOP_URL . '/ipn/internal.php',
-                'gateway_vars'  => implode("\n", $gateway_vars),
-                'cart_id'       => $this->m_cart_id,
-                'uid'           => $_USER['uid'],
-                'method'        => 'post',
-            ) );
-            $T->parse('checkout_btn', 'checkout');
-            return $T->finish($T->get_var('checkout_btn'));
-        } elseif ($gw->Supports('checkout')) {
+        if ($gw->Supports('checkout')) {
             // Else, if amount > 0, regular checkout button
             $this->custom_info['by_gc'] = $by_gc;   // pass GC amount used via gateway
             $this->by_gc = $by_gc;                  // pass GC amount used via gateway

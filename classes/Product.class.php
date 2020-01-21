@@ -1644,7 +1644,8 @@ class Product
         if (
             $add_cart &&
             $this->btn_type != 'donation' &&
-            ($this->price > 0 || !$this->canBuyNow())
+            $this->canOrder()
+            //($this->price > 0 || !$this->canBuyNow())
         ) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
             $T->set_file(array(
