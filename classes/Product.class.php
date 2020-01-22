@@ -630,7 +630,7 @@ class Product
      *
      * @return  array   Array of ProductVariant objects
      */
-    private function getVariants()
+    public function getVariants()
     {
         if ($this->Variants === NULL) {
             $this->Variants = ProductVariant::getByProduct($this->id);
@@ -827,7 +827,9 @@ class Product
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
-            ProductVariant::saveNew($A);
+            if (is_array($A) && isset($A['groups'])) {
+                ProductVariant::saveNew($A);
+            }
 
             //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
@@ -2198,10 +2200,15 @@ class Product
         // Save the original ID, needed to copy image files
         $old_id = $this->id;
 
+        // Get variants and categories to be saved for the new product
+        $this->getVariants();
+        $this->getCategories();
+
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
         $this->name = $this->name . ' - ' . uniqid();
+        var_dump($this->getVariants());die;
         $this->Save();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
@@ -3086,12 +3093,12 @@ class Product
                 'sort'  => false,
                 'align' => 'center',
             ),
-            array(
+            /*array(
                 'text'  => $LANG_ADMIN['copy'],
                 'field' => 'copy',
                 'sort'  => false,
                 'align' => 'center',
-            ),
+            ),*/
             array(
                 'text'  => $LANG_SHOP['enabled'],
                 'field' => 'enabled',
