@@ -45,7 +45,6 @@ class free extends \Shop\Gateway
             //'terms'     => 0,
         );
         $this->enabled = 1;         // set default for installation
-        $this->is_system = 1;       // this gateway is required
         parent::__construct();
     }
 

@@ -228,10 +228,6 @@ function SHOP_do_upgrade($dvlp = false)
             Shop\MigratePP::createVariants();
         }
         mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
-
-        // Install the gateway to handle free orders.
-        Shop\Gateway::getInstance('free')->Install();
-
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
