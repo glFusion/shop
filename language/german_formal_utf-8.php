@@ -113,6 +113,7 @@ $LANG_SHOP = array (
         'pay_now'   => 'Jetzt zahlen',
         'checkout'  => 'Zur Kasse gehen',
         'external'  => 'Externe Produkte',
+    'free'      => 'Free Purchase',
     ),
 'prod_type'         => 'Produkt-Typ',
 'prod_types'        => array(1 => 'Materiell', 2 => 'Herunterladbar', 4 => 'Virtuell', 3 => 'Materiell + Herunterladbar',),

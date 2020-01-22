@@ -121,6 +121,7 @@ $LANG_SHOP = array (
     'pay_now'   => 'Pay Now',
     'checkout'  => 'Checkout',
     'external'  => 'External Products',
+    'free'      => 'Free Purchase',
 ),
 'prod_type'         => 'Product Type',
 'prod_types'        => array(

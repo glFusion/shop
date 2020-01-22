@@ -1,0 +1,17 @@
+{# begin {templatelocation} #}
+<form style="display:inline;" class="frm_checkout" name="frm_free"
+    action="{action_url}" id="frm_{uniqid}"
+{!if method}
+    method="{method}"
+{!else}
+    method="post"
+{!endif}
+>
+  {gateway_vars}
+{!if button_url}
+  {button_url}
+{!else}
+  <button type="submit" class="uk-button uk-button-primary" name="submit">{btn_text}</button>
+{!endif}
+</form>
+{# end {templatelocation} #}
