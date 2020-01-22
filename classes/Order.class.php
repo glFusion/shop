@@ -320,8 +320,9 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
-        $OI->setQuantity($args['quantity']);
-        $OI->Save();
+        $OI->setQuantity($args['quantity'])
+            ->applyDiscountPct($this->getDiscountPct())
+            ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
         //$this->Save();
@@ -506,6 +507,9 @@ class Order
             Cart::clearSession('order_id');
         }
         $this->shipper_id = $A['shipper_id'];
+        $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
+        $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
+        $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         return $this;
     }
 
@@ -719,6 +723,8 @@ class Order
         $this->no_shipping = 1;   // no shipping unless physical item ordered
         $this->gross_items = 0;
         $this->net_items = 0;
+        $this->net_nontax = 0;
+        $this->net_taxable = 0;
         $item_qty = array();        // array to track quantity by base item ID
         $have_images = false;
         $has_sale_items = false;
@@ -771,6 +777,11 @@ class Order
             $item_total = $item->getPrice() * $item->getQuantity();
             $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->gross_items += $item_total;
+            if ($P->isTaxable()) {
+                $this->net_taxable += $item_net;
+            } else {
+                $this->net_nontax += $item_net;
+            }
             $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
@@ -2681,7 +2692,12 @@ class Order
      */
     public function getDiscountAmount()
     {
-        return max($this->gross_items - $this->net_items, 0);
+        return max(
+            $this->getCurrency()->RoundVal(
+                $this->gross_items - $this->net_nontax - $this->net_taxable
+            ),
+            0
+        );
     }
 
 
