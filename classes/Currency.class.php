@@ -313,6 +313,20 @@ class Currency
 
 
     /**
+     * Round a value to the correct number of decimals by always rounding up.
+     * Used in the IPN processor to be conservative when giving credit for
+     * discounts.
+     *
+     * @return  float       Rounded value
+     */
+    public function RoundUp($amount)
+    {
+        $fig = pow(10, $this->decimals);
+        return (ceil($amount * $fig) / $fig);
+    }
+
+
+    /**
      * Converts a price amount from the current currency to the target currency.
      *
      * To convert an amount from one currency to another, we simply take the amount

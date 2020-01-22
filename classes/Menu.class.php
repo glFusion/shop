@@ -402,11 +402,7 @@ class Menu
             $todo[] = $LANG_SHOP['todo_noproducts'];
         }
 
-        if (DB_count(
-            $_TABLES['shop.gateways'],
-            array('enabled', 'is_system'),
-            array(1, 0)
-        ) == 0) {
+        if (DB_count($_TABLES['shop.gateways'], 'enabled', 1) == 0) {
             $todo[] = $LANG_SHOP['todo_nogateways'];
         }
         if (MigratePP::canMigrate()) {

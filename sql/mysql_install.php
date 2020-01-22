@@ -245,10 +245,8 @@ $_SQL = array(
   `config` text,
   `services` varchar(255) DEFAULT NULL,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
-  `is_system` tinyint(1) unsigned NOT NULL default 0,
   PRIMARY KEY (`id`),
-  KEY `orderby` (`orderby`),
-  KEY `is_system` (`is_system`)
+  KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
 
 'shop.workflows' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.workflows']}` (
@@ -598,8 +596,6 @@ $SHOP_UPGRADE['1.1.0'] = array(
         ('ZWB','$','Zimbabwean Bonds',0,'before','','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2020-01-14 21:58:16'),
         ('TMT','T','Turkmenistan Manat',934,'after','','hidden',2,0.00,',','.','Manat','Teňňe',1.00000,'2020-01-14 22:00:46'),
         ('ALL','ALL','Albanian Lek',8,'after','','hidden',2,0.00,',','.','Lek','Qindarka',1.00000,'2020-01-14 22:02:28')",
-    "ALTER TABLE {$_TABLES['shop.gateways']} ADD is_system tinyint(1) unsigned NOT NULL default 0",
-    "ALTER TABLE {$_TABLES['shop.gateways']} ADD KEY `is_system` (`is_system`)",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
