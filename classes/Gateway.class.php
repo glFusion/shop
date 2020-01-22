@@ -129,6 +129,11 @@ class Gateway
      * @var integer */
     protected $grp_access;
 
+    /** Indicate that this is a system (required) gateway.
+     * Default to non-system.
+     * @var boolean */
+    protected $is_system = 0;
+
 
     /**
      * Constructor. Initializes variables.
@@ -592,14 +597,16 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.gateways']}
-                (id, orderby, enabled, description, config, services) VALUES (
+            $sql = "INSERT INTO {$_TABLES['shop.gateways']} (
+                id, orderby, enabled, description, config, services, is_system
+                ) VALUES (
                 '" . DB_escapeString($this->gw_name) . "',
                 '990',
                 {$this->getEnabled()},
                 '" . DB_escapeString($this->gw_desc) . "',
                 '" . DB_escapeString($config) . "',
-                '" . DB_escapeString($services) . "')";
+                '" . DB_escapeString($services) . "'),
+                {$this->getSystem()}";
             DB_query($sql);
             Cache::clear('gateways');
             return DB_error() ? false : true;
@@ -1647,7 +1654,7 @@ class Gateway
 
         switch($fieldname) {
         case 'edit':
-            if ($A['enabled'] !== 'na') {
+            if ($A['enabled'] !== 'na' && $A['is_system'] == 0) {
                 $retval .= COM_createLink(
                     Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
                     SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
@@ -1761,6 +1768,17 @@ class Gateway
     protected function getEnabled()
     {
         return $this->enabled ? 1 : 0;
+    }
+
+
+    /**
+     * Get the "is_system" flag value.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
+    protected function getSystem()
+    {
+        return $this->is_system ? 1 : 0;
     }
 
 }   // class Gateway
