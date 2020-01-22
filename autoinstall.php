@@ -302,7 +302,8 @@ function plugin_postinstall_shop()
     }
 
     // Install default payment gateways
-    require_once 'functions.inc';       // required for class autoloader
+    require_once __DIR__ . '/classes/Autoload.class.php';
+    Shop\Autoload::register();
     Shop\Gateway::getInstance('free')->Install();
 
     // Set the shop Admin ID
