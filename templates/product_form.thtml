@@ -19,6 +19,7 @@
     <li id="tab-variants" {tabactive_variants}><a href="#">{$LANG_SHOP['variants']}</a></li>
     <li id="tab-discounts" {tabactive_discounts}><a href="#">{$LANG_SHOP['qty_discounts']}</a></li>
     <li id="tab-supplier" {tabactive_supplier}><a href="#">{$LANG_SHOP['supplier']}</a></li>
+    <li id="tab-features" {tabactive_features}><a href="#">{$LANG_SHOP['features']}</a></li>
   </ul>
 
   <div class="uk-panel uk-panel-box uk-margin">
@@ -443,6 +444,11 @@
         </select>
       </div>
     </div>
+  </li>
+
+{# Product Features #}
+  <li>
+    {features_list}
   </li>
 
   </ul>

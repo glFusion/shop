@@ -1115,6 +1115,7 @@ class Product
             'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
             'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
+            'features_list'  => $this->id > 0 ? Feature::productForm($this->id) : '',
         ) );
 
         // Create the button type selections. New products get the default

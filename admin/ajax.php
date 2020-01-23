@@ -40,6 +40,64 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
+case 'newPXF':      // add a product->featurevalue mapping
+    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
+    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
+    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
+    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
+    if (
+        $prod_id > 0 &&
+        $ft_id > 0 &&
+        ($fv_id > 0 || !empty($fv_text))
+    ) {
+        $retval = array(
+            'status' => Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
+            'ft_name' => Shop\Feature::getInstance($ft_id)->getName(),
+            'ft_opts' => Shop\Feature::getOptionList($ft_id),
+            'fv_opts' => Shop\FeatureValue::getOptionList($fv_id),
+            'fv_custom' => $fv_text,
+        );
+    } else {
+        $retval = array(
+            'status' => false,
+        );
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    exit;
+    break;
+
+case 'getFVopts':
+    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
+    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
+    if ($ft_id > 0) {
+        $retval = array(
+            'status' => true,
+            'options' => COM_optionList(
+                $_TABLES['shop.features_values'],
+                'fv_id,fv_value',
+                1,
+                $fv_id,
+                "ft_id = $ft_id"
+            ),
+        );
+    } else {
+        $retval = array(
+            'status' => false,
+            'options' => '',
+        );
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    exit;
+    break;
+
 case 'delFV':
     $retval = array(
         'status' => false,

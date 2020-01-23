@@ -59,6 +59,7 @@ $expected = array(
     'ena_region', 'disa_region', 'del_region',
     'ena_country', 'disa_country', 'del_country',
     'ena_state', 'disa_state', 'del_state',
+    'ft_save', 'ft_del', 'ft_move',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -181,6 +182,14 @@ case 'savecat':
     }
     break;
 
+case 'ft_save':
+    $FT = new Shop\Feature($_POST['ft_id']);
+    if (!$FT->Save($_POST)) {
+        $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?features');
+    break;
+
 case 'pog_save':
     $POG = new \Shop\ProductOptionGroup($_POST['og_id']);
     if (!$POG->Save($_POST)) {
@@ -231,6 +240,11 @@ case 'pv_del':
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
     }
     exit;
+    break;
+
+case 'ft_del':
+    Shop\Feature::Delete($_REQUEST['ft_id']);
+    $view = 'features';
     break;
 
 case 'pog_del':
@@ -350,6 +364,14 @@ case 'gwsave':
         $status = $gw->SaveConfig($_POST);
     }
     $view = 'gwadmin';
+    break;
+
+case 'ft_move':
+    $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
+    if ($ft_id > 0) {
+        Shop\Feature::getInstance($ft_id)->moveRow($actionval);
+    }
+    $view = 'features';
     break;
 
 case 'pog_move':

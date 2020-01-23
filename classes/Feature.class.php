@@ -24,15 +24,30 @@ class Feature
      * @var array */
     static $TAGS = array('products', 'features');
 
-    /** Indicate whether the current object is a new entry or not.
-     * @var boolean */
-    public $isNew;
+    /** Feature record ID.
+     * @var integer */
+    private $ft_id = 0;
 
-    private $ft_id;
-    private $ft_name;
-    private $fv_text;
+    /** Current FeatureValue record ID.
+     * @var integer */
+    private $fv_id = 0;
 
+    /** Feature name.
+     * @var string */
+    private $ft_name = '';
+
+    /** FeatureValue text.
+     * @var string */
+    private $fv_text = '';
+
+    /** Number to determine display order.
+     * @var integer */
+    private $orderby = 9999;
+
+    /** FeatureValue objects associated with this feature.
+     * @var array */
     private $Values = NULL;
+
 
     /**
      * Constructor.
@@ -43,9 +58,6 @@ class Feature
      */
     public function __construct($id=0)
     {
-        $this->properties = array();
-        $this->isNew = true;
-
         if (is_array($id)) {
             $this->setVars($id);
         } else {
@@ -121,8 +133,10 @@ class Feature
             return;
         }
         $this->ft_id = (int)$A['ft_id'];
+        $this->fv_id = SHOP_getVar($A, 'fv_id', 'integer', 0);
         $this->ft_name = $A['ft_name'];
         $this->fv_text = SHOP_getVar($A, 'fv_text', 'string', '');
+        $this->orderby = SHOP_getVar($A, 'orderby', 'integer', 9999);
     }
 
 
@@ -153,7 +167,6 @@ class Feature
         } else {
             $A = DB_fetchArray($result, false);
             $this->setVars($A);
-            $this->isNew = false;
             return true;
         }
     }
@@ -169,7 +182,17 @@ class Feature
     {
         global $_TABLES, $_SHOP_CONF;
 
+        $reorder = false;
         if (is_array($A) && !empty($A)) {
+            if (!isset($A['orderby'])) {
+                // Put this field at the end of the line by default.
+                $A['orderby'] = 9999;
+            } elseif ($A['orderby'] != $this->getOrderby()) {
+                // Bump the number from the "position after" value and
+                // indicate that sorting is needed after saving.
+                $A['orderby'] += 5;
+                $reorder = true;
+            }
             // Put this field at the end of the line by default
             $this->setVars($A);
         }
@@ -181,17 +204,22 @@ class Feature
 
         $ft_id = $this->getId();
         $ft_name = DB_escapeString($this->getName());
-        $sql = "INSERT INTO {$_TABLES['shop.features']} SET 
-            ft_id = {$ft_id}
-            ft_name = '$ft_name'
+        $sql = "INSERT INTO {$_TABLES['shop.features']} SET
+            ft_id = {$ft_id},
+            ft_name = '$ft_name',
+            orderby = {$this->getOrderby()}
             ON DUPLICATE KEY UPDATE
-            ft_name = '$ft_name'";
+            ft_name = '$ft_name',
+            orderby = {$this->getOrderby()}";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {
             if ($this->ft_id == 0) {
                 $this->ft_id = DB_insertID();
+            }
+            if ($reorder) {
+                self::reOrder();
             }
             return true;
         } else {
@@ -213,12 +241,12 @@ class Feature
     {
         global $_TABLES;
 
+        $ft_id = (int)$ft_id;
         if ($ft_id <= 0) {
             return false;
         }
-
-        DB_delete($_TABLRES['shop.features_values'], 'ft_id', $ft_id);
-        DB_delete($_TABLRES['shop.prodXfeat'], 'ft_id', $ft_id);
+        DB_delete($_TABLES['shop.features_values'], 'ft_id', $ft_id);
+        DB_delete($_TABLES['shop.prodXfeat'], 'ft_id', $ft_id);
         DB_delete($_TABLES['shop.features'], 'ft_id', $ft_id);
         return true;
     }
@@ -264,6 +292,13 @@ class Feature
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('feature_form'),
             'ft_name'      => $this->ft_name,
+            'orderby_opts'  => COM_optionList(
+                $_TABLES['shop.features'],
+                'orderby,ft_name',
+                $this->orderby - 10,
+                0,
+                "ft_id <> {$this->ft_id}"
+            ),
         ) );
         $T->set_block('form', 'FVList', 'FV');
         foreach ($this->getValues() as $FV) {
@@ -323,7 +358,7 @@ class Feature
         );
 
         $defsort_arr = array(
-            'field' => 'ft_id',
+            'field' => 'orderby',
             'direction' => 'ASC',
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
@@ -434,18 +469,23 @@ class Feature
         //$cache_key = 'ft_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
-            $sql = "SELECT  pf.*, f.ft_name
+        $sql = "SELECT  pf.prod_id, pf.ft_id, pf.fv_id,
+            f.ft_name, f.orderby,
+            IFNULL(pf.fv_text, fv.fv_value) AS fv_text
                 FROM {$_TABLES['shop.products']} p
                 LEFT JOIN {$_TABLES['shop.prodXfeat']} pf
                     ON pf.prod_id = p.id
                 LEFT JOIN {$_TABLES['shop.features']} f
                     ON f.ft_id = pf.ft_id
+                LEFT JOIN {$_TABLES['shop.features_values']} fv
+                    ON fv.fv_id = pf.fv_id
                 WHERE p.id = $prod_id
                 ORDER BY f.orderby ASC";
             $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $grps[$A['ft_id']] = new self($A);
-            }
+        while ($A = DB_fetchArray($res, false)) {
+            $grps[$A['ft_id']] = new self($A);
+
+        }
             //Cache::set($cache_key, $grps, self::$TAGS);
         //}
         return $grps;
@@ -472,7 +512,18 @@ class Feature
      */
     public function getID()
     {
-        return $this->ft_id;
+        return (int)$this->ft_id;
+    }
+
+
+    /**
+     * Get the value record ID.
+     *
+     * @return  integer     FeatureValue record ID
+     */
+    public function getValueID()
+    {
+        return (int)$this->fv_id;
     }
 
 
@@ -484,6 +535,17 @@ class Feature
     public function getName()
     {
         return $this->ft_name;
+    }
+
+
+    /**
+     * Get the orderby field to ensure it's sanitized as an integer.
+     *
+     * @return  integer     Feature orderby value
+     */
+    public function getOrderby()
+    {
+        return (int)$this->orderby;
     }
 
 
@@ -560,13 +622,109 @@ class Feature
         }
 
         if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.featuress']}
+            $sql = "UPDATE {$_TABLES['shop.features']}
                     SET orderby = orderby $oper 11
                     WHERE ft_id = '{$this->ft_id}'";
             //echo $sql;die
             DB_query($sql);
             self::reOrder();
         }
+    }
+
+
+    /**
+     * Get the feature list to show on the product form.
+     * Returns an array of current feature options plus an input row to
+     * submit additional features.
+     *
+     * @param   integer $prod_id        Product record ID
+     * @return  string      HTML for Feature  page in product form
+     */
+    public static function productForm($prod_id)
+    {
+        global $_TABLES;
+
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('prod_feat', 'prod_feat_form.thtml');
+        $Features = self::getByProduct($prod_id);
+        $T->set_block('prod_feat', 'FeatList', 'FL');
+        foreach ($Features as $F) {
+            $T->set_var(array(
+                'prod_id'   => $prod_id,
+                'ft_name'   => $F->getName(),
+                'ft_id'     => $F->getID(),
+                'fv_text'   => $F->getValueID() == 0 ? $F->getValue() : '',
+                'fv_sel'    => FeatureValue::optionList($F->getValueID()),
+            ) );
+            $T->parse('FL', 'FeatList', true);
+        }
+        $T->set_var(array(
+            'ft_name_options' => self::optionList(),
+        ) );
+
+        $retval = $T->parse('output', 'prod_feat');
+        return $T->parse('output', 'prod_feat');
+    }
+
+
+    /**
+     * Add a product->feature mapping.
+     * Called via AJAX.
+     *
+     * @param   integer $prod_id        Product record ID
+     * @param   integer $fv_id          FeatureValue record ID
+     * @param   string  $custom_text    Optional override text
+     * @return  boolean     True on success, False on error
+     */
+    public function addProduct($prod_id, $fv_id, $custom_text='')
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        $fv_id = (int)$fv_id;
+        if (!empty($custom_text)) {
+            // Override the text and set the FV ID to zero.
+            $text = "'" . DB_escapeString($custom_text) . "'";
+            $fv_id = 0;
+        } else {
+            // No custom text and use the FV ID provided.
+            $text = 'NULL';
+        }
+        $sql = "INSERT INTO {$_TABLES['shop.prodXfeat']} SET
+            prod_id = $prod_id,
+            ft_id = {$this->getID()},
+            fv_id = {$fv_id},
+            fv_text = $text";
+        $res = DB_query($sql,1);
+        $err = DB_error($res);
+        return $err === NULL ? true : false;
+    }
+
+
+    /**
+     * Get the selection options for features.
+     * Returns the `<option></option>` tags for the selection list.
+     *
+     * @param   integer $sel    Currently-selected option
+     * @param   integer $sel    Currently-selected option
+     * @return  string      Option tags for selection
+     */
+    public static function getOptionList($sel=0)
+    {
+        global $_TABLES;
+
+        if (!empty($exclude)) {
+            $exclude = 'ft_id NOT IN (' . implode(',', $exclude) . ')';
+        } else {
+            $exclude = '';
+        }
+
+        return COM_optionList(
+            $_TABLES['shop.features'],
+            'ft_id,ft_name',
+            $sel,
+            1
+        );
     }
 
 }

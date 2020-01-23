@@ -31,7 +31,7 @@ class FeatureValue
 
     /** Option value.
      * @var string */
-    private $fv_text;
+    private $fv_value;
 
 
     /**
@@ -56,7 +56,7 @@ class FeatureValue
                 // New entry, set defaults
                 $this->fv_id = 0;
                 $this->ft_id = 0;
-                $this->fv_text = '';
+                $this->fv_value = '';
             } else {
                 $this->fv_id =  $id;
                 if (!$this->Read()) {
@@ -64,6 +64,22 @@ class FeatureValue
                 }
             }
         }
+    }
+
+
+    /**
+     * Get an instance of a FeatureValue object.
+     *
+     * @param   integer $fv_id  FeatureValue record ID
+     * @return  object      FeatureValue object
+     */
+    public static function getInstance($fv_id)
+    {
+        static $fv_arr = array();
+        if (!array_key_exists($fv_id, $fv_arr)) {
+            $fv_arr[$fv_id] = new self($fv_id);
+        }
+        return $fv_arr[$fv_id];
     }
 
 
@@ -77,7 +93,7 @@ class FeatureValue
         if (!is_array($row)) return;
         $this->fv_id = (int)$row['fv_id'];
         $this->ft_id = (int)$row['ft_id'];
-        $this->fv_text = $row['fv_text'];
+        $this->fv_value = $row['fv_value'];
     }
 
 
@@ -138,7 +154,7 @@ class FeatureValue
             return false;
         }
         $fv_id = (int)$this->fv_id;
-        $fv_text = DB_escapeString($this->fv_text);
+        $fv_value = DB_escapeString($this->fv_value);
         if ($this->fv_id == 0) {
             $sql1 = "INSERT INTO {$_TABLES['shop.features_values']} SET ";
             $sql3 = '';
@@ -146,7 +162,7 @@ class FeatureValue
             $sql1 = "UPDATE {$_TABLES['shop.features_values']} SET ";
             $sql3 = " WHERE fv_id = $fv_id";
         }
-        $sql2 = "ft_id = {$this->getFeatureID()}, fv_text = '$fv_text'";
+        $sql2 = "ft_id = {$this->getFeatureID()}, fv_value = '$fv_value'";
         $sql = $sql1 . $sql2 . $sql3;
         COM_errorLog($sql);
         DB_query($sql, 1);
@@ -207,7 +223,7 @@ class FeatureValue
         // Check that basic required fields are filled in
         if (
             $this->ft_id == 0 ||
-            $this->fv_text == ''
+            $this->fv_value == ''
         ) {
             return false;
         }
@@ -285,187 +301,6 @@ class FeatureValue
 
 
     /**
-     * Product Option Value list view.
-     *
-     * @param   integer $ft_id    Feature record ID
-     * @return  string      HTML for the attribute list.
-     */
-    public static function adminList($ft_id)
-    {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $_SYSTEM;
-
-        $ft_id = (int)$ft_id;
-        $sql = "SELECT fv_id, fv_text
-            FROM {$_TABLES['shop.features_values']}
-            WHERE ft_id = $ft_id";
-        $res = DB_query($sql);
-        $data_arr = array();
-        while ($A = DB_fetchArray($res, false)) {
-            $data_arr[] = array(
-                'fv_id' => $A['fv_id'],
-                'fv_text' => $A['fv_text'],
-            );
-        }
-        $data_arr[] = array(
-            'fv_id' => 'Add:',
-            'fv_text' => '<in',
-        );
-
-        $header_arr = array(
-            array(
-                'text' => 'ID',
-                'field' => 'fv_id',
-                'sort' => true,
-            ),
-            array(
-                'text' => $LANG_SHOP['edit'],
-                'field' => 'edit',
-                'sort' => false,
-                'align' => 'center',
-            ),
-            array(
-                'text' => $LANG_SHOP['feat_value'],
-                'field' => 'fv_text',
-                'sort' => true,
-            ),
-        );
-
-        $defsort_arr = array(
-            'field' => 'fv_id',
-            'direction' => 'ASC',
-        );
-
-        $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $def_filter = '';
-        $text_arr = array();
-        $filter = '';
-        $options = array();
-        $display .= ADMIN_listArray(
-            $_SHOP_CONF['pi_name'] . '_fvlist',
-            array(__CLASS__,  'getAdminField'),
-            $header_arr, $text_arr, $data_arr, $defsort_arr,
-            '', '', '', ''
-        );
-
-        // Create the "copy "options" form at the bottom
-        /*if ($sel_prod_id == 0) {
-            $T = new \Template(SHOP_PI_PATH . '/templates');
-            $T->set_file('copy_opt_form', 'copy_options_form.thtml');
-            $T->set_var(array(
-                'src_product'       => $product_selection,
-                'product_select'    => COM_optionList($_TABLES['shop.products'], 'id, name'),
-                'cat_select'        => COM_optionList($_TABLES['shop.categories'], 'cat_id,cat_name'),
-            ) );
-            $display .= $T->parse('output', 'copy_opt_form');
-        }*/
-
-        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-        return $display;
-    }
-
-
-    /**
-     * Get an individual field for the attribute list.
-     *
-     * @param   string  $fieldname  Name of field (from the array, not the db)
-     * @param   mixed   $fieldvalue Value of the field
-     * @param   array   $A          Array of all fields from the database
-     * @param   array   $icon_arr   System icon array (not used)
-     * @return  string              HTML for field display in the table
-     */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
-    {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
-
-        $retval = '';
-
-        switch($fieldname) {
-        case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array(
-                    'title' => $LANG_ADMIN['edit'],
-                ) ),
-                SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;fv_id={$A['fv_id']}"
-            );
-            break;
-
-        case 'orderby':
-            $retval = COM_createLink(
-                Icon::getHTML('arrow-up'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['fv_id']
-            ) .
-            COM_createLink(
-                Icon::getHTML('arrow-down'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['fv_id']
-            );
-            break;
-
-        case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['fv_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['fv_id']}\",\"enabled\",".
-                "\"option\");' />" . LB;
-            break;
-
-        case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;fv_id=' . $A['fv_id'],
-                array(
-                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_pov'] . '\');',
-                    'title' => $LANG_SHOP['del_item'],
-                    'class' => 'tooltip',
-                )
-            );
-            break;
-
-        case 'opt_price':
-            $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
-            break;
-
-        default:
-            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
-            break;
-        }
-
-        return $retval;
-    }
-
-
-    /**
-     * Create the selection list for the `orderby` value.
-     * Used here and from admin/ajax.php.
-     *
-     * @param   integer $ft_id    Current Feature ID
-     * @param   integer $sel        Currently-selection option
-     * @return  string      Option elements for a selection list
-     */
-    public static function getValueOpts($ft_id=0, $sel=0)
-    {
-        global $_TABLES, $LANG_SHOP;
-
-        $og_id = (int)$og_id;
-        $sel = (int)$sel;
-        $retval = '<option value="0">--' . $LANG_SHOP['first'] . '--</option>' . LB;
-        $retval .= COM_optionList(
-            $_TABLES['shop.features_values'],
-            'orderby,fv_text',
-            $sel - 10,
-            0,
-            "ft_id = '$og_id' AND orderby <> '$sel'"
-        );
-        return $retval;
-    }
-
-
-    /**
      * Get all the available feature values for a specific feature.
      *
      * @param   integer $ft_id     ProductOptionGroup ID
@@ -482,7 +317,6 @@ class FeatureValue
             $opts = array();
             $sql = "SELECT * FROM {$_TABLES['shop.features_values']}
                 WHERE ft_id = $ft_id";
-//                ORDER BY orderby ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $opts[$A['fv_id']] = new self($A);
@@ -501,7 +335,7 @@ class FeatureValue
      */
     public function setValue($val)
     {
-        $this->fv_text = $val;
+        $this->fv_value = $val;
         return $this;
     }
 
@@ -513,7 +347,7 @@ class FeatureValue
      */
     public function getValue()
     {
-        return $this->fv_text;
+        return $this->fv_value;
     }
 
 
@@ -549,6 +383,32 @@ class FeatureValue
     public function getFeatureID()
     {
         return (int)$this->ft_id;
+    }
+
+
+    /**
+     * Get the options for a FeatureValue selection.
+     *
+     * @param   integer $sel    Currently-selected option
+     * @param   array   $exclude    Optional array of feature IDs to exclude
+     * @return  string      HTML for option tags
+     */
+    public static function getOptionList($sel=0, $exclude=array())
+    {
+        global $_TABLES;
+
+        if (!empty($exclude)) {
+            $exclude = 'ft_id NOT IN (' . implode(',', $exclude) . ')';
+        } else {
+            $exclude = '';
+        }
+        return COM_optionList(
+            $_TABLES['shop.features_values'],
+            'fv_id,fv_value',
+            $sel,
+            1,
+            $exclude
+        );
     }
 
 }

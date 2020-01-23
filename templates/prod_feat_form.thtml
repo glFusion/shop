@@ -1,0 +1,195 @@
+{# begin {templatelocation} #}
+<h2>Manage Product Features</h2>
+        <table id="pxf_tbl" style="width:90%">
+        <thead>
+        <tr>
+            <th>Feature Name</th>
+            <th>Feature Value</th>
+            <th>Custom Text</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+<!-- BEGIN FeatList -->
+        <tr id="pxf_row_{ft_id}">
+            <td>{ft_name}</td>
+            <td>
+                <select id="fv_sel_{ft_id}">
+                <option value="0">--{$LANG_SHOP['select']}--</option>
+                {fv_sel}
+                </select>
+            </td>
+            <td>{fv_text}</td>
+            <td style="text-align:center">
+                <i class="uk-icon uk-icon-circle uk-text-success" data-uk-tooltip
+                    onclick="updatePXF({prod_id}, {ft_id});" title="{$LANG_SHOP['update']}"></i>
+                &nbsp;&nbsp;
+                <i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip
+                    onclick="delPXF({prod_id}, {ft_id});" title="{$LANG_SHOP['delete']}"></i>
+            </td>
+        </tr>
+<!-- END FeatList -->
+        </tbody>
+        <tfoot>
+        <tr>
+            <td>
+                <select id="ft_name_sel" onchange="updateFVsel();">
+                    {ft_name_options}
+                </select>
+            </td>
+            <td>
+                <select id="fv_sel">
+                    {fv_options}
+                </select>
+            </td>
+            <td>
+                <input id="fv_custom" type="text" size="30" name="fv_custom" value="">
+            </td>
+            <td style="text-align:center">
+                <i class="uk-icon uk-icon-plus-circle uk-text-success" data-uk-tooltip
+                    onclick="addPXF();" title="{$LANG_SHOP['new']}"></i>
+            </td>
+        </tr>
+        </tfoot>
+        </table>
+
+<script>
+function delPXF(ft_id)
+{
+    if (pxf_id < 1) {
+        $.UIkit.notify("Invalid object selected", {timeout: 2000,pos:'top-center'});
+        return;
+    }
+    if (!confirm('{$LANG_SHOP['q_del_item']}')) {
+        return false;
+    }
+    var dataS = {
+        "action": "delPXF",
+        "prod_id": {prod_id},
+        "ft_id": ft_id
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: site_admin_url + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status == true) {
+                    row = document.getElementById("pxf_row_"+pxf_id);
+                    row.remove();
+                }
+                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+            } catch(err) {
+                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+            }
+        },
+        error: function(result) {
+            console.log(result);
+        }
+    });
+    return;
+}
+    
+function addPXF()
+{
+    fv_custom = document.getElementById("fv_custom").value;
+    fv_id = document.getElementById("fv_sel").value;
+    if (fv_custom == "") {
+        fv_custom = "";
+        if (fv_id == "") {
+        $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+        return;
+    }
+    }
+    ft_id = document.getElementById("ft_name_sel").value;
+    if (ft_id == "") {
+        $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+        return;
+    }
+         
+    var dataS = {
+        "action": "newPXF",
+        "prod_id": {prod_id},
+        "ft_id": ft_id,
+        "fv_id": fv_id,
+        "fv_text": fv_custom
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: site_admin_url + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status == true) {
+                    var newRowContent = '<tr id="pxf_row_{prod_id}_' + ft_id + '"><td>' +
+                        result.ft_name + '</td><td>' +
+                        '<select id="fv_sel_' + ft_id + '">' +
+                        '<option value="0">--{$LANG_SHOP['select']}--</option>' +
+                        result.fv_opts + '</select></td><td>' +
+                        result.fv_custom + '</td><td>' +
+                        '<i class="uk-icon uk-icon-circle uk-text-success" data-uk-tooltip title="{$LANG_SHOP['update']}"' +
+                        'onclick="javascript:return updatePXF(' + result.prod_id + ',' + result.ft_id + ');"></i>' +
+                        '&nbsp;&nbsp;'+
+                        '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['delete']}"' +
+                        'onclick="javascript:return delPXF(' + result.prod_id + ',' + result.ft_id + ');"></i>' +
+                        '</td></tr>';
+                    $("#pxf_tbl tbody").append(newRowContent);
+                    document.getElementById("fv_custom").value = '';
+                } else {
+                    $.UIkit.notify("Cannot add duplicate features", {timeout: 2000,pos:'top-center'});
+                }
+            } catch(err) {
+                console.log(err);
+                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+            }
+        },
+        error: function(result) {
+            console.log(result);
+        }
+    });
+    return;
+}
+
+function updateFVsel()
+{
+    ft_id = document.getElementById("ft_name_sel").value;
+    var dataS = {
+        "action": "getFVopts",
+        "ft_id": ft_id,
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: site_admin_url + "/plugins/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status == true) {
+                    var select = $('#fv_sel');
+                    select.empty().append(result.options);
+                }
+            } catch(err) {
+                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+            }
+        },
+        error: function(result) {
+            console.log(result);
+        }
+    });
+    return;
+}
+
+function updatePXF(pxf_id)
+{
+    console.log("Updating prodXfeat id " + pxf_id);
+}
+
+updateFVsel();
+</script>
+
+{# end {templatelocation} #}
