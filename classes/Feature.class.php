@@ -202,7 +202,9 @@ class Feature
 
 
     /**
-     * Delete the current attrribute group record from the database.
+     * Remove the current attrribute group record from the database.
+     * Deletes the feature values, any product records using it, and
+     * the feature record.
      *
      * @param   integer $ft_id      Record ID of the feature
      * @return  boolean     True on success, False on invalid ID
@@ -216,6 +218,7 @@ class Feature
         }
 
         DB_delete($_TABLRES['shop.features_values'], 'ft_id', $ft_id);
+        DB_delete($_TABLRES['shop.prodXfeat'], 'ft_id', $ft_id);
         DB_delete($_TABLES['shop.features'], 'ft_id', $ft_id);
         return true;
     }
@@ -495,6 +498,11 @@ class Feature
     }
 
 
+    /**
+     * Get the value text for this feature.
+     *
+     * @return  string      Feature text
+     */
     public function getValue()
     {
         return $this->fv_text;
