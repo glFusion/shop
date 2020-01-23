@@ -630,6 +630,11 @@ $LANG_SHOP = array (
 'bulk_delete' => 'Delete All Selected',
 'msg_some_not_del' => 'Some items could not be deleted.',
 'opts_not_avail' => 'Selection option combination is not available.',
+'features' => 'Features',
+'ft_name' => 'Feature Name',
+'ft_value' => 'Feature Value',
+'new_ft' => 'Create a new Feature',
+'edit_ft' => 'Edit a Feature',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

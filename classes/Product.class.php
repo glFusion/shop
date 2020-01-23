@@ -142,6 +142,11 @@ class Product
     private $Variant;
 
 
+    /** Product features to be shown in the detail page.
+     * @var array */
+    private $Features;
+
+
     /**
      * Constructor.
      * Reads in the specified class, if $id is set.  If $id is zero,
@@ -636,6 +641,21 @@ class Product
             $this->Variants = ProductVariant::getByProduct($this->id);
         }
         return $this->Variants;
+    }
+
+
+    /**
+     * Get all the static features related to this product.
+     * Sets the local Features property for later use.
+     *
+     * @return  array   Array of Feature objects
+     */
+    public function getFeatures()
+    {
+        if ($this->Features === NULL) {
+            $this->Features = Feature::getByProduct($this->id);
+        }
+        return $this->Features;
     }
 
 
@@ -1499,8 +1519,18 @@ class Product
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
         ) );
+        $Features = $this->getFeatures();
+        $T->set_var('has_features', count($Features));
+        $T->set_block('prod_info', 'FeatList', 'FL');
+        foreach ($this->getFeatures() as $FT) {
+            $T->set_var(array(
+                'ft_name' => $FT->getName(),
+                'fv_text' => $FT->getValue(),
+            ) );
+            $T->parse('FL', 'FeatList', true);
+        }
         $T->set_var(array(
-            'prod_det_blk'      => $T->parse('product', 'prod_info'),
+            'prod_det_blk'  => $T->parse('product', 'prod_info'),
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');

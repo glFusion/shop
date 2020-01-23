@@ -1,8 +1,11 @@
 {# begin {templatelocation} #}
 <ul id="tabs" class="uk-tab" data-uk-tab="{connect:'#prod_details'}">
-    <li class="uk-active"><a href="#">{$LANG_SHOP['product_info']}</a></li>
+    <li><a href="#">{$LANG_SHOP['product_info']}</a></li>
 {!if brand_dscp}
-    <li class="uk-active"><a href="#">{$LANG_SHOP['brand']}</a></li>
+    <li><a href="#">{$LANG_SHOP['brand']}</a></li>
+{!endif}
+{!if has_features}
+    <li><a href="#">{$LANG_SHOP['features']}</a></li>
 {!endif}
 </ul>
 <ul id="prod_details" class="uk-switcher uk-margin">
@@ -36,12 +39,22 @@
     </li>
 
 {# Brand info, if available #}
+{!if brand_dscp}
     <li>
 {!if brand_logo_url}
     <img class="shopLogoImage medium floatleft" src="{brand_logo_url}" />
 {!endif}
     {brand_dscp}
     </li>
+{!endif}
+
+{!if has_features}
+    <li>
+<!-- BEGIN FeatList -->
+        <b>{ft_name}:</b> {fv_text}<br />
+<!-- END FeatList -->
+    </li>
+{!endif}
 </ul>
 {# end {templatelocation} #}
 

@@ -72,6 +72,7 @@ $expected = array(
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
+    'features', 'ft_view', 'ft_edit',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -1040,6 +1041,17 @@ case 'suppliers':
     // Display an admin list of supplier/brand records
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Supplier::adminList();
+    break;
+
+case 'features':
+    // Display the list of features
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Feature::adminList();
+    break;
+
+case 'ft_edit':
+    $Ft = new Shop\Feature($actionval);
+    $content .= $Ft->Edit();
     break;
 
 case 'edit_sup':

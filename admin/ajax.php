@@ -40,6 +40,55 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
+case 'delFV':
+    $retval = array(
+        'status' => false,
+        'statusMessage' => 'An error occurred',
+    );
+    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
+    if ($fv_id > 0) {
+        $retval = array(
+            'status' => Shop\FeatureValue::Delete($fv_id),
+            'statusMessage' => 'Record Deleted',
+        );
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    exit;
+    break;
+
+ case 'newFV':       // Add a new feature value
+    $retval = array(
+        'status' => false,
+        'statusMessage' => 'An error occurred',
+        'fv_id' => 0,
+        'fv_text' => '',
+    );
+    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
+    $fv_text = SHOP_getVar($_POST, 'fv_text');
+    if (!empty($fv_text)) {
+        $FV = new Shop\FeatureValue();
+        $FV->setValue($fv_text)
+            ->setFeatureID($ft_id);
+        $status = $FV->Save();
+        if ($status) {
+            $retval['status'] = true;
+            $retval['statusMessage'] = 'Success';
+            $retval['fv_id'] = $FV->getID();
+            $retval['fv_text'] = $FV->getValue();
+        }
+    }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    exit;
+    break;
+
 case 'orderImages':
     $retval = array(
         'status' => false,

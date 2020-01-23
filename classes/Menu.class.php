@@ -249,6 +249,11 @@ class Menu
                 'text' => $LANG_SHOP['suppliers'],
                 'active' => $view == 'suppliers' ? true : false,
             ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?features',
+                'text' => $LANG_SHOP['features'],
+                'active' => $view == 'features' ? true : false,
+            ),
         );
         if ($_SHOP_CONF['gc_enabled']) {
             // Show the Coupons menu option only if enabled

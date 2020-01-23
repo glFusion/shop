@@ -1,5 +1,11 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.2.0
+Release TBD
+
+  * Add product image sorting.
+  * Add static features/attributes.
+
 ## v1.1.0
 Release 2020-01-22
 
