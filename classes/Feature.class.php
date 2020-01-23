@@ -654,7 +654,7 @@ class Feature
                 'ft_name'   => $F->getName(),
                 'ft_id'     => $F->getID(),
                 'fv_text'   => $F->getValueID() == 0 ? $F->getValue() : '',
-                'fv_sel'    => FeatureValue::optionList($F->getValueID()),
+                'fv_sel'    => FeatureValue::optionList($F->getID(), $F->getValueID()),
             ) );
             $T->parse('FL', 'FeatList', true);
         }
@@ -700,16 +700,73 @@ class Feature
         return $err === NULL ? true : false;
     }
 
+    /**
+     * Update an existing product->feature mapping.
+     * Called via AJAX.
+     *
+     * @param   integer $prod_id        Product record ID
+     * @param   integer $fv_id          FeatureValue record ID
+     * @param   string  $custom_text    Optional override text
+     * @return  boolean     True on success, False on error
+     */
+    public function updateProduct($prod_id, $fv_id, $custom_text='')
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        $fv_id = (int)$fv_id;
+        if (!empty($custom_text)) {
+            // Override the text and set the FV ID to zero.
+            $text = "'" . DB_escapeString($custom_text) . "'";
+            $fv_id = 0;
+        } else {
+            // No custom text and use the FV ID provided.
+            $text = 'NULL';
+        }
+        $sql = "UPDATE {$_TABLES['shop.prodXfeat']} SET
+            fv_id = {$fv_id},
+            fv_text = $text
+            WHERE prod_id = $prod_id AND ft_id = {$this->getID()}";
+        $res = DB_query($sql,1);
+        $err = DB_error($res);
+        return $err === NULL ? true : false;
+    }
+
+
+    /**
+     * Delete a product->feature mapping.
+     * Called via AJAX.
+     *
+     * @param   integer $prod_id    Product record ID
+     * @param   integer $ft_id      Feature record ID
+     * @return  boolean     True on success, False on error
+     */
+    public static function deleteProduct($prod_id, $ft_id)
+    {
+        global $_TABLES;
+
+        if ($prod_id > 0 && $ft_id > 0) {
+            DB_delete(
+                $_TABLES['shop.prodXfeat'],
+                array('prod_id', 'ft_id'),
+                array((int)$prod_id, (int)$ft_id)
+            );
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 
     /**
      * Get the selection options for features.
      * Returns the `<option></option>` tags for the selection list.
      *
      * @param   integer $sel    Currently-selected option
-     * @param   integer $sel    Currently-selected option
+     * @param   array   $exclude    Array of feature IDs to exclude
      * @return  string      Option tags for selection
      */
-    public static function getOptionList($sel=0)
+    public static function optionList($sel=0, $exclude=array())
     {
         global $_TABLES;
 
@@ -723,7 +780,8 @@ class Feature
             $_TABLES['shop.features'],
             'ft_id,ft_name',
             $sel,
-            1
+            1,
+            $exclude
         );
     }
 

@@ -389,25 +389,26 @@ class FeatureValue
     /**
      * Get the options for a FeatureValue selection.
      *
+     * @param   integer $ft_id  Feature record being used.
      * @param   integer $sel    Currently-selected option
      * @param   array   $exclude    Optional array of feature IDs to exclude
      * @return  string      HTML for option tags
      */
-    public static function getOptionList($sel=0, $exclude=array())
+    public static function optionList($ft_id, $sel=0, $exclude=array())
     {
         global $_TABLES;
 
+        $ft_id = (int)$ft_id;
+        $where = "ft_id = $ft_id";
         if (!empty($exclude)) {
-            $exclude = 'ft_id NOT IN (' . implode(',', $exclude) . ')';
-        } else {
-            $exclude = '';
+            $where .= 'AND fv_id NOT IN (' . implode(',', $exclude) . ')';
         }
         return COM_optionList(
             $_TABLES['shop.features_values'],
             'fv_id,fv_value',
             $sel,
             1,
-            $exclude
+            $where
         );
     }
 
