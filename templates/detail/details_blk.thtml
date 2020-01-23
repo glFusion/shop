@@ -51,7 +51,7 @@
 {!if has_features}
     <li>
 <!-- BEGIN FeatList -->
-        <b>{ft_name}:</b> {fv_text}<br />
+        <label style="width:10em;">{ft_name}:</label> {fv_text}<br />
 <!-- END FeatList -->
     </li>
 {!endif}
