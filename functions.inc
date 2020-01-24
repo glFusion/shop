@@ -805,6 +805,10 @@ function plugin_autouninstall_shop()
             'shop.regions',
             'shop.countries',
             'shop.states',
+            // v1.2.0
+            'shop.features',
+            'shop.features_values',
+            'shop.prodXfeat',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

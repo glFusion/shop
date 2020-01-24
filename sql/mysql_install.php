@@ -597,6 +597,31 @@ $SHOP_UPGRADE['1.1.0'] = array(
         ('TMT','T','Turkmenistan Manat',934,'after','','hidden',2,0.00,',','.','Manat','Teňňe',1.00000,'2020-01-14 22:00:46'),
         ('ALL','ALL','Albanian Lek',8,'after','','hidden',2,0.00,',','.','Lek','Qindarka',1.00000,'2020-01-14 22:02:28')",
 );
+$SHOP_UPGRADE['1.2.0'] = array(
+    "CREATE TABLE `{$_TABLES['shop.features']}` (
+      `ft_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `ft_name` varchar(40) NOT NULL DEFAULT '',
+      `orderby` int(5) NOT NULL DEFAULT '9999',
+      PRIMARY KEY (`ft_id`),
+      KEY `feat_name` (`ft_name`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.features_values']}` (
+      `fv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `ft_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_value` varchar(40) NOT NULL DEFAULT '',
+      PRIMARY KEY (`fv_id`),
+      UNIQUE KEY `id_txt` (`ft_id`,`fv_value`),
+      KEY `feat_id` (`ft_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.prodXfeat']}` (
+      `prod_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `ft_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_text` varchar(40) DEFAULT NULL,
+      PRIMARY KEY (`prod_id`,`ft_id`)
+    ) ENGINE=MyISAM",
+);
+
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -616,5 +641,8 @@ $_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
 $_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
+$_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
+$_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
+$_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 
 ?>
