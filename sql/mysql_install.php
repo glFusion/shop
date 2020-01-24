@@ -76,6 +76,7 @@ $_SQL = array(
   `max_ord_qty` int(3) NOT NULL DEFAULT 0,
   `brand_id` int(11) unsigned NOT NULL DEFAULT 0,
   `supplier_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `supplier_ref` varchar(64) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -620,6 +621,7 @@ $SHOP_UPGRADE['1.2.0'] = array(
       `fv_text` varchar(40) DEFAULT NULL,
       PRIMARY KEY (`prod_id`,`ft_id`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD   `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `suppliers_id`",
 );
 
 
