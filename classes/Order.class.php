@@ -812,6 +812,7 @@ class Order
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
             }
+            $qty_bo = 0;
             if ($this->status == 'cart') {      // TODO, divorce cart from order
                 $qty_bo = $P->getQuantityBO($item->getQuantity());
                 if ($qty_bo > 0) {
@@ -839,6 +840,9 @@ class Order
             }
             if ($has_sale_items) {
                 $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
+            }
+            if ($qty_bo) {
+                $icon_tooltips[] = $LANG_SHOP['backordered'][0] . ' = ' . $LANG_SHOP['backordered'];
             }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
