@@ -133,6 +133,10 @@ class Product
      * @var string */
     private $supplier_ref = '';
 
+    /** Description of product lead time.
+     * @var string */
+    private $lead_time = '';
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -570,7 +574,8 @@ class Product
         $this->btn_type = $row['buttons'];
         $this->setSupplierID($row['supplier_id'])
             ->setBrandID($row['brand_id'])
-            ->setSupplierRef($row['supplier_ref']);
+            ->setSupplierRef($row['supplier_ref'])
+            ->setLeadTime($row['lead_time']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -857,6 +862,7 @@ class Product
                 brand_id ='" . $this->getBrandID() . "',
                 supplier_id ='" . $this->getSupplierID() . "',
                 supplier_ref = '{$this->getSupplierRef()}',
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
@@ -1088,6 +1094,10 @@ class Product
 
         }
 
+        $ph_lead_time = Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        if (empty($ph_lead_time)) {
+            $ph_lead_time = $LANG_SHOP['none'];
+        }
         list($allcats_sel, $selcats_sel) = $this->getCatSelections($this->id);
         $T->set_var(array(
             //'post_options'  => $post_options,
@@ -1147,6 +1157,8 @@ class Product
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
             'features_list'  => $this->id > 0 ? Feature::productForm($this->id) : '',
             'supplier_ref'  => $this->getSupplierRef(),
+            'lead_time'     => $this->getLeadTime(),
+            'ph_lead_time'  => $ph_lead_time,
         ) );
 
         // Create the button type selections. New products get the default
@@ -1550,7 +1562,9 @@ class Product
             'weight'            => $this->weight + $this->Variant->getWeight(),
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
+            'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
         ) );
+
         $Features = $this->getFeatures();
         $T->set_var('has_features', count($Features));
         $T->set_block('prod_info', 'FeatList', 'FL');
@@ -3824,6 +3838,44 @@ class Product
     public function getBrandName()
     {
         return Supplier::getInstance($this->getBrandID())->getDisplayName();
+    }
+
+
+    /**
+     * Set the lead time string to override the supplier's lead time.
+     *
+     * @param   string  $str    Lead time description
+     * @return  object  $this
+     */
+    public function setLeadTime($str)
+    {
+        $this->lead_time = $str;
+    }
+
+
+    /**
+     * Get the lead time text for this supplier.
+     *
+     * @return  string  Lead time description
+     */
+    public function getLeadTime()
+    {
+        return $this->lead_time;
+    }
+
+
+    /**
+     * Get the lead time string for the product, or from the supplier if not set.
+     *
+     * @return  string  Lead time description.
+     */
+    public function LeadTime()
+    {
+        if (empty($this->lead_time)) {
+            return Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        } else {
+            return $this->lead_time;
+        }
     }
 
 
