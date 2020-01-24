@@ -58,7 +58,7 @@
 function delPXF(ft_id)
 {
     if (ft_id < 1) {
-        $.UIkit.notify("Invalid object selected", {timeout: 2000,pos:'top-center'});
+        $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
         return;
     }
     if (!confirm('{$LANG_SHOP['q_del_item']}')) {
@@ -81,9 +81,9 @@ function delPXF(ft_id)
                     row = document.getElementById("pxf_row_"+ft_id);
                     row.remove();
                 }
-                $.UIkit.notify("Item Removed", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify("{$LANG_SHOP['msg_deleted']}", {timeout: 2000,pos:'top-center'});
             } catch(err) {
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify("{$LANG_SHOP['msg_nochange']}", {timeout: 2000,pos:'top-center'});
             }
         },
         error: function(result) {
@@ -100,13 +100,13 @@ function addPXF()
     if (fv_custom == "") {
         fv_custom = "";
         if (fv_id == "") {
-            $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+            $.UIkit.notify("{$LANG_SHOP['missing_fields']}", {timeout: 2000,pos:'top-center'});
             return;
         }
     }
     ft_id = document.getElementById("ft_name_sel").value;
     if (ft_id == "") {
-        $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+        $.UIkit.notify("{$LANG_SHOP['missing_fields']}", {timeout: 2000,pos:'top-center'});
         return;
     }
          
@@ -142,11 +142,11 @@ function addPXF()
                     $("#pxf_tbl tbody").append(newRowContent);
                     document.getElementById("fv_custom").value = '';
                 } else {
-                    $.UIkit.notify("Cannot add duplicate features", {timeout: 2000,pos:'top-center'});
+                    $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
                 }
             } catch(err) {
                 console.log(err);
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
             }
         },
         error: function(result) {
@@ -179,7 +179,7 @@ function updateFVsel()
                 }
             } catch(err) {
                 console.log(err);
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
             }
         },
         error: function(result) {
@@ -196,7 +196,7 @@ function updatePXF(ft_id)
     if (fv_custom == "") {
         fv_custom = "";
         if (fv_id == "") {
-            $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+            $.UIkit.notify("{$LANG_SHOP['missing_fields']}", {timeout: 2000,pos:'top-center'});
             return;
         }
     }
@@ -222,7 +222,7 @@ function updatePXF(ft_id)
                 }
             } catch(err) {
                 console.log(err);
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
             }
         },
         error: function(result) {
