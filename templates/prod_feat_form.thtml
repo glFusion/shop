@@ -47,7 +47,7 @@
                 <input id="fv_custom" type="text" size="30" name="fv_custom" value="">
             </td>
             <td style="text-align:center">
-                <i class="uk-icon uk-icon-plus-check_circle uk-text-success" data-uk-tooltip
+                <i class="uk-icon uk-icon-plus-circle uk-text-success" data-uk-tooltip
                     onclick="addPXF();" title="{$LANG_SHOP['new']}"></i>
             </td>
         </tr>
@@ -131,8 +131,9 @@ function addPXF()
                         '<select id="fv_sel_' + ft_id + '">' +
                         '<option value="0">--{$LANG_SHOP['select']}--</option>' +
                         result.fv_opts + '</select></td><td>' +
-                        result.fv_custom + '</td><td style="text-align:center;">' +
-                        '<i class="uk-icon uk-icon-circle uk-text-success" data-uk-tooltip title="{$LANG_SHOP['update']}"' +
+                        '<input id="fv_custom_' + ft_id + '" type="text" size="30" name="fv_custom_"' + ft_id + ' value="' +
+                        result.fv_custom + '" /></td><td style="text-align:center;">' +
+                        '<i class="uk-icon uk-icon-check-circle uk-text-success" data-uk-tooltip title="{$LANG_SHOP['update']}"' +
                         'onclick="javascript:return updatePXF(' + ft_id + ');"></i>' +
                         '&nbsp;&nbsp;'+
                         '<i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['delete']}"' +
