@@ -46,12 +46,6 @@ case 'delPXF':      // delete a product->feature mapping
     $retval = array(
         'status' => Shop\Feature::deleteProduct($prod_id, $ft_id),
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
 case 'updPXF':      // update a product->feature mapping
@@ -77,12 +71,6 @@ case 'updPXF':      // update a product->feature mapping
             'status' => false,
         );
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
 case 'newPXF':      // add a product->feature mapping
@@ -110,12 +98,6 @@ case 'newPXF':      // add a product->feature mapping
             'status' => false,
         );
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
 case 'getFVopts':
@@ -138,12 +120,6 @@ case 'getFVopts':
             'options' => '',
         );
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
 case 'delFV':
@@ -158,12 +134,6 @@ case 'delFV':
             'statusMessage' => 'Record Deleted',
         );
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
  case 'newFV':       // Add a new feature value
@@ -187,12 +157,6 @@ case 'delFV':
             $retval['fv_text'] = $FV->getValue();
         }
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    exit;
     break;
 
 case 'orderImages':
@@ -206,11 +170,6 @@ case 'orderImages':
     Shop\Images\Product::updateOrder($_POST['ordering']);
     Shop\Cache::clear('products');
      */
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'dropupload_cat':
@@ -252,11 +211,6 @@ case 'dropupload_cat':
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'dropupload':
@@ -297,11 +251,6 @@ case 'dropupload':
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'opt_orderby_opts':
@@ -310,6 +259,7 @@ case 'opt_orderby_opts':
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
     $retval = Shop\ProductOptionValue::getOrderbyOpts($og_id, $selected);
+    // This function gets JSON from the object.
     echo $retval;
     exit;
 
@@ -344,57 +294,39 @@ case 'updatestatus':
                 }
             }
         }
-        header('Content-Type: application/json');
-        header("Cache-Control: no-cache, must-revalidate");
-        //A date in the past
-        header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-        echo json_encode($L);
+        $retval = $L;
         break;
     }
+    exit;       // do nothing if nothing was logged
     break;
 
 case 'delimage_cat':
     // Delete a product image from the product edit form.
     $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
     $nonce = SHOP_getVar($_POST, 'nonce');
-    $arr = array(
+    $retval = array(
         'cat_id'    => $cat_id,
         'status'    => \Shop\Images\Category::DeleteImage($cat_id, $nonce),
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($arr);
     break;
 
 case 'delimage':
     // Delete a product image from the product edit form.
     $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
-    $arr = array(
+    $retval = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::DeleteImage($img_id),
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($arr);
     break;
 
 case 'setDefImg':
     // Set an image as the default.
     $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
     $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $arr = array(
+    $retval = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::setAsDefault($img_id, $prod_id),
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($arr);
     break;
 
 case 'add_tracking':
@@ -425,11 +357,6 @@ case 'add_tracking':
     } else {
         $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'del_tracking':
@@ -440,11 +367,6 @@ case 'del_tracking':
     $retval = array(
         'status' => true,
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'void':
@@ -483,11 +405,6 @@ case 'void':
             'text' => $LANG_SHOP['valid'],
         );
     }
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
     break;
 
 case 'toggle':
@@ -625,12 +542,14 @@ case 'toggle':
             $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
         'title' => $title,
     );
-    header('Content-Type: application/json');
-    header("Cache-Control: no-cache, must-revalidate");
-    //A date in the past
-    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-    echo json_encode($retval);
-    break;
 }
+
+// Return the $retval array as a JSON string
+header('Content-Type: application/json');
+header("Cache-Control: no-cache, must-revalidate");
+//A date in the past
+header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+echo json_encode($retval);
+exit;
 
 ?>
