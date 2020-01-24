@@ -49,6 +49,10 @@ class ProductVariant
      * @var string */
     private $sku;
 
+    /** Supplier reference number (sku, part number, etc.).
+     * @var string */
+    private $supplier_ref;
+
     /** Quantity on hand.
      * @var float */
     private $onhand;
@@ -152,6 +156,7 @@ class ProductVariant
                 ->setWeight(SHOP_getVar($A, 'weight', 'float'))
                 ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
+                ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
                 ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
@@ -439,6 +444,30 @@ class ProductVariant
 
 
     /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
+    }
+
+
+    /**
      * Get all variants related to a given productd.
      *
      * @param   integer $product_id     Product record ID
@@ -614,7 +643,10 @@ class ProductVariant
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = new \Template(__DIR__ . '/../templates');
-        $T->set_file('form', 'variant_edit.thtml');
+        $T->set_file(array(
+            'form' => 'variant_edit.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
 
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
@@ -637,6 +669,7 @@ class ProductVariant
             'dscp'          => $this->getDscpString(),
             'reorder'       => $this->getReorder(),
             'is_form'       => true,
+            'supplier_ref'  => $this->getSupplierRef(),
         ) );
         $Groups = ProductOptionGroup::getAll();
         $optsInUse = $this->_optsInUse();
@@ -659,6 +692,7 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
         return $retval;
@@ -730,6 +764,8 @@ class ProductVariant
                 return false;
             }
         }
+        Cache::clear('products');
+        Cache::clear('options');
         return true;
     }
 
@@ -810,10 +846,16 @@ class ProductVariant
             } else {
                 $reorder = (float)$A['reorder'];
             }
+            if ($A['supplier_ref'] === '') {
+                $sup_ref = $P->getSupplierRef();
+            } else {
+                $sup_ref = $A['supplier_ref'];
+            }
 
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
                 item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
+                supplier_ref = '" . DB_escapeString($sup_ref) . "',
                 price = " . (float)$price . ",
                 weight = $weight,
                 shipping_units = $shipping_units,
@@ -858,6 +900,7 @@ class ProductVariant
         $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
             item_id = '" . (int)$this->item_id . "',
             sku = '" . DB_escapeString($this->sku) . "',
+            supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
@@ -1037,6 +1080,11 @@ class ProductVariant
              array(
                 'text'  => 'SKU',
                 'field' => 'sku',
+                'sort'  => true,
+            ),
+             array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
                 'sort'  => true,
             ),
             array(

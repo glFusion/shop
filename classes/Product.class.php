@@ -129,6 +129,10 @@ class Product
      * @var integer */
     private $brand_id = 0;
 
+    /** Supplier Reference, e.g. model number, sku.
+     * @var string */
+    private $supplier_ref = '';
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -565,7 +569,8 @@ class Product
         $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
         $this->btn_type = $row['buttons'];
         $this->setSupplierID($row['supplier_id'])
-            ->setBrandID($row['brand_id']);
+            ->setBrandID($row['brand_id'])
+            ->setSupplierRef($row['supplier_ref']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -656,6 +661,30 @@ class Product
             $this->Features = Feature::getByProduct($this->id);
         }
         return $this->Features;
+    }
+
+
+    /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
     }
 
 
@@ -827,6 +856,7 @@ class Product
                 avail_end='" . DB_escapeString($this->avail_end) . "',
                 brand_id ='" . $this->getBrandID() . "',
                 supplier_id ='" . $this->getSupplierID() . "',
+                supplier_ref = '{$this->getSupplierRef()}',
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
@@ -1116,6 +1146,7 @@ class Product
             'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
             'features_list'  => $this->id > 0 ? Feature::productForm($this->id) : '',
+            'supplier_ref'  => $this->getSupplierRef(),
         ) );
 
         // Create the button type selections. New products get the default
