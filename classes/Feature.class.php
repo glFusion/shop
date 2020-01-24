@@ -187,6 +187,7 @@ class Feature
             if (!isset($A['orderby'])) {
                 // Put this field at the end of the line by default.
                 $A['orderby'] = 9999;
+                $reorder = true;
             } elseif ($A['orderby'] != $this->getOrderby()) {
                 // Bump the number from the "position after" value and
                 // indicate that sorting is needed after saving.
@@ -299,6 +300,7 @@ class Feature
                 0,
                 "ft_id <> {$this->ft_id}"
             ),
+            'last_sel'      => $this->ft_id == 0 ? 'selected="selected"' : '',
         ) );
         $T->set_block('form', 'FVList', 'FV');
         foreach ($this->getValues() as $FV) {

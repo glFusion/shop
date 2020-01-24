@@ -20,7 +20,7 @@
     <select name="orderby">
       <option value="0">--{$LANG_SHOP['first']}--</option>
       {orderby_opts}
-      <option value="9999" {orderby_last}>--{$LANG_SHOP['last']}--</option>
+      <option value="9999" {orderby_last} {last_sel}>--{$LANG_SHOP['last']}--</option>
     </select>
     </div>
   </div>
