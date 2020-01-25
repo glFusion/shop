@@ -740,23 +740,21 @@ class Feature
      * Called via AJAX.
      *
      * @param   integer $prod_id    Product record ID
-     * @param   integer $ft_id      Feature record ID
+     * @param   integer $ft_id      Feature record ID, -1 for all
      * @return  boolean     True on success, False on error
      */
-    public static function deleteProduct($prod_id, $ft_id)
+    public static function deleteProduct($prod_id, $ft_id = -1)
     {
         global $_TABLES;
 
-        if ($prod_id > 0 && $ft_id > 0) {
-            DB_delete(
-                $_TABLES['shop.prodXfeat'],
-                array('prod_id', 'ft_id'),
-                array((int)$prod_id, (int)$ft_id)
-            );
-            return true;
-        } else {
-            return false;
+        $args = array('prod_id');
+        $vals = array((int)$prod_id);
+        if ($ft > -1) {
+            $args[] = 'ft_id';
+            $vals[] = (int)$ft_id;
         }
+        DB_delete($_TABLES['shop.prodXfeat'], $args, $vals);
+        return DB_error() ? false : true;
     }
 
 
@@ -785,6 +783,30 @@ class Feature
             1,
             $exclude
         );
+    }
+
+
+    /**
+     * Duplicate a feature set from one product to another.
+     *
+     * @param   integer $src    Source product record ID
+     * @param   integer $dst    Destination product record ID
+     * @return  boolean     True on success, False on error
+     */
+    public static function cloneProduct($src, $dst)
+    {
+        global $_TABLES;
+
+        $src = (int)$src;
+        $dst = (int)$dst;
+        // Clear target categories, the Home category is probably there.
+        DB_delete($_TABLES['shop.prodXfeat'], 'product_id', $dst);
+        $sql = "INSERT INTO {$_TABLES['shop.prodXfeat']}
+            (prod_id, ft_id, fv_id, fv_text)
+            SELECT $dst, ft_id, fv_id, fv_text FROM {$_TABLES['shop.prodXfeat']}
+            WHERE prod_id = $src";
+        DB_query($sql, 1);
+        return DB_error() ? false : true;
     }
 
 }

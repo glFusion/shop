@@ -994,6 +994,7 @@ class Product
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
         ProductVariant::deleteByProduct($this->id);
         Category::deleteProduct($this->id);
+        Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -2337,7 +2338,8 @@ class Product
         $s1 = ProductVariant::cloneProduct($old_id, $new_id);
         $s2 = Category::cloneProduct($old_id, $new_id);
         $s3 = Images\Product::cloneProduct($old_id, $new_id);
-        return $s1 && $s2 && $s3;
+        $s4 = Feature::cloneProduct($old_id, $new_id);
+        return $s1 && $s2 && $s3 && $s4;
     }
 
 
