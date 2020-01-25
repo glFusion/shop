@@ -638,6 +638,7 @@ $LANG_SHOP = array (
 'err_not_curr_ver' => 'The Shop Plugin has not been updated from %1$s  to %2$s.',
 'supplier_ref' => 'Supplier Reference',
 'lead_time' => 'Lead Time',
+'disp_lead_time' => 'Allow %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

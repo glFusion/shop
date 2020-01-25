@@ -468,6 +468,22 @@ class ProductVariant
 
 
     /**
+     * Get the lead time for this variant.
+     * TODO: Add per-variant lead times.
+     *
+     * @return  string  Lead time if out of stock
+     */
+    public function getLeadTime()
+    {
+        // if ($this->lead_time == '') {        // todo
+        // return $this->lead_time;
+        // } else {
+        return Product::getInstance($this->item_id)->LeadTime();
+        // }
+    }
+
+
+    /**
      * Get all variants related to a given productd.
      *
      * @param   integer $product_id     Product record ID
@@ -1322,6 +1338,7 @@ class ProductVariant
                 'onhand'    => 0,
                 'weight'    => '--',
                 'sku'       => '',
+                'leadtime'  => '',
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
@@ -1340,6 +1357,7 @@ class ProductVariant
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
+                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
             );
         }
         if ($P->getTrackOnhand()) {

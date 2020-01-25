@@ -25,14 +25,8 @@
 {!if track_onhand}
         <p>
         <label>{$LANG_SHOP['onhand']}:</label>
-        <span id="onhand">{onhand}</span>
+        <span id="onhand">{onhand}</span><span style="margin-left:20px;" id="leadtime">{lead_time}</span>
         </p>
-{!if lead_time}
-        <p>
-        <label>{$LANG_SHOP['lead_time']}:</label>
-        <span id="lead_time">{lead_time}</span>
-        </p>
-{!endif}
         <p>
         <label>{$LANG_SHOP['weight']}:</label>
         <span id="weight">{weight}</span> {weight_unit}

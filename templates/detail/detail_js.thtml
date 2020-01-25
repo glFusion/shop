@@ -40,8 +40,10 @@ function ProcessForm(form)
         data: data,
         success: function(result) {
             try {
+console.log(result);
                 $("div#avail_msg").text(result.msg);
                 $("span#onhand").text(result.onhand);
+                $("span#leadtime").text(result.leadtime);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
                     $("span#weight").text(result.weight);

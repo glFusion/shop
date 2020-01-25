@@ -1562,7 +1562,8 @@ class Product
             'weight'            => $this->weight + $this->Variant->getWeight(),
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
-            'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
+            //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
+            'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_tim'], $this->LeadTime()) . ')' : '',
         ) );
 
         $Features = $this->getFeatures();
@@ -2409,11 +2410,19 @@ class Product
     public function isInStock()
     {
         // Not tracking stock, or have stock on hand, return true
-        if ($this->track_onhand == 0 || $this->getOnhand() > 0) {
-            return true;
-        } else {
-            return false;
+        if ($this->track_onhand == 1) {
+            $this->getVariants();
+            if (!empty($this->Variants)) {
+                foreach ($this->Variants as $V) {
+                    if ($V->getOnhand() > 0) {
+                        return true;
+                    }
+                }
+            } elseif ($this->getOnhand() > 0) {
+                return true;
+            }
         }
+        return false;
     }
 
 
