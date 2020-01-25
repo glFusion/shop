@@ -195,7 +195,7 @@ div.shopProductListOuter {
 
 .shopProductListItem {
     position: relative;
-    padding: 5px;
+    /*padding: 5px;*/
     text-decoration: none;
     overflow: hidden;
 }
@@ -802,4 +802,24 @@ ul#prod_details label {
 }
 ul#prod_details p {
     margin-top:8px;
+}
+
+ul.product-flags {
+    list-style: none;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    padding-left: 0;
+    z-index: 3;
+}
+ul.product-flags li {
+    background: #f39d72;
+    color: white;
+    width: 100%;
+    text-align: center;
+    left: 0;
+    top: 0;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: .3rem .5rem;
 }
