@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -48,7 +48,7 @@ $expected = array(
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move',
-    'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
+    'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
@@ -111,10 +111,10 @@ case 'statcomment':         // update comment and status
     COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
     break;
 
-case 'dup_product':
+case 'prod_clone':
     $P = new \Shop\Product($_REQUEST['id']);
     $P->Duplicate();
-    echo COM_refresh(SHOP_ADMIN_URL.'/index.php');
+    COM_refresh(SHOP_ADMIN_URL.'/index.php?products');
     break;
 
 case 'deleteproduct':
@@ -124,7 +124,7 @@ case 'deleteproduct':
     } else {
         COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
-    echo COM_refresh(SHOP_ADMIN_URL);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'delshipping':
@@ -157,7 +157,7 @@ case 'deletecat':
     } else {
         $C->Delete();
     }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
     break;
 
 case 'saveproduct':
@@ -169,7 +169,7 @@ case 'saveproduct':
             COM_setMsg($msg, 'error');
         }
     }
-    echo COM_refresh($url);
+    COM_refresh($url);
     break;
 
 case 'savecat':

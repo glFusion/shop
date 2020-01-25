@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -759,20 +759,19 @@ class Product
 
         $old_rating_ena = $this->rating_enabled;    // save original setting
 
+        // See if the name changed. If so, then the Variant skus need to be
+        // updated.
+        $old_name = $this->name;
+
         if (is_array($A)) {
             $this->setVars($A);
         }
         $nonce = SHOP_getVar($A, 'nonce');
-        $errs = $this->_Validate();
+        $this->Errors = $this->_Validate();
         if (!empty($errs)) {
-            $this->Errors = $errs;
-        }
-
-        if (isset($A['imgdelete']) && !empty($A['imgdelete'])) {
-            $del_ids = explode(',', $A['imgdelete']);
-            foreach ($del_ids as $img_id) {
-                Images\Product::deleteById($img_id);
-            }
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
         }
 
         // Handle file uploads.
@@ -800,6 +799,21 @@ class Product
             $this->file = '';
         }
 
+        // Check for errors during validation and file upload,
+        // and abort before any real DB action is taken.
+        if (!empty($this->Errors)) {
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
+        }
+
+        if (isset($A['imgdelete']) && !empty($A['imgdelete'])) {
+            $del_ids = explode(',', $A['imgdelete']);
+            foreach ($del_ids as $img_id) {
+                Images\Product::deleteById($img_id);
+            }
+        }
+
         // For downloads and virtual items. physical options don't apply.
         if (!$this->isPhysical()) {
             $this->weight = 0;
@@ -824,6 +838,13 @@ class Product
             SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
+            // While we're here, change the existing Variant SKUs if the
+            // product SKU has changed.
+            if (empty($this->Errors) && $old_name != $this->name) {
+                foreach ($this->getVariants() as $Variant) {
+                    $Variant->updateSKU($old_name, $this->name);
+                }
+            }
         } else {
             SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
             $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
@@ -931,6 +952,7 @@ class Product
             self::deleteButtons($this->id);
         }
 
+        // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
             COM_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
@@ -971,6 +993,7 @@ class Product
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
         ProductVariant::deleteByProduct($this->id);
+        Category::deleteProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -2298,15 +2321,11 @@ class Product
         // Save the original ID, needed to copy image files
         $old_id = $this->id;
 
-        // Get variants and categories to be saved for the new product
-        $this->getVariants();
-        $this->getCategories();
-
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . ' - ' . uniqid();
-        var_dump($this->getVariants());die;
+        $old_name = $this->name;
+        $this->name = $this->name . uniqid();
         $this->Save();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
@@ -2314,23 +2333,11 @@ class Product
         }
         $new_id = $this->id;
 
-        // Copy all the image files
-        foreach ($this->Images as $A) {
-            $parts = explode('_', $A['filename']);
-            $new_fname = "{$new_id}_{$parts[1]}";
-            $src_f = $_SHOP_CONF['image_dir'] . '/' . $A['filename'];
-            $dst_f = $_SHOP_CONF['image_dir'] . '/' . $new_fname;
-            if (@copy($src_f, $dst_f)) {
-                // copy successful, insert record into table
-                $sql = "INSERT INTO {$_TABLES['shop.images']}
-                            (product_id, filename)
-                        VALUES ('$new_id', '" . DB_escapeString($new_fname) . "')";
-                DB_query($sql);
-            } else {
-                SHOP_log("Error copying file $src_f to $dst_f, continuing", SHOP_LOG_ERROR);
-            }
-        }
-        return true;
+        // Now clone the other records
+        $s1 = ProductVariant::cloneProduct($old_id, $new_id);
+        $s2 = Category::cloneProduct($old_id, $new_id);
+        $s3 = Images\Product::cloneProduct($old_id, $new_id);
+        return $s1 && $s2 && $s3;
     }
 
 
@@ -3199,12 +3206,12 @@ class Product
                 'sort'  => false,
                 'align' => 'center',
             ),
-            /*array(
+            array(
                 'text'  => $LANG_ADMIN['copy'],
                 'field' => 'copy',
                 'sort'  => false,
                 'align' => 'center',
-            ),*/
+            ),
             array(
                 'text'  => $LANG_SHOP['enabled'],
                 'field' => 'enabled',
@@ -3400,7 +3407,7 @@ class Product
         case 'copy':
             $retval .= COM_createLink(
                 Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
+                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
             );
             break;
 
@@ -3549,7 +3556,6 @@ class Product
     private function _Validate()
     {
         global $_TABLES, $LANG_SHOP;
-
         $errors = array();
         $sku = DB_escapeString($this->name);
         $sku_err = (int)DB_getItem(

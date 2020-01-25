@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -210,6 +210,9 @@ class ProductVariant
      */
     public function getOptions()
     {
+        if ($this->Options === NULL) {
+            $this->loadOptions();
+        }
         return $this->Options;
     }
 
@@ -911,18 +914,25 @@ class ProductVariant
             $this->setVars($A);
         }
         if ($this->pv_id == 0) {
-            return self::saveNew($A);
+           if (isset($A['groups'])) {
+               return self::saveNew($A);
+           } else {
+               $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
+                $sql3 = '';
+           }
+        } else {
+            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} SET ";
+            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
         }
-        $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
-            item_id = '" . (int)$this->item_id . "',
+        $sql2 = "item_id = '" . (int)$this->item_id . "',
             sku = '" . DB_escapeString($this->sku) . "',
             supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
-            reorder = " . (float)$this->reorder . "
-            WHERE pv_id = '{$this->pv_id}'";
+            reorder = " . (float)$this->reorder;
+        $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -1494,9 +1504,11 @@ class ProductVariant
             } else {
                 $sku = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.product_variants']}
-                (item_id, sku, price, weight, shipping_units, onhand, reorder, enabled)
-                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled
+            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} (
+                    item_id, sku, price, weight, shipping_units, onhand,
+                    reorder, enabled, supplier_ref
+                )
+                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref
                 FROM {$_TABLES['shop.product_variants']}
                 WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
@@ -1504,6 +1516,26 @@ class ProductVariant
             $sql = "INSERT INTO {$_TABLES['shop.variantXopt']} (pv_id, pov_id)
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
+        }
+        Cache::clear('products');
+        Cache::clear('options');
+    }
+
+    /**
+     * Update the SKU value when the product SKU has changed.
+     * Only changes the SKU if the first part is the product sku. No action
+     * is taken if the variant SKU has been modified by the admin.
+     *
+     * @param   string  $old_sku    Original product SKU
+     * @param   string  $new_sku    New product SKU
+     */
+    public function updateSKU($old_sku, $new_sku)
+    {
+        $len = strlen($old_sku);
+        if (substr($this->getSku(), 0, $len) == $old_sku) {
+            $var_sku = substr($this->getSku(), $len);
+            $this->setSku($new_sku . $var_sku)
+                ->Save();
         }
     }
 
