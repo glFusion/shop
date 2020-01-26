@@ -800,7 +800,7 @@ class Feature
         $src = (int)$src;
         $dst = (int)$dst;
         // Clear target categories, the Home category is probably there.
-        DB_delete($_TABLES['shop.prodXfeat'], 'product_id', $dst);
+        DB_delete($_TABLES['shop.prodXfeat'], 'prod_id', $dst);
         $sql = "INSERT INTO {$_TABLES['shop.prodXfeat']}
             (prod_id, ft_id, fv_id, fv_text)
             SELECT $dst, ft_id, fv_id, fv_text FROM {$_TABLES['shop.prodXfeat']}
