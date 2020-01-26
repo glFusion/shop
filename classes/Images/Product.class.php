@@ -26,11 +26,11 @@ class Product extends \Shop\Image
 
     /** Maximum width, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxwidth = 800;
+    static $maxwidth = 1024;
 
     /** Maximum height, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxheight = 600;
+    static $maxheight = 1024;
 
 
     /**
