@@ -642,6 +642,15 @@ $SHOP_UPGRADE['1.2.0'] = array(
       `fv_text` varchar(40) DEFAULT NULL,
       PRIMARY KEY (`prod_id`,`ft_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.zone_rules']}` (
+      `rule_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `rule_name` varchar(64) NOT NULL DEFAULT '',
+      `allow` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      `regions` text,
+      `countries` text,
+      `states` text,
+      PRIMARY KEY (`rule_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_ref`",
     "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
@@ -668,5 +677,6 @@ $_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
 $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
+$_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 
 ?>

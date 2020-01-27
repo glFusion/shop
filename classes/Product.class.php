@@ -3926,6 +3926,18 @@ class Product
         return array($allcats_sel, $selcats_sel);
     }
 
+
+    /**
+     * Get the zone rule ID for this product.
+     * TODO: stub function during testing
+     *
+     * @return  integer     Applicable rule ID
+     */
+    public function getRuleID()
+    {
+        return 0;
+    }
+
 }
 
 ?>

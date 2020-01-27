@@ -155,13 +155,12 @@ class RegionBase
                 'class="uk-button uk-button-mini tooltip" ' .
                 'title="' . $LANG_ADMIN['disable'] . '" ' .
                 '><i class="uk-icon uk-icon-remove"></i>' .
-                '</button>&nbsp;',
-                /*'<button type="submit" name="del_' . static::$KEY . '" value="x" ' .
-                'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-                'title="' . $LANG_SHOP['delete'] . '" ' .
-                'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
-                '><i class="uk-icon uk-icon-trash"></i>' .
-                '</button>',*/
+                '</button>&nbsp;' .
+                '<select name="rule_id">' . Rules\Zone::optionList() . '</select>' .
+                '<button type="submit" name="rule_add" value="' . static::$KEY . '" ' .
+                'class="uk-button uk-button-mini uk-button-primary tooltip" ' .
+                'title="XX' . $LANG_SHOP['add_to_rule'] . '">Add to rule' .
+                '</button>',
         );
         return $options;
     }

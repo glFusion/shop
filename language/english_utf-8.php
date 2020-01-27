@@ -640,6 +640,17 @@ $LANG_SHOP = array (
 'lead_time' => 'Lead Time',
 'disp_lead_time' => 'Allow %s',
 'on_sale' => 'On Sale!',
+'rules' => 'Zone Rules',
+'rule_name' => 'Rule Name',
+'sales_are' => 'Sales Are',
+'allowed' => 'Allowed',
+'denied' => 'Denied',
+'chk_all' => 'Check/Uncheck All',
+'del_selected' => 'Delete Selected',
+'del_rule' => 'Delete Rule',
+'save_rule' => 'Save Rule',
+'new_rule' => 'New Rule',
+'edit-rule' => 'Edit Rule',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -670,6 +681,8 @@ $LANG_SHOP_HELP = array(
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',
 'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
+'hlp_chk_all' => 'Select or de-select all items',
+'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
