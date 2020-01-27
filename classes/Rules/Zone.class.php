@@ -394,7 +394,7 @@ class Zone
         $defsort_arr = array();
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_ft'],
+            $LANG_SHOP['new_rule'],
             SHOP_ADMIN_URL . '/index.php?rule_edit=0',
             array(
                 'style' => 'float:left;',
