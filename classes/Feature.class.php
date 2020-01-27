@@ -320,7 +320,6 @@ class Feature
     /**
      * Admin List View.
      *
-     * @param   integer $cat_id     Optional attribute ID to limit listing
      * @return  string      HTML for the attribute list.
      */
     public static function adminList()
