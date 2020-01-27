@@ -3,9 +3,9 @@
  * Class to manage order shipments
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -15,15 +15,11 @@
 namespace Shop;
 
 /**
- * Class for order line items.
+ * Class for order shipments.
  * @package shop
  */
 class Shipment
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
-
     /** Order object related to this shipment.
      * var object */
     private $Order = NULL;
@@ -128,39 +124,13 @@ class Shipment
 
 
     /**
-     * Setter function.
+     * Get the shipment record ID.
      *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
+     * @return  integer     Shipment record ID
      */
-    public function __set($key, $value)
+    public function getID()
     {
-        switch ($key) {
-        case 'shipment_id':
-        case 'shipper_id':
-        case 'ts':
-            $this->properties[$key] = (int)$value;
-            break;
-        default:
-            $this->properties[$key] = trim($value);
-            break;
-        }
-    }
-
-
-    /**
-     * Getter function.
-     *
-     * @param   string  $key    Property to retrieve
-     * @return  mixed           Value of property, NULL if undefined
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        return (int)$this->shipment_id;
     }
 
 
@@ -379,11 +349,11 @@ class Shipment
         }
 
         $Pkg = new ShipmentPackage();
-        $Pkg->shipment_id = $this->shipment_id;
-        $Pkg->shipper_id = $shipper_id;
-        $Pkg->shipper_info = $shipper_info;
-        $Pkg->tracking_num = $tracking_num;
-        $Pkg->Save();
+        $Pkg->setShipmentID($this->shipment_id)
+            ->setShipperID($shipper_id)
+            ->setShipperInfo($shipper_info)
+            ->setTrackingNum($tracking_num)
+            ->Save();
     }
 
 

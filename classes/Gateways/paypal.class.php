@@ -464,7 +464,9 @@ class paypal extends \Shop\Gateway
         global $_SHOP_CONF, $LANG_SHOP;
 
         // Make sure we want to create a buy_now-type button
-        if ($P->isPhysical()) return '';    // Not for items that require shipping.
+        if ($P->getPrice() == 0 || $P->isPhysical()) {
+            return '';    // Not for items that require shipping or are free
+        }
         $btn_type = $P->btn_type;
         if (empty($btn_type)) return '';
 

@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -48,6 +48,10 @@ class ProductVariant
     /** Variant SKU.
      * @var string */
     private $sku;
+
+    /** Supplier reference number (sku, part number, etc.).
+     * @var string */
+    private $supplier_ref;
 
     /** Quantity on hand.
      * @var float */
@@ -152,6 +156,7 @@ class ProductVariant
                 ->setWeight(SHOP_getVar($A, 'weight', 'float'))
                 ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
+                ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
                 ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
@@ -205,6 +210,9 @@ class ProductVariant
      */
     public function getOptions()
     {
+        if ($this->Options === NULL) {
+            $this->loadOptions();
+        }
         return $this->Options;
     }
 
@@ -439,6 +447,46 @@ class ProductVariant
 
 
     /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
+    }
+
+
+    /**
+     * Get the lead time for this variant.
+     * TODO: Add per-variant lead times.
+     *
+     * @return  string  Lead time if out of stock
+     */
+    public function getLeadTime()
+    {
+        // if ($this->lead_time == '') {        // todo
+        // return $this->lead_time;
+        // } else {
+        return Product::getInstance($this->item_id)->LeadTime();
+        // }
+    }
+
+
+    /**
      * Get all variants related to a given productd.
      *
      * @param   integer $product_id     Product record ID
@@ -614,7 +662,10 @@ class ProductVariant
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = new \Template(__DIR__ . '/../templates');
-        $T->set_file('form', 'variant_edit.thtml');
+        $T->set_file(array(
+            'form' => 'variant_edit.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
 
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
@@ -637,6 +688,7 @@ class ProductVariant
             'dscp'          => $this->getDscpString(),
             'reorder'       => $this->getReorder(),
             'is_form'       => true,
+            'supplier_ref'  => $this->getSupplierRef(),
         ) );
         $Groups = ProductOptionGroup::getAll();
         $optsInUse = $this->_optsInUse();
@@ -659,6 +711,7 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
         return $retval;
@@ -730,6 +783,8 @@ class ProductVariant
                 return false;
             }
         }
+        Cache::clear('products');
+        Cache::clear('options');
         return true;
     }
 
@@ -810,10 +865,16 @@ class ProductVariant
             } else {
                 $reorder = (float)$A['reorder'];
             }
+            if ($A['supplier_ref'] === '') {
+                $sup_ref = $P->getSupplierRef();
+            } else {
+                $sup_ref = $A['supplier_ref'];
+            }
 
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
                 item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
+                supplier_ref = '" . DB_escapeString($sup_ref) . "',
                 price = " . (float)$price . ",
                 weight = $weight,
                 shipping_units = $shipping_units,
@@ -853,17 +914,25 @@ class ProductVariant
             $this->setVars($A);
         }
         if ($this->pv_id == 0) {
-            return self::saveNew($A);
+           if (isset($A['groups'])) {
+               return self::saveNew($A);
+           } else {
+               $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
+                $sql3 = '';
+           }
+        } else {
+            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} SET ";
+            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
         }
-        $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
-            item_id = '" . (int)$this->item_id . "',
+        $sql2 = "item_id = '" . (int)$this->item_id . "',
             sku = '" . DB_escapeString($this->sku) . "',
+            supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
-            reorder = " . (float)$this->reorder . "
-            WHERE pv_id = '{$this->pv_id}'";
+            reorder = " . (float)$this->reorder;
+        $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -1037,6 +1106,11 @@ class ProductVariant
              array(
                 'text'  => 'SKU',
                 'field' => 'sku',
+                'sort'  => true,
+            ),
+             array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
                 'sort'  => true,
             ),
             array(
@@ -1274,6 +1348,7 @@ class ProductVariant
                 'onhand'    => 0,
                 'weight'    => '--',
                 'sku'       => '',
+                'leadtime'  => '',
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
@@ -1292,6 +1367,7 @@ class ProductVariant
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
+                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
             );
         }
         if ($P->getTrackOnhand()) {
@@ -1428,9 +1504,11 @@ class ProductVariant
             } else {
                 $sku = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.product_variants']}
-                (item_id, sku, price, weight, shipping_units, onhand, reorder, enabled)
-                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled
+            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} (
+                    item_id, sku, price, weight, shipping_units, onhand,
+                    reorder, enabled, supplier_ref
+                )
+                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref
                 FROM {$_TABLES['shop.product_variants']}
                 WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
@@ -1438,6 +1516,26 @@ class ProductVariant
             $sql = "INSERT INTO {$_TABLES['shop.variantXopt']} (pv_id, pov_id)
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
+        }
+        Cache::clear('products');
+        Cache::clear('options');
+    }
+
+    /**
+     * Update the SKU value when the product SKU has changed.
+     * Only changes the SKU if the first part is the product sku. No action
+     * is taken if the variant SKU has been modified by the admin.
+     *
+     * @param   string  $old_sku    Original product SKU
+     * @param   string  $new_sku    New product SKU
+     */
+    public function updateSKU($old_sku, $new_sku)
+    {
+        $len = strlen($old_sku);
+        if (substr($this->getSku(), 0, $len) == $old_sku) {
+            $var_sku = substr($this->getSku(), $len);
+            $this->setSku($new_sku . $var_sku)
+                ->Save();
         }
     }
 

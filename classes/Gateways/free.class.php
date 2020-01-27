@@ -108,17 +108,58 @@ class free extends \Shop\Gateway
      */
     public function ProductButton($P)
     {
-        // TODO
-        return '';
+        global $_USER, $LANG_SHOP;
+
+        if ($P->getPrice() > 0 || $P->isPhysical()) {
+            return '';    // Not for items that require shipping.
+        }
+        $cust = array(
+            'uid' => $_USER['uid'],
+            'transtype' => $this->gw_name,
+            'btn_type' => 'buy_now',
+        );
+        $gatewayVars = array(
+            '<input type="hidden" name="processorder" value="' . $this->gw_name . '" />',
+            '<input type="hidden" name="custom" value=\'' . htmlspecialchars(@serialize($cust)) . '\' />',
+            '<input type="hidden" name="payment_status" value="Completed" />',
+            '<input type="hidden" name="pmt_gross" value="0" />',
+            '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
+            '<input type="hidden" name="status" value="paid" />',
+            '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />',
+            '<input type="hidden" name="item_number" value="' . $P->getID() . '" />',
+            '<input type="hidden" name="quantity" value="1" />',
+            '<input type="hidden" name="return" value="' . SHOP_URL . '/index.php?thanks=free" />',
+            '<input type="hidden" name="cmd" value="buy_now" />',
+            '<input type="hidden" name="ipn_type" value="buy_now" />',
+        );
+        $gatewayVars = implode(LB, $gatewayVars);
+
+        // Set the text for the button, falling back to our Buy Now
+        // phrase if not available
+        $btn_text = $P->btn_text;    // maybe provided by a plugin
+        if ($btn_text == '') {
+            $btn_text = SHOP_getVar($LANG_SHOP['buttons'], $this->gw_name, 'string', $LANG_SHOP['buy_now']);
+        }
+        $T = new \Template(SHOP_PI_PATH . '/templates/buttons');
+        $T->set_file('btn', 'btn_free.thtml');
+        $T->set_var(array(
+            'action_url'    => $this->getActionUrl(),
+            'btn_text'      => $btn_text,
+            'gateway_vars'  => $gatewayVars,
+            'method'        => $this->getMethod(),
+            'uniqid'        => uniqid(),
+        ) );
+        $retval = $T->parse('', 'btn');
+        return $retval;
     }
 
 
     /**
      * Check that the current user is allowed to use this gateway.
-     * This limits access to special gateways like 'check' or 'terms'.
-     * The internal gateway can be used by all users if the order value
+     * The free gateway can be used by allowed users only if the order value
      * is zero.
      *
+     * @param   float   $total  Order total
      * @return  boolean     True if access is allowed, False if not
      */
     public function hasAccess($total=0)

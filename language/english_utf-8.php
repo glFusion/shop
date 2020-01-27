@@ -121,6 +121,7 @@ $LANG_SHOP = array (
     'pay_now'   => 'Pay Now',
     'checkout'  => 'Checkout',
     'external'  => 'External Products',
+    'free'      => 'Free Purchase',
 ),
 'prod_type'         => 'Product Type',
 'prod_types'        => array(
@@ -629,6 +630,16 @@ $LANG_SHOP = array (
 'bulk_delete' => 'Delete All Selected',
 'msg_some_not_del' => 'Some items could not be deleted.',
 'opts_not_avail' => 'Selection option combination is not available.',
+'features' => 'Features',
+'ft_name' => 'Feature Name',
+'ft_value' => 'Feature Value',
+'new_ft' => 'Create a new Feature',
+'edit_ft' => 'Edit a Feature',
+'err_not_curr_ver' => 'The Shop Plugin has not been updated from %1$s  to %2$s.',
+'supplier_ref' => 'Supplier Reference',
+'lead_time' => 'Lead Time',
+'disp_lead_time' => 'Allow %s',
+'on_sale' => 'On Sale!',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

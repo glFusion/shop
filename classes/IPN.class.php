@@ -1179,6 +1179,7 @@ class IPN
     /**
      * Get an order object for this payment.
      * Sets any credits included in the order record.
+     * Credits are forced to round up to the next decimal value.
      *
      * @param   string  $order_id   Order ID gleaned from the IPN message
      * @return  object      Order object
@@ -1189,7 +1190,7 @@ class IPN
             $order_id = $this->order_id;
         }
         $this->Order = Order::getInstance($order_id);
-        $this->addCredit('gc', $this->Order->getInfo('apply_gc'));
+        $this->addCredit('gc', $this->getCurrency()->RoundUp($this->Order->getInfo('apply_gc')));
         return $this->Order;
     }
 

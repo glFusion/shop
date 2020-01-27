@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -129,6 +129,14 @@ class Product
      * @var integer */
     private $brand_id = 0;
 
+    /** Supplier Reference, e.g. model number, sku.
+     * @var string */
+    private $supplier_ref = '';
+
+    /** Description of product lead time.
+     * @var string */
+    private $lead_time = '';
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -140,6 +148,11 @@ class Product
     /** A single product variant attached to this product.
      * @var object */
     private $Variant;
+
+
+    /** Product features to be shown in the detail page.
+     * @var array */
+    private $Features;
 
 
     /**
@@ -560,7 +573,9 @@ class Product
         $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
         $this->btn_type = $row['buttons'];
         $this->setSupplierID($row['supplier_id'])
-            ->setBrandID($row['brand_id']);
+            ->setBrandID($row['brand_id'])
+            ->setSupplierRef($row['supplier_ref'])
+            ->setLeadTime($row['lead_time']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -630,12 +645,51 @@ class Product
      *
      * @return  array   Array of ProductVariant objects
      */
-    private function getVariants()
+    public function getVariants()
     {
         if ($this->Variants === NULL) {
             $this->Variants = ProductVariant::getByProduct($this->id);
         }
         return $this->Variants;
+    }
+
+
+    /**
+     * Get all the static features related to this product.
+     * Sets the local Features property for later use.
+     *
+     * @return  array   Array of Feature objects
+     */
+    public function getFeatures()
+    {
+        if ($this->Features === NULL) {
+            $this->Features = Feature::getByProduct($this->id);
+        }
+        return $this->Features;
+    }
+
+
+    /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
     }
 
 
@@ -705,19 +759,19 @@ class Product
 
         $old_rating_ena = $this->rating_enabled;    // save original setting
 
+        // See if the name changed. If so, then the Variant skus need to be
+        // updated.
+        $old_name = $this->name;
+
         if (is_array($A)) {
             $this->setVars($A);
         }
         $nonce = SHOP_getVar($A, 'nonce');
-        $errs = $this->_Validate();
+        $this->Errors = $this->_Validate();
         if (!empty($errs)) {
-            $this->Errors = $errs;
-        }
-
-        if (isset($A['delimg']) && is_array($A['delimg'])) {
-            foreach ($A['delimg'] as $img_id) {
-                $this->deleteImage($img_id);
-            }
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
         }
 
         // Handle file uploads.
@@ -745,6 +799,21 @@ class Product
             $this->file = '';
         }
 
+        // Check for errors during validation and file upload,
+        // and abort before any real DB action is taken.
+        if (!empty($this->Errors)) {
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
+        }
+
+        if (isset($A['imgdelete']) && !empty($A['imgdelete'])) {
+            $del_ids = explode(',', $A['imgdelete']);
+            foreach ($del_ids as $img_id) {
+                Images\Product::deleteById($img_id);
+            }
+        }
+
         // For downloads and virtual items. physical options don't apply.
         if (!$this->isPhysical()) {
             $this->weight = 0;
@@ -769,6 +838,13 @@ class Product
             SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
+            // While we're here, change the existing Variant SKUs if the
+            // product SKU has changed.
+            if (empty($this->Errors) && $old_name != $this->name) {
+                foreach ($this->getVariants() as $Variant) {
+                    $Variant->updateSKU($old_name, $this->name);
+                }
+            }
         } else {
             SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
             $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
@@ -806,6 +882,8 @@ class Product
                 avail_end='" . DB_escapeString($this->avail_end) . "',
                 brand_id ='" . $this->getBrandID() . "',
                 supplier_id ='" . $this->getSupplierID() . "',
+                supplier_ref = '{$this->getSupplierRef()}',
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
@@ -819,15 +897,33 @@ class Product
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
+                $this->getImages();     // Load images
                 // Clear categories for new products so the new cats get updated
                 // correcly.
                 $this->Categories = array();
             }
+            if (isset($A['imgorder']) && !empty($A['imgorder'])) {
+                $img_ids = explode(',', $A['imgorder']);
+                $orderby = 10;
+                foreach ($img_ids as $img_id) {
+                    $img_id = (int)$img_id;
+                    if ($this->Images[$img_id]['orderby'] != $orderby) {
+                        $this->Images[$img_id]['orderby'] = $orderby;
+                        DB_query("UPDATE {$_TABLES['shop.images']}
+                            SET orderby = $orderby
+                            WHERE img_id = $img_id");
+                    }
+                    $orderby += 10;
+                }
+            }
+
             $this->updateCategories($A['selected_cats']);
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
-            ProductVariant::saveNew($A);
+            if (is_array($A) && isset($A['groups'])) {
+                ProductVariant::saveNew($A);
+            }
 
             //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
@@ -856,6 +952,7 @@ class Product
             self::deleteButtons($this->id);
         }
 
+        // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
             COM_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
@@ -896,6 +993,8 @@ class Product
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
         ProductVariant::deleteByProduct($this->id);
+        Category::deleteProduct($this->id);
+        Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -931,7 +1030,7 @@ class Product
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1 || !array_key_exists($img_id, $this->Images)) {
+        if ($img_id < 1) {
             return;
         }
 
@@ -1019,6 +1118,10 @@ class Product
 
         }
 
+        $ph_lead_time = Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        if (empty($ph_lead_time)) {
+            $ph_lead_time = $LANG_SHOP['none'];
+        }
         list($allcats_sel, $selcats_sel) = $this->getCatSelections($this->id);
         $T->set_var(array(
             //'post_options'  => $post_options,
@@ -1076,6 +1179,10 @@ class Product
             'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
             'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
+            'features_list'  => $this->id > 0 ? Feature::productForm($this->id) : '',
+            'supplier_ref'  => $this->getSupplierRef(),
+            'lead_time'     => $this->getLeadTime(),
+            'ph_lead_time'  => $ph_lead_time,
         ) );
 
         // Create the button type selections. New products get the default
@@ -1121,7 +1228,9 @@ class Product
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize image counter
+        $imgorder = array();     // string to contain image order
         foreach ($this->Images as $id=>$prow) {
+            $imgorder[] = $prow['img_id'];
             $T->set_var(array(
                 'img_url'   => $this->getImage($prow['filename'])['url'],
                 'thumb_url' => $this->getThumb($prow['filename'])['url'],
@@ -1130,6 +1239,8 @@ class Product
             ) );
             $T->parse('PRow', 'PhotoRow', true);
         }
+        $imgorder = implode(',', $imgorder);
+        $T->set_var('imgorder', $imgorder);
 
         $T->set_block('dtable', 'discTable', 'DT');
         foreach ($this->qty_discounts as $qty=>$amt) {
@@ -1475,9 +1586,24 @@ class Product
             'weight'            => $this->weight + $this->Variant->getWeight(),
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
+            //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
+            'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_tim'], $this->LeadTime()) . ')' : '',
         ) );
+
+        $Features = $this->getFeatures();
+        if (count($Features) > 0) {
+            $T->set_var('has_features', true);
+            $T->set_block('prod_info', 'FeatList', 'FL');
+            foreach ($Features as $FT) {
+                $T->set_var(array(
+                    'ft_name' => $FT->getName(),
+                    'fv_text' => $FT->getValue(),
+                ) );
+                $T->parse('FL', 'FeatList', true);
+            }
+        }
         $T->set_var(array(
-            'prod_det_blk'      => $T->parse('product', 'prod_info'),
+            'prod_det_blk'  => $T->parse('product', 'prod_info'),
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');
@@ -2201,7 +2327,8 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . ' - ' . uniqid();
+        $old_name = $this->name;
+        $this->name = $this->name . uniqid();
         $this->Save();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
@@ -2209,23 +2336,12 @@ class Product
         }
         $new_id = $this->id;
 
-        // Copy all the image files
-        foreach ($this->Images as $A) {
-            $parts = explode('_', $A['filename']);
-            $new_fname = "{$new_id}_{$parts[1]}";
-            $src_f = $_SHOP_CONF['image_dir'] . '/' . $A['filename'];
-            $dst_f = $_SHOP_CONF['image_dir'] . '/' . $new_fname;
-            if (@copy($src_f, $dst_f)) {
-                // copy successful, insert record into table
-                $sql = "INSERT INTO {$_TABLES['shop.images']}
-                            (product_id, filename)
-                        VALUES ('$new_id', '" . DB_escapeString($new_fname) . "')";
-                DB_query($sql);
-            } else {
-                SHOP_log("Error copying file $src_f to $dst_f, continuing", SHOP_LOG_ERROR);
-            }
-        }
-        return true;
+        // Now clone the other records
+        $s1 = ProductVariant::cloneProduct($old_id, $new_id);
+        $s2 = Category::cloneProduct($old_id, $new_id);
+        $s3 = Images\Product::cloneProduct($old_id, $new_id);
+        $s4 = Feature::cloneProduct($old_id, $new_id);
+        return $s1 && $s2 && $s3 && $s4;
     }
 
 
@@ -2305,11 +2421,19 @@ class Product
     public function isInStock()
     {
         // Not tracking stock, or have stock on hand, return true
-        if ($this->track_onhand == 0 || $this->getOnhand() > 0) {
-            return true;
-        } else {
-            return false;
+        if ($this->track_onhand == 1) {
+            $this->getVariants();
+            if (!empty($this->Variants)) {
+                foreach ($this->Variants as $V) {
+                    if ($V->getOnhand() > 0) {
+                        return true;
+                    }
+                }
+            } elseif ($this->getOnhand() > 0) {
+                return true;
+            }
         }
+        return false;
     }
 
 
@@ -2724,7 +2848,7 @@ class Product
         $this->Images = Cache::get($cache_key);
         if ($this->Images === NULL) {
             $this->Images = array();
-            $sql = "SELECT img_id, filename
+            $sql = "SELECT img_id, filename, orderby
                 FROM {$_TABLES['shop.images']}
                 WHERE product_id='". $this->id . "'
                 ORDER BY orderby ASC";
@@ -3287,7 +3411,7 @@ class Product
         case 'copy':
             $retval .= COM_createLink(
                 Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
+                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
             );
             break;
 
@@ -3436,7 +3560,6 @@ class Product
     private function _Validate()
     {
         global $_TABLES, $LANG_SHOP;
-
         $errors = array();
         $sku = DB_escapeString($this->name);
         $sku_err = (int)DB_getItem(
@@ -3734,6 +3857,44 @@ class Product
     public function getBrandName()
     {
         return Supplier::getInstance($this->getBrandID())->getDisplayName();
+    }
+
+
+    /**
+     * Set the lead time string to override the supplier's lead time.
+     *
+     * @param   string  $str    Lead time description
+     * @return  object  $this
+     */
+    public function setLeadTime($str)
+    {
+        $this->lead_time = $str;
+    }
+
+
+    /**
+     * Get the lead time text for this supplier.
+     *
+     * @return  string  Lead time description
+     */
+    public function getLeadTime()
+    {
+        return $this->lead_time;
+    }
+
+
+    /**
+     * Get the lead time string for the product, or from the supplier if not set.
+     *
+     * @return  string  Lead time description.
+     */
+    public function LeadTime()
+    {
+        if (empty($this->lead_time)) {
+            return Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        } else {
+            return $this->lead_time;
+        }
     }
 
 

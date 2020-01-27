@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -1212,6 +1212,43 @@ class Category
     public function getName()
     {
         return $this->cat_name;
+    }
+
+
+    /**
+     * Delete product->category mappings when a product is deleted.
+     *
+     * @param   integer $prod_id    Product record ID
+     */
+    public static function deleteProduct($prod_id)
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        DB_delete($_TABLES['shop.prodXcat'], 'product_id', $prod_id);
+    }
+
+
+    /**
+     * Clone the categories for a product to a new product.
+     *
+     * @param   integer $src    Source product ID
+     * @param   integer $dst    Destination product ID
+     * @return  boolean     True on success, False on error
+     */
+    public static function cloneProduct($src, $dst)
+    {
+        global $_TABLES;
+
+        $src = (int)$src;
+        $dst = (int)$dst;
+        // Clear target categories, the Home category is probably there.
+        DB_delete($_TABLES['shop.prodXcat'], 'product_id', $dst);
+        $sql = "INSERT INTO {$_TABLES['shop.prodXcat']} (product_id, cat_id)
+            SELECT $dst, cat_id FROM {$_TABLES['shop.prodXcat']}
+            WHERE product_id = $src";
+        DB_query($sql, 1);
+        return DB_error() ? false : true;
     }
 
 }

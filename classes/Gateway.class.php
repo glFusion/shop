@@ -592,14 +592,16 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.gateways']}
-                (id, orderby, enabled, description, config, services) VALUES (
-                '" . DB_escapeString($this->gw_name) . "',
-                '990',
-                {$this->getEnabled()},
-                '" . DB_escapeString($this->gw_desc) . "',
-                '" . DB_escapeString($config) . "',
-                '" . DB_escapeString($services) . "')";
+            $sql = "INSERT INTO {$_TABLES['shop.gateways']} (
+                    id, orderby, enabled, description, config, services
+                ) VALUES (
+                    '" . DB_escapeString($this->gw_name) . "',
+                    '990',
+                    {$this->getEnabled()},
+                    '" . DB_escapeString($this->gw_desc) . "',
+                    '" . DB_escapeString($config) . "',
+                    '" . DB_escapeString($services) . "'
+                )";
             DB_query($sql);
             Cache::clear('gateways');
             return DB_error() ? false : true;
@@ -1648,6 +1650,7 @@ class Gateway
         switch($fieldname) {
         case 'edit':
             if ($A['enabled'] !== 'na') {
+                com_errorLog($A['id']);
                 $retval .= COM_createLink(
                     Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
                     SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"

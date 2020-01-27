@@ -163,6 +163,8 @@ $tables = array(
     // v1.1.0
     'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
     'discountcodes', 'regions', 'countries', 'states',
+    // v1.2.0
+    'shop.features', 'shop.features_values', 'shop.prodXfeat',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
@@ -300,10 +302,6 @@ function plugin_postinstall_shop()
             }
         }
     }
-
-    // Install default payment gateways
-    require_once 'functions.inc';       // required for class autoloader
-    Shop\Gateway::getInstance('free')->Install();
 
     // Set the shop Admin ID
     $gid = (int)DB_getItem(

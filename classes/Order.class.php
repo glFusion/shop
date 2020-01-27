@@ -320,8 +320,9 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
-        $OI->setQuantity($args['quantity']);
-        $OI->Save();
+        $OI->setQuantity($args['quantity'])
+            ->applyDiscountPct($this->getDiscountPct())
+            ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
         //$this->Save();
@@ -506,6 +507,9 @@ class Order
             Cart::clearSession('order_id');
         }
         $this->shipper_id = $A['shipper_id'];
+        $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
+        $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
+        $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         return $this;
     }
 
@@ -719,6 +723,8 @@ class Order
         $this->no_shipping = 1;   // no shipping unless physical item ordered
         $this->gross_items = 0;
         $this->net_items = 0;
+        $this->net_nontax = 0;
+        $this->net_taxable = 0;
         $item_qty = array();        // array to track quantity by base item ID
         $have_images = false;
         $has_sale_items = false;
@@ -771,6 +777,11 @@ class Order
             $item_total = $item->getPrice() * $item->getQuantity();
             $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->gross_items += $item_total;
+            if ($P->isTaxable()) {
+                $this->net_taxable += $item_net;
+            } else {
+                $this->net_nontax += $item_net;
+            }
             $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
@@ -801,6 +812,7 @@ class Order
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
             }
+            $qty_bo = 0;
             if ($this->status == 'cart') {      // TODO, divorce cart from order
                 $qty_bo = $P->getQuantityBO($item->getQuantity());
                 if ($qty_bo > 0) {
@@ -828,6 +840,9 @@ class Order
             }
             if ($has_sale_items) {
                 $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
+            }
+            if ($qty_bo) {
+                $icon_tooltips[] = $LANG_SHOP['backordered'][0] . ' = ' . $LANG_SHOP['backordered'];
             }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
@@ -902,7 +917,7 @@ class Order
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
+                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -1498,10 +1513,10 @@ class Order
             if ($shipper_id !== NULL) {
                 // Array is 0-indexed so search for the shipper ID, if any.
                 foreach ($shippers as $id=>$shipper) {
-                    if ($shipper->id == $shipper_id) {
+                    if ($shipper->getID() == $shipper_id) {
                         // Use the already-selected shipper, if any.
                         // The ship_method var should already be set.
-                        $this->shipping = $shippers[$id]->ordershipping->total_rate;
+                        $this->shipping = $shippers[$id]->getOrderShipping()->total_rate;
                         $have_shipper = true;
                         break;
                     }
@@ -1511,8 +1526,8 @@ class Order
                 // If the specified shipper isn't found for some reason,
                 // get the first shipper available, which will be the best rate.
                 $shipper = reset($shippers);
-                $this->ship_method = $shipper->name;
-                $this->shipping = $shipper->ordershipping->total_rate;
+                $this->ship_method = $shipper->getName();
+                $this->shipping = $shipper->getOrderShipping->total_rate;
             }
         } else {
             $this->shipping = 0;
@@ -1935,9 +1950,9 @@ class Order
             // Have to iterate through all the shippers since the array is
             // ordered by rate, not shipper ID
             foreach ($shippers as $sh) {
-                if ($sh->id == $shipper_id) {
-                    $this->shipping = $sh->ordershipping->total_rate;
-                    $this->shipper_id = $sh->id;
+                if ($sh->getID()  == $shipper_id) {
+                    $this->shipping = $sh->getOrderShipping()->total_rate;
+                    $this->shipper_id = $sh->getID();
                     break;
                 }
             }
@@ -1974,7 +1989,7 @@ class Order
         if ($shipper_id !== NULL) {
             // Array is 0-indexed so search for the shipper ID, if any.
             foreach ($shippers as $id=>$shipper) {
-                if ($shipper->id == $shipper_id) {
+                if ($shipper->getID() == $shipper_id) {
                     // Already have a shipper selected
                     $best = $shippers[$id];
                     break;
@@ -1993,18 +2008,18 @@ class Order
         $base_chg = $this->gross_items + $this->handling + $this->tax;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
-            $sel = $shipper->id == $best->id ? 'selected="selected"' : '';
-            $s_amt = $shipper->ordershipping->total_rate;
+            $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
+            $s_amt = $shipper->getORderShipping()->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
-            $ship_rates[$shipper->id] = $rate;
+            $ship_rates[$shipper->getID()] = $rate;
             $T->set_var(array(
                 'method_sel'    => $sel,
-                'method_name'   => $shipper->name,
+                'method_name'   => $shipper->getName(),
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
-                'method_id'     => $shipper->id,
+                'method_id'     => $shipper->getID(),
                 'order_id'      => $this->order_id,
                 'multi'         => count($shippers) > 1 ? true : false,
             ) );
@@ -2458,15 +2473,15 @@ class Order
             }
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
-                $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
-                $Sh = Shipper::getInstance($Pkg->shipper_id);
+                $Sh = Shipper::getInstance($Pkg->getShipperID());
+                $url = $Sh->getTrackingUrl($Pkg->getTrackingNum());
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date'     => $Dt->toMySQL(true),
-                    'shipment_id'   => $Shipment->shipment_id,
-                    'shipper_info'  => $Pkg->shipper_info,
-                    'tracking_num'  => $Pkg->tracking_num,
-                    'shipper_id'    => $Pkg->shipper_id,
+                    'shipment_id'   => $Shipment->getID(),
+                    'shipper_info'  => $Pkg->getShipperInfo(),
+                    'tracking_num'  => $Pkg->getTrackingNum(),
+                    'shipper_id'    => $Pkg->getShipperID(),
                     'tracking_url'  => $url,
                     'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
                 ) );
@@ -2681,7 +2696,12 @@ class Order
      */
     public function getDiscountAmount()
     {
-        return max($this->gross_items - $this->net_items, 0);
+        return max(
+            $this->getCurrency()->RoundVal(
+                $this->gross_items - $this->net_nontax - $this->net_taxable
+            ),
+            0
+        );
     }
 
 

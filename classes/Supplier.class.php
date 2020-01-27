@@ -31,6 +31,10 @@ class Supplier extends Address
      * @var string */
     private $dscp = '';
 
+    /** Normal lead time for this supplier.
+     * @var string */
+    private $lead_time;
+
 
     /**
      * Constructor. Reads in the specified record,
@@ -98,7 +102,20 @@ class Supplier extends Address
             ->setPhone(SHOP_getVar($data, 'phone', 'string'))
             ->setDscp(SHOP_getVar($data, 'dscp', 'string'))
             ->setIsSupplier(SHOP_getVar($data, 'is_supplier', 'integer', 1))
-            ->setIsBrand(SHOP_getVar($data, 'is_brand', 'integer', 0));
+            ->setIsBrand(SHOP_getVar($data, 'is_brand', 'integer', 0))
+            ->setLeadTime(SHOP_getVar($data, 'lead_time', 'string', ''));
+    }
+
+
+    /**
+     * Set the lead time text for this supplier.
+     *
+     * @param   string  $str    Lead time description
+     * @return  object  $this
+     */
+    public function setLeadTime($str)
+    {
+        $this->lead_time = $str;
     }
 
 
@@ -190,6 +207,17 @@ class Supplier extends Address
 
 
     /**
+     * Get the lead time text for this supplier.
+     *
+     * @return  string  Lead time description
+     */
+    public function getLeadTime()
+    {
+        return $this->lead_time;
+    }
+
+
+    /**
      * Get a selection list for brand, supplier, or all records.
      *
      * @param   integer $sel    Selected record ID
@@ -276,7 +304,8 @@ class Supplier extends Address
                 zip = '" . DB_escapeString($this->getPostal()) . "',
                 dscp = '" . DB_escapeString($this->getDscp()) . "',
                 is_supplier = {$this->getIsSupplier()},
-                is_brand = {$this->getIsBrand()}";
+                is_brand = {$this->getIsBrand()},
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -382,6 +411,7 @@ class Supplier extends Address
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
+            'lead_time' => $this->getLeadTime(),
         ) );
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
