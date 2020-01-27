@@ -801,7 +801,11 @@ ul#prod_details label {
     float:left;
 }
 ul#prod_details p {
-    margin-top:8px;
+    margin-top:3px;
+    margin-bottom:2px;
+}
+ul#prod_details label {
+    width: 10em;
 }
 
 ul.product-flags {

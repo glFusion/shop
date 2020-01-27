@@ -1591,14 +1591,16 @@ class Product
         ) );
 
         $Features = $this->getFeatures();
-        $T->set_var('has_features', count($Features));
-        $T->set_block('prod_info', 'FeatList', 'FL');
-        foreach ($this->getFeatures() as $FT) {
-            $T->set_var(array(
-                'ft_name' => $FT->getName(),
-                'fv_text' => $FT->getValue(),
-            ) );
-            $T->parse('FL', 'FeatList', true);
+        if (count($Features) > 0) {
+            $T->set_var('has_features', true);
+            $T->set_block('prod_info', 'FeatList', 'FL');
+            foreach ($Features as $FT) {
+                $T->set_var(array(
+                    'ft_name' => $FT->getName(),
+                    'fv_text' => $FT->getValue(),
+                ) );
+                $T->parse('FL', 'FeatList', true);
+            }
         }
         $T->set_var(array(
             'prod_det_blk'  => $T->parse('product', 'prod_info'),
