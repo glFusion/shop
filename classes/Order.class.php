@@ -917,7 +917,7 @@ class Order
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
+                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -1513,10 +1513,10 @@ class Order
             if ($shipper_id !== NULL) {
                 // Array is 0-indexed so search for the shipper ID, if any.
                 foreach ($shippers as $id=>$shipper) {
-                    if ($shipper->id == $shipper_id) {
+                    if ($shipper->getID() == $shipper_id) {
                         // Use the already-selected shipper, if any.
                         // The ship_method var should already be set.
-                        $this->shipping = $shippers[$id]->ordershipping->total_rate;
+                        $this->shipping = $shippers[$id]->getOrderShipping()->total_rate;
                         $have_shipper = true;
                         break;
                     }
@@ -1526,8 +1526,8 @@ class Order
                 // If the specified shipper isn't found for some reason,
                 // get the first shipper available, which will be the best rate.
                 $shipper = reset($shippers);
-                $this->ship_method = $shipper->name;
-                $this->shipping = $shipper->ordershipping->total_rate;
+                $this->ship_method = $shipper->getName();
+                $this->shipping = $shipper->getOrderShipping->total_rate;
             }
         } else {
             $this->shipping = 0;
@@ -1950,9 +1950,9 @@ class Order
             // Have to iterate through all the shippers since the array is
             // ordered by rate, not shipper ID
             foreach ($shippers as $sh) {
-                if ($sh->id == $shipper_id) {
-                    $this->shipping = $sh->ordershipping->total_rate;
-                    $this->shipper_id = $sh->id;
+                if ($sh->getID()  == $shipper_id) {
+                    $this->shipping = $sh->getOrderShipping()->total_rate;
+                    $this->shipper_id = $sh->getID();
                     break;
                 }
             }
@@ -1989,7 +1989,7 @@ class Order
         if ($shipper_id !== NULL) {
             // Array is 0-indexed so search for the shipper ID, if any.
             foreach ($shippers as $id=>$shipper) {
-                if ($shipper->id == $shipper_id) {
+                if ($shipper->getID() == $shipper_id) {
                     // Already have a shipper selected
                     $best = $shippers[$id];
                     break;
@@ -2008,18 +2008,18 @@ class Order
         $base_chg = $this->gross_items + $this->handling + $this->tax;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
-            $sel = $shipper->id == $best->id ? 'selected="selected"' : '';
-            $s_amt = $shipper->ordershipping->total_rate;
+            $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
+            $s_amt = $shipper->getORderShipping()->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
-            $ship_rates[$shipper->id] = $rate;
+            $ship_rates[$shipper->getID()] = $rate;
             $T->set_var(array(
                 'method_sel'    => $sel,
-                'method_name'   => $shipper->name,
+                'method_name'   => $shipper->getName(),
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
-                'method_id'     => $shipper->id,
+                'method_id'     => $shipper->getID(),
                 'order_id'      => $this->order_id,
                 'multi'         => count($shippers) > 1 ? true : false,
             ) );
@@ -2473,15 +2473,15 @@ class Order
             }
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
-                $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
-                $Sh = Shipper::getInstance($Pkg->shipper_id);
+                $Sh = Shipper::getInstance($Pkg->getShipperID());
+                $url = $Sh->getTrackingUrl($Pkg->getTrackingNum());
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date'     => $Dt->toMySQL(true),
-                    'shipment_id'   => $Shipment->shipment_id,
-                    'shipper_info'  => $Pkg->shipper_info,
-                    'tracking_num'  => $Pkg->tracking_num,
-                    'shipper_id'    => $Pkg->shipper_id,
+                    'shipment_id'   => $Shipment->getID(),
+                    'shipper_info'  => $Pkg->getShipperInfo(),
+                    'tracking_num'  => $Pkg->getTrackingNum(),
+                    'shipper_id'    => $Pkg->getShipperID(),
                     'tracking_url'  => $url,
                     'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
                 ) );
