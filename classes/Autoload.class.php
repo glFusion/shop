@@ -1,8 +1,27 @@
 <?php
+/**
+ * Class Autoloader for the Shop plugin
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @package     shop
+ * @version     v1.2.0
+ * @since       v1.1.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 namespace Shop;
 
+/**
+ * Autoloader function for the Shop plugin.
+ * @package shop
+ */
 class Autoload
 {
+    /**
+     * Register the autoloader.
+     */
     function register()
     {
         static $registered = false;
@@ -45,5 +64,3 @@ class Autoload
 }
 
 ?>
-
-
