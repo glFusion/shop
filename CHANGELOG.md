@@ -6,6 +6,7 @@ Release TBD
   * Add product image sorting.
   * Add static features/attributes.
   * Add Supplier Reference field to products and variants for ordering.
+  * Product cloning includes Features, Categories, Variants and Images.
 
 ## v1.1.0
 Release 2020-01-22

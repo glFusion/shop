@@ -4,9 +4,6 @@
 {!if brand_dscp}
     <li><a href="#">{$LANG_SHOP['brand']}</a></li>
 {!endif}
-{!if has_features}
-    <li><a href="#">{$LANG_SHOP['features']}</a></li>
-{!endif}
 </ul>
 <ul id="prod_details" class="uk-switcher uk-margin">
     <li>
@@ -36,6 +33,15 @@
         <label>SKU:</label>
         <span id="sku">{sku}</span>
         </p>
+{!if has_features}
+        <div style="clear:both;height:10px;"></div>
+<!-- BEGIN FeatList -->
+        <p>
+        <label>{ft_name}:</label> {fv_text}
+        </p>
+<!-- END FeatList -->
+{!endif}
+
     </li>
 
 {# Brand info, if available #}
@@ -48,13 +54,6 @@
     </li>
 {!endif}
 
-{!if has_features}
-    <li>
-<!-- BEGIN FeatList -->
-        <label style="width:10em;">{ft_name}:</label> {fv_text}<br />
-<!-- END FeatList -->
-    </li>
-{!endif}
 </ul>
 {# end {templatelocation} #}
 
