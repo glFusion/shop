@@ -313,6 +313,10 @@ $LANG_SHOP = array (
         'name' => 'Coupon Activity',
         'dscp' => 'List coupon purchases and application against orders.',
     ),
+    'reorder' => array(
+        'name' => 'Item Reorder Report',
+        'dscp' => 'List all items at or below their minimum stock levels.',
+    ),
 ),  
 'my_orders' => 'Meine Bestellungen',
 'no_products_match' => 'No products match your search parameters',
