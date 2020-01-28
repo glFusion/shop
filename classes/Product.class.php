@@ -3304,12 +3304,12 @@ class Product
                 'field' => 'prod_type',
                 'sort' => true,
             ),
-            array(
+            /*array(
                 'text'  => $LANG_SHOP['status'],
                 'field' => 'availability',
                 'sort'  => false,
                 'align' => 'center',
-            ),
+            ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
                 Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
