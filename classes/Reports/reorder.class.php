@@ -50,15 +50,29 @@ class reorder extends \Shop\Report
         $T = $this->getTemplate();
 
         $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
+            short_description as dscp,
+            pv.pv_id, pv.sku, pv.onhand as pv_onhand, pv.reorder as pv_reorder,
             s.company as supplier
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.product_variants']} pv
+                ON p.id = pv.item_id
             LEFT JOIN {$_TABLES['shop.suppliers']} s
-            ON s.sup_id = p.supplier_id";
+                ON s.sup_id = p.supplier_id";
 
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['item_name'],
                 'field' => 'name',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['description'],
+                'field' => 'dscp',
+                'sort'  => false,
+            ),
+            array(
+                'text'  => 'SKU',
+                'field' => 'sku',
                 'sort'  => true,
             ),
             array(
@@ -81,14 +95,18 @@ class reorder extends \Shop\Report
         );
 
         $defsort_arr = array(
-            'field'     => 'name',
+            'field'     => 'p.name',
             'direction' => 'ASC',
         );
 
-        $where = " WHERE track_onhand = 1 AND onhand <= reorder";
+        $where = " WHERE track_onhand = 1 AND (
+            (pv.pv_id IS NULL AND p.onhand <= p.reorder) OR
+            (pv.pv_id IS NOT NULL AND pv.onhand <= pv.reorder)
+        )";
         if ($this->supplier_id > 0) {
             $where .= " AND supplier_id = " . (int)$this->supplier_id;
         }
+        //echo $sql . ' ' . $where;die;
 
         $query_arr = array(
             'table' => 'shop.orderstatus',
@@ -164,8 +182,11 @@ class reorder extends \Shop\Report
     {
         switch ($fieldname) {
         case 'onhand':
+            $retval = is_null($A['sku']) ? (float)$A['onhand'] : (float)$A['pv_onhand'];
+            break;
+
         case 'reorder':
-            $retval = (float)$fieldvalue;
+            $retval = is_null($A['pv_id']) ? (float)$A['reorder'] : (float)$A['pv_reorder'];
             break;
         }
         return $retval;
