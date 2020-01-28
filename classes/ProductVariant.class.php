@@ -1197,6 +1197,22 @@ class ProductVariant
             ),
         );
 
+        $extra = array();
+        if ($prod_id) {
+            $header_arr[] = array(
+                'text' => $LANG_ADMIN['default'],
+                'field' => 'def_pv_id',
+                'sort' => 'false',
+                'align' => 'center',
+            );
+            $extra['def_pv_id'] = (int)DB_getItem(
+                $_TABLES['shop.products'],
+                'def_pv_id',
+                "id = $prod_id"
+            );
+
+        }
+
         $defsort_arr = array(
             'field' => 'sku',
             'direction' => 'ASC',
@@ -1274,7 +1290,7 @@ class ProductVariant
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', $options, ''
+            $filter, $extra, $options, ''
         );
         // Create the "copy "options" form at the bottom
         if ($prod_id == 0) {
@@ -1299,9 +1315,10 @@ class ProductVariant
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed from the list function
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -1368,6 +1385,12 @@ class ProductVariant
             if ((float)$A['onhand'] <= (float)$A['reorder']) {
                 $retval = '<span class="uk-text-danger">' . $retval . '</span>';
             }
+            break;
+
+        case 'def_pv_id':
+            $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
+            $retval = '<input type="radio" name="def_pv_id" value="' . $A['pv_id'] .
+                '" ' . $sel . ' />';
             break;
 
         default:
@@ -1600,6 +1623,16 @@ class ProductVariant
         }
     }
 
+
+    /**
+     * Check if this variant is the default.
+     *
+     * @return  boolean     True if default, False if not
+     */
+    public function isDefault()
+    {
+        return $this->pv_id == 67 ? true : false;
+    }
 }
 
 ?>

@@ -137,6 +137,10 @@ class Product
      * @var string */
     private $lead_time = '';
 
+    /** Default Variant ID.
+     * @var integer */
+    private $def_pv_id = 0;
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -207,6 +211,7 @@ class Product
             $this->qty_discounts = array();
             $this->custom = '';
             $this->reorder = 0;
+            $this->def_pv_id = 0;
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -575,7 +580,8 @@ class Product
         $this->setSupplierID($row['supplier_id'])
             ->setBrandID($row['brand_id'])
             ->setSupplierRef($row['supplier_ref'])
-            ->setLeadTime($row['lead_time']);
+            ->setLeadTime($row['lead_time'])
+            ->setDefVariantID($row['def_pv_id']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -602,7 +608,7 @@ class Product
         }
 
         $cache_key = self::_makeCacheKey($id);
-        $row = Cache::get($cache_key);
+        //$row = Cache::get($cache_key);
         if ($row === NULL) {
             $result = DB_query("SELECT *
                         FROM {$_TABLES['shop.products']}
@@ -884,10 +890,11 @@ class Product
                 supplier_id ='" . $this->getSupplierID() . "',
                 supplier_ref = '{$this->getSupplierRef()}',
                 lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                def_pv_id = {$this->getDefVariantID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-                //options='$options',
+        //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -1406,6 +1413,19 @@ class Product
             $OI = NULL;
         }
 
+        if ($this->hasVariants()) {              // also sets $this->Variants
+            $def_id = $this->getDefVariantID();
+            // Set the default if a default isn't specified or valid
+            $this->Variant = reset($this->Variants);
+            if ($def_id > 0) {
+                foreach ($this->Variants as $Variant) {
+                    if ($Variant->getID() == $def_id) {
+                        $this->setVariant($def_id);
+                    }
+                }
+            }
+        }
+
         // Set the template dir based on the configured template version
         $T = new \Template(array(
             __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
@@ -1466,6 +1486,9 @@ class Product
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
+        if ($this->Variant) {
+            $VarOptions = $this->Variant->getOptions();
+        }
         foreach ($this->OptionGroups as $OG) {
             if (count($OG->Options) < 1) {
                 // Could happen if options are removed leaving an empty option group.
@@ -1478,7 +1501,11 @@ class Product
             case 'select':
             case 'radio':
                 // First find the selected option
-                $sel_opt = 0;
+                if ($this->Variant) {
+                    $sel_opt = $VarOptions[$OG->getName()]->getID();
+                } else {
+                    $sel_opt = 0;
+                }
                 foreach ($OG->Options as $Opt) {
                     if (in_array($Opt->getID(), $this->sel_opts)) {
                         $sel_opt = $Opt->getID();
@@ -1523,7 +1550,6 @@ class Product
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
-        $this->setVariant(ProductVariant::getByAttributes($this->id, $pv_opts));
 
         // Retrieve the photos and put into the templatea.
         // Get the images for the current Variant, if any. If none then show
@@ -3896,6 +3922,7 @@ class Product
     public function setLeadTime($str)
     {
         $this->lead_time = $str;
+        return $this;
     }
 
 
@@ -3922,6 +3949,30 @@ class Product
         } else {
             return $this->lead_time;
         }
+    }
+
+
+    /**
+     * Set the ID of the default variant for this product.
+     *
+     * @param   integer $id     ProductVariant record ID
+     * @return  object  $this
+     */
+    private function setDefVariantID($id)
+    {
+        $this->def_pv_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the default ProductVariant ID for this product.
+     *
+     * @return  integer     ProductVariant record ID
+     */
+    public function getDefVariantID()
+    {
+        return (int)$this->def_pv_id;
     }
 
 
