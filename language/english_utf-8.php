@@ -641,6 +641,7 @@ $LANG_SHOP = array (
 'disp_lead_time' => 'Allow %s',
 'on_sale' => 'On Sale!',
 'chk_all' => 'Check All',
+'default' => 'Default',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

@@ -1200,7 +1200,7 @@ class ProductVariant
         $extra = array();
         if ($prod_id) {
             $header_arr[] = array(
-                'text' => $LANG_ADMIN['default'],
+                'text' => $LANG_SHOP['default'],
                 'field' => 'def_pv_id',
                 'sort' => 'false',
                 'align' => 'center',
