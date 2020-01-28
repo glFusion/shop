@@ -1423,7 +1423,7 @@ class Product
                 }
             }
             // Set the default if a default isn't specified or valid
-            if $this->Variant == NULL) {
+            if ($this->Variant == NULL) {
                 $this->Variant = reset($this->Variants);
             }
         }
