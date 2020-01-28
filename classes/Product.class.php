@@ -1415,14 +1415,16 @@ class Product
 
         if ($this->hasVariants()) {              // also sets $this->Variants
             $def_id = $this->getDefVariantID();
-            // Set the default if a default isn't specified or valid
-            $this->Variant = reset($this->Variants);
             if ($def_id > 0) {
                 foreach ($this->Variants as $Variant) {
                     if ($Variant->getID() == $def_id) {
                         $this->setVariant($def_id);
                     }
                 }
+            }
+            // Set the default if a default isn't specified or valid
+            if $this->Variant == NULL) {
+                $this->Variant = reset($this->Variants);
             }
         }
 
