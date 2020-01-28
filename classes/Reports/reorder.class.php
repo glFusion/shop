@@ -71,7 +71,7 @@ class reorder extends \Shop\Report
                 'sort'  => false,
             ),
             array(
-                'text'  => 'SKU',
+                'text'  => $LANG_SHOP['variants'],
                 'field' => 'sku',
                 'sort'  => true,
             ),
@@ -142,8 +142,9 @@ class reorder extends \Shop\Report
                 $T->set_var(array(
                     'item_name'     => $A['name'],
                     'dscp'          => $this->remQuote($A['short_description']),
-                    'onhand'        => $A['onhand'],
-                    'reorder'       => $A['reorder'],
+                    'sku'           => $this->remQuote($A['sku']),
+                    'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['pv_onhand'],
+                    'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['pv_reorder'],
                     'supplier'      => $A['supplier'],
                     'nl'            => "\n",
                 ) );

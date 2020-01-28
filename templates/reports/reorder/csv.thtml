@@ -1,0 +1,4 @@
+"{$LANG_SHOP['item_name']}","{$LANG_SHOP['description']}","{$LANG_SHOP['variants']}","{$LANG_SHOP['onhand']}","{$LANG_SHOP['reorder']}","{$LANG_SHOP['supplier']}"{nl}
+<!-- BEGIN ItemRow -->
+"{item_name}","{dscp}","{sku}","{onhand}","{reorder}","{supplier}"{nl}
+<!-- END ItemRow -->
