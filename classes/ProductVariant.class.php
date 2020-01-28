@@ -69,6 +69,10 @@ class ProductVariant
      * @var array */
     private $Options = NULL;
 
+    /** Image IDs associated with this Variant.
+     * @var array */
+    private $images = array();
+
 
     /**
      * Constructor.
@@ -144,6 +148,7 @@ class ProductVariant
      * Set the object variables from an array.
      *
      * @param   array   $A      Array of values
+     * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
     public function setVars($A)
@@ -159,6 +164,7 @@ class ProductVariant
                 ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
+                ->setImageIDs(SHOP_getVar($A, 'img_ids', 'mixed'))
                 ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
@@ -548,10 +554,11 @@ class ProductVariant
     /**
      * Convert a json string from the DB directly to a string description.
      *
+     * @deprecated
      * @param   array|string    Array of elements or JSON string
      * @return  string      One-line description
      */
-    private static function jsonToString($json)
+    private static function XXjsonToString($json)
     {
         $retval = array();
         $json = json_decode($json,true);
@@ -671,6 +678,7 @@ class ProductVariant
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
             $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
         }
+        $Product = Product::getByID($this->item_id);
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -678,7 +686,7 @@ class ProductVariant
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
             'item_id'       => $this->getItemId(),
-            'item_name'     => Product::getByID($this->item_id)->name,
+            'item_name'     => $Product->getName(),
             'pv_id'         => $this->getId(),
             'price'         => $this->getID() ? $this->getPrice() : '',
             'weight'        => $this->getWeight(),
@@ -711,6 +719,17 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
+
+        $T->set_block('form', 'ImageBlock', 'IB');
+        foreach ($Product->getImages() as $img) {
+            $T->set_var(array(
+                'img_id'    => $img['img_id'],
+                'img_url'   => Images\Product::getUrl($img['filename'])['url'],
+                'img_chk'   => in_array($img['img_id'], $this->images) ? 'checked="checked"' : '',
+            ) );
+            $T->parse('IB', 'ImageBlock', true);
+        }
+
         $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
@@ -913,6 +932,7 @@ class ProductVariant
         if (is_array($A)) {
             $this->setVars($A);
         }
+
         if ($this->pv_id == 0) {
            if (isset($A['groups'])) {
                return self::saveNew($A);
@@ -931,6 +951,7 @@ class ProductVariant
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
+            img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
             reorder = " . (float)$this->reorder;
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -1058,6 +1079,37 @@ class ProductVariant
     public function getID()
     {
         return $this->pv_id;
+    }
+
+
+    /**
+     * Set the image IDs specific to this variant.
+     *
+     * @param   array   $ids    Array of image record IDs
+     * @return  object  $this
+     */
+    public function setImageIDs($ids)
+    {
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+        $this->images = array_filter($ids, 'intval');
+        if (!$this->images) {
+            $this->images = array();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the image IDs for this particular product variant.
+     *
+     * TODO: implement DB field
+     * @return  array       Array of integer image IDs.
+     */
+    public function getImageIDs()
+    {
+        return $this->images;
     }
 
 
@@ -1337,6 +1389,13 @@ class ProductVariant
     {
         global $LANG_SHOP;
 
+        if (!is_array($opts)) {
+            $opts = array();
+        }
+        if (!isset($opts['quantity'])) {
+            $opts['quantity'] = 1;
+        }
+
         $P = Product::getByID($this->item_id);
         if ($P->getID() < 1 || $this->getID() < 1) {
             $retval = array(
@@ -1349,6 +1408,7 @@ class ProductVariant
                 'weight'    => '--',
                 'sku'       => '',
                 'leadtime'  => '',
+                'images'    => array(),
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
@@ -1368,6 +1428,7 @@ class ProductVariant
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
                 'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+                'images'    => $this->images,
             );
         }
         if ($P->getTrackOnhand()) {

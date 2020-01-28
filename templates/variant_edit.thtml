@@ -112,6 +112,22 @@
     </div>
 <!-- END OptionGroups -->
 
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['images']}:
+            <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'img_ids');">
+        </label>
+        <div class="uk-form-controls">
+            <ul class="shopProductThumbWrapper">
+<!-- BEGIN ImageBlock -->
+            <li class="shopProductThumb">
+                <input id="img_cb_{img_id}" type="checkbox" name="img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
+                <label for="img_cb_{img_id}"><img src="{img_url}" id="img_{img_id}" /></label>
+            </li>
+<!-- END ImageBlock -->
+            </ul>
+        </div>
+    </div>
+
 {!if is_form}
     <div class="uk-form-row" align="center">
         <button class="uk-button uk-button-success" type="submit" name="pv_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
@@ -125,4 +141,20 @@
 </form>
 {!endif}
 {tooltipster_js}
+<script>
+function XSHOP_caItems(f, name, cb) {
+    var n=f.elements.length;
+    for (i=0;i<n; i++) {
+        var field=f.elements[i];
+        if (field.type == 'checkbox' && field.name.match(name)) {
+            if (cb.checked) {
+                field.checked=true;
+            } else {
+                field.checked=false;
+            }
+        }
+    }
+    return false;
+}
+</script>
 {# end {templatelocation} #}

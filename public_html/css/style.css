@@ -169,20 +169,71 @@ div.shopProductDesc.v2 {
     margin-bottom: 2em;
     width:100%;
 }
-div.shopProductThumbWrapper {
+ul.shopProductThumbWrapper {
     clear: both;
     float: left;
     margin-top: .5em;
     margin-bottom: 1em;
+    list-style: none;
 }
-div.shopProductThumb {
+li.shopProductThumb {
     float: left;
     margin-right: .25em;
+    display: inline;
 }
+li.shopProductThumb input[type="checkbox"][id^="img_cb"] {
+  display: none;
+}
+li.shopProductThumb label {
+  border: 1px solid #fff;
+  padding: 10px;
+  display: block;
+  position: relative;
+  margin: 10px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+li.shopProductThumb label::before {
+  background-color: white;
+  color: white;
+  content: " ";
+  display: block;
+  border-radius: 50%;
+  border: 1px solid grey;
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  width: 25px;
+  height: 25px;
+  text-align: center;
+  line-height: 28px;
+  transition-duration: 0.4s;
+  transform: scale(0);
+}
+li.shopProductThumb :checked+label {
+  /*border-color: #ddd;*/
+    outline: 3px solid #2fb5d2;
+}
+
+li.shopProductThumb :checked+label::before {
+  /*content: "✓";
+  background-color: grey;
+  transform: scale(1);*/
+}
+li.shopProductThumb img {
+    max-height: 100px;
+    margin-right:5px;
+}
+
 div.shopProductThumb.v1 img {
     max-height: 150px;
 }
-div.shopProductThumb.v2 img {
+li.shopProductThumb.v2 img {
     max-height: 80px;
 }
 
@@ -567,6 +618,9 @@ div.ItemOptions {
     color: #666666;
     font-size: 120%;
     font-style:italic;
+}
+.shopOnhand.v1 {
+    clear:left;
 }
 .shopOnhand.sm {
     font-size: initial;

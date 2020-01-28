@@ -1461,28 +1461,6 @@ class Product
             }
         }
 
-        // Retrieve the photos and put into the template
-        $i = 0;
-        foreach ($this->Images as $id=>$prow) {
-            if (self::imageExists($prow['filename'])) {
-                if ($i == 0) {
-                    $T->set_var(array(
-                        'main_img' => $this->getImage($prow['filename'])['url'],
-                        'main_imgfile' => $prow['filename'],
-                    ) );
-                }
-                $T->set_block('product', 'Thumbnail', 'PBlock');
-                $T->set_var(array(
-                    'img_file'      => $prow['filename'],
-                    'img_url'       => $this->getImage($prow['filename'])['url'],
-                    'thumb_url'     => $this->getThumb($prow['filename'])['url'],
-                    'session_id'    => session_id(),
-                ) );
-                $T->parse('PBlock', 'Thumbnail', true);
-                $i++;
-            }
-        }
-
         // Get the product options, if any, and set them into the form
         $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
@@ -1546,6 +1524,53 @@ class Product
             $T->clear_var('optSel');
         }
         $this->setVariant(ProductVariant::getByAttributes($this->id, $pv_opts));
+
+        // Retrieve the photos and put into the templatea.
+        // Get the images for the current Variant, if any. If none then show
+        // all attached imates.
+        $i = 0;
+        $all_images = array();      // for json list of all image information
+        $all_image_ids = array();   // for json list of image IDs
+        $showImages = $this->getImages();
+        if ($this->Variant !== NULL) {
+            $ids = $this->Variant->getImageIDs();
+            if (!empty($ids)) {
+                $showImages = array();
+                foreach ($ids as $id) {
+                    $showImages[$id] = $this->Images[$id];
+                }
+            }
+        }
+        foreach ($this->Images as $id=>$prow) {
+            if (self::imageExists($prow['filename'])) {
+                if (isset($showImages[$id])) {
+                    if ($i == 0) {
+                        $T->set_var(array(
+                            'main_img' => $this->getImage($prow['filename'])['url'],
+                            'main_imgfile' => $prow['filename'],
+                        ) );
+                    }
+                    $T->set_block('product', 'Thumbnail', 'PBlock');
+                    $T->set_var(array(
+                        'img_id'        => $id,
+                        'img_file'      => $prow['filename'],
+                        'img_url'       => $this->getImage($prow['filename'])['url'],
+                        'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+                        'session_id'    => session_id(),
+                    ) );
+                    $T->parse('PBlock', 'Thumbnail', true);
+                    $i++;
+                }
+            }
+            // Add to "all images" json
+            $all_images[$id] = array(
+                'img_file'      => $prow['filename'],
+                'img_url'       => $this->getImage($prow['filename'])['url'],
+                'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+            );
+            $all_image_ids[] = $id;
+        }
+
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1661,6 +1686,8 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
+            'img_json'          => json_encode($all_images),
+            'all_image_ids'     => json_encode($all_image_ids),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
@@ -2840,29 +2867,28 @@ class Product
         global $_TABLES;
 
         // If already loaded, just return the images.
-        if ($this->Images !== NULL) {
-            return $this->Images;
+        if ($this->Images === NULL) {
+            $cache_key = self::_makeCacheKey($this->id, 'img');
+            $this->Images = Cache::get($cache_key);
+            if ($this->Images === NULL) {
+                $this->Images = array();
+                $sql = "SELECT img_id, filename, orderby
+                    FROM {$_TABLES['shop.images']}
+                    WHERE product_id='". $this->id . "'
+                    ORDER BY orderby ASC";
+                $res = DB_query($sql);
+                while ($prow = DB_fetchArray($res, false)) {
+                    if (self::imageExists($prow['filename'])) {
+                        $this->Images[$prow['img_id']] = $prow;
+                    } else {
+                        // Might as well remove DB records for images that don't exist.
+                        $this->deleteImage($prow['img_id']);
+                    }
+                }
+                Cache::set($cache_key, $this->Images, 'products');
+            }
         }
 
-        $cache_key = self::_makeCacheKey($this->id, 'img');
-        $this->Images = Cache::get($cache_key);
-        if ($this->Images === NULL) {
-            $this->Images = array();
-            $sql = "SELECT img_id, filename, orderby
-                FROM {$_TABLES['shop.images']}
-                WHERE product_id='". $this->id . "'
-                ORDER BY orderby ASC";
-            $res = DB_query($sql);
-            while ($prow = DB_fetchArray($res, false)) {
-                if (self::imageExists($prow['filename'])) {
-                    $this->Images[$prow['img_id']] = $prow;
-                } else {
-                    // Might as well remove DB records for images that don't exist.
-                    $this->deleteImage($prow['img_id']);
-                }
-            }
-            Cache::set($cache_key, $this->Images, 'products');
-        }
         return $this->Images;
     }
 
@@ -2874,8 +2900,9 @@ class Product
      */
     public function getOneImage()
     {
-        if (is_array($this->Images)) {
-            $img = reset($this->Images);
+        $Images = $this->getImages();
+        if (is_array($Images)) {
+            $img = reset($Images);
             return $img['filename'];
         } else {
             return '';
