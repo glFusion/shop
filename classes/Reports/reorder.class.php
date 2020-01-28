@@ -20,17 +20,8 @@ namespace Shop\Reports;
 class reorder extends \Shop\Report
 {
     /** Icon to display on report menu
-     * @var string
-     */
-    protected $icon = 'barcode';
-
-    /** Item ID being reported
-     * @var integer */
-    private $supplier_id;
-
-    /** Item short description for report title
      * @var string */
-    private $item_dscp;
+    protected $icon = 'barcode';
 
     /**
      * Constructor.
@@ -55,7 +46,7 @@ class reorder extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
-        $this->supplier_id = SHOP_getVar($_GET, 'supplier_id');
+        $this->setParam('supplier_id', SHOP_getVar($_GET, 'supplier_id'), 'integer');
         $T = $this->getTemplate();
 
         $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
@@ -94,8 +85,8 @@ class reorder extends \Shop\Report
             'direction' => 'ASC',
         );
 
-        $where = " WHERE onhand <= reorder";
-        if ($this->suppliier_id > 0) {
+        $where = " WHERE track_onhand = 1 AND onhand <= reorder";
+        if ($this->supplier_id > 0) {
             $where .= " AND supplier_id = " . (int)$this->supplier_id;
         }
 
@@ -179,6 +170,53 @@ class reorder extends \Shop\Report
         }
         return $retval;
     }
+
+
+    /**
+     * Creates the configuration form for elements unique to this report.
+     *
+     * @return  string          HTML for edit form
+     */
+    protected function getReportConfig()
+    {
+        global $_TABLES;
+
+        $T = $this->getTemplate('config');
+        $supplier_id = self::_getSessVar('supplier_id');
+        $T->set_var(
+            'supplier_options',
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $supplier_id,
+                1
+            )
+        );
+        return $T->parse('output', 'report');
+    }
+
+
+    /**
+     * Get the report title, showing the supplier name if filtered.
+     *
+     * @return  string      Report title
+     */
+    protected function getTitle()
+    {
+        global $LANG_SHOP, $_TABLES;
+
+        if (array_key_exists('title', $LANG_SHOP['reports_avail'][$this->key])) {
+            $retval = $LANG_SHOP['reports_avail'][$this->key]['title'];
+        } else {
+            $retval = $LANG_SHOP['reports_avail'][$this->key]['name'];
+        }
+        if ($this->supplier_id > 0) {
+            $retval .= ': ' . DB_getItem($_TABLES['shop.suppliers'], 'company', "sup_id={$this->supplier_id}");
+        }
+        return $retval;
+    }
+
+
 
 }
 
