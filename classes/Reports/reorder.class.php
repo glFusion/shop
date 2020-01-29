@@ -50,7 +50,7 @@ class reorder extends \Shop\Report
         $T = $this->getTemplate();
 
         $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
-            short_description as dscp,
+            short_description as dscp, p.supplier_ref, pv.supplier_ref as pv_ref,
             pv.pv_id, pv.sku, pv.onhand as pv_onhand, pv.reorder as pv_reorder,
             s.company as supplier
             FROM {$_TABLES['shop.products']} p
@@ -73,6 +73,11 @@ class reorder extends \Shop\Report
             array(
                 'text'  => $LANG_SHOP['variants'],
                 'field' => 'sku',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
                 'sort'  => true,
             ),
             array(
@@ -143,6 +148,7 @@ class reorder extends \Shop\Report
                     'item_name'     => $A['name'],
                     'dscp'          => $this->remQuote($A['short_description']),
                     'sku'           => $this->remQuote($A['sku']),
+                    'supplier_ref'  => empty($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'],
                     'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['pv_onhand'],
                     'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['pv_reorder'],
                     'supplier'      => $A['supplier'],
@@ -188,6 +194,10 @@ class reorder extends \Shop\Report
 
         case 'reorder':
             $retval = is_null($A['pv_id']) ? (float)$A['reorder'] : (float)$A['pv_reorder'];
+            break;
+
+        case 'supplier_ref':
+            $retval = is_null($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'];
             break;
         }
         return $retval;
