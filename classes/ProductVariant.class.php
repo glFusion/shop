@@ -246,9 +246,10 @@ class ProductVariant
     /**
      * Load the product attributs into the options array.
      *
+     * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    private function loadOptions()
+    public function loadOptions()
     {
         global $_TABLES;
 
@@ -261,6 +262,7 @@ class ProductVariant
                     ON pog.pog_id = pov.pog_id
                 WHERE vx.pv_id = {$this->pv_id}
                 ORDER BY pog.pog_orderby ASC";
+            //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $this->Options[$A['pog_name']] = new ProductOptionValue($A);
@@ -517,22 +519,11 @@ class ProductVariant
     /**
      * Get the description array elements.
      *
-     * @return  string      Item description
+     * @return  array       Array of description fields
      */
     public function getDscp()
     {
-        static $POGS = NULL;
-        if ($POGS === NULL) {
-            $POGS = ProductOptionGroup::getAll();
-        }
-        $retval = array();
-        foreach ($this->Options as $Opt) {
-            $retval[] = array(
-                'naem' => $POGS[$Opt->getGroupID()]->getName(),
-                'value' => $Opt->getValue(),
-            );
-        }
-        return $retval;
+        return $this->dscp;
     }
 
 
@@ -547,28 +538,6 @@ class ProductVariant
         foreach ($this->dscp as $dscp) {
             $retval .= " -- {$dscp['name']}: {$dscp['value']}<br />\n";
         }
-        return $retval;
-    }
-
-
-    /**
-     * Convert a json string from the DB directly to a string description.
-     *
-     * @deprecated
-     * @param   array|string    Array of elements or JSON string
-     * @return  string      One-line description
-     */
-    private static function XXjsonToString($json)
-    {
-        $retval = array();
-        $json = json_decode($json,true);
-        if (!is_array($json)) {
-            return '';
-        }
-        foreach ($json as $dscp) {
-            $retval[] = "{$dscp['name']}:{$dscp['value']}";
-        }
-        $retval = implode(', ', $retval);
         return $retval;
     }
 
@@ -593,9 +562,10 @@ class ProductVariant
      * Get the decriptive elements from the option names and values.
      * Sets the local dscp property
      *
+     * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    private function makeDscp()
+    public function makeDscp()
     {
         $this->dscp = array();
         foreach ($this->Options as $name=>$POV) {
@@ -852,6 +822,7 @@ class ProductVariant
             }
             $opt_ids = array();
             $sku_parts = array();
+            $dscp = array();
             foreach($groups as $pog=>$pov_id) {
                 if ($pov_id == 0) {
                     continue;
@@ -866,6 +837,10 @@ class ProductVariant
                         $sku_parts[] = $Opt->getSku();
                     }
                 }
+                $dscp[] = array(
+                    'name'  => ProductOptionGroup::getInstance($pog)->getName(),
+                    'value' => $Opt->getValue(),
+                );
             }
             if (empty($A['sku'])) {
                 if (!empty($sku_parts) && !empty($P->getName())) {
@@ -898,6 +873,7 @@ class ProductVariant
                 weight = $weight,
                 shipping_units = $shipping_units,
                 reorder = $reorder,
+                dscp = '" . DB_escapeString(json_encode($dscp)) . "',
                 onhand = $onhand";
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -952,6 +928,7 @@ class ProductVariant
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
             img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
+            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "',
             reorder = " . (float)$this->reorder;
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -966,33 +943,36 @@ class ProductVariant
             $retval = false;;
         }
 
-        // Create two standardized arrays to detect new and removed option vals
-        $old_opts = array();
-        $new_opts = array();
-        foreach ($this->Options as $Opt) {
-            $old_opts[] = $Opt->getID();
-        }
-        foreach ($A['groups'] as $opt) {
-            if ($opt > 0) {
-                $new_opts[] = (int)$opt;
+        // Create two standardized arrays to detect new and removed option vals.
+        // Only if submitted from a form, where the groups variable is present.
+        if (isset($A['groups'])) {
+            $old_opts = array();
+            $new_opts = array();
+            foreach ($this->Options as $Opt) {
+                $old_opts[] = $Opt->getID();
             }
-        }
-        $removed = array_diff($old_opts, $new_opts);
-        $added = array_diff($new_opts, $old_opts);
-        if (!empty($added)) {
-            foreach ($added as $opt_id) {
-                $vals[] = '(' . $this->getID() . ',' . $opt_id . ')';
+            foreach ($A['groups'] as $opt) {
+                if ($opt > 0) {
+                    $new_opts[] = (int)$opt;
+                }
             }
-            $sql_vals = implode(',', $vals);
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
-                (pv_id, pov_id) VALUES $sql_vals";
-            DB_query($sql);
-        }
-        if (!empty($removed)) {
-            $removed = implode(',', $removed);
-            $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
-                WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
-            DB_query($sql);
+            $removed = array_diff($old_opts, $new_opts);
+            $added = array_diff($new_opts, $old_opts);
+            if (!empty($added)) {
+                foreach ($added as $opt_id) {
+                    $vals[] = '(' . $this->getID() . ',' . $opt_id . ')';
+                }
+                $sql_vals = implode(',', $vals);
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
+                    (pv_id, pov_id) VALUES $sql_vals";
+                DB_query($sql);
+            }
+            if (!empty($removed)) {
+                $removed = implode(',', $removed);
+                $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
+                    WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
+                DB_query($sql);
+            }
         }
 
         return $retval;
