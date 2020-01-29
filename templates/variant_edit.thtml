@@ -141,20 +141,4 @@
 </form>
 {!endif}
 {tooltipster_js}
-<script>
-function XSHOP_caItems(f, name, cb) {
-    var n=f.elements.length;
-    for (i=0;i<n; i++) {
-        var field=f.elements[i];
-        if (field.type == 'checkbox' && field.name.match(name)) {
-            if (cb.checked) {
-                field.checked=true;
-            } else {
-                field.checked=false;
-            }
-        }
-    }
-    return false;
-}
-</script>
 {# end {templatelocation} #}
