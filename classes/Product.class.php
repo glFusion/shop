@@ -932,6 +932,23 @@ class Product
                 ProductVariant::saveNew($A);
             }
 
+            // Add any new features
+            if (array_key_exists('new_ft', $A)) {
+                foreach ($A['new_ft'] as $idx=>$ft_id) {
+                    Feature::getInstance($ft_id)->addProduct(
+                        $this->id,
+                        $A['new_fv_sel'][$idx],
+                        $A['new_fv_custom'][$idx]
+                    );
+                }
+            }
+            // Delete any features checked for deletion
+            if (array_key_exists('del_ft', $A)) {
+                foreach ($A['del_ft'] as $ft_id=>$val) {
+                    Feature::deleteProduct($this->id, $ft_id);
+                }
+            }
+
             //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {

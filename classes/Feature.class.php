@@ -471,18 +471,19 @@ class Feature
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
         $sql = "SELECT  pf.prod_id, pf.ft_id, pf.fv_id,
-            f.ft_name, f.orderby,
-            IFNULL(pf.fv_text, fv.fv_value) AS fv_text
-                FROM {$_TABLES['shop.products']} p
-                LEFT JOIN {$_TABLES['shop.prodXfeat']} pf
-                    ON pf.prod_id = p.id
-                LEFT JOIN {$_TABLES['shop.features']} f
-                    ON f.ft_id = pf.ft_id
-                LEFT JOIN {$_TABLES['shop.features_values']} fv
-                    ON fv.fv_id = pf.fv_id
-                WHERE p.id = $prod_id
-                ORDER BY f.orderby ASC";
-            $res = DB_query($sql);
+                f.ft_name, f.orderby,
+                IFNULL(pf.fv_text, fv.fv_value) AS fv_text
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXfeat']} pf
+                ON pf.prod_id = p.id
+            LEFT JOIN {$_TABLES['shop.features']} f
+                ON f.ft_id = pf.ft_id
+            LEFT JOIN {$_TABLES['shop.features_values']} fv
+                ON fv.fv_id = pf.fv_id
+            WHERE p.id = $prod_id AND pf.prod_id IS NOT NULL
+            ORDER BY f.orderby ASC";
+        //echo $sql;die;
+        $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $grps[$A['ft_id']] = new self($A);
 
@@ -647,7 +648,15 @@ class Feature
 
         $T = new \Template(SHOP_PI_PATH . '/templates');
         $T->set_file('prod_feat', 'prod_feat_form.thtml');
+        $T->set_var('prod_id', $prod_id);
         $Features = self::getByProduct($prod_id);
+        $ft_ids = array();
+        if ($Features) {
+            foreach ($Features as $F) {
+                $ft_ids[] = $F->getID();
+            }
+        }
+        $T->set_var('ft_ids', json_encode($ft_ids));
         $T->set_block('prod_feat', 'FeatList', 'FL');
         foreach ($Features as $F) {
             $T->set_var(array(
@@ -748,7 +757,7 @@ class Feature
 
         $args = array('prod_id');
         $vals = array((int)$prod_id);
-        if ($ft > -1) {
+        if ($ft_id > -1) {
             $args[] = 'ft_id';
             $vals[] = (int)$ft_id;
         }

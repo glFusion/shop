@@ -40,39 +40,6 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
-case 'delPXF':      // delete a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $retval = array(
-        'status' => Shop\Feature::deleteProduct($prod_id, $ft_id),
-    );
-    break;
-
-case 'updPXF':      // update a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
-    if (
-        $prod_id > 0 &&
-        $ft_id > 0 &&
-        ($fv_id > 0 || !empty($fv_text))
-    ) {
-        if (!empty($fv_text)) {
-            $fv_id = 0;
-        }
-        $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->updateProduct($prod_id, $fv_id, $fv_text),
-            'fv_id' => $fv_id,
-            'fv_custom' => $fv_text,
-        );
-    } else {
-        $retval = array(
-            'status' => false,
-        );
-    }
-    break;
-
 case 'newPXF':      // add a product->feature mapping
     $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
     $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
@@ -87,8 +54,9 @@ case 'newPXF':      // add a product->feature mapping
             $fv_id = 0;
         }
         $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
+            'status' => true, //Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
             'ft_name' => Shop\Feature::getInstance($ft_id)->getName(),
+            'ft_val' => $ft_id,
             'ft_opts' => Shop\Feature::optionList($ft_id),
             'fv_opts' => Shop\FeatureValue::optionList($ft_id, $fv_id),
             'fv_custom' => $fv_text,
