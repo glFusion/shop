@@ -689,12 +689,9 @@ $LANG_SHOP_HELP = array(
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',
 'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
-<<<<<<< HEAD
 'hlp_chk_all' => 'Select or de-select all items',
 'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
-=======
 'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
->>>>>>> develop
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
