@@ -183,7 +183,11 @@ class Zone
         if (!$apply && in_array($state_id, $this->states)) {
             $apply = true;
         }
-        return $apply ? (bool)$this->allow : true;
+        if ($this->allow) {
+            return $apply;
+        } else {
+            return !$apply;
+        }
     }
 
 
