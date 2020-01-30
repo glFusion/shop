@@ -77,7 +77,9 @@ case 'addcartitem':
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];
-    } elseif ($new_qty != $req_qty) {
+    } elseif ($new_qty < $req_qty) {
+        // TODO: better handling of adjustments.
+        // This really only handles changes to the initial qty.
         $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
     }
     $output = array(
