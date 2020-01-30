@@ -145,6 +145,10 @@ class Product
      * @var integer */
     private $def_pv_id = 0;
 
+    /** Zone rule ID.
+     * @var integer */
+    private $zone_rule = 0;
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -585,7 +589,8 @@ class Product
             ->setBrandID($row['brand_id'])
             ->setSupplierRef($row['supplier_ref'])
             ->setLeadTime($row['lead_time'])
-            ->setDefVariantID($row['def_pv_id']);
+            ->setDefVariantID($row['def_pv_id'])
+            ->setRuleID($row['zone_rule']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -700,6 +705,47 @@ class Product
     public function getSupplierRef()
     {
         return $this->supplier_ref;
+    }
+
+
+    /**
+     * Set the zone rule for this item.
+     *
+     * @param   integer $id     Rule ID
+     * @return  object  $this
+     */
+    private function setRuleID($id)
+    {
+        $this->zone_rule = (int)$id;
+        return $this;
+
+    }
+
+
+    /**
+     * Get the zone rule ID
+     *
+     * @return  intger      Rule ID
+     */
+    public function getRuleID()
+    {
+        COM_errorLog("{$this->id} : {$this->zone_rule}");
+        return (int)$this->zone_rule;
+    }
+
+
+    /**
+     * Get the zone rule object.
+     *
+     * @return  object      Rule object
+     */
+    public function getRule()
+    {
+        if ($this->zone_rule> 0) {
+            return Rules\Zone::getInstance($this->zone_rule);
+        } else {
+            return new Rules\Zone;
+        }
     }
 
 
@@ -4035,18 +4081,6 @@ class Product
             $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
         }
         return array($allcats_sel, $selcats_sel);
-    }
-
-
-    /**
-     * Get the zone rule ID for this product.
-     * TODO: stub function during testing
-     *
-     * @return  integer     Applicable rule ID
-     */
-    public function getRuleID()
-    {
-        return 0;
     }
 
 }

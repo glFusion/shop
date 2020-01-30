@@ -35,6 +35,9 @@
 
   <div class="shopOrder">
 
+{!if rules_msg}
+    <div class="uk-alert uk-alert-danger">{rules_msg}</div>
+{!endif}
     <div id="shopBilling">
       <b>{$LANG_SHOP['bill_to']}:</b>
 {!if not_final}
@@ -80,7 +83,11 @@
           </th>
         </tr>
         <!-- BEGIN ItemRow -->
+{!if rulespassed}
         <tr>
+{!else}
+        <tr class="embargo">
+{!endif}
           <td>
 {!!if {img_url} && {item_link} !!}
             <a href="{item_link}">{img_url}</a>
@@ -116,6 +123,11 @@
 {!endif}
 {!if discount_tooltip}
           <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
+{!endif}
+{!if rulespassed}
+{!else}
+          <i class="uk-icon uk-icon-ban uk-text-danger uk-icon-medium tooltip"
+            title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
 {!endif}
           </td>
         </tr>
