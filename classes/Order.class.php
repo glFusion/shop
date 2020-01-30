@@ -894,8 +894,6 @@ class Order
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
-            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -928,6 +926,8 @@ class Order
 
         if (count($this->rulesPassed)) {
             $T->set_var(array(
+                'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
+                'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
                 'total'     => $Currency->Format($this->total),
                 'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
                 'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
