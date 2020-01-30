@@ -731,6 +731,7 @@ class Order
         $item_net = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            $P->setVariant($item->getVariantID());
             if ($is_invoice) {
                 $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
@@ -830,6 +831,8 @@ class Order
             $T->clear_var('iOpts');
         }
 
+        $this->total = $this->getTotal();     // also calls calcTax()
+        $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
             if ($discount_items > 0) {
@@ -846,8 +849,6 @@ class Order
             }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
-        $this->total = $this->getTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getInfo('apply_gc');
         /*if ($this->tax_rate > 0) {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
             //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
