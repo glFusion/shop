@@ -1641,7 +1641,6 @@ class Product
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
-            'avail_msg'         => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
@@ -2492,20 +2491,24 @@ class Product
      */
     public function isInStock()
     {
+        $status = false;
+
         // Not tracking stock, or have stock on hand, return true
         if ($this->track_onhand == 1) {
             $this->getVariants();
             if (!empty($this->Variants)) {
                 foreach ($this->Variants as $V) {
                     if ($V->getOnhand() > 0) {
-                        return true;
+                        $status = true;
                     }
                 }
             } elseif ($this->getOnhand() > 0) {
-                return true;
+                $status = true;
             }
+        } else {
+            $status = true;
         }
-        return false;
+        return $status;
     }
 
 
