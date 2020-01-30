@@ -281,9 +281,10 @@ class Shipper
      */
     private function setModuleCode($code)
     {
-        $this->code = $code;
+        $this->module_code = $code;
         return $this;
     }
+
 
     /**
      * Set the shipper name.
@@ -399,7 +400,7 @@ class Shipper
         if (empty($value)) {
             $value = self::MAX_DATETIME;
         }
-        $this->properties[$var] = new \Date($value, $_CONF['timezone']);
+        $this->valid_to = new \Date($value, $_CONF['timezone']);
         return $this;
     }
 

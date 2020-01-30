@@ -137,6 +137,10 @@ class Product
      * @var string */
     private $lead_time = '';
 
+    /** Default Variant ID.
+     * @var integer */
+    private $def_pv_id = 0;
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -207,6 +211,7 @@ class Product
             $this->qty_discounts = array();
             $this->custom = '';
             $this->reorder = 0;
+            $this->def_pv_id = 0;
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -575,7 +580,8 @@ class Product
         $this->setSupplierID($row['supplier_id'])
             ->setBrandID($row['brand_id'])
             ->setSupplierRef($row['supplier_ref'])
-            ->setLeadTime($row['lead_time']);
+            ->setLeadTime($row['lead_time'])
+            ->setDefVariantID($row['def_pv_id']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -602,7 +608,7 @@ class Product
         }
 
         $cache_key = self::_makeCacheKey($id);
-        $row = Cache::get($cache_key);
+        //$row = Cache::get($cache_key);
         if ($row === NULL) {
             $result = DB_query("SELECT *
                         FROM {$_TABLES['shop.products']}
@@ -884,10 +890,11 @@ class Product
                 supplier_id ='" . $this->getSupplierID() . "',
                 supplier_ref = '{$this->getSupplierRef()}',
                 lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                def_pv_id = {$this->getDefVariantID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-                //options='$options',
+        //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -923,6 +930,23 @@ class Product
             $A['item_id'] = $this->id;
             if (is_array($A) && isset($A['groups'])) {
                 ProductVariant::saveNew($A);
+            }
+
+            // Add any new features
+            if (array_key_exists('new_ft', $A)) {
+                foreach ($A['new_ft'] as $idx=>$ft_id) {
+                    Feature::getInstance($ft_id)->addProduct(
+                        $this->id,
+                        $A['new_fv_sel'][$idx],
+                        $A['new_fv_custom'][$idx]
+                    );
+                }
+            }
+            // Delete any features checked for deletion
+            if (array_key_exists('del_ft', $A)) {
+                foreach ($A['del_ft'] as $ft_id=>$val) {
+                    Feature::deleteProduct($this->id, $ft_id);
+                }
             }
 
             //SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -1406,6 +1430,21 @@ class Product
             $OI = NULL;
         }
 
+        if ($this->hasVariants()) {              // also sets $this->Variants
+            $def_id = $this->getDefVariantID();
+            if ($def_id > 0) {
+                foreach ($this->Variants as $Variant) {
+                    if ($Variant->getID() == $def_id) {
+                        $this->setVariant($def_id);
+                    }
+                }
+            }
+            // Set the default if a default isn't specified or valid
+            if ($this->Variant == NULL) {
+                $this->Variant = reset($this->Variants);
+            }
+        }
+
         // Set the template dir based on the configured template version
         $T = new \Template(array(
             __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
@@ -1461,33 +1500,14 @@ class Product
             }
         }
 
-        // Retrieve the photos and put into the template
-        $i = 0;
-        foreach ($this->Images as $id=>$prow) {
-            if (self::imageExists($prow['filename'])) {
-                if ($i == 0) {
-                    $T->set_var(array(
-                        'main_img' => $this->getImage($prow['filename'])['url'],
-                        'main_imgfile' => $prow['filename'],
-                    ) );
-                }
-                $T->set_block('product', 'Thumbnail', 'PBlock');
-                $T->set_var(array(
-                    'img_file'      => $prow['filename'],
-                    'img_url'       => $this->getImage($prow['filename'])['url'],
-                    'thumb_url'     => $this->getThumb($prow['filename'])['url'],
-                    'session_id'    => session_id(),
-                ) );
-                $T->parse('PBlock', 'Thumbnail', true);
-                $i++;
-            }
-        }
-
         // Get the product options, if any, and set them into the form
         $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
+        if ($this->Variant) {
+            $VarOptions = $this->Variant->getOptions();
+        }
         foreach ($this->OptionGroups as $OG) {
             if (count($OG->Options) < 1) {
                 // Could happen if options are removed leaving an empty option group.
@@ -1500,7 +1520,11 @@ class Product
             case 'select':
             case 'radio':
                 // First find the selected option
-                $sel_opt = 0;
+                if ($this->Variant) {
+                    $sel_opt = $VarOptions[$OG->getName()]->getID();
+                } else {
+                    $sel_opt = 0;
+                }
                 foreach ($OG->Options as $Opt) {
                     if (in_array($Opt->getID(), $this->sel_opts)) {
                         $sel_opt = $Opt->getID();
@@ -1545,7 +1569,53 @@ class Product
             $T->parse('AG', 'OptionGroup', true);
             $T->clear_var('optSel');
         }
-        $this->setVariant(ProductVariant::getByAttributes($this->id, $pv_opts));
+
+        // Retrieve the photos and put into the templatea.
+        // Get the images for the current Variant, if any. If none then show
+        // all attached imates.
+        $i = 0;
+        $all_images = array();      // for json list of all image information
+        $all_image_ids = array();   // for json list of image IDs
+        $showImages = $this->getImages();
+        if ($this->Variant !== NULL) {
+            $ids = $this->Variant->getImageIDs();
+            if (!empty($ids)) {
+                $showImages = array();
+                foreach ($ids as $id) {
+                    $showImages[$id] = $this->Images[$id];
+                }
+            }
+        }
+        foreach ($this->Images as $id=>$prow) {
+            if (self::imageExists($prow['filename'])) {
+                if (isset($showImages[$id])) {
+                    if ($i == 0) {
+                        $T->set_var(array(
+                            'main_img' => $this->getImage($prow['filename'])['url'],
+                            'main_imgfile' => $prow['filename'],
+                        ) );
+                    }
+                    $T->set_block('product', 'Thumbnail', 'PBlock');
+                    $T->set_var(array(
+                        'img_id'        => $id,
+                        'img_file'      => $prow['filename'],
+                        'img_url'       => $this->getImage($prow['filename'])['url'],
+                        'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+                        'session_id'    => session_id(),
+                    ) );
+                    $T->parse('PBlock', 'Thumbnail', true);
+                    $i++;
+                }
+            }
+            // Add to "all images" json
+            $all_images[$id] = array(
+                'img_file'      => $prow['filename'],
+                'img_url'       => $this->getImage($prow['filename'])['url'],
+                'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+            );
+            $all_image_ids[] = $id;
+        }
+
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1661,6 +1731,8 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
+            'img_json'          => json_encode($all_images),
+            'all_image_ids'     => json_encode($all_image_ids),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
@@ -2840,29 +2912,28 @@ class Product
         global $_TABLES;
 
         // If already loaded, just return the images.
-        if ($this->Images !== NULL) {
-            return $this->Images;
+        if ($this->Images === NULL) {
+            $cache_key = self::_makeCacheKey($this->id, 'img');
+            $this->Images = Cache::get($cache_key);
+            if ($this->Images === NULL) {
+                $this->Images = array();
+                $sql = "SELECT img_id, filename, orderby
+                    FROM {$_TABLES['shop.images']}
+                    WHERE product_id='". $this->id . "'
+                    ORDER BY orderby ASC";
+                $res = DB_query($sql);
+                while ($prow = DB_fetchArray($res, false)) {
+                    if (self::imageExists($prow['filename'])) {
+                        $this->Images[$prow['img_id']] = $prow;
+                    } else {
+                        // Might as well remove DB records for images that don't exist.
+                        $this->deleteImage($prow['img_id']);
+                    }
+                }
+                Cache::set($cache_key, $this->Images, 'products');
+            }
         }
 
-        $cache_key = self::_makeCacheKey($this->id, 'img');
-        $this->Images = Cache::get($cache_key);
-        if ($this->Images === NULL) {
-            $this->Images = array();
-            $sql = "SELECT img_id, filename, orderby
-                FROM {$_TABLES['shop.images']}
-                WHERE product_id='". $this->id . "'
-                ORDER BY orderby ASC";
-            $res = DB_query($sql);
-            while ($prow = DB_fetchArray($res, false)) {
-                if (self::imageExists($prow['filename'])) {
-                    $this->Images[$prow['img_id']] = $prow;
-                } else {
-                    // Might as well remove DB records for images that don't exist.
-                    $this->deleteImage($prow['img_id']);
-                }
-            }
-            Cache::set($cache_key, $this->Images, 'products');
-        }
         return $this->Images;
     }
 
@@ -2874,8 +2945,9 @@ class Product
      */
     public function getOneImage()
     {
-        if (is_array($this->Images)) {
-            $img = reset($this->Images);
+        $Images = $this->getImages();
+        if (is_array($Images)) {
+            $img = reset($Images);
             return $img['filename'];
         } else {
             return '';
@@ -3249,12 +3321,12 @@ class Product
                 'field' => 'prod_type',
                 'sort' => true,
             ),
-            array(
+            /*array(
                 'text'  => $LANG_SHOP['status'],
                 'field' => 'availability',
                 'sort'  => false,
                 'align' => 'center',
-            ),
+            ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
                 Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
@@ -3869,6 +3941,7 @@ class Product
     public function setLeadTime($str)
     {
         $this->lead_time = $str;
+        return $this;
     }
 
 
@@ -3895,6 +3968,30 @@ class Product
         } else {
             return $this->lead_time;
         }
+    }
+
+
+    /**
+     * Set the ID of the default variant for this product.
+     *
+     * @param   integer $id     ProductVariant record ID
+     * @return  object  $this
+     */
+    private function setDefVariantID($id)
+    {
+        $this->def_pv_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the default ProductVariant ID for this product.
+     *
+     * @return  integer     ProductVariant record ID
+     */
+    public function getDefVariantID()
+    {
+        return (int)$this->def_pv_id;
     }
 
 

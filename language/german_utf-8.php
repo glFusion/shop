@@ -313,6 +313,10 @@ $LANG_SHOP = array (
         'name' => 'Coupon Activity',
         'dscp' => 'List coupon purchases and application against orders.',
     ),
+    'reorder' => array(
+        'name' => 'Item Reorder Report',
+        'dscp' => 'List all items at or below their minimum stock levels.',
+    ),
 ),
 'my_orders' => 'Meine Bestellungen',
 'no_products_match' => 'No products match your search parameters',
@@ -641,6 +645,8 @@ $LANG_SHOP = array (
 'lead_time' => 'Lead Time',
 'disp_lead_time' => 'Allow %s',
 'on_sale' => 'On Sale!',
+'chk_all' => 'Check All',
+'default' => 'Default',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

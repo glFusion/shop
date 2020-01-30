@@ -793,7 +793,7 @@ class Order
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
-                'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
+                'taxable'       => $P->isTaxable(),
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'sale_icon'     => $LANG_SHOP['sale_price'][0],
                 'discount_icon' => $LANG_SHOP['discount'][0],
@@ -848,10 +848,12 @@ class Order
         }
         $this->total = $this->getTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
-        if ($this->tax_rate > 0) {
-            $lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
-        } else {
+        /*if ($this->tax_rate > 0) {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
+            //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
+        } else {
+            $lang_tax_on_items = $LANG_SHOP['sales_tax'];*/
+        if ($view == 'viewcart') {
             // Back out sales tax if tax is not charged. This happens when viewing the cart
             // and a tax amount gets set, but shouldn't be shown in the order yet.
             $this->total -= $this->tax;

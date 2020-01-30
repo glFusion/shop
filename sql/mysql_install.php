@@ -78,6 +78,7 @@ $_SQL = array(
   `supplier_id` int(11) unsigned NOT NULL DEFAULT 0,
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
   `lead_time` varchar(64) NOT NULL DEFAULT '',
+  `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -379,6 +380,23 @@ $_SQL = array(
   KEY `is_brand` (`is_brand`,`name`)
 ) ENGINE=MyISAM",
 
+'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.variants']}
+  `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `item_id` int(11) unsigned NOT NULL,
+  `sku` varchar(64) DEFAULT NULL,
+  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `onhand` int(10) NOT NULL DEFAULT '0',
+  `reorder` int(10) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `supplier_ref` varchar(64) NOT NULL DEFAULT '',
+  `img_ids` varchar(255) DEFAULT NULL,
+  `dscp` text NOT NULL,
+  PRIMARY KEY (`pv_id`),
+  KEY `prod_id` (`item_id`)
+) ENGINE=MyISAM",
+
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -653,7 +671,10 @@ $SHOP_UPGRADE['1.2.0'] = array(
     ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_ref`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0'",
     "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
 );
 
 
@@ -669,7 +690,6 @@ $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
-$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];

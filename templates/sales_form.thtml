@@ -104,14 +104,20 @@
       <span id="start" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="text" id="start_dt" name="start" value="{start_date}" size="12" maxlength="12"
-            data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-            placeholder="{min_date}"
-            data-uk-tooltip />
-      <input type="text" id="start_time" name="start_time" value="{start_time}" size="12" maxlength="12"
-            data-uk-timepicker title="{$LANG_SHOP['timepicker']}" placeholder="{min_time}"
-            {st_time_disabled}
-            data-uk-tooltip />
+        <div class="uk-form-icon">
+            <i class="uk-icon-calendar"></i>
+              <input type="text" id="start_dt" name="start" value="{start_date}" size="12" maxlength="12"
+                data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
+                placeholder="{min_date}"
+                data-uk-tooltip />
+        </div>
+        <div class="uk-form-icon">
+            <i class="uk-icon-clock-o"></i>
+              <input type="text" id="start_time" name="start_time" value="{start_time}" size="12" maxlength="12"
+                data-uk-timepicker title="{$LANG_SHOP['timepicker']}" placeholder="{min_time}"
+                {st_time_disabled}
+                data-uk-tooltip />
+        </div>
       &nbsp;<input type="checkbox" name="start_allday" value="1" {st_allday_chk} onclick="setAllday(this,'start');"/>&nbsp;{$LANG_SHOP['allday']}
       &nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
@@ -124,15 +130,21 @@
       <span id="end" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <input type="text" id="end_dt" name="end" value="{end_date}" size="12" maxlength="12"
-            data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-            placeholder="{max_date}"
-            data-uk-tooltip />
-      <input type="text" id="end_time" name="end_time" value="{end_time}" size="12" maxlength="12"
-            data-uk-timepicker title="{$LANG_SHOP['timepicker']}"
-            placeholder="{max_time}"
-            {end_time_disabled}
-            data-uk-tooltip />
+        <div class="uk-form-icon">
+            <i class="uk-icon-calendar"></i>
+            <input type="text" id="end_dt" name="end" value="{end_date}" size="12" maxlength="12"
+              data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
+                placeholder="{max_date}"
+                data-uk-tooltip />
+        </div>
+        <div class="uk-form-icon">
+            <i class="uk-icon-clock-o"></i>
+            <input type="text" id="end_time" name="end_time" value="{end_time}" size="12" maxlength="12"
+                data-uk-timepicker title="{$LANG_SHOP['timepicker']}"
+                placeholder="{max_time}"
+                {end_time_disabled}
+                data-uk-tooltip />
+        </div>
       &nbsp;<input type="checkbox" name="end_allday" value="1" {end_allday_chk} onclick="setAllday(this,'end');"/>&nbsp;{$LANG_SHOP['allday']}
       &nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
         title="{$LANG_SHOP_HELP['reset_date']}"
