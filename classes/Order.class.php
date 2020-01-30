@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -731,6 +731,7 @@ class Order
         $item_net = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            $P->setVariant($item->getVariantID());
             if ($is_invoice) {
                 $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
@@ -830,6 +831,16 @@ class Order
             $T->clear_var('iOpts');
         }
 
+        // Reload the address objects in case the addresses were updated
+        $ShopAddr = new Company;
+        $this->Billto = new Address($this->getAddress('billto'));
+        $this->Shipto = new Address($this->getAddress('shipto'));
+
+        // Call selectShipper() here to get the shipping amount into the local var.
+        $shipper_select = $this->selectShipper();
+
+        $this->total = $this->getTotal();     // also calls calcTax()
+        $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
             if ($discount_items > 0) {
@@ -846,8 +857,6 @@ class Order
             }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
-        $this->total = $this->getTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getInfo('apply_gc');
         /*if ($this->tax_rate > 0) {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
             //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
@@ -859,14 +868,6 @@ class Order
             $this->total -= $this->tax;
         }
 
-        $ShopAddr = new Company;
-
-        // Reload the address objects in case the addresses were updated
-        $this->Billto = new Address($this->getAddress('billto'));
-        $this->Shipto = new Address($this->getAddress('shipto'));
-
-        // Call selectShipper() here to get the shipping amount into the local var.
-        $shipper_select = $this->selectShipper();
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
@@ -2002,6 +2003,14 @@ class Order
             // None already selected, grab the first one. It has the best rate.
             $best = reset($shippers);
         }
+        if (!$best) {
+            // Error getting shippers, shouldn't happen unless shippers have been deleted.
+            $this->shipper_id = 0;
+            $this->shipping = 0;
+            return '';
+        }
+        $this->shipper_id = $best->getID();
+        $this->shipping = $best->getOrderShipping()->total_rate;
 
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
@@ -2011,7 +2020,7 @@ class Order
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
-            $s_amt = $shipper->getORderShipping()->total_rate;
+            $s_amt = $shipper->getOrderShipping()->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),

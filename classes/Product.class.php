@@ -39,6 +39,10 @@ class Product
      * @const integer */
     const OVERSELL_HIDE = 2;
 
+    /** Fixed maximum value for order quantity.
+     * @const integer */
+    const MAX_ORDER_QTY = 99999;
+
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
     protected $properties;
@@ -2558,7 +2562,7 @@ class Product
     public function getQuantityBO($qty)
     {
         if ($this->track_onhand) {
-            $avail = $this->onhand;
+            $avail = $this->Variant ? $this->Variant->getOnhand() : $this->onhand;
             return max($qty - $avail, 0);
         } else {
             return 0;
@@ -2575,12 +2579,17 @@ class Product
      */
     public function getMaxOrderQty()
     {
-        $max = $this->max_ord_qty == 0 ? 99999 : $this->max_ord_qty;
+        $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
+        if ($this->Variant) {
+            $onhand = $this->Variant->getOnhand();
+        } else {
+            $onhand = $this->onhand;
+        }
 
         if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
             return $max;
         } else {
-            return min($this->onhand, $max);
+            return min($onhand, $max);
         }
     }
 
