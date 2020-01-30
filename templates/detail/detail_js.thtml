@@ -79,23 +79,14 @@ function ProcessForm(form)
                 SHOP_changeImages(result.images);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
-                    //$("span#weight").text(result.weight);
-                    //orig_price = result.orig_price.toFixed({cur_decimals});
-                    //sale_price = result.sale_price.toFixed({cur_decimals});
-                    //$("#price").html(sale_price);
-                    //$("#price_was").html(orig_price);
-                    //$("span#sku").text(result.sku);
                     $("button#btn_add_cart_{id}").prop("disabled", false);
                     $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-success");
-                    //$("div#oos_msg").css('visibility', 'hidden');
                 } else {
-                    //$("#price").html("n/a");
-                    //$("#price_was").html("n/a");
                     $("button#btn_add_cart_{id}").prop("disabled", true);
                     $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-disabled");
-                    //$("div#oos_msg").css('visibility', '');
-                    //$.UIkit.notify(result.msg, {timeout: 2000,pos:'top-center'});
                 }
+                // Show or hide the out of stock message. Purchase buttons
+                // may still be enabled.
                 if (result.is_oos) {
                     $("div#oos_msg").css('visibility', '');
                 } else {
