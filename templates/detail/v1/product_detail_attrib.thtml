@@ -94,16 +94,9 @@
         {buy_now_button}<br />
       <!-- END BtnBlock -->
         </div>
-{!if avail_msg}
-      <div id="avail_msg" class="shopOnhand v1">
-        {avail_msg}
-      </div>
-{!endif}
-{!if stock_msg}
-      <div class="shopOnhand uk-alert uk-alert-danger floatright">
-        {$LANG_SHOP['out_of_stock']}
-      </div>
-{!endif}
+        <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
+            <span class="shopProductAvailability">{$LANG_SHOP['out_of_stock']}</span>
+        </div>
 
     <div id="shopProductDesc" class="shopProductDesc v1">
       {description}

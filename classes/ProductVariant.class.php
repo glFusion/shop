@@ -1417,14 +1417,17 @@ class ProductVariant
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
             if ($this->onhand > 0) {
+                $oos = false;
                 $allowed = true;
             } else {
+                $oos = true;
                 $allowed = $P->getOversell() == 0 ? true : false;
             }
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
                 'allowed'   =>  $allowed,
+                'is_oos'    => $oos,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
                 'onhand'    => $this->onhand,

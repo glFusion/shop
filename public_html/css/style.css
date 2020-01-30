@@ -615,9 +615,10 @@ div.ItemOptions {
 
 .shopOnhand {
     margin-top: 1em;
-    color: #666666;
     font-size: 120%;
     font-style:italic;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
 .shopOnhand.v1 {
     clear:left;
@@ -880,4 +881,10 @@ ul.product-flags li {
     text-transform: uppercase;
     font-weight: 700;
     padding: .3rem .5rem;
+}
+.shopProductAvailability {
+    margin:10px;
+}
+button:disabled {
+    cursor: not-allowed;
 }
