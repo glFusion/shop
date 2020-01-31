@@ -397,6 +397,17 @@ $_SQL = array(
   KEY `prod_id` (`item_id`)
 ) ENGINE=MyISAM",
 
+'shop.states' = "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
+  `state_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `country_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `state_name` varchar(64) NOT NULL DEFAULT '',
+  `iso_code` varchar(10) NOT NULL DEFAULT '',
+  `state_enabled` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`state_id`),
+  UNIQUE KEY `country_state` (`country_id`,`iso_code`),
+  KEY `state_enabled` (`state_enabled`)
+) ENGINE=MyISAM",
+
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -666,8 +677,9 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
+    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
+    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
-
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -684,7 +696,6 @@ $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
-$_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
 $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];

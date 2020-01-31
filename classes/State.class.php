@@ -395,7 +395,7 @@ class State extends RegionBase
      */
     public function Save($A=NULL)
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $this->Country = Country::getInstance($A['country_iso']);
         $country_id = $this->Country->getID();
@@ -414,6 +414,7 @@ class State extends RegionBase
             $sql1 = "INSERT INTO {$_TABLES['shop.states']} SET ";
             $sql3 = '';
         }
+
         $sql2 = "country_id = {$this->getCountryID()},
             iso_code = '" . DB_escapeString($this->getISO()) . "',
             state_name = '" . DB_escapeString($this->getName()) . "',
@@ -421,14 +422,15 @@ class State extends RegionBase
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        DB_query($sql, 1);  // suppress errors, show nice error message instead
         if (!DB_error()) {
             if ($this->getID() == 0) {
                 $this->setID(DB_insertID());
             }
             $status = true;
         } else {
+            $this->addError($LANG_SHOP['err_dup_iso']);
+            SHOP_log($sql, SHOP_LOG_ERROR);
             $status = false;
         }
         return $status;
