@@ -264,7 +264,7 @@ class Zone
             case 'country':
                 $this->countries = array_diff($this->countries, $vals);
                 break;
-            case 'statee':
+            case 'state':
                 $this->states = array_diff($this->states, $vals);
                 break;
             }
