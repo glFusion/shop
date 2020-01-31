@@ -481,14 +481,35 @@ class Zone
      */
     public function Edit()
     {
+        global $LANG_SHOP;
+
         $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T->set_file('form', 'rule_edit.thtml');
+        $T->set_file(array(
+            'form'  => 'rule_edit.thtml',
+            'tips'  => 'tooltipster.thtml',
+        ) );
         $T->set_var(array(
             'rule_id'   => $this->rule_id,
             'rule_name' => $this->rule_name,
             'type_sel' . $this->allow => 'checked="checked"',
-        ) );
+            'doc_url'   => SHOP_getDocURL('zone_rules', $_CONF['language']),
+            'have_regions' => count($this->regions),
+            'have_countries' => count($this->countries),
+            'have_states' => count($this->states),
+            'lang_no_regions' => sprintf(
+                $LANG_SHOP['none_defined'],
+                $LANG_SHOP['regions']
+            ),
+            'lang_no_countries' => sprintf(
+                $LANG_SHOP['none_defined'],
+                $LANG_SHOP['countries']
+            ),
 
+            'lang_no_states' => sprintf(
+                $LANG_SHOP['none_defined'],
+                $LANG_SHOP['states']
+            ),
+        ) );
         $T->set_block('form', 'regionBlk', 'RB');
         foreach ($this->regions as $id) {
             $Obj = Region::getInstance($id);
@@ -518,6 +539,7 @@ class Zone
             ) );
             $T->parse('SB', 'stateBlk', true);
         }
+        $T->parse('tooltipster_js', 'tips');
         $retval .= $T->parse('output', 'form');
         //$retval .= COM_endBlock();
         return $retval;

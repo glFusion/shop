@@ -661,6 +661,7 @@ $LANG_SHOP = array (
 'prod_features' => 'Product Features',
 'zone_rule' => 'Zone Rule',
 'restrictions' => 'Restrictions',
+'none_defined' => 'No %s have been defined.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

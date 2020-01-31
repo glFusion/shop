@@ -1,3 +1,4 @@
+{# begin {templatelocation} #}
 <form action-"{site_admin_url}/plugins/shop/index.php" class="uk-form uk-form-horizontal" method="post">
     <input type="hidden" name="rule_id" value="{rule_id}" />
 {!if rule_id}
@@ -17,7 +18,7 @@
     </div>
 
     <div class="uk-form-row">
-      <label class="uk-form-label" for="f_rule_name">{$LANG_SHOP['sales_are']}:
+      <label class="uk-form-label">{$LANG_SHOP['sales_are']}:
         <span id="hlp_rule_type" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
@@ -30,37 +31,49 @@
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_SHOP['regions']}:
         <span id="hlp_regions" class="tooltip_cfg tooltipstered"></span>
-        <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'region_del', this);">
       </label>
       <div class="uk-form-controls">
+{!if have_countries}
+        <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'region_del', this);">&nbsp;<b>{$LANG_SHOP['chk_all']}</b><br />
 <!-- BEGIN regionBlk -->
         <input type="checkbox" name="region_del[]" value="{id}">&nbsp;{name}<br />
 <!-- END regionBlk -->
+{!else}
+        {lang_no_regions}
+{!endif}
       </div>
     </div>
 
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_SHOP['countries']}:
         <span id="hlp_countries" class="tooltip_cfg tooltipstered"></span>
-        <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'country_del', this);">
       </label>
       <div class="uk-form-controls">
+{!if have_countries}
+        <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'country_del', this);">&nbsp;<b>{$LANG_SHOP['chk_all']}</b><br />
 <!-- BEGIN countryBlk -->
         <input type="checkbox" name="country_del[]" value="{id}">&nbsp;{name}<br />
 <!-- END countryBlk -->
+{!else}
+        {lang_no_countries}
+{!endif}
       </div>
     </div>
 
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_SHOP['states']}:
         <span id="hlp_states" class="tooltip_cfg tooltipstered"></span>
-        <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'state_del', this);">
       </label>
       <div class="uk-form-controls">
+{!if have_states}
+        <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'state_del', this);">&nbsp;<b>{$LANG_SHOP['chk_all']}</b><br />
 <!-- BEGIN stateBlk -->
         <input type="checkbox" name="state_del[]" value="{id}">&nbsp;{name}<br />
 <!-- END stateBlk -->
       </div>
+{!else}
+        {lang_no_states}
+{!endif}
     </div>
 {!endif}
 
@@ -95,3 +108,5 @@ function SHOP_caItems(f, name, cb) {
     return false;
 }
 </script>
+{tooltipster_js}
+{# end {templatelocation} #}
