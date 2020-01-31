@@ -654,11 +654,13 @@ $LANG_SHOP = array (
 'del_rule' => 'Delete Rule',
 'save_rule' => 'Save Rule',
 'new_rule' => 'New Rule',
-'edit-rule' => 'Edit Rule',
+'edit_rule' => 'Edit Rule',
 'chk_all' => 'Check All',
 'default' => 'Default',
 'cust_text_override' => 'Custom Text Override',
 'prod_features' => 'Product Features',
+'zone_rule' => 'Zone Rule',
+'restrictions' => 'Restrictions',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -692,7 +694,7 @@ $LANG_SHOP_HELP = array(
 'hlp_chk_all' => 'Select or de-select all items',
 'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
 'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
-'hlp_rules_item' => 'This item cannot be shipped to the location given.',
+'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
 'hlp_rules_noitems' => 'None of the items on your order can be shipped to your selected shipping address.',
 );
 
