@@ -62,7 +62,14 @@ class taxcloud extends \Shop\Tax
     {
         $data = $this->_getData()['rate'];
         if (array_key_exists('combined_rate', $data)) {
-            return (float)$data['combined_rate'];
+            $rate = (float)$data['combined_rate'];
+            foreach ($this->Order->getItems() as &$Item) {
+                if ($Item->isTaxable()) {
+                    $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                    $Item->setTotalTax($tax)->setTaxRate($rate);
+                }
+            }
+            return $rate;
         }
         return 0;
     }
