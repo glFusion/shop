@@ -123,10 +123,9 @@ class Order
      * @var boolean */
     protected $tainted = false;
 
-    /** Item status, indicate whether items are allowed to be shipped or not.
-     * @var array */
-    private $rulesPassed = array();
-
+    /** Flag to indicate that there are invalid items on the order.
+     * @var boolean */
+    private $hasInvalid = false;
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -665,9 +664,11 @@ class Order
         $icon_tooltips = array();
 
         switch ($view) {
+        case 'adminview':
         case 'order':
-        case 'adminview';
             $this->isFinalView = true;
+            $tplname = 'order';
+            break;
         case 'checkout':
             $this->checkRules();
             $this->setTaxRate(
@@ -734,6 +735,7 @@ class Order
         $have_images = false;
         $has_sale_items = false;
         $item_net = 0;
+        $good_items = 0;        // Count non-embargoed items
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             $P->setVariant($item->getVariantID());
@@ -780,14 +782,11 @@ class Order
                 $sale_tooltip = '';
             }
 
-            $rulesPassed = isset($this->rulesPassed[$item->getID()]);
-            if ($rulesPassed) {
-                $item_total = $item->getPrice() * $item->getQuantity();
-                $item_net = $item->getNetPrice() * $item->getQuantity();
-            } else {
-                $item_total = 0;
-                $item_net = 0;
+            if (!$item->getInvalid()) {
+                $good_items++;
             }
+            $item_total = $item->getPrice() * $item->getQuantity();
+            $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->gross_items += $item_total;
             if ($P->isTaxable()) {
                 $this->net_taxable += $item_net;
@@ -802,7 +801,7 @@ class Order
                 'item_dscp'     => htmlspecialchars($item->getDscp()),
                 'item_price'    => $Currency->FormatValue($item->getPrice()),
                 'item_quantity' => $item->getQuantity(),
-                'item_total'    => $rulesPassed ? $Currency->FormatValue($item_total) : '',
+                'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
                 'taxable'       => $P->isTaxable(),
@@ -820,7 +819,7 @@ class Order
                 'del_item_url'  => COM_buildUrl(
                     SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
                 ),
-                'rulespassed'   => $rulesPassed,
+                'embargoed'     => $item->getInvalid(),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -922,16 +921,14 @@ class Order
             'dc_row_vis'    => $this->getDiscountAmount(),
             'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
             'net_items'     => $Currency->Format($this->net_items),
+            'good_items'    => $good_items,
+            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
+            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
+            'total'     => $Currency->Format($this->total),
+            'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
+            'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
         ) );
 
-        if (count($this->rulesPassed)) {
-            $T->set_var(array(
-                'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-                'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
-                'total'     => $Currency->Format($this->total),
-                'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-                'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
-            ) );
             if (!$this->no_shipping) {
                 $T->set_var(array(
                     'shipper_id'    => $this->shipper_id,
@@ -940,9 +937,6 @@ class Order
                     'shipping'      => $Currency->FormatValue($this->shipping),
                 ) );
             }
-        } else {
-            $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
-        }
 
         if ($this->isAdmin) {
             $T->set_var(array(
@@ -995,7 +989,9 @@ class Order
             $T->set_var('gateway_radios', $this->getCheckoutRadios());
             break;
         case 'checkout':
-            if (count($this->rulesPassed) > 0) {
+            if ($this->hasInvalid) {
+                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
+            } else {
                 $gw = Gateway::getInstance($this->getInfo('gateway'));
                 if ($gw) {
                     $T->set_var(array(
@@ -1640,9 +1636,7 @@ class Order
     {
         $total = 0;
         foreach ($this->items as $id => $item) {
-            if (!isset($this->rulesPassed[$item->getID()]) || $this->rulesPassed[$item->getID()] == true) {
-                $total += ($item->getPrice() * $item->getQuantity());
-            }
+            $total += ($item->getPrice() * $item->getQuantity());
         }
         // Remove any discount amount.
         $total -= $this->getDiscountAmount();
@@ -2873,17 +2867,23 @@ class Order
 
     /**
      * Check the zone rules for each item, and mark those that aren't allowed.
+     * Also sets `$this->hasInvalid` if any invalid items are found so the
+     * checkout button can be suppressed.
      *
      * @return  object  $this
      */
     private function checkRules()
     {
-        $this->rulesPassed = array();
+        $this->hasInvalid = false;
         foreach ($this->items as $id=>$Item) {
             if ($Item->getProduct()->getRuleID() > 0) {
+                $status = $Item->getInvalid();
                 $Rule = $Item->getProduct()->getRule();
-                if ($Rule->isOK($this->getShipto())) {
-                    $this->rulesPassed[$id] = true;
+                if (!$Rule->isOK($this->getShipto())) {
+                    $Item->setInvalid(true);
+                    $this->hasInvalid = true;
+                } else {
+                    $Item->setInvalid(false);
                 }
             }
         }

@@ -83,10 +83,10 @@
           </th>
         </tr>
         <!-- BEGIN ItemRow -->
-{!if rulespassed}
-        <tr>
-{!else}
+{!if embargoed}
         <tr class="embargo">
+{!else}
+        <tr>
 {!endif}
           <td>
 {!!if {img_url} && {item_link} !!}
@@ -124,10 +124,11 @@
 {!if discount_tooltip}
           <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
 {!endif}
-{!if rulespassed}
-{!else}
-          <i class="uk-icon uk-icon-ban uk-text-danger uk-icon-medium tooltip"
-            title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
+{!if embargoed}
+              <a href="{del_item_url}">
+                <i class="uk-icon uk-icon-ban uk-text-danger uk-icon-medium tooltip"
+                title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
+              </a>
 {!endif}
           </td>
         </tr>
@@ -175,7 +176,7 @@
           <td></td>
         </tr>
 {!endif}
-{!if rulespassed}
+{!if good_items}
         <tr>
           <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
