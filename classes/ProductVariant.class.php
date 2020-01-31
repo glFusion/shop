@@ -260,7 +260,7 @@ class ProductVariant
                     ON vx.pov_id = pov.pov_id
                 INNER JOIN {$_TABLES['shop.prod_opt_grps']} pog
                     ON pog.pog_id = pov.pog_id
-                WHERE vx.pv_id = {$this->pv_id}
+                WHERE vx.pv_id = {$this->getID()}
                 ORDER BY pog.pog_orderby ASC";
             //echo $sql;die;
             $res = DB_query($sql);
@@ -1058,7 +1058,7 @@ class ProductVariant
      */
     public function getID()
     {
-        return $this->pv_id;
+        return (int)$this->pv_id;
     }
 
 
