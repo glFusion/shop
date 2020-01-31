@@ -1606,16 +1606,6 @@ class ProductVariant
         }
     }
 
-
-    /**
-     * Check if this variant is the default.
-     *
-     * @return  boolean     True if default, False if not
-     */
-    public function isDefault()
-    {
-        return $this->pv_id == 67 ? true : false;
-    }
 }
 
 ?>

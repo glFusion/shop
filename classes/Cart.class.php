@@ -322,7 +322,9 @@ class Cart extends Order
                 $item_id = $this->items[$id]->getProductId();
                 $old_qty = $this->items[$id]->getQuantity();
                 // Check that the order hasn't exceeded the max allowed qty.
-                $max = Product::getById($item_id)->getMaxOrderQty();
+                $max = Product::getById($item_id)
+                    ->setVariant($this->items[$id]->getVariantID())
+                    ->getMaxOrderQty();
                 if ($qty > $max) {
                     $qty = $max;
                 }
