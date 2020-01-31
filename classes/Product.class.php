@@ -1257,6 +1257,7 @@ class Product
             'supplier_ref'  => $this->getSupplierRef(),
             'lead_time'     => $this->getLeadTime(),
             'ph_lead_time'  => $ph_lead_time,
+            'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
         ) );
 
         // Create the button type selections. New products get the default
