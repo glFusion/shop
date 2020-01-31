@@ -10,6 +10,7 @@ Release TBD
   * Allow a default variant to be set which will be shown first.
   * A subset of product images can be assigned to each variant.
   * New reorder report listing items at or below their reorder qty.
+  * Restrict product sales by region.
 
 ## v1.1.0
 Release 2020-01-22
