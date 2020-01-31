@@ -643,7 +643,7 @@ class Product
     public function hasVariants()
     {
         if ($this->Variants === NULL) {
-            $this->Variants = ProductVariant::getByProduct($this->id);
+            $this->Variants = $this->getVariants();
         }
         return count($this->Variants);
     }
@@ -2957,13 +2957,15 @@ class Product
      */
     public function getOneImage()
     {
-        $Images = $this->getImages();
-        if (is_array($Images)) {
-            $img = reset($Images);
-            return $img['filename'];
+        $retval = '';
+        $Images = $this->getVariantImages();
+        if (!is_array($Images)) {
+            $retval = '';
         } else {
-            return '';
+            $img = reset($Images);
+            $retval = $img['filename'];
         }
+        return $retval;
     }
 
 
@@ -4035,6 +4037,32 @@ class Product
             $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
         }
         return array($allcats_sel, $selcats_sel);
+    }
+
+
+    /**
+     * Get all the Variant images for display.
+     * If there is no variant then just return all product images.
+     *
+     * @return  array   Array of image info
+     */
+    public function getVariantImages()
+    {
+        $Images = $this->getImages();
+        if (!$this->Variant) {
+            // Not really a variant, just return the Product's image array
+            $retval = $this->getImages();
+        } else {
+            $retval = array();
+            $ids = $this->Variant->getImageIDs();
+            if (!empty($ids)) {
+                $retval = array();
+                foreach ($ids as $id) {
+                    $retval[$id] = $this->Images[$id];
+                }
+            }
+        }
+        return $retval;
     }
 
 }
