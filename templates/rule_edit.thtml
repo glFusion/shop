@@ -74,6 +74,7 @@
         <a href="{site_admin_url}/plugins/shop/index.php?rules" class="uk-button">{$LANG_ADMIN['cancel']}</a>
 {!endif}
         <button class="uk-button uk-button-success" type="submit" name="rule_save">{$LANG_SHOP['save_rule']}</button>
+        <button class="uk-button" type="submit" name="rules">{$LANG_ADMIN['cancel']}</button>
       </div>
     </div>
 </form>
