@@ -44,6 +44,12 @@ class OrderItem
      * @var float */
     private $tax_rate;
 
+    /** Flag indicating the item failed a zone rule.
+     * Not saved to the database.
+     * @var boolean;
+     */
+    private $invalid = false;
+
     /** Fields for an OrderItem record.
      * @var array */
     private static $fields = array(
@@ -604,6 +610,29 @@ class OrderItem
     public function getShippingAmt()
     {
         return $this->product->shipping_amt * $this->quantity;
+    }
+
+
+    /**
+     * Set the item as "embargoed" due to failing a zone rule.
+     *
+     * @param   boolean $flag   True to prevent ordering this item
+     * @return  object  $this
+     */
+    public function setInvalid($flag)
+    {
+        $this->invalid = $flag ? 1: 0;
+    }
+
+
+    /**
+     * Get the embargoed status flag.
+     *
+     * @return  boolean     True if embargoed, False if not
+     */
+    public function getInvalid()
+    {
+        return $this->invalid ? 1 : 0;
     }
 
 
