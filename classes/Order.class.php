@@ -989,6 +989,7 @@ class Order
             $T->set_var('gateway_radios', $this->getCheckoutRadios());
             break;
         case 'checkout':
+            $T->set_var('checkout', true);
             if ($this->hasInvalid) {
                 $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
             } else {
@@ -996,7 +997,6 @@ class Order
                 if ($gw) {
                     $T->set_var(array(
                         'gateway_vars'  => $this->checkoutButton($gw),
-                        'checkout'      => 'true',
                         'pmt_method'    => $gw->getDscp(),
                     ) );
                 }
