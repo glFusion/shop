@@ -696,7 +696,7 @@ $LANG_SHOP_HELP = array(
 'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
 'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
 'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
-'hlp_rules_noitems' => 'None of the items on your order can be shipped to your selected shipping address.',
+'hlp_rules_noitems' => 'One or more of the items on your order can be shipped to your selected shipping address. Please edit the order or shipping information.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
