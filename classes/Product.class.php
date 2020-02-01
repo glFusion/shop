@@ -941,6 +941,7 @@ class Product
                 supplier_ref = '{$this->getSupplierRef()}',
                 lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
                 def_pv_id = {$this->getDefVariantID()},
+                zone_rule = {$this->getRuleID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
