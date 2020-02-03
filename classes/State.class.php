@@ -103,7 +103,7 @@ class State extends RegionBase
             if (count($parts) == 2) {
                 $s_iso = DB_escapeString($parts[1]);
                 $c_iso = DB_escapeString($parts[0]);
-                $sql = "SELECT s.*, c.iso_code as country_iso
+                $sql = "SELECT s.*, c.alpha2 as country_iso
                     FROM {$_TABLES['shop.states']} s
                     LEFT JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
@@ -113,7 +113,7 @@ class State extends RegionBase
                 // Try with just the state, but this is unpredictable
                 $s_iso = DB_escapeString($parts[0]);
                 $c_iso = '';
-                $sql = "SELECT s.*, s.iso_code as country_iso
+                $sql = "SELECT s.*, s.alpha2 as country_iso
                     FROM {$_TABLES['shop.states']} s
                     LEFT JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
