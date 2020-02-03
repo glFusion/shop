@@ -20,6 +20,10 @@ namespace Shop;
  */
 class RegionBase
 {
+    /** Error messages returned to the caller.
+     * @var array */
+    protected $messages = array();
+
 
     /**
      * Create an object and set the variables.
@@ -99,7 +103,7 @@ class RegionBase
      * @param   string  $msg    Message to add
      * @param   boolean $clear  Clear array first?
      */
-    private function addError($msg, $clear=false)
+    protected function addError($msg, $clear=false)
     {
         if ($clear) {
             $this->messages = array();

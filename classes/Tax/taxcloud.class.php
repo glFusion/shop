@@ -35,7 +35,12 @@ class taxcloud extends \Shop\Tax
      * @var string */
     protected $key = 'taxcloud';
 
+    /** API key obtained from taxcloud.com.
+     * @var string */
     private $api_key;
+
+    /** API ID obtained from taxcloud.com.
+     * @var string */
     private $api_id;
 
     /**

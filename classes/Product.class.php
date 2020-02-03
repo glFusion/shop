@@ -4096,12 +4096,8 @@ class Product
      */
     public function getVariantImages()
     {
-        $Images = $this->getImages();
-        if (!$this->Variant) {
-            // Not really a variant, just return the Product's image array
-            $retval = $this->getImages();
-        } else {
-            $retval = array();
+        $retval = $this->getImages();
+        if ($this->Variant) {
             $ids = $this->Variant->getImageIDs();
             if (!empty($ids)) {
                 $retval = array();
