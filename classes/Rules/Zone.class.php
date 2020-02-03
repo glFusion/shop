@@ -170,7 +170,9 @@ class Zone
             return true;
         }
 
-        $State = State::getInstance($Addr->getState());
+        $State = State::getInstance(
+            $Addr->getCountry() . '-' . $Addr->getState()
+        );
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
         $region_id = Country::getInstance($Addr->getCountry())->getRegionID();
