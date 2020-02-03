@@ -175,19 +175,11 @@ class Zone
         $country_id = $State->getCountryID();
         $region_id = Country::getInstance($Addr->getCountry())->getRegionID();
 
-        // Region found in the rule, assume the rule will be applied
-        $apply = in_array($region_id, $this->regions);
-        if (!$apply && in_array($country_id, $this->countries)) {
-            $apply = true;
-        }
-        if (!$apply && in_array($state_id, $this->states)) {
-            $apply = true;
-        }
-        if ($this->allow) {
-            return $apply;
-        } else {
-            return !$apply;
-        }
+        // Check if the region, country and country-state is found, in that order
+        $apply = in_array($region_id, $this->regions) ||
+            in_array($country, $this->countries) ||
+            in_array($state, $this->states);
+        return $this->allow ? $apply : !$apply;
     }
 
 
