@@ -156,9 +156,9 @@ class RegionBase
                 '><i class="uk-icon uk-icon-check"></i>' .
                 '</button>&nbsp;'.
                 '<button type="submit" name="disa_' . static::$KEY . '" value="x" ' .
-                'class="uk-button uk-button-mini tooltip" ' .
+                'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
                 'title="' . $LANG_ADMIN['disable'] . '" ' .
-                '><i class="uk-icon uk-icon-remove"></i>' .
+                '><i class="uk-icon uk-icon-ban"></i>' .
                 '</button>&nbsp;',
                 /*'<button type="submit" name="del_' . static::$KEY . '" value="x" ' .
                 'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
