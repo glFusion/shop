@@ -514,7 +514,7 @@ class State extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x',
+            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . (int)$country_id,
         );
 
         /*$options = array(
