@@ -1447,6 +1447,10 @@ class Product
             if ($this->Variant == NULL) {
                 $this->Variant = reset($this->Variants);
             }
+        } else {
+            // Make sure there's always a variant set to avoid calling
+            // functions on null objects
+            $this->Variant = new ProductVariant;
         }
 
         // Set the template dir based on the configured template version
