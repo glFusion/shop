@@ -2758,6 +2758,18 @@ class Product
      * @param   string  $override  Optional description override
      * @return  string              Product sort description
      */
+    public function getText($override = '')
+    {
+        return $override == '' ? $this->description : $override;
+    }
+
+
+    /**
+     * Get the product short description. Allows for an override.
+     *
+     * @param   string  $override  Optional description override
+     * @return  string              Product sort description
+     */
     public function getDscp($override = '')
     {
         return $override == '' ? $this->short_description : $override;
