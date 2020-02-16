@@ -231,6 +231,20 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.1.2')) {
+        $current_ver = '1.1.2';
+        if (!_SHOPtableHasColumn('shop.address', 'phone')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.address']}
+                ADD `phone` varchar(20) DEFAULT NULL after `zip`";
+        }
+        if (!_SHOPtableHasColumn('shop.orderitems', 'dc_price')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orderitems']}
+                ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount";
+        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     if (!COM_checkVersion($current_ver, '1.2.0')) {
         $current_ver = '1.2.0';
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
