@@ -11,6 +11,15 @@ Release TBD
   * A subset of product images can be assigned to each variant.
   * New reorder report listing items at or below their reorder qty.
 
+## v1.1.2
+Release 2020-02-15
+  * Add missing phone field to address table for new installations.
+  * Add missing discount code price to order item table for new installations.
+
+## v1.1.1
+Release 2020-01-27
+  * Fix PDF creation.
+
 ## v1.1.0
 Release 2020-01-22
 
