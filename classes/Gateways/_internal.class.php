@@ -186,6 +186,7 @@ class _internal extends \Shop\Gateway
      * The internal gateway can be used by all users if the order value
      * is zero.
      *
+     * @param   float   $total  Order total
      * @return  boolean     True if access is allowed, False if not
      */
     public function hasAccess($total=0)

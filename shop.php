@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.1
+ * @version     v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -23,7 +23,7 @@ global $_SHOP_CONF;
 
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
-$_SHOP_CONF['pi_version']         = '1.1.1';
+$_SHOP_CONF['pi_version']         = '1.2.0';
 $_SHOP_CONF['gl_version']         = '1.7.0';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
@@ -65,6 +65,9 @@ $_TABLES['shop.suppliers'] = $_SHOP_table_prefix . 'suppliers';
 $_TABLES['shop.regions'] = $_SHOP_table_prefix . 'regions';
 $_TABLES['shop.countries'] = $_SHOP_table_prefix . 'countries';
 $_TABLES['shop.states'] = $_SHOP_table_prefix . 'states';
+$_TABLES['shop.features'] = $_SHOP_table_prefix . 'features';
+$_TABLES['shop.features_values'] = $_SHOP_table_prefix . 'features_values';
+$_TABLES['shop.prodXfeat'] = $_SHOP_table_prefix . 'prodXfeat';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

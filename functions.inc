@@ -493,7 +493,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         return $tags;
     } else if ($op == 'parse') {
         // Do nothing if the user can't view the catalog
-        if (!SHOP_access_check() || !SHOP_isMinVersion()) return $content;
+        if (!SHOP_access_check()) return $content;
 
         $repl = false;      // assume no replacement to start off
         $t1 = explode(' ', $autotag['parm2']);
@@ -574,6 +574,7 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
     static $access = array();
 
     if (!array_key_exists($rights, $access)) {
+        SHOP_isMinVersion();    // sets an admin message and closes the shop
         $acc = true;
         if (!$_SHOP_CONF['shop_enabled'] && !SEC_hasRights('shop.admin')) {
             $acc = false;
@@ -805,6 +806,10 @@ function plugin_autouninstall_shop()
             'shop.regions',
             'shop.countries',
             'shop.states',
+            // v1.2.0
+            'shop.features',
+            'shop.features_values',
+            'shop.prodXfeat',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -907,7 +912,7 @@ function plugin_getcommenturlid_shop()
  */
 function phpblock_shop_cart()
 {
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $T = new Template(__DIR__ . '/templates');
     $T->set_file('shopping_cart', 'blk_cart.thtml');
@@ -937,7 +942,7 @@ function phpblock_shop_cart_contents()
 {
     global $_SHOP_CONF, $LANG_SHOP;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
@@ -995,7 +1000,7 @@ function phpblock_shop_search()
 {
     global $_TABLES;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $T = new Template(__DIR__ . '/templates/');
     $T->set_file('search', 'blk_search.thtml');
@@ -1030,7 +1035,7 @@ function phpblock_shop_random($cat='')
 {
     global $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_random_limit'];
     if ($limit < 1)
@@ -1057,7 +1062,7 @@ function phpblock_shop_featured($cat='')
 {
     global $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_featured_limit'];
     if ($limit < 1)
@@ -1083,7 +1088,7 @@ function phpblock_shop_categories()
 {
     global $_TABLES;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $parents = '0, ' . Shop\Category::getRoot()->cat_id;
     $sql = "SELECT c.*, (
@@ -1149,7 +1154,7 @@ function phpblock_shop_popular()
 {
     global $_TABLES, $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
@@ -1188,7 +1193,7 @@ function phpblock_shop_recent($cat='')
 {
     global $_TABLES, $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
@@ -2263,7 +2268,7 @@ function SHOP_getTemplate($name, $id='', $path='')
  */
 function SHOP_isMinVersion($required = '')
 {
-    global $_SHOP_CONF, $_PLUGIN_INFO;
+    global $_SHOP_CONF, $_PLUGIN_INFO, $LANG_SHOP;
 
     // If not specified, use the current code version as required.
     if ($required == '') $required = $_SHOP_CONF['pi_version'];
@@ -2279,8 +2284,9 @@ function SHOP_isMinVersion($required = '')
     }
     if (!COM_checkVersion($installed, $required)) {
         if (plugin_ismoderator_shop()) {
-            COM_setMsg("Shop Plugin has not been updated from $installed to $required", 'error');
+            COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
+        $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
         return false;
     } else {
         return true;

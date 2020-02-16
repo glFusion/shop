@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -49,6 +49,10 @@ class ProductVariant
      * @var string */
     private $sku;
 
+    /** Supplier reference number (sku, part number, etc.).
+     * @var string */
+    private $supplier_ref;
+
     /** Quantity on hand.
      * @var float */
     private $onhand;
@@ -64,6 +68,10 @@ class ProductVariant
     /** OptionValue items associated with this variant.
      * @var array */
     private $Options = NULL;
+
+    /** Image IDs associated with this Variant.
+     * @var array */
+    private $images = array();
 
 
     /**
@@ -140,6 +148,7 @@ class ProductVariant
      * Set the object variables from an array.
      *
      * @param   array   $A      Array of values
+     * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
     public function setVars($A)
@@ -152,8 +161,10 @@ class ProductVariant
                 ->setWeight(SHOP_getVar($A, 'weight', 'float'))
                 ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
+                ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
+                ->setImageIDs(SHOP_getVar($A, 'img_ids', 'mixed'))
                 ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
@@ -205,6 +216,9 @@ class ProductVariant
      */
     public function getOptions()
     {
+        if ($this->Options === NULL) {
+            $this->loadOptions();
+        }
         return $this->Options;
     }
 
@@ -439,6 +453,46 @@ class ProductVariant
 
 
     /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
+    }
+
+
+    /**
+     * Get the lead time for this variant.
+     * TODO: Add per-variant lead times.
+     *
+     * @return  string  Lead time if out of stock
+     */
+    public function getLeadTime()
+    {
+        // if ($this->lead_time == '') {        // todo
+        // return $this->lead_time;
+        // } else {
+        return Product::getInstance($this->item_id)->LeadTime();
+        // }
+    }
+
+
+    /**
      * Get all variants related to a given productd.
      *
      * @param   integer $product_id     Product record ID
@@ -500,10 +554,11 @@ class ProductVariant
     /**
      * Convert a json string from the DB directly to a string description.
      *
+     * @deprecated
      * @param   array|string    Array of elements or JSON string
      * @return  string      One-line description
      */
-    private static function jsonToString($json)
+    private static function XXjsonToString($json)
     {
         $retval = array();
         $json = json_decode($json,true);
@@ -614,12 +669,16 @@ class ProductVariant
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = new \Template(__DIR__ . '/../templates');
-        $T->set_file('form', 'variant_edit.thtml');
+        $T->set_file(array(
+            'form' => 'variant_edit.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
 
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
             $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
         }
+        $Product = Product::getByID($this->item_id);
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -627,7 +686,7 @@ class ProductVariant
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
             'item_id'       => $this->getItemId(),
-            'item_name'     => Product::getByID($this->item_id)->name,
+            'item_name'     => $Product->getName(),
             'pv_id'         => $this->getId(),
             'price'         => $this->getID() ? $this->getPrice() : '',
             'weight'        => $this->getWeight(),
@@ -637,6 +696,7 @@ class ProductVariant
             'dscp'          => $this->getDscpString(),
             'reorder'       => $this->getReorder(),
             'is_form'       => true,
+            'supplier_ref'  => $this->getSupplierRef(),
         ) );
         $Groups = ProductOptionGroup::getAll();
         $optsInUse = $this->_optsInUse();
@@ -659,6 +719,18 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
+
+        $T->set_block('form', 'ImageBlock', 'IB');
+        foreach ($Product->getImages() as $img) {
+            $T->set_var(array(
+                'img_id'    => $img['img_id'],
+                'img_url'   => Images\Product::getUrl($img['filename'])['url'],
+                'img_chk'   => in_array($img['img_id'], $this->images) ? 'checked="checked"' : '',
+            ) );
+            $T->parse('IB', 'ImageBlock', true);
+        }
+
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
         return $retval;
@@ -730,6 +802,8 @@ class ProductVariant
                 return false;
             }
         }
+        Cache::clear('products');
+        Cache::clear('options');
         return true;
     }
 
@@ -810,10 +884,16 @@ class ProductVariant
             } else {
                 $reorder = (float)$A['reorder'];
             }
+            if ($A['supplier_ref'] === '') {
+                $sup_ref = $P->getSupplierRef();
+            } else {
+                $sup_ref = $A['supplier_ref'];
+            }
 
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
                 item_id = $item_id,
                 sku = '" . DB_escapeString($sku) . "',
+                supplier_ref = '" . DB_escapeString($sup_ref) . "',
                 price = " . (float)$price . ",
                 weight = $weight,
                 shipping_units = $shipping_units,
@@ -852,18 +932,28 @@ class ProductVariant
         if (is_array($A)) {
             $this->setVars($A);
         }
+
         if ($this->pv_id == 0) {
-            return self::saveNew($A);
+           if (isset($A['groups'])) {
+               return self::saveNew($A);
+           } else {
+               $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
+                $sql3 = '';
+           }
+        } else {
+            $sql1 = "UPDATE {$_TABLES['shop.product_variants']} SET ";
+            $sql3 = " WHERE pv_id = '{$this->pv_id}'";
         }
-        $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
-            item_id = '" . (int)$this->item_id . "',
+        $sql2 = "item_id = '" . (int)$this->item_id . "',
             sku = '" . DB_escapeString($this->sku) . "',
+            supplier_ref = '" . DB_escapeString($this->supplier_ref) . "',
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
-            reorder = " . (float)$this->reorder . "
-            WHERE pv_id = '{$this->pv_id}'";
+            img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
+            reorder = " . (float)$this->reorder;
+        $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
@@ -993,6 +1083,37 @@ class ProductVariant
 
 
     /**
+     * Set the image IDs specific to this variant.
+     *
+     * @param   array   $ids    Array of image record IDs
+     * @return  object  $this
+     */
+    public function setImageIDs($ids)
+    {
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+        $this->images = array_filter($ids, 'intval');
+        if (!$this->images) {
+            $this->images = array();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the image IDs for this particular product variant.
+     *
+     * TODO: implement DB field
+     * @return  array       Array of integer image IDs.
+     */
+    public function getImageIDs()
+    {
+        return $this->images;
+    }
+
+
+    /**
      * Set the net price for the item.
      *
      * @param   float   $price  New net price
@@ -1039,6 +1160,11 @@ class ProductVariant
                 'field' => 'sku',
                 'sort'  => true,
             ),
+             array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
+                'sort'  => true,
+            ),
             array(
                 'text' => $LANG_SHOP['description'],
                 'field' => 'dscp',
@@ -1070,6 +1196,22 @@ class ProductVariant
                 'align' => 'center',
             ),
         );
+
+        $extra = array();
+        if ($prod_id) {
+            $header_arr[] = array(
+                'text' => $LANG_SHOP['default'],
+                'field' => 'def_pv_id',
+                'sort' => 'false',
+                'align' => 'center',
+            );
+            $extra['def_pv_id'] = (int)DB_getItem(
+                $_TABLES['shop.products'],
+                'def_pv_id',
+                "id = $prod_id"
+            );
+
+        }
 
         $defsort_arr = array(
             'field' => 'sku',
@@ -1148,7 +1290,7 @@ class ProductVariant
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', $options, ''
+            $filter, $extra, $options, ''
         );
         // Create the "copy "options" form at the bottom
         if ($prod_id == 0) {
@@ -1173,9 +1315,10 @@ class ProductVariant
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed from the list function
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -1244,6 +1387,12 @@ class ProductVariant
             }
             break;
 
+        case 'def_pv_id':
+            $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
+            $retval = '<input type="radio" name="def_pv_id" value="' . $A['pv_id'] .
+                '" ' . $sel . ' />';
+            break;
+
         default:
             $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
             break;
@@ -1263,6 +1412,13 @@ class ProductVariant
     {
         global $LANG_SHOP;
 
+        if (!is_array($opts)) {
+            $opts = array();
+        }
+        if (!isset($opts['quantity'])) {
+            $opts['quantity'] = 1;
+        }
+
         $P = Product::getByID($this->item_id);
         if ($P->getID() < 1 || $this->getID() < 1) {
             $retval = array(
@@ -1274,6 +1430,8 @@ class ProductVariant
                 'onhand'    => 0,
                 'weight'    => '--',
                 'sku'       => '',
+                'leadtime'  => '',
+                'images'    => array(),
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
@@ -1292,6 +1450,8 @@ class ProductVariant
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
+                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+                'images'    => $this->images,
             );
         }
         if ($P->getTrackOnhand()) {
@@ -1428,9 +1588,11 @@ class ProductVariant
             } else {
                 $sku = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.product_variants']}
-                (item_id, sku, price, weight, shipping_units, onhand, reorder, enabled)
-                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled
+            $sql = "INSERT INTO {$_TABLES['shop.product_variants']} (
+                    item_id, sku, price, weight, shipping_units, onhand,
+                    reorder, enabled, supplier_ref
+                )
+                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref
                 FROM {$_TABLES['shop.product_variants']}
                 WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
@@ -1439,8 +1601,38 @@ class ProductVariant
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
         }
+        Cache::clear('products');
+        Cache::clear('options');
     }
 
+    /**
+     * Update the SKU value when the product SKU has changed.
+     * Only changes the SKU if the first part is the product sku. No action
+     * is taken if the variant SKU has been modified by the admin.
+     *
+     * @param   string  $old_sku    Original product SKU
+     * @param   string  $new_sku    New product SKU
+     */
+    public function updateSKU($old_sku, $new_sku)
+    {
+        $len = strlen($old_sku);
+        if (substr($this->getSku(), 0, $len) == $old_sku) {
+            $var_sku = substr($this->getSku(), $len);
+            $this->setSku($new_sku . $var_sku)
+                ->Save();
+        }
+    }
+
+
+    /**
+     * Check if this variant is the default.
+     *
+     * @return  boolean     True if default, False if not
+     */
+    public function isDefault()
+    {
+        return $this->pv_id == 67 ? true : false;
+    }
 }
 
 ?>

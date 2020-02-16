@@ -95,7 +95,7 @@
       <!-- END BtnBlock -->
         </div>
 {!if avail_msg}
-      <div id="avail_msg" class="shopOnhand">
+      <div id="avail_msg" class="shopOnhand v1">
         {avail_msg}
       </div>
 {!endif}
@@ -112,9 +112,9 @@
 {!if rating_bar}
     <div class="shopRatingBar detail v1">{rating_bar}</div>
 {!endif}
-    <div class="shopProductThumbWrapper v1">
-      <!-- BEGIN Thumbnail -->
-      <div class="shopProductThumb v1">
+    <ul id="productThumbWrapper" class="shopProductThumbWrapper v1">
+<!-- BEGIN XThumbnail -->
+      <li class="shopProductThumb v1">
  {!if thumb_url}
         <a href="{img_url}" data-uk-lightbox="{group:'product'}">
           <img src="{thumb_url}"
@@ -124,9 +124,9 @@
               data-uk-tooltip />
         </a>
  {!endif}
-      </div>
-      <!-- END Thumbnail -->
-    </div>
+      </li>
+<!-- END XThumbnail -->
+    </ul>
 
   </div>
 </form>

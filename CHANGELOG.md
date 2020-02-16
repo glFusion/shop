@@ -1,5 +1,16 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.2.0
+Release TBD
+
+  * Add product image sorting.
+  * Add static features/attributes.
+  * Add Supplier Reference field to products and variants for ordering.
+  * Product cloning includes Features, Categories, Variants and Images.
+  * Allow a default variant to be set which will be shown first.
+  * A subset of product images can be assigned to each variant.
+  * New reorder report listing items at or below their reorder qty.
+
 ## v1.1.0
 Release 2020-01-22
 

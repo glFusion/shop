@@ -48,7 +48,7 @@ class pendingship_shipper extends pendingship
         $T->set_block('report', 'shipperSelect', 'shipsel');
         foreach ($shippers as $id => $obj) {
             $T->set_var(array(
-                'shipper_name' => $obj->name,
+                'shipper_name' => $obj->getName(),
                 'shipper_id'   => $id,
                 'selected'  => $id == $shipper_id ? 'selected="selected"' : '',
             ) );
@@ -76,10 +76,10 @@ class pendingship_shipper extends pendingship
         }
         $nonshipped = "'" . implode("','", $nonshipped) . "'";
         $Shipper = \Shop\Shipper::getInstance($this->shipper_id);
-        if ($Shipper->isNew) {
+        if ($Shipper->isNew()) {
             return $LANG_SHOP['no_data'];
         }
-        self::_setSessVar('shipper_id', $Shipper->id);
+        self::_setSessVar('shipper_id', $Shipper->getID());
 
         $header_arr = array(
             array(
@@ -125,7 +125,7 @@ class pendingship_shipper extends pendingship
             'sql' => $this->sql,
             'query_fields' => array(),
             'default_filter' => "WHERE ord.status IN ($nonshipped)
-                AND ord.shipper_id = '{$Shipper->id}'",
+                AND ord.shipper_id = '{$Shipper->getID()}'",
             /*'default_filter' => "WHERE itm.product_id = '{$Item->id}'
             HAVING qty_shipped < itm.quantity",*/
         );
@@ -133,7 +133,7 @@ class pendingship_shipper extends pendingship
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&shipper_id=' . $Shipper->id,
+                '&shipper_id=' . $Shipper->getID(),
             'has_limit' => true,
             'has_paging' => true,
         );
@@ -143,7 +143,7 @@ class pendingship_shipper extends pendingship
         case 'html':
             $this->extra['class'] = __CLASS__;
             $T->set_var(array(
-                'report_title' => sprintf($this->getTitle(), $Shipper->name),
+                'report_title' => sprintf($this->getTitle(), $Shipper->getName()),
                 'output'    => \ADMIN_list(
                     'shop_rep_' . $this->key,
                     array('\Shop\Report', 'getReportField'),
@@ -180,7 +180,7 @@ class pendingship_shipper extends pendingship
             break;
         }
             $T->set_var(array(
-                'shopper_name'  => $Shipper->name,
+                'shipper_name'  => $Shipper->getName(),
                 'report_key'    => $this->key,
                 'nl'            => "\n",
             ) );

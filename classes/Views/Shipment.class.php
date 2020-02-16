@@ -137,11 +137,11 @@ class Shipment extends Order
             $T->set_block('order', 'trackingPackages', 'TP');
             foreach ($Shp->Packages as $Pkg) {
                 $T->set_var(array(
-                    'shipper_code'  => $Pkg->getShipper()->code,
-                    'shipper_name'  => $Pkg->shipper_info,
-                    'tracking_num'  => $Pkg->tracking_num,
-                    'pkg_id'        => $Pkg->pkg_id,
-                    'tracking_url'  => \Shop\Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num),
+                    'shipper_code'  => $Pkg->getShipper()->getCode(),
+                    'shipper_name'  => $Pkg->getShipperInfo(),
+                    'tracking_num'  => $Pkg->getTrackingNum(),
+                    'pkg_id'        => $Pkg->getID(),
+                    'tracking_url'  => \Shop\Shipper::getInstance($Pkg->getShipperID())->getTrackingUrl($Pkg->getTrackingNum()),
                 ) );
                 $T->parse('TP', 'trackingPackages', true);
             }

@@ -75,7 +75,7 @@ class RegionBase
      * Toggle a flag for several records at once and sets a status message.
      *
      * @uses    self::Toggle()
-     * @param   integer $oldvalue   Old (current) value
+     * @param   integer $oldval     Old (current) value
      * @param   string  $varname    Name of DB field to set
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure

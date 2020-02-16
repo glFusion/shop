@@ -76,6 +76,9 @@ $_SQL = array(
   `max_ord_qty` int(3) NOT NULL DEFAULT 0,
   `brand_id` int(11) unsigned NOT NULL DEFAULT 0,
   `supplier_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `supplier_ref` varchar(64) NOT NULL DEFAULT '',
+  `lead_time` varchar(64) NOT NULL DEFAULT '',
+  `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -359,6 +362,26 @@ $_SQL = array(
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
+'shop.suppliers' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.suppliers']}` (
+  `sup_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(127) DEFAULT NULL,
+  `company` varchar(127) NOT NULL DEFAULT '',
+  `address1` varchar(127) NOT NULL DEFAULT '',
+  `address2` varchar(127) NOT NULL DEFAULT '',
+  `city` varchar(127) NOT NULL DEFAULT '',
+  `state` varchar(127) NOT NULL DEFAULT '',
+  `country` varchar(127) NOT NULL DEFAULT '',
+  `zip` varchar(40) NOT NULL DEFAULT '',
+  `phone` varchar(40) NOT NULL DEFAULT '',
+  `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `dscp` text,
+  `lead_time` varchar(64) NOT NULL DEFAULT '',
+  PRIMARY KEY (`sup_id`),
+  KEY `is_supplier` (`is_supplier`,`name`),
+  KEY `is_brand` (`is_brand`,`name`)
+) ENGINE=MyISAM",
+
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -599,6 +622,35 @@ $SHOP_UPGRADE['1.1.0'] = array(
         ('TMT','T','Turkmenistan Manat',934,'after','','hidden',2,0.00,',','.','Manat','Teňňe',1.00000,'2020-01-14 22:00:46'),
         ('ALL','ALL','Albanian Lek',8,'after','','hidden',2,0.00,',','.','Lek','Qindarka',1.00000,'2020-01-14 22:02:28')",
 );
+$SHOP_UPGRADE['1.2.0'] = array(
+    "CREATE TABLE `{$_TABLES['shop.features']}` (
+      `ft_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `ft_name` varchar(40) NOT NULL DEFAULT '',
+      `orderby` int(5) NOT NULL DEFAULT '9999',
+      PRIMARY KEY (`ft_id`),
+      KEY `feat_name` (`ft_name`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.features_values']}` (
+      `fv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `ft_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_value` varchar(40) NOT NULL DEFAULT '',
+      PRIMARY KEY (`fv_id`),
+      UNIQUE KEY `id_txt` (`ft_id`,`fv_value`),
+      KEY `feat_id` (`ft_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.prodXfeat']}` (
+      `prod_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `ft_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `fv_text` varchar(40) DEFAULT NULL,
+      PRIMARY KEY (`prod_id`,`ft_id`)
+    ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_id`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_ref`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0'",
+    "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
+);
+
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -614,9 +666,11 @@ $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
-$_SQL['shop.suppliers'] = $SHOP_UPGRADE['1.1.0'][5];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
 $_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
+$_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
+$_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
+$_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 
 ?>

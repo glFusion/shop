@@ -589,6 +589,33 @@ class State extends RegionBase
         return $retval;
     }
 
+
+    /**
+     * Get the state ISO code from the country ISO and state name.
+     *
+     * @param   string  $alpha2     2-letter ISO code for the country
+     * @param   string  $state_name Full state name
+     * @return  string      2-letter ISO code for state
+     */
+    public static function isoFromName($alpha2, $state_name)
+    {
+        global $_TABLES;
+
+        $retval = '';
+        $alpha2 = DB_escapeString($alpha2);
+        $state_name = DB_escapeString($state_name);
+        $sql = "SELECT s.iso_code FROM {$_TABLES['shop.states']} s
+            LEFT JOIN {$_TABLES['shop.countries']} c
+                ON c.country_id = s.country_id
+            WHERE c.alpha2='$alpha2' AND  s.state_name='$state_name'";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            $retval = $A['iso_code'];
+        }
+        return $retval;
+    }
+
 }
 
 ?>
