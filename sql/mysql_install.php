@@ -97,6 +97,7 @@ $_SQL = array(
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
   `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `dc_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -105,7 +106,7 @@ $_SQL = array(
   `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `handling` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `tax` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `tax_rate` decimal(6,4) NOT NULL DEFAULT  '0.0000',
+  `tax_rate` decimal(6,4) NOT NULL DEFAULT '0.0000',
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`),
@@ -115,7 +116,7 @@ $_SQL = array(
 'shop.images' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
   `img_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(11) unsigned NOT NULL,
-  `orderby` int(3) NOT NULL DEFAULT 999,
+  `orderby` int(3) NOT NULL DEFAULT '999',
   `filename` varchar(255) DEFAULT NULL,
   `nonce` varchar(20) DEFAULT NULL,
   `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -150,7 +151,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `pog_value` (`pog_id`, `pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -224,6 +225,7 @@ $_SQL = array(
   `state` varchar(255) DEFAULT NULL,
   `country` varchar(255) DEFAULT NULL,
   `zip` varchar(40) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
   `billto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `shipto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`addr_id`),
@@ -481,7 +483,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `percent` decimal(4,2) unsigned NOT NULL DEFAULT '0.00',
       `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
       `end` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
-          `min_order` decimal(9,4) unsigned NOT NULL DEFAULT '0.0000',
+      `min_order` decimal(9,4) unsigned NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`code_id`),
       UNIQUE KEY `code` (`code`),
       KEY `bydate` (`start`,`end`)
