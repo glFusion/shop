@@ -233,11 +233,11 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.1.2')) {
         $current_ver = '1.1.2';
-        if (!_SHOPtableHasColumn('shop.address', 'phone') {
+        if (!_SHOPtableHasColumn('shop.address', 'phone')) {
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.address']}
                 ADD `phone` varchar(20) DEFAULT NULL after `zip`";
         }
-        if (!_SHOPtableHasColumn('shop.orderitems', 'dc_price') {
+        if (!_SHOPtableHasColumn('shop.orderitems', 'dc_price')) {
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orderitems']}
                 ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount";
         }
