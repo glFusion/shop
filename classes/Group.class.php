@@ -163,7 +163,7 @@ class Group
             $gross_price = $Item->getPrice();
             $net_price = $Item->getNetPrice();
             if ($gross_price == $net_price) {
-                $price = round($net_price * $factor, 2);
+                $price = round($gross_price * $factor, 2);
                 $Item->setNetPrice($price);
             }
             break;
