@@ -3,9 +3,9 @@
  * Handle the headline autotag for the Shop plugin.
  * Based on the glFusion headline autotag.
  *
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -118,7 +118,7 @@ class headlines
             }
             if (!empty($cats)) {
                 $cats = DB_escapeString(implode(',', $cats));
-                $where .= ' AND p.cat_id IN (' . $cats . ')';
+                $where .= ' AND c.cat_id IN (' . $cats . ')';
             }
         }
 
@@ -128,8 +128,10 @@ class headlines
         // no category record, as long as the product is enabled.
         $sql = "SELECT id
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON p.cat_id=c.cat_id
+                ON pxc.cat_id=c.cat_id
             WHERE
                 p.enabled=1 AND
                 (c.enabled=1 OR c.enabled IS NULL) AND
@@ -156,14 +158,22 @@ class headlines
             $T->set_file('page', $template);
             $T->set_var('columns' ,$cols);
             $T->set_block('page', 'headlines', 'hl');
-
             foreach ($allItems as $A) {
                 $P = \Shop\Product::getByID($A['id']);
+                $tn = $P->getThumb();
+                $image = COM_createImage(
+                    $tn['url'],
+                    '',
+                    array(
+                        'width' => $tn['width'],
+                        'height' => $tn['height'],
+                    )
+                );
                 $T->set_var(array(
-                    'url'       => SHOP_URL . '/detail.php?id='. $P->id,
-                    'text'      => trim($P->description),
-                    'title'     => $P->short_description,
-                    'thumb_url' => $P->getThumb()['url'],
+                    'url'       => $P->getLink(),
+                    'text'      => $P->getText(),
+                    'title'     => $P->getDscp(),
+                    'thumb_url' => $image,
                     'large_url' => $P->getImage('', 1024, 1024)['url'],
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,

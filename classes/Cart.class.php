@@ -129,6 +129,7 @@ class Cart extends Order
             }
             $args = array(
                 'item_number'   => $Item->product_id,
+                'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
                 'extras'        => $Item->extras,
                 'description'   => $Item->description,
@@ -165,7 +166,6 @@ class Cart extends Order
         ) {
             return false;
         }
-        COM_errorLog("adding item: " . print_r($args,true));
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
         $item_id = $args['item_number'];    // may contain options
@@ -177,6 +177,7 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
+        $PV         = ProductVariant::getByAttributes($P->getID(), $options);
         if (!is_array($this->items)) {
             $this->items = array();
         }
@@ -191,10 +192,14 @@ class Cart extends Order
             }
             // Add the option numbers to the item ID to create a new ID
             // to check whether the product already exists in the cart.
-            $opt_str = implode(',', $options);
-            $item_id .= '|' . $opt_str;
+            //$opt_str = implode(',', $options);
+            //$item_id .= '|' . $opt_str;
         } else {
             $opts = array();
+        }
+        if ($PV->getID() > 0) {
+            $P->setVariant($PV);
+            $item_id .= '|' . $PV->getID();
         }
 
         // Look for identical items, including options (to catch
@@ -213,13 +218,12 @@ class Cart extends Order
         } elseif ($quantity == 0) {
             return false;
         } else {
-            //$price = $P->getPrice($attrs, $quantity, array('uid'=>$uid));
             $tmp = array(
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
-                //'price'     => sprintf("%.2f", $price),
+                'variant'   => $PV->getID(),
                 'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
@@ -275,7 +279,7 @@ class Cart extends Order
      * @param   integer $step   Step in the checkout process (not used)
      * @return  string      HTML for cart view
      */
-    public function View($view = 'order', $step = 0)
+    public function XXView($view = 'order', $step = 0)
     {
         foreach ($this->items as $key=>$Item) {
             $prod_price = $Item->getItemPrice();
@@ -307,7 +311,7 @@ class Cart extends Order
         $items = $A['quantity'];
         if (!is_array($items)) {
             // No items in the cart?
-            return;
+            return $this->m_cart;
         }
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
@@ -315,25 +319,35 @@ class Cart extends Order
             // browser window.
             if (array_key_exists($id, $this->items)) {
                 $qty = (float)$qty;
+                $item_id = $this->items[$id]->getProductId();
+                $old_qty = $this->items[$id]->getQuantity();
+                // Check that the order hasn't exceeded the max allowed qty.
+                $max = Product::getById($item_id)
+                    ->setVariant($this->items[$id]->getVariantID())
+                    ->getMaxOrderQty();
+                if ($qty > $max) {
+                    $qty = $max;
+                }
                 if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
                     // Save the item ID to update any affected qty-based
                     // discounts.
-                    $item_id = $this->items[$id]->product_id;
                     $this->Remove($id);
+                    // Re-apply qty discounts in case there are other items
+                    // with the same base ID
                     $this->applyQtyDiscounts($item_id);
-                } else {
+                    $this->tainted = true;
+                } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
-                    $max = Product::getById($this->items[$id]->getProductId())->getMaxOrderQty();
-                    if ($qty > $max) {
-                        $qty = $max;
-                    }
                     $this->items[$id]->setQuantity($qty);
+                    $this->applyQtyDiscounts($item_id);
+                    $this->tainted = true;
                 }
             }
+            $this->applyQtyDiscounts($this->items[$id]->product_id);
         }
-        $this->applyQtyDiscounts($this->items[$id]->product_id);
+        $this->calcItemTotals();
 
         // Now look for a coupon code to redeem against the user's account.
         if ($_SHOP_CONF['gc_enabled']) {
@@ -341,6 +355,7 @@ class Cart extends Order
             if (!empty($gc)) {
                 if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
+                    $this->tainted = true;
                 }
             }
         }
@@ -356,6 +371,13 @@ class Cart extends Order
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
+        if (isset($A['discount_code']) && !empty($A['discount_code'])) {
+            $dc = $A['discount_code'];
+        } else {
+            $dc = $this->getDiscountCode();
+        }
+        $this->validateDiscountCode($dc);
+
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this->m_cart;
     }
@@ -452,27 +474,7 @@ class Cart extends Order
         $T = SHOP_getTemplate('btn_checkout', 'checkout', 'buttons');
         $by_gc = (float)$this->getInfo('apply_gc');
         $net_total = $this->total - $by_gc;
-        // Special handling if there is a zero total due to discounts
-        // or gift cards
-        if ($net_total < .001) {
-            $this->custom_info['uid'] = $_USER['uid'];
-            $this->custom_info['transtype'] = 'internal';
-            $this->custom_info['cart_id'] = $this->CartID();
-            $gateway_vars = array(
-                '<input type="hidden" name="processorder" value="by_gc" />',
-                '<input type="hidden" name="cart_id" value="' . $this->CartID() . '" />',
-                '<input type="hidden" name="custom" value=\'' . @serialize($this->custom_info) . '\' />',
-            );
-            $T->set_var(array(
-                'action'        => SHOP_URL . '/ipn/internal.php',
-                'gateway_vars'  => implode("\n", $gateway_vars),
-                'cart_id'       => $this->m_cart_id,
-                'uid'           => $_USER['uid'],
-                'method'        => 'post',
-            ) );
-            $T->parse('checkout_btn', 'checkout');
-            return $T->finish($T->get_var('checkout_btn'));
-        } elseif ($gw->Supports('checkout')) {
+        if ($gw->Supports('checkout')) {
             // Else, if amount > 0, regular checkout button
             $this->custom_info['by_gc'] = $by_gc;   // pass GC amount used via gateway
             $this->by_gc = $by_gc;                  // pass GC amount used via gateway
@@ -496,7 +498,7 @@ class Cart extends Order
         $gateway_vars = '';
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             foreach (Gateway::getAll() as $gw) {
-                if ($gw->hasAccess() && $gw->Supports('checkout')) {
+                if ($gw->hasAccess($this->total) && $gw->Supports('checkout')) {
                     $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
                 }
@@ -533,7 +535,11 @@ class Cart extends Order
             }
             $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
             if (empty($gateways)) return NULL;  // no available gateways
-            if (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
+            if ($this->total == 0) {
+                // Automatically select the "free" gateway if appropriate.
+                // Other gateways shouldn't be shown anyway.
+                $gw_sel = 'free';
+            } elseif (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
                 // Select the previously selected gateway
                 $gw_sel = $this->m_info['gateway'];
             } elseif ($gc_bal >= $this->total) {
@@ -542,16 +548,19 @@ class Cart extends Order
             } else {
                 // Select the first if there's one, otherwise select none.
                 $gw_sel = Gateway::getSelected();
+                if ($gw_sel == '') {
+                    $gw_sel = Customer::getInstance($this->uid)->getPrefGW();
+                }
             }
             foreach ($gateways as $gw_id=>$gw) {
-                if (is_null($gw) || !$gw->hasAccess()) {
+                if (is_null($gw) || !$gw->hasAccess($this->total)) {
                     continue;
                 }
                 if ($gw->Supports('checkout')) {
-                    if ($gw_sel == '') $gw_sel = $gw->Name();
+                    if ($gw_sel == '') $gw_sel = $gw->getName();
                     $T->set_var(array(
-                        'gw_id' => $gw->Name(),
-                        'radio' => $gw->checkoutRadio($gw_sel == $gw->Name()),
+                        'gw_id' => $gw->getName(),
+                        'radio' => $gw->checkoutRadio($gw_sel == $gw->getName()),
                     ) );
                     $T->parse('row', 'Radios', true);
                 }
@@ -863,6 +872,7 @@ class Cart extends Order
         } else {
             $wf_name = 'viewcart';
         }
+
         switch($wf_name) {
         case 'viewcart':
             // Initial cart view. Check here and populate the billing and
@@ -1014,6 +1024,8 @@ class Cart extends Order
                 $this->Remove($id);
                 $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
                 $invalid['removed'][] = $P;
+            } else {
+                $this->applyQtyDiscounts($P->getId());
             }
         }
         if (!empty($msg)) {

@@ -3,9 +3,9 @@
  * Automatic installation functions for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -156,8 +156,15 @@ $tables = array(
     'products', 'categories', 'orderitems', 'ipnlog', 'orders', 'sales',
     'prod_opt_vals', 'images', 'gateways', 'address', 'userinfo', 'workflows',
     'buttons', 'orderstatus', 'order_log', 'currency', 'coupons', 'coupon_log',
-    'shipping', 'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
+    'shipping',
+    // v1.0.0
+    'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
     'shipment_packages', 'carrier_config', 'cache',
+    // v1.1.0
+    'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
+    'discountcodes', 'regions', 'countries', 'states',
+    // v1.2.0
+    'shop.features', 'shop.features_values', 'shop.prodXfeat',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
@@ -228,6 +235,7 @@ function plugin_postinstall_shop()
         $_SHOP_CONF['download_path'],
         $_SHOP_CONF['image_dir'],
         $_SHOP_CONF['catimgpath'],
+        $_SHOP_CONF['tmpdir'] . '/images/brands',
     );
     foreach ($paths as $path) {
         COM_errorLog("Creating $path", 1);

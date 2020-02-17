@@ -217,7 +217,6 @@ class authorizenet extends \Shop\Gateway
         );
 
         $jsonEncoded = json_encode($json, JSON_UNESCAPED_SLASHES);
-        //var_export($json);
 
         $ch = curl_init();
         //var_dump($this->token_url);die;
@@ -362,6 +361,20 @@ class authorizenet extends \Shop\Gateway
     protected function getInstructions()
     {
         return $this->adminWarnBB();
+    }
+
+
+    /**
+     * Set the return URL after payment is made.
+     * Authorize.net can't accept the url parameters.
+     *
+     * @param   string  $cart_id    Cart order ID
+     * @param   string  $token      Order token, to verify accessa
+     * @return  string      URL to pass to the gateway as the return URL
+     */
+    protected function returnUrl($cart_id, $token)
+    {
+        return SHOP_URL . '/index.php?thanks=' . $this->gw_name;
     }
 
 }   // class authorizenet

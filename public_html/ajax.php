@@ -3,9 +3,9 @@
  * Common user-facing AJAX functions.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2010-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2010-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -57,7 +57,7 @@ case 'addcartitem':
     }
 
     $req_qty = SHOP_getVar($_POST, 'quantity', 'integer', $P->getMinOrderQty());
-    $exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
+    //$exp_qty = $Cart->getItem($item_number)->getQuantity() + $req_qty;
     $unique = SHOP_getVar($_POST, '_unique', 'integer', $P->isUnique());
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
@@ -77,7 +77,9 @@ case 'addcartitem':
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];
-    } elseif ($new_qty != $exp_qty) {
+    } elseif ($new_qty < $req_qty) {
+        // TODO: better handling of adjustments.
+        // This really only handles changes to the initial qty.
         $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
     }
     $output = array(
@@ -115,6 +117,47 @@ case 'redeem_gc':
             'status' => $status,
         );
     }
+    break;
+
+case 'validateOpts':
+    $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
+    $output = $PV->Validate(array(
+        'quantity' => $_GET['quantity'],
+    ) );
+    break;
+
+case 'validateAddress':
+    // Validate customer-entered addresses and present a popup selection
+    // between the original and validated versions, if different.
+    $output = array(
+        'status'    => true,
+        'form'      => '',
+    );
+    $A1 = new Shop\Address($_POST);
+        $A2 = $A1->Validate();
+        if (!$A1->Matches($A2)) {
+            $T = new Template(SHOP_PI_PATH . '/templates');
+            $T->set_file('popup', 'address_select.thtml');
+            $T->set_var(array(
+                'address1_html' => $A1->toHTML(),
+                'address1_json' => htmlentities($A1->toJSON()),
+                'address2_html' => $A2->toHTML(),
+                'address2_json' => htmlentities($A2->toJSON()),
+                'ad_type'       => $_POST['ad_type'],
+                'next_step'     => $_POST['next_step'],
+            ) );
+            $output['status']  = false;
+            $output['form'] = $T->parse('output', 'popup');
+        }
+    break;
+
+case 'getStateOpts':
+    $output = array(
+        'status' => true,
+        'opts' => Shop\State::optionList(
+            SHOP_getVar($_GET, 'country_iso', 'string', '')
+        ),
+    );
     break;
 
 default:

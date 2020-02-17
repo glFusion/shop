@@ -62,7 +62,7 @@ $breadcrumbs = '';
 if (!empty($id)) {
     $P = \Shop\Product::getInstance($id);
     if ($P->verifyID($id) && $P->hasAccess()) {
-        $breadcrumbs = $P->Cat->Breadcrumbs();
+        $breadcrumbs = $P->Breadcrumbs();
         $P->setQuery($query);
         $P->setOrderItem($oi_id);
         $content .= $P->Detail();

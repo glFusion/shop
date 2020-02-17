@@ -7,7 +7,7 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
  * @version     v0.7.0
@@ -367,7 +367,8 @@ case 'products':
 default:
     SHOP_setUrl();
     $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
-    $content .= Shop\Catalog::defaultCatalog($cat_id);
+    $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
+    $content .= Shop\Catalog::defaultCatalog($cat_id, $brand_id);
     break;
 
 case 'none':

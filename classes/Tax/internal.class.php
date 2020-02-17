@@ -24,20 +24,23 @@ class internal extends \Shop\Tax
 {
 
     /**
-     * Get the sales tax rate.
+     * Get the sales tax data for the internally-configured rate.
      * The default function only returns the globally-configured rate.
      *
-     * @return  float   Default configured tax rate.
+     * @return  array   Array of data (just total rate)
      */
-    public function getRate()
+    protected function _getData()
     {
         global $_SHOP_CONF;
 
         if ($this->hasNexus()) {
-            return SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+            $rate = SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
         } else {
-            return 0;
+            $rate = 0;
         }
+        return array(
+            'totalRate' => $rate,
+        );
     }
 
 

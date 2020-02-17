@@ -147,3 +147,33 @@ var shopApplyGC = function(frm_id)
     return false;
 };
 
+// Change the country selection on an address form
+// Used for customer and supplier addresses
+function chgCountrySel(newcountry)
+{
+    var dataS = {
+        "action": "getStateOpts",
+        "country_iso": newcountry,
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status && result.opts.length > 0) {
+                    $("#stateSelect").html(result.opts);
+                    $("#stateSelectDiv").show();
+                } else {
+                    $("#stateSelectDiv").hide();
+                }
+            }
+            catch(err) {
+            }
+        }
+    });
+    return;
+}
+

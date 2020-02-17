@@ -3,9 +3,9 @@
  * Class to manage product categories.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -148,7 +148,7 @@ class Category
         $this->enabled = $row['enabled'];
         $this->cat_name = $row['cat_name'];
         $this->grp_access = $row['grp_access'];
-        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['description'];
+        $this->disp_name = isset($row['disp_name']) ? $row['disp_name'] : $row['cat_name'];
         $this->lft = isset($row['lft']) ? $row['lft'] : 0;
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
@@ -543,7 +543,7 @@ class Category
     {
         global $_TABLES;
 
-        return DB_count($_TABLES['shop.products'], 'cat_id', (int)$cat_id);
+        return DB_count($_TABLES['shop.prodXcat'], 'cat_id', (int)$cat_id);
     }
 
 
@@ -614,13 +614,12 @@ class Category
      * @return  boolean     True if user has access, False if not
      */
     public function hasAccess($groups = NULL)
-     {
-         global $_GROUPS;
+    {
+        global $_GROUPS;
 
         if ($groups === NULL) {
             $groups = $_GROUPS;
         }
-
         if ($this->enabled && in_array($this->grp_access, $groups)) {
             return true;
         } else {
@@ -637,8 +636,6 @@ class Category
      */
     public function getImage()
     {
-        global $_SHOP_CONF;
-
         return Images\Category::getUrl($this->image);
     }
 
@@ -1136,6 +1133,122 @@ class Category
             }
         }
         return '';
+    }
+
+
+    /**
+     * Get all categories that are related to a given product ID.
+     *
+     * @param   integer $prod_id    Product ID
+     * @return  array       Array of Category objexts
+     */
+    public static function getByProductId($prod_id)
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $prod_id = (int)$prod_id;
+        if ($prod_id < 1) {
+            // No categories selected if this is a new product
+            return array();
+        }
+        $cache_key = 'shop.categories_' . $prod_id;
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
+                WHERE product_id = $prod_id";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+            }
+
+            // If no categories are found, add the root category to be sure
+            // there is one category for the product.
+            if (empty($retval)) {
+                $Cat = self::getRoot();
+                $retval[$Cat->getID()] = $Cat;
+            }
+            Cache::set($cache_key, $retval, array('products', 'categories'));
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Load all categories from the database into an array.
+     *
+     * @return  array       Array of category objects
+     */
+    public static function getAll()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT cat_id FROM {$_TABLES['shop.categories']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the record ID for a category.
+     *
+     * @return  integer     Category DB record ID
+     */
+    public function getID()
+    {
+        return $this->cat_id;
+    }
+
+
+    /**
+     * Get the category name.
+     *
+     * @return  string  Category name
+     */
+    public function getName()
+    {
+        return $this->cat_name;
+    }
+
+
+    /**
+     * Delete product->category mappings when a product is deleted.
+     *
+     * @param   integer $prod_id    Product record ID
+     */
+    public static function deleteProduct($prod_id)
+    {
+        global $_TABLES;
+
+        $prod_id = (int)$prod_id;
+        DB_delete($_TABLES['shop.prodXcat'], 'product_id', $prod_id);
+    }
+
+
+    /**
+     * Clone the categories for a product to a new product.
+     *
+     * @param   integer $src    Source product ID
+     * @param   integer $dst    Destination product ID
+     * @return  boolean     True on success, False on error
+     */
+    public static function cloneProduct($src, $dst)
+    {
+        global $_TABLES;
+
+        $src = (int)$src;
+        $dst = (int)$dst;
+        // Clear target categories, the Home category is probably there.
+        DB_delete($_TABLES['shop.prodXcat'], 'product_id', $dst);
+        $sql = "INSERT INTO {$_TABLES['shop.prodXcat']} (product_id, cat_id)
+            SELECT $dst, cat_id FROM {$_TABLES['shop.prodXcat']}
+            WHERE product_id = $src";
+        DB_query($sql, 1);
+        return DB_error() ? false : true;
     }
 
 }

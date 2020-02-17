@@ -4,9 +4,9 @@
  * First iteration only allows for a number of "units" per product.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.1
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -37,9 +37,49 @@ class Shipper
      * @var string */
     static $base_tag = 'shipping';
 
-    /** Property fields. Accessed via __set() and __get()
-     * @var array */
-    private $properties;
+    /** Shipper record ID.
+     * @var integer */
+    private $id = 0;
+
+    /** glFusion group ID which can use this shipper.
+     * @var integer */
+    private $grp_access;
+
+    /** Name of the shipper, e.g. "United Parcel Service".
+     * @var string */
+    private $name;
+
+    /** Short code, e.g. "ups".
+     * @var string */
+    private $module_code;
+
+    /** Minimum shipping units that can be sent by this shipper.
+     * @var float */
+    private $min_units;
+
+    /** Maximum shipping units that can be sent by this shipper.
+     * @var float */
+    private $max_units;
+
+    /** Flag to indicate whether this shipper is active.
+     * @var boolean */
+    private $enabled;
+
+    /** Flag to indicate whether fixed shipping cost is included or ignored.
+     * @var boolean */
+    private $use_fixed;
+
+    /** Std class to accumulate order shipping prices for the shipper.
+     * @var object */
+    private $ordershipping;
+
+    /** Earliest date/time that this shipper can be used.
+     * @var object */
+    private $valid_from;
+
+    /** Latest date/time that this shipper can be used.
+     * @var object */
+    private $valid_to;
 
     /** Configuration items, if used.
      * @var array */
@@ -51,11 +91,11 @@ class Shipper
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    public $isNew;
+    private $isNew;
 
     /** Individual rate element.
      * @var array */
-    public $rates;
+    private $rates;
 
     /** Flag to indicate whether the shipper class implements a quote API.
      * @var boolean */
@@ -153,14 +193,14 @@ class Shipper
     {
         global $LANG_SHOP;
 
-        $this->id = SHOP_getVar($A, 'id', 'integer');
-        $this->module_code = SHOP_getVar($A, 'module_code');
-        $this->name = SHOP_getVar($A, 'name');
-        $this->min_units = SHOP_getVar($A, 'min_units', 'integer');
-        $this->max_units = SHOP_getVar($A, 'max_units', 'integer');
-        $this->enabled = SHOP_getVar($A, 'enabled', 'integer');
-        $this->use_fixed = SHOP_getVar($A, 'use_fixed', 'integer', 0);
-        $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
+        $this->setID(SHOP_getVar($A, 'id', 'integer'))
+            ->setModuleCode(SHOP_getVar($A, 'module_code'))
+            ->setName(SHOP_getVar($A, 'name'))
+            ->setMinUnits(SHOP_getVar($A, 'min_units', 'integer'))
+            ->setMaxUnits(SHOP_getVar($A, 'max_units', 'integer'))
+            ->setEnabled(SHOP_getVar($A, 'enabled', 'integer'))
+            ->setUseFixed(SHOP_getVar($A, 'use_fixed', 'integer', 0))
+            ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
         if (!$fromDB) {
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -193,8 +233,186 @@ class Shipper
             if ($rates === NULL) $rates = array();
             $this->rates = $rates;
         }
-        $this->valid_from = $A['valid_from'];
-        $this->valid_to = $A['valid_to'];
+        $this->setValidFrom($A['valid_from']);
+        $this->setValidTo($A['valid_to']);
+    }
+
+
+    /**
+     * Check whether this is a new record.
+     *
+     * @return  boolean     True if new, False if already saved
+     */
+    public function isNew()
+    {
+        return (bool)$this->isNew;
+    }
+
+
+    /**
+     * Set the record ID.
+     *
+     * @param   integer $id     Record ID
+     * @return  object  $this
+     */
+    private function setID($id)
+    {
+        $this->id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the record ID.
+     *
+     * @return  integer     Shipper DB record ID
+     */
+    public function getID()
+    {
+        return (int)$this->id;
+    }
+
+
+    /**
+     * Set the module code value.
+     *
+     * @param   string  $code   Module code
+     * @return  object  $this
+     */
+    private function setModuleCode($code)
+    {
+        $this->module_code = $code;
+        return $this;
+    }
+
+
+    /**
+     * Set the shipper name.
+     *
+     * @param   string  $name   Shipper name
+     * @return  object  $this
+     */
+    private function setName($name)
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+
+    /**
+     * Get the shipper's name.
+     *
+     * @return  string      Shipper name
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+
+    /**
+     * Set the minimum shipping units allowed.
+     *
+     * @param   float   $units  Shipping units
+     * @return  object  $this
+     */
+    private function setMinUnits($units)
+    {
+        $this->min_units = (float)$units;
+        return $this;
+    }
+
+    /**
+     * Set the maximum shipping units allowed.
+     *
+     * @param   float   $units  Shipping units
+     * @return  object  $this
+     */
+    private function setMaxUnits($units)
+    {
+        $this->max_units = (float)$units;
+        return $this;
+    }
+
+
+    /**
+     * Set the `enabled` flag value.
+     *
+     * @param   boolean $enabled    True or false
+     * @return  object  $this
+     */
+    private function setEnabled($enabled)
+    {
+        $this->enabled = $enabled ? 1 : 0;
+        return $this;
+    }
+
+    /**
+     * Set the flag to include product fixed shipping charge.
+     *
+     * @param   boolean $enabled    True or false
+     * @return  object  $this
+     */
+    private function setUseFixed($enabled)
+    {
+        $this->use_fixed = $enabled ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Set the glFusion group which can use this shipper.
+     *
+     * @param   integer $gid    Group ID
+     * @return  object  $this
+     */
+    private function setGrpAccess($gid)
+    {
+        $this->grp_access = (int)$gid;
+        return $this;
+    }
+
+
+    /**
+     * Set the valid_from property.
+     *
+     * @param   string  $value  DateTime string
+     * @return  object  $this
+     */
+    private function setValidFrom($value)
+    {
+        if (empty($value)) {
+            $value = self::MIN_DATETIME;
+        }
+        $this->valid_from = new \Date($value, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Set the valid_to property.
+     *
+     * @param   string  $value  DateTime string
+     * @return  object  $this
+     */
+    private function setValidTo($value)
+    {
+        if (empty($value)) {
+            $value = self::MAX_DATETIME;
+        }
+        $this->valid_to = new \Date($value, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the order shipping table for this shipper.
+     *
+     * @return  object      Shipping table object
+     */
+    public function getOrderShipping()
+    {
+        return $this->ordershipping;
     }
 
 
@@ -561,81 +779,6 @@ class Shipper
 
 
     /**
-     * Set a property's value.
-     *
-     * @param   string  $var    Name of property to set.
-     * @param   mixed   $value  New value for property.
-     */
-    public function __set($var, $value='')
-    {
-        global $_CONF;
-
-        switch ($var) {
-        case 'id':
-        case 'grp_access':
-            // Integer values
-            $this->properties[$var] = (int)$value;
-            break;
-
-        case 'name':
-        case 'module_code':
-            // String values
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'min_units':
-            if ($value == 0) $value = self::MIN_UNITS;
-        case 'max_units':
-            $this->properties[$var] = (float)$value;
-            break;
-
-        case 'enabled':
-        case 'use_fixed':
-            $this->properties[$var] = $value == 0 ? 0 : 1;
-            break;
-
-        case 'ordershipping':
-            $this->properties[$var] = $value;
-            break;
-
-        case 'valid_from':
-            if (empty($value)) {
-                $value = self::MIN_DATETIME;
-            }
-            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
-            break;
-
-        case 'valid_to':
-            if (empty($value)) {
-                $value = self::MAX_DATETIME;
-            }
-            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
-            break;
-
-        default:
-            // Undefined values (do nothing)
-            break;
-        }
-    }
-
-
-    /**
-     * Get the value of a property.
-     *
-     * @param   string  $var    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
-     */
-    public function __get($var)
-    {
-        if (array_key_exists($var, $this->properties)) {
-            return $this->properties[$var];
-        } else {
-            return NULL;
-        }
-    }
-
-
-    /**
      * Save shipper information to the database.
      *
      * @param   array   $A      Optional array of values from $_POST
@@ -791,17 +934,6 @@ class Shipper
             Cache::clear(self::$base_tag);
             return $newvalue;
         }
-    }
-
-
-    /**
-     * Get the name of the shipper.
-     *
-     * @return  string      Shipper name
-     */
-    public function getName()
-    {
-        return $this->name;
     }
 
 
@@ -1264,7 +1396,7 @@ class Shipper
      * Check if this shipper implements a rate quote API.
      * Returns false if a quote API isn't implemented, or if the
      * configuration isn't valid.
-     * 
+     *
      * @return   boolean    True if the api is available, false if not
      */
     protected function hasQuoteAPI()
@@ -1277,7 +1409,7 @@ class Shipper
      * Check if this shipper implements a package tracking API.
      * Returns false if a tracking API isn't implemented, or if the
      * configuration isn't valid.
-     * 
+     *
      * @return   boolean    True if the api is available, false if not
      */
     protected function hasTrackingAPI()

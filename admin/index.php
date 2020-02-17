@@ -5,10 +5,10 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net>
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -46,21 +46,34 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
-    'carrier_save',
+    'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move',
-    'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
+    'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
+    'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
-    'importtaxexec', 'savetaxrate', 'deltaxrate',
+    'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
+    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
+    'saveregion', 'savecountry', 'savestate',
+    'ena_region', 'disa_region', 'del_region',
+    'ena_country', 'disa_country', 'del_country',
+    'ena_state', 'disa_state', 'del_state',
+    'ft_save', 'ft_del', 'ft_move',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'options', 'pov_edit', 'other', 'products', 'gwadmin', 'gwedit', 'carrier_config',
+    'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
+    'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
-    'importtaxform', 'taxrates', 'edittaxrate',
+    'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
+    'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
+    'editregion', 'editcountry', 'editstate',
+    'regions', 'countries', 'states',
+    'features', 'ft_view', 'ft_edit',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -78,10 +91,30 @@ $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
 switch ($action) {
-case 'dup_product':
+case 'statcomment':         // update comment and status
+    $order_id = SHOP_getVar($_POST, 'order_id');
+    $notify = SHOP_getVar($_POST, 'notify', 'integer', 0);
+    $comment = SHOP_getVar($_POST, 'comment');
+    $newstatus = SHOP_getVar($_POST, 'newstatus');
+    if (!empty($order_id)) {
+        $Ord = Shop\Order::getInstance($order_id);
+        $Ord->updateStatus($newstatus, true, false);
+        $Ord->Log($comment);
+        if (!$notify) {
+            // The Notify function will send the update if notifications are
+            // set for the new status. Only include the comment if specifically
+            // requested.
+            $comment = '';
+        }
+        $Ord->Notify($newstatus, $comment, $notify);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
+    break;
+
+case 'prod_clone':
     $P = new \Shop\Product($_REQUEST['id']);
     $P->Duplicate();
-    echo COM_refresh(SHOP_ADMIN_URL.'/index.php');
+    COM_refresh(SHOP_ADMIN_URL.'/index.php?products');
     break;
 
 case 'deleteproduct':
@@ -91,7 +124,7 @@ case 'deleteproduct':
     } else {
         COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
-    echo COM_refresh(SHOP_ADMIN_URL);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'delshipping':
@@ -124,7 +157,7 @@ case 'deletecat':
     } else {
         $C->Delete();
     }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
     break;
 
 case 'saveproduct':
@@ -136,7 +169,7 @@ case 'saveproduct':
             COM_setMsg($msg, 'error');
         }
     }
-    echo COM_refresh($url);
+    COM_refresh($url);
     break;
 
 case 'savecat':
@@ -149,12 +182,32 @@ case 'savecat':
     }
     break;
 
+case 'ft_save':
+    $FT = new Shop\Feature($_POST['ft_id']);
+    if (!$FT->Save($_POST)) {
+        $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?features');
+    break;
+
 case 'pog_save':
     $POG = new \Shop\ProductOptionGroup($_POST['og_id']);
     if (!$POG->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?opt_grp=x');
+    break;
+
+case 'pv_save':
+    $from = SESS_getVar('shop.pv_view');
+    $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
+    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
+    Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
+    if ($from == 'pv_bulkedit') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $item_id);
+    }
     break;
 
 case 'pov_save':
@@ -168,6 +221,32 @@ case 'pov_save':
     } else {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&item_id=' . $_POST['item_id'] . '&pog_id=' . $Opt->getGroupID());
     }
+    break;
+
+case 'pv_del_bulk':
+    $ids = SHOP_getVar($_POST, 'pv_bulk_id', 'array');
+    foreach ($ids as $id) {
+        Shop\ProductVariant::Delete($id);
+    }
+    Shop\Cache::clear('products');
+    Shop\Cache::clear('options');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
+    break;
+
+case 'pv_del':
+    $from = SESS_getVar('shop.pv_view');
+    Shop\ProductVariant::Delete($_REQUEST['pv_id']);
+    if ($from === 'pv_bulk') {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_REQUEST['item_id']);
+    } else {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
+    }
+    exit;
+    break;
+
+case 'ft_del':
+    Shop\Feature::Delete($_REQUEST['ft_id']);
+    $view = 'features';
     break;
 
 case 'pog_del':
@@ -289,6 +368,14 @@ case 'gwsave':
     $view = 'gwadmin';
     break;
 
+case 'ft_move':
+    $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
+    if ($ft_id > 0) {
+        Shop\Feature::getInstance($ft_id)->moveRow($actionval);
+    }
+    $view = 'features';
+    break;
+
 case 'pog_move':
     $og_id = SHOP_getVar($_GET, 'id', 'integer');
     if ($og_id > 0) {
@@ -333,7 +420,9 @@ case 'attrcopy':
     $done_prods = array();
 
     // Nothing to do if no source product selected
-    if ($src_prod < 1) break;
+    if ($src_prod < 1) {
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
+    }
 
     // Copy product options to all products in a category.
     // Ignore the source product, which may or may not be in the category.
@@ -345,17 +434,17 @@ case 'attrcopy':
                 continue;
             }
             $done_prods[] = $dst_id;    // track for later
-            Shop\ProductOptionValue::cloneProduct($src_prod, $dst_id, $del_existing);
+            Shop\ProductVariant::cloneProduct($src_prod, $dst_id, $del_existing);
         }
     }
 
     // If a target product was selected, it's not the same as the source, and hasn't
     // already been done as part of the category, then update the target product also.
     if ($dest_prod > 0 && $dest_prod != $src_prod && !in_array($dest_prod, $done_prods)) {
-        Shop\ProductOptionValue::cloneProduct($src_prod, $dest_prod, $del_existing);
+        Shop\ProductVariant::cloneProduct($src_prod, $dest_prod, $del_existing);
     }
     \Shop\Cache::clear();
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
 case 'runreport':
@@ -416,12 +505,44 @@ case 'savesale':
     exit;
     break;
 
+case 'save_sup':
+    // Save a supplier/brand record
+    $Sup = new Shop\Supplier($_POST['sup_id']);
+    if ($Sup->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?suppliers');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $Sup->getID());
+    }
+    break;
+
+case 'savecode':
+    $C = new \Shop\DiscountCode($_POST['code_id']);
+    if (!$C->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&icode_d=' . $C->code_id);
+    } else {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
+    }
+    exit;
+    break;
+
 case 'delsale':
     $id = SHOP_getVar($_REQUEST, 'id', 'integer', 0);
     if ($id > 0) {
         \Shop\Sales::Delete($id);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
+    break;
+
+case 'delcode':
+    $id = SHOP_getVar($_REQUEST, 'code_id', 'integer', 0);
+    if ($id > 0) {
+        \Shop\DiscountCode::Delete($id);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
     break;
 
 case 'updateshipment':
@@ -475,12 +596,127 @@ case 'deltaxrate':
     $view = 'taxrates';
     break;
 
+case 'prod_bulk_save':
+    if (Shop\Product::BulkUpdateDo($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['error']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
+case 'prod_bulk_del':
+    $prod_ids = SHOP_getVar($_POST, 'prod_bulk', 'array', array());
+    $mag = $LANG_SHOP['msg_updated'];   // assume success
+    foreach ($prod_ids as $id) {
+        if (!Shop\Product::getById($id)->Delete()) {
+            $msg = $LANG_SHOP['msg_some_not_del'];
+        }
+    }
+    COM_setMsg($msg);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
+case 'pv_bulk_save':
+    if (Shop\ProductVariant::BulkUpdateDo($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['error']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
+    break;
+
+case 'saveregion':
+    // Save a region record
+    $R = Shop\Region::getInstance($_POST['region_id']);
+    if ($R->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editregion=' . $R->getID());
+    }
+    break;
+
+case 'savecountry':
+    // Save a country record
+    $C = Shop\Country::getInstance($_POST['country_id']);
+    if ($C->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    } else {
+        COM_setMsg($C->getErrors());
+        $content = $C->Edit($_POST);
+        $view = 'none';
+    }
+    break;
+
+case 'savestate':
+    // Save a state record
+    $S = Shop\State::getInstance((int)$_POST['state_id']);
+    if ($S->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['msg_updated']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    } else {
+        COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editstate=' . $S->getID());
+    }
+    break;
+
+case 'ena_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(0, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+case 'disa_region':
+    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
+    if (!empty($regions)) {
+        Shop\Region::BulkToggle(1, 'region_enabled', $regions);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
+    break;
+
+
+case 'ena_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(0, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'disa_country':
+    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
+    if (!empty($countries)) {
+        Shop\Country::BulkToggle(1, 'country_enabled', $countries);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
+    break;
+
+case 'ena_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(0, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    break;
+
+case 'disa_state':
+    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
+    if (!empty($states)) {
+        Shop\State::BulkToggle(1, 'state_enabled', $states);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
+    break;
+
 default:
     $view = $action;
     break;
 }
 
-//SHOP_log('Admin view: ' . $action, SHOP_LOG_DEBUG);
 switch ($view) {
 case 'history':
     $content .= \Shop\history(true);
@@ -549,13 +785,15 @@ case 'ipnlog':
     break;
 
 case 'editproduct':
-    $id = isset($_REQUEST['id']) ? (int)$_REQUEST['id'] : 0;
+    SESS_setVar('shop.pv_view', 'editproduct');
+    $id = SHOP_getVar($_REQUEST, 'id', 'integer');
+    $tab = SHOP_getVar($_GET, 'tab');
     $P = new \Shop\Product($id);
     if ($id == 0 && isset($_POST['short_description'])) {
         // Pick a field.  If it exists, then this is probably a rejected save
         $P->SetVars($_POST);
     }
-    $content .= $P->showForm();
+    $content .= $P->showForm(0, $tab);
     break;
 
 case 'editcat':
@@ -577,6 +815,12 @@ case 'categories':
 case 'sales':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Sales::adminList();
+    $view = 'products';   // cheating, to get the active menu set
+    break;
+
+case 'codes':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\DiscountCode::adminList();
     $view = 'products';   // cheating, to get the active menu set
     break;
 
@@ -614,14 +858,29 @@ case 'carriers':
     $content .= Shop\Shipper::carrierLIst();
     break;
 
+case 'variants':
+    $content .= Shop\Menu::adminCatalog('variants');
+case 'pv_bulk':
+    SESS_setVar('shop.pv_view', $view);
+    $prod_id = SHOP_getVar($_GET, 'item_id', 'integer');
+    $content .= Shop\ProductVariant::adminList($prod_id, true);
+    break;
+
+case 'pv_edit':
+    $pv_id = SHOP_getVar($_GET, 'pv_id', 'integer');
+    $content .= Shop\Menu::adminCatalog($view);
+    $Var = new Shop\ProductVariant($pv_id);
+    if ($Var->getID() == 0) {
+        // For a new variant, force the item ID to be set
+        $Var->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
+    }
+    $content .= $Var->Edit();
+    break;
+
 case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
-    if ($opt_id == 0) {
-        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
-        $Opt->setItemID(SHOP_getVar($_GET, 'item_id', 'integer'));
-    }
     $content .= $Opt->Edit();
     break;
 
@@ -636,6 +895,12 @@ case 'editsale':
     $id = SHOP_getVar($_GET, 'id', 'integer', 0);
     $D = new \Shop\Sales($id);
     $content .= $D->Edit();
+    break;
+
+case 'editcode':
+    $id = SHOP_getVar($_GET, 'code_id', 'integer', 0);
+    $C = new \Shop\DiscountCode($id);
+    $content .= $C->Edit();
     break;
 
 case 'other':
@@ -794,6 +1059,82 @@ case 'taxrates':
 
 case 'edittaxrate':
     $content .= Shop\Tax\table::Edit($_GET['code']);
+    break;
+
+case 'suppliers':
+    // Display an admin list of supplier/brand records
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Supplier::adminList();
+    break;
+
+case 'features':
+    // Display the list of features
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Feature::adminList();
+    break;
+
+case 'ft_edit':
+    $Ft = new Shop\Feature($actionval);
+    $content .= $Ft->Edit();
+    break;
+
+case 'edit_sup':
+    // Edit a supplier or brand record
+    $Sup = new Shop\Supplier($_GET['id']);
+    $content .= $Sup->Edit();
+    break;
+
+case 'pv_edit_bulk':
+    // Bulk update variants - price, weight, shipping, etc.
+    $pv_ids = SHOP_getVar($_POST, 'pv_bulk_id', 'array');
+    if (!empty($pv_ids)) {
+        $content .= Shop\ProductVariant::bulkEdit($pv_ids);
+    }
+    break;
+
+case 'prod_bulk_frm':
+    // Bulk update product attributes
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
+    break;
+
+case 'editregion':
+    $region_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('regions');
+    $content .= Shop\Region::getInstance($region_id)->Edit();
+    break;
+
+case 'editcountry':
+    $country_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('countries');
+    $content .= Shop\Country::getInstance($country_id)->Edit();
+    break;
+
+case 'editstate':
+    $state_id = (int)$actionval;
+    $content .= Shop\Menu::adminRegions('states');
+    $content .= Shop\State::getInstance($state_id)->Edit();
+    break;
+
+case 'countries':
+    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\Country::adminList($region_id);
+    break;
+
+case 'states':
+    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\State::adminList($country_id);
+    break;
+
+case 'regions':
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\Region::adminList();
+    break;
+
+case 'none':
+    // Content provided by an action above, don't show anything here
     break;
 
 default:

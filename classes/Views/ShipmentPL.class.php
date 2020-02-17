@@ -141,7 +141,7 @@ class ShipmentPL
         }
         foreach ($ids as $shp_id) {
             $PL = new self($shp_id);
-            if ($PL->Shipment->isNew) {
+            if ($PL->Shipment->isNew()) {
                 continue;
             }
             $content = $PL->Render('packinglist', 'pdf');

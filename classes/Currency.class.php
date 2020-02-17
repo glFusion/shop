@@ -131,6 +131,28 @@ class Currency
 
 
     /**
+     * Get the currency code value.
+     *
+     * @return  string      Currency code
+     */
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+
+    /**
+     * Get the currency name.
+     *
+     * @return  string      Full name of currency
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+
+    /**
      * Get an instance of a currency.
      * Caches in a static variable for quick repeated retrivals,
      * and also caches using glFusion caching if available.
@@ -291,6 +313,21 @@ class Currency
 
 
     /**
+     * Round a value to the correct number of decimals by always rounding up.
+     * Used in the IPN processor to be conservative when giving credit for
+     * discounts.
+     *
+     * @param   float   $amount Original value
+     * @return  float       Rounded value
+     */
+    public function RoundUp($amount)
+    {
+        $fig = pow(10, $this->decimals);
+        return (ceil($amount * $fig) / $fig);
+    }
+
+
+    /**
      * Converts a price amount from the current currency to the target currency.
      *
      * To convert an amount from one currency to another, we simply take the amount
@@ -364,13 +401,17 @@ class Currency
     {
         global $_TABLES;
 
-        static $currencies = NULL;
+        $currencies = Cache::get('shop.currencies');
         if ($currencies === NULL) {
             $currencies = array();
-            $res = DB_query("SELECT * FROM {$_TABLES['shop.currency']}");
+            $res = DB_query(
+                "SELECT * FROM {$_TABLES['shop.currency']}
+                ORDER BY code ASC"
+            );
             while ($A = DB_fetchArray($res, false)) {
                 $currencies[$A['code']] = new self($A);
             }
+            Cache::set('shop.currencies', $currencies, 'currency', 86400);
         }
         return $currencies;
     }
@@ -400,6 +441,25 @@ class Currency
     {
         return round($intval / (10 ** $this->decimals), $this->decimals);
     }
+
+
+    /**
+     * Create selection options for currency values.
+     *
+     * @param   string  $sel    Currently-selected currency code
+     * @return  string      Option elements for a selection list
+     */
+    public static function optionList($sel = '')
+    {
+        $currencies = self::getAll();
+        $retval = '';
+        foreach ($currencies as $Cur) {
+            $selected = $sel == $Cur->getCode() ? 'selected="selected"' : '';
+            $retval .= "<option $selected value=\"{$Cur->getCode()}\">{$Cur->getCode()} - {$Cur->getName()}</option>";
+        }
+        return $retval;
+    }
+
 
 }
 

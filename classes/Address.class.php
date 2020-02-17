@@ -3,9 +3,9 @@
  * Class to handle billing and shipping addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -72,9 +72,9 @@ class Address
      * @var integer */
     private $addr_id;
 
-    /** Address data fields.
-     * @var array */
-    private $properties = array();
+    /** DB table name, to facilitate inherited classes.
+     * @var string */
+    protected $table = 'shop.addresses';
 
 
     /**
@@ -82,6 +82,7 @@ class Address
      * `$data` may be an array or a json_encoded string.
      *
      * @param   string|array    $data   Address data
+     * @return  object          $this
      */
     public function __construct($data=array())
     {
@@ -94,17 +95,18 @@ class Address
         if (!is_array($data)) {
             $data = array();
         }
-        $this->uid = SHOP_getVar($data, 'uid', 'integer');
-        $this->addr_id = SHOP_getVar($data, 'addr_id', 'integer');
-        $this->billto_def = SHOP_getVar($data, 'billto_def', 'integer');
-        $this->shipto_def = SHOP_getVar($data, 'shipto_def', 'integer');
-        $this->name = SHOP_getVar($data, 'name');
-        $this->address1 = SHOP_getVar($data, 'address1');
-        $this->address2 = SHOP_getVar($data, 'address2');
-        $this->city = SHOP_getVar($data, 'city');
-        $this->state = SHOP_getVar($data, 'state');
-        $this->zip = SHOP_getVar($data, 'zip');
-        $this->country = SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']);
+        return $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
+            ->setID(SHOP_getVar($data, 'addr_id', 'integer'))
+            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
+            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'))
+            ->setName(SHOP_getVar($data, 'name'))
+            ->setCompany(SHOP_getVar($data, 'company'))
+            ->setAddress1(SHOP_getVar($data, 'address1'))
+            ->setAddress2(SHOP_getVar($data, 'address2'))
+            ->setCity(SHOP_getVar($data, 'city'))
+            ->setState(SHOP_getVar($data, 'state'))
+            ->setPostal(SHOP_getVar($data, 'zip'))
+            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']));
     }
 
 
@@ -379,7 +381,7 @@ class Address
         if ($this->country == 'US') {
             $pos = strpos($this->zip, '-');
             if ($pos !== false) {
-                $retval = substr($this->zip, $pos, 4);
+                $retval = substr($this->zip, $pos+1, 4);
             } else {
                 $retval = '';
             }
@@ -878,6 +880,26 @@ class Address
                 ->setUid($Addr->getUid());
         }
         return $this;
+    }
+
+
+    /**
+     * Use an address validation service to verify an address.
+     *
+     */
+    public function Validate()
+    {
+        global $_SHOP_CONF;
+
+        if (SHOP_getVar($_SHOP_CONF, 'address_validator') != '') {
+            $cls = 'Shop\\Validators\\' . $_SHOP_CONF['address_validator'];
+            if (class_exists($cls)) {
+                $AV = new $cls($this);
+                $AV->Validate();
+                return $AV->getAddress();
+            }
+        }
+        return $this;       // default if no validator used
     }
 
 }

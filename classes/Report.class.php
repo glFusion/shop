@@ -631,7 +631,7 @@ class Report
             $str = str_replace('"', '&quot;', $str);
             break;
         case 'csv':
-            $str = str_replace('"', '', $str);
+            $str = str_replace('"', '""', $str);
             break;
         }
         return $str;
@@ -786,9 +786,16 @@ class Report
                 $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' .
                     $Cur->Format($fieldvalue) . '</td></tr>' . LB;
-                    foreach (array('tax', 'shipping', 'handling') as $fld) {
-                        if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
-                            $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
+                $disc_amt = $A['gross_items'] - $A['net_nontax'] - $A['net_taxable'];
+                if ($disc_amt > 0) {
+                    $total -= $disc_amt;
+                    $tip .= '<tr><td>' . $LANG_SHOP['discount'] .
+                        ': </td><td style=&quot;text-align:right&quot;>- ' .
+                        $Cur->FormatValue($disc_amt) . '</td></tr>' . LB;
+                }
+                foreach (array('tax', 'shipping', 'handling') as $fld) {
+                    if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
+                        $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
                                 $Cur->FormatValue($A[$fld]) .
                                 '</td></tr>' . LB;

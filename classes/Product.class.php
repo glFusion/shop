@@ -3,9 +3,9 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -38,6 +38,10 @@ class Product
     /** Out-of-stock items are hidden from the catalog and can't be sold.
      * @const integer */
     const OVERSELL_HIDE = 2;
+
+    /** Fixed maximum value for order quantity.
+     * @const integer */
+    const MAX_ORDER_QTY = 99999;
 
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
@@ -74,10 +78,6 @@ class Product
     /** Fixed quantity that can be purchased, zero means use-selectable.
      * @var integer */
     protected $_fixed_q = 0;
-
-    /** Category object related to this product.
-     * @var object */
-    public $Cat;
 
     /** Indicate that the price can be overridden during purchase.
      * Typically used by plugin items.
@@ -121,6 +121,47 @@ class Product
      * @var integer */
     private $max_ord_qty = 0;
 
+    /** Reorder quantity. Overridden by variants if any exist.
+     * @var integer */
+    private $reorder;
+
+    /** Supplier ID.
+     * @var integer */
+    private $supplier_id = 0;
+
+    /** Brand ID.
+     * @var integer */
+    private $brand_id = 0;
+
+    /** Supplier Reference, e.g. model number, sku.
+     * @var string */
+    private $supplier_ref = '';
+
+    /** Description of product lead time.
+     * @var string */
+    private $lead_time = '';
+
+    /** Default Variant ID.
+     * @var integer */
+    private $def_pv_id = 0;
+
+    /** Related category objects.
+     * @var array */
+    private $Categories = NULL;
+
+    /** Product variants for this product. Null to load only once.
+     * @var array */
+    private $Variants = NULL;
+
+    /** A single product variant attached to this product.
+     * @var object */
+    private $Variant;
+
+
+    /** Product features to be shown in the detail page.
+     * @var array */
+    private $Features;
+
 
     /**
      * Constructor.
@@ -138,11 +179,9 @@ class Product
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
         $this->cancel_url = SHOP_URL . '/index.php';
-
         if (is_array($id)) {
             $this->setVars($id, true);
             $this->isNew = false;
-            $this->Cat = Category::getInstance($this->cat_id);
         } elseif ($id == 0) {
             $this->item_id = '';
             $this->id = 0;
@@ -175,7 +214,8 @@ class Product
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
             $this->custom = '';
-            $this->Cat = NULL;
+            $this->reorder = 0;
+            $this->def_pv_id = 0;
         } else {
             $this->id = $id;
             if (!$this->Read()) {
@@ -274,7 +314,8 @@ class Product
         $A = Cache::get($cache_key);
         if (!is_array($A)) {
             $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                    WHERE name = '$item_id'";
+                WHERE name = '$item_id'
+                LIMIT 1";
             $res = DB_query($sql);
             $A = DB_fetchArray($res, false);
             if (isset($A['id'])) {
@@ -306,7 +347,8 @@ class Product
             $A = Cache::get($cache_key);
             if (!is_array($A)) {
                 $sql = "SELECT * FROM {$_TABLES['shop.products']}
-                        WHERE id  = '$id'";
+                    WHERE id  = $id
+                    LIMIT 1";
                 $res = DB_query($sql);
                 $A = DB_fetchArray($res, false);
                 if (isset($A['id'])) {
@@ -477,6 +519,7 @@ class Product
      *
      * @param   array   $row        Array of values, from DB or $_POST
      * @param   boolean $fromDB     True if read from DB, false if from $_POST
+     * @return  object  $this
      */
     public function setVars($row, $fromDB=false)
     {
@@ -509,9 +552,9 @@ class Product
         $this->custom = $row['custom'];
         $this->avail_beg = $row['avail_beg'];
         $this->avail_end = $row['avail_end'];
-        $this->brand = $row['brand'];
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
+        $this->reorder = (int)$row['reorder'];
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -533,20 +576,21 @@ class Product
             $this->qty_discounts = $qty_discounts;
         }
 
-        if (isset($row['categories'])) {
-            $this->categories = $row['categories'];
-        } else {
-            $this->categories = array();
-        }
-
         $this->votes = isset($row['votes']) ? $row['votes'] : 0;
         $this->rating = isset($row['rating']) ? $row['rating'] : 0;
         $this->comments_enabled = $row['comments_enabled'];
         $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
         $this->btn_type = $row['buttons'];
+        $this->setSupplierID($row['supplier_id'])
+            ->setBrandID($row['brand_id'])
+            ->setSupplierRef($row['supplier_ref'])
+            ->setLeadTime($row['lead_time'])
+            ->setDefVariantID($row['def_pv_id']);
+
         if ($fromDB) {
             $this->views = $row['views'];
         }
+        return $this;
     }
 
 
@@ -568,7 +612,7 @@ class Product
         }
 
         $cache_key = self::_makeCacheKey($id);
-        $row = Cache::get($cache_key);
+        //$row = Cache::get($cache_key);
         if ($row === NULL) {
             $result = DB_query("SELECT *
                         FROM {$_TABLES['shop.products']}
@@ -580,9 +624,10 @@ class Product
             }
         }
         if (!empty($row)) {
-            $this->setVars($row, true);
             $this->isNew = false;
-            $this->loadOptions();
+            $this->setVars($row, true)
+                ->loadOptions()
+                ->loadCategories();
             return true;
         } else {
             return false;
@@ -591,10 +636,105 @@ class Product
 
 
     /**
+     * Check if this product has variants.
+     *
+     * @return  integer     Number of variants
+     */
+    public function hasVariants()
+    {
+        if ($this->Variants === NULL) {
+            $this->Variants = $this->getVariants();
+        }
+        return count($this->Variants);
+    }
+
+
+    /**
+     * Get all the variants related to this product.
+     * Sets the local Variants property for later use.
+     *
+     * @return  array   Array of ProductVariant objects
+     */
+    public function getVariants()
+    {
+        if ($this->Variants === NULL) {
+            $this->Variants = ProductVariant::getByProduct($this->id);
+        }
+        return $this->Variants;
+    }
+
+
+    /**
+     * Get all the static features related to this product.
+     * Sets the local Features property for later use.
+     *
+     * @return  array   Array of Feature objects
+     */
+    public function getFeatures()
+    {
+        if ($this->Features === NULL) {
+            $this->Features = Feature::getByProduct($this->id);
+        }
+        return $this->Features;
+    }
+
+
+    /**
+     * Set the Supplier Reference field.
+     *
+     * @param   string  $ref    Supplier reference number
+     * @return  object  $this
+     */
+    public function setSupplierRef($ref)
+    {
+        $this->supplier_ref = $ref;
+        return $this;
+    }
+
+
+    /**
+     * Get the Supplier Reference value.
+     *
+     * @return  string      Supplier reference number
+     */
+    public function getSupplierRef()
+    {
+        return $this->supplier_ref;
+    }
+
+
+    /**
      * Load the product attributs into the options array.
+     *
+     * @return  object  $this
      */
     protected function loadOptions()
     {
+        global $_TABLES;
+
+    /*    $sql = "SELECT DISTINCT pov.pov_id, pov.pov_value, pog.pog_id, pog.pog_name, pv.sku,
+                pov.pov_price
+            FROM {$_TABLES['shop.prod_opt_vals']} pov
+            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
+                ON pog.pog_id =.pov.pog_id
+            LEFT JOIN {$_TABLES['shop.variantXopt']} vxo
+                ON vxo.pov_id = pov.pov_id
+            LEFT JOIN {$_TABLES['shop.product_variants']} pv
+                ON pv.pv_id = vxo.pv_id
+            WHERE pv.item_id = {$this->id}
+            ORDER BY pog.pog_orderby, pov.orderby ASC";
+        $res = DB_query($sql);
+        $ctlbk = 0;
+        $Grps = array();
+        while ($A = DB_fetchArray($res, false)) {
+            if ($A['pog_id'] != $ctlbk) {
+                $Grps[$A['pog_id']] = new ProductOptionGroup($A['pog_id']);
+            }
+            //$Grps[$A['pog_id']]->addOption(new \StdClass
+            echo "{$A['pog_name']} - {$A['pov_value']}\n";
+        }
+        var_dump($Grps);
+        return;*/
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {
@@ -611,6 +751,7 @@ class Product
                 }
             }
         }
+        return $this;
     }
 
 
@@ -628,20 +769,19 @@ class Product
 
         $old_rating_ena = $this->rating_enabled;    // save original setting
 
+        // See if the name changed. If so, then the Variant skus need to be
+        // updated.
+        $old_name = $this->name;
+
         if (is_array($A)) {
             $this->setVars($A);
         }
         $nonce = SHOP_getVar($A, 'nonce');
-
-        $errs = $this->_Validate();
+        $this->Errors = $this->_Validate();
         if (!empty($errs)) {
-            $this->Errors = $errs;
-        }
-
-        if (isset($A['delimg']) && is_array($A['delimg'])) {
-            foreach ($A['delimg'] as $img_id) {
-                $this->deleteImage($img_id);
-            }
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
         }
 
         // Handle file uploads.
@@ -669,6 +809,21 @@ class Product
             $this->file = '';
         }
 
+        // Check for errors during validation and file upload,
+        // and abort before any real DB action is taken.
+        if (!empty($this->Errors)) {
+            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
+            COM_setMsg($msg, 'error');
+            return false;
+        }
+
+        if (isset($A['imgdelete']) && !empty($A['imgdelete'])) {
+            $del_ids = explode(',', $A['imgdelete']);
+            foreach ($del_ids as $img_id) {
+                Images\Product::deleteById($img_id);
+            }
+        }
+
         // For downloads and virtual items. physical options don't apply.
         if (!$this->isPhysical()) {
             $this->weight = 0;
@@ -693,6 +848,13 @@ class Product
             SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
+            // While we're here, change the existing Variant SKUs if the
+            // product SKU has changed.
+            if (empty($this->Errors) && $old_name != $this->name) {
+                foreach ($this->getVariants() as $Variant) {
+                    $Variant->updateSKU($old_name, $this->name);
+                }
+            }
         } else {
             SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
             $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
@@ -701,7 +863,6 @@ class Product
         }
         //$options = DB_escapeString(@serialize($this->options));
         $sql2 = "name='" . DB_escapeString($this->name) . "',
-                cat_id='" . (int)$this->cat_id . "',
                 short_description='" . DB_escapeString($this->short_description) . "',
                 description='" . DB_escapeString($this->description) . "',
                 keywords='" . DB_escapeString($this->keywords) . "',
@@ -722,17 +883,22 @@ class Product
                 show_random='" . (int)$this->show_random . "',
                 show_popular='" . (int)$this->show_popular . "',
                 onhand='{$this->onhand}',
+                reorder = '{$this->reorder}',
                 track_onhand='{$this->track_onhand}',
                 oversell = '{$this->oversell}',
                 qty_discounts = '{$qty_discounts}',
                 custom='" . DB_escapeString($this->custom) . "',
                 avail_beg='" . DB_escapeString($this->avail_beg) . "',
                 avail_end='" . DB_escapeString($this->avail_end) . "',
-                brand ='" . DB_escapeString($this->brand) . "',
+                brand_id ='" . $this->getBrandID() . "',
+                supplier_id ='" . $this->getSupplierID() . "',
+                supplier_ref = '{$this->getSupplierRef()}',
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                def_pv_id = {$this->getDefVariantID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-                //options='$options',
+        //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -742,8 +908,52 @@ class Product
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
+                $this->getImages();     // Load images
+                // Clear categories for new products so the new cats get updated
+                // correcly.
+                $this->Categories = array();
             }
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            if (isset($A['imgorder']) && !empty($A['imgorder'])) {
+                $img_ids = explode(',', $A['imgorder']);
+                $orderby = 10;
+                foreach ($img_ids as $img_id) {
+                    $img_id = (int)$img_id;
+                    if ($this->Images[$img_id]['orderby'] != $orderby) {
+                        $this->Images[$img_id]['orderby'] = $orderby;
+                        DB_query("UPDATE {$_TABLES['shop.images']}
+                            SET orderby = $orderby
+                            WHERE img_id = $img_id");
+                    }
+                    $orderby += 10;
+                }
+            }
+
+            $this->updateCategories($A['selected_cats']);
+            // Save any variants that were created.
+            // First, set item ID into $_POST var for ProductVariant to use.
+            $A['item_id'] = $this->id;
+            if (is_array($A) && isset($A['groups'])) {
+                ProductVariant::saveNew($A);
+            }
+
+            // Add any new features
+            if (array_key_exists('new_ft', $A)) {
+                foreach ($A['new_ft'] as $idx=>$ft_id) {
+                    Feature::getInstance($ft_id)->addProduct(
+                        $this->id,
+                        $A['new_fv_sel'][$idx],
+                        $A['new_fv_custom'][$idx]
+                    );
+                }
+            }
+            // Delete any features checked for deletion
+            if (array_key_exists('del_ft', $A)) {
+                foreach ($A['del_ft'] as $ft_id=>$val) {
+                    Feature::deleteProduct($this->id, $ft_id);
+                }
+            }
+
+            //SHOP_log($sql, SHOP_LOG_DEBUG);
             $status = true;
         } else {
             SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
@@ -770,6 +980,7 @@ class Product
             self::deleteButtons($this->id);
         }
 
+        // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
             COM_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
@@ -809,8 +1020,9 @@ class Product
             $this->deleteImage($prow['img_id']);
         }
         DB_delete($_TABLES['shop.products'], 'id', $this->id);
-        Option::deleteProduct($this->id);
-        //DB_delete($_TABLES['shop.prod_attr'], 'item_id', $this->id);
+        ProductVariant::deleteByProduct($this->id);
+        Category::deleteProduct($this->id);
+        Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
@@ -846,7 +1058,7 @@ class Product
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1 || !array_key_exists($img_id, $this->Images)) {
+        if ($img_id < 1) {
             return;
         }
 
@@ -874,11 +1086,12 @@ class Product
      * @uses    SHOP_getDocUrl()
      * @uses    SHOP_errorMessage()
      * @param   integer $id     Optional ID, current record used if zero
+     * @param   string  $tab    Name of tab to set as active
      * @return  string          HTML for edit form
      */
-    public function showForm($id = 0)
+    public function showForm($id = 0, $tab='')
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP;
 
         $id = (int)$id;
         if ($id > 0) {
@@ -933,6 +1146,11 @@ class Product
 
         }
 
+        $ph_lead_time = Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        if (empty($ph_lead_time)) {
+            $ph_lead_time = $LANG_SHOP['none'];
+        }
+        list($allcats_sel, $selcats_sel) = $this->getCatSelections($this->id);
         $T->set_var(array(
             //'post_options'  => $post_options,
             'product_id'    => $this->id,
@@ -977,12 +1195,22 @@ class Product
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
-            'option_list'   => ProductOptionValue::adminList($this->id),
+            'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand,
             'min_ord_qty'   => $this->min_ord_qty,
             'max_ord_qty'   => $this->max_ord_qty,
+            'available_cats' => $allcats_sel,
+            'selected_cats' => $selcats_sel,
+            'tabactive_' . $tab => 'class="uk-active"',
+            'reorder'       => $this->reorder,
+            'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
+            'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
+            'features_list'  => $this->id > 0 ? Feature::productForm($this->id) : '',
+            'supplier_ref'  => $this->getSupplierRef(),
+            'lead_time'     => $this->getLeadTime(),
+            'ph_lead_time'  => $ph_lead_time,
         ) );
 
         // Create the button type selections. New products get the default
@@ -1028,7 +1256,9 @@ class Product
         // If there are any images, retrieve and display the thumbnails.
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize image counter
+        $imgorder = array();     // string to contain image order
         foreach ($this->Images as $id=>$prow) {
+            $imgorder[] = $prow['img_id'];
             $T->set_var(array(
                 'img_url'   => $this->getImage($prow['filename'])['url'],
                 'thumb_url' => $this->getThumb($prow['filename'])['url'],
@@ -1037,6 +1267,8 @@ class Product
             ) );
             $T->parse('PRow', 'PhotoRow', true);
         }
+        $imgorder = implode(',', $imgorder);
+        $T->set_var('imgorder', $imgorder);
 
         $T->set_block('dtable', 'discTable', 'DT');
         foreach ($this->qty_discounts as $qty=>$amt) {
@@ -1202,9 +1434,34 @@ class Product
             $OI = NULL;
         }
 
+        if ($this->hasVariants()) {              // also sets $this->Variants
+            $def_id = $this->getDefVariantID();
+            if ($def_id > 0) {
+                foreach ($this->Variants as $Variant) {
+                    if ($Variant->getID() == $def_id) {
+                        $this->setVariant($def_id);
+                    }
+                }
+            }
+            // Set the default if a default isn't specified or valid
+            if ($this->Variant == NULL) {
+                $this->Variant = reset($this->Variants);
+            }
+        } else {
+            // Make sure there's always a variant set to avoid calling
+            // functions on null objects
+            $this->Variant = new ProductVariant;
+        }
+
         // Set the template dir based on the configured template version
-        $T = new \Template(__DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver']);
-        $T->set_file('product', 'product_detail_attrib.thtml');
+        $T = new \Template(array(
+            __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
+            __DIR__ . '/../templates/detail',
+        ) );
+        $T->set_file(array(
+            'product'   => 'product_detail_attrib.thtml',
+            'prod_info' => 'details_blk.thtml',
+        ) );
         // Set up the template containing common javascript
         $JT = new \Template(__DIR__ . '/../templates/detail');
         $JT->set_file('js', 'detail_js.thtml');
@@ -1251,34 +1508,19 @@ class Product
             }
         }
 
-        // Retrieve the photos and put into the template
-        $i = 0;
-        foreach ($this->Images as $id=>$prow) {
-            if (self::imageExists($prow['filename'])) {
-                if ($i == 0) {
-                    $T->set_var(array(
-                        'main_img' => $this->getImage($prow['filename'])['url'],
-                        'main_imgfile' => $prow['filename'],
-                    ) );
-                }
-                $T->set_block('product', 'Thumbnail', 'PBlock');
-                $T->set_var(array(
-                    'img_file'      => $prow['filename'],
-                    'img_url'       => $this->getImage($prow['filename'])['url'],
-                    'thumb_url'     => $this->getThumb($prow['filename'])['url'],
-                    'session_id'    => session_id(),
-                ) );
-                $T->parse('PBlock', 'Thumbnail', true);
-                $i++;
-            }
-        }
-
         // Get the product options, if any, and set them into the form
-        $json_opts = array();
+        $pv_opts = array();     // Collect options to find the product variant
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
+        if ($this->Variant) {
+            $VarOptions = $this->Variant->getOptions();
+        }
         foreach ($this->OptionGroups as $OG) {
+            if (count($OG->Options) < 1) {
+                // Could happen if options are removed leaving an empty option group.
+                continue;
+            }
             // Most options use the option group name as the prompt
             $display_name = $OG->getName();
             $T->set_block('product', 'Option' . $OG->getType(), 'optSel');
@@ -1286,7 +1528,11 @@ class Product
             case 'select':
             case 'radio':
                 // First find the selected option
-                $sel_opt = 0;
+                if ($this->Variant) {
+                    $sel_opt = $VarOptions[$OG->getName()]->getID();
+                } else {
+                    $sel_opt = 0;
+                }
                 foreach ($OG->Options as $Opt) {
                     if (in_array($Opt->getID(), $this->sel_opts)) {
                         $sel_opt = $Opt->getID();
@@ -1296,37 +1542,22 @@ class Product
                     $sel_opt = reset($OG->Options)->getID();
                 }
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
                         'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
+                $pv_opts[] = $sel_opt;
                 break;
             case 'checkbox':
                 foreach ($OG->Options as $Opt) {
-                    $opt_price = $Sale->getOptionPrice($Opt->getPrice());
-                    $json_opts[$Opt->getID()] = $opt_price;
-                    if ($opt_price != 0) {
-                        // Show the incremental price in the selection.
-                        $opt_str = sprintf(" ( %+0.2f )", $opt_price);
-                    } else {
-                        $opt_str = '';
-                    }
                     $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()) . $opt_str,
+                        'opt_str'  => htmlspecialchars($Opt->getValue()),
                         'checked'   => $checked,
                     ) );
                     $T->parse('optSel', 'Option' . $OG->og_type, true);
@@ -1347,6 +1578,52 @@ class Product
             $T->clear_var('optSel');
         }
 
+        // Retrieve the photos and put into the templatea.
+        // Get the images for the current Variant, if any. If none then show
+        // all attached imates.
+        $i = 0;
+        $all_images = array();      // for json list of all image information
+        $all_image_ids = array();   // for json list of image IDs
+        $showImages = $this->getImages();
+        if ($this->Variant !== NULL) {
+            $ids = $this->Variant->getImageIDs();
+            if (!empty($ids)) {
+                $showImages = array();
+                foreach ($ids as $id) {
+                    $showImages[$id] = $this->Images[$id];
+                }
+            }
+        }
+        foreach ($this->Images as $id=>$prow) {
+            if (self::imageExists($prow['filename'])) {
+                if (isset($showImages[$id])) {
+                    if ($i == 0) {
+                        $T->set_var(array(
+                            'main_img' => $this->getImage($prow['filename'])['url'],
+                            'main_imgfile' => $prow['filename'],
+                        ) );
+                    }
+                    $T->set_block('product', 'Thumbnail', 'PBlock');
+                    $T->set_var(array(
+                        'img_id'        => $id,
+                        'img_file'      => $prow['filename'],
+                        'img_url'       => $this->getImage($prow['filename'])['url'],
+                        'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+                        'session_id'    => session_id(),
+                    ) );
+                    $T->parse('PBlock', 'Thumbnail', true);
+                    $i++;
+                }
+            }
+            // Add to "all images" json
+            $all_images[$id] = array(
+                'img_file'      => $prow['filename'],
+                'img_url'       => $this->getImage($prow['filename'])['url'],
+                'thumb_url'     => $this->getThumb($prow['filename'])['url'],
+            );
+            $all_image_ids[] = $id;
+        }
+
         if ($this->getShipping()) {
             $shipping_txt = sprintf(
                 $LANG_SHOP['plus_shipping'],
@@ -1355,6 +1632,7 @@ class Product
         } else {
             $shipping_txt = '';
         }
+
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
@@ -1371,12 +1649,38 @@ class Product
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
-            'onhand'            => $this->track_onhand ? $this->onhand : '',
             'qty_disc'          => count($this->qty_discounts),
             'session_id'        => session_id(),
             'shipping_txt'      => $shipping_txt,
-            'stock_msg'         => ($this->onhand <= 0 && $this->track_onhand),
             'rating_bar'        => $this->ratingBar(),
+            'brand_id'          => $this->getBrandID(),
+            'brand_name'        => $this->getBrandName(),
+            'brand_logo_url'    => Supplier::getInstance($this->getBrandID())->getImage()['url'],
+            'brand_dscp'        => Supplier::getInstance($this->getBrandID())->getDscp(),
+            'is_physical'       => $this->isPhysical(),
+            'track_onhand'      => $this->getTrackOnhand(),
+            'onhand'            => $this->getOnhand(),
+            'weight'            => $this->weight + $this->Variant->getWeight(),
+            'weight_unit'       => $_SHOP_CONF['weight_unit'],
+            'sku'               => $this->getName(),
+            //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
+            'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_tim'], $this->LeadTime()) . ')' : '',
+        ) );
+
+        $Features = $this->getFeatures();
+        if (count($Features) > 0) {
+            $T->set_var('has_features', true);
+            $T->set_block('prod_info', 'FeatList', 'FL');
+            foreach ($Features as $FT) {
+                $T->set_var(array(
+                    'ft_name' => $FT->getName(),
+                    'fv_text' => $FT->getValue(),
+                ) );
+                $T->parse('FL', 'FeatList', true);
+            }
+        }
+        $T->set_var(array(
+            'prod_det_blk'  => $T->parse('product', 'prod_info'),
         ) );
 
         $T->set_block('product', 'SpecialFields', 'SF');
@@ -1434,7 +1738,8 @@ class Product
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
             'orig_price_val'    => $this->_orig_price,
-            'opt_prices'        => json_encode($json_opts),
+            'img_json'          => json_encode($all_images),
+            'all_image_ids'     => json_encode($all_image_ids),
         ) );
         $JT->parse('output', 'js');
         $T->set_var('javascript', $JT->finish($JT->get_var('output')));
@@ -1522,9 +1827,6 @@ class Product
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
             $add_cart = false;
-        } elseif ($this->_OutOfStock() > 0) {
-            // If out of stock, display but deny purchases
-            $add_cart = false;
         } elseif (
             $_USER['uid'] == 1 &&
             !$_SHOP_CONF['anon_buy']
@@ -1539,7 +1841,7 @@ class Product
                 // Gateway buy-now buttons only used if no options
                 foreach (Gateway::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {
-                        $buttons[$gw->Name()] = $gw->ProductButton($this);
+                        $buttons[$gw->getName()] = $gw->ProductButton($this);
                     }
                 }
             }
@@ -1551,12 +1853,23 @@ class Product
         if (
             $add_cart &&
             $this->btn_type != 'donation' &&
-            ($this->price > 0 || !$this->canBuyNow())
+            $this->canOrder()
+            //($this->price > 0 || !$this->canBuyNow())
         ) {
             $T = new \Template(SHOP_PI_PATH . '/templates');
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
+            $btn_class = 'uk-button uk-button-small uk-button-success';
+            if ($this->track_onhand) {
+                $this->getVariants();
+                if (count($this->Variants) > 0) {
+                    if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
+                        $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                    }
+                }
+            }
+
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
@@ -1572,6 +1885,7 @@ class Product
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
+                'btn_cls'   => $btn_class,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -1721,6 +2035,17 @@ class Product
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the base price for this item.
+     *
+     * @return  float       Base item price
+     */
+    public function getBasePrice()
+    {
+        return (float)$this->price;
     }
 
 
@@ -1944,7 +2269,7 @@ class Product
         $status = 0;
 
         // update the qty on hand, if tracking and not already zero
-        if ($this->track_onhand && $this->onhand > 0) {
+        if ($this->track_onhand && $this->getOnhand() > 0) {
             $sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->quantity})
                     WHERE id = '{$this->id}'";
@@ -2001,6 +2326,30 @@ class Product
 
 
     /**
+     * Get all the options for this product.
+     *
+     * @todo determine if this still works
+     * @deprecate
+     * @return  array       Array of options
+     */
+    public function getOptions()
+    {
+        return $this->Options;
+    }
+
+
+    /**
+     * Get all the option groups related to this product.
+     *
+     * @return  array       Array of OptionGroup objects
+     */
+    public function getOptionGroups()
+    {
+        return $this->OptionGroups;
+    }
+
+
+    /**
      * Get the prompt for a custom field.
      * Returns "Undefined" if for some reason the field isn't defined.
      *
@@ -2020,6 +2369,16 @@ class Product
         } else {
             return 'Undefined';
         }
+    }
+
+    /**
+     * Get the shipping weight for one unit of this product.
+     *
+     * @return  float   Item weight
+     */
+    public function getWeight()
+    {
+        return $this->weight;
     }
 
 
@@ -2047,7 +2406,8 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . ' - ' . uniqid();
+        $old_name = $this->name;
+        $this->name = $this->name . uniqid();
         $this->Save();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
@@ -2055,23 +2415,12 @@ class Product
         }
         $new_id = $this->id;
 
-        // Copy all the image files
-        foreach ($this->Images as $A) {
-            $parts = explode('_', $A['filename']);
-            $new_fname = "{$new_id}_{$parts[1]}";
-            $src_f = $_SHOP_CONF['image_dir'] . '/' . $A['filename'];
-            $dst_f = $_SHOP_CONF['image_dir'] . '/' . $new_fname;
-            if (@copy($src_f, $dst_f)) {
-                // copy successful, insert record into table
-                $sql = "INSERT INTO {$_TABLES['shop.images']}
-                            (product_id, filename)
-                        VALUES ('$new_id', '" . DB_escapeString($new_fname) . "')";
-                DB_query($sql);
-            } else {
-                SHOP_log("Error copying file $src_f to $dst_f, continuing", SHOP_LOG_ERROR);
-            }
-        }
-        return true;
+        // Now clone the other records
+        $s1 = ProductVariant::cloneProduct($old_id, $new_id);
+        $s2 = Category::cloneProduct($old_id, $new_id);
+        $s3 = Images\Product::cloneProduct($old_id, $new_id);
+        $s4 = Feature::cloneProduct($old_id, $new_id);
+        return $s1 && $s2 && $s3 && $s4;
     }
 
 
@@ -2150,12 +2499,24 @@ class Product
      */
     public function isInStock()
     {
+        $status = false;
+
         // Not tracking stock, or have stock on hand, return true
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
-            return true;
+        if ($this->track_onhand == 1) {
+            $this->getVariants();
+            if (!empty($this->Variants)) {
+                foreach ($this->Variants as $V) {
+                    if ($V->getOnhand() > 0) {
+                        $status = true;
+                    }
+                }
+            } elseif ($this->getOnhand() > 0) {
+                $status = true;
+            }
         } else {
-            return false;
+            $status = true;
         }
+        return $status;
     }
 
 
@@ -2205,7 +2566,7 @@ class Product
     public function getQuantityBO($qty)
     {
         if ($this->track_onhand) {
-            $avail = $this->onhand;
+            $avail = $this->Variant ? $this->Variant->getOnhand() : $this->onhand;
             return max($qty - $avail, 0);
         } else {
             return 0;
@@ -2222,12 +2583,17 @@ class Product
      */
     public function getMaxOrderQty()
     {
-        $max = $this->max_ord_qty == 0 ? 99999 : $this->max_ord_qty;
+        $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
+        if ($this->Variant) {
+            $onhand = $this->Variant->getOnhand();
+        } else {
+            $onhand = $this->onhand;
+        }
 
         if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
             return $max;
         } else {
-            return min($this->onhand, $max);
+            return min($onhand, $max);
         }
     }
 
@@ -2356,7 +2722,7 @@ class Product
 
     /**
      * Determine if the current user has access to view this product.
-     * Checks the related category for access.
+     * If the user has access to at least one parent category, return true.
      *
      * @return  boolean     True if access and purchase is allowed.
      */
@@ -2364,9 +2730,13 @@ class Product
     {
         global $_GROUPS;
 
-        // Make sure the category is set
-        if (!$this->Cat) $this->Cat = Category::getInstance($this->cat_id);
-        return $this->Cat->hasAccess($_GROUPS);
+        $Cats = $this->getCategories();
+        foreach ($this->getCategories() as $Cat) {
+            if ($Cat->hasAccess($_GROUPS)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -2388,9 +2758,32 @@ class Product
      * @param   string  $override  Optional description override
      * @return  string              Product sort description
      */
+    public function getText($override = '')
+    {
+        return $override == '' ? $this->description : $override;
+    }
+
+
+    /**
+     * Get the product short description. Allows for an override.
+     *
+     * @param   string  $override  Optional description override
+     * @return  string              Product sort description
+     */
     public function getDscp($override = '')
     {
         return $override == '' ? $this->short_description : $override;
+    }
+
+
+    /**
+     * Get the reorder quantity set for this product.
+     *
+     * @return  float   Reorder quantity
+     */
+    public function getReorder()
+    {
+        return (float)$this->reorder;
     }
 
 
@@ -2486,14 +2879,22 @@ class Product
      */
     private function _OutOfStock()
     {
-        if ($this->track_onhand == 0 || $this->onhand > 0) {
-            // Return zero, act normally.
-            return 0;
-        } else {
-            // Return the oversell setting for the caller to act accordingly
-            // when out of stock
-            return $this->oversell;
+        if ($this->track_onhand != 0) {
+            if ($this->hasVariants()) {
+                // Return the oversell setting for the caller to act accordingly
+                // when out of stock
+                foreach ($this->getVariants() as $Var) {
+                    if ($Var->getOnhand() >  0) {
+                        return 0;
+                        break;
+                    }
+                }
+                return $this->oversell;
+            } elseif ($this->onhand == 0) {
+                return $this->oversell;
+            }
         }
+        return 0;
     }
 
 
@@ -2539,29 +2940,28 @@ class Product
         global $_TABLES;
 
         // If already loaded, just return the images.
-        if ($this->Images !== NULL) {
-            return $this->Images;
+        if ($this->Images === NULL) {
+            $cache_key = self::_makeCacheKey($this->id, 'img');
+            $this->Images = Cache::get($cache_key);
+            if ($this->Images === NULL) {
+                $this->Images = array();
+                $sql = "SELECT img_id, filename, orderby
+                    FROM {$_TABLES['shop.images']}
+                    WHERE product_id='". $this->id . "'
+                    ORDER BY orderby ASC";
+                $res = DB_query($sql);
+                while ($prow = DB_fetchArray($res, false)) {
+                    if (self::imageExists($prow['filename'])) {
+                        $this->Images[$prow['img_id']] = $prow;
+                    } else {
+                        // Might as well remove DB records for images that don't exist.
+                        $this->deleteImage($prow['img_id']);
+                    }
+                }
+                Cache::set($cache_key, $this->Images, 'products');
+            }
         }
 
-        $cache_key = self::_makeCacheKey($this->id, 'img');
-        $this->Images = Cache::get($cache_key);
-        if ($this->Images === NULL) {
-            $this->Images = array();
-            $sql = "SELECT img_id, filename
-                FROM {$_TABLES['shop.images']}
-                WHERE product_id='". $this->id . "'
-                ORDER BY orderby ASC";
-            $res = DB_query($sql);
-            while ($prow = DB_fetchArray($res, false)) {
-                if (self::imageExists($prow['filename'])) {
-                    $this->Images[$prow['img_id']] = $prow;
-                } else {
-                    // Might as well remove DB records for images that don't exist.
-                    $this->deleteImage($prow['img_id']);
-                }
-            }
-            Cache::set($cache_key, $this->Images, 'products');
-        }
         return $this->Images;
     }
 
@@ -2573,12 +2973,15 @@ class Product
      */
     public function getOneImage()
     {
-        if (is_array($this->Images)) {
-            $img = reset($this->Images);
-            return $img['filename'];
+        $retval = '';
+        $Images = $this->getVariantImages();
+        if (!is_array($Images)) {
+            $retval = '';
         } else {
-            return '';
+            $img = reset($Images);
+            $retval = $img['filename'];
         }
+        return $retval;
     }
 
 
@@ -2774,6 +3177,109 @@ class Product
 
 
     /**
+     * Render the form for updating product attributes in bulk.
+     *
+     * @param   array   $ids    Array of product IDs
+     * @return  string      HTML form for update.
+     */
+    public static function BulkUpdateForm($ids=array())
+    {
+        global $LANG_SHOP, $_SHOP_CONF;
+
+        if (empty($ids)) {
+            COM_setMsg("No products selected");
+            COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+        }
+        $ids = implode(',', $ids);
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'prod_bulk_form.thtml');
+        $T->set_var(array(
+            'prod_ids'  => $ids,
+            'currency'  => Currency::getInstance(),
+            'brand_select' => Supplier::getBrandSelection(),
+            'supplier_select' => Supplier::getSupplierSelection(),
+            'available_cats' => self::getCatSelections(0)[0],
+        ) );
+        $T->set_block('form', 'ProdTypeRadio', 'ProdType');
+        foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
+            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+                continue;
+            }
+            $T->set_var(array(
+                'type_val'  => $value,
+                'type_txt'  => $text,
+            ));
+            $T->parse('ProdType', 'ProdTypeRadio', true);
+        }
+        return $T->parse('output', 'form');
+    }
+
+
+    /**
+     * Perform the bulk update of multiple products at once.
+     *
+     * @param   array   $A      Values from $_POST
+     * @return  boolean     True on success, False on failure
+     */
+    public static function BulkUpdateDo($A)
+    {
+        global $_TABLES;
+
+        $sql_vals  = array();
+        $ids = DB_escapeString($A['prod_ids']);
+
+        if (isset($A['supplier_id']) && $A['supplier_id'] > -1) {
+            $sql_vals[] = "supplier_id = " . (int)$A['supplier_id'];
+        }
+        if (isset($A['brand_id']) && $A['brand_id'] > -1) {
+            $sql_vals[] = "brand_id = " . (int)$A['brand_id'];
+        }
+        if (isset($A['price']) && $A['price'] !== '') {
+            $sql_vals[] = "price = " . (float)$A['price'];
+        }
+        if (isset($A['taxable']) && $A['taxable'] > -1) {
+            $sql_vals[] = 'taxable = ' . ($A['taxable'] == 1 ? 1 : 0);
+        }
+        if (isset($A['prod_type']) && $A['prod_type'] > -1) {
+            $sql_vals[] = "prod_type = " . (int)$A['prod_type'];
+        }
+        if (!empty($sql_vals)) {
+            $sql_vals = implode(', ', $sql_vals);
+            DB_query("UPDATE {$_TABLES['shop.products']} SET " . $sql_vals .
+                " WHERE id IN ($ids)");
+            if (DB_error()) {
+                return false;
+            }
+        }
+
+        // If any categories were supplied, use them to replace any existing
+        // ones for all submitted products.
+        if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
+            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE product_id in ($ids)";
+            $res = DB_query($sql, 1);
+            if (!DB_error()) {
+                $prod_ids = explode(',', $A['prod_ids']);
+                $cat_ids = explode('|', $A['selected_cats']);
+                $vals = array();
+                foreach ($prod_ids as $prod_id) {
+                    $prod_id = (int)$prod_id;
+                    foreach ($cat_ids as $cat_id) {
+                        $cat = (int)$cat_id;
+                        $vals[] = "($prod_id, $cat_id)";
+                    }
+                }
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                    (product_id, cat_id) VALUES " . implode(',', $vals);
+                DB_query($sql, 1);
+            }
+        }
+
+        Cache::clear('products');
+        return true;
+    }
+
+
+    /**
      * Product Admin List View.
      *
      * @param   integer $cat_id     Optional category ID to limit listing
@@ -2787,11 +3293,12 @@ class Product
         $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
-                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell,
-                c.cat_id, c.cat_name
-            FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON p.cat_id = c.cat_id";
+                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell
+            FROM {$_TABLES['shop.products']} p";
+        if ($cat_id > 0) {
+            $sql .= " LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id";
+        }
 
         $header_arr = array(
             array(
@@ -2834,11 +3341,6 @@ class Product
                 'sort' => true,
             ),
             array(
-                'text'  => $LANG_SHOP['category'],
-                'field' => 'cat_name',
-                'sort' => true,
-            ),
-            array(
                 'text'  => $LANG_SHOP['price'],
                 'field' => 'price',
                 'sort'  => true,
@@ -2849,12 +3351,12 @@ class Product
                 'field' => 'prod_type',
                 'sort' => true,
             ),
-            array(
+            /*array(
                 'text'  => $LANG_SHOP['status'],
                 'field' => 'availability',
                 'sort'  => false,
                 'align' => 'center',
-            ),
+            ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
                 Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
@@ -2880,11 +3382,21 @@ class Product
             )
         );
 
+        // Filter on category, brand and supplier
+        $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
+        $brand_id = SHOP_getVar($_GET, 'brand_id', 'integer', 0);
+        $supplier_id = SHOP_getVar($_GET, 'supplier_id', 'integer', 0);
+        $def_filter = 'WHERE 1=1';
         if ($cat_id > 0) {
-            $def_filter = "WHERE c.cat_id='$cat_id'";
-        } else {
-            $def_filter = 'WHERE 1=1';
+            $def_filter .= " AND pxc.cat_id= $cat_id";
         }
+        if ($brand_id > 0) {
+            $def_filter .= " AND p.brand_id = $brand_id";
+        }
+        if ($supplier_id > 0) {
+            $def_filter .= " AND p.supplier_id = $supplier_id";
+        }
+
         $query_arr = array(
             'table' => 'shop.products',
             'sql'   => $sql,
@@ -2892,32 +3404,86 @@ class Product
                 'p.name',
                 'p.short_description',
                 'p.description',
-                'c.cat_name',
             ),
             'default_filter' => $def_filter,
         );
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php',
+            'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
-        $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+
+        // Update certain product properties in bulk
+        $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
+            'class="uk-button uk-button-mini tooltip" ' .
+            'title="' . $LANG_SHOP['bulk_update'] . '">' .
+            $LANG_SHOP['update'] .
+            '</button>&nbsp;' .
+            '<button type="submit" name="prod_bulk_del" value="x" ' .
+            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
+            'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
+            'title="' . $LANG_SHOP['bulk_delete'] . '">' .
+            $LANG_SHOP['delete'] .
+            '</button>';
+
+        $options = array(
+            'chkdelete' => true,
+            'chkall' => true,
+            'chkfield' => 'id',
+            'chkname' => 'prod_bulk',
+            'chkactions' => $bulk_update,
+        );
         $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
             onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/index.php?view=prodcts&amp;cat_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;supplier_id=' . $supplier_id .
+            '&amp;cat_id=\'+' . 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
-                $_TABLES['shop.categories'], 'cat_id, cat_name', $cat_id, 1
+                $_TABLES['shop.categories'],
+                'cat_id,cat_name',
+                $cat_id,
+                1
             ) .
             "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ': <select name="brand_id"
+            onchange="javascript: document.location.href=\'' .
+                SHOP_ADMIN_URL . '/index.php?products' .
+                '&amp;cat_id=' . $cat_id .
+                '&amp;supplier_id=' . $supplier_id .
+                '&amp;brand_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $brand_id,
+                1,
+                "is_brand=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': <select name="supplier_id"
+            onchange="javascript: document.location.href=\'' .
+            SHOP_ADMIN_URL . '/index.php?products' .
+            '&amp;brand_id=' . $brand_id .
+            '&amp;cat_id=' . $cat_id .
+            '&amp;supplier_id=\'+' . 'this.options[this.selectedIndex].value">' .
+            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+            COM_optionList(
+                $_TABLES['shop.suppliers'],
+                'sup_id,company',
+                $supplier_id,
+                1,
+                "is_supplier=1"
+            ) .
+            "</select>" . LB;
+        $filter .= '<br />' . LB;
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_productlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', '', ''
+            $filter, '', $options, ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -2947,7 +3513,7 @@ class Product
         case 'copy':
             $retval .= COM_createLink(
                 Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?dup_product=x&amp;id={$A['id']}"
+                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
             );
             break;
 
@@ -3079,7 +3645,6 @@ class Product
     public function verifyID($id)
     {
         global $_SHOP_CONF;
-
         $parts = explode('|', $id);
         if ($_SHOP_CONF['use_sku']) {
             return $this->name == $parts[0];
@@ -3097,7 +3662,6 @@ class Product
     private function _Validate()
     {
         global $_TABLES, $LANG_SHOP;
-
         $errors = array();
         $sku = DB_escapeString($this->name);
         $sku_err = (int)DB_getItem(
@@ -3145,6 +3709,23 @@ class Product
 
 
     /**
+     * Set the variant for this product.
+     *
+     * @param   integer|object  $variant    Variant ID or object
+     * @return  object  $this
+     */
+    public function setVariant($variant)
+    {
+        if (is_integer($variant)) {
+            $this->Variant = ProductVariant::getInstance($variant);
+        } elseif (is_object($variant)) {
+            $this->Variant = $variant;
+        }
+        return $this;
+    }
+
+
+    /**
      * Set the query string to be highlighted in the Detail view.
      *
      * @param   string  $query  Query string
@@ -3174,6 +3755,326 @@ class Product
     public function getShippingUnits()
     {
         return $this->shipping_units;
+    }
+
+
+    /**
+     * Get the DB record ID for the product.
+     *
+     * @return  integer     DB record ID.
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+
+    /**
+     * Update the category cross-reference table.
+     * TODO: update in-memory categories property.
+     *
+     * @param   array|string    $cats   String from form or array of cat IDs
+     * @return  object  $this
+     */
+    private function updateCategories($cats)
+    {
+        global $_TABLES;
+
+        if (empty($cats)) {
+            // If no categories specified, use root category automatically
+            $cats = array(Category::getRoot()->getID());
+        } elseif (is_string($cats)) {
+            $cats = explode('|', $cats);
+        }
+        $add = array();
+        $rem = array();
+        foreach ($cats as $cat_id) {
+            if (!array_key_exists($cat_id, $this->getCategories())) {
+                $add[] = "({$this->id}, $cat_id)";
+            }
+        }
+        foreach ($this->getCategories() as $cat_id=>$cat) {
+            if (!in_array($cat_id, $cats)) {
+                $rem[] = $cat_id;
+            }
+        }
+        if (!empty($add)) {
+            $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} VALUES " .
+                implode(',', $add);
+            DB_query($sql);
+        }
+        if (!empty($rem)) {
+            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
+                product_id = '{$this->id}' AND
+                cat_id in (" . implode(',', $rem) . ')';
+            DB_query($sql);
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the array of related category objects.
+     *
+     * 2return  array       Array of category objects
+     */
+    public function getCategories()
+    {
+        if ($this->Categories === NULL) {
+            $this->Categories = Category::getByProductId($this->id);
+        }
+        return $this->Categories;
+    }
+
+
+    /**
+     * Load the related categories from the database into the object variable.
+     *
+     * @return  object  $this
+     */
+    private function loadCategories()
+    {
+        $this->Categories = Category::getByProductId($this->id);
+        return $this;
+    }
+
+
+    /**
+     * Get the first category for the product.
+     * Used where only one category's information can be used.
+     * Currently indeterminate.
+     *
+     * @return  object      First category object
+     */
+    public function getFirstCategory()
+    {
+        return reset($this->getCategories());
+    }
+
+
+    /**
+     * Create the breadcrumb links at the top of the detail page.
+     * TODO: know which category list page we came from and use that category.
+     *
+     * @return  string      HTML for breadcrumbs
+     */
+    public function Breadcrumbs()
+    {
+        return $this->getFirstCategory()->Breadcrumbs();
+    }
+
+
+    /**
+     * Get the track_onhand property value.
+     *
+     * @return  boolean     TrackOnhand setting
+     */
+    public function getTrackOnhand()
+    {
+        return $this->track_onhand;
+    }
+
+
+    /**
+     * Get the value of the oversell property.
+     *
+     * @return  integer     Oversell setting
+     */
+    public function getOversell()
+    {
+        return $this->oversell;
+    }
+
+
+    /**
+     * Get the quantity on hand.
+     * If there are variants, get the variant onhand value, otherwise use the
+     * product's value.
+     *
+     * @return  float   Quantity on hand
+     */
+    public function getOnhand()
+    {
+        if ($this->Variant !== NULL) {
+            return $this->Variant->getOnhand();
+        } else {
+            return $this->onhand;
+        }
+    }
+
+
+    /**
+     * Set the supplier ID for this product.
+     *
+     * @param   integer $id     Supplier record ID
+     * @return  object  $this
+     */
+    private function setBrandID($id)
+    {
+        $this->brand_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the supplier ID for this product.
+     *
+     * @return  integer     Supplier record ID
+     */
+    private function getBrandID()
+    {
+        return (int)$this->brand_id;
+    }
+
+
+    /**
+     * Set the supplier ID for this product.
+     *
+     * @param   integer $id     Supplier record ID
+     * @return  object  $this
+     */
+    private function setSupplierID($id)
+    {
+        $this->supplier_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the supplier ID for this product.
+     *
+     * @return  integer     Supplier record ID
+     */
+    private function getSupplierID()
+    {
+        return (int)$this->supplier_id;
+    }
+
+
+    /**
+     * Get the brand name for the product,
+     *
+     * @return  string  Brand name
+     */
+    public function getBrandName()
+    {
+        return Supplier::getInstance($this->getBrandID())->getDisplayName();
+    }
+
+
+    /**
+     * Set the lead time string to override the supplier's lead time.
+     *
+     * @param   string  $str    Lead time description
+     * @return  object  $this
+     */
+    public function setLeadTime($str)
+    {
+        $this->lead_time = $str;
+        return $this;
+    }
+
+
+    /**
+     * Get the lead time text for this supplier.
+     *
+     * @return  string  Lead time description
+     */
+    public function getLeadTime()
+    {
+        return $this->lead_time;
+    }
+
+
+    /**
+     * Get the lead time string for the product, or from the supplier if not set.
+     *
+     * @return  string  Lead time description.
+     */
+    public function LeadTime()
+    {
+        if (empty($this->lead_time)) {
+            return Supplier::getInstance($this->getSupplierID())->getLeadTime();
+        } else {
+            return $this->lead_time;
+        }
+    }
+
+
+    /**
+     * Set the ID of the default variant for this product.
+     *
+     * @param   integer $id     ProductVariant record ID
+     * @return  object  $this
+     */
+    private function setDefVariantID($id)
+    {
+        $this->def_pv_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the default ProductVariant ID for this product.
+     *
+     * @return  integer     ProductVariant record ID
+     */
+    public function getDefVariantID()
+    {
+        return (int)$this->def_pv_id;
+    }
+
+
+    /**
+     * Get the category selection lists.
+     * Returns 2 arrays, available category options and selected ones.
+     * If `$prod_id` is empty then no selected categories are returned. This
+     * is used in the bulk update form.
+     *
+     * @param   integer $prod_id    Product ID, zero if no selected cats needed.
+     * @return  array   Array of (available options, selected options)
+     */
+    private static function getCatSelections($prod_id)
+    {
+        $allcats = Category::getAll();
+        if ($prod_id > 0) {
+            $selcats = Category::getByProductID($prod_id);
+        } else {
+            $selcats = array();
+        }
+        $allcats_sel = '';
+        $selcats_sel = '';
+        foreach ($allcats as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $selcats)) {
+                $allcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+            }
+        }
+        foreach ($selcats as $cat_id=>$Cat) {
+            $selcats_sel .= '<option value="' . $cat_id . '">' . $Cat->getName() . '</option>' . LB;
+        }
+        return array($allcats_sel, $selcats_sel);
+    }
+
+
+    /**
+     * Get all the Variant images for display.
+     * If there is no variant then just return all product images.
+     *
+     * @return  array   Array of image info
+     */
+    public function getVariantImages()
+    {
+        $retval = $this->getImages();
+        if ($this->Variant) {
+            $ids = $this->Variant->getImageIDs();
+            if (!empty($ids)) {
+                $retval = array();
+                foreach ($ids as $id) {
+                    $retval[$id] = $this->Images[$id];
+                }
+            }
+        }
+        return $retval;
     }
 
 }

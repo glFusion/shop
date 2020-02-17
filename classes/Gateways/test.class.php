@@ -226,6 +226,20 @@ class test extends \Shop\Gateway
         return true;
     }
 
+
+    /**
+     * Check that the current user is allowed to use this gateway.
+     * This limits access to special gateways like 'check' or 'terms'.
+     * The Test gateway can be used by the authorized group regardless of
+     * order value.
+     *
+     * @return  boolean     True if access is allowed, False if not
+     */
+    public function hasAccess($total=0)
+    {
+        return SEC_inGroup($this->grp_access);
+    }
+
 }
 
 ?>

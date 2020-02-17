@@ -3,9 +3,9 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -173,7 +173,91 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.1.0')) {
         $current_ver = '1.1.0';
+
+        if (_SHOPtableHasColumn('shop.products', 'cat_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+                (product_id, cat_id)
+                SELECT id, cat_id FROM {$_TABLES['shop.products']}";
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.products']}
+                DROP cat_id";
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+
+        if (_SHOPtableHasColumn('shop.products', 'brand')) {
+            // Update brand_id and supplier_id fields, and drop brand field
+            // Must be done after other SQL updates to the products table.
+            $brands = array();
+            $sql = "SELECT id, brand FROM {$_TABLES['shop.products']} WHERE brand <> ''";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                if (!isset($brands[$A['brand']])) {
+                    $brands[$A['brand']] = array(
+                        'sup_id' => 0,
+                        'items' => array(),
+                    );
+                }
+                $brands[$A['brand']]['items'][] = (int)$A['id'];
+            }
+            foreach ($brands as $brand=>$items) {
+                $Sup = new Shop\Supplier;
+                if ($Sup->setCompany($brand)
+                    ->setIsBrand(1)
+                    ->setIsSupplier(0)
+                    ->Save()) {
+                    $brands[$brand]['sup_id'] = $Sup->getID();
+                }
+            }
+            // update schema
+            foreach ($brands as $brand=>$data) {
+                if ($data['sup_id'] == 0) {
+                    // Saving the supplier failed
+                    continue;
+                }
+                $sup_id = (int)$data['sup_id'];
+                $prod_ids = implode(',', $data['items']);
+                $sql = "UPDATE {$_TABLES['shop.products']}
+                    SET brand_id = $sup_id
+                    WHERE id in ($prod_ids)";
+                DB_query($sql);
+            }
+            DB_query("ALTER TABLE {$_TABLES['shop.products']} DROP `brand`");
+        }
+
+        if (_SHOPtableHasIndex('shop.prod_opt_vals', 'pog_value') != 2) {
+            // Upgrades to use the new product variants.
+            Shop\MigratePP::createVariants();
+        }
+        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
+    if (!COM_checkVersion($current_ver, '1.1.2')) {
+        $current_ver = '1.1.2';
+        if (!_SHOPtableHasColumn('shop.address', 'phone')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.address']}
+                ADD `phone` varchar(20) DEFAULT NULL after `zip`";
+        }
+        if (!_SHOPtableHasColumn('shop.orderitems', 'dc_price')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orderitems']}
+                ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount";
+        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
+    if (!COM_checkVersion($current_ver, '1.2.0')) {
+        $current_ver = '1.2.0';
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        // Load the variant descriptions into the new field.
+        // Must be done after executing the upgrade SQL.
+        $sql = "SELECT * FROM {$_TABLES['shop.product_variants']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            Shop\ProductVariant::getInstance($A)
+                ->loadOptions()
+                ->makeDscp()
+                ->Save();
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -217,7 +301,7 @@ function SHOP_do_upgrade($dvlp = false)
 function SHOP_do_upgrade_sql($version, $ignore_error = false)
 {
     global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
-
+echo "executing upgrade sql for $version" . "<br />\n";
     // If no sql statements passed in, return success
     if (!is_array($SHOP_UPGRADE[$version])) {
         return true;
@@ -325,6 +409,8 @@ function SHOP_remove_old_files()
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
+            // 1.2.0
+            'js/country_state.js',
         ),
         // admin/plugins/shop
         $_CONF['path_html'] . 'admin/plugins/shop' => array(
@@ -378,6 +464,24 @@ function _SHOPcolumnType($table, $col_name)
         $retval = $A['DATA_TYPE'];
     }
     return $retval;
+}
+
+
+/**
+ * Check if a table has a specific index defined.
+ *
+ * @param   string  $table      Key into `$_TABLES` array
+ * @param   string  $idx_name   Index name
+ * @return  integer     Number of rows (fields) in the index
+ */
+function _SHOPtableHasIndex($table, $idx_name)
+{
+    global $_TABLES;
+
+    $sql = "SHOW INDEX FROM {$_TABLES[$table]}
+        WHERE key_name = '" . DB_escapeString($idx_name) . "'";
+    $res = DB_query($sql);
+    return DB_numRows($res);
 }
 
 ?>

@@ -65,12 +65,19 @@ class taxjar extends \Shop\Tax
     public function getRate()
     {
         $data = $this->_getData()['rate'];
+        $rate = 0;
         foreach (array('combined_rate', 'standard_rate') as $key) {
             if (array_key_exists($key, $data)) {
-                return (float)$data[$key];
+                $rate = (float)$data[$key];
             }
         }
-        return 0;
+        foreach ($this->Order->getItems() as &$Item) {
+            if ($Item->isTaxable()) {
+                $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                $Item->setTotalTax($tax)->setTaxRate($rate);
+            }
+        }
+        return $rate;
     }
 
 
@@ -250,7 +257,7 @@ class taxjar extends \Shop\Tax
      *
      * @return  array   Decoded array of data from the JSON reply
      */
-    private function _getData()
+    protected function _getData()
     {
         global $_SHOP_CONF, $LANG_SHOP;
 

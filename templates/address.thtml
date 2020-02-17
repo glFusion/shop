@@ -21,11 +21,12 @@ function updateForm(id)
         document.getElementById("city").value = document.getElementById("ad_city["+id+"]").value;
         document.getElementById("zip").value = document.getElementById("ad_zip["+id+"]").value;
         document.getElementById("phone").value = document.getElementById("ad_phone["+id+"]").value;
+        document.getElementById("countrySelect").value=document.getElementById("ad_country["+id+"]").value;;
+        document.getElementById("stateSelect").value=document.getElementById("ad_state["+id+"]").value;;
         document.getElementById("countryDefault").value = document.getElementById("ad_country["+id+"]").value;
         document.getElementById("stateDefault").value = document.getElementById("ad_state["+id+"]").value;
         document.getElementById("addr_id").value = id;
     }
-    initCountry();
 }
 
 function removeAddress(addr_id)
@@ -61,16 +62,11 @@ function removeAddress(addr_id)
 </script>
 
 <h2>{addr_type}</h2>
-<form action="{pi_url}/cart.php" method="post" class="uk-form uk-form-horizontal">
+<form id="cust_addr_frm" action="{pi_url}/cart.php" method="post" class="uk-form uk-form-horizontal">
   <input type="hidden" name="order_id" value="{order_id}" />
-  {# This is recruited for the country and State Field #}
-  <input type="hidden" value="countrySelect" name="cs_config_country_field" id="cs_config_country_field">
-  <input type="hidden" value="stateSelect" name="cs_config_state_field" id="cs_config_state_field">
-  <input type="hidden" value="countryDefault" name="cs_config_country_default" id="cs_config_country_default">
-  <input type="hidden" value="stateDefault" name="cs_config_state_default" id="cs_config_state_default">
+  <input type="hidden" name="ad_type" value="{ad_type}" />
   <input type="hidden" value="{country}" name="countryDefault" id="countryDefault">
   <input type="hidden" value="{state}" name="stateDefault" id="stateDefault">
-  <script type="text/javascript" src="{pi_url}/js/country_state.js"></script>
 
 {!if have_addresses}
   <div class="shopContent">
@@ -162,7 +158,9 @@ function removeAddress(addr_id)
         required
 {!endif}
         id="countrySelect" name="country"
-            onchange='updateState(this.id)' class="shopStateSelect">
+            onchange='chgCountrySel(this.value)' class="shopStateSelect">
+{#            onchange='updateState(this.id)' class="shopStateSelect">#}
+        {country_options}
       </select>
 {!if req_country}
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
@@ -171,6 +169,22 @@ function removeAddress(addr_id)
   </div>
 {!else}
   <input type="hidden" id="country" name="country" value="" />
+{!endif}
+
+{!if get_state}
+  <div class="uk-form-row" id="stateSelectDiv" style="display:{state_sel_vis};">
+    <label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
+    <div class="uk-form-controls">
+      <select id="stateSelect" name="state" class="shopStateSelect">
+        {state_options}
+      </select>
+{!if req_state}
+      <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+{!endif}
+    </div>
+  </div>
+{!else}
+  <input type="hidden" id="state" name="state" value="" />
 {!endif}
 
 {!if get_city}
@@ -189,22 +203,6 @@ function removeAddress(addr_id)
   </div>
 {!else}
   <input type="hidden" id="city" name="city" value="" />
-{!endif}
-
-{!if get_state}
-  <div class="uk-form-row">
-    <label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
-    <div class="uk-form-controls">
-      <select
-        id="stateSelect" name="state" class="shopStateSelect">
-      </select>
-{!if req_state}
-      <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
-    </div>
-  </div>
-{!else}
-  <input type="hidden" id="state" name="state" value="" />
 {!endif}
 
 {!if get_postal}
@@ -257,16 +255,48 @@ function removeAddress(addr_id)
   <div class="uk-form-row" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls" style="text-align:center;">
-      <button class="uk-button uk-button-success" type="submit" name="{action}">{$LANG_ADMIN['submit']}</button>
+      <button class="uk-button uk-button-success" type="submit" name="{action}"
+        onclick="javascript:validateAddress(this.form);return false;"
+        >{$LANG_ADMIN['submit']}</button>
       <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
       <button class="uk-button" type="submit" name="nextstep">{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
 </form>
 <script type="text/javascript">
-    {!if addr_id}
-        updateForm({addr_id});
-    {!endif}
-    initCountry();
+{!if addr_id}
+updateForm({addr_id});
+{!endif}
+
+function validateAddress(form)
+{
+    if (typeof(form) == 'undefined') {
+        return;
+    }
+    data = $("#" + form.id).serialize();
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status != true) {
+                    modal = UIkit.modal.blockUI(result.form);
+                } else {
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "{action}";
+                    input.value = "x";;
+                    form.appendChild(input);
+                    form.submit();
+                }
+            }
+            catch(err) {
+            }
+        }
+    });
+    return;
+}
 </script>
  {# begin {templatelocation} #}

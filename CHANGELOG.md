@@ -1,10 +1,39 @@
 # Shop plugin for glFusion - Changelog
 
-## v1.1.0
+## v1.2.0
 Release TBD
+
+  * Add product image sorting.
+  * Add static features/attributes.
+  * Add Supplier Reference field to products and variants for ordering.
+  * Product cloning includes Features, Categories, Variants and Images.
+  * Allow a default variant to be set which will be shown first.
+  * A subset of product images can be assigned to each variant.
+  * New reorder report listing items at or below their reorder qty.
+
+## v1.1.2
+Release 2020-02-15
+  * Add missing phone field to address table for new installations.
+  * Add missing discount code price to order item table for new installations.
+
+## v1.1.1
+Release 2020-01-27
+  * Fix PDF creation.
+
+## v1.1.0
+Release 2020-01-22
 
   * Add sales tax calculation based on shipping address.
   * Add phone number field to addresses.
+  * Add discount codes.
+  * Allow products to be related to multiple categories.
+  * Create product variants for specific option combinations.
+  * Implement table to store saved supplier and brand information.
+  * Implement bulk updates for some product fields.
+  * Implement address validation for user-entered addresses.
+  * Add Brand and Supplier information for products.
+  * Add tables for regions, countries, states and allow sales restrictions.
+  * Add specific gateway to handle free orders.
 
 ## v1.0.1
 Release 2019-12-24

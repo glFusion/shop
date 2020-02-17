@@ -245,7 +245,8 @@ class Order
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items),
+            //'lang_tax_on_items'  => sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items),
+            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -311,7 +312,7 @@ class Order
                 $T->set_var(array(
                     'gateway_vars'  => $this->checkoutButton($gw),
                     'checkout'      => 'true',
-                    'pmt_method'    => $gw->Description(),
+                    'pmt_method'    => $gw->getDscp(),
                 ) );
             }
         default:
@@ -322,7 +323,7 @@ class Order
         if ($this->pmt_method != '') {
             $gw = Gateway::getInstance($this->pmt_method);
             if ($gw !== NULL) {
-                $pmt_method = $gw->Description();
+                $pmt_method = $gw->getDscp();
             } else {
                 $pmt_method = $this->pmt_method;
             }

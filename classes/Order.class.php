@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -65,9 +65,9 @@ class Order
      * @var array */
     protected $items = array();
 
-    /** Order item total.
-     * @var float */
-    protected $subtotal = 0;
+    /** Order item total, excluding discount codes.
+      @var float */
+    protected $gross_items = 0;
 
     /** Order final total, incl. shipping, handling, etc.
      * @var float */
@@ -98,6 +98,30 @@ class Order
     /** Shipping address object.
      * @var object */
     protected $Shipto;
+
+    /** Discount code applied.
+     * @var string */
+    protected $discount_code;
+
+    /** Discount percentage applied.
+     * @var float */
+    protected $discount_pct;
+
+    /** Item total, i.e. net order amount excluding taxes and fees.
+     * @var float */
+    protected $net_items;
+
+    /** Total nontaxable items.
+     * @var float */
+    protected $net_nontax;
+
+    /** Total taxable items.
+     * @var float */
+    protected $net_taxable;
+
+    /** Experimental flag to mark whether an order needs to be saved.
+     * @var boolean */
+    protected $tainted = false;
 
 
     /**
@@ -223,7 +247,6 @@ class Order
     }
 
 
-
     /**
      * Load the order information from the database.
      *
@@ -234,6 +257,7 @@ class Order
     {
         global $_TABLES;
 
+        $this->tainted = false;
         if ($id != '') {
             $this->order_id = $id;
         }
@@ -296,8 +320,9 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
-        $OI->setQuantity($args['quantity']);
-        $OI->Save();
+        $OI->setQuantity($args['quantity'])
+            ->applyDiscountPct($this->getDiscountPct())
+            ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
         //$this->Save();
@@ -393,8 +418,11 @@ class Order
                 $this->shipto_country   = SHOP_getVar($A, 'country');
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
                 $this->Shipto = new Address($A);
-                $new_tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
-                $this->setTaxRate($new_tax_rate);
+                $this->setTaxRate(
+                    Tax::getProvider()
+                    ->withOrder($this)
+                    ->getRate()
+                );
             }
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET
@@ -452,6 +480,8 @@ class Order
         $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
         $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
         $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer');
+        $this->setDiscountPct(SHOP_getVar($A, 'discount_pct', 'float'));
+        $this->setDiscountCode(SHOP_getVar($A, 'discount_code'));
         //if ($this->status != 'cart') {
             $this->tax_rate = SHOP_getVar($A, 'tax_rate');
         //}
@@ -477,6 +507,9 @@ class Order
             Cart::clearSession('order_id');
         }
         $this->shipper_id = $A['shipper_id'];
+        $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
+        $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
+        $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         return $this;
     }
 
@@ -537,9 +570,11 @@ class Order
         if (!SHOP_isMinVersion()) return '';
 
         // Save all the order items
+        /*$this->net_nontax = $this->net_taxable = $this->gross_items = 0;*/
         foreach ($this->items as $item) {
             $item->Save();
         }
+        $order_total = $this->getOrderTotal();
 
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -558,7 +593,6 @@ class Order
             $sql1 = "UPDATE {$_TABLES['shop.orders']} SET ";
             $sql2 = " WHERE order_id = '{$this->order_id}'";
         }
-        $this->calcTotalCharges();
 
         $fields = array(
                 "order_date = '{$this->order_date->toUnix()}'",
@@ -570,13 +604,19 @@ class Order
                 "tax = '{$this->tax}'",
                 "shipping = '{$this->shipping}'",
                 "handling = '{$this->handling}'",
+                "gross_items = '{$this->gross_items}'",
+                "net_nontax = '{$this->net_nontax}'",
+                "net_taxable = '{$this->net_taxable}'",
                 "instructions = '" . DB_escapeString($this->instructions) . "'",
                 "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
                 "info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
                 "tax_rate = '{$this->tax_rate}'",
                 "currency = '{$this->currency}'",
                 "shipper_id = '{$this->shipper_id}'",
-        );
+                "discount_code = '" . DB_escapeString($this->discount_code) . "'",
+                "discount_pct = '{$this->discount_pct}'",
+                "order_total = {$order_total}",
+            );
         foreach (array('billto', 'shipto') as $type) {
             $fld = $type . '_id';
             $fields[] = "$fld = " . (int)$this->$fld;
@@ -625,9 +665,13 @@ class Order
         case 'adminview';
             $this->isFinalView = true;
         case 'checkout':
-            /*$this->tax_rate = Tax::getProvider()
-                ->withAddress($this->Shipto)
-                ->getRate();*/
+            $this->setTaxRate(
+                Tax::getProvider()
+                    ->withOrder($this)
+                    ->getRate()
+                )
+                ->calcTotalCharges()
+                ->Save();
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -677,12 +721,17 @@ class Order
 
         $Currency = Currency::getInstance($this->currency);
         $this->no_shipping = 1;   // no shipping unless physical item ordered
-        $this->subtotal = 0;
+        $this->gross_items = 0;
+        $this->net_items = 0;
+        $this->net_nontax = 0;
+        $this->net_taxable = 0;
         $item_qty = array();        // array to track quantity by base item ID
         $have_images = false;
         $has_sale_items = false;
+        $item_net = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            $P->setVariant($item->getVariantID());
             if ($is_invoice) {
                 $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
@@ -727,7 +776,14 @@ class Order
             }
 
             $item_total = $item->getPrice() * $item->getQuantity();
-            $this->subtotal += $item_total;
+            $item_net = $item->getNetPrice() * $item->getQuantity();
+            $this->gross_items += $item_total;
+            if ($P->isTaxable()) {
+                $this->net_taxable += $item_net;
+            } else {
+                $this->net_nontax += $item_net;
+            }
+            $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
                 'fixed_q'       => $P->getFixedQuantity(),
@@ -738,14 +794,13 @@ class Order
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
-                'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
+                'taxable'       => $P->isTaxable(),
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'sale_icon'     => $LANG_SHOP['sale_price'][0],
-                'discount_icon' => 'D',
+                'discount_icon' => $LANG_SHOP['discount'][0],
                 'discount_tooltip' => $price_tooltip,
                 'sale_tooltip'  => $sale_tooltip,
                 'token'         => $item->getToken(),
-                //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
                 'item_link'     => $P->getLink($item->getID()),
@@ -758,6 +813,7 @@ class Order
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
             }
+            $qty_bo = 0;
             if ($this->status == 'cart') {      // TODO, divorce cart from order
                 $qty_bo = $P->getQuantityBO($item->getQuantity());
                 if ($qty_bo > 0) {
@@ -775,6 +831,16 @@ class Order
             $T->clear_var('iOpts');
         }
 
+        // Reload the address objects in case the addresses were updated
+        $ShopAddr = new Company;
+        $this->Billto = new Address($this->getAddress('billto'));
+        $this->Shipto = new Address($this->getAddress('shipto'));
+
+        // Call selectShipper() here to get the shipping amount into the local var.
+        $shipper_select = $this->selectShipper();
+
+        $this->total = $this->getTotal();     // also calls calcTax()
+        $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
             if ($discount_items > 0) {
@@ -786,24 +852,22 @@ class Order
             if ($has_sale_items) {
                 $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
             }
+            if ($qty_bo) {
+                $icon_tooltips[] = $LANG_SHOP['backordered'][0] . ' = ' . $LANG_SHOP['backordered'];
+            }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
-        $this->total = $this->getTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getInfo('apply_gc');
-        if ($this->tax_rate > 0) {
-            $lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
-        } else {
+        /*if ($this->tax_rate > 0) {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
+            //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
+        } else {
+            $lang_tax_on_items = $LANG_SHOP['sales_tax'];*/
+        if ($view == 'viewcart') {
+            // Back out sales tax if tax is not charged. This happens when viewing the cart
+            // and a tax amount gets set, but shouldn't be shown in the order yet.
+            $this->total -= $this->tax;
         }
 
-        $ShopAddr = new Company;
-
-        // Reload the address objects in case the addresses were updated
-        $this->Billto = new Address($this->getAddress('billto'));
-        $this->Shipto = new Address($this->getAddress('shipto'));
-
-        // Call selectShipper() here to get the shipping amount into the local var.
-        $shipper_select = $this->selectShipper();
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
@@ -814,7 +878,7 @@ class Order
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
             'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'      => $this->subtotal == $this->total ? '' : $Currency->Format($this->subtotal),
+            'subtotal'      => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
@@ -822,7 +886,7 @@ class Order
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => $lang_tax_on_items,
+            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -832,7 +896,7 @@ class Order
             'total_postfix' => $Currency->Post(),
             'total_num'     => $Currency->FormatValue($this->total),
             'cur_decimals'  => $Currency->Decimals(),
-            'item_subtotal' => $Currency->FormatValue($this->subtotal),
+            'item_subtotal' => $Currency->FormatValue($this->gross_items),
             'return_url'    => SHOP_getUrl(),
             'is_invoice'    => $is_invoice,
             'icon_dscp'     => $icon_tooltips,
@@ -846,12 +910,17 @@ class Order
             'itemsToShip'   => $this->itemsToShip(),
             'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
             'tax_items'     => $this->tax_items,
+            'discount_code_fld' => $this->canShowDiscountEntry(),
+            'discount_code' => $this->getDiscountCode(),
+            'dc_row_vis'    => $this->getDiscountAmount(),
+            'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
+            'net_items'     => $Currency->Format($this->net_items),
         ) );
 
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->name,
+                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -913,7 +982,7 @@ class Order
                 $T->set_var(array(
                     'gateway_vars'  => $this->checkoutButton($gw),
                     'checkout'      => 'true',
-                    'pmt_method'    => $gw->Description(),
+                    'pmt_method'    => $gw->getDscp(),
                 ) );
             }
         default:
@@ -924,7 +993,7 @@ class Order
         if ($this->pmt_method != '') {
             $gw = Gateway::getInstance($this->pmt_method);
             if ($gw !== NULL) {
-                $pmt_method = $gw->Description();
+                $pmt_method = $gw->getDscp();
             } else {
                 $pmt_method = $this->pmt_method;
             }
@@ -1081,10 +1150,17 @@ class Order
      *
      * @param   string  $status     Order status (pending, paid, etc.)
      * @param   string  $gw_msg     Optional gateway message to include with email
+     * @param   boolean $force      True to force notification
      */
-    public function Notify($status='', $gw_msg='')
+    public function Notify($status='', $gw_msg='', $force=false)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        // Nothing to do if the status hasn't changed and we're not
+        // forcing a notification.
+        if (!$force && $status == $this->getStatus()) {
+            return;
+        }
 
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
@@ -1095,7 +1171,7 @@ class Order
 
         $Shop = new Company;
         $Cust = Customer::getInstance($this->uid);
-        if ($notify_buyer) {
+        if ($force || $notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
             $save_userlang = $_CONF['language'];
             $_CONF['language'] = $Cust->getLanguage(true);
@@ -1139,7 +1215,7 @@ class Order
             $LANG_SHOP = $save_language;    // Restore the default language
         }
 
-        if ($notify_admin) {
+        if ($notify_admin) {        // never forced
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
             // This uses the site default language.
@@ -1412,21 +1488,16 @@ class Order
     {
         if ($this->Shipto === NULL) {
             $this->tax = 0;
-            return 0;
+            return $this;
         }
-        //$this->tax_rate = Tax::getProvider()->withAddress($this->Shipto)->getRate();
         $tax = 0;
         $this->tax_items = 0;
-        foreach ($this->items as $item) {
-            if ($item->getProduct()->isTaxable()) {
-                $tax += Currency::getInstance($this->currency)
-                    ->RoundVal($this->tax_rate * $item->getQuantity() * $item->getPrice());
-                $this->tax_items++;
-            }
+        foreach ($this->items as &$Item) {
+            $this->tax_items += $Item->getTaxable();
+            $tax += $Item->getTotalTax();
         }
-        //$this->tax = Currency::getInstance()->RoundVal($this->tax_rate * $tax_amt);
         $this->tax = $tax;
-        return $this->tax;
+        return $this;
     }
 
 
@@ -1445,10 +1516,10 @@ class Order
             if ($shipper_id !== NULL) {
                 // Array is 0-indexed so search for the shipper ID, if any.
                 foreach ($shippers as $id=>$shipper) {
-                    if ($shipper->id == $shipper_id) {
+                    if ($shipper->getID() == $shipper_id) {
                         // Use the already-selected shipper, if any.
                         // The ship_method var should already be set.
-                        $this->shipping = $shippers[$id]->ordershipping->total_rate;
+                        $this->shipping = $shippers[$id]->getOrderShipping()->total_rate;
                         $have_shipper = true;
                         break;
                     }
@@ -1458,12 +1529,13 @@ class Order
                 // If the specified shipper isn't found for some reason,
                 // get the first shipper available, which will be the best rate.
                 $shipper = reset($shippers);
-                $this->ship_method = $shipper->name;
-                $this->shipping = $shipper->ordershipping->total_rate;
+                $this->ship_method = $shipper->getName();
+                $this->shipping = $shipper->getOrderShipping->total_rate;
             }
         } else {
             $this->shipping = 0;
         }
+        return $this;
     }
 
 
@@ -1482,10 +1554,9 @@ class Order
             $P = $item->getProduct();
             $this->handling += $P->getHandling($item->getQuantity());
         }
-
-        $this->calcTax();   // Tax calculation is slightly more complex
-        $this->calcShipping();
-        return $this->tax + $this->shipping + $this->handling;
+        $this->calcTax()   // Tax calculation is slightly more complex
+            ->calcShipping();
+        return $this;
     }
 
 
@@ -1551,13 +1622,13 @@ class Order
         foreach ($this->items as $id => $item) {
             $total += ($item->getPrice() * $item->getQuantity());
         }
+        // Remove any discount amount.
+        $total -= $this->getDiscountAmount();
         if ($this->status == 'cart') {
-            $total += $this->calcTotalCharges();
-        } else {
-            // Already have the amounts calculated, don't do it again
-            // every time the order is viewed since rates may change.
-            $total += $this->shipping + $this->tax + $this->handling;
+            // Re-calculate all charges in case of changes.
+            $this->calcTotalCharges();
         }
+        $total += $this->shipping + $this->tax + $this->handling;
         return Currency::getInstance()->RoundVal($total);
     }
 
@@ -1616,7 +1687,7 @@ class Order
         if (!isset($id_parts[1])) $id_parts[1] = '';
         $args = array(
             'product_id'    => $id_parts[0],
-            'options'       => $id_parts[1],
+            'variant'       => $id_parts[1],
             'extras'        => $extras,
         );
         $Item2 = new OrderItem($args);
@@ -1754,7 +1825,10 @@ class Order
             $gc_bal = \Shop\Products\Coupon::getUserBalance();
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
-        $this->setInfo('apply_gc', $amt);
+        if ($amt != $this->getInfo('apply_gc')) {
+            $this->setInfo('apply_gc', $amt);
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -1769,7 +1843,10 @@ class Order
      */
     public function setGateway($gw_name)
     {
-        $this->setInfo('gateway', $gw_name);
+        if ($gw_name != $this->getInfo('gateway')) {
+            $this->setInfo('gateway', $gw_name);
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -1876,9 +1953,9 @@ class Order
             // Have to iterate through all the shippers since the array is
             // ordered by rate, not shipper ID
             foreach ($shippers as $sh) {
-                if ($sh->id == $shipper_id) {
-                    $this->shipping = $sh->ordershipping->total_rate;
-                    $this->shipper_id = $sh->id;
+                if ($sh->getID()  == $shipper_id) {
+                    $this->shipping = $sh->getOrderShipping()->total_rate;
+                    $this->shipper_id = $sh->getID();
                     break;
                 }
             }
@@ -1915,7 +1992,7 @@ class Order
         if ($shipper_id !== NULL) {
             // Array is 0-indexed so search for the shipper ID, if any.
             foreach ($shippers as $id=>$shipper) {
-                if ($shipper->id == $shipper_id) {
+                if ($shipper->getID() == $shipper_id) {
                     // Already have a shipper selected
                     $best = $shippers[$id];
                     break;
@@ -1926,26 +2003,34 @@ class Order
             // None already selected, grab the first one. It has the best rate.
             $best = reset($shippers);
         }
+        if (!$best) {
+            // Error getting shippers, shouldn't happen unless shippers have been deleted.
+            $this->shipper_id = 0;
+            $this->shipping = 0;
+            return '';
+        }
+        $this->shipper_id = $best->getID();
+        $this->shipping = $best->getOrderShipping()->total_rate;
 
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
         // Save the base charge (order total - current shipping charge).
-        $base_chg = $this->subtotal + $this->handling + $this->tax;
+        $base_chg = $this->gross_items + $this->handling + $this->tax;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
-            $sel = $shipper->id == $best->id ? 'selected="selected"' : '';
-            $s_amt = $shipper->ordershipping->total_rate;
+            $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
+            $s_amt = $shipper->getOrderShipping()->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
-            $ship_rates[$shipper->id] = $rate;
+            $ship_rates[$shipper->getID()] = $rate;
             $T->set_var(array(
                 'method_sel'    => $sel,
-                'method_name'   => $shipper->name,
+                'method_name'   => $shipper->getName(),
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
-                'method_id'     => $shipper->id,
+                'method_id'     => $shipper->getID(),
                 'order_id'      => $this->order_id,
                 'multi'         => count($shippers) > 1 ? true : false,
             ) );
@@ -2320,6 +2405,28 @@ class Order
 
 
     /**
+     * Get the customer (user) ID
+     *
+     * @return  integer     User ID
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
+    }
+
+
+    /**
+     * Get the order ID.
+     *
+     * @return  string  Order ID
+     */
+    public function getOrderID()
+    {
+        return $this->order_id;
+    }
+
+
+    /**
      * Get the order date.
      *
      * @return  object  Date object
@@ -2377,15 +2484,15 @@ class Order
             }
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
-                $url = Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num);
-                $Sh = Shipper::getInstance($Pkg->shipper_id);
+                $Sh = Shipper::getInstance($Pkg->getShipperID());
+                $url = $Sh->getTrackingUrl($Pkg->getTrackingNum());
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date'     => $Dt->toMySQL(true),
-                    'shipment_id'   => $Shipment->shipment_id,
-                    'shipper_info'  => $Pkg->shipper_info,
-                    'tracking_num'  => $Pkg->tracking_num,
-                    'shipper_id'    => $Pkg->shipper_id,
+                    'shipment_id'   => $Shipment->getID(),
+                    'shipper_info'  => $Pkg->getShipperInfo(),
+                    'tracking_num'  => $Pkg->getTrackingNum(),
+                    'shipper_id'    => $Pkg->getShipperID(),
                     'tracking_url'  => $url,
                     'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
                 ) );
@@ -2429,15 +2536,15 @@ class Order
      */
     public function itemsToShip()
     {
-        $total_items = 0;
+        $gross_items = 0;
         $shipped_items = 0;
         foreach ($this->items as $oi_id=>$data) {
             if ($data->getProduct()->isPhysical()) {
-                $total_items += $data->quantity;
+                $gross_items += $data->quantity;
                 $shipped_items += ShipmentItem::getItemsShipped($oi_id);
             }
         }
-        return ($total_items - $shipped_items);
+        return ($gross_items - $shipped_items);
     }
 
 
@@ -2484,6 +2591,13 @@ class Order
     }
 
 
+    /**
+     * Set the sales tax rate for this order.
+     * No action if the new rate is the same as the existing rate.
+     *
+     * @param   float   $new_rate   New tax rate
+     * @return  object  $this
+     */
     public function setTaxRate($new_rate)
     {
         global $_TABLES;
@@ -2499,6 +2613,239 @@ class Order
             );
         }
         return $this;
+    }
+
+
+    /**
+     * Set the discount code applied to this order.
+     *
+     * @param   string  $code   Discount code
+     * @return  object  $this
+     */
+    public function setDiscountCode($code)
+    {
+        $this->discount_code = strtoupper(trim($code));
+        return $this;
+    }
+
+
+    /**
+     * Get the discount code applied to this order, if any.
+     *
+     * @return  string      Discount code
+     */
+    public function getDiscountCode()
+    {
+        return $this->discount_code;
+    }
+
+
+    /**
+     * Set the discount percentage applied from a discount code.
+     *
+     * @param   float   $pct    Discount percentage
+     * @return  object  $this
+     */
+    public function setDiscountPct($pct)
+    {
+        $this->discount_pct = (float)$pct;
+        return $this;
+    }
+
+
+    /**
+     * Get the total shipping charge for this order.
+     *
+     * @return  float       Shipping charge
+     */
+    public function getShipping()
+    {
+        return $this->shipping;
+    }
+
+
+    /**
+     * Get the total sales tax for this order.
+     *
+     * @return  float       Sales Tax
+     */
+    public function getTax()
+    {
+        return $this->tax;
+    }
+
+
+    /**
+     * Get the discount percentage applied from a discount code.
+     *
+     * @return  float   $pct    Discount percentage
+     */
+    public function getDiscountPct()
+    {
+        return $this->discount_pct;
+    }
+
+
+    /**
+     * Determine if the discount code entry field can be shown.
+     * This wrapper allows for future conditions based on group menbership,
+     * existence of sale prices, etc. but currently just shows the field if
+     * there are any active codes.
+     *
+     * @return  boolean     True if the field can be shown, False if not.
+     */
+    private function canShowDiscountEntry()
+    {
+        return DiscountCode::countCurrent() > 0 ? true : false;
+    }
+
+
+    /**
+     * Get the amount of the discount yielded by the discount code.
+     *
+     * @return  float   Discount amount
+     */
+    public function getDiscountAmount()
+    {
+        return max(
+            $this->getCurrency()->RoundVal(
+                $this->gross_items - $this->net_nontax - $this->net_taxable
+            ),
+            0
+        );
+    }
+
+
+    /**
+     * Get the currency object for this order.
+     *
+     * @return  object      Currency object
+     */
+    public function getCurrency()
+    {
+        return Currency::getInstance($this->currency);
+    }
+
+
+    /**
+     * Apply a discount code to the order and all items.
+     * The discount code and discount percent must be set in the order first.
+     *
+     * @return  object  $this
+     */
+    protected function applyDiscountCode()
+    {
+        global $_TABLES;
+
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            discount_code = '" . DB_escapeString($this->discount_code) . "',
+            discount_pct = '" . (float)$this->discount_pct . "'
+            WHERE order_id = '" . (int)$this->order_id . "'";
+        DB_query($sql);
+        if (!DB_error()) {
+            foreach ($this->items as $id=>$Item) {
+                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+            }
+        }
+        return $this;
+    }
+
+
+    /**
+     * Validate a discount code. If valid, save the elements in the order.
+     * Doesn't update the order if the code is valid, in case a valid code
+     * was previously entered.
+     *
+     * @param   string  $code   Entered discount code, current code if null
+     * @return  boolean     True if valud, False if not.
+     */
+    public function validateDiscountCode($code='')
+    {
+        // Get the existing values to see if either has changed.
+        $have_code = $this->getDiscountCode();
+        $have_pct = $this->getDiscountPct();
+
+        // If no code is supplied, check the existing discount code.
+        if (empty($code)) {         // could be null or empty string
+            $code = $have_code;
+        }
+
+        // Still empty? Then the order has no code.
+        if (empty($code)) {
+            return true;
+        }
+
+        // Now check that the code is valid. It may have expired, or the order
+        // total may have changed.
+        if (!empty($code)) {
+            $DC = DiscountCode::getInstance($code);
+            $this->calcItemTotals();
+            $pct = $DC->Validate($this->gross_items);
+        }
+
+        // If the code and percentage have not changed, just return true.
+        // Otherwise update the discount in the order and items.
+        if ($pct == $have_pct && $code == $have_code) {
+            return true;
+        }
+
+        if ($pct > 0) {
+            // Valid code, set the new values.
+            $this->setDiscountCode($code);
+            $this->setDiscountPct($pct);
+            $msg = $DC->getMessage();
+            $status = true;
+        } else {
+            // Invalid code, remove it from the order.
+            $this->setDiscountCode('');
+            $this->setDiscountPct(0);
+            $msg = $DC->getMessage();
+            if ($have_code) {
+                // If there was a valid code, indicate that it has been removed
+                $msg .= ' ' . $LANG_SHOP['dc_removed'];
+            }
+            $status = false;
+        }
+        $this->applyDiscountCode();      // apply code to order and items
+        COM_setMsg($msg, $status ? 'info' : 'error', $status);
+        return $status;
+    }
+
+
+    /**
+     * Calculate the net items totals, taxable and nontaxable.
+     */
+    protected function calcItemTotals()
+    {
+        $this->net_nontax = $this->net_taxable = $this->gross_items = $this->net_items = 0;
+        foreach ($this->items as $Item) {
+            //$Item->Save();
+            $item_gross = $Item->getPrice() * $Item->getQuantity();
+            $item_net = $Item->getNetPrice() * $Item->getQuantity();
+            $this->gross_items += $item_gross;
+            $this->net_items += $item_net;
+            if ($Item->isTaxable()) {
+                $this->net_taxable += $item_net;
+            } else {
+                $this->net_nontax += $item_net;
+            }
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the total order value including miscellaneous charges.
+     * Also calls functions to set internal values.
+     *
+     * @uses    self::calcItemTotals()
+     * @uses    self::calcTax()
+     * @return  float   Total order amount
+     */
+    protected function getOrderTotal()
+    {
+        $this->calcItemTotals()->calcTax();
+        return (float)$this->gross_items + $this->shipping + $this->tax + $this->handling;
     }
 
 }

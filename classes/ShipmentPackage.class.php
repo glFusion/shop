@@ -4,9 +4,9 @@
  * Handles tracking numbers.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -25,12 +25,29 @@ class ShipmentPackage
      * @var array */
     private $properties = array();
 
-    /** Fields for an ShipmentPackage record.
-     * @var array */
-    private static $fields = array(
-        'pkg_id', 'shipment_id', 'shipper_id', 'shipper_info',
-        'tracking_num', 'comment',
-    );
+    /** Package record ID.
+     * @var integer */
+    private $pkg_id;
+
+    /** Record ID of shipment containing this package.
+     * @var integer */
+    private $shipment_id;
+
+    /** Record ID of the shipper for this package.
+     * @var integer */
+    private $shipper_id;
+
+    /** Information about the shipper.
+     * @var string */
+    private $shipper_info;
+
+    /** Package tracking number.
+     * @var string */
+    private $tracking_num;
+
+    /** General comment entered about the package.
+     * @var string */
+    private $comment;
 
 
     /**
@@ -114,49 +131,120 @@ class ShipmentPackage
     {
         if (!is_array($A)) return false;
 
-        foreach (self::$fields as $field) {
-            if (isset($A[$field])) {
-                $this->$field = $A[$field];
-            }
-        }
+        $this->pkg_id = SHOP_getVar($A, 'pkg_id', 'integer', 0);
+        $this->shipment_id = SHOP_getVar($A, 'shipment_id', 'integer', 0);
+        $this->shipper_id = SHOP_getVar($A, 'shipper_id', 'integer', 0);
+        $this->shipper_info = SHOP_getVar($A, 'shipper_info', 'string', '');
+        $this->tracking_num = SHOP_getVar($A, 'tracking_num', 'string', '');
+        $this->comment = SHOP_getVar($A, 'comment', 'string', '');
         return true;
     }
 
 
     /**
-     * Setter function.
+     * Get the package record ID.
      *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
+     * @return  integer     Record ID for the package
      */
-    public function __set($key, $value)
+    public function getID()
     {
-        switch ($key) {
-        case 'pkg_id':
-        case 'shipment_id':
-        case 'shipper_id':
-            $this->properties[$key] = (int)$value;
-            break;
-        default:
-            $this->properties[$key] = trim($value);
-            break;
-        }
+        return (int)$this->pkg_id;
     }
 
 
     /**
-     * Getter function.
+     * Set the shipment ID for this package.
      *
-     * @param   string  $key    Property to retrieve
-     * @return  mixed           Value of property, NULL if undefined
+     * @param   integer $id     Shipment record ID
+     * @return  object  $this
      */
-    public function __get($key)
+    public function setShipmentid($id)
     {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        $this->shipment_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the shipment ID related to this package.
+     *
+     * @return  integer     Shipment record ID
+     */
+    public function getShipmentID()
+    {
+        return (int)$this->shipment_id;
+    }
+
+
+    /**
+     * Set the shipper ID for this package.
+     *
+     * @param   integer $id     Shipper record ID
+     * @return  object  $this
+     */
+    public function setShipperID($id)
+    {
+        $this->shipper_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
+     * Get the shippper ID related to this package.
+     *
+     * @return  integer     Shipper record ID
+     */
+    public function getShipperID()
+    {
+        return (int)$this->shipper_id;
+    }
+
+
+    /**
+     * Set the shipper information related to this package.
+     *
+     * @param   string  $shipper_info   Shipper information
+     * @return  object  $this
+     */
+    public function setShipperInfo($shipper_info)
+    {
+        $this->shipper_info = $shipper_info;
+        return $this;
+    }
+
+
+    /**
+     * Get the shipper information for this package shipper.
+     *
+     * @return  string      Shipper information
+     */
+    public function getShipperInfo()
+    {
+        return $this->shipper_info;
+    }
+
+
+    /**
+     * Set the tracking number for the package.
+     *
+     * @param   string  $tracking_num   Tracking number
+     * @return  object  $this
+     */
+    public function setTrackingNum($tracking_num)
+    {
+        $this->tracking_num = $tracking_num;
+        return $this;
+    }
+
+
+    /**
+     * Get the tracking number for this package.
+     *
+     * @return  string      Tracking number
+     */
+    public function getTrackingNum()
+    {
+        return $this->tracking_num;
     }
 
 
@@ -188,7 +276,7 @@ class ShipmentPackage
             $sql1 = "INSERT INTO {$_TABLES['shop.shipment_packages']} ";
             $sql3 = '';
         }
-        $sql2 = "SET 
+        $sql2 = "SET
             shipment_id = '{$this->shipment_id}',
             shipper_id = '{$this->shipper_id}',
             shipper_info = '" . DB_escapeString($this->shipper_info) . "',

@@ -21,8 +21,13 @@ var SHOP_toggle = function(cbox, id, type, component) {
         url: site_admin_url + "/plugins/shop/ajax.php",
         data: data,
         success: function(result) {
-            cbox.checked = result.newval == 1 ? true : false;
             try {
+                console.log(cbox);
+                cbox.checked = result.newval == 1 ? true : false;
+                console.log(result.title);
+                if (result.title != null) {
+                    cbox.title = result.title;
+                }
                 $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
             }
             catch(err) {

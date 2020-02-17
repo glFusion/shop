@@ -173,7 +173,8 @@ class OrderItemOption
         //if ($retval === NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oi_id = {$Item->id}";
+                WHERE oi_id = {$Item->id}
+                ORDER BY oio_id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $retval[] = new self($A);

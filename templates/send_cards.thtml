@@ -14,7 +14,11 @@
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_SHOP['expiration']}:</label>
       <div class="uk-form-controls">
-        <input id="exp_date" type="text" name="expires" data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{expires}" />&nbsp;&nbsp;
+        <div class="uk-form-icon">
+            <i class="uk-icon-calendar"></i>
+        <input id="exp_date" type="text" name="expires" data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{expires}" />
+        </div>
+        &nbsp;&nbsp;
         <input type="checkbox" name="no_exp" value="1" />&nbsp;{$LANG_SHOP['no_exp']}
       </div>
     </div>

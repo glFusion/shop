@@ -3,9 +3,9 @@
  * Class to get and cache sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -23,6 +23,10 @@ abstract class Tax
     /** Address object used for rate lookup.
      * @var object */
     protected $Address;
+
+    /** Order object used for tax calculations.
+     * @var object */
+    protected $Order;
 
     /** Use test endpoints.
      * @var boolean */
@@ -75,6 +79,22 @@ abstract class Tax
 
 
     /**
+     * Set the Order object to use for calculations.
+     *
+     * @param   object  $Order  Order object
+     * @return  object  $this
+     */
+    public function withOrder($Order)
+    {
+        $this->Order = $Order;
+        if ($this->Address == NULL) {
+            $this->Address = $this->Order->getShipto();
+        }
+        return $this;
+    }
+
+
+    /**
      * Make a cache key for a specific tax request.
      *
      * @param   string  $key    Additional cache key for data type
@@ -104,17 +124,7 @@ abstract class Tax
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        $key = DB_escapeString($key);
-        $exp = time();
-        $data = DB_getItem(
-            $_TABLES['shop.cache'],
-            'data',
-            "cache_key = '$key' AND expires >= $exp"
-        );
-        if ($data !== NULL) {
-            $data = @unserialize(base64_decode($data));
-        }
-        return $data;
+        return CacheDB::get($key);
     }
 
 
@@ -130,20 +140,10 @@ abstract class Tax
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        $key = DB_escapeString($key);
-        $data = DB_escapeString(base64_encode(@serialize($data)));
         if ($exp <= 0) {
             $exp = 86400 * 7;
         }
-        $exp += time();
-        $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
-            cache_key = '$key',
-            expires = $exp,
-            data = '$data'
-            ON DUPLICATE KEY UPDATE
-                expires = $exp,
-                data = '$data'";
-        DB_query($sql);
+        CacheDB::set($key, $data, $exp);
     }
 
 
@@ -159,10 +159,10 @@ abstract class Tax
 
         if (empty($_SHOP_CONF['tax_nexuses'])) {
             // No nexus locations configured
-            return false;
+            return true;
         }
         foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
-            list($country, $state) = explode(',', strtoupper($str));
+            list($country, $state) = explode('-', strtoupper($str));
             if (
                 $this->Address->getCountry() == (string)$country
                 &&
@@ -187,10 +187,17 @@ abstract class Tax
     public function getRate()
     {
         if ($this->hasNexus()) {
-            return $this->_getData()['totalRate'];
+            $rate = $this->_getData()['totalRate'];
         } else {
-            return 0;
+            $rate = 0;;
         }
+        foreach ($this->Order->getItems() as &$Item) {
+            if ($Item->isTaxable()) {
+                $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                $Item->setTotalTax($tax)->setTaxRate($rate);
+            }
+        }
+        return $rate;
     }
 
 

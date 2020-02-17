@@ -5,10 +5,10 @@
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @author      Vincent Furia <vinny01@users.sourceforge.net
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -99,34 +99,8 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
     $_USER['fullname'] = 'Anonymous';
 }
 
-spl_autoload_register(function ($class)
-{
-    // project-specific namespace prefix
-    $prefix = 'Shop\\';
-
-    // does the class use the namespace prefix?
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        // no, move to the next registered autoloader
-        return;
-    }
-
-    // base directory for the namespace prefix
-    $base_dir = __DIR__ . '/classes/';
-
-    // get the relative class name
-    $relative_class = substr($class, $len);
-
-    // replace the namespace prefix with the base directory, replace namespace
-    // separators with directory separators in the relative class name, append
-    // with .php
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
-
-    // if the file exists, require it
-    if (file_exists($file)) {
-        require $file;
-    }
-});
+require_once __DIR__ . '/classes/Autoload.class.php';
+Shop\Autoload::register();
 
 
 /**
@@ -519,7 +493,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         return $tags;
     } else if ($op == 'parse') {
         // Do nothing if the user can't view the catalog
-        if (!SHOP_access_check() || !SHOP_isMinVersion()) return $content;
+        if (!SHOP_access_check()) return $content;
 
         $repl = false;      // assume no replacement to start off
         $t1 = explode(' ', $autotag['parm2']);
@@ -600,6 +574,7 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
     static $access = array();
 
     if (!array_key_exists($rights, $access)) {
+        SHOP_isMinVersion();    // sets an admin message and closes the shop
         $acc = true;
         if (!$_SHOP_CONF['shop_enabled'] && !SEC_hasRights('shop.admin')) {
             $acc = false;
@@ -666,8 +641,10 @@ function plugin_dopluginsearch_shop(
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['prodXcat']} pxc
+                ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
-                ON p.cat_id=c.cat_id
+                ON pxc.cat_id=c.cat_id
             WHERE p.enabled = 1
             AND (c.enabled=1 OR c.enabled IS NULL)";
 
@@ -810,6 +787,7 @@ function plugin_autouninstall_shop()
             'shop.coupon_log',
             'shop.sales',
             'shop.shipping',
+            // v1.0.0
             'shop.prod_opt_grps',
             'shop.prod_opt_vals',
             'shop.shipments',
@@ -817,6 +795,21 @@ function plugin_autouninstall_shop()
             'shop.shipment_packages',
             'shop.carrier_config',
             'shop.cache',
+            // v1.1.0
+            'shop.tax_rates',
+            'shop.discountcodes',
+            'shop.prodXcat',
+            'shop.product_variants',
+            'shop.variantXopt',
+            'shop.suppliers',
+            'shop.discountcodes',
+            'shop.regions',
+            'shop.countries',
+            'shop.states',
+            // v1.2.0
+            'shop.features',
+            'shop.features_values',
+            'shop.prodXfeat',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -919,7 +912,7 @@ function plugin_getcommenturlid_shop()
  */
 function phpblock_shop_cart()
 {
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $T = new Template(__DIR__ . '/templates');
     $T->set_file('shopping_cart', 'blk_cart.thtml');
@@ -949,7 +942,7 @@ function phpblock_shop_cart_contents()
 {
     global $_SHOP_CONF, $LANG_SHOP;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     // If the cart is not enabled, or there is no cart, return
     if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
@@ -1007,7 +1000,7 @@ function phpblock_shop_search()
 {
     global $_TABLES;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $T = new Template(__DIR__ . '/templates/');
     $T->set_file('search', 'blk_search.thtml');
@@ -1042,7 +1035,7 @@ function phpblock_shop_random($cat='')
 {
     global $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_random_limit'];
     if ($limit < 1)
@@ -1069,7 +1062,7 @@ function phpblock_shop_featured($cat='')
 {
     global $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_featured_limit'];
     if ($limit < 1)
@@ -1095,13 +1088,15 @@ function phpblock_shop_categories()
 {
     global $_TABLES;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $parents = '0, ' . Shop\Category::getRoot()->cat_id;
     $sql = "SELECT c.*, (
         SELECT count(p.id)
         FROM {$_TABLES['shop.products']} p
-        WHERE p.cat_id = c.cat_id AND p.enabled = 1
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        WHERE pxc.cat_id = c.cat_id AND p.enabled = 1
         ) AS cnt
         FROM {$_TABLES['shop.categories']} c
         WHERE c.cat_id > 0
@@ -1159,7 +1154,7 @@ function phpblock_shop_popular()
 {
     global $_TABLES, $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
@@ -1198,7 +1193,7 @@ function phpblock_shop_recent($cat='')
 {
     global $_TABLES, $_SHOP_CONF;
 
-    if (!SHOP_access_check() || !SHOP_isMinVersion()) return '';
+    if (!SHOP_access_check()) return '';
 
     $limit = (int)$_SHOP_CONF['blk_popular_limit'];
     if ($limit < 1)
@@ -1298,8 +1293,10 @@ function SHOP_phpblock_product_sql($where, $limit=1)
     // no category record, as long as the product is enabled.
     $sql = "SELECT  id
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON p.cat_id=c.cat_id
+                ON pxc.cat_id=c.cat_id
             WHERE
                 p.enabled=1 AND (c.enabled=1 OR c.enabled IS NULL) " .
             SEC_buildAccessSql('AND', 'c.grp_access') . "
@@ -1701,12 +1698,13 @@ function plugin_configmanager_select_def_prod_type_shop()
 
 /**
  * Select the country code for the shop.
+ * Allows selection from all countries, not just enabled ones.
  *
  * @return  array   $option => path
  */
 function plugin_configmanager_select_country_shop()
 {
-    return Shop\Country::makeConfigSelection();
+    return Shop\Country::makeConfigSelection(false);
 }
 
 
@@ -1860,7 +1858,9 @@ function SHOP_child_cat_product_count($p_cat)
     $sql = "SELECT c.cat_id, c.cat_name, (
         SELECT count(p.id)
         FROM {$_TABLES['shop.products']} p
-        WHERE p.cat_id = c.cat_id
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        WHERE pxc.cat_id = c.cat_id
         ) AS cnt
         FROM {$_TABLES['shop.categories']} c
         WHERE c.lft BETWEEN $lft AND $rgt
@@ -2011,9 +2011,11 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
 
     $retval = array();
     $sql = "SELECT $fields
-             FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['shop.categories']} c
-                ON c.cat_id = p.cat_id ";
+        FROM {$_TABLES['shop.products']} p
+        LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+            ON pxc.product_id = p.id
+        LEFT JOIN {$_TABLES['shop.categories']} c
+            ON c.cat_id = pxc.cat_id ";
     $today = SHOP_now()->format('Y-m-d');
     if ($id == '*') {
         $where = ' WHERE 1 = 1 ';
@@ -2023,7 +2025,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     $where .= " AND p.enabled = 1 AND c.enabled = 1 AND avail_beg <= '$today' AND avail_end >= '$today' ";
     $where .= $cat_where;   // set above during check for shop_enabled setting
     if (isset($options['cat_id'])) {
-        $where .= ' AND p.cat_id = ' . (int)$options['cat_id'];
+        $where .= ' AND c.cat_id = ' . (int)$options['cat_id'];
     }
     $sql .= $where;
     $res = DB_query($sql);
@@ -2166,19 +2168,26 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
 
 /**
  * Get an array variable, first checking whether it's set.
+ * If `$emptyok` is set then the default value is returned when the variable
+ * is found but is empty. Otherwise as long as that variable is found it is
+ * returned, empty or not.
  *
  * @param   array   $A          Array where var should be
  * @param   string  $varname    Name of array element
  * @param   string  $type       Type of return value
  * @param   mixed   $default    Default value, if any
+ * @param   boolean $emptyok    True if return val can be empty
  * @return  array       Array element or NULL, cast to $type
  */
-function SHOP_getVar($A, $varname, $type = 'string', $default = NULL)
+function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = false)
 {
     if (!isset($A[$varname])) {
         return $default;
     } else {
         $val = $A[$varname];
+        if (empty($val) && !$emptyok) {
+            return $default;
+        }
     }
     switch ($type) {
     case 'int':
@@ -2259,7 +2268,7 @@ function SHOP_getTemplate($name, $id='', $path='')
  */
 function SHOP_isMinVersion($required = '')
 {
-    global $_SHOP_CONF, $_PLUGIN_INFO;
+    global $_SHOP_CONF, $_PLUGIN_INFO, $LANG_SHOP;
 
     // If not specified, use the current code version as required.
     if ($required == '') $required = $_SHOP_CONF['pi_version'];
@@ -2275,8 +2284,9 @@ function SHOP_isMinVersion($required = '')
     }
     if (!COM_checkVersion($installed, $required)) {
         if (plugin_ismoderator_shop()) {
-            COM_setMsg("Shop Plugin has not been updated from $installed to $required", 'error');
+            COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
+        $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
         return false;
     } else {
         return true;
