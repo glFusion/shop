@@ -169,71 +169,20 @@ div.shopProductDesc.v2 {
     margin-bottom: 2em;
     width:100%;
 }
-ul.shopProductThumbWrapper {
+div.shopProductThumbWrapper {
     clear: both;
     float: left;
     margin-top: .5em;
     margin-bottom: 1em;
-    list-style: none;
 }
-li.shopProductThumb {
+div.shopProductThumb {
     float: left;
     margin-right: .25em;
-    display: inline;
 }
-li.shopProductThumb input[type="checkbox"][id^="img_cb"] {
-  display: none;
-}
-li.shopProductThumb label {
-  border: 1px solid #fff;
-  padding: 10px;
-  display: block;
-  position: relative;
-  margin: 10px;
-  cursor: pointer;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-li.shopProductThumb label::before {
-  background-color: white;
-  color: white;
-  content: " ";
-  display: block;
-  border-radius: 50%;
-  border: 1px solid grey;
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 25px;
-  height: 25px;
-  text-align: center;
-  line-height: 28px;
-  transition-duration: 0.4s;
-  transform: scale(0);
-}
-li.shopProductThumb :checked+label {
-  /*border-color: #ddd;*/
-    outline: 3px solid #2fb5d2;
-}
-
-li.shopProductThumb :checked+label::before {
-  /*content: "✓";
-  background-color: grey;
-  transform: scale(1);*/
-}
-li.shopProductThumb img {
-    max-height: 100px;
-    margin-right:5px;
-}
-
 div.shopProductThumb.v1 img {
     max-height: 150px;
 }
-li.shopProductThumb.v2 img {
+div.shopProductThumb.v2 img {
     max-height: 80px;
 }
 
@@ -246,7 +195,7 @@ div.shopProductListOuter {
 
 .shopProductListItem {
     position: relative;
-    /*padding: 5px;*/
+    padding: 5px;
     text-decoration: none;
     overflow: hidden;
 }
@@ -619,9 +568,6 @@ div.ItemOptions {
     font-size: 120%;
     font-style:italic;
 }
-.shopOnhand.v1 {
-    clear:left;
-}
 .shopOnhand.sm {
     font-size: initial;
 }
@@ -855,29 +801,5 @@ ul#prod_details label {
     float:left;
 }
 ul#prod_details p {
-    margin-top:3px;
-    margin-bottom:2px;
-}
-ul#prod_details label {
-    width: 10em;
-}
-
-ul.product-flags {
-    list-style: none;
-    position: absolute;
-    top: 0;
-    width: 100%;
-    padding-left: 0;
-    z-index: 3;
-}
-ul.product-flags li {
-    background: #f39d72;
-    color: white;
-    width: 100%;
-    text-align: center;
-    left: 0;
-    top: 0;
-    text-transform: uppercase;
-    font-weight: 700;
-    padding: .3rem .5rem;
+    margin-top:8px;
 }

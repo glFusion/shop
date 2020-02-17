@@ -111,13 +111,10 @@
         <span id="start" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <div class="uk-form-icon">
-            <i class="uk-icon-calendar"></i>
         <input type="text" id="valid_from" name="valid_from" value="{valid_from}" size="12" maxlength="12"
             data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
             placeholder="1970-01-01"
             data-uk-tooltip />
-        </div>
       <i class="uk-icon uk-icon-remove-o uk-text-danger"
         onclick='SHOP_resetShipperDates("valid_from");'></i>
       </div>
@@ -128,13 +125,10 @@
         <span id="end" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <div class="uk-form-icon">
-            <i class="uk-icon-calendar"></i>
         <input type="text" id="valid_to" name="valid_to" value="{valid_to}" size="12" maxlength="12"
             data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
             placeholder="2037-12-31"
             data-uk-tooltip />
-        </div>
       <i class="uk-icon uk-icon-remove-o uk-text-danger"
         onclick='SHOP_resetShipperDates("valid_to");'></i>
       </div>

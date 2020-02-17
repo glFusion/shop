@@ -3,9 +3,9 @@
  * Class to get and cache sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.1.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -124,7 +124,17 @@ abstract class Tax
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        return CacheDB::get($key);
+        $key = DB_escapeString($key);
+        $exp = time();
+        $data = DB_getItem(
+            $_TABLES['shop.cache'],
+            'data',
+            "cache_key = '$key' AND expires >= $exp"
+        );
+        if ($data !== NULL) {
+            $data = @unserialize(base64_decode($data));
+        }
+        return $data;
     }
 
 
@@ -140,10 +150,20 @@ abstract class Tax
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
+        $key = DB_escapeString($key);
+        $data = DB_escapeString(base64_encode(@serialize($data)));
         if ($exp <= 0) {
             $exp = 86400 * 7;
         }
-        CacheDB::set($key, $data, $exp);
+        $exp += time();
+        $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
+            cache_key = '$key',
+            expires = $exp,
+            data = '$data'
+            ON DUPLICATE KEY UPDATE
+                expires = $exp,
+                data = '$data'";
+        DB_query($sql);
     }
 
 

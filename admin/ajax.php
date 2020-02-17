@@ -40,138 +40,6 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
-case 'delPXF':      // delete a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $retval = array(
-        'status' => Shop\Feature::deleteProduct($prod_id, $ft_id),
-    );
-    break;
-
-case 'updPXF':      // update a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
-    if (
-        $prod_id > 0 &&
-        $ft_id > 0 &&
-        ($fv_id > 0 || !empty($fv_text))
-    ) {
-        if (!empty($fv_text)) {
-            $fv_id = 0;
-        }
-        $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->updateProduct($prod_id, $fv_id, $fv_text),
-            'fv_id' => $fv_id,
-            'fv_custom' => $fv_text,
-        );
-    } else {
-        $retval = array(
-            'status' => false,
-        );
-    }
-    break;
-
-case 'newPXF':      // add a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
-    if (
-        $prod_id > 0 &&
-        $ft_id > 0 &&
-        ($fv_id > 0 || !empty($fv_text))
-    ) {
-        if (!empty($fv_text)) {
-            $fv_id = 0;
-        }
-        $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
-            'ft_name' => Shop\Feature::getInstance($ft_id)->getName(),
-            'ft_opts' => Shop\Feature::optionList($ft_id),
-            'fv_opts' => Shop\FeatureValue::optionList($ft_id, $fv_id),
-            'fv_custom' => $fv_text,
-        );
-    } else {
-        $retval = array(
-            'status' => false,
-        );
-    }
-    break;
-
-case 'getFVopts':
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    if ($ft_id > 0) {
-        $retval = array(
-            'status' => true,
-            'options' => COM_optionList(
-                $_TABLES['shop.features_values'],
-                'fv_id,fv_value',
-                1,
-                $fv_id,
-                "ft_id = $ft_id"
-            ),
-        );
-    } else {
-        $retval = array(
-            'status' => false,
-            'options' => '',
-        );
-    }
-    break;
-
-case 'delFV':
-    $retval = array(
-        'status' => false,
-        'statusMessage' => 'An error occurred',
-    );
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    if ($fv_id > 0) {
-        $retval = array(
-            'status' => Shop\FeatureValue::Delete($fv_id),
-            'statusMessage' => 'Record Deleted',
-        );
-    }
-    break;
-
- case 'newFV':       // Add a new feature value
-    $retval = array(
-        'status' => false,
-        'statusMessage' => 'An error occurred',
-        'fv_id' => 0,
-        'fv_text' => '',
-    );
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text');
-    if (!empty($fv_text)) {
-        $FV = new Shop\FeatureValue();
-        $FV->setValue($fv_text)
-            ->setFeatureID($ft_id);
-        $status = $FV->Save();
-        if ($status) {
-            $retval['status'] = true;
-            $retval['statusMessage'] = 'Success';
-            $retval['fv_id'] = $FV->getID();
-            $retval['fv_text'] = $FV->getValue();
-        }
-    }
-    break;
-
-case 'orderImages':
-    $retval = array(
-        'status' => false,
-        'statusMessage' => 'Not implemented',
-    );
-    /*$retval = array(
-        'status' => true,
-    );
-    Shop\Images\Product::updateOrder($_POST['ordering']);
-    Shop\Cache::clear('products');
-     */
-    break;
-
 case 'dropupload_cat':
     // Handle a drag-and-drop image upload for categories
     $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
@@ -211,6 +79,11 @@ case 'dropupload_cat':
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
     }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'dropupload':
@@ -251,6 +124,11 @@ case 'dropupload':
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
     }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'opt_orderby_opts':
@@ -259,7 +137,6 @@ case 'opt_orderby_opts':
     $og_id = SHOP_getVar($_POST, 'og_id', 'integer', 0);
     $selected = SHOP_getVar($_POST, 'selected', 'integer', 0);
     $retval = Shop\ProductOptionValue::getOrderbyOpts($og_id, $selected);
-    // This function gets JSON from the object.
     echo $retval;
     exit;
 
@@ -294,39 +171,57 @@ case 'updatestatus':
                 }
             }
         }
-        $retval = $L;
+        header('Content-Type: application/json');
+        header("Cache-Control: no-cache, must-revalidate");
+        //A date in the past
+        header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+        echo json_encode($L);
         break;
     }
-    exit;       // do nothing if nothing was logged
     break;
 
 case 'delimage_cat':
     // Delete a product image from the product edit form.
     $cat_id = SHOP_getVar($_POST, 'cat_id', 'integer', 0);
     $nonce = SHOP_getVar($_POST, 'nonce');
-    $retval = array(
+    $arr = array(
         'cat_id'    => $cat_id,
         'status'    => \Shop\Images\Category::DeleteImage($cat_id, $nonce),
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
     break;
 
 case 'delimage':
     // Delete a product image from the product edit form.
     $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
-    $retval = array(
+    $arr = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::DeleteImage($img_id),
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
     break;
 
 case 'setDefImg':
     // Set an image as the default.
     $img_id = SHOP_getVar($_POST, 'img_id', 'integer', 0);
     $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $retval = array(
+    $arr = array(
         'img_id'    => $img_id,
         'status'    => \Shop\Images\Product::setAsDefault($img_id, $prod_id),
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($arr);
     break;
 
 case 'add_tracking':
@@ -357,6 +252,11 @@ case 'add_tracking':
     } else {
         $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
     }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'del_tracking':
@@ -367,6 +267,11 @@ case 'del_tracking':
     $retval = array(
         'status' => true,
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'void':
@@ -405,6 +310,11 @@ case 'void':
             'text' => $LANG_SHOP['valid'],
         );
     }
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
     break;
 
 case 'toggle':
@@ -542,14 +452,12 @@ case 'toggle':
             $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
         'title' => $title,
     );
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+    //A date in the past
+    header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
+    echo json_encode($retval);
+    break;
 }
-
-// Return the $retval array as a JSON string
-header('Content-Type: application/json');
-header("Cache-Control: no-cache, must-revalidate");
-//A date in the past
-header("Expires: Mon, 26 Jul 1997 05:00:00 GMT");
-echo json_encode($retval);
-exit;
 
 ?>

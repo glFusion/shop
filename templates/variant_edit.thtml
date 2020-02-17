@@ -22,15 +22,6 @@
         </div>
     </div>
 
-    <div class="uk-form-row">
-        <label class="uk-form-label">{$LANG_SHOP['supplier_ref']}:
-            <span id="hlp_sup_ref" class="tooltip_cfg tooltipstered"></span>
-        </label>
-        <div class="uk-form-controls">
-            <input type="text" name="supplier_ref" value="{supplier_ref}" size="48" />
-        </div>
-    </div>
-
 {!if pv_id}
     <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['description']}:</label>
@@ -112,22 +103,6 @@
     </div>
 <!-- END OptionGroups -->
 
-    <div class="uk-form-row">
-        <label class="uk-form-label">{$LANG_SHOP['images']}:
-            <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'img_ids');">
-        </label>
-        <div class="uk-form-controls">
-            <ul class="shopProductThumbWrapper">
-<!-- BEGIN ImageBlock -->
-            <li class="shopProductThumb">
-                <input id="img_cb_{img_id}" type="checkbox" name="img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
-                <label for="img_cb_{img_id}"><img src="{img_url}" id="img_{img_id}" /></label>
-            </li>
-<!-- END ImageBlock -->
-            </ul>
-        </div>
-    </div>
-
 {!if is_form}
     <div class="uk-form-row" align="center">
         <button class="uk-button uk-button-success" type="submit" name="pv_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
@@ -139,22 +114,33 @@
   </div>
 
 </form>
-{!endif}
-{tooltipster_js}
-<script>
-function XSHOP_caItems(f, name, cb) {
-    var n=f.elements.length;
-    for (i=0;i<n; i++) {
-        var field=f.elements[i];
-        if (field.type == 'checkbox' && field.name.match(name)) {
-            if (cb.checked) {
-                field.checked=true;
-            } else {
-                field.checked=false;
-            }
+
+<script type="text/javascript">
+var ConfigDocUrl = '{doc_url}';
+$(document).ready(function() {
+    $('.tooltip_cfg').tooltipster({
+        contentAsHTML: true,
+        animation: 'fade',
+        trigger: 'click',
+        iconDesktop: true,
+        iconTouch: true,
+        functionBefore: function(origin, continueTooltip) {
+            var attrHref = ConfigDocUrl;
+            var ajobj = $(this);
+            $.get(attrHref, function(data) {
+                var confVar = ajobj.attr('id');
+                if (data.indexOf(confVar) > 0) {
+                    var desc = $(data).find('#desc_' + confVar + ' dd:first').text();
+                    origin.tooltipster('content', desc);
+                } else {
+                    origin.tooltipster('content', 'No Help Text Found');
+                    console.log('Unable to find help text for desc_%s',confVar);
+                }
+                continueTooltip();
+            });
         }
-    }
-    return false;
-}
+    });
+});
 </script>
+{!endif}
 {# end {templatelocation} #}

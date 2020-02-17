@@ -317,7 +317,6 @@ class Currency
      * Used in the IPN processor to be conservative when giving credit for
      * discounts.
      *
-     * @param   float   $amount Original value
      * @return  float       Rounded value
      */
     public function RoundUp($amount)

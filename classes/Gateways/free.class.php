@@ -159,7 +159,6 @@ class free extends \Shop\Gateway
      * The free gateway can be used by allowed users only if the order value
      * is zero.
      *
-     * @param   float   $total  Order total
      * @return  boolean     True if access is allowed, False if not
      */
     public function hasAccess($total=0)

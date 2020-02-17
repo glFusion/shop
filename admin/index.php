@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -48,7 +48,7 @@ $expected = array(
     'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
     'attrcopy', 'pov_move',
-    'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
+    'dup_product', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
@@ -59,7 +59,6 @@ $expected = array(
     'ena_region', 'disa_region', 'del_region',
     'ena_country', 'disa_country', 'del_country',
     'ena_state', 'disa_state', 'del_state',
-    'ft_save', 'ft_del', 'ft_move',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -73,7 +72,6 @@ $expected = array(
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
-    'features', 'ft_view', 'ft_edit',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -111,10 +109,10 @@ case 'statcomment':         // update comment and status
     COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
     break;
 
-case 'prod_clone':
+case 'dup_product':
     $P = new \Shop\Product($_REQUEST['id']);
     $P->Duplicate();
-    COM_refresh(SHOP_ADMIN_URL.'/index.php?products');
+    echo COM_refresh(SHOP_ADMIN_URL.'/index.php');
     break;
 
 case 'deleteproduct':
@@ -124,7 +122,7 @@ case 'deleteproduct':
     } else {
         COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    echo COM_refresh(SHOP_ADMIN_URL);
     break;
 
 case 'delshipping':
@@ -157,7 +155,7 @@ case 'deletecat':
     } else {
         $C->Delete();
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?categories');
     break;
 
 case 'saveproduct':
@@ -169,7 +167,7 @@ case 'saveproduct':
             COM_setMsg($msg, 'error');
         }
     }
-    COM_refresh($url);
+    echo COM_refresh($url);
     break;
 
 case 'savecat':
@@ -180,14 +178,6 @@ case 'savecat':
     } else {
         $view = 'categories';
     }
-    break;
-
-case 'ft_save':
-    $FT = new Shop\Feature($_POST['ft_id']);
-    if (!$FT->Save($_POST)) {
-        $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?features');
     break;
 
 case 'pog_save':
@@ -228,8 +218,6 @@ case 'pv_del_bulk':
     foreach ($ids as $id) {
         Shop\ProductVariant::Delete($id);
     }
-    Shop\Cache::clear('products');
-    Shop\Cache::clear('options');
     COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
     break;
 
@@ -242,11 +230,6 @@ case 'pv_del':
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
     }
     exit;
-    break;
-
-case 'ft_del':
-    Shop\Feature::Delete($_REQUEST['ft_id']);
-    $view = 'features';
     break;
 
 case 'pog_del':
@@ -366,14 +349,6 @@ case 'gwsave':
         $status = $gw->SaveConfig($_POST);
     }
     $view = 'gwadmin';
-    break;
-
-case 'ft_move':
-    $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
-    if ($ft_id > 0) {
-        Shop\Feature::getInstance($ft_id)->moveRow($actionval);
-    }
-    $view = 'features';
     break;
 
 case 'pog_move':
@@ -1065,17 +1040,6 @@ case 'suppliers':
     // Display an admin list of supplier/brand records
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Supplier::adminList();
-    break;
-
-case 'features':
-    // Display the list of features
-    $content .= Shop\Menu::adminCatalog($view);
-    $content .= Shop\Feature::adminList();
-    break;
-
-case 'ft_edit':
-    $Ft = new Shop\Feature($actionval);
-    $content .= $Ft->Edit();
     break;
 
 case 'edit_sup':

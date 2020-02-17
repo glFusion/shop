@@ -3,41 +3,13 @@
   <span class="alert">{$LANG_SHOP['no_javascript']}</span>
 </noscript>
 <script type="text/javascript">
-var img_json = {img_json};
-var all_image_ids = {all_image_ids};
-function SHOPupdateImage(img_id)
+function SHOPupdateImage(img_file, lg_img)
 {
-    var img = img_json[img_id];
-    var disp = document.getElementById("disp_img");
-    if (typeof(img) !== "undefined" && disp) {
-        disp.src = img['img_url'];
-    }
+    document.getElementById("disp_img").src = "{site_url}/lglib/img.php?src=" +
+        img_file + "&plugin=shop&sess={session_id}&width=460&height=460";
+//    document.getElementById("disp_img").src = disp_img;
+//    document.getElementById("lg_img").href = lg_img;
 }
-function SHOP_changeImages(image_ids)
-{
-    $("ul#productThumbWrapper").empty();
-    if (image_ids.length == 0) {
-        image_ids = all_image_ids;
-    }
-    for (var i = 0; i < image_ids.length; i++) {
-        var img_id = image_ids[i];
-        var img = img_json[img_id];
-        if (i == 0) {
-            SHOPupdateImage(img_id);
-        }
-        $("ul#productThumbWrapper").append(
-            '<li class="shopProductThumb v2">' +
-                '<a href="' +img['img_url'] + '" data-uk-lightbox="{group:\'product\'}">' +
-                    '<img src="' + img['thumb_url'] + '" alt="{$LANG_SHOP[click_to_enlarge]}" ' +
-                        'title="{$LANG_SHOP[click_to_enlarge]}" ' +
-                        'class="tooltip" style="border:0px;" ' +
-                        'onmouseover="javascript:SHOPupdateImage(' + img_id + ');" />' +
-                '</a>' +
-            '</li>'
-        );
-    }
-}
-
 </script>
 {!if have_attributes}
 <script type="text/javascript">
@@ -70,8 +42,6 @@ function ProcessForm(form)
             try {
                 $("div#avail_msg").text(result.msg);
                 $("span#onhand").text(result.onhand);
-                $("span#leadtime").text(result.leadtime);
-                SHOP_changeImages(result.images);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
                     $("span#weight").text(result.weight);

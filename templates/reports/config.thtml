@@ -14,19 +14,13 @@
       </select>
       <span id="cust_dates" style="display:none;">
         &nbsp;&nbsp;{$LANG_SHOP['from']}:
-        <div class="uk-form-icon">
-            <i class="uk-icon-calendar"></i>
-              <input type="text" id="from_date" name="from_date" size="12"
-                data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{from_date}"
-                maxlength="12" />
-        </div>
+      <input type="text" id="from_date" name="from_date" size="12"
+        data-uk-datepicker="{format:'YYYY-MM-DD'}" value="{from_date}"
+        maxlength="12" />
       {$LANG_SHOP['to']}:
-        <div class="uk-form-icon">
-            <i class="uk-icon-calendar"></i>
-            <input type="text" id="to_date" name="to_date" size="12"
-              data-uk-datepicker="{format:'YYYY-MM-DD'}"value="{to_date}"
-                maxlength="12" />
-        </div>
+      <input type="text" id="to_date" name="to_date" size="12"
+        data-uk-datepicker="{format:'YYYY-MM-DD'}"value="{to_date}"
+        maxlength="12" />
       </span>
     </div>
   </div>

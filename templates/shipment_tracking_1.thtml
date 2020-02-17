@@ -128,6 +128,7 @@ function addTrackingNumber()
         success: function(result) {
             try {
                 if (result.status == true) {
+console.log("valid save");
                     var newRowContent = '<tr id="trackrow_' + result.pkg_id + '"><td></td><td>' +
                         result.shipper_name + '</td><td>' +
                         result.tracking_url + '</td><td class="aligncenter">' +

@@ -631,7 +631,7 @@ class Report
             $str = str_replace('"', '&quot;', $str);
             break;
         case 'csv':
-            $str = str_replace('"', '""', $str);
+            $str = str_replace('"', '', $str);
             break;
         }
         return $str;
