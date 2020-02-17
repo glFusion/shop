@@ -1147,6 +1147,11 @@ class Category
         global $_TABLES;
 
         $retval = array();
+        if (Product::isPluginItem($prod_id)) {
+            $Cat = self::getRoot();
+            return array($Cat->getID() => $Cat);
+        }
+
         $prod_id = (int)$prod_id;
         if ($prod_id < 1) {
             // No categories selected if this is a new product

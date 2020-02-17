@@ -2730,6 +2730,9 @@ class Product
     {
         global $_GROUPS;
 
+        if (self::isPluginItem($this->item_id)) {
+            return true;
+        }
         $Cats = $this->getCategories();
         foreach ($this->getCategories() as $Cat) {
             if ($Cat->hasAccess($_GROUPS)) {
