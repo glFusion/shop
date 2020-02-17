@@ -60,9 +60,11 @@ $expected = array(
     'ena_country', 'disa_country', 'del_country',
     'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
+    'grpsave', 'grpmove',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'groups', 'grpedit',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -368,6 +370,15 @@ case 'gwsave':
     $view = 'gwadmin';
     break;
 
+case 'grpsave':
+    // Save a payment gateway configuration
+    $G = \Shop\Group::getInstance($_POST['gid']);
+    if ($G !== NULL) {
+        $status = $G->Save($_POST);
+    }
+    $view = 'groups';
+    break;
+
 case 'ft_move':
     $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
     if ($ft_id > 0) {
@@ -392,6 +403,11 @@ case 'pov_move':
         $Opt->moveRow($actionval);
     }
     $view = 'options';
+    break;
+
+case 'grpmove':
+    \Shop\Group::moveRow($_GET['id'], $actionval);
+    $view = 'groups';
     break;
 
 case 'gwmove':
@@ -945,6 +961,17 @@ case 'sendcards_form':
 
 case 'gwadmin':
     $content .= Shop\Gateway::adminList();
+    break;
+
+case 'groups':
+    $content .= Shop\Group::adminList();
+    break;
+
+case 'grpedit':
+    $G = \Shop\Group::getInstance($_GET['id']);
+    if ($G !== NULL) {
+        $content .= $G->Edit();
+    }
     break;
 
 case 'gwedit':

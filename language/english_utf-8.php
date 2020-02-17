@@ -649,6 +649,15 @@ $LANG_SHOP = array (
 'default' => 'Default',
 'cust_text_override' => 'Custom Text Override',
 'prod_features' => 'Product Features',
+'grp_sale_opt' => 'Group/Sale Handling',
+'group' => 'Group',
+'groups' => 'Groups',
+'new_group' => 'New Group',
+'sale_opt' => array(
+    'Override',
+    'Combine',
+    'Use Sale Price',
+),
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

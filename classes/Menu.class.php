@@ -104,11 +104,6 @@ class Menu
                 'text' => $LANG_SHOP['shipping'],
                 'active' => $view == 'shipping' ? true : false,
             ),
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
-                'text' => $LANG_SHOP['sale_prices'],
-                'active' => $view == 'sales' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
                 'text' => $LANG_SHOP['gateways'],
@@ -123,6 +118,11 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
                 'text' => $LANG_SHOP['other_func'],
                 'active' => $view == 'other' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?groups=x',
+                'text' => $LANG_SHOP['groups'],
+                'active' => $view == 'groups' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/report.php',
