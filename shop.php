@@ -69,7 +69,6 @@ $_TABLES['shop.states'] = $_SHOP_table_prefix . 'states';
 $_TABLES['shop.features'] = $_SHOP_table_prefix . 'features';
 $_TABLES['shop.features_values'] = $_SHOP_table_prefix . 'features_values';
 $_TABLES['shop.prodXfeat'] = $_SHOP_table_prefix . 'prodXfeat';
->>>>>>> develop
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
