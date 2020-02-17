@@ -890,7 +890,7 @@ class OrderItem
      */
     public function applyDiscountPct($pct)
     {
-        $price = $this->getPrice() * (100 - $pct) / 100;
+        $price = round($this->getPrice() * (100 - $pct) / 100, 2);
         $this->setNetPrice(Currency::getInstance()->RoundVal($price));
         Group::findByUser($uid)->applyDiscount($this);
         return $this;
