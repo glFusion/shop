@@ -3,7 +3,7 @@
  * Class to interface with glFusion groups for discounts and other access.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     vTBD
  * @since       vTBD
@@ -19,28 +19,33 @@ namespace Shop;
  */
 class Group
 {
-    private const OPT_OVERRIDE = 0;
-    private const OPT_COMBINE = 1;
-    private const OPT_IGNORE = 2;
+    const OPT_OVERRIDE = 0;
+    const OPT_COMBINE = 1;
+    const OPT_IGNORE = 2;
+    const OPT_BEST = 3;
 
     /** glFusion group ID.
      * @var integer */
-    private $gid;
+    private $gid = 0;
+
+    /** Group name/description from the glFusion group table.
+     * @var string */
+    private $dscp = '';
 
     /** Group order number.
      * When a buyer is a member of multiple groups, determines which
      * group is used.
      */
-    private $orderby;
+    private $orderby = 999;
 
     /** Discounts applied for this group.
     * @var array */
-    private $percent;
+    private $percent = 0;
 
     /** Combine group discounts with sale prices?
      * Combine with, override, or ignore and use sale price.
      * @var integer */
-    private $sale_opt;
+    private $sale_opt = 0;
 
 
     /**
@@ -52,9 +57,13 @@ class Group
      */
     public function __construct($gid=0)
     {
-        $this->setGid($gid);
-        if ($this->gid > 0) {
-            $this->getRecord();
+        if (is_array($gid)) {
+            $this->setVars($gid);
+        } else {
+            $this->setGid($gid);
+            if ($this->gid > 0) {
+                $this->getRecord();
+            }
         }
     }
 
@@ -78,6 +87,100 @@ class Group
 
 
     /**
+     * Get all groups into an array.
+     *
+     * @retrun  array       Array of Group objects
+     */
+    public static function getAll()
+    {
+        global $_TABLES;
+
+        $cache_key = 'shop.groups.all';
+        $retval = Cache::get($cache_key);
+        if ($retval === NULL) {
+            $retval = array();
+            $sql = "SELECT g.*, ug.grp_name FROM {$_TABLES['shop.groups']} g
+                LEFT JOIN {$_TABLES['groups']} ug
+                    ON g.gid = ug.grp_id
+                ORDER BY g.orderby ASC";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $retval[$A['gid']] = new self($A);
+            }
+            Cache::set($cache_key, $retval, 'groups', 86400);
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Find and return the first group object for a user ID.
+     *
+     * @param   integer $uid    User ID
+     * @return  object          Group object
+     */
+    public static function findByUser($uid)
+    {
+        $groups = \Group::getAssigned($uid);
+        foreach (self::getAll() as $Grp) {
+            if (in_array($Grp->getGid(), $groups)) {
+                return $Grp;
+            }
+        }
+        return new self;
+    }
+
+
+    /**
+     * Apply the group dicount to an order item.
+     * Updates the Item object in-place.
+     *
+     * @param   object  $Item   Order Item object
+     * @return  object  $this
+     */
+    public function applyDiscount(&$Item)
+    {
+        COM_errorLog("applying discount {$this->percent}");
+        if ($this->percent == 0) {
+            // Nothing to do, perhaps no group object was found.
+            return $this;
+        }
+
+        $factor = (100 - $this->percent) / 100;
+        switch ($this->sale_opt) {
+        case self::OPT_OVERRIDE:
+            // Use the group discount in place of any sale pricing.
+            $price = round($Item->getPrice() * $factor, 2);
+            $Item->setNetPrice($price);
+            break;
+        case self::OPT_COMBINE:
+            // Apply the group discount to sale prices.
+            $price = round($Item->getNetPrice() & $factor, 2);
+            $Item->setNetPrice($price);
+            break;
+        case self::OPT_IGNORE:
+            // Only apply group discounts to non-sale items.
+            $gross_price = $Item->getPrice();
+            $net_price = $Item->getNetPrice();
+            if ($gross_price == $net_price) {
+                $price = round($net_price * $factor, 2);
+                $Item->setNetPrice($price);
+            }
+            break;
+        case self::OPT_BEST:
+            // Apply the group or sale price, whichever is lower.
+            $price = round($Item->getPrice() * $factor, 2);
+            if ($price < $Item->getNetPrice()) {
+                $Item->setNetPrice($price);
+            }
+            break;
+        }
+        COM_errorLog("set price to " . $Item->getNetPrice());
+        return $this;
+    }
+
+
+    /**
      * Read one record from the database.
      *
      * @return  object  $this
@@ -87,7 +190,7 @@ class Group
         global $_TABLES;
 
         $res = DB_query(
-            "SELECT * FROM {$_TABLES['shop.groups']} g
+            "SELECT g.*, gl.grp_name FROM {$_TABLES['shop.groups']} g
             LEFT JOIN {$_TABLES['groups']} gl
                 ON g.gid = gl.grp_id
                 WHERE g.gid = {$this->gid}"
@@ -112,8 +215,9 @@ class Group
     {
         $this
             ->setGid(SHOP_getVar($A, 'gid', 'integer', 0))
+            ->setDscp(SHOP_getVar($A, 'grp_name'))
             ->setOrderby(SHOP_getVar($A, 'orderby', 'integer', 999))
-            ->setPercent(SHOP_getVar($A, 'percent', 'float', 0))
+            ->setDiscount(SHOP_getVar($A, 'percent', 'float', 0))
             ->setSaleOpt(SHOP_getVar($A, 'sale_opt', 'integer', 0));
         return $this;
     }
@@ -127,6 +231,30 @@ class Group
     public function setGid($gid)
     {
         $this->gid = (int)$gid;
+        return $this;
+    }
+
+
+    /**
+     * Get the group ID property.
+     *
+     * @return  integer     Group ID
+     */
+    public function getGid()
+    {
+        return (int)$this->gid;
+    }
+
+
+    /**
+     * Set the description from the glFusion group table.
+     *
+     * @param   string  $dscp   Group Name/Description
+     * @return  object  $this
+     */
+    private function setDscp($dscp)
+    {
+        $this->dscp = $dscp;
         return $this;
     }
 
@@ -256,7 +384,7 @@ class Group
     /**
      * Reorder all groups.
      */
-    public static function ReOrder()
+    public static function reOrder()
     {
         global $_TABLES;
 
@@ -276,6 +404,7 @@ class Group
             }
             $order += $stepNumber;
         }
+        Cache::clear('groups');
     }
 
 
@@ -320,8 +449,7 @@ class Group
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
-            $LANG32;
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $LANG_SHOP_HELP;
 
         $display = '';
         $sql = "SELECT g.*, ug.grp_name FROM {$_TABLES['shop.groups']} g
@@ -369,13 +497,15 @@ class Group
             ),
             'default_filter' => '',
         );
-
-
         $defsort_arr = array(
             'field' => 'orderby',
             'direction' => 'asc',
         );
+        $extra = array(
+            'grp_count' => DB_count($_TABLES['shop.groups']),
+        );
 
+        $display .= '<div class="uk-alert">' . $LANG_SHOP_HELP['hlp_grpadmin'] . '</div>';
         $display .= COM_createLink(
             $LANG_SHOP['new_group'],
             SHOP_ADMIN_URL . '/index.php?grpedit=x',
@@ -392,7 +522,7 @@ class Group
             $_SHOP_CONF['pi_name'] . '_grplist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', $options, ''
+            '', $extra, '', ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -406,9 +536,10 @@ class Group
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra verbatim values
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
         static $today = NULL;

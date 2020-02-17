@@ -1529,7 +1529,9 @@ class Product
             case 'radio':
                 // First find the selected option
                 if ($this->Variant) {
-                    $sel_opt = $VarOptions[$OG->getName()]->getID();
+                    if (isset($VarOptions[$OG->getName()])) {
+                        $sel_opt = $VarOptions[$OG->getName()]->getID();
+                    }
                 } else {
                     $sel_opt = 0;
                 }

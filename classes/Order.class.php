@@ -321,7 +321,7 @@ class Order
         $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
         $OI->setQuantity($args['quantity'])
-            ->applyDiscountPct($this->getDiscountPct())
+            ->applyDiscountPct($this->getDiscountPct(), $this->uid)
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
@@ -789,9 +789,9 @@ class Order
                 'fixed_q'       => $P->getFixedQuantity(),
                 'item_id'       => htmlspecialchars($item->getProductId()),
                 'item_dscp'     => htmlspecialchars($item->getDscp()),
-                'item_price'    => $Currency->FormatValue($item->getPrice()),
+                'item_price'    => $Currency->FormatValue($item->getNetPrice()),
                 'item_quantity' => $item->getQuantity(),
-                'item_total'    => $Currency->FormatValue($item_total),
+                'item_total'    => $Currency->FormatValue($item_net),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
                 'taxable'       => $P->isTaxable(),

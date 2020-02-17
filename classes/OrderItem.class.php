@@ -445,12 +445,12 @@ class OrderItem
             $sql1 = "INSERT INTO {$_TABLES['shop.orderitems']} ";
             $sql3 = '';
         }
-        $dc_pct = $this->getOrder()->getDiscountPct() / 100;
+        /*$dc_pct = $this->getOrder()->getDiscountPct() / 100;
         if ($dc_pct > 0) {
             $this->net_price = $this->price * (1 - $dc_pct);
         } else {
             $this->net_price = $this->price;
-        }
+        }*/
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
                 variant_id = '" . (int)$this->variant_id . "',
@@ -885,12 +885,14 @@ class OrderItem
      * Apply a discount percentage to this item.
      *
      * @param   float   $pct    Discount percent, as a whole number
+     * @param   integer $uid    Purchasing user ID
      * @return  object  $this
      */
     public function applyDiscountPct($pct)
     {
         $price = $this->getPrice() * (100 - $pct) / 100;
         $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+        Group::findByUser($uid)->applyDiscount($this);
         return $this;
     }
 
