@@ -303,22 +303,23 @@ case 'add_tracking':
     if ($shipment_id > 0) {
         $SP = new Shop\ShipmentPackage();
         if ($SP->Save($_POST)) {
-            if ($SP->shipper_id > 0) {
-                $shipper_code = Shop\Shipper::getInstance($SP->shipper_id)->code;
-                $tracking_url = Shop\Shipper::getInstance($SP->shipper_id)->getTrackingUrl($SP->tracking_num);
+            if ($SP->getShipperID() > 0) {
+                $shipper_code = Shop\Shipper::getInstance($SP->getShipperID())->getCode();
+                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNum());
             } else {
                 $shipper_code = '';
                 $tracking_url = '';
             }
             $retval = array(
                 'status'        => true,
-                'shipper_id'    => $SP->shipper_id,
-                'pkg_id'        => $SP->pkg_id,
-                'shipper_name'  => $SP->shipper_info,
-                'tracking_num'  => $SP->tracking_num,
+                'shipper_id'    => $SP->getShipperID(),
+                'pkg_id'        => $SP->getID(),
+                'shipper_name'  => $SP->getShipperInfo(),
+                'tracking_num'  => $SP->getTrackingNum(),
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
+            COM_errorlog(print_r($retval,true));
         } else {
             $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
         }
