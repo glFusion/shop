@@ -208,7 +208,7 @@ class orderlist extends \Shop\Report
         case 'html':
             $this->setExtra('class', __CLASS__);
             // Get the totals, have to use a separate query for this.
-            $s = "SELECT SM(itm.quantity * itm.price) as total_sales,
+            $s = "SELECT SUM(itm.quantity * itm.price) as total_sales,
                 SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
                 FROM {$_TABLES['shop.orders']} ord
                 LEFT JOIN {$_TABLES['shop.orderitems']} itm
