@@ -763,10 +763,7 @@ class Report
             break;
 
         case 'order_total':
-            $sales = SHOP_getVar($A, 'sales_amt', 'float');
-            $tax = SHOP_getVar($A, 'tax', 'float');
-            $shipping = SHOP_getVar($A, 'shipping', 'float');
-            $retval = Currency::getInstance($A['currency'])->FormatValue($sales + $tax + $shipping);
+            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
             break;
 
         case 'status':
