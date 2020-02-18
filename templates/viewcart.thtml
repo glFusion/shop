@@ -152,7 +152,7 @@
         <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
 {!if gateway_radios}
     <input type="hidden" name="next_step" value="{next_step}" />
-    <button style="float:none;" id="submit" type="submit" class="uk-button uk-button-success" name="checkout">
+    <button style="float:none;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="checkout">
         <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
 {!endif}
     <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
@@ -186,15 +186,6 @@
         </div>
       </div>
 
-{!if 0}
-      <div class="uk-width-1-4 uk-margin floatright" id="checkoutButtons">
-{!if gateway_radios}
-        <input type="hidden" name="next_step" value="{next_step}" />
-        <button style="float:none;" id="submit" type="submit" class="uk-button uk-button-success" name="checkout">
-          <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
-{!endif}
-      </div>
-{!endif}
     </div>
   </form>
 {!if tc_link}
