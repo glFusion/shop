@@ -42,7 +42,7 @@
 
     <div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">
       <div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
-        <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{id}" action="javascript:void()">
+        <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{frm_id}" action="javascript:void()">
             <div class="shopDetailPrice v2">
 {!if on_sale}
                 <span class="shopPrice was">{price_prefix}</span>

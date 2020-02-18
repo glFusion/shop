@@ -1636,6 +1636,7 @@ class Product
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
+            'frm_id'            => COM_sanitizeID($prod_id, false),
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_dscp,
@@ -1873,6 +1874,7 @@ class Product
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
+                'frm_id'        => COM_sanitizeID($this->id, false),
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
@@ -1880,7 +1882,6 @@ class Product
                 //'form_url'  => false,
                 'form_url'  => $this->_view == 'list' ? true : false,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
-                'frm_id'    => md5($this->id . rand()),
                 'quantity'  => $this->getFixedQuantity(),
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),

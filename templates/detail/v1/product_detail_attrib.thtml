@@ -8,7 +8,7 @@
   </a>
 </div>
 {!endif}
-<form id="add_cart_{id}" action="{site_url}/shop/index.php" method="post">
+<form id="add_cart_{frm_id}" action="{site_url}/shop/index.php" method="post">
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}
