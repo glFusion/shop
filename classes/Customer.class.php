@@ -430,7 +430,6 @@ class Customer
             } else {
                 $ad_checked = '';
             }
-
             $T->set_var(array(
                 'id'        => $address->getID(),
                 'ad_type'   => $type,
@@ -470,6 +469,7 @@ class Customer
             'order_id'      => $this->order_id,
             'sel_addr_text' => $LANG_SHOP['sel_' . $type . '_addr'],
             'addr_type'     => $LANG_SHOP[$type . '_info'],
+            'ad_type'       => $type,
             'allow_default' => $this->uid > 1 ? 'true' : '',
             'have_addresses' => $count > 0 ? 'true' : '',
             'addr_id'   => empty($addr_id) ? '' : $addr_id,
