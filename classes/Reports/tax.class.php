@@ -19,22 +19,31 @@ use Shop\State;
 
 
 /**
- * Class for Order History Report.
+ * Class for Sales Tax Report.
  * @package shop
  */
 class tax extends \Shop\Report
 {
     /** Report icon name
      * @var string */
-    protected $icon = 'list';
+    protected $icon = 'institution';
 
-    /** All possible allowed order statuses.
-     * Excludes cart.
-     * @var array */
-    private $default_statuses = array(
-        'paid', 'shipped',
-        'closed', 'complete',
-    );
+
+    /**
+     * Constructor.
+     * Override the allowed statuses.
+     */
+    public function __construct()
+    {
+        // This report doesn't show shipped or closed statuses.
+        $this->allowed_statuses = array(
+            'paid',
+            'processing',
+            'shipped', 'closed', 'complete',
+        );
+        $this->filter_uid = false;
+        parent::__construct();
+    }
 
 
     /**
@@ -44,10 +53,11 @@ class tax extends \Shop\Report
      */
     protected function getReportConfig()
     {
-        $C = new Company;
+        $C = new Company;   // use shop location as default region
         $T = $this->getTemplate('config');
         $state = self::_getSessVar('state');
         $country = self::_getSessVar('country');
+        $incl_nontax = self::_getSessVar('incl_nontax');
         if (empty($country)) {
             $country = $C->getCountry();
         }
@@ -58,6 +68,7 @@ class tax extends \Shop\Report
             'state_options' => State::optionList($country, $state),
             'country_options' => Country::optionList($country),
             'zip' => $this->_getSessVar('zip'),
+            'incl_nontax_chk' => $incl_nontax ? 'checked="checked"' : '',
         ) );
         return $T->parse('output', 'report');
     }
@@ -78,8 +89,8 @@ class tax extends \Shop\Report
         $this->setParam('country', SHOP_getVar($_GET, 'country'));
         $this->setParam('state', SHOP_getVar($_GET, 'state'));
         $this->setParam('zip', SHOP_getVar($_GET, 'zip'));
-        $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('q'=>''));
-        $this->setExtra('state_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
+        $this->setParam('incl_nontax', SHOP_getVar($_GET, 'incl_nontax', 'integer', 0));
+        $this->setParam('orderstatus', SHOP_getVar($_GET, 'orderstatus', 'array', array()));
 
         $header_arr = array(
             array(
@@ -98,13 +109,13 @@ class tax extends \Shop\Report
                 'sort'  => true,
                 'align' => 'center',
             ),
-           array(
+            array(
                 'text'  => $LANG_SHOP['taxable'],
                 'field' => 'net_taxable',
                 'sort'  => true,
                 'align' => 'right',
             ),
-           array(
+            array(
                 'text'  => $LANG_SHOP['nontaxable'],
                 'field' => 'net_nontax',
                 'sort'  => true,
@@ -123,9 +134,15 @@ class tax extends \Shop\Report
                 'align' => 'right',
             ),
             array(
+                'text'  => $LANG_SHOP['handling'],
+                'field' => 'handling',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
                 'text'  => $LANG_SHOP['total'],
                 'field' => 'order_total',
-                'sort'  => false,
+                'sort'  => true,
                 'align' => 'right',
             ),
             array(
@@ -153,22 +170,16 @@ class tax extends \Shop\Report
         $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
         //$listOptions = $this->_getListOptions();
         $listOptions = '';
-        $form_url = SHOP_ADMIN_URL . '/report.php?run=' . $this->key;
+        $form_url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(); //run=' . $this->key;
         $defsort_arr = array(
             'field' => 'order_date',
             'direction' => 'DESC',
         );
 
         $sql = "SELECT ord.* FROM {$_TABLES['shop.orders']} ord ";
-        $orderstatus = $this->allowed_statuses;
+        $orderstatus = $this->orderstatus;
         if (empty($orderstatus)) {
-            $orderstatus = self::_getSessVar('orderstatus');
-        }
-        if (empty($orderstatus)) {
-            // If still empty, may come from a direct link instead of the
-            // report config page. Allow all valid "order" statuses.
-            // Excludes cart.
-            $orderstatus = $this->default_statuses;
+            $orderstatus = $this->allowed_statuses;
         }
         if (!empty($orderstatus)) {
             $status_sql = "'" . implode("','", $orderstatus) . "'";
@@ -188,6 +199,9 @@ class tax extends \Shop\Report
         if ($this->uid > 0) {
             $where .= " AND uid = {$this->uid}";
         }
+        if (!$this->incl_nontax) {
+            $where .= ' AND net_taxable > 0';
+        }
         $query_arr = array(
             'table' => 'shop.orders',
             'sql' => $sql,
@@ -203,6 +217,7 @@ class tax extends \Shop\Report
             'default_filter' => "WHERE $where",
             //'group_by' => 'ord.order_id',
         );
+        //echo $sql . ' WHERE ' . $where;die;
         $text_arr = array(
             'has_extras' => false,
             'form_url' => $form_url,
@@ -319,18 +334,6 @@ class tax extends \Shop\Report
 
         $retval = NULL;
         switch ($fieldname) {
-        case 'action':
-            $retval = '<span style="white-space:nowrap" class="nowrap">';
-            $retval .= \Shop\Order::linkPrint($A['order_id']);
-            if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']); 
-            }
-            $retval .= '</span>';
-            break;
-        case 'net_taxable':
-        case 'net_nontax':
-            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
-            break;
         case 'region':
             $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString();
             $c_url = $url . "&country={$A['shipto_country']}&state=";
