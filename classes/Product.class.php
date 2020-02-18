@@ -3659,6 +3659,48 @@ class Product
 
 
     /**
+     * Validate that the product can be ordered.
+     * Checks quantity and qty tracking only. If there are attributes
+     * then ProductVariant::Validate() should be used instead.
+     */
+    public function Validate($opts = array())
+    {
+        global $LANG_SHOP;
+
+        if (!isset($opts['quantity'])) {
+            $opts['quantity'] = 1;
+        }
+        $retval = array(
+            'status'    => 0,
+            'msg'       => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
+            'allowed'   => true,
+            'is_oos'    => false,
+            'orig_price' => Currency::getInstance()->RoundVal($this->getPrice()),
+            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice($this->getPrice())),
+            'onhand'    => $this->onhand,
+            'weight'    => $this->getWeight(),
+            'sku'       => $this->getName(),
+            'leadtime'  => $this->onhand == 0 && $this->lead_time != '' ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+            'images'    => array(),
+        );
+        if ($this->track_onhand) {
+            if ($this->onhand < $opts['quantity']) {
+                $retval['is_oos'] = true;
+                if ($this->getOversell() == self::OVERSELL_HIDE) {
+                    $retval['status'] = 2;
+                    $retval['msg'] = 'Not Available';
+                    $retval['allowed'] = false;
+                } else {
+                    $retval['status'] = 1;
+                    $retval['msg'] = 'Backordered';
+                }
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Validate the form fields and return an array of errors.
      *
      * return   array   Array of error messages, empty if all is valid

@@ -120,10 +120,18 @@ case 'redeem_gc':
     break;
 
 case 'validateOpts':
-    $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
-    $output = $PV->Validate(array(
-        'quantity' => $_GET['quantity'],
-    ) );
+    if (isset($_GET['options']) && !empty($_GET['options'])) {
+        // Checking a product that has options, see if the variant is in stock
+        $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
+        $output = $PV->Validate(array(
+            'quantity' => $_GET['quantity'],
+        ) );
+    } else {
+        // Product has no options, just check the product object
+        $output = Shop\Product::getInstance($_GET['item_number'])->ValidateQty(array(
+            'quantity' => $_GET['quantity'],
+        ) );
+    }
     break;
 
 case 'validateAddress':
