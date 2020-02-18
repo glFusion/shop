@@ -417,6 +417,17 @@ class Shipper
 
 
     /**
+     * Get the module code for this shipper.
+     *
+     * @return  string      Module code
+     */
+    public function getCode()
+    {
+        return $this->module_code;
+    }
+
+
+    /**
      * Get a single shipper record.
      * Returns an empty shipper object if the requested ID is not found so
      * that object operations won't fail.
