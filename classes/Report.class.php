@@ -762,10 +762,6 @@ class Report
                 $dt->format($_SHOP_CONF['datetime_fmt'], true) . '</span>';
             break;
 
-        case 'order_total':
-            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
-            break;
-
         case 'status':
             // Show the order status. Admins can update the status, Users can view only.
             if ($extra['isAdmin']) {
@@ -811,10 +807,14 @@ class Report
             }
             break;
 
+        case 'order_total':
         case 'total':
         case 'shipping':
+        case 'handling':
+        case 'net_taxable':
+        case 'net_nontax':
         case 'tax':
-            $retval = Currency::getInstance($A['currency'])->FormatValue($fieldvalue);
+            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
             break;
 
         case 'customer':
