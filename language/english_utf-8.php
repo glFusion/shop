@@ -85,6 +85,7 @@ $LANG_SHOP = array (
 'disabled'          => 'Disabled',
 'featured'          => 'Featured',
 'taxable'           => 'Taxable',
+'nontaxable'        => 'Non-Taxable',
 'delete'            => 'Delete',
 'thanks_title'      => 'Thank you for your order!',
 'yes'               => 'Yes',
@@ -348,6 +349,10 @@ $LANG_SHOP = array (
     'reorder' => array(
         'name' => 'Item Reorder Report',
         'dscp' => 'List all items at or below their minimum stock levels.',
+    ),
+    'tax' => array(
+        'name' => 'Sales Tax Report',
+        'dscp' => 'List orders including tax and region information',
     ),
 ),
 'my_orders' => 'My Orders',
