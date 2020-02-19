@@ -179,8 +179,8 @@ class Zone
 
         // Check if the region, country and country-state is found, in that order
         $apply = in_array($region_id, $this->regions) ||
-            in_array($country, $this->countries) ||
-            in_array($state, $this->states);
+            in_array($country_id, $this->countries) ||
+            in_array($state_id, $this->states);
         return $this->allow ? $apply : !$apply;
     }
 
