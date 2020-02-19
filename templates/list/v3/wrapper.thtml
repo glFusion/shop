@@ -29,7 +29,7 @@
     <li class="uk-vertical-align-top ppProductListItem v3 uk-margin-bottom">
       <a href="{item_url}">
         <div class="shopProductListItem v3">
-                <ul class="product-flags"">
+                <ul class="product-flags">
 {!if on_sale}
                     <li>{$LANG_SHOP['on_sale']}</li>
 {!endif}
