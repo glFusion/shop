@@ -371,7 +371,7 @@ case 'gwsave':
 case 'ft_move':
     $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
     if ($ft_id > 0) {
-        Shop\Feature::getInstance($ft_id)->moveRow($actionval);
+        Shop\Feature::moveRow($ft_id, $actionval);
     }
     $view = 'features';
     break;
@@ -379,8 +379,7 @@ case 'ft_move':
 case 'pog_move':
     $og_id = SHOP_getVar($_GET, 'id', 'integer');
     if ($og_id > 0) {
-        $OG = new \Shop\ProductOptionGroup($og_id);
-        $OG->moveRow($actionval);
+        Shop\ProductOptionGroup::moveRow($og_id, $actionval);
     }
     $view = 'opt_grp';
     break;
