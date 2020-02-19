@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 {!if form_url}
-<form id="add_cart_{item_number}" style="display:inline;" action="{action_url}" method="post"
+<form id="add_cart_{frm_id}" style="display:inline;" action="{action_url}" method="post"
   class="uk-form">
 {!endif}
   <input type="hidden" name="item_name" value="{item_name}" />
@@ -26,9 +26,9 @@
 {!endif}
         value="{min_ord_qty}" style="width:80px;"/>
 {!endif}
-      &nbsp;&nbsp;<button id="btn_add_cart_{item_number}" type="submit"
+      &nbsp;&nbsp;<button id="btn_add_cart_{frm_id}" type="submit"
         class="{btn_cls}"
-        onclick='shopAddToCart("add_cart_{item_number}");return false;'>
+        onclick='shopAddToCart("add_cart_{frm_id}");return false;'>
         <i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
       </button>
     </div>

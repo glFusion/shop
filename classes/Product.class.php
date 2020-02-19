@@ -1495,6 +1495,10 @@ class Product
             if ($this->Variant == NULL) {
                 $this->Variant = reset($this->Variants);
             }
+        } else {
+            // Make sure there's always a variant set to avoid calling
+            // functions on null objects
+            $this->Variant = new ProductVariant;
         }
 
         // Set the template dir based on the configured template version
@@ -1680,6 +1684,7 @@ class Product
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->code,   // USD, etc.
+            'frm_id'            => COM_sanitizeID($prod_id, false),
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_dscp,
@@ -1917,6 +1922,7 @@ class Product
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
+                'frm_id'        => COM_sanitizeID($this->id, false),
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
@@ -1924,7 +1930,6 @@ class Product
                 //'form_url'  => false,
                 'form_url'  => $this->_view == 'list' ? true : false,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
-                'frm_id'    => md5($this->id . rand()),
                 'quantity'  => $this->getFixedQuantity(),
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
@@ -2774,6 +2779,9 @@ class Product
     {
         global $_GROUPS;
 
+        if (self::isPluginItem($this->item_id)) {
+            return true;
+        }
         $Cats = $this->getCategories();
         foreach ($this->getCategories() as $Cat) {
             if ($Cat->hasAccess($_GROUPS)) {
@@ -2793,6 +2801,18 @@ class Product
     public function getName($override = '')
     {
         return $override == '' ? $this->name : $override;
+    }
+
+
+    /**
+     * Get the product short description. Allows for an override.
+     *
+     * @param   string  $override  Optional description override
+     * @return  string              Product sort description
+     */
+    public function getText($override = '')
+    {
+        return $override == '' ? $this->description : $override;
     }
 
 
@@ -2901,6 +2921,30 @@ class Product
     public function cartCanAccumulate()
     {
         return true;
+    }
+
+
+    /**
+     * Get the out-of-stock message to display on product pages.
+     *
+     * @return  string      Text for OOS message
+     */
+    public function getLeadTimeMessage()
+    {
+        global $LANG_SHOP;
+
+        $lt_msg = '';
+        // trim the leadtime since it isn't trimmed in the DB
+        // to allow "nothing" instead of inheriting the supplier
+        // lead time.
+        if (trim($this->LeadTime()) != '') {
+            $lt_msg = sprintf(
+                $LANG_SHOP['disp_lead_time'],
+                $this->LeadTime()
+            );
+        }
+        COM_errorLog("msg: " . var_export($lt_msg,true));
+        return $lt_msg;
     }
 
 
@@ -3687,6 +3731,48 @@ class Product
 
 
     /**
+     * Validate that the product can be ordered.
+     * Checks quantity and qty tracking only. If there are attributes
+     * then ProductVariant::Validate() should be used instead.
+     */
+    public function Validate($opts = array())
+    {
+        global $LANG_SHOP;
+
+        if (!isset($opts['quantity'])) {
+            $opts['quantity'] = 1;
+        }
+        $retval = array(
+            'status'    => 0,
+            'msg'       => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
+            'allowed'   => true,
+            'is_oos'    => false,
+            'orig_price' => Currency::getInstance()->RoundVal($this->getPrice()),
+            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice($this->getPrice())),
+            'onhand'    => $this->onhand,
+            'weight'    => $this->getWeight(),
+            'sku'       => $this->getName(),
+            'leadtime'  => $this->onhand == 0 ? $this->getLeadTimeMessage() : '',
+            'images'    => array(),
+        );
+        if ($this->track_onhand) {
+            if ($this->onhand < $opts['quantity']) {
+                $retval['is_oos'] = true;
+                if ($this->getOversell() == self::OVERSELL_HIDE) {
+                    $retval['status'] = 2;
+                    $retval['msg'] = 'Not Available';
+                    $retval['allowed'] = false;
+                } else {
+                    $retval['status'] = 1;
+                    $retval['msg'] = 'Backordered';
+                }
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
      * Validate the form fields and return an array of errors.
      *
      * return   array   Array of error messages, empty if all is valid
@@ -4008,7 +4094,7 @@ class Product
 
 
     /**
-     * Get the lead time text for this supplier.
+     * Get the lead time text for this product.
      *
      * @return  string  Lead time description
      */

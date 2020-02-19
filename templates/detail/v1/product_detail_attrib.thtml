@@ -8,7 +8,7 @@
   </a>
 </div>
 {!endif}
-<form id="add_cart_{id}" action="{site_url}/shop/index.php" method="post">
+<form id="add_cart_{frm_id}" action="{site_url}/shop/index.php" method="post">
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}
@@ -87,19 +87,17 @@
 
     </div>
 
-      {add_cart_button}
+    {add_cart_button}
 
-        <div class="frmAddCart v1">
-      <!-- BEGIN BtnBlock -->
+    <div class="frmAddCart v1">
+<!-- BEGIN BtnBlock -->
         {buy_now_button}<br />
-      <!-- END BtnBlock -->
-        </div>
-        <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-            <span class="shopProductAvailability">{$LANG_SHOP['out_of_stock']}</span>
-        </div>
-
+<!-- END BtnBlock -->
+    </div>
+    <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
+    </div>
     <div id="shopProductDesc" class="shopProductDesc v1">
-      {description}
+        {description}
     </div>
 
 {!if rating_bar}

@@ -1416,29 +1416,28 @@ class ProductVariant
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
-            if ($this->onhand > 0) {
-                $oos = false;
-                $allowed = true;
+            if ($this->onhand == 0) {
+                $lt_msg = $P->getLeadTimeMessage();
             } else {
-                $oos = true;
-                $allowed = $P->getOversell() == 0 ? true : false;
+                $lt_msg = '';
             }
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
-                'allowed'   =>  $allowed,
-                'is_oos'    => $oos,
+                'allowed'   => true,
+                'is_oos'    => false,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
-                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+                'leadtime'  => $lt_msg,
                 'images'    => $this->images,
             );
         }
         if ($P->getTrackOnhand()) {
             if ($this->onhand < $opts['quantity']) {
+                $retval['is_oos'] = true;
                 if ($P->getOversell() == Product::OVERSELL_HIDE) {
                     $retval['status'] = 2;
                     $retval['msg'] = 'Not Available';

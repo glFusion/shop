@@ -1,0 +1,33 @@
+{# begin {templatelocation} #}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['country']}:</label>
+    <div class="uk-form-controls">
+      <select name="country"
+            onchange='chgCountrySel(this.value)'>
+        <option value="">{$LANG_SHOP['all']}</option>
+        {country_options}
+      </select>
+    </div>
+  </div>
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['state']}:</label>
+    <div class="uk-form-controls">
+      <select id="stateSelect" name="state">
+        <option value="">{$LANG_SHOP['all']}</option>
+        {state_options}
+      </select>
+    </div>
+  </div>
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['zip']}:</label>
+    <div class="uk-form-controls">
+      <input type="text" name="zip" value="{zip}" />
+    </div>
+  </div>
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['incl_nontax']}:</label>
+    <div class="uk-form-controls">
+      <input type="checkbox" name="incl_nontax" value="1" {incl_nontax_chk} />
+    </div>
+  </div>
+{# end {templatelocation} #}

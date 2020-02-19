@@ -2861,7 +2861,7 @@ class Order
     protected function getOrderTotal()
     {
         $this->calcItemTotals()->calcTax();
-        return (float)$this->gross_items + $this->shipping + $this->tax + $this->handling;
+        return (float)$this->net_items + $this->shipping + $this->tax + $this->handling;
     }
 
 

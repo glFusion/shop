@@ -47,7 +47,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
     global $_CONF, $_SHOP_CONF;
 
     $Cart = Shop\Cart::getInstance();
-    $btn_type = isset($args['btn_type']) ? $args['btn_type'] : '';
+    $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
     // Create the immediate purchase button, if requested.  As soon as a

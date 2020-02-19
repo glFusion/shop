@@ -12,6 +12,15 @@ Release TBD
   * New reorder report listing items at or below their reorder qty.
   * Restrict product sales by region.
 
+## v1.1.2
+Release 2020-02-15
+  * Add missing phone field to address table for new installations.
+  * Add missing discount code price to order item table for new installations.
+
+## v1.1.1
+Release 2020-01-27
+  * Fix PDF creation.
+
 ## v1.1.0
 Release 2020-01-22
 

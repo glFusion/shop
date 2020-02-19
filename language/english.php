@@ -85,6 +85,7 @@ $LANG_SHOP = array (
 'disabled'          => 'Disabled',
 'featured'          => 'Featured',
 'taxable'           => 'Taxable',
+'nontaxable'        => 'Non-Taxable',
 'delete'            => 'Delete',
 'thanks_title'      => 'Thank you for your order!',
 'yes'               => 'Yes',
@@ -196,6 +197,7 @@ $LANG_SHOP = array (
 'err_missing_exp'   => 'Missing expiration period for downloadable product',
 'err_phys_need_price' => 'Non-downloadable items must have a positive price value',
 'err_dup_sku'       => 'The SKU must be unique across all products.',
+'err_dup_iso'       => 'An error occurred. Check that the ISO code is unique.',
 'missing_fields'    => 'Missing Fields',
 'no_javascript'     => 'Javascript is required for this site to function properly. Your cart may not be updated accurately, and your order may be delayed unless you enable Javascript in your browser.',
 'clk_help'      => 'Click for Help',
@@ -347,6 +349,10 @@ $LANG_SHOP = array (
     'reorder' => array(
         'name' => 'Item Reorder Report',
         'dscp' => 'List all items at or below their minimum stock levels.',
+    ),
+    'tax' => array(
+        'name' => 'Sales Tax Report',
+        'dscp' => 'List orders including tax and region information',
     ),
 ),
 'my_orders' => 'My Orders',
@@ -646,6 +652,9 @@ $LANG_SHOP = array (
 'on_sale' => 'On Sale!',
 'chk_all' => 'Check All',
 'default' => 'Default',
+'cust_text_override' => 'Custom Text Override',
+'prod_features' => 'Product Features',
+'incl_nontax' => 'Include non-taxable sales?',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -676,6 +685,7 @@ $LANG_SHOP_HELP = array(
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',
 'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
+'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

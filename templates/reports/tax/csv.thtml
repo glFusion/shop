@@ -1,0 +1,5 @@
+"{$LANG_SHOP['order_number']}","{$LANG_SHOP['datetime']}","{$LANG_SHOP['customer']}","{$LANG_SHOP['taxable']}","{$LANG_SHOP['nontaxable']}","{$LANG_SHOP['tax']}","{$LANG_SHOP['shipping']}","{$LANG_SHOP['handling']}","{$LANG_SHOP['total']}","{$LANG_SHOP['region']}","{$LANG_SHOP['zip']}"{nl}
+<!-- BEGIN ItemRow -->
+"{order_id}","{order_date}","{customer}","{taxable}","{nontax}","{tax}","{shipping}","{handling}","{total}","{region}","{zip}"{nl}
+<!-- END ItemRow -->
+"{$LANG_SHOP['total']}","","","{total_taxable}","{total_nontax}","{total_tax}","{total_shipping}","{total_handling}","{total_total}"{nl}

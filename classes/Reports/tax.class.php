@@ -1,35 +1,78 @@
 <?php
 /**
- * Order History Report.
+ * Sales Tax Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
- * @since       v0.7.0
+ * @version     v1.2.0
+ * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Currency;
+use Shop\Company;
+use Shop\Country;
+use Shop\State;
+
 
 /**
- * Class for Order History Report.
+ * Class for Sales Tax Report.
  * @package shop
  */
-class orderlist extends \Shop\Report
+class tax extends \Shop\Report
 {
     /** Report icon name
      * @var string */
-    protected $icon = 'list';
+    protected $icon = 'institution';
 
-    /** All possible allowed order statuses.
-     * Excludes cart.
-     * @var array */
-    private $default_statuses = array(
-        'pending', 'paid', 'processing', 'shipped',
-        'closed', 'complete', 'refunded',
-    );
+
+    /**
+     * Constructor.
+     * Override the allowed statuses.
+     */
+    public function __construct()
+    {
+        // This report doesn't show shipped or closed statuses.
+        $this->allowed_statuses = array(
+            'paid',
+            'processing',
+            'shipped', 'closed', 'complete',
+        );
+        $this->filter_uid = false;
+        parent::__construct();
+    }
+
+
+    /**
+     * Get additional config fields for this report.
+     *
+     * @return  string      HTML for form fields
+     */
+    protected function getReportConfig()
+    {
+        $C = new Company;   // use shop location as default region
+        $T = $this->getTemplate('config');
+        $state = self::_getSessVar('state');
+        $country = self::_getSessVar('country');
+        $incl_nontax = self::_getSessVar('incl_nontax');
+        if (empty($country)) {
+            $country = $C->getCountry();
+        }
+        if (empty($state)) {
+            $state = $C->getState();
+        }
+        $T->set_var(array(
+            'state_options' => State::optionList($country, $state),
+            'country_options' => Country::optionList($country),
+            'zip' => $this->_getSessVar('zip'),
+            'incl_nontax_chk' => $incl_nontax ? 'checked="checked"' : '',
+        ) );
+        return $T->parse('output', 'report');
+    }
+
 
     /**
      * Create and render the report contents.
@@ -43,25 +86,22 @@ class orderlist extends \Shop\Report
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        if ($this->isAdmin) {
-            $cust_hdr = array(
+        $this->setParam('country', SHOP_getVar($_GET, 'country'));
+        $this->setParam('state', SHOP_getVar($_GET, 'state'));
+        $this->setParam('zip', SHOP_getVar($_GET, 'zip'));
+        $this->setParam('incl_nontax', SHOP_getVar($_GET, 'incl_nontax', 'integer', 0));
+        $this->setParam('orderstatus', SHOP_getVar($_GET, 'orderstatus', 'array', array()));
+
+        $header_arr = array(
+            array(
                 'text'  => $LANG_SHOP['customer'],
                 'field' => 'customer',
                 'sort'  => true,
-            );
-        } else {
-            $cust_hdr = array();
-        }
-        $header_arr = array(
+            ),
             array(
                 'text'  => $LANG_SHOP['order_number'],
                 'field' => 'order_id',
                 'sort'  => true,
-            ),
-            array(
-                'text'  => '',
-                'field' => 'action',
-                'sort'  => false,
             ),
             array(
                 'text'  => $LANG_SHOP['order_date'],
@@ -69,13 +109,15 @@ class orderlist extends \Shop\Report
                 'sort'  => true,
                 'align' => 'center',
             ),
-        );
-        if ($this->isAdmin) {
-            $header_arr = array_merge($header_arr, array(
-            $cust_hdr,
             array(
-                'text'  => $LANG_SHOP['amount'],
-                'field' => 'sales_amt',
+                'text'  => $LANG_SHOP['taxable'],
+                'field' => 'net_taxable',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
+                'text'  => $LANG_SHOP['nontaxable'],
+                'field' => 'net_nontax',
                 'sort'  => true,
                 'align' => 'right',
             ),
@@ -92,9 +134,15 @@ class orderlist extends \Shop\Report
                 'align' => 'right',
             ),
             array(
+                'text'  => $LANG_SHOP['handling'],
+                'field' => 'handling',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
                 'text'  => $LANG_SHOP['total'],
                 'field' => 'order_total',
-                'sort'  => false,
+                'sort'  => true,
                 'align' => 'right',
             ),
             array(
@@ -108,63 +156,30 @@ class orderlist extends \Shop\Report
                 'sort'  => true,
                 'align' => 'right',
             ),
-        )
-        );
-        } else {
-            $header_arr = array_merge(
-                $header_arr,
-                array(
-                array(
-                    'text'  => $LANG_SHOP['total'] . '&nbsp;' .
-                    \Shop\Icon::getHTML(
-                        'question',
-                        'tooltip',
-                        array(
-                            'title' => $LANG_SHOP_HELP['orderlist_total']
-                        )
-                    ),
-                    //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                'field' => 'sales_amt',
-                'sort'  => true,
-                'align' => 'right',
+            array(
+                'text'  => $LANG_SHOP['region'],
+                'field' => 'region',
+                'sort'  => false,
             ),
             array(
-                'text'  => $LANG_SHOP['status'],
-                'field' => 'status',
+                'text'  => $LANG_SHOP['zip'],
+                'field' => 'shipto_zip',
                 'sort'  => true,
             ),
-        ) );
-        }
-
-        if ($this->isAdmin) {
-            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
-            $listOptions = $this->_getListOptions();
-            $form_url = SHOP_ADMIN_URL . '/report.php?run=' . $this->key;
-        } else {
-            $listOptions = '';
-            $form_url = '';
-        }
-
+        );
+        $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
+        //$listOptions = $this->_getListOptions();
+        $listOptions = '';
+        $form_url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(); //run=' . $this->key;
         $defsort_arr = array(
             'field' => 'order_date',
             'direction' => 'DESC',
         );
 
-        $sql = "SELECT ord.*, (
-                SELECT sum(itm.price * itm.quantity)
-                FROM {$_TABLES['shop.orderitems']} itm
-                WHERE itm.order_id = ord.order_id
-            ) as sales_amt
-            FROM {$_TABLES['shop.orders']} ord ";
-        $orderstatus = $this->allowed_statuses;
+        $sql = "SELECT ord.* FROM {$_TABLES['shop.orders']} ord ";
+        $orderstatus = $this->orderstatus;
         if (empty($orderstatus)) {
-            $orderstatus = self::_getSessVar('orderstatus');
-        }
-        if (empty($orderstatus)) {
-            // If still empty, may come from a direct link instead of the
-            // report config page. Allow all valid "order" statuses.
-            // Excludes cart.
-            $orderstatus = $this->default_statuses;
+            $orderstatus = $this->allowed_statuses;
         }
         if (!empty($orderstatus)) {
             $status_sql = "'" . implode("','", $orderstatus) . "'";
@@ -172,8 +187,20 @@ class orderlist extends \Shop\Report
         }
 
         $where = "$status_sql (ord.order_date >= '$from_date' AND ord.order_date <= '$to_date')";
+        if ($this->country != '') {
+            $where .= " AND shipto_country = '" . DB_escapeString($this->country) . "'";
+        }
+        if ($this->state != '') {
+            $where .= " AND shipto_state = '" . DB_escapeString($this->state) . "'";
+        }
+        if ($this->zip != '') {
+            $where .= " AND shipto_zip LIKE '%" . DB_escapeString($this->zip) . "%'";
+        }
         if ($this->uid > 0) {
             $where .= " AND uid = {$this->uid}";
+        }
+        if (!$this->incl_nontax) {
+            $where .= ' AND net_taxable > 0';
         }
         $query_arr = array(
             'table' => 'shop.orders',
@@ -190,6 +217,7 @@ class orderlist extends \Shop\Report
             'default_filter' => "WHERE $where",
             //'group_by' => 'ord.order_id',
         );
+        //echo $sql . ' WHERE ' . $where;die;
         $text_arr = array(
             'has_extras' => false,
             'form_url' => $form_url,
@@ -222,6 +250,7 @@ class orderlist extends \Shop\Report
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
             $filter = '<select name="period">' . $this->getPeriodSelection($this->period, false) . '</select>';
+            //$filter = '';
             $T->set_var(
                 'output',
                 \ADMIN_list(
@@ -239,28 +268,33 @@ class orderlist extends \Shop\Report
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {
-                if (!empty($A['billto_company'])) {
-                    $customer = $A['billto_company'];
+                if (!empty($A['shipto_company'])) {
+                    $customer = $A['shipto_company'];
                 } else {
-                    $customer = $A['billto_name'];
+                    $customer = $A['shipto_name'];
                 }
                 $order_date->setTimestamp($A['order_date']);
-                $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => $Cur->FormatValue($A['sales_amt']),
+                    'taxable'       => $Cur->FormatValue($A['net_taxable']),
+                    'nontax'        => $Cur->FormatValue($A['net_nontax']),
                     'tax'           => $Cur->FormatValue($A['tax']),
                     'shipping'      => $Cur->FormatValue($A['shipping']),
-                    'total'         => $Cur->FormatValue($order_total),
+                    'handling'      => $Cur->FormatValue($A['handling']),
+                    'total'         => $Cur->FormatValue($A['order_total']),
+                    'region'        => $A['shipto_state'] . ', ' . $A['shipto_country'],
+                    'zip'           => $A['shipto_zip'],
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
-                $total_sales += $A['sales_amt'];
+                $total_taxable += $A['net_taxable'];
+                $total_nontax += $A['net_nontax'];
                 $total_tax += $A['tax'];
                 $total_shipping += $A['shipping'];
-                $total_total += $order_total;
+                $total_handling += $A['handling'];
+                $total_total += $A['order_total'];
             }
             break;
         }
@@ -268,9 +302,11 @@ class orderlist extends \Shop\Report
         $T->set_var(array(
             'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
-            'total_sales'       => $Cur->FormatValue($total_sales),
+            'total_taxable'     => $Cur->FormatValue($total_taxable),
+            'total_nontax'      => $Cur->FormatValue($total_nontax),
             'total_tax'         => $Cur->FormatValue($total_tax),
             'total_shipping'    => $Cur->FormatValue($total_shipping),
+            'total_handling'    => $Cur->FormatValue($total_handling),
             'total_total'       => $Cur->FormatValue($total_total),
             'nl'                => "\n",
         ) );
@@ -298,14 +334,19 @@ class orderlist extends \Shop\Report
 
         $retval = NULL;
         switch ($fieldname) {
-        case 'action':
-            $retval = '<span style="white-space:nowrap" class="nowrap">';
-            $retval .= \Shop\Order::linkPrint($A['order_id']);
-            if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']); 
-            }
-            $retval .= '</span>';
+        case 'region':
+            $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString();
+            $c_url = $url . "&country={$A['shipto_country']}&state=";
+            $s_url = $url . "&country={$A['shipto_country']}&state={$A['shipto_state']}";
+            $retval = COM_createLink($A['shipto_state'], $s_url) . ', ' .
+                COM_createLink($A['shipto_country'], $c_url);
             break;
+        case 'shipto_zip':
+            $url = SHOP_ADMIN_URL . '/report.php?' . self::getQueryString(array('zip' => $fieldvalue));
+            $retval = COM_createLink($A['shipto_zip'], $url);
+            break;
+        case 'status':
+            $retval = ucfirst($fieldvalue);
         }
         return $retval;
     }

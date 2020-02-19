@@ -127,6 +127,8 @@ class ups extends \Shop\Shipper
      */
     public function getTracking($tracking)
     {
+        global $LANG_SHOP;
+
         // Attempt to get from cache
         $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
         if ($Tracking !== NULL) {
