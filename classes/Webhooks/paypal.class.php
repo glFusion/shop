@@ -47,7 +47,11 @@ class paypal extends \Shop\Webhook
     }
 
 
-
+    /**
+     * Perform the necessary actions based on the webhook.
+     *
+     * @return  boolean     True on success, False on error
+     */
     protected function Dispatch()
     {
         switch ($this->getEvent()) {
