@@ -124,7 +124,6 @@
 
                 {add_cart_button}
                 <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-                    <span class="shopProductAvailability">{$LANG_SHOP['out_of_stock']}</span>
                 </div>
             </div>
         </form>

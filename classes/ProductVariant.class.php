@@ -1416,6 +1416,11 @@ class ProductVariant
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
+            if ($this->onhand == 0) {
+                $lt_msg = $P->getLeadTimeMessage();
+            } else {
+                $lt_msg = '';
+            }
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
@@ -1426,7 +1431,7 @@ class ProductVariant
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
-                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+                'leadtime'  => $lt_msg,
                 'images'    => $this->images,
             );
         }

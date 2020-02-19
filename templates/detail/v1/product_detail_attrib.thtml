@@ -87,19 +87,17 @@
 
     </div>
 
-      {add_cart_button}
+    {add_cart_button}
 
-        <div class="frmAddCart v1">
-      <!-- BEGIN BtnBlock -->
+    <div class="frmAddCart v1">
+<!-- BEGIN BtnBlock -->
         {buy_now_button}<br />
-      <!-- END BtnBlock -->
-        </div>
-        <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-            <span class="shopProductAvailability">{$LANG_SHOP['out_of_stock']}</span>
-        </div>
-
+<!-- END BtnBlock -->
+    </div>
+    <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
+    </div>
     <div id="shopProductDesc" class="shopProductDesc v1">
-      {description}
+        {description}
     </div>
 
 {!if rating_bar}

@@ -39,19 +39,7 @@ function SHOP_changeImages(image_ids)
 }
 
 </script>
-{!if have_attributes}
 <script type="text/javascript">
-function isValidField(obj)
-{
-    if (null == obj) {
-        return false;
-    }
-    if ("undefined" == typeof(obj)) {
-        return false;
-    }
-    return true;
-}
-
 function ProcessForm(form)
 {
     if (typeof(form) == 'undefined') {
@@ -88,7 +76,12 @@ function ProcessForm(form)
                 // Show or hide the out of stock message. Purchase buttons
                 // may still be enabled.
                 if (result.is_oos) {
+                    var msg = "{$LANG_SHOP['out_of_stock']}";
+                    if (result.leadtime != "") {
+                        msg += "<br />(" + result.leadtime + ")";
+                    }
                     $("div#oos_msg").css('visibility', '');
+                    $("div#oos_msg").html(msg);
                 } else {
                     $("div#oos_msg").css('visibility', 'hidden');
                 }
@@ -111,5 +104,4 @@ $(document).ready(function() {
     ProcessForm(document.getElementById("add_cart_{id}"));
 });
 </script>
-{!endif}
 {# end {templatelocation} #}

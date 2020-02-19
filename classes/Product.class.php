@@ -2877,6 +2877,30 @@ class Product
 
 
     /**
+     * Get the out-of-stock message to display on product pages.
+     *
+     * @return  string      Text for OOS message
+     */
+    public function getLeadTimeMessage()
+    {
+        global $LANG_SHOP;
+
+        $lt_msg = '';
+        // trim the leadtime since it isn't trimmed in the DB
+        // to allow "nothing" instead of inheriting the supplier
+        // lead time.
+        if (trim($this->LeadTime()) != '') {
+            $lt_msg = sprintf(
+                $LANG_SHOP['disp_lead_time'],
+                $this->LeadTime()
+            );
+        }
+        COM_errorLog("msg: " . var_export($lt_msg,true));
+        return $lt_msg;
+    }
+
+
+    /**
      * Check if this item is out of stock.
      *
      * @return  integer     Zero to behave normally, or 1 or 2 if out of stock.
@@ -3680,7 +3704,7 @@ class Product
             'onhand'    => $this->onhand,
             'weight'    => $this->getWeight(),
             'sku'       => $this->getName(),
-            'leadtime'  => $this->onhand == 0 && $this->lead_time != '' ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+            'leadtime'  => $this->onhand == 0 ? $this->getLeadTimeMessage() : '',
             'images'    => array(),
         );
         if ($this->track_onhand) {
@@ -4022,7 +4046,7 @@ class Product
 
 
     /**
-     * Get the lead time text for this supplier.
+     * Get the lead time text for this product.
      *
      * @return  string  Lead time description
      */
