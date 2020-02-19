@@ -44,7 +44,7 @@
             <button class="uk-button uk-button-success" type="submit" name="saveregion">{$LANG_ADMIN['submit']}</button>
             <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
             <button class="uk-button" type="reset" name="regions"i
-                onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?countries';" />{$LANG_ADMIN['cancel']}</button>
+                onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?regions';" />{$LANG_ADMIN['cancel']}</button>
         </div>
     </div>
 </form>

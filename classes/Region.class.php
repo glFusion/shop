@@ -257,6 +257,7 @@ class Region extends RegionBase
 
         $T->set_var(array(
             'region_id'     => $this->getID(),
+            'region_code'   => $this->getCode(),
             'region_name'   => $this->getName(),
             'ena_chk'       => $this->region_enabled ? 'checked="checked"' : '',
             'doc_url'       => SHOP_getDocUrl('region_form'),
