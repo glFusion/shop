@@ -20,25 +20,68 @@ namespace Shop;
  */
 class Catalog
 {
+    /** Brand ID, to limit results.
+     * @var integer */
+    private $brand_id = 0;
+
+    /** Category ID, to limit results.
+     * @var mixed */
+    private $cat_id = 0;
+
+    /** Cart object for creating nonce values.
+     * @var object */
+    private $Cart = NULL;
+
+
+    /**
+     * Set the brand ID to limit results.
+     *
+     * @param   integer $brand_id   Brand ID
+     * @return  object  $this
+     */
+    public function setBrandID($brand_id)
+    {
+        $this->brand_id = (int)$brand_id;
+        return $this;
+    }
+
+
+    /**
+     * Set the category to limit results shown.
+     * `$cat_id` can be an integer for a Shop category, or a string for a
+     * plugin name.
+     *
+     * @param   integer|string  $cat_id     Category ID/Plugin Name
+     * @return  object      $this
+     */
+    public function setCatID($cat_id)
+    {
+        if (is_numeric($cat_id) || empty($cat_id)) {
+            $this->cat_id = (int)$cat_id;
+        } else {
+            $this->cat_id = $cat_id;
+        }
+        return $this;
+    }
+
+
     /**
      * Show the default catalog layout based on plugin configuration.
      *
-     * @param   integer $cat_id     Optional category ID from the URL
-     * @param   integer $brand_id   Optional brand ID to filter results
      * @return  string      HTML for catalog display
      */
-    public static function defaultCatalog($cat_id=0, $brand_id=0)
+    public function defaultCatalog()
     {
         global $_SHOP_CONF;
 
         if (
             ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
-            $cat_id == 0 &&
+            $this->cat_id == 0 &&
             (!isset($_GET['query']) || isset($_GET['clearsearch']))
         ) {
-            $content .= self::Categories();
+            $content .= $this->Categories();
         } else {
-            $content .= self::Products($cat_id, $brand_id);
+            $content .= $this->Products();
             $menu_opt = $LANG_SHOP['products'];
             $page_title = $LANG_SHOP['main_title'];
         }
@@ -49,20 +92,41 @@ class Catalog
     /**
      * Diaplay the product catalog items.
      *
-     * @param   integer $cat_id     Optional category ID to limit display
-     * @param   integer $brand_id   Optional brand ID. Overrides $cat_id
      * @return  string      HTML for product catalog.
      */
-    public static function Products($cat_id=0, $brand_id=0)
+    public function Products()
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER, $_PLUGINS;
 
         $isAdmin = plugin_ismoderator_shop() ? true : false;
+
+        // Create product template
+        if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
+        $T = SHOP_getTemplate(array(
+            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
+            'start'   => 'product_list_start',
+            'end'     => 'product_list_end',
+            'download'  => 'buttons/btn_download',
+            'login_req' => 'buttons/btn_login_req',
+            'btn_details' => 'buttons/btn_details',
+        ) );
+
+        // If a string is submitted as the category ID, treat it as a plugin and
+        // show all the products under that category.
+        if (!is_int($this->cat_id) && !empty($this->cat_id)) {
+            $display .= $T->parse('', 'start');
+            $this->getPluginProducts($T, $this->cat_id);
+            $T->set_block('wrapper', 'ProductItems', 'PI');
+            $display .= $T->parse('', 'wrapper');
+            $display .= $T->parse('', 'end');
+            return $display;
+        }
+
         $cat_name = '';
         $cat_img_url = '';
         $display = '';
         $cat_sql = '';
-        $Cat = Category::getInstance($cat_id);
+        $Cat = Category::getInstance($this->cat_id);
         $Cart = Cart::getInstance();
 
         // If a cat ID is requested but doesn't exist or the user can't access
@@ -74,7 +138,7 @@ class Catalog
 
         // Get the root category and see if the requested category is root.
         $RootCat = Category::getRoot();
-        if ($brand_id == 0) {       // no brand limit, check for a category ID
+        if ($this->brand_id == 0) {       // no brand limit, check for a category ID
             $cat_name = $Cat->cat_name;
             $cat_desc = $Cat->description;
             $cat_img_url = $Cat->getImage()['url'];
@@ -95,7 +159,7 @@ class Catalog
             $brand_name = '';
             $brand_dscp = '';
         } else {
-            $Sup = Supplier::getInstance($brand_id);
+            $Sup = Supplier::getInstance($this->brand_id);
             if ($Sup->getID() > 0) {
                 // Just borrow $cat_sql for this limit
                 $cat_sql = " AND p.brand_id = {$Sup->getID()}";
@@ -243,8 +307,8 @@ class Catalog
             $query_str = '';
         }
         $pagenav_args = array();
-        if ($cat_id > 0) {
-            $pagenav_args[] = 'category=' . $cat_id;
+        if ($this->cat_id > 0) {
+            $pagenav_args[] = 'category=' . $this->cat_id;
         }
 
         // If applicable, order by
@@ -293,7 +357,7 @@ class Catalog
         }
 
         // Create product template
-        if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
+        /*if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
         $T = SHOP_getTemplate(array(
             'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
             'start'   => 'product_list_start',
@@ -301,20 +365,20 @@ class Catalog
             'download'  => 'buttons/btn_download',
             'login_req' => 'buttons/btn_login_req',
             'btn_details' => 'buttons/btn_details',
-        ) );
+        ) );*/
 
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
             'currency'      => $_SHOP_CONF['currency'],
-            'breadcrumbs'   => $cat_id > 0 ? $Cat->Breadcrumbs() : '',
+            'breadcrumbs'   => $cthis->at_id > 0 ? $Cat->Breadcrumbs() : '',
             'search_text'   => $search,
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             'sortby_options' => $sortby_options,
             'sortby'        => $sortby,
             'table_columns' => $_SHOP_CONF['catalog_columns'],
-            'cat_id'        => $cat_id == 0 ? '' : $cat_id,
-            'brand_id'      => $brand_id,
+            'cat_id'        => $this->cat_id == 0 ? '' : $this->cat_id,
+            'brand_id'      => $this->brand_id,
             'prod_by_brand' => $prod_by_brand,
             'brand_logo_url' => $brand_logo_url,
             'brand_dscp'    => $brand_dscp,
@@ -407,13 +471,72 @@ class Catalog
         if (
             $_SHOP_CONF['show_plugins']&&
             $page == 1 &&
-            $brand_id == 0 &&
-            ( $cat_id == 0 || $cat_id == $RootCat->cat_id ) &&
+            $this->brand_id == 0 &&
+            ( $this->cat_id == 0 || $this->cat_id == $RootCat->cat_id ) &&
             empty($search)
+        ) {
+            $this->getPluginProducts($T);
+        }
+
+        //$T->parse('output', 'wrapper');
+        $display .= $T->parse('', 'wrapper');
+
+        if ($catrows == 0 && COM_isAnonUser()) {
+            $T->set_var('anon_and_empty', 'true');
+        }
+
+        $pagenav_args = empty($pagenav_args) ? '' : '?'.implode('&', $pagenav_args);
+        // Display pagination
+        if ($prod_per_page > 0 && $count > $prod_per_page) {
+            $T->set_var(
+                'pagination',
+                COM_printPageNavigation(
+                    SHOP_URL . '/index.php' . $pagenav_args,
+                    $page,
+                    ceil($count / $prod_per_page)
+                )
+            );
+        } else {
+            $T->set_var('pagination', '');
+        }
+
+        // Display a "not found" message if count == 0
+        if ($prodrows == 0) {
+            $T->set_var('no_rows', true);
+        }
+
+        $display .= $T->parse('', 'end');
+        return $display;
+    }
+
+
+    /**
+     * Get plugin products for the catalog.
+     * Shown on the homepage and if a plugin (non-integer) category is requested.
+     *
+     * @param   object  $T      Template object
+     * @param   string  $pi_name    Plugin name, empty for all plugins
+     */ 
+    private function getPluginProducts(&$T, $pi_name='')
+    {
+        global $_SHOP_CONF, $_PLUGINS, $_USER;
+
+        // Get products from plugins.
+        // For now, this hack shows plugins only on the first page, since
+        // they're not included in the page calculation.
+        if (
+            $_SHOP_CONF['show_plugins']
         ) {
             // Get the currency class for formatting prices
             $Cur = Currency::getInstance();
-            foreach ($_PLUGINS as $pi_name) {
+            $Cart = Cart::getInstance();
+
+            if (!empty($pi_name)) {
+                $plugins = array($pi_name);
+            } else {
+                $plugins = $_PLUGINS;
+            }
+            foreach ($plugins as $pi_name) {
                 $status = LGLIB_invokeService(
                     $pi_name,
                     'getproducts',
@@ -421,7 +544,9 @@ class Catalog
                     $plugin_data,
                     $svc_msg
                 );
-                if ($status != PLG_RET_OK || empty($plugin_data)) continue;
+                if ($status != PLG_RET_OK || empty($plugin_data)) {
+                    continue;
+                }
 
                 foreach ($plugin_data as $A) {
                     // Reset button values
@@ -433,8 +558,8 @@ class Catalog
                     $P = \Shop\Product::getByID($A['id']);
                     $price = $P->getPrice();
                     $T->set_var(array(
-                        'id'        => $P->id,          // required
-                        'item_id'   => $P->item_id,     // required
+                        'id'        => $P->getID(),     // required
+                        'item_id'   => $P->getItemID(), // required
                         'name'      => $P->short_description,
                         'short_description' => $P->short_description,
                         'encrypted' => '',
@@ -473,39 +598,9 @@ class Catalog
                     $T->parse('PI', 'ProductItems', true);
                 }   // foreach plugin_data
 
-            }   // foreach $_PLUGINS
+            }   // foreach $plugins
 
-        }   // if page == 1
-
-        //$T->parse('output', 'wrapper');
-        $display .= $T->parse('', 'wrapper');
-
-        if ($catrows == 0 && COM_isAnonUser()) {
-            $T->set_var('anon_and_empty', 'true');
-        }
-
-        $pagenav_args = empty($pagenav_args) ? '' : '?'.implode('&', $pagenav_args);
-        // Display pagination
-        if ($prod_per_page > 0 && $count > $prod_per_page) {
-            $T->set_var(
-                'pagination',
-                COM_printPageNavigation(
-                    SHOP_URL . '/index.php' . $pagenav_args,
-                    $page,
-                    ceil($count / $prod_per_page)
-                )
-            );
-        } else {
-            $T->set_var('pagination', '');
-        }
-
-        // Display a "not found" message if count == 0
-        if ($prodrows == 0) {
-            $T->set_var('no_rows', true);
-        }
-
-        $display .= $T->parse('', 'end');
-        return $display;
+        }   // if showing plugins
     }
 
 
@@ -514,7 +609,7 @@ class Catalog
      *
      * @return  string  HTML for category homepage
      */
-    public static function Categories()
+    public function Categories()
     {
         global $_SHOP_CONF;
 

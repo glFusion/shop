@@ -3836,9 +3836,20 @@ class Product
      *
      * @return  integer     DB record ID.
      */
-    public function getId()
+    public function getID()
     {
         return $this->id;
+    }
+
+
+    /**
+     * Get the item ID for the product.
+     *
+     * @return  mixed       Item ID
+     */
+    public function getItemID()
+    {
+        return $this->item_id;
     }
 
 
