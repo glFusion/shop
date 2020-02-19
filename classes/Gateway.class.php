@@ -14,13 +14,18 @@
  */
 namespace Shop;
 
+
 /**
  * Base class for Shop payment gateway.
  * Provides common variables and methods required by payment gateway classes.
  * @package shop
  */
-class Gateway
+class Gateway extends DBO
 {
+    /** Table key, used by DBO class.
+     * @var string */
+    protected static $TABLE = 'shop.gateways';
+
     /**
      * Property fields.  Accessed via __set() and __get().
      * This is for configurable properties of the gateway- URL, testing
@@ -493,67 +498,6 @@ class Gateway
     public static function toggleDonation($oldvalue, $id)
     {
         return self::_toggle($oldvalue, 'donation', $id);
-    }
-
-
-    /**
-     * Reorder all gateways.
-     */
-    public static function ReOrder()
-    {
-        global $_TABLES;
-
-        $sql = "SELECT id, orderby
-                FROM {$_TABLES['shop.gateways']}
-                ORDER BY orderby ASC;";
-        $result = DB_query($sql);
-
-        $order = 10;
-        $stepNumber = 10;
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
-                $sql = "UPDATE {$_TABLES['shop.gateways']}
-                    SET orderby = '$order'
-                    WHERE id = '" . DB_escapeString($A['id']) . "'";
-                DB_query($sql);
-            }
-            $order += $stepNumber;
-        }
-        Cache::clear('gateways');
-    }
-
-
-    /**
-     * Move a gateway definition up or down the admin list.
-     *
-     * @param   string  $id     Gateway IDa
-     * @param   string  $where  Direction to move (up or down)
-     */
-    public static function moveRow($id, $where)
-    {
-        global $_TABLES;
-
-        switch ($where) {
-        case 'up':
-            $oper = '-';
-            break;
-        case 'down':
-            $oper = '+';
-            break;
-        default:
-            $oper = '';
-            break;
-        }
-
-        if (!empty($oper)) {
-            $id = DB_escapeString($id);
-            $sql = "UPDATE {$_TABLES['shop.gateways']}
-                    SET orderby = orderby $oper 11
-                    WHERE id = '$id'";
-            //echo $sql;die;
-            DB_query($sql);
-            self::ReOrder();
-        }
     }
 
 

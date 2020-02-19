@@ -18,8 +18,20 @@ namespace Shop;
  * Class for product attribute groups.
  * @package shop
  */
-class ProductOptionGroup
+class ProductOptionGroup extends DBO
 {
+    /** Table key, used by DBO class.
+     * @var string */
+    protected static $TABLE = 'shop.prod_opt_grps';
+
+    /** ID Field name, used by DBO class.
+     * @var string */
+    protected static $F_ID = 'pog_id';
+
+    /** Order field name, useb by DBO class.
+     * @var string */
+    protected static $F_ORDERBY = 'pog_orderby';
+
     /** Tag array used with caching, for consistency.
      * @var array */
     static $TAGS = array('products', 'options');
@@ -373,71 +385,6 @@ class ProductOptionGroup
     public function AddError($msg)
     {
         $this->Errors[] = $msg;
-    }
-
-
-    /**
-     * Reorder all attribute items with the same product ID and attribute og_name.
-     */
-    private function reOrder()
-    {
-        global $_TABLES;
-
-        $sql = "SELECT pog_id, pog_orderby
-                FROM {$_TABLES['shop.prod_opt_grps']}
-                ORDER BY pog_orderby, pog_name ASC;";
-        $result = DB_query($sql);
-
-        $order = 10;        // First og_orderby value
-        $stepNumber = 10;   // Increment amount
-        $changed = false;   // Assume no changes
-        while ($A = DB_fetchArray($result, false)) {
-            SHOP_log("checking item {$A['pog_id']}", SHOP_LOG_DEBUG);
-                SHOP_log("Order by is {$A['pog_orderby']}, should be $order", SHOP_LOG_DEBUG);
-            if ($A['pog_orderby'] != $order) {  // only update incorrect ones
-                $changed = true;
-                $sql = "UPDATE {$_TABLES['shop.prod_opt_grps']}
-                    SET pog_orderby = '$order'
-                    WHERE pog_id = '{$A['pog_id']}'";
-                DB_query($sql);
-            }
-            $order += $stepNumber;
-        }
-        if ($changed) {
-            self::clearCache();
-        }
-    }
-
-
-    /**
-     * Move an attribute group up or down the admin list.
-     *
-     * @param   string  $where  Direction to move (up or down)
-     */
-    public function moveRow($where)
-    {
-        global $_TABLES;
-
-        switch ($where) {
-        case 'up':
-            $oper = '-';
-            break;
-        case 'down':
-            $oper = '+';
-            break;
-        default:
-            $oper = '';
-            break;
-        }
-
-        if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.prod_opt_grps']}
-                    SET pog_orderby = pog_orderby $oper 11
-                    WHERE pog_id = '{$this->pog_id}'";
-            //echo $sql;die;
-            DB_query($sql);
-            $this->reOrder();
-        }
     }
 
 

@@ -18,11 +18,19 @@ namespace Shop;
  * Class for product features.
  * @package shop
  */
-class Feature
+class Feature extends DBO
 {
+    /** Table key, used by DBO class.
+     * @var string */
+    protected static $TABLE = 'shop.features';
+
+    /** ID Field name, used by DBO class.
+     * @var string */
+    protected static $F_ID = 'ft_id';
+
     /** Tag array used with caching, for consistency.
      * @var array */
-    static $TAGS = array('products', 'features');
+    private static $TAGS = array('products', 'features');
 
     /** Feature record ID.
      * @var integer */
@@ -570,67 +578,6 @@ class Feature
     public function getValue()
     {
         return $this->fv_text;
-    }
-
-
-    /**
-     * Update the feature display order.
-     */
-    public static function reOrder()
-    {
-        global $_TABLES;
-
-        $sql = "SELECT ft_id, orderby
-                FROM {$_TABLES['shop.features']}
-                ORDER BY orderby ASC;";
-        //echo $sql;die;
-        $result = DB_query($sql);
-
-        $order = 10;        // First orderby value
-        $stepNumber = 10;   // Increment amount
-        while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
-                $changed = true;
-                $sql = "UPDATE {$_TABLES['shop.features']}
-                    SET orderby = '$order'
-                    WHERE ft_id = '{$A['ft_id']}'";
-                DB_query($sql);
-            }
-            $order += $stepNumber;
-        }
-    }
-
-
-    /**
-     * Move a calendar up or down the admin list, within its product.
-     * Product ID is needed to pass through to reOrder().
-     *
-     * @param   string  $where  Direction to move (up or down)
-     */
-    public function moveRow($where)
-    {
-        global $_TABLES;
-
-        switch ($where) {
-        case 'up':
-            $oper = '-';
-            break;
-        case 'down':
-            $oper = '+';
-            break;
-         default:
-            $oper = '';
-            break;
-        }
-
-        if (!empty($oper)) {
-            $sql = "UPDATE {$_TABLES['shop.features']}
-                    SET orderby = orderby $oper 11
-                    WHERE ft_id = '{$this->ft_id}'";
-            //echo $sql;die
-            DB_query($sql);
-            self::reOrder();
-        }
     }
 
 
