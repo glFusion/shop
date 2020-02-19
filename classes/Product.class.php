@@ -1527,8 +1527,11 @@ class Product
             switch ($OG->getType()) {
             case 'select':
             case 'radio':
-                // First find the selected option
-                if ($this->Variant) {
+                // First find the selected option.
+                // Check that the option is included in the variant, this could
+                // get out of sync if variants are created with more options
+                // later and the default variant doesn' thave them.
+                if ($this->Variant && isset($VarOptions[$OG->getName()])) {
                     $sel_opt = $VarOptions[$OG->getName()]->getID();
                 } else {
                     $sel_opt = 0;
