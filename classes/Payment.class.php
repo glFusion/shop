@@ -254,6 +254,9 @@ class Payment
     }
 
 
+    /**
+     * Migrate payment information from the IPN log to the Payments table.
+     */
     public static function loadFromIPN()
     {
         global $_TABLES;
@@ -280,19 +283,20 @@ class Payment
             if (isset($ipn_data['pmt_gross']) && $ipn_data['pmt_gross'] > 0) {
                 $pmt_gross = $ipn_data['pmt_gross'];
             } else {
-                $pmt_gross = $ipn->pmt_gross;
+                $pmt_gross = $ipn->getPmtGross();
             }
             if ($pmt_gross < .01) {
                 //echo "Skipping id {$A['id']} - amount is empty\n";
                 continue;
             }
+
             if (!empty($A['order_id'])) {
                 $order_id = $A['order_id'];
-            } elseif ($ipn->txn_id != '') {
+            } elseif ($ipn->getTxnId() != '') {
                 $order_id = DB_getItem(
                     $_TABLES['shop.orders'],
                     'order_id',
-                    "pmt_txn_id = '" . DB_escapeString($ipn->txn_id) . "'"
+                    "pmt_txn_id = '" . DB_escapeString($ipn->getTxnId()) . "'"
                 );
             } else {
                 $order_id = '';
