@@ -433,29 +433,13 @@ class Gateway extends DBO
      * @param   string  $id         Gateway ID
      * @return  integer             New value, or old value upon failure
      */
-    private static function _toggle($oldvalue, $varname, $id)
+    protected static function _toggle($oldvalue, $varname, $id)
     {
-        global $_TABLES;
-
-        $id = DB_escapeString($id);
-        $varname = DB_escapeString($varname);
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-
-        // Determing the new value (opposite the old)
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.gateways']}
-                SET $varname=$newvalue
-                WHERE id='$id'";
-        //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql, 1);
-        if (DB_error()) {
-            return $oldvalue;
-        } else {
+        $newval = parent::_toggle($oldvalue, $varname, $id);
+        if ($newval != $oldvalue) {
             Cache::clear('gateways');
-            return $newvalue;
         }
+        return $newval;
     }
 
 

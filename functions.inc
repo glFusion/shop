@@ -2180,7 +2180,7 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
  * @param   boolean $emptyok    True if return val can be empty
  * @return  array       Array element or NULL, cast to $type
  */
-function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = false)
+function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = true)
 {
     if (!isset($A[$varname])) {
         return $default;
