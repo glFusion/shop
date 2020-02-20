@@ -10,6 +10,7 @@ Release TBD
   * Allow a default variant to be set which will be shown first.
   * A subset of product images can be assigned to each variant.
   * New reorder report listing items at or below their reorder qty.
+  * Allow plugins to use the catalog display by calling index.php with `category=pi_name`.
 
 ## v1.1.2
 Release 2020-02-15
