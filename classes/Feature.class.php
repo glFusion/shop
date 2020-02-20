@@ -18,15 +18,17 @@ namespace Shop;
  * Class for product features.
  * @package shop
  */
-class Feature extends DBO
+class Feature
 {
+    use DBO;    // import trait for reordering
+
     /** Table key, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.features';
+    private static $TABLE = 'shop.features';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    protected static $F_ID = 'ft_id';
+    private static $F_ID = 'ft_id';
 
     /** Tag array used with caching, for consistency.
      * @var array */

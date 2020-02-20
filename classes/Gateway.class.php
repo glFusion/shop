@@ -20,11 +20,13 @@ namespace Shop;
  * Provides common variables and methods required by payment gateway classes.
  * @package shop
  */
-class Gateway extends DBO
+class Gateway
 {
+    use DBO;
+
     /** Table key, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.gateways';
+    private static $TABLE = 'shop.gateways';
 
     /**
      * Property fields.  Accessed via __set() and __get().
@@ -433,9 +435,9 @@ class Gateway extends DBO
      * @param   string  $id         Gateway ID
      * @return  integer             New value, or old value upon failure
      */
-    protected static function _toggle($oldvalue, $varname, $id)
+    protected static function do_toggle($oldvalue, $varname, $id)
     {
-        $newval = parent::_toggle($oldvalue, $varname, $id);
+        $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
             Cache::clear('gateways');
         }
@@ -453,7 +455,7 @@ class Gateway extends DBO
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'enabled', $id);
+        return self::do_toggle($oldvalue, 'enabled', $id);
     }
 
 
@@ -467,7 +469,7 @@ class Gateway extends DBO
      */
     public static function toggleBuyNow($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'buy_now', $id);
+        return self::do_toggle($oldvalue, 'buy_now', $id);
     }
 
 
@@ -481,7 +483,7 @@ class Gateway extends DBO
      */
     public static function toggleDonation($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'donation', $id);
+        return self::do_toggle($oldvalue, 'donation', $id);
     }
 
 

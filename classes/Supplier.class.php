@@ -19,6 +19,11 @@ namespace Shop;
  */
 class Supplier extends Address
 {
+    use DBO;
+
+    private static $TABLE = 'shop.suppliers';
+    private static $F_ID = 'sup_id';
+
     /** Flag indicates that this is a supplier (default)
      * @var integer */
     private $is_supplier = 1;
@@ -152,7 +157,7 @@ class Supplier extends Address
      */
     public function setIsSupplier($val)
     {
-        $this->is_supplier = $val == 0 ? 0 : 1;
+        $this->is_supplier = $val == 1 ? 1 : 0;
         return $this;
     }
 
@@ -162,7 +167,7 @@ class Supplier extends Address
      *
      * @return  integer     Value of is_supplier flag
      */
-    private function getIsSupplier()
+    public function getIsSupplier()
     {
         return (int)$this->is_supplier;
     }
@@ -187,7 +192,7 @@ class Supplier extends Address
      *
      * @return  integer     Value of is_brand flag
      */
-    private function getIsBrand()
+    public function getIsBrand()
     {
         return (int)$this->is_brand;
     }
@@ -415,41 +420,6 @@ class Supplier extends Address
         ) );
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
-    }
-
-
-    /**
-     * Sets a boolean field to the opposite of the supplied value.
-     *
-     * @param   integer $oldvalue   Old (current) value
-     * @param   string  $varname    Name of DB field to set
-     * @param   integer $id         ID number of element to modify
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function Toggle($oldvalue, $varname, $id)
-    {
-        global $_TABLES;
-
-        $id = (int)$id;
-        switch ($varname) {     // allow only valid field names
-        case 'is_supplier':
-        case 'is_brand':
-            // Determing the new value (opposite the old)
-            $oldvalue = $oldvalue == 1 ? 1 : 0;
-            $newvalue = $oldvalue == 1 ? 0 : 1;
-
-            $sql = "UPDATE {$_TABLES['shop.suppliers']}
-                SET $varname=$newvalue
-                WHERE sup_id=$id";
-            // Ignore SQL errors since varname is indeterminate
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-                return $oldvalue;
-            } else {
-                return $newvalue;
-            }
-        }
     }
 
 

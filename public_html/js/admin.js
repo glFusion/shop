@@ -22,9 +22,7 @@ var SHOP_toggle = function(cbox, id, type, component) {
         data: data,
         success: function(result) {
             try {
-                console.log(cbox);
                 cbox.checked = result.newval == 1 ? true : false;
-                console.log(result.title);
                 if (result.title != null) {
                     cbox.title = result.title;
                 }
@@ -33,6 +31,9 @@ var SHOP_toggle = function(cbox, id, type, component) {
             catch(err) {
                 alert(result.statusMessage);
             }
+        },
+        error: function(err) {
+            console.log(err);
         }
     });
     return false;

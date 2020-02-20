@@ -18,8 +18,18 @@ namespace Shop;
  * Each product belongs to one category.
  * @package shop
  */
-class Category
+class Category// extends DBO
 {
+    use DBO;
+
+    /** Key field name.
+     * @var string */
+    protected static $TABLE = 'shop.categories';
+
+    /** ID Field name.
+     * @var string */
+    protected static $F_ID = 'cat_id';
+
     /** Property fields accessed via `__set()` and `__get()`.
      * @var array */
     var $properties = array();
@@ -496,27 +506,14 @@ class Category
      * @param   integer $id         ID number of element to modify
      * @return  integer             New value, or old value upon failure
      */
-    private static function _toggle($oldvalue, $varname, $id)
+    protected static function do_toggle($oldvalue, $varname, $id)
     {
-        global $_TABLES;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.categories']}
-                SET $varname=$newvalue
-                WHERE cat_id=$id";
-        //echo $sql;die;
-        DB_query($sql);
-        if (DB_error()) {
-            SHOP_log("Category::_toggle() SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
+        $newval = self::_toggle($oldvalue, $varname, $id);
+        if ($newval != $oldval) {
             Cache::clear('categories');
             Cache::clear('sitemap');
-            return $newvalue;
         }
+        return $newval;
     }
 
 
@@ -529,7 +526,7 @@ class Category
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'enabled', $id);
+        return self::do_toggle($oldvalue, 'enabled', $id);
     }
 
 

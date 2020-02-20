@@ -1,6 +1,6 @@
 <?php
 /**
- * DataBase Object class to provide common functions for other classes.
+ * DataBase Object trait to provide common functions for other classes.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
@@ -14,23 +14,19 @@
 namespace Shop;
 
 /**
- * Base class for database operations.
- * Requires derived classes to define the `$TABLE` variable.
+ * Utility trait containing common database operations.
+ * Classes using this trait must define at least the `$TABLE` variable.
  * @package shop
  */
-abstract class DBO
+trait DBO
 {
-    /** Key field name.
+    /** Key field name. Can be overridden by defining `$F_ID`.
      * @var string */
-    protected static $F_ID = 'id';
+    private static $_F_ID = 'id';
 
-    /** Order field name.
+    /** Order field name. Can be overridden by defining `$F_ORDERBY`.
      * @var string */
-    protected static $F_ORDERBY = 'orderby';
-
-    /** Table key. Blank value will cause no action to be taken.
-     * @var string */
-    protected static $TABLE = '';
+    private static $_F_ORDERBY = 'orderby';
 
 
     /**
@@ -60,8 +56,8 @@ abstract class DBO
             break;
         }
 
-        $f_orderby = static::$F_ORDERBY;
-        $f_id = static::$F_ID;
+        $f_orderby = isset(static::$F_ORDERBY) ? static::$F_ORDERBY : static::$_F_ORDERBY;
+        $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
         if (!empty($oper)) {
             $sql = "UPDATE {$_TABLES[static::$TABLE]}
                     SET $f_orderby = $f_orderby $oper 11
@@ -81,12 +77,12 @@ abstract class DBO
         global $_TABLES;
 
         // Do nothing if the derived class did not specify a table key.
-        if (static::$TABLE == '') {
+        if (!isset(static::$TABLE)) {
             return;
         }
 
-        $f_id = static::$F_ID;
-        $f_orderby = static::$F_ORDERBY;
+        $f_orderby = isset(static::$F_ORDERBY) ? static::$F_ORDERBY : static::$_F_ORDERBY;
+        $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
         $table = $_TABLES[static::$TABLE];
         $sql = "SELECT $f_id, $f_orderby
                 FROM $table
@@ -104,6 +100,61 @@ abstract class DBO
             }
             $order += $stepNumber;
         }
+    }
+
+
+    /**
+     * Sets a boolean field to the opposite of the supplied value.
+     *
+     * @param   integer $oldvalue   Old (current) value
+     * @param   string  $varname    Name of DB field to set
+     * @param   integer $id         ID of record to modify
+     * @return  integer     New value, or old value upon failure
+     */
+    private static function _toggle($oldvalue, $varname, $id)
+    {
+        global $_TABLES;
+
+        // Do nothing if the derived class did not specify a table key.
+        if (!isset(static::$TABLE)) {
+            return $oldvalue;
+        }
+
+        $f_id = isset(static::$F_ID) ? static::$F_ID : static::$_F_ID;
+        $id = DB_escapeString($id);
+
+        // Determing the new value (opposite the old)
+        $oldvalue = $oldvalue == 1 ? 1 : 0;
+        $newvalue = $oldvalue == 1 ? 0 : 1;
+
+        $sql = "UPDATE {$_TABLES[static::$TABLE]}
+                SET $varname = $newvalue
+                WHERE $f_id = '$id'";
+        //COM_errorLog($sql);;
+        // Ignore SQL errors since varname is indeterminate
+        DB_query($sql, 1);
+        if (DB_error()) {
+            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+            return $oldvalue;
+        } else {
+            return $newvalue;
+        }
+    }
+
+
+    /**
+     * Public-facing function to toggle some field from oldvalue.
+     * Used for objects that don't have their own Toggle function and don't
+     * need any other action taken, like clearing caches.
+     *
+     * @param   integer $oldval Original value to be changed
+     * @param   string  $field  Name of field to change
+     * @param   mixed   $id     Record ID
+     * @return  integer     New value on success, Old value on error
+     */
+    public static function Toggle($oldval, $field, $id)
+    {
+        return self::_toggle($oldval, $field, $id);
     }
 
 }

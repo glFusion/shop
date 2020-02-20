@@ -18,7 +18,7 @@ namespace Shop;
  * Class for product attribute groups.
  * @package shop
  */
-class ProductOptionGroup extends DBO
+class ProductOptionGroup// extends DBO
 {
     /** Table key, used by DBO class.
      * @var string */
