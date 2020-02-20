@@ -19,8 +19,16 @@ namespace Shop;
  * color, size and style.
  * @package shop
  */
-class ProductVariant
+class ProductVariant extends DBO
 {
+    /** Key field name.
+     * @var string */
+    protected static $TABLE = 'shop.product_variants';
+
+    /** Key field name.
+     * @var string */
+    protected static $F_ID = 'pv_id';
+
     /** Variant record ID.
      * @var integer */
     private $pv_id;
@@ -1489,26 +1497,12 @@ class ProductVariant
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        global $_TABLES;
-
-        $id = (int)$id;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 1 ? 1 : 0;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.product_variants']}
-                SET enabled = $newvalue
-                WHERE pv_id = $id";
-        DB_query($sql, 1);
-        if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
+        $newval = parent::_toggle($oldvalue, 'enabled', $id);
+        if ($newval != $oldvalue) {
             Cache::clear('products');
             Cache::clear('options');
-            return $newvalue;
         }
+        return $newval;
     }
 
 

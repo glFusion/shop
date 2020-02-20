@@ -733,7 +733,8 @@ case 'orders':
     break;
 
 case 'coupons':
-    $content = Shop\Products\Coupon::adminList();
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Products\Coupon::adminList();
     break;
 
 case 'order':

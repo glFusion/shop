@@ -17,8 +17,14 @@ namespace Shop;
  * Class for product.
  * @package shop
  */
-class Product
+class Product // extends DBO
 {
+    use DBO;
+
+    /** Table key. Blank value will cause no action to be taken.
+     * @var string */
+    protected static $TABLE = 'shop.products';
+
     /** Minimum possible date available.
      * @const string */
     const MIN_DATE = '1900-01-01';
@@ -1318,30 +1324,14 @@ class Product
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    private static function _toggle($oldvalue, $varname, $id)
+    protected static function X_toggle($oldvalue, $varname, $id)
     {
-        global $_TABLES;
-
-        $id = (int)$id;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 1 ? 1 : 0;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.products']}
-                SET $varname=$newvalue
-                WHERE id=$id";
-        //echo $sql;die;
-        // Ignore SQL errors since varname is indeterminate
-        DB_query($sql, 1);
-        if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
+        $newval = self::_toggle($oldvalue, $varname, $id);
+        if ($newval != $oldvalue) {
             Cache::clear('products');
             Cache::clear('sitemap');
-            return $newvalue;
         }
+        return $newval;
     }
 
 
@@ -1355,7 +1345,7 @@ class Product
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'enabled', $id);
+        return self::X_toggle($oldvalue, 'enabled', $id);
     }
 
 
@@ -3689,6 +3679,9 @@ class Product
      * Validate that the product can be ordered.
      * Checks quantity and qty tracking only. If there are attributes
      * then ProductVariant::Validate() should be used instead.
+     *
+     * @param   array   $opts   Array of options for compatibility
+     * @return  array       Array of validation result information
      */
     public function Validate($opts = array())
     {
