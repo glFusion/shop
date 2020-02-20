@@ -122,7 +122,8 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
         $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
-        $display .= Shop\Catalog::defaultCatalog($cat_id);
+        $Catalog = new Shop\Catalog;
+        $display .= $Cat->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
     }
     return $display;

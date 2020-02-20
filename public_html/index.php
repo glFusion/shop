@@ -366,9 +366,12 @@ case 'checkoutcart':
 case 'products':
 default:
     SHOP_setUrl();
-    $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
+    $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
     $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
-    $content .= Shop\Catalog::defaultCatalog($cat_id, $brand_id);
+    $Cat = new Shop\Catalog;
+    $content .= $Cat->setCatID($cat_id)
+        ->setBrandID($brand_id)
+        ->defaultCatalog();
     break;
 
 case 'none':
