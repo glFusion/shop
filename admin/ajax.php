@@ -481,6 +481,10 @@ case 'toggle':
         }
         break;
 
+    case 'zone_rule':
+        $newval = Shop\Rules\Zone::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
     case 'supplier':
         $newval = Shop\Supplier::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;

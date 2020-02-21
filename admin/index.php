@@ -60,7 +60,7 @@ $expected = array(
     'ena_country', 'disa_country', 'del_country',
     'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
-    'rule_del', 'rule_del_regions', 'rule_add', 'rule_save',
+    'rule_del', 'rule_add', 'rule_save',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
@@ -184,12 +184,6 @@ case 'savecat':
     }
     break;
 
-case 'rule_save':
-    $Rule = Shop\Rules\Zone::getInstance($_POST['rule_id']);
-    $Rule->Save($_POST);
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
-    break;
-
 case 'ft_save':
     $FT = new Shop\Feature($_POST['ft_id']);
     if (!$FT->Save($_POST)) {
@@ -279,15 +273,15 @@ case 'rule_del':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
     break;
 
-case 'rule_del_regions':
+case 'rule_save':
     $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
-    if ($rule_id > 0) {
-        Shop\Rules\Zone::getInstance($rule_id)
-            ->del('region', $_POST['region_del'])
+    $Rule = Shop\Rules\Zone::getInstance($rule_id);
+    if ($Rule->getID() > 0) {
+        $Rule->del('region', $_POST['region_del'])
             ->del('country', $_POST['country_del'])
-            ->del('state', $_POST['state_del'])
-            ->Save();
+            ->del('state', $_POST['state_del']);
     }
+    $Rule->Save($_POST);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
     break;
 

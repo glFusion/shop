@@ -675,6 +675,7 @@ $SHOP_UPGRADE['1.2.0'] = array(
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.zone_rules']}` (
       `rule_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       `rule_name` varchar(64) NOT NULL DEFAULT '',
       `allow` tinyint(1) unsigned NOT NULL DEFAULT '0',
       `regions` text,

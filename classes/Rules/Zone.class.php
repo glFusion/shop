@@ -5,8 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.2.0
+ * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -17,33 +17,52 @@ use Shop\Country;
 use Shop\State;
 use Shop\Icon;      // for the admin list
 
+
 /**
  * Class for zone rules.
  * @package shop
  */
 class Zone
 {
+    use \Shop\DBO;
+
+    /** Table key for DBO utilities.
+     * @var string */
+    private static $TABLE = 'shop.zone_rules';
+
+    /** ID Field name for DBO utilities.
+     * @var string */
+    private static $F_ID = 'rule_id';
+
     /** Record ID of the rule.
      * @var integer */
-    private $rule_id;
+    private $rule_id = 0;
+
+    /** Rule name.
+     * @var string */
+    private $rule_name = '';
 
     /** Indicate wheter rule is `allow` or `deny`.
      * @var boolean */
-    private $allow;
+    private $allow = 0;
 
     /** Regions affected by the rule.
      * @var array */
-    private $regions;
+    private $regions = array();
 
     /** Countries affected by the rule.
      * If not empty, the regions are ignored.
      * @var array */
-    private $countries;
+    private $countries = array();
 
     /** States affected by the rule.
      * If not empty, the countries are ignored.
      * @var array */
-    private $states;
+    private $states = array();
+
+    /** Flag to indicate that this rule is active.
+     * @var boolean */
+    private $enabled = 1;
 
 
     /**
@@ -71,13 +90,9 @@ class Zone
                 $this->states = array();
             }
             $this->allow = $A['allow'] ? 1 : 0;
+            $this->enabled = $A['enabled'] ? 1 : 0;
         } else {
             $this->rule_id = 0;
-            $this->rule_name = $LANG_SHOP['new_rule'];
-            $this->regions = array();
-            $this->countries = array();
-            $this->states = array();
-            $this->allow = 0;
         }
     }
 
@@ -158,6 +173,17 @@ class Zone
 
 
     /**
+     * Get the rule ID.
+     *
+     * @return  integer     Rule record ID
+     */
+    public function getID()
+    {
+        return (int)$this->rule_id;
+    }
+
+
+    /**
      * Check whether sales are allowed to a region based on this rule.
      *
      * @param   object  $Addr   Address object
@@ -165,8 +191,8 @@ class Zone
      */
     public function isOK($Addr)
     {
-        // If there is no actual rule set, return true
-        if ($this->rule_id == 0) {
+        // If there is no actual rule set, or the rule is disabled, return true
+        if ($this->rule_id == 0 || !$this->enabled) {
             return true;
         }
 
@@ -247,9 +273,6 @@ class Zone
         if (!is_array($vals) || empty($vals)) {
             $vals = array();
         }
-        if (!is_array($vals)) {
-            $vals = array();
-        }
         if (!empty($vals)) {
             switch ($type) {
             case 'region':
@@ -314,6 +337,7 @@ class Zone
         if (is_array($A)) {
             $this->rule_name = $A['rule_name'];
             $this->allow = (int)$A['allow'];
+            $this->enabled = isset($A['enabled']) ? 1 : 0;
         }
 
         if ($this->rule_id == 0) {
@@ -325,6 +349,7 @@ class Zone
         }
         $sql2 = "rule_name = '" . DB_escapeString($this->rule_name) . "',
             allow = " . (int)$this->allow . ",
+            enabled = " . (int)$this->enabled . ",
             regions = '" . DB_escapeString(json_encode($this->regions)) . "',
             countries = '" . DB_escapeString(json_encode($this->countries)) . "',
             states = '" . DB_escapeString(json_encode($this->states)) . "'";
@@ -367,6 +392,12 @@ class Zone
                 'align' => 'center',
             ),
             array(
+                'text' => $LANG_SHOP['enabled'],
+                'field' => 'enabled',
+                'sort' => false,
+                'align' => 'center',
+            ),
+            array(
                 'text' => $LANG_SHOP['name'],
                 'field' => 'rule_name',
                 'sort' => false,
@@ -376,11 +407,6 @@ class Zone
                 'field' => 'allow',
                 'sort' => false,
             ),
-            /*array(
-                'text' => $LANG_SHOP['regions'],
-                'field' => 'regions',
-                'sort' => false,
-            ),*/
             array(
                 'text' => $LANG_ADMIN['delete'],
                 'field' => 'delete',
@@ -389,7 +415,10 @@ class Zone
             ),
         );
 
-        $defsort_arr = array();
+        $defsort_arr = array(
+            'field' => 'rule_id',
+            'direction' => 'ASC',
+        );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_rule'],
@@ -405,8 +434,13 @@ class Zone
             'query_fields' => array(),
             'default_filter' => '',
         );
-        $extra = array();
-        $options = array('chkdelete' => true, 'chkfield' => 'rule_id');
+        $extra = array(
+            'count' => DB_count($_TABLES[static::$TABLE]),
+        );
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'rule_id',
+        );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_rule_list',
             array(__CLASS__,  'getAdminField'),
@@ -458,6 +492,24 @@ class Zone
             );
             break;
 
+        case 'enabled':
+            if ($fieldvalue == '1') {
+                $switch = ' checked="checked"';
+                $enabled = 1;
+                $tip = $LANG_SHOP['ck_to_disable'];
+            } else {
+                $switch = '';
+                $enabled = 0;
+                $tip = $LANG_SHOP['ck_to_enable'];
+            }
+            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
+                data-uk-tooltip
+                id=\"togenabled{$A['id']}\"
+                title=\"$tip\"
+                onclick='SHOP_toggle(this,\"{$A['rule_id']}\",\"{$fieldname}\",".
+                "\"zone_rule\");' />" . LB;
+            break;
+
         default:
             $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
             break;
@@ -486,6 +538,7 @@ class Zone
             'rule_id'   => $this->rule_id,
             'rule_name' => $this->rule_name,
             'type_sel' . $this->allow => 'checked="checked"',
+            'ena_chk'   => $this->enabled ? 'checked="checked"' : '',
             'doc_url'   => SHOP_getDocURL('zone_rules', $_CONF['language']),
             'have_regions' => count($this->regions),
             'have_countries' => count($this->countries),
@@ -513,7 +566,7 @@ class Zone
             ) );
             $T->parse('RB', 'regionBlk', true);
         }
-   
+
         $T->set_block('form', 'countryBlk', 'CB');
         foreach ($this->countries as $id) {
             $Obj = Country::getInstance($id);
@@ -535,9 +588,7 @@ class Zone
         }
         $T->parse('tooltipster_js', 'tips');
         $retval .= $T->parse('output', 'form');
-        //$retval .= COM_endBlock();
         return $retval;
-
     }
 
 }
