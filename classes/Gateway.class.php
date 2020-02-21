@@ -1116,8 +1116,15 @@ class Gateway
         $fields = $this->getConfigFields();
         $T->set_block('tpl', 'ItemRow', 'IRow');
         foreach ($fields as $name=>$field) {
+            // Format the parameter name nicely for the form
+            if (isset($this->lang[$name])) {
+                $prompt = $this->lang[$name];
+            } else {
+                $parts = array_map('ucfirst', explode('_', $name));
+                $prompt = implode(' ', $parts);
+            }
             $T->set_var(array(
-                'param_name'    => isset($this->lang[$name]) ? $this->lang[$name] : $name,
+                'param_name'    => $prompt,
                 'field_name'    => $name,
                 'param_field'   => $field['param_field'],
                 'other_label'   => isset($field['other_label']) ? $field['other_label'] : '',
