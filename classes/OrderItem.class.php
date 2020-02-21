@@ -622,6 +622,7 @@ class OrderItem
     public function setInvalid($flag)
     {
         $this->invalid = $flag ? 1: 0;
+        return $this;
     }
 
 
@@ -641,18 +642,17 @@ class OrderItem
      *
      * @param   string  $old    Original currency
      * @param   string  $new    New currency
-     * @return  boolean     True on success, False on error
+     * @return  object  $this
      */
     public function convertCurrency($old, $new)
     {
-        // If already set, return OK. Nothing to do.
-        if ($new == $old) return true;
-
-        foreach (array('price') as $fld) {
-            $this->$fld = Currency::Convert($this->$fld, $new, $old);
+        if ($new != $old) {
+            foreach (array('price') as $fld) {
+                $this->$fld = Currency::Convert($this->$fld, $new, $old);
+            }
+            $this->Save();
         }
-        $this->Save();
-        return true;
+        return $this;
     }
 
 
