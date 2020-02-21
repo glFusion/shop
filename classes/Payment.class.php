@@ -277,7 +277,7 @@ class Payment
             pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
             pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
             pmt_method = '" . DB_escapeString($this->method) . "',
-            pmt_comment = '" . DB_escapeString($this->comment) . "'
+            pmt_comment = '" . DB_escapeString($this->comment) . "',
             pmt_uid = " . (int)$this->uid;
         //echo $sql;die;
         $res = DB_query($sql);
