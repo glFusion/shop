@@ -33,7 +33,7 @@
         <span id="hlp_regions" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-{!if have_countries}
+{!if have_regions}
         <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="SHOP_caItems(this.form,'region_del', this);">&nbsp;<b>{$LANG_SHOP['chk_all']}</b><br />
 <!-- BEGIN regionBlk -->
         <input type="checkbox" name="region_del[]" value="{id}">&nbsp;{name}<br />
