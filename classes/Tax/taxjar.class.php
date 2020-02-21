@@ -74,7 +74,7 @@ class taxjar extends \Shop\Tax
         foreach ($this->Order->getItems() as &$Item) {
             if ($Item->isTaxable()) {
                 $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
-                $Item->setTotalTax($tax)->setTaxRate($rate);
+                $Item->setTax($tax)->setTaxRate($rate);
             }
         }
         return $rate;

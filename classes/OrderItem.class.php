@@ -472,7 +472,7 @@ class OrderItem
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
                 extras = '" . DB_escapeString(json_encode($this->extras)) . "',
-                tax = {$this->getTotalTax()},
+                tax = {$this->getTax()},
                 tax_rate = {$this->getTaxRate()}";
                 //options = '" . DB_escapeString($this->options) . "',
                 //shipping = {$shipping},
@@ -930,7 +930,7 @@ class OrderItem
      * @param   float   $tax    Tax amount
      * @return  object  $this
      */
-    public function setTotalTax($tax)
+    public function setTax($tax)
     {
         $this->tax = (float)$this->getOrder()->getCurrency()->formatValue($tax);
         return $this;
@@ -942,7 +942,7 @@ class OrderItem
      *
      * @return  float       Total sales tax for the item
      */
-    public function getTotalTax()
+    public function getTax()
     {
         return (float)$this->tax;
     }
