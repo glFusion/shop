@@ -4,9 +4,9 @@
  * Provides the base class for actual payment gateway classes to use.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -935,10 +935,12 @@ class Gateway
      *
      * @param   string  $key        Item name
      * @param   string  $value      Item value
+     * @return  object  $this
      */
     public function AddCustom($key, $value)
     {
         $this->custom[$key] = $value;
+        return $this;
     }
 
 
@@ -1383,10 +1385,12 @@ class Gateway
      *
      * @param   string  $key    Name of configuration item
      * @param   mixed   $value  Value to set
+     * @return  object  $this
      */
     public function setConfig($key, $value)
     {
         $this->config[$key] = $value;
+        return $this;
     }
 
 
@@ -1394,10 +1398,12 @@ class Gateway
      * Set a gateway ID as the selected one to remember between orders.
      *
      * @param   string  $gw_id  Gateway ID
+     * @return  object  $this
      */
     public static function setSelected($gw_id)
     {
         SESS_setVar('shop_gateway_sel', $gw_id);
+        return $this;
     }
 
 
@@ -1712,6 +1718,18 @@ class Gateway
     protected function getEnabled()
     {
         return $this->enabled ? 1 : 0;
+    }
+
+
+    /**
+     * Return a dummy `true` value during AJAX finalizing cart.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  boolean     True
+     */
+    public function processOrder($order_id)
+    {
+        return true;
     }
 
 }   // class Gateway

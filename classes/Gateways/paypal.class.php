@@ -100,7 +100,7 @@ class paypal extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
-            //'terms'     => 0,
+            'terms'     => 1,
         );
 
         // Call the parent constructor to initialize the common variables.
@@ -1067,7 +1067,7 @@ class paypal extends \Shop\Gateway
             if ($OI->getProduct()->isTaxable()) {
                 $item['tax'] = array(
                     'name' => $LANG_SHOP['tax'],
-                    'percent' => $OI->getTax(),
+                    'amount' => $OI->getTax(),
                 );
             }
             $A['items'][] = $item;
@@ -1119,6 +1119,7 @@ class paypal extends \Shop\Gateway
         } else {
 //            var_dump($inv);
             SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
+            SHOP_Log("Data: " . var_export($inv, true));
             return false;
         }
         return true;

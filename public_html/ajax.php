@@ -92,9 +92,12 @@ case 'addcartitem':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
+    $status = Shop\Gateway::getInstance(
+        Shop\Order::getInstance($cart_id)->getInfo('gateway')
+    )->processOrder($cart_id);
     Shop\Cart::setFinal($cart_id);
     $output = array(
-        'status' => true,
+        'status' => $status,
     );
     break;
 

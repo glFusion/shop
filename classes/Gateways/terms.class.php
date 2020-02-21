@@ -3,22 +3,21 @@
  * Gateway to handle Net terms.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Gateways;
+use Shop\Gateway;
 
-use Shop\Cart;
-use Shop\Coupon;
-use Shop\Currency;
 
 /**
- *  Coupon gateway class, just to provide checkout buttons for coupons
+ *  Net Terms gateway class.
+ *  @package shop
  */
 class terms extends \Shop\Gateway
 {
@@ -26,6 +25,7 @@ class terms extends \Shop\Gateway
      * Number of days for net terms, default = "Net 30"
      * @var integer */
     private $net_days = 30;
+
 
     /**
      * Constructor.
@@ -46,11 +46,13 @@ class terms extends \Shop\Gateway
             'gateway'   => '',
             'net_days'  => 30,
         );
-
+        $this->cfgFields= array(
+            'gateway'   => 'select',
+            'net_days'  => 'string',
+        );
         $this->services = array(
             'checkout'  => 1,
         );
-
         parent::__construct();
     }
 
@@ -82,6 +84,7 @@ class terms extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
+        return '';      // TODO not needed? Probably call Gateway::createInvoice() here.
         global $_USER;
 
         // Add custom info for the internal ipn processor
@@ -136,7 +139,6 @@ class terms extends \Shop\Gateway
                 'doc_url'       => '',
             );
         }
-
         return $fields;
     }
 
@@ -173,6 +175,22 @@ class terms extends \Shop\Gateway
     public function allowNoIPN()
     {
         return true;
+    }
+
+
+    /**
+     * Process the order confirmation. Called via AJAX.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  boolean     True on success, False on error
+     */
+    public function processOrder($order_id)
+    {
+        $gw_name = $this->getConfig('gateway');
+        if (empty($gw_name)) {
+            return false;           // unconfigured
+        }
+        return Gateway::getInstance($gw_name)->createInvoice($order_id);
     }
 
 }
