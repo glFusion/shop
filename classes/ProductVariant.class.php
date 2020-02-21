@@ -1448,7 +1448,8 @@ class ProductVariant
         if ($P->getTrackOnhand()) {
             if ($this->onhand < $opts['quantity']) {
                 $retval['is_oos'] = true;
-                if ($P->getOversell() == Product::OVERSELL_HIDE) {
+                if ($P->getOversell() > Product::OVERSELL_ALLOW) {
+                    // Can't be sold
                     $retval['status'] = 2;
                     $retval['msg'] = 'Not Available';
                     $retval['allowed'] = false;
