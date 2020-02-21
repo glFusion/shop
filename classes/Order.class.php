@@ -1510,7 +1510,7 @@ class Order
         $this->tax_items = 0;
         foreach ($this->items as &$Item) {
             $this->tax_items += $Item->getTaxable();
-            $tax += $Item->getTotalTax();
+            $tax += $Item->getTax();
         }
         $this->tax = $tax;
         return $this;
@@ -2676,7 +2676,18 @@ class Order
      */
     public function getShipping()
     {
-        return $this->shipping;
+        return (float)$this->shipping;
+    }
+
+
+    /**
+     * Get the total handling charge for this order.
+     *
+     * @return  float       Handling charge
+     */
+    public function getHandling()
+    {
+        return (float)$this->handling;
     }
 
 
@@ -2687,7 +2698,7 @@ class Order
      */
     public function getTax()
     {
-        return $this->tax;
+        return (float)$this->tax;
     }
 
 
@@ -2698,7 +2709,7 @@ class Order
      */
     public function getDiscountPct()
     {
-        return $this->discount_pct;
+        return (float)$this->discount_pct;
     }
 
 
