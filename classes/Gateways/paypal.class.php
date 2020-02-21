@@ -974,8 +974,8 @@ class paypal extends \Shop\Gateway
         $Shop = new Company();
         $Order = Order::getInstance($order_num);
         $Currency = Currency::getInstance($Order->currency);
-        $Billto = new Address($Order->getAddress('billto'));
-        $Shipto = new Address($Order->getAddress('shipto'));
+        $Billto = $Order->getBillto();
+        $Shipto = $Order->getShipto();
 
         $A = array(
             'detail' => array(
@@ -1008,12 +1008,12 @@ class paypal extends \Shop\Gateway
                             'surname' => $Billto->parseName('lname'),
                         ),
                         'address' => array(
-                            'address_line_1'    => $Order->billto_address1,
-                            'address_line_2'    => $Order->billto_address2,
-                            'admin_area_2'      => $Order->billto_city,
-                            'admin_area_1'      => $Order->billto_state,
-                            'postal_code'       => $Order->billto_zip,
-                            'country_code'      => $Order->billto_country,
+                            'address_line_1'    => $Billto->getAddress1(),
+                            'address_line_2'    => $Billto->getAddress2(),
+                            'admin_area_2'      => $Billto->getCity(),
+                            'admin_area_1'      => $Billto->getState(),
+                            'postal_code'       => $Billto->getPostal(),
+                            'country_code'      => $Billto->getCountry(),
                         ),
                         'email_address' => $Order->buyer_email,
                     ),
@@ -1023,12 +1023,12 @@ class paypal extends \Shop\Gateway
                             'surname' => $Shipto->parseName('lname'),
                         ),
                         'address' => array(
-                            'address_line_1'    => $Order->shipto_address1,
-                            'address_line_2'    => $Order->shipto_address2,
-                            'admin_area_2'      => $Order->shipto_city,
-                            'admin_area_1'      => $Order->shipto_state,
-                            'postal_code'       => $Order->shipto_zip,
-                            'country_code'      => $Order->shipto_country,
+                            'address_line_1'    => $Shipto->getAddress1(),
+                            'address_line_2'    => $Shipto->getAddress2(),
+                            'admin_area_2'      => $Shipto->getCity(),
+                            'admin_area_1'      => $Shipto->getState(),
+                            'postal_code'       => $Shipto->getPostal(),
+                            'country_code'      => $Shipto->getCountry(),
                         ),
                     ),
                 ),
@@ -1046,8 +1046,8 @@ class paypal extends \Shop\Gateway
                 'breakdown' => array(
                     'shipping' => array(
                         'amount' => array(
-                            'currency_code' => $Order->currency,
-                            'value' => $Currency->FormatValue($Order->shipping),
+                            'currency_code' => $Order->getCurrency()->getCode(),
+                            'value' => $Currency->FormatValue($Order->getShipping()),
                         ),
                     ),
                 ),
@@ -1055,24 +1055,24 @@ class paypal extends \Shop\Gateway
         );
         foreach ($Order->getItems() as $OI) {
             $item = array(
-                'name' => $OI->getProduct()->name,
-                'description' => $OI->description,
-                'quantity' => $OI->quantity,
+                'name' => $OI->getProduct()->getName(),
+                'description' => $OI->getDscp(),
+                'quantity' => $OI->getQuantity(),
                 'unit_amount' => array(
-                    'currency_code' => $Currency->code,
-                    'value' => $Currency->FormatValue($OI->price),
+                    'currency_code' => $Currency->getCode(),
+                    'value' => $Currency->FormatValue($OI->getNetPrice()),
                 ),
                 'unit_of_measure' => 'QUANTITY',
             );
             if ($OI->getProduct()->isTaxable()) {
                 $item['tax'] = array(
                     'name' => $LANG_SHOP['tax'],
-                    'percent' => SHOP_getTaxRate() * 100,
+                    'percent' => $OI->getTax(),
                 );
             }
             $A['items'][] = $item;
         }
-        var_dump($A);die;
+        //var_export($A);die;
 
         // Create the draft invoice
         $ch = curl_init();
@@ -1137,7 +1137,7 @@ class paypal extends \Shop\Gateway
 
 
     /**
-     * Get the webhook ID depending on whether in test or produciton mode.
+     * Get the webhook ID depending on whether in test or production mode.
      *
      * @return  string      Webhook ID from Paypal
      */
@@ -1161,7 +1161,6 @@ class paypal extends \Shop\Gateway
         return true;
     }
 
-
-}   // class paypal
+}
 
 ?>
