@@ -123,6 +123,9 @@ class Order
      * @var boolean */
     protected $tainted = false;
 
+    /** Flag to indicate that there are invalid items on the order.
+     * @var boolean */
+    private $hasInvalid = false;
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -646,7 +649,7 @@ class Order
      */
     public function View($view = 'order', $step = 0)
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
 
         // Safety valve in case an invalid order is requested.
         // This is for administrators, the canView() function will trap this
@@ -661,10 +664,13 @@ class Order
         $icon_tooltips = array();
 
         switch ($view) {
+        case 'adminview':
         case 'order':
-        case 'adminview';
             $this->isFinalView = true;
+            $tplname = 'order';
+            break;
         case 'checkout':
+            $this->checkRules();
             $this->setTaxRate(
                 Tax::getProvider()
                     ->withOrder($this)
@@ -729,6 +735,7 @@ class Order
         $have_images = false;
         $has_sale_items = false;
         $item_net = 0;
+        $good_items = 0;        // Count non-embargoed items
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             $P->setVariant($item->getVariantID());
@@ -775,6 +782,9 @@ class Order
                 $sale_tooltip = '';
             }
 
+            if (!$item->getInvalid()) {
+                $good_items++;
+            }
             $item_total = $item->getPrice() * $item->getQuantity();
             $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->gross_items += $item_total;
@@ -809,6 +819,7 @@ class Order
                 'del_item_url'  => COM_buildUrl(
                     SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
                 ),
+                'embargoed'     => $item->getInvalid(),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -872,21 +883,16 @@ class Order
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
-            'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
-            'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'      => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
-            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -915,16 +921,22 @@ class Order
             'dc_row_vis'    => $this->getDiscountAmount(),
             'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
             'net_items'     => $Currency->Format($this->net_items),
+            'good_items'    => $good_items,
+            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
+            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
+            'total'     => $Currency->Format($this->total),
+            'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
+            'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
         ) );
 
-        if (!$this->no_shipping) {
-            $T->set_var(array(
-                'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
-                'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
-                'shipping'      => $Currency->FormatValue($this->shipping),
-            ) );
-        }
+            if (!$this->no_shipping) {
+                $T->set_var(array(
+                    'shipper_id'    => $this->shipper_id,
+                    'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
+                    'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
+                    'shipping'      => $Currency->FormatValue($this->shipping),
+                ) );
+            }
 
         if ($this->isAdmin) {
             $T->set_var(array(
@@ -977,13 +989,17 @@ class Order
             $T->set_var('gateway_radios', $this->getCheckoutRadios());
             break;
         case 'checkout':
-            $gw = Gateway::getInstance($this->getInfo('gateway'));
-            if ($gw) {
-                $T->set_var(array(
-                    'gateway_vars'  => $this->checkoutButton($gw),
-                    'checkout'      => 'true',
-                    'pmt_method'    => $gw->getDscp(),
-                ) );
+            $T->set_var('checkout', true);
+            if ($this->hasInvalid) {
+                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
+            } else {
+                $gw = Gateway::getInstance($this->getInfo('gateway'));
+                if ($gw) {
+                    $T->set_var(array(
+                        'gateway_vars'  => $this->checkoutButton($gw),
+                        'pmt_method'    => $gw->getDscp(),
+                    ) );
+                }
             }
         default:
             break;
@@ -2846,6 +2862,31 @@ class Order
     {
         $this->calcItemTotals()->calcTax();
         return (float)$this->net_items + $this->shipping + $this->tax + $this->handling;
+    }
+
+
+    /**
+     * Check the zone rules for each item, and mark those that aren't allowed.
+     * Also sets `$this->hasInvalid` if any invalid items are found so the
+     * checkout button can be suppressed.
+     *
+     * @return  object  $this
+     */
+    private function checkRules()
+    {
+        $this->hasInvalid = false;
+        foreach ($this->items as $id=>$Item) {
+            if ($Item->getProduct()->getRuleID() > 0) {
+                $status = $Item->getInvalid();
+                $Rule = $Item->getProduct()->getRule();
+                if (!$Rule->isOK($this->getShipto())) {
+                    $Item->setInvalid(true);
+                    $this->hasInvalid = true;
+                } else {
+                    $Item->setInvalid(false);
+                }
+            }
+        }
     }
 
 }

@@ -1253,6 +1253,18 @@ class Category// extends DBO
         return DB_error() ? false : true;
     }
 
+
+    /**
+     * Get the zone rule ID for this category.
+     * Traverses the tree in reverse and returns the first rule found.
+     * TODO: stub function during testing
+     *
+     * @return  integer     Applicable rule ID
+     */
+    public function getRuleID()
+    {
+        return 3;
+    }
 }
 
 ?>

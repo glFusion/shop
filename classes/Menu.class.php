@@ -193,6 +193,11 @@ class Menu
                 'text' => $LANG_SHOP['states'],
                 'active' => $view == 'states' ? true : false,
             ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?rules',
+                'text' => $LANG_SHOP['rules'],
+                'active' => $view == 'rules' ? true : false,
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }

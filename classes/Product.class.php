@@ -151,6 +151,10 @@ class Product // extends DBO
      * @var integer */
     private $def_pv_id = 0;
 
+    /** Zone rule ID.
+     * @var integer */
+    private $zone_rule = 0;
+
     /** Related category objects.
      * @var array */
     private $Categories = NULL;
@@ -591,7 +595,8 @@ class Product // extends DBO
             ->setBrandID($row['brand_id'])
             ->setSupplierRef($row['supplier_ref'])
             ->setLeadTime($row['lead_time'])
-            ->setDefVariantID($row['def_pv_id']);
+            ->setDefVariantID($row['def_pv_id'])
+            ->setRuleID($row['zone_rule']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -706,6 +711,47 @@ class Product // extends DBO
     public function getSupplierRef()
     {
         return $this->supplier_ref;
+    }
+
+
+    /**
+     * Set the zone rule for this item.
+     *
+     * @param   integer $id     Rule ID
+     * @return  object  $this
+     */
+    private function setRuleID($id)
+    {
+        $this->zone_rule = (int)$id;
+        return $this;
+
+    }
+
+
+    /**
+     * Get the zone rule ID
+     *
+     * @return  intger      Rule ID
+     */
+    public function getRuleID()
+    {
+        COM_errorLog("{$this->id} : {$this->zone_rule}");
+        return (int)$this->zone_rule;
+    }
+
+
+    /**
+     * Get the zone rule object.
+     *
+     * @return  object      Rule object
+     */
+    public function getRule()
+    {
+        if ($this->zone_rule> 0) {
+            return Rules\Zone::getInstance($this->zone_rule);
+        } else {
+            return new Rules\Zone;
+        }
     }
 
 
@@ -901,6 +947,7 @@ class Product // extends DBO
                 supplier_ref = '{$this->getSupplierRef()}',
                 lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
                 def_pv_id = {$this->getDefVariantID()},
+                zone_rule = {$this->getRuleID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
@@ -1217,6 +1264,7 @@ class Product // extends DBO
             'supplier_ref'  => $this->getSupplierRef(),
             'lead_time'     => $this->getLeadTime(),
             'ph_lead_time'  => $ph_lead_time,
+            'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
         ) );
 
         // Create the button type selections. New products get the default
