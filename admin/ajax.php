@@ -40,39 +40,6 @@ if (isset($_POST['action'])) {
 }
 $title = NULL;      // title attribute to be set
 switch ($action) {
-case 'delPXF':      // delete a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $retval = array(
-        'status' => Shop\Feature::deleteProduct($prod_id, $ft_id),
-    );
-    break;
-
-case 'updPXF':      // update a product->feature mapping
-    $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
-    $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
-    $fv_id = SHOP_getVar($_POST, 'fv_id', 'integer', 0);
-    $fv_text = SHOP_getVar($_POST, 'fv_text', 'string', '');
-    if (
-        $prod_id > 0 &&
-        $ft_id > 0 &&
-        ($fv_id > 0 || !empty($fv_text))
-    ) {
-        if (!empty($fv_text)) {
-            $fv_id = 0;
-        }
-        $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->updateProduct($prod_id, $fv_id, $fv_text),
-            'fv_id' => $fv_id,
-            'fv_custom' => $fv_text,
-        );
-    } else {
-        $retval = array(
-            'status' => false,
-        );
-    }
-    break;
-
 case 'newPXF':      // add a product->feature mapping
     $prod_id = SHOP_getVar($_POST, 'prod_id', 'integer', 0);
     $ft_id = SHOP_getVar($_POST, 'ft_id', 'integer', 0);
@@ -87,8 +54,9 @@ case 'newPXF':      // add a product->feature mapping
             $fv_id = 0;
         }
         $retval = array(
-            'status' => Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
+            'status' => true, //Shop\Feature::getInstance($ft_id)->addProduct($prod_id, $fv_id, $fv_text),
             'ft_name' => Shop\Feature::getInstance($ft_id)->getName(),
+            'ft_val' => $ft_id,
             'ft_opts' => Shop\Feature::optionList($ft_id),
             'fv_opts' => Shop\FeatureValue::optionList($ft_id, $fv_id),
             'fv_custom' => $fv_text,
@@ -335,22 +303,23 @@ case 'add_tracking':
     if ($shipment_id > 0) {
         $SP = new Shop\ShipmentPackage();
         if ($SP->Save($_POST)) {
-            if ($SP->shipper_id > 0) {
-                $shipper_code = Shop\Shipper::getInstance($SP->shipper_id)->code;
-                $tracking_url = Shop\Shipper::getInstance($SP->shipper_id)->getTrackingUrl($SP->tracking_num);
+            if ($SP->getShipperID() > 0) {
+                $shipper_code = Shop\Shipper::getInstance($SP->getShipperID())->getCode();
+                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNum());
             } else {
                 $shipper_code = '';
                 $tracking_url = '';
             }
             $retval = array(
                 'status'        => true,
-                'shipper_id'    => $SP->shipper_id,
-                'pkg_id'        => $SP->pkg_id,
-                'shipper_name'  => $SP->shipper_info,
-                'tracking_num'  => $SP->tracking_num,
+                'shipper_id'    => $SP->getShipperID(),
+                'pkg_id'        => $SP->getID(),
+                'shipper_name'  => $SP->getShipperInfo(),
+                'tracking_num'  => $SP->getTrackingNum(),
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
+            COM_errorlog(print_r($retval,true));
         } else {
             $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
         }
@@ -510,6 +479,10 @@ case 'toggle':
         default:
             exit;
         }
+        break;
+
+    case 'zone_rule':
+        $newval = Shop\Rules\Zone::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
     case 'supplier':

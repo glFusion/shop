@@ -122,7 +122,8 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
         $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
-        $display .= Shop\Catalog::defaultCatalog($cat_id);
+        $Catalog = new Shop\Catalog;
+        $display .= $Cat->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
     }
     return $display;
@@ -810,6 +811,7 @@ function plugin_autouninstall_shop()
             'shop.features',
             'shop.features_values',
             'shop.prodXfeat',
+            'shop.zone_rules',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -2179,7 +2181,7 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
  * @param   boolean $emptyok    True if return val can be empty
  * @return  array       Array element or NULL, cast to $type
  */
-function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = false)
+function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = true)
 {
     if (!isset($A[$varname])) {
         return $default;

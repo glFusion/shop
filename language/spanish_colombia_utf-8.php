@@ -317,6 +317,10 @@ $LANG_SHOP = array (
         'name' => 'Coupon Activity',
         'dscp' => 'List coupon purchases and application against orders.',
     ),
+    'reorder' => array(
+        'name' => 'Item Reorder Report',
+        'dscp' => 'List all items at or below their minimum stock levels.',
+    ),
 ),
 'my_orders' => 'My Orders',
 'no_products_match' => 'No products match your search parameters',
@@ -645,6 +649,26 @@ $LANG_SHOP = array (
 'lead_time' => 'Lead Time',
 'disp_lead_time' => 'Allow %s',
 'on_sale' => 'On Sale!',
+'chk_all' => 'Check All',
+'default' => 'Default',
+'nontaxable' => 'Non-Taxable',
+'err_dup_iso' => 'An error occurred. Check that the ISO code is unique.',
+'cust_text_override' => 'Custom Text Override',
+'prod_features' => 'Product Features',
+'incl_nontax' => 'Include non-taxable sales?',
+'rules' => 'Zone Rules',
+'rule_name' => 'Rule Name',
+'sales_are' => 'Sales Are',
+'allowed' => 'Allowed',
+'denied' => 'Denied',
+'del_selected' => 'Delete Selected',
+'del_rule' => 'Delete Rule',
+'save_rule' => 'Save Rule',
+'new_rule' => 'New Rule',
+'edit_rule' => 'Edit Rule',
+'zone_rule' => 'Zone Rule',
+'restrictions' => 'Restrictions',
+'none_defined' => 'No %s have been defined.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -675,6 +699,12 @@ $LANG_SHOP_HELP = array(
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',
 'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
+'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
+'hlp_chk_all' => 'Select or de-select all items',
+'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
+'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
+'hlp_rules_noitems' => 'One or more of the items on your order can be shipped to your selected shipping address. Please edit the order or shipping information.',
+'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

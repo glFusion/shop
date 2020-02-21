@@ -103,7 +103,7 @@ class State extends RegionBase
             if (count($parts) == 2) {
                 $s_iso = DB_escapeString($parts[1]);
                 $c_iso = DB_escapeString($parts[0]);
-                $sql = "SELECT s.*, c.iso_code as country_iso
+                $sql = "SELECT s.*, c.alpha2 as country_iso
                     FROM {$_TABLES['shop.states']} s
                     LEFT JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
@@ -113,7 +113,7 @@ class State extends RegionBase
                 // Try with just the state, but this is unpredictable
                 $s_iso = DB_escapeString($parts[0]);
                 $c_iso = '';
-                $sql = "SELECT s.*, s.iso_code as country_iso
+                $sql = "SELECT s.*, c.alpha2 as country_iso
                     FROM {$_TABLES['shop.states']} s
                     LEFT JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
@@ -395,7 +395,7 @@ class State extends RegionBase
      */
     public function Save($A=NULL)
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $this->Country = Country::getInstance($A['country_iso']);
         $country_id = $this->Country->getID();
@@ -414,6 +414,7 @@ class State extends RegionBase
             $sql1 = "INSERT INTO {$_TABLES['shop.states']} SET ";
             $sql3 = '';
         }
+
         $sql2 = "country_id = {$this->getCountryID()},
             iso_code = '" . DB_escapeString($this->getISO()) . "',
             state_name = '" . DB_escapeString($this->getName()) . "',
@@ -421,14 +422,15 @@ class State extends RegionBase
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        DB_query($sql, 1);  // suppress errors, show nice error message instead
         if (!DB_error()) {
             if ($this->getID() == 0) {
                 $this->setID(DB_insertID());
             }
             $status = true;
         } else {
+            $this->addError($LANG_SHOP['err_dup_iso']);
+            SHOP_log($sql, SHOP_LOG_ERROR);
             $status = false;
         }
         return $status;
@@ -512,7 +514,7 @@ class State extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x',
+            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . (int)$country_id,
         );
 
         /*$options = array(
@@ -585,6 +587,33 @@ class State extends RegionBase
         default:
             $retval = $fieldvalue;
             break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Get the state ISO code from the country ISO and state name.
+     *
+     * @param   string  $alpha2     2-letter ISO code for the country
+     * @param   string  $state_name Full state name
+     * @return  string      2-letter ISO code for state
+     */
+    public static function isoFromName($alpha2, $state_name)
+    {
+        global $_TABLES;
+
+        $retval = '';
+        $alpha2 = DB_escapeString($alpha2);
+        $state_name = DB_escapeString($state_name);
+        $sql = "SELECT s.iso_code FROM {$_TABLES['shop.states']} s
+            LEFT JOIN {$_TABLES['shop.countries']} c
+                ON c.country_id = s.country_id
+            WHERE c.alpha2='$alpha2' AND  s.state_name='$state_name'";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            $retval = $A['iso_code'];
         }
         return $retval;
     }

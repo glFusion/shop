@@ -21,9 +21,11 @@ namespace Shop;
  */
 class OrderStatus extends Workflow
 {
+    use DBO;
+
     /** Table name.
      * @var string */
-    public static $table = 'shop.orderstatus';
+    protected static $TABLE = 'shop.orderstatus';
 
     /** Status Name.
      * @var string */
@@ -52,7 +54,7 @@ class OrderStatus extends Workflow
     {
         if (is_array($A)) {
             $this->name         = SHOP_getVar($A, 'name', 'string', 'undefined');
-            $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 1);
+            $this->enabled      = SHOP_getVar($A, 'enabled', 'integer', 0);
             $this->notify_buyer = SHOP_getVar($A, 'notify_buyer', 'integer', 1);
             $this->notify_admin = SHOP_getVar($A, 'notify_admin', 'integer', 1);
         } else {
@@ -77,9 +79,9 @@ class OrderStatus extends Workflow
         if ($statuses === NULL) {
             $statuses = array();
             $sql = "SELECT *
-                    FROM {$_TABLES[self::$table]}
-                    WHERE enabled = 1
+                    FROM {$_TABLES[self::$TABLE]}
                     ORDER BY id ASC";
+                    //WHERE enabled = 1
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
@@ -98,7 +100,7 @@ class OrderStatus extends Workflow
      */
     public static function getInstance($name)
     {
-        $statuses = self::getAll();
+        $statuses = self::getAll(true);
         if (isset($statuses[$name])) {
             return $statuses[$name];
         } else {
@@ -171,7 +173,7 @@ class OrderStatus extends Workflow
      * @param   integer $oldvalue   Original value to change
      * @return  integer     New value, or old value upon failure
      */
-    public static function Toggle($id, $field, $oldvalue)
+    public static function XToggle($id, $field, $oldvalue)
     {
         global $_TABLES;
 
@@ -184,9 +186,9 @@ class OrderStatus extends Workflow
         // Determing the new value (opposite the old)
         $newvalue = $oldvalue == 1 ? 0 : 1;
 
-        $sql = "UPDATE {$_TABLES[self::$table]}
+        $sql = "UPDATE {$_TABLES[self::$TABLE]}
                 SET $field = $newvalue
-                WHERE id='$id'";
+                WHERE id ='$id'";
         //echo $sql;die;
         DB_query($sql, 1);
         if (!DB_error()) {

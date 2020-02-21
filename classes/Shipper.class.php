@@ -21,6 +21,12 @@ namespace Shop;
  */
 class Shipper
 {
+    use DBO;
+
+    /** Table key for DBO functions
+     * @var string */
+    private static $TABLE = 'shop.shipping';
+
     /** Minimim possible effective date/time.
      * @const string */
     const MIN_DATETIME = '1970-01-01 00:00:00';
@@ -281,9 +287,10 @@ class Shipper
      */
     private function setModuleCode($code)
     {
-        $this->code = $code;
+        $this->module_code = $code;
         return $this;
     }
+
 
     /**
      * Set the shipper name.
@@ -399,7 +406,7 @@ class Shipper
         if (empty($value)) {
             $value = self::MAX_DATETIME;
         }
-        $this->properties[$var] = new \Date($value, $_CONF['timezone']);
+        $this->valid_to = new \Date($value, $_CONF['timezone']);
         return $this;
     }
 
@@ -412,6 +419,17 @@ class Shipper
     public function getOrderShipping()
     {
         return $this->ordershipping;
+    }
+
+
+    /**
+     * Get the module code for this shipper.
+     *
+     * @return  string      Module code
+     */
+    public function getCode()
+    {
+        return $this->module_code;
     }
 
 
@@ -914,25 +932,11 @@ class Shipper
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        global $_TABLES;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-        $id = (int)$id;
-
-        $sql = "UPDATE {$_TABLES['shop.shipping']}
-                SET enabled = $newvalue
-                WHERE id = $id";
-        //echo $sql;die;
-        DB_query($sql);
-        if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
+        $newval = self::_toggle($oldvalue, 'enabled', $id);
+        if ($newval != $oldvalue) {
             Cache::clear(self::$base_tag);
-            return $newvalue;
         }
+        return $newvalue;
     }
 
 

@@ -21,6 +21,16 @@ namespace Shop;
  */
 class ProductVariant
 {
+    use DBO;
+
+    /** Key field name.
+     * @var string */
+    private static $TABLE = 'shop.product_variants';
+
+    /** Key field name.
+     * @var string */
+    private  static $F_ID = 'pv_id';
+
     /** Variant record ID.
      * @var integer */
     private $pv_id;
@@ -68,6 +78,10 @@ class ProductVariant
     /** OptionValue items associated with this variant.
      * @var array */
     private $Options = NULL;
+
+    /** Image IDs associated with this Variant.
+     * @var array */
+    private $images = array();
 
 
     /**
@@ -144,6 +158,7 @@ class ProductVariant
      * Set the object variables from an array.
      *
      * @param   array   $A      Array of values
+     * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
     public function setVars($A)
@@ -159,6 +174,7 @@ class ProductVariant
                 ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
+                ->setImageIDs(SHOP_getVar($A, 'img_ids', 'mixed'))
                 ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
@@ -240,9 +256,10 @@ class ProductVariant
     /**
      * Load the product attributs into the options array.
      *
+     * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    private function loadOptions()
+    public function loadOptions()
     {
         global $_TABLES;
 
@@ -253,8 +270,9 @@ class ProductVariant
                     ON vx.pov_id = pov.pov_id
                 INNER JOIN {$_TABLES['shop.prod_opt_grps']} pog
                     ON pog.pog_id = pov.pog_id
-                WHERE vx.pv_id = {$this->pv_id}
+                WHERE vx.pv_id = {$this->getID()}
                 ORDER BY pog.pog_orderby ASC";
+            //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $this->Options[$A['pog_name']] = new ProductOptionValue($A);
@@ -511,22 +529,11 @@ class ProductVariant
     /**
      * Get the description array elements.
      *
-     * @return  string      Item description
+     * @return  array       Array of description fields
      */
     public function getDscp()
     {
-        static $POGS = NULL;
-        if ($POGS === NULL) {
-            $POGS = ProductOptionGroup::getAll();
-        }
-        $retval = array();
-        foreach ($this->Options as $Opt) {
-            $retval[] = array(
-                'naem' => $POGS[$Opt->getGroupID()]->getName(),
-                'value' => $Opt->getValue(),
-            );
-        }
-        return $retval;
+        return $this->dscp;
     }
 
 
@@ -541,27 +548,6 @@ class ProductVariant
         foreach ($this->dscp as $dscp) {
             $retval .= " -- {$dscp['name']}: {$dscp['value']}<br />\n";
         }
-        return $retval;
-    }
-
-
-    /**
-     * Convert a json string from the DB directly to a string description.
-     *
-     * @param   array|string    Array of elements or JSON string
-     * @return  string      One-line description
-     */
-    private static function jsonToString($json)
-    {
-        $retval = array();
-        $json = json_decode($json,true);
-        if (!is_array($json)) {
-            return '';
-        }
-        foreach ($json as $dscp) {
-            $retval[] = "{$dscp['name']}:{$dscp['value']}";
-        }
-        $retval = implode(', ', $retval);
         return $retval;
     }
 
@@ -586,9 +572,10 @@ class ProductVariant
      * Get the decriptive elements from the option names and values.
      * Sets the local dscp property
      *
+     * @access  public  To be called during upgrade
      * @return  object  $this
      */
-    private function makeDscp()
+    public function makeDscp()
     {
         $this->dscp = array();
         foreach ($this->Options as $name=>$POV) {
@@ -671,6 +658,7 @@ class ProductVariant
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
             $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
         }
+        $Product = Product::getByID($this->item_id);
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -678,7 +666,7 @@ class ProductVariant
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
             'item_id'       => $this->getItemId(),
-            'item_name'     => Product::getByID($this->item_id)->name,
+            'item_name'     => $Product->getName(),
             'pv_id'         => $this->getId(),
             'price'         => $this->getID() ? $this->getPrice() : '',
             'weight'        => $this->getWeight(),
@@ -711,6 +699,17 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
+
+        $T->set_block('form', 'ImageBlock', 'IB');
+        foreach ($Product->getImages() as $img) {
+            $T->set_var(array(
+                'img_id'    => $img['img_id'],
+                'img_url'   => Images\Product::getUrl($img['filename'])['url'],
+                'img_chk'   => in_array($img['img_id'], $this->images) ? 'checked="checked"' : '',
+            ) );
+            $T->parse('IB', 'ImageBlock', true);
+        }
+
         $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         $retval .= $T->finish($T->get_var('output'));
@@ -833,6 +832,7 @@ class ProductVariant
             }
             $opt_ids = array();
             $sku_parts = array();
+            $dscp = array();
             foreach($groups as $pog=>$pov_id) {
                 if ($pov_id == 0) {
                     continue;
@@ -847,6 +847,10 @@ class ProductVariant
                         $sku_parts[] = $Opt->getSku();
                     }
                 }
+                $dscp[] = array(
+                    'name'  => ProductOptionGroup::getInstance($pog)->getName(),
+                    'value' => $Opt->getValue(),
+                );
             }
             if (empty($A['sku'])) {
                 if (!empty($sku_parts) && !empty($P->getName())) {
@@ -879,6 +883,7 @@ class ProductVariant
                 weight = $weight,
                 shipping_units = $shipping_units,
                 reorder = $reorder,
+                dscp = '" . DB_escapeString(json_encode($dscp)) . "',
                 onhand = $onhand";
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -913,6 +918,7 @@ class ProductVariant
         if (is_array($A)) {
             $this->setVars($A);
         }
+
         if ($this->pv_id == 0) {
            if (isset($A['groups'])) {
                return self::saveNew($A);
@@ -931,6 +937,8 @@ class ProductVariant
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             onhand = " . (float)$this->onhand . ",
+            img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
+            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "',
             reorder = " . (float)$this->reorder;
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -945,33 +953,36 @@ class ProductVariant
             $retval = false;;
         }
 
-        // Create two standardized arrays to detect new and removed option vals
-        $old_opts = array();
-        $new_opts = array();
-        foreach ($this->Options as $Opt) {
-            $old_opts[] = $Opt->getID();
-        }
-        foreach ($A['groups'] as $opt) {
-            if ($opt > 0) {
-                $new_opts[] = (int)$opt;
+        // Create two standardized arrays to detect new and removed option vals.
+        // Only if submitted from a form, where the groups variable is present.
+        if (isset($A['groups'])) {
+            $old_opts = array();
+            $new_opts = array();
+            foreach ($this->Options as $Opt) {
+                $old_opts[] = $Opt->getID();
             }
-        }
-        $removed = array_diff($old_opts, $new_opts);
-        $added = array_diff($new_opts, $old_opts);
-        if (!empty($added)) {
-            foreach ($added as $opt_id) {
-                $vals[] = '(' . $this->getID() . ',' . $opt_id . ')';
+            foreach ($A['groups'] as $opt) {
+                if ($opt > 0) {
+                    $new_opts[] = (int)$opt;
+                }
             }
-            $sql_vals = implode(',', $vals);
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
-                (pv_id, pov_id) VALUES $sql_vals";
-            DB_query($sql);
-        }
-        if (!empty($removed)) {
-            $removed = implode(',', $removed);
-            $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
-                WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
-            DB_query($sql);
+            $removed = array_diff($old_opts, $new_opts);
+            $added = array_diff($new_opts, $old_opts);
+            if (!empty($added)) {
+                foreach ($added as $opt_id) {
+                    $vals[] = '(' . $this->getID() . ',' . $opt_id . ')';
+                }
+                $sql_vals = implode(',', $vals);
+                $sql = "INSERT IGNORE INTO {$_TABLES['shop.variantXopt']}
+                    (pv_id, pov_id) VALUES $sql_vals";
+                DB_query($sql);
+            }
+            if (!empty($removed)) {
+                $removed = implode(',', $removed);
+                $sql = "DELETE FROM {$_TABLES['shop.variantXopt']}
+                    WHERE pv_id = " . $this->getID() . " AND pov_id IN ($removed)";
+                DB_query($sql);
+            }
         }
 
         return $retval;
@@ -1057,7 +1068,38 @@ class ProductVariant
      */
     public function getID()
     {
-        return $this->pv_id;
+        return (int)$this->pv_id;
+    }
+
+
+    /**
+     * Set the image IDs specific to this variant.
+     *
+     * @param   array   $ids    Array of image record IDs
+     * @return  object  $this
+     */
+    public function setImageIDs($ids)
+    {
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+        $this->images = array_filter($ids, 'intval');
+        if (!$this->images) {
+            $this->images = array();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the image IDs for this particular product variant.
+     *
+     * TODO: implement DB field
+     * @return  array       Array of integer image IDs.
+     */
+    public function getImageIDs()
+    {
+        return $this->images;
     }
 
 
@@ -1145,6 +1187,22 @@ class ProductVariant
             ),
         );
 
+        $extra = array();
+        if ($prod_id) {
+            $header_arr[] = array(
+                'text' => $LANG_SHOP['default'],
+                'field' => 'def_pv_id',
+                'sort' => 'false',
+                'align' => 'center',
+            );
+            $extra['def_pv_id'] = (int)DB_getItem(
+                $_TABLES['shop.products'],
+                'def_pv_id',
+                "id = $prod_id"
+            );
+
+        }
+
         $defsort_arr = array(
             'field' => 'sku',
             'direction' => 'ASC',
@@ -1222,7 +1280,7 @@ class ProductVariant
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', $options, ''
+            $filter, $extra, $options, ''
         );
         // Create the "copy "options" form at the bottom
         if ($prod_id == 0) {
@@ -1247,9 +1305,10 @@ class ProductVariant
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extra      Extra information passed from the list function
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -1318,6 +1377,12 @@ class ProductVariant
             }
             break;
 
+        case 'def_pv_id':
+            $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
+            $retval = '<input type="radio" name="def_pv_id" value="' . $A['pv_id'] .
+                '" ' . $sel . ' />';
+            break;
+
         default:
             $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
             break;
@@ -1337,6 +1402,13 @@ class ProductVariant
     {
         global $LANG_SHOP;
 
+        if (!is_array($opts)) {
+            $opts = array();
+        }
+        if (!isset($opts['quantity'])) {
+            $opts['quantity'] = 1;
+        }
+
         $P = Product::getByID($this->item_id);
         if ($P->getID() < 1 || $this->getID() < 1) {
             $retval = array(
@@ -1349,30 +1421,35 @@ class ProductVariant
                 'weight'    => '--',
                 'sku'       => '',
                 'leadtime'  => '',
+                'images'    => array(),
             );
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
-            if ($this->onhand > 0) {
-                $allowed = true;
+            if ($this->onhand == 0) {
+                $lt_msg = $P->getLeadTimeMessage();
             } else {
-                $allowed = $P->getOversell() == 0 ? true : false;
+                $lt_msg = '';
             }
             $retval = array(
                 'status'    => 0,
                 'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
-                'allowed'   =>  $allowed,
+                'allowed'   => true,
+                'is_oos'    => false,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
                 'onhand'    => $this->onhand,
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
-                'leadtime'  => $this->onhand == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->getLeadTime()) . ')' : '',
+                'leadtime'  => $lt_msg,
+                'images'    => $this->images,
             );
         }
         if ($P->getTrackOnhand()) {
             if ($this->onhand < $opts['quantity']) {
-                if ($P->getOversell() == Product::OVERSELL_HIDE) {
+                $retval['is_oos'] = true;
+                if ($P->getOversell() > Product::OVERSELL_ALLOW) {
+                    // Can't be sold
                     $retval['status'] = 2;
                     $retval['msg'] = 'Not Available';
                     $retval['allowed'] = false;
@@ -1423,26 +1500,12 @@ class ProductVariant
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        global $_TABLES;
-
-        $id = (int)$id;
-
-        // Determing the new value (opposite the old)
-        $oldvalue = $oldvalue == 1 ? 1 : 0;
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES['shop.product_variants']}
-                SET enabled = $newvalue
-                WHERE pv_id = $id";
-        DB_query($sql, 1);
-        if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        } else {
+        $newval = self::_toggle($oldvalue, 'enabled', $id);
+        if ($newval != $oldvalue) {
             Cache::clear('products');
             Cache::clear('options');
-            return $newvalue;
         }
+        return $newval;
     }
 
 

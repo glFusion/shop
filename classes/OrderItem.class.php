@@ -44,6 +44,12 @@ class OrderItem
      * @var float */
     private $tax_rate;
 
+    /** Flag indicating the item failed a zone rule.
+     * Not saved to the database.
+     * @var boolean;
+     */
+    private $invalid = false;
+
     /** Fields for an OrderItem record.
      * @var array */
     private static $fields = array(
@@ -608,22 +614,45 @@ class OrderItem
 
 
     /**
+     * Set the item as "embargoed" due to failing a zone rule.
+     *
+     * @param   boolean $flag   True to prevent ordering this item
+     * @return  object  $this
+     */
+    public function setInvalid($flag)
+    {
+        $this->invalid = $flag ? 1: 0;
+        return $this;
+    }
+
+
+    /**
+     * Get the embargoed status flag.
+     *
+     * @return  boolean     True if embargoed, False if not
+     */
+    public function getInvalid()
+    {
+        return $this->invalid ? 1 : 0;
+    }
+
+
+    /**
      * Convert from one currency to another.
      *
      * @param   string  $old    Original currency
      * @param   string  $new    New currency
-     * @return  boolean     True on success, False on error
+     * @return  object  $this
      */
     public function convertCurrency($old, $new)
     {
-        // If already set, return OK. Nothing to do.
-        if ($new == $old) return true;
-
-        foreach (array('price') as $fld) {
-            $this->$fld = Currency::Convert($this->$fld, $new, $old);
+        if ($new != $old) {
+            foreach (array('price') as $fld) {
+                $this->$fld = Currency::Convert($this->$fld, $new, $old);
+            }
+            $this->Save();
         }
-        $this->Save();
-        return true;
+        return $this;
     }
 
 

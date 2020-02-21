@@ -3,27 +3,43 @@
   <span class="alert">{$LANG_SHOP['no_javascript']}</span>
 </noscript>
 <script type="text/javascript">
-function SHOPupdateImage(img_file, lg_img)
+var img_json = {img_json};
+var all_image_ids = {all_image_ids};
+function SHOPupdateImage(img_id)
 {
-    document.getElementById("disp_img").src = "{site_url}/lglib/img.php?src=" +
-        img_file + "&plugin=shop&sess={session_id}&width=460&height=460";
-//    document.getElementById("disp_img").src = disp_img;
-//    document.getElementById("lg_img").href = lg_img;
+    var img = img_json[img_id];
+    var disp = document.getElementById("disp_img");
+    if (typeof(img) !== "undefined" && disp) {
+        disp.src = img['img_url'];
+    }
 }
-</script>
-{!if have_attributes}
-<script type="text/javascript">
-function isValidField(obj)
+function SHOP_changeImages(image_ids)
 {
-    if (null == obj) {
-        return false;
+    $("ul#productThumbWrapper").empty();
+    if (image_ids.length == 0) {
+        image_ids = all_image_ids;
     }
-    if ("undefined" == typeof(obj)) {
-        return false;
+    for (var i = 0; i < image_ids.length; i++) {
+        var img_id = image_ids[i];
+        var img = img_json[img_id];
+        if (i == 0) {
+            SHOPupdateImage(img_id);
+        }
+        $("ul#productThumbWrapper").append(
+            '<li class="shopProductThumb v2">' +
+                '<a href="' +img['img_url'] + '" data-uk-lightbox="{group:\'product\'}">' +
+                    '<img src="' + img['thumb_url'] + '" alt="{$LANG_SHOP[click_to_enlarge]}" ' +
+                        'title="{$LANG_SHOP[click_to_enlarge]}" ' +
+                        'class="tooltip" style="border:0px;" ' +
+                        'onmouseover="javascript:SHOPupdateImage(' + img_id + ');" />' +
+                '</a>' +
+            '</li>'
+        );
     }
-    return true;
 }
 
+</script>
+<script type="text/javascript">
 function ProcessForm(form)
 {
     if (typeof(form) == 'undefined') {
@@ -40,26 +56,34 @@ function ProcessForm(form)
         data: data,
         success: function(result) {
             try {
-console.log(result);
-                $("div#avail_msg").text(result.msg);
                 $("span#onhand").text(result.onhand);
                 $("span#leadtime").text(result.leadtime);
+                orig_price = result.orig_price.toFixed({cur_decimals});
+                sale_price = result.sale_price.toFixed({cur_decimals});
+                $("#price").html(sale_price);
+                $("#price_was").html(orig_price);
+                $("span#weight").text(result.weight);
+                $("span#sku").text(result.sku);
+                SHOP_changeImages(result.images);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
-                    $("span#weight").text(result.weight);
-                    orig_price = result.orig_price.toFixed({cur_decimals});
-                    sale_price = result.sale_price.toFixed({cur_decimals});
-                    $("#price").html(sale_price);
-                    $("#price_was").html(orig_price);
-                    $("span#sku").text(result.sku);
                     $("button#btn_add_cart_{id}").prop("disabled", false);
                     $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-success");
                 } else {
-                    $("#price").html("n/a");
-                    $("#price_was").html("n/a");
                     $("button#btn_add_cart_{id}").prop("disabled", true);
                     $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-disabled");
-                    $.UIkit.notify(result.msg, {timeout: 2000,pos:'top-center'});
+                }
+                // Show or hide the out of stock message. Purchase buttons
+                // may still be enabled.
+                if (result.is_oos) {
+                    var msg = "{$LANG_SHOP['out_of_stock']}";
+                    if (result.leadtime != "") {
+                        msg += "<br />(" + result.leadtime + ")";
+                    }
+                    $("div#oos_msg").css('visibility', '');
+                    $("div#oos_msg").html(msg);
+                } else {
+                    $("div#oos_msg").css('visibility', 'hidden');
                 }
             } catch(err) {
             }
@@ -80,5 +104,4 @@ $(document).ready(function() {
     ProcessForm(document.getElementById("add_cart_{id}"));
 });
 </script>
-{!endif}
 {# end {templatelocation} #}

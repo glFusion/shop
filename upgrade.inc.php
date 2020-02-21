@@ -231,9 +231,33 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.1.2')) {
+        $current_ver = '1.1.2';
+        if (!_SHOPtableHasColumn('shop.address', 'phone')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.address']}
+                ADD `phone` varchar(20) DEFAULT NULL after `zip`";
+        }
+        if (!_SHOPtableHasColumn('shop.orderitems', 'dc_price')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orderitems']}
+                ADD dc_price decimal(9,4) NOT NULL DEFAULT 0 after qty_discount";
+        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     if (!COM_checkVersion($current_ver, '1.2.0')) {
         $current_ver = '1.2.0';
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        // Load the variant descriptions into the new field.
+        // Must be done after executing the upgrade SQL.
+        $sql = "SELECT * FROM {$_TABLES['shop.product_variants']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            Shop\ProductVariant::getInstance($A)
+                ->loadOptions()
+                ->makeDscp()
+                ->Save();
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -277,7 +301,7 @@ function SHOP_do_upgrade($dvlp = false)
 function SHOP_do_upgrade_sql($version, $ignore_error = false)
 {
     global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
-
+echo "executing upgrade sql for $version" . "<br />\n";
     // If no sql statements passed in, return success
     if (!is_array($SHOP_UPGRADE[$version])) {
         return true;

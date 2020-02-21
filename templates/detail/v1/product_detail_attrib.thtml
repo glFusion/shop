@@ -8,7 +8,7 @@
   </a>
 </div>
 {!endif}
-<form id="add_cart_{id}" action="{site_url}/shop/index.php" method="post">
+<form id="add_cart_{frm_id}" action="{site_url}/shop/index.php" method="post">
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}
@@ -87,34 +87,25 @@
 
     </div>
 
-      {add_cart_button}
+    {add_cart_button}
 
-        <div class="frmAddCart v1">
-      <!-- BEGIN BtnBlock -->
+    <div class="frmAddCart v1">
+<!-- BEGIN BtnBlock -->
         {buy_now_button}<br />
-      <!-- END BtnBlock -->
-        </div>
-{!if avail_msg}
-      <div id="avail_msg" class="shopOnhand">
-        {avail_msg}
-      </div>
-{!endif}
-{!if stock_msg}
-      <div class="shopOnhand uk-alert uk-alert-danger floatright">
-        {$LANG_SHOP['out_of_stock']}
-      </div>
-{!endif}
-
+<!-- END BtnBlock -->
+    </div>
+    <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
+    </div>
     <div id="shopProductDesc" class="shopProductDesc v1">
-      {description}
+        {description}
     </div>
 
 {!if rating_bar}
     <div class="shopRatingBar detail v1">{rating_bar}</div>
 {!endif}
-    <div class="shopProductThumbWrapper v1">
-      <!-- BEGIN Thumbnail -->
-      <div class="shopProductThumb v1">
+    <ul id="productThumbWrapper" class="shopProductThumbWrapper v1">
+<!-- BEGIN XThumbnail -->
+      <li class="shopProductThumb v1">
  {!if thumb_url}
         <a href="{img_url}" data-uk-lightbox="{group:'product'}">
           <img src="{thumb_url}"
@@ -124,9 +115,9 @@
               data-uk-tooltip />
         </a>
  {!endif}
-      </div>
-      <!-- END Thumbnail -->
-    </div>
+      </li>
+<!-- END XThumbnail -->
+    </ul>
 
   </div>
 </form>

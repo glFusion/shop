@@ -78,6 +78,8 @@ $_SQL = array(
   `supplier_id` int(11) unsigned NOT NULL DEFAULT 0,
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
   `lead_time` varchar(64) NOT NULL DEFAULT '',
+  `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `zone_rule` int(11) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -99,6 +101,7 @@ $_SQL = array(
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
   `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `dc_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -107,7 +110,7 @@ $_SQL = array(
   `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `handling` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `tax` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `tax_rate` decimal(6,4) NOT NULL DEFAULT  '0.0000',
+  `tax_rate` decimal(6,4) NOT NULL DEFAULT '0.0000',
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`),
@@ -117,7 +120,7 @@ $_SQL = array(
 'shop.images' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
   `img_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `product_id` int(11) unsigned NOT NULL,
-  `orderby` int(3) NOT NULL DEFAULT 999,
+  `orderby` int(3) NOT NULL DEFAULT '999',
   `filename` varchar(255) DEFAULT NULL,
   `nonce` varchar(20) DEFAULT NULL,
   `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -152,7 +155,7 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `pog_value` (`pog_id`, `pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -226,6 +229,7 @@ $_SQL = array(
   `state` varchar(255) DEFAULT NULL,
   `country` varchar(255) DEFAULT NULL,
   `zip` varchar(40) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
   `billto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `shipto_def` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`addr_id`),
@@ -379,6 +383,33 @@ $_SQL = array(
   KEY `is_brand` (`is_brand`,`name`)
 ) ENGINE=MyISAM",
 
+'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.variants']}
+  `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `item_id` int(11) unsigned NOT NULL,
+  `sku` varchar(64) DEFAULT NULL,
+  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
+  `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `onhand` int(10) NOT NULL DEFAULT '0',
+  `reorder` int(10) NOT NULL DEFAULT '0',
+  `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `supplier_ref` varchar(64) NOT NULL DEFAULT '',
+  `img_ids` varchar(255) DEFAULT NULL,
+  `dscp` text NOT NULL,
+  PRIMARY KEY (`pv_id`),
+  KEY `prod_id` (`item_id`)
+) ENGINE=MyISAM",
+
+'shop.states' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
+  `state_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `country_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `state_name` varchar(64) NOT NULL DEFAULT '',
+  `iso_code` varchar(10) NOT NULL DEFAULT '',
+  `state_enabled` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  PRIMARY KEY (`state_id`),
+  UNIQUE KEY `country_state` (`country_id`,`iso_code`),
+  KEY `state_enabled` (`state_enabled`)
+) ENGINE=MyISAM",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -503,7 +534,7 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `percent` decimal(4,2) unsigned NOT NULL DEFAULT '0.00',
       `start` datetime NOT NULL DEFAULT '1970-01-01 00:00:00',
       `end` datetime NOT NULL DEFAULT '9999-12-31 23:59:59',
-          `min_order` decimal(9,4) unsigned NOT NULL DEFAULT '0.0000',
+      `min_order` decimal(9,4) unsigned NOT NULL DEFAULT '0.0000',
       PRIMARY KEY (`code_id`),
       UNIQUE KEY `code` (`code`),
       KEY `bydate` (`start`,`end`)
@@ -642,11 +673,27 @@ $SHOP_UPGRADE['1.2.0'] = array(
       `fv_text` varchar(40) DEFAULT NULL,
       PRIMARY KEY (`prod_id`,`ft_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.zone_rules']}` (
+      `rule_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+      `rule_name` varchar(64) NOT NULL DEFAULT '',
+      `allow` tinyint(1) unsigned NOT NULL DEFAULT '0',
+      `regions` text,
+      `countries` text,
+      `states` text,
+      PRIMARY KEY (`rule_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `supplier_ref`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0'",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `zone_rule` int(11) unsigned NOT NULL DEFAULT '0'",
     "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `enabled`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
+    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
+    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
-
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -660,13 +707,12 @@ $_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
-$_SQL['shop.product_variants'] = $SHOP_UPGRADE['1.1.0'][3];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
 $_SQL['shop.regions'] = $SHOP_UPGRADE['1.1.0'][6];
 $_SQL['shop.countries'] = $SHOP_UPGRADE['1.1.0'][7];
-$_SQL['shop.states'] = $SHOP_UPGRADE['1.1.0'][8];
 $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
+$_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 
 ?>

@@ -68,10 +68,6 @@ class Country extends RegionBase
      * @var integer */
     private $country_enabled;
 
-    /** Error message array.
-     * @var array */
-    private $messages = array();
-
     /** Region object.
      * @var object */
     private $Region;
@@ -550,7 +546,6 @@ class Country extends RegionBase
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql, 1);  // suppress errors, show nice error message instead
         if (!DB_error()) {
             if ($this->getID() == 0) {
@@ -558,7 +553,8 @@ class Country extends RegionBase
             }
             $status = true;
         } else {
-            $this->addError('An error occurred. Check that the 2-letter code is unique.');
+            $this->addError($LANG_SHOP['err_dup_iso']);
+            SHOP_log($sql, SHOP_LOG_ERROR);
             $status = false;
         }
         return $status;
@@ -566,49 +562,21 @@ class Country extends RegionBase
 
 
     /**
-     * Add an error message into the message array.
+     * Enable countries in bulk.
      *
-     * @param   string  $msg    Message to add
-     * @param   boolean $clear  Clear array first?
+     * @param   array   $countries  Array of country record IDs
      */
-    private function addError($msg, $clear=false)
-    {
-        if ($clear) {
-            $this->messages = array();
-        }
-        $this->messages[] = $msg;
-    }
-
-
-    /**
-     * Get the errors that were encountered when saving.
-     *
-     * @param   boolean $list   True to get as a list, False for a raw array
-     * @return  array|string    Array of errors, or HTML list
-     */
-    public function getErrors($list=true)
-    {
-        if ($list) {
-            if (empty($this->messages)) {
-                $retval = '';
-            } else {
-                $retval = '<ul><li>';
-                $retval .= implode('</li><li>', $this->messages);
-                $retval .= '</li></ul>';
-            }
-        } else {
-            $retval = $this->messages;
-        }
-        return $retval;
-    }
-
-
     public static function Enable($countries)
     {
         self::bulkEnaDisa($countries, 1);
     }
 
 
+    /**
+     * Disable countries in bulk.
+     *
+     * @param   array   $countries  Array of country record IDs
+     */
     public static function Disable($countries)
     {
         self::bulkEnaDisa($countries, 0);

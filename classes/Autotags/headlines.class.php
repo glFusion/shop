@@ -158,14 +158,22 @@ class headlines
             $T->set_file('page', $template);
             $T->set_var('columns' ,$cols);
             $T->set_block('page', 'headlines', 'hl');
-
             foreach ($allItems as $A) {
                 $P = \Shop\Product::getByID($A['id']);
+                $tn = $P->getThumb();
+                $image = COM_createImage(
+                    $tn['url'],
+                    '',
+                    array(
+                        'width' => $tn['width'],
+                        'height' => $tn['height'],
+                    )
+                );
                 $T->set_var(array(
-                    'url'       => SHOP_URL . '/detail.php?id='. $P->id,
-                    'text'      => trim($P->description),
-                    'title'     => $P->short_description,
-                    'thumb_url' => $P->getThumb()['url'],
+                    'url'       => $P->getLink(),
+                    'text'      => $P->getText(),
+                    'title'     => $P->getDscp(),
+                    'thumb_url' => $image,
                     'large_url' => $P->getImage('', 1024, 1024)['url'],
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,

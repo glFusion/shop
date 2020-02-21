@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -123,6 +123,9 @@ class Order
      * @var boolean */
     protected $tainted = false;
 
+    /** Flag to indicate that there are invalid items on the order.
+     * @var boolean */
+    private $hasInvalid = false;
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -646,7 +649,7 @@ class Order
      */
     public function View($view = 'order', $step = 0)
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
 
         // Safety valve in case an invalid order is requested.
         // This is for administrators, the canView() function will trap this
@@ -661,10 +664,13 @@ class Order
         $icon_tooltips = array();
 
         switch ($view) {
+        case 'adminview':
         case 'order':
-        case 'adminview';
             $this->isFinalView = true;
+            $tplname = 'order';
+            break;
         case 'checkout':
+            $this->checkRules();
             $this->setTaxRate(
                 Tax::getProvider()
                     ->withOrder($this)
@@ -729,8 +735,10 @@ class Order
         $have_images = false;
         $has_sale_items = false;
         $item_net = 0;
+        $good_items = 0;        // Count non-embargoed items
         foreach ($this->items as $item) {
             $P = $item->getProduct();
+            $P->setVariant($item->getVariantID());
             if ($is_invoice) {
                 $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
                 if (!empty($img['url'])) {
@@ -774,6 +782,9 @@ class Order
                 $sale_tooltip = '';
             }
 
+            if (!$item->getInvalid()) {
+                $good_items++;
+            }
             $item_total = $item->getPrice() * $item->getQuantity();
             $item_net = $item->getNetPrice() * $item->getQuantity();
             $this->gross_items += $item_total;
@@ -793,7 +804,7 @@ class Order
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
-                'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
+                'taxable'       => $P->isTaxable(),
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'sale_icon'     => $LANG_SHOP['sale_price'][0],
                 'discount_icon' => $LANG_SHOP['discount'][0],
@@ -808,6 +819,7 @@ class Order
                 'del_item_url'  => COM_buildUrl(
                     SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
                 ),
+                'embargoed'     => $item->getInvalid(),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -830,6 +842,16 @@ class Order
             $T->clear_var('iOpts');
         }
 
+        // Reload the address objects in case the addresses were updated
+        $ShopAddr = new Company;
+        $this->Billto = new Address($this->getAddress('billto'));
+        $this->Shipto = new Address($this->getAddress('shipto'));
+
+        // Call selectShipper() here to get the shipping amount into the local var.
+        $shipper_select = $this->selectShipper();
+
+        $this->total = $this->getTotal();     // also calls calcTax()
+        $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
             if ($discount_items > 0) {
@@ -846,44 +868,31 @@ class Order
             }
             $icon_tooltips = implode('<br />', $icon_tooltips);
         }
-        $this->total = $this->getTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getInfo('apply_gc');
-        if ($this->tax_rate > 0) {
-            $lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
-        } else {
+        /*if ($this->tax_rate > 0) {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];
+            //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
+        } else {
+            $lang_tax_on_items = $LANG_SHOP['sales_tax'];*/
+        if ($view == 'viewcart') {
             // Back out sales tax if tax is not charged. This happens when viewing the cart
             // and a tax amount gets set, but shouldn't be shown in the order yet.
             $this->total -= $this->tax;
         }
 
-        $ShopAddr = new Company;
-
-        // Reload the address objects in case the addresses were updated
-        $this->Billto = new Address($this->getAddress('billto'));
-        $this->Shipto = new Address($this->getAddress('shipto'));
-
-        // Call selectShipper() here to get the shipping amount into the local var.
-        $shipper_select = $this->selectShipper();
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
-            'total'         => $Currency->Format($this->total),
             'not_final'     => !$this->isFinalView,
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
-            'handling'      => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'      => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
-            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => $lang_tax_on_items,
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -912,16 +921,22 @@ class Order
             'dc_row_vis'    => $this->getDiscountAmount(),
             'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
             'net_items'     => $Currency->Format($this->net_items),
+            'good_items'    => $good_items,
+            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
+            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
+            'total'     => $Currency->Format($this->total),
+            'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
+            'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
         ) );
 
-        if (!$this->no_shipping) {
-            $T->set_var(array(
-                'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
-                'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
-                'shipping'      => $Currency->FormatValue($this->shipping),
-            ) );
-        }
+            if (!$this->no_shipping) {
+                $T->set_var(array(
+                    'shipper_id'    => $this->shipper_id,
+                    'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
+                    'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
+                    'shipping'      => $Currency->FormatValue($this->shipping),
+                ) );
+            }
 
         if ($this->isAdmin) {
             $T->set_var(array(
@@ -974,13 +989,17 @@ class Order
             $T->set_var('gateway_radios', $this->getCheckoutRadios());
             break;
         case 'checkout':
-            $gw = Gateway::getInstance($this->getInfo('gateway'));
-            if ($gw) {
-                $T->set_var(array(
-                    'gateway_vars'  => $this->checkoutButton($gw),
-                    'checkout'      => 'true',
-                    'pmt_method'    => $gw->getDscp(),
-                ) );
+            $T->set_var('checkout', true);
+            if ($this->hasInvalid) {
+                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
+            } else {
+                $gw = Gateway::getInstance($this->getInfo('gateway'));
+                if ($gw) {
+                    $T->set_var(array(
+                        'gateway_vars'  => $this->checkoutButton($gw),
+                        'pmt_method'    => $gw->getDscp(),
+                    ) );
+                }
             }
         default:
             break;
@@ -2000,6 +2019,14 @@ class Order
             // None already selected, grab the first one. It has the best rate.
             $best = reset($shippers);
         }
+        if (!$best) {
+            // Error getting shippers, shouldn't happen unless shippers have been deleted.
+            $this->shipper_id = 0;
+            $this->shipping = 0;
+            return '';
+        }
+        $this->shipper_id = $best->getID();
+        $this->shipping = $best->getOrderShipping()->total_rate;
 
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
@@ -2009,7 +2036,7 @@ class Order
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
-            $s_amt = $shipper->getORderShipping()->total_rate;
+            $s_amt = $shipper->getOrderShipping()->total_rate;
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
@@ -2834,7 +2861,32 @@ class Order
     protected function getOrderTotal()
     {
         $this->calcItemTotals()->calcTax();
-        return (float)$this->gross_items + $this->shipping + $this->tax + $this->handling;
+        return (float)$this->net_items + $this->shipping + $this->tax + $this->handling;
+    }
+
+
+    /**
+     * Check the zone rules for each item, and mark those that aren't allowed.
+     * Also sets `$this->hasInvalid` if any invalid items are found so the
+     * checkout button can be suppressed.
+     *
+     * @return  object  $this
+     */
+    private function checkRules()
+    {
+        $this->hasInvalid = false;
+        foreach ($this->items as $id=>$Item) {
+            if ($Item->getProduct()->getRuleID() > 0) {
+                $status = $Item->getInvalid();
+                $Rule = $Item->getProduct()->getRule();
+                if (!$Rule->isOK($this->getShipto())) {
+                    $Item->setInvalid(true);
+                    $this->hasInvalid = true;
+                } else {
+                    $Item->setInvalid(false);
+                }
+            }
+        }
     }
 
 }

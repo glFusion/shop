@@ -228,6 +228,9 @@ class paypal extends \Shop\Gateway
         } else {
             $cartItems = $cart->getItems();
             foreach ($cartItems as $cart_item_id=>$item) {
+                if ($item->getQuantity() == 0) {
+                    continue;
+                }
                 $item_count++;
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];

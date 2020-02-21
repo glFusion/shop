@@ -177,7 +177,7 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
-        $Var        = ProductVariant::getByAttributes($P->getID(), $options);
+        $PV         = ProductVariant::getByAttributes($P->getID(), $options);
         if (!is_array($this->items)) {
             $this->items = array();
         }
@@ -197,7 +197,10 @@ class Cart extends Order
         } else {
             $opts = array();
         }
-        $item_id .= '|' . $Var->getID();
+        if ($PV->getID() > 0) {
+            $P->setVariant($PV);
+            $item_id .= '|' . $PV->getID();
+        }
 
         // Look for identical items, including options (to catch
         // attributes). If found, just update the quantity.
@@ -220,7 +223,7 @@ class Cart extends Order
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description'   => $P->getDscp($item_dscp),
-                'variant'   => $Var->getID(),
+                'variant'   => $PV->getID(),
                 'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
@@ -319,7 +322,9 @@ class Cart extends Order
                 $item_id = $this->items[$id]->getProductId();
                 $old_qty = $this->items[$id]->getQuantity();
                 // Check that the order hasn't exceeded the max allowed qty.
-                $max = Product::getById($item_id)->getMaxOrderQty();
+                $max = Product::getById($item_id)
+                    ->setVariant($this->items[$id]->getVariantID())
+                    ->getMaxOrderQty();
                 if ($qty > $max) {
                     $qty = $max;
                 }

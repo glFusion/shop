@@ -7,6 +7,20 @@ Release TBD
   * Add static features/attributes.
   * Add Supplier Reference field to products and variants for ordering.
   * Product cloning includes Features, Categories, Variants and Images.
+  * Allow a default variant to be set which will be shown first.
+  * A subset of product images can be assigned to each variant.
+  * New reorder report listing items at or below their reorder qty.
+  * Allow plugins to use the catalog display by calling index.php with `category=pi_name`.
+  * Restrict product sales by region.
+
+## v1.1.2
+Release 2020-02-15
+  * Add missing phone field to address table for new installations.
+  * Add missing discount code price to order item table for new installations.
+
+## v1.1.1
+Release 2020-01-27
+  * Fix PDF creation.
 
 ## v1.1.0
 Release 2020-01-22

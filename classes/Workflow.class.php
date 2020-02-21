@@ -41,7 +41,7 @@ class Workflow
 
     /** Database table name.
      * @var string */
-    static $table = 'shop.workflows';
+    protected static $TABLE = 'shop.workflows';
 
     /** Workflow Name.
      * @var string */
@@ -81,7 +81,7 @@ class Workflow
         if (!isset($_SHOP_CONF['workflows'])) {
             $_SHOP_CONF['workflows'] = array();
             $sql = "SELECT wf_name
-                    FROM {$_TABLES[self::$table]}
+                    FROM {$_TABLES[self::$TABLE]}
                     WHERE enabled > 0
                     ORDER BY id ASC";
             $res = DB_query($sql);
@@ -118,7 +118,7 @@ class Workflow
         $workflows = Cache::get($cache_key);
         if (!$workflows) {
             $workflows = array();
-            $sql = "SELECT * FROM {$_TABLES[self::$table]}
+            $sql = "SELECT * FROM {$_TABLES[self::$TABLE]}
                 $where
                 ORDER BY id ASC";
             $res = DB_query($sql);
@@ -194,7 +194,7 @@ class Workflow
         // Determing the new value (opposite the old)
         $newvalue = (int)$newvalue;
 
-        $sql = "UPDATE {$_TABLES[self::$table]}
+        $sql = "UPDATE {$_TABLES[self::$TABLE]}
                 SET $field = $newvalue
                 WHERE id='$id'";
         DB_query($sql, 1);

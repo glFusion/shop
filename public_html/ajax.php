@@ -77,7 +77,9 @@ case 'addcartitem':
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];
-    } elseif ($new_qty != $req_qty) {
+    } elseif ($new_qty < $req_qty) {
+        // TODO: better handling of adjustments.
+        // This really only handles changes to the initial qty.
         $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
     }
     $output = array(
@@ -118,10 +120,18 @@ case 'redeem_gc':
     break;
 
 case 'validateOpts':
-    $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
-    $output = $PV->Validate(array(
-        'quantity' => $_GET['quantity'],
-    ) );
+    if (isset($_GET['options']) && !empty($_GET['options'])) {
+        // Checking a product that has options, see if the variant is in stock
+        $PV = Shop\ProductVariant::getByAttributes($_GET['item_number'], $_GET['options']);
+        $output = $PV->Validate(array(
+            'quantity' => $_GET['quantity'],
+        ) );
+    } else {
+        // Product has no options, just check the product object
+        $output = Shop\Product::getInstance($_GET['item_number'])->ValidateQty(array(
+            'quantity' => $_GET['quantity'],
+        ) );
+    }
     break;
 
 case 'validateAddress':
@@ -132,21 +142,21 @@ case 'validateAddress':
         'form'      => '',
     );
     $A1 = new Shop\Address($_POST);
-        $A2 = $A1->Validate();
-        if (!$A1->Matches($A2)) {
-            $T = new Template(SHOP_PI_PATH . '/templates');
-            $T->set_file('popup', 'address_select.thtml');
-            $T->set_var(array(
-                'address1_html' => $A1->toHTML(),
-                'address1_json' => htmlentities($A1->toJSON()),
-                'address2_html' => $A2->toHTML(),
-                'address2_json' => htmlentities($A2->toJSON()),
-                'ad_type'       => $_POST['ad_type'],
-                'next_step'     => $_POST['next_step'],
-            ) );
-            $output['status']  = false;
-            $output['form'] = $T->parse('output', 'popup');
-        }
+    $A2 = $A1->Validate();
+    if (!$A1->Matches($A2)) {
+        $T = new Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('popup', 'address_select.thtml');
+        $T->set_var(array(
+            'address1_html' => $A1->toHTML(),
+            'address1_json' => htmlentities($A1->toJSON()),
+            'address2_html' => $A2->toHTML(),
+            'address2_json' => htmlentities($A2->toJSON()),
+            'ad_type'       => $_POST['ad_type'],
+            'next_step'     => $_POST['next_step'],
+        ) );
+        $output['status']  = false;
+        $output['form'] = $T->parse('output', 'popup');
+    }
     break;
 
 case 'getStateOpts':

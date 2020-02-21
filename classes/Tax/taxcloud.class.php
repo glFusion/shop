@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -35,7 +35,12 @@ class taxcloud extends \Shop\Tax
      * @var string */
     protected $key = 'taxcloud';
 
+    /** API key obtained from taxcloud.com.
+     * @var string */
     private $api_key;
+
+    /** API ID obtained from taxcloud.com.
+     * @var string */
     private $api_id;
 
     /**
@@ -62,7 +67,14 @@ class taxcloud extends \Shop\Tax
     {
         $data = $this->_getData()['rate'];
         if (array_key_exists('combined_rate', $data)) {
-            return (float)$data['combined_rate'];
+            $rate = (float)$data['combined_rate'];
+            foreach ($this->Order->getItems() as &$Item) {
+                if ($Item->isTaxable()) {
+                    $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                    $Item->setTotalTax($tax)->setTaxRate($rate);
+                }
+            }
+            return $rate;
         }
         return 0;
     }
@@ -77,28 +89,36 @@ class taxcloud extends \Shop\Tax
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        // Validate the destination address first
-        $Validator = new Validator($this->Address);
-        $Validator->Validate();
-        $Address = $Validator->getAddress();
-
         // Default return value if no rate returned or no nexus
         $default = array(
             'rate' => array(
-                'zip'   => $Address->getPostal(),
+                'zip'   => '',
                 'state_rate' => 0,
-                'state' => $Address->getState(),
+                'state' => '',
                 'freight_taxable'  => false,
                 'county_rate' => 0,
                 'county' => 'Undefined',
                 'country_rate' => 0,
-                'country' => $Address->getCountry(),
+                'country' => '',
                 'combined_rate' => 0,
                 'combined_district_rate' => 0,
                 'city_rate' => 0,
-                'city' => $Address->getCity(),
+                'city' => '',
             ),
         );
+
+        // Validate the destination address first
+        if ($this->Address != NULL) {
+            $Validator = new Validator($this->Address);
+            $Validator->Validate();
+            $Address = $Validator->getAddress();
+            $default['zip'] = $Address->getPostal();
+            $default['state'] = $Address->getState();
+            $default['country'] = $Address->getcountry();
+            $default['city'] = $Address->getCity();
+        } else {
+            return $default;
+        }
 
         $Company = Company::getInstance();
         $req = array(
@@ -146,7 +166,7 @@ class taxcloud extends \Shop\Tax
         // We'll save the $req array as an array so we can reference the
         // cart items from the response.
 
-//        $decoded = $this->getCache();      // Try first to read from cache
+        $decoded = $this->getCache();      // Try first to read from cache
         if ($decoded === NULL) {           // Cache failed, look up via API
             $ch = curl_init();
             curl_setopt_array($ch, array(
@@ -164,8 +184,9 @@ class taxcloud extends \Shop\Tax
             $resp = curl_exec($ch);
             $status = curl_getinfo($ch);
             $decoded = json_decode($resp, true);
-//            $this->setCache($decoded);
+            $this->setCache($decoded);
         }
+        //var_dump($decoded);die;
         if (SHOP_getVar($decoded, 'ResponseType', 'integer')) {
             $Items = $this->Order->getItems();
             foreach (SHOP_getVar($decoded, 'CartItemsResponse', 'array') as $item) {

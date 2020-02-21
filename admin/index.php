@@ -60,9 +60,10 @@ $expected = array(
     'ena_country', 'disa_country', 'del_country',
     'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
+    'rule_del', 'rule_add', 'rule_save',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'pov_edit', 'other', 'gwadmin', 'gwedit',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -74,6 +75,8 @@ $expected = array(
     'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
+    'rules', 'rule_edit',
+    'products',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -244,6 +247,45 @@ case 'pv_del':
     exit;
     break;
 
+case 'rule_add':
+    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    if ($rule_id > 0) {
+        switch ($actionval) {
+        case 'region':
+        case 'country':
+        case 'state':
+            Shop\Rules\Zone::getInstance($rule_id)
+                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
+                ->Save();
+            break;
+        }
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?' . http_build_query($_GET));
+    break;
+
+case 'rule_del':
+    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer');
+    if (!$rule_id) {    // maybe came from $_GET
+        $rule_id = SHOP_getVar($_GET, 'rule_id', 'integer');
+    }
+    if ($rule_id) {
+        Shop\Rules\Zone::deleteRule($rule_id);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
+    break;
+
+case 'rule_save':
+    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
+    $Rule = Shop\Rules\Zone::getInstance($rule_id);
+    if ($Rule->getID() > 0) {
+        $Rule->del('region', $_POST['region_del'])
+            ->del('country', $_POST['country_del'])
+            ->del('state', $_POST['state_del']);
+    }
+    $Rule->Save($_POST);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
+    break;
+
 case 'ft_del':
     Shop\Feature::Delete($_REQUEST['ft_id']);
     $view = 'features';
@@ -371,7 +413,7 @@ case 'gwsave':
 case 'ft_move':
     $ft_id = SHOP_getVar($_GET, 'id', 'integer', 0);
     if ($ft_id > 0) {
-        Shop\Feature::getInstance($ft_id)->moveRow($actionval);
+        Shop\Feature::moveRow($ft_id, $actionval);
     }
     $view = 'features';
     break;
@@ -379,8 +421,7 @@ case 'ft_move':
 case 'pog_move':
     $og_id = SHOP_getVar($_GET, 'id', 'integer');
     if ($og_id > 0) {
-        $OG = new \Shop\ProductOptionGroup($og_id);
-        $OG->moveRow($actionval);
+        Shop\ProductOptionGroup::moveRow($og_id, $actionval);
     }
     $view = 'opt_grp';
     break;
@@ -734,7 +775,8 @@ case 'orders':
     break;
 
 case 'coupons':
-    $content = Shop\Products\Coupon::adminList();
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Products\Coupon::adminList();
     break;
 
 case 'order':
@@ -1067,10 +1109,21 @@ case 'suppliers':
     $content .= Shop\Supplier::adminList();
     break;
 
+case 'rules':
+    // Display the list of zone rules
+    $content .= Shop\Menu::adminRegions($view);
+    $content .= Shop\Rules\Zone::adminList();
+    break;
+
 case 'features':
     // Display the list of features
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Feature::adminList();
+    break;
+
+case 'rule_edit':
+    $content .= Shop\Menu::adminRegions('rules');
+    $content .= Shop\Rules\Zone::getInstance($actionval)->Edit();
     break;
 
 case 'ft_edit':
