@@ -2936,7 +2936,6 @@ class Product // extends DBO
                 $this->LeadTime()
             );
         }
-        COM_errorLog("msg: " . var_export($lt_msg,true));
         return $lt_msg;
     }
 
