@@ -688,6 +688,7 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0'",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `zone_rule` int(11) unsigned NOT NULL DEFAULT '0'",
     "ALTER TABLE {$_TABLES['shop.suppliers']} ADD `lead_time` varchar(64) NOT NULL DEFAULT '' AFTER `dscp`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
     "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
