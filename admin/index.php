@@ -63,7 +63,7 @@ $expected = array(
     'rule_del', 'rule_add', 'rule_save',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'pov_edit', 'other', 'products', 'gwadmin', 'gwedit',
+    'pov_edit', 'other', 'gwadmin', 'gwedit',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -76,6 +76,7 @@ $expected = array(
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
     'rules', 'rule_edit',
+    'products',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
