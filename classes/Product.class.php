@@ -3267,6 +3267,7 @@ class Product // extends DBO
             'brand_select' => Supplier::getBrandSelection(),
             'supplier_select' => Supplier::getSupplierSelection(),
             'available_cats' => self::getCatSelections(0)[0],
+            'zone_rule_options' => Rules\Zone::optionList(),
         ) );
         $T->set_block('form', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
@@ -3310,6 +3311,9 @@ class Product // extends DBO
         }
         if (isset($A['prod_type']) && $A['prod_type'] > -1) {
             $sql_vals[] = "prod_type = " . (int)$A['prod_type'];
+        }
+        if (isset($A['rule_id']) && $A['rule_id'] > -1) {
+            $sql_vals[] = "zone_rule = " . (int)$A['rule_id'];
         }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
