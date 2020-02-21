@@ -3,10 +3,10 @@
  * Payment class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -40,6 +40,10 @@ class Payment
      * @var string */
     private $order_id;
 
+    /** Entering user ID, for manually-entered payments.
+     * Zero indicates payment by IPN or webhook
+     * @var integer */
+    private $uid = 0;
 
     private $method;
     private $comment;
@@ -52,13 +56,14 @@ class Payment
     public function __construct($A=NULL)
     {
         if (is_array($A)) {
-            $this->setRefID($A['pmt_ref_id']);
-            $this->setAmount($A['pmt_amount']);
-            $this->setTS($A['pmt_ts']);
-            $this->setGateway($A['pmt_gateway']);
-            $this->setOrderID($A['pmt_order_id']);
-            $this->setOrderID($A['comment']);
-            $this->setOrderID($A['method']);
+            $this->setRefID($A['pmt_ref_id'])
+                ->setAmount($A['pmt_amount'])
+                ->setTS($A['pmt_ts'])
+                ->setGateway($A['pmt_gateway'])
+                ->setOrderID($A['pmt_order_id'])
+                ->setComment($A['comment'])
+                ->setMethod($A['method'])
+                ->setUid($A['uid']);
         }
     }
 
@@ -150,6 +155,12 @@ class Payment
     }
 
 
+    /**
+     * Set the payment method text.
+     *
+     * @param   string  $method     Payment method or gateway name
+     * @return  object  $this
+     */
     public function setMethod($method)
     {
         $this->method = $method;
@@ -157,6 +168,25 @@ class Payment
     }
 
 
+    /**
+     * Set the submitting user ID.
+     *
+     * @param   integer $uid    User ID
+     * @return  object  $this
+     */
+    private function setUid($uid)
+    {
+        $this->uid = (int)$uid;
+        return $this;
+    }
+
+
+    /**
+     * Set the comment string.
+     *
+     * @param   string  $comment    Comment text
+     * @return  object  $this
+     */
     public function setComment($comment)
     {
         $this->comment = $comment;
@@ -247,7 +277,8 @@ class Payment
             pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
             pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
             pmt_method = '" . DB_escapeString($this->method) . "',
-            pmt_comment = '" . DB_escapeString($this->comment) . "'";
+            pmt_comment = '" . DB_escapeString($this->comment) . "'
+            pmt_uid = " . (int)$this->uid;
         //echo $sql;die;
         $res = DB_query($sql);
         return DB_error() ? 0 : DB_insertID();
