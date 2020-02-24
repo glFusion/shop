@@ -65,20 +65,21 @@ class paypal extends \Shop\Webhook
         switch ($this->getEvent()) {
         case self::EV_PAYMENT:
             if ($invoice) {
-                    $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
-                    if ($payments) {
-                        $payment = array_pop($payments['transactions']);
-                        //var_dump($payment);die;
-                        $Pmt = new Payment;
-                        $Pmt->setRefID($this->getID())
-                            ->setAmount($payment['amount']['value'])
-                            ->setGateway($this->getSource())
-                            ->setMethod($payment['method'])
-                            ->setComment($payment['note'])
-                            ->setOrderID($this->getOrderID());
-                        return $Pmt->Save();
-                    }
+                $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
+                if ($payments) {
+                    // Get just the latest payment.
+                    // If there are multiple payments for the order, all are included.
+                    $payment = array_pop($payments['transactions']);
+                    $Pmt = new Payment;
+                    $Pmt->setRefID($this->getID())
+                        ->setAmount($payment['amount']['value'])
+                        ->setGateway($this->getSource())
+                        ->setMethod($payment['method'])
+                        ->setComment($payment['note'])
+                        ->setOrderID($this->getOrderID());
+                    return $Pmt->Save();
                 }
+            }
             break;
 
         case self::EV_CREATED:

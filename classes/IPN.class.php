@@ -15,13 +15,14 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -623,7 +624,7 @@ class IPN
                 gateway = '{$this->gw_id}',
                 ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
         if ($this->Order !== NULL) {
-            $sql .= ", order_id = '" . DB_escapeString($this->Order->order_id) . "'";
+            $sql .= ", order_id = '" . DB_escapeString($this->Order->getOrderId()) . "'";
         }
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
@@ -789,6 +790,7 @@ class IPN
 
         // Update the status last since it sends the notification.
         $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp());
+        $this->recordPayment();
         if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
             // If this paid order has only downloadable items, them mark
             // it closed since there's no further action needed.
@@ -1240,6 +1242,24 @@ class IPN
     {
         global $_TABLES;
         return DB_count($_TABLES['shop.ipnlog'], $id, $value);
+    }
+
+
+    /**
+     * Create a payment record for this IPN message.
+     *
+     * @return  object  New payment object
+     */
+    protected function recordPayment()
+    {
+        $Pmt = new Payment;
+        $Pmt->setRefID($this->getTxnId())
+            ->setAmount($this->getPmtGross())
+            ->setGateway($this->getGwName())
+            ->setMethod($this->gw_id)
+            ->setComment('Recorded by IPN message')
+            ->setOrderID($this->Order->getOrderId());
+        return $Pmt->Save();
     }
 
 }   // class IPN
