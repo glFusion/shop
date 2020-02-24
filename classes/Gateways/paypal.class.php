@@ -161,7 +161,7 @@ class paypal extends \Shop\Gateway
     /**
      * Get the form variables for the cart checkout button.
      *
-     * @uses    Gateway::_Supports()
+     * @uses    Gateway::Supports()
      * @uses    self::_encButton()
      * @uses    self::getActionUrl()
      * @param   object      $cart   Shopping Cart Object
@@ -171,7 +171,7 @@ class paypal extends \Shop\Gateway
     {
         global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
-        if (!$this->_Supports('checkout')) {
+        if (!$this->Supports('checkout')) {
             return '';
         }
 
@@ -973,7 +973,7 @@ class paypal extends \Shop\Gateway
 
         $Shop = new Company();
         $Order = Order::getInstance($order_num);
-        $Currency = Currency::getInstance($Order->currency);
+        $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
 
@@ -981,7 +981,7 @@ class paypal extends \Shop\Gateway
             'detail' => array(
                 'invoice_number' => $order_num,
                 'reference' => $order_num,
-                'currency_code' => $Order->currency,
+                'currency_code' => $Currency->getCode(),
                 'payment_term' => array(
                     'term_type' => $this->getInvoiceTerms(),
                 ),
@@ -1044,15 +1044,33 @@ class paypal extends \Shop\Gateway
             ),
             'amount' => array(
                 'breakdown' => array(
+//                    'tax_total' => array(
+//                        'currency_code' => $Currency->getCode(),
+//                        'value' => $Currency->FormatValue($Order->getTax()),
+//                    ),
                     'shipping' => array(
                         'amount' => array(
-                            'currency_code' => $Order->getCurrency()->getCode(),
-                            'value' => $Currency->FormatValue($Order->getShipping()),
+                            'currency_code' => $Currency->getCode(),
+                            'value' => sprintf('%.02f', $Order->getShipping()),
                         ),
                     ),
                 ),
             ),
         );
+        if ($Order->getShipping() > 0 && $Order->getTaxShipping()) {
+            $A['amount']['breakdown']['shipping']['tax'] = array(
+                'currency_code' => $Currency->getCode(),
+                'percent' => $Order->getTaxRate() * 100,
+            );
+        }
+        /*if ($Order->getHandling() > 0) {
+            $handling = $Order->getHandling();
+            $A['amount']['breakdown']['shipping']['tax'] = array(
+                'currency_code' => $Currency->getCode(),
+                'percent' => $Order->getTaxRate() * 100,
+            );
+        }*/
+
         foreach ($Order->getItems() as $OI) {
             $item = array(
                 'name' => $OI->getProduct()->getName(),
@@ -1064,14 +1082,19 @@ class paypal extends \Shop\Gateway
                 ),
                 'unit_of_measure' => 'QUANTITY',
             );
+            $opts = $OI->getOptionsText();
+            if (!empty($opts)) {
+                $item['description'] .= ' ' . implode(', ', $opts);
+            }
             if ($OI->getProduct()->isTaxable()) {
                 $item['tax'] = array(
-                    'name' => $LANG_SHOP['tax'],
-                    'amount' => $OI->getTax(),
+                    'name' => $LANG_SHOP['sales_tax'],
+                    'percent' => $Order->getTaxRate() * 100,
                 );
             }
             $A['items'][] = $item;
         }
+        //var_dump($item);die;
         //var_export($A);die;
 
         // Create the draft invoice
@@ -1092,6 +1115,7 @@ class paypal extends \Shop\Gateway
 
         // If the invoice was created successfully, send to the buyer
         if ($http_code == 201) {
+            $Order->updateStatus('invoiced');
             $json = json_decode($inv, true);
             if (isset($json['href'])) {
                 $ch = curl_init();

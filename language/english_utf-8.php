@@ -250,6 +250,9 @@ $LANG_SHOP = array (
 'shipping'      => 'Shipping',
 'handling'      => 'Handling',
 'tax'           => 'Tax',
+'tax_shipping'  => 'Shipping Tax',
+'tax_handling'  => 'Handling Tax',
+'net_items'     => 'Net Items',
 'or'            => 'or',
 'purch_signup'  => 'Create an Account',
 'buyer_email'   => 'Buyer E-Mail',
@@ -263,6 +266,7 @@ $LANG_SHOP = array (
     'processing' => 'Processing',
     'closed'    => 'Closed',
     'refunded'  => 'Refunded',
+    'invliced'  => 'Invoiced',
 ),
 'message' => 'Message',
 'timestamp' => 'Timestamp',
@@ -714,7 +718,8 @@ $PLG_shop_MESSAGE04 = 'Error performing the plugin upgrade';
 $PLG_shop_MESSAGE05 = 'Error upgrading the plugin version number';
 $PLG_shop_MESSAGE06 = 'Plugin is already up to date';
 $PLG_shop_MESSAGE07 = 'Invalid download token given';
-$PLG_shop_MESSAGE08 = 'There was an error finalizing your order. Please contact the site administrator.';
+$PLG_shop_MESSAGE08 = 'There was an error finalizing your order.<br />Please contact the site administrator.';
+$PLG_shop_MESSAGE09 = 'Your order has been submitted.<br />Thank you.';
 
 /** Language strings for the plugin configuration section */
 $LANG_configsections['shop'] = array(

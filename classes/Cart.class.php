@@ -812,9 +812,9 @@ class Cart extends Order
      * Also removes the cart_id cookie for anonymous users.
      *
      * @param   string  $cart_id    Cart ID to update
-     * @param   boolean $status     Status to set, currently only "true"
+     * @param   string  $status     Status to set, default is "pending"
      */
-    public static function setFinal($cart_id, $status=true)
+    public static function setFinal($cart_id, $status='pending')
     {
         global $_TABLES, $LANG_SHOP, $_CONF;
 
@@ -822,7 +822,7 @@ class Cart extends Order
         if ($Order->isNew) {
             SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
             // Cart not found, do nothing
-            return;
+            return $Order->getStatus();
         }
 
         //$oldstatus = $Order->status;

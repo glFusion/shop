@@ -13,7 +13,7 @@
  */
 namespace Shop\Webhooks;
 use Shop\Payment;
-
+use Shop\Order;
 
 /**
  * Paypal webhook class.
@@ -29,7 +29,7 @@ class paypal extends \Shop\Webhook
     public function __construct($blob)
     {
         $this->setSource('paypal');
-        //$this->setHeaders();
+        $this->setHeaders();
         $this->setTimestamp();
         $this->setData(json_decode($blob, true));
         //COM_errorLog('HEADERS: ' . var_export($this->getHeader(),true));
@@ -38,11 +38,9 @@ class paypal extends \Shop\Webhook
         // Check that the blob was decoded successfully.
         // If so, extract the key fields and set Webhook variables.
         $data = $this->getData();
-        //var_dump($data);die;
-        if ($data) {        // Indicates that the blob was decoded
+        if ($data) {     // Indicates that the blob was decoded
             $this->setID(SHOP_getVar($this->getData(), 'id'));
             $this->setEvent(SHOP_getVar($this->getData(), 'event_type'));
-            $this->Dispatch();
         }
     }
 
@@ -52,10 +50,8 @@ class paypal extends \Shop\Webhook
      *
      * @return  boolean     True on success, False on error
      */
-    protected function Dispatch()
+    public function Dispatch()
     {
-        switch ($this->getEvent()) {
-        case self::EV_PAYMENT:
             $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
             if  ($resource) {
                 $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
@@ -64,9 +60,15 @@ class paypal extends \Shop\Webhook
                     if ($detail) {
                         $this->setOrderID(SHOP_getVar($detail, 'reference'));
                     }
+                }
+            }
+        switch ($this->getEvent()) {
+        case self::EV_PAYMENT:
+            if ($invoice) {
                     $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
                     if ($payments) {
                         $payment = array_pop($payments['transactions']);
+                        //var_dump($payment);die;
                         $Pmt = new Payment;
                         $Pmt->setRefID($this->getID())
                             ->setAmount($payment['amount']['value'])
@@ -77,6 +79,13 @@ class paypal extends \Shop\Webhook
                         return $Pmt->Save();
                     }
                 }
+            break;
+
+        case self::EV_CREATED:
+            COM_errorLog("Invlice created for {$this->getOrderID()}");
+            $Order = Order::getInstance($this->getOrderID());
+            if (!$Order->isNew()) {
+                $Order->updateStatus('invoiced');
             }
             break;
         }
@@ -95,6 +104,9 @@ class paypal extends \Shop\Webhook
         case 'INVOICING.INVOICE.PAID':
             return self::EV_PAYMENT;
             break;
+        case 'INVOICING.INVOICE.CREATED':
+            return self::EV_CREATED;
+            break;
         default:
             return self::EV_UNDEFINED;
             break;
@@ -109,17 +121,21 @@ class paypal extends \Shop\Webhook
      */
     public function Verify()
     {
+        //COM_errorLog("In webhook verify");
         $gw = \Shop\Gateway::getInstance($this->getSource());
+        //COM_errorLog("GW is " . print_r($gw,true));
+//        var_dump($this->getHeader());die;
         $body = array(
-            'transmission_id' => $this->getHeader('Paypal-transmission-id'),
-            'transmission_time' => $this->getHeader('Paypal-transmission-time'),
-            'cert_url' => $this->getHeader('Paypal-cert-url'),
-            'auth_algo' => $this->getHeader('Paypal-auth-algo'),
-            'transmission_sig' => $this->getHeader('Paypal-transmission-sig'),
+            'transmission_id' => $this->getHeader('Paypal-Transmission-Id'),
+            'transmission_time' => $this->getHeader('Paypal-Transmission-Time'),
+            'cert_url' => $this->getHeader('Paypal-Cert-Url'),
+            'auth_algo' => $this->getHeader('Paypal-Auth-Algo'),
+            'transmission_sig' => $this->getHeader('Paypal-Transmission-Sig'),
             'webhook_id' => '7AL053045J1030934',
             //'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
             'webhook_event' => $this->getData(),
         );
+        //var_dump($body);die;
         $body = json_encode($body, JSON_UNESCAPED_SLASHES);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $gw->getApiUrl() . '/v1/notifications/verify-webhook-signature');
@@ -143,6 +159,7 @@ class paypal extends \Shop\Webhook
                 COM_errorLog("Paypal WebHook verification result: Code $code, Data " . print_r($result,true));
                 $status = false;
             } else {
+                var_dump($result);
                 $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
             }
         }

@@ -1,6 +1,8 @@
 <?php
 /**
  * Gateway to handle Net terms.
+ * This offers Net Terms as a checkout method to authorized buyers, then
+ * calls the configured gateway (e.g. "paypal") to process the invoice.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright  Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
@@ -38,7 +40,8 @@ class terms extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'terms';
         $this->gw_desc = 'Net Terms';
-        $this->gw_url = SHOP_URL . '/ipn/terms.php';
+        // This gateway processes the order via AJAX and just returns to the shopping page.
+        $this->gw_url = SHOP_URL . '/index.php?msg=09&plugin=shop';
 
         // Set default values for the config items, just to be sure that
         // something is set here.
@@ -65,7 +68,7 @@ class terms extends \Shop\Gateway
      * @param   string  $btn_type   Button type to check
      * @return  boolean             True if the button is supported
      */
-    protected function _Supports($btn_type)
+    protected function X_Supports($btn_type)
     {
         $arr_parms = array(
             'enabled' => $this->enabled,

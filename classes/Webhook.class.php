@@ -26,6 +26,10 @@ class Webhook
      * @const string */
     const EV_PAYMENT = 'invoice_paid';
 
+    /** Standard event type for invoice creation.
+     * @const string */
+    const EV_CREATED = 'invoice_created';
+
     /** Standard event type for unidentified events.
      * @const string */
     const EV_UNDEFINED = 'undefined';
@@ -302,12 +306,14 @@ class Webhook
     /**
      * Set the header array from the received webhook headers.
      *
+     * @param   array   $arr    Specified array of headers for debugging
      * @return  object  $this
      */
-    public function setHeaders()
+    public function setHeaders($arr = NULL)
     {
         $headers = array();
-        foreach($_SERVER as $key => $value) {
+        $arr = $arr === NULL ? $_SERVER : $arr;
+        foreach($arr as $key => $value) {
             if (substr($key, 0, 5) <> 'HTTP_') {
                 continue;
             }
