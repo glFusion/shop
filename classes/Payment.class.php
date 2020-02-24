@@ -20,6 +20,10 @@ namespace Shop;
  */
 class Payment
 {
+    /** Payment record ID in the database.
+     * @var integer */
+    private $pmt_id;
+
     /** Transaction reference ID provided by the payment gateway.
      * @var string */
     private $ref_id;
@@ -60,8 +64,10 @@ class Payment
      */
     public function __construct($A=NULL)
     {
+        $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
         if (is_array($A)) {
-            $this->setRefID($A['pmt_ref_id'])
+            $this->setPmtID($pmt_id)
+                ->setRefID($A['pmt_ref_id'])
                 ->setAmount($A['pmt_amount'])
                 ->setTS($A['pmt_ts'])
                 ->setGateway($A['pmt_gateway'])
@@ -96,6 +102,19 @@ class Payment
 
 
     /**
+     * Set the payment record ID.
+     *
+     * @param   integer $id     Payment ID
+     * @return  object  $this
+     */
+    public function setPmtID($id)
+    {
+        $this->pmt_id = (int)$id;
+        return $this;
+    }
+
+
+    /**
      * Accessor function to set the Reference ID.
      *
      * @param   string  $ref_id     Reference ID
@@ -109,7 +128,7 @@ class Payment
 
 
     /**
-     * Accessor function to sset the Timestamp.
+     * Accessor function to set the Timestamp.
      *
      * @param   integer $ts     Timestamp
      * @return  object  $this
@@ -200,6 +219,17 @@ class Payment
 
 
     /**
+     * Get the payment record ID.
+     *
+     * @return  integer     DB record ID for the payment
+     */
+    public function getPmtID()
+    {
+        return (int)$this->pmt_id;
+    }
+
+
+    /**
      * Accessor function to get the Reference ID.
      *
      * @return  string      Reference ID
@@ -269,7 +299,7 @@ class Payment
     /**
      * Save the payment object to the database.
      *
-     * @return  integer     New DB record ID, 0 on error
+     * @return  object  $this
      */
     public function Save()
     {
@@ -286,7 +316,10 @@ class Payment
             pmt_uid = " . (int)$this->uid;
         //echo $sql;die;
         $res = DB_query($sql);
-        return DB_error() ? 0 : DB_insertID();
+        if (!DB_error()) {
+            $this->setPmtId(DB_insertID());
+        }
+        return $this;
     }
 
 
@@ -375,6 +408,19 @@ class Payment
             $P[$order_id][] = new self($A);
         }
         return $P[$order_id];
+    }
+
+
+    /**
+     * Purge all payments from the database.
+     * No safety check or confirmation is done; that should be done before
+     * calling this function.
+     */
+    public static function Purge()
+    {
+        global $_TABLES;
+
+        DB_query("TRUNCATE {$_TABLES['shop.payments']}");
     }
 
 }
