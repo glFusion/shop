@@ -1482,7 +1482,7 @@ class Shipper
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Shipper::saveConfig() error: $sql");
+            SHOP_log("Shipper::saveConfig() error: $sql");
             return false;
         } else {
             return true;

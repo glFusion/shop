@@ -675,8 +675,8 @@ class Coupon extends \Shop\Product
     public static function Void($code, $newstatus=self::VOID)
     {
         global $_TABLES, $_USER;;
-        COM_errorLog("Setting $code as $newstatus");
 
+        SHOP_log("Setting $code as $newstatus", SHOP_LOG_DEBUG);
         $code = DB_escapeString($code);
         $newstatus = DB_escapeString($newstatus);
         $sql = "UPDATE {$_TABLES['shop.coupons']}

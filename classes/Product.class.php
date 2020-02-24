@@ -735,7 +735,6 @@ class Product // extends DBO
      */
     public function getRuleID()
     {
-        COM_errorLog("{$this->id} : {$this->zone_rule}");
         return (int)$this->zone_rule;
     }
 
