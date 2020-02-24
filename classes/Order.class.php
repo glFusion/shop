@@ -119,6 +119,14 @@ class Order
      * @var float */
     protected $net_taxable;
 
+    /** Is tax charged on shipping?
+     * @var boolean */
+    protected $tax_shipping = 0;
+
+    /** Is tax charged on handling?
+     * @var boolean */
+    protected $tax_handling = 0;
+
     /** Experimental flag to mark whether an order needs to be saved.
      * @var boolean */
     protected $tainted = false;
@@ -247,6 +255,17 @@ class Order
     public function getStatus()
     {
         return $this->status;
+    }
+
+
+    /**
+     * Allow other callers to determine if this is a new order, e.g. not found.
+     *
+     * @return  boolean     1 if not an existing record, 0 if it is
+     */
+    public function isNew()
+    {
+        return $this->isNew ? 1 : 0;
     }
 
 
@@ -389,7 +408,6 @@ class Order
     {
         global $_TABLES;
 
-        $tax = $this->tax;
         if ($A === NULL) {
             // Clear out the shipping address
             $this->shipto_id        = 0;
@@ -488,6 +506,9 @@ class Order
         //if ($this->status != 'cart') {
             $this->tax_rate = SHOP_getVar($A, 'tax_rate');
         //}
+        $this->setTaxShipping($A['tax_shipping'])
+            ->setTaxHandling($A['tax_handling']);
+
         $this->m_info = @unserialize(SHOP_getVar($A, 'info'));
         if ($this->m_info === false) $this->m_info = array();
         foreach (array('billto', 'shipto') as $type) {
@@ -513,6 +534,54 @@ class Order
         $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
         $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
+        return $this;
+    }
+
+
+    /**
+     * Set the "tax on shipping" flag.
+     *
+     * @param   boolean $flag   True to tax shipping, False if not
+     * @return  object  $this
+     */
+    private function setTaxShipping($flag)
+    {
+        $this->tax_shipping = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Check if this order required tax on shipping.
+     *
+     * @return  integer     1 if shipping is taxed, 0 if not
+     */
+    public function getTaxShipping()
+    {
+        return $this->tax_shipping ? 1 : 0;
+    }
+
+
+    /**
+     * Check if this order required tax on handling.
+     *
+     * @return  integer     1 if handling is taxed, 0 if not
+     */
+    public function getTaxHandling()
+    {
+        return $this->tax_handling ? 1 : 0;
+    }
+
+
+    /**
+     * Set the "tax on handling" flag.
+     *
+     * @param   boolean $flag   True to tax handling, False if not
+     * @return  object  $this
+     */
+    private function setTaxHandling($flag)
+    {
+        $this->tax_handling = $flag ? 1 : 0;
         return $this;
     }
 
@@ -927,6 +996,9 @@ class Order
             'total'     => $Currency->Format($this->total),
             'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
+            'tax_icon'  => $LANG_SHOP['tax'][0],
+            'tax_shipping' => $this->getTaxShipping(),
+            'tax_handling' => $this->getTaxHandling(),
         ) );
 
             if (!$this->no_shipping) {
@@ -1506,13 +1578,20 @@ class Order
             $this->tax = 0;
             return $this;
         }
+        $C = Currency::getInstance($this->currency);
         $tax = 0;
         $this->tax_items = 0;
         foreach ($this->items as &$Item) {
             $this->tax_items += $Item->getTaxable();
             $tax += $Item->getTax();
         }
-        $this->tax = $tax;
+        if ($this->tax_shipping) {
+            $tax += $C->RoundVal($this->tax_rate * $this->shipping);
+        }
+        if ($this->tax_handling) {
+            $tax += $C->RoundVal($this->tax_rate * $this->handling);
+        }
+        $this->tax = $C->FormatValue($tax);
         return $this;
     }
 
@@ -2602,7 +2681,13 @@ class Order
      */
     public function setStatus($newstatus)
     {
-        $this->status = $newstatus;
+        global $LANG_SHOP;
+
+        if (array_key_exists($newstatus, $LANG_SHOP['orderstatus'])) {
+            $this->status = $newstatus;
+        } else {
+            SHOP_log("Invalid log status '{$newstatus}' specified for order {$this->getID()}");
+        }
         return $this;
     }
 
@@ -2619,16 +2704,43 @@ class Order
         global $_TABLES;
 
         $new_rate = (float)$new_rate;
-        if ($this->tax_rate != $new_rate) {
-            $this->tax_rate = (float)$new_rate;
-            $this->calcTax();
-            DB_query(
-                "UPDATE {$_TABLES['shop.orders']}
-                SET tax_rate = {$this->tax_rate}
-                WHERE order_id = '{$this->order_id}'"
-            );
+        //if ($this->tax_rate != $new_rate) {
+        $this->tax_rate = (float)$new_rate;
+        foreach ($this->getItems() as $Item) {
+            if ($Item->isTaxable()) {
+                $Item->setTaxRate($this->tax_rate);
+                $Item->Save();
+            }
         }
+        $this->calcTax();
+        // See if tax is charged on shipping and handling.
+        if ($this->tax_rate > 0) {
+            $State = State::getInstance($this->Shipto);
+            $this->setTaxShipping($State->taxesShipping())
+                ->setTaxHandling($State->taxesHandling());
+        } else {
+            $this->setTaxShipping(0)
+                ->setTaxHandling(0);
+        }
+        DB_query(
+            "UPDATE {$_TABLES['shop.orders']} SET
+                tax_rate = {$this->tax_rate},
+                tax_shipping = {$this->tax_shipping},
+                tax_handling = {$this->tax_handling}
+            WHERE order_id = '{$this->order_id}'"
+        );
         return $this;
+    }
+
+
+    /**
+     * Get the sales tax rate applied to this order.
+     *
+     * @return  float       Sales tax rate
+     */
+    public function getTaxRate()
+    {
+        return (float)$this->tax_rate;
     }
 
 
@@ -2900,6 +3012,32 @@ class Order
         }
     }
 
+
+    /**
+     * Get all the payments recorded for this order.
+     *
+     * @return  array       Array of Payment objects.
+     */
+    public function getPayments()
+    {
+        return Payment::getByOrder($this->order_id);
+    }
+
+
+    /**
+     * Get the total amount paid against this order.
+     *
+     * @return  float       Total amount paid
+     */
+    public function getAmountPaid()
+    {
+        $amount = 0;
+        $pmts = $this->getPayments();
+        foreach ($pmts as $Pmt) {
+            $amount += $Pmt->getAmount();
+        }
+        return $amount;
+    }
 }
 
 ?>

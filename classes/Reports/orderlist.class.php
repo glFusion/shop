@@ -27,7 +27,7 @@ class orderlist extends \Shop\Report
      * Excludes cart.
      * @var array */
     private $default_statuses = array(
-        'pending', 'paid', 'processing', 'shipped',
+        'invoiced', 'pending', 'paid', 'processing', 'shipped',
         'closed', 'complete', 'refunded',
     );
 
@@ -71,69 +71,72 @@ class orderlist extends \Shop\Report
             ),
         );
         if ($this->isAdmin) {
-            $header_arr = array_merge($header_arr, array(
-            $cust_hdr,
-            array(
-                'text'  => $LANG_SHOP['amount'],
-                'field' => 'sales_amt',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_SHOP['tax'],
-                'field' => 'tax',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_SHOP['shipping'],
-                'field' => 'shipping',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_SHOP['total'],
-                'field' => 'order_total',
-                'sort'  => false,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_SHOP['status'],
-                'field' => 'status',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['order_seq'],
-                'field' => 'order_seq',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-        )
-        );
+            $header_arr = array_merge(
+                $header_arr,
+                array(
+                    $cust_hdr,
+                    array(
+                        'text'  => $LANG_SHOP['amount'],
+                        'field' => 'sales_amt',
+                        'sort'  => true,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['tax'],
+                        'field' => 'tax',
+                        'sort'  => true,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['shipping'],
+                        'field' => 'shipping',
+                        'sort'  => true,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['total'] . 'X',
+                        'field' => 'order_total',
+                        'sort'  => false,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['status'],
+                        'field' => 'status',
+                        'sort'  => true,
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['order_seq'],
+                        'field' => 'order_seq',
+                        'sort'  => true,
+                        'align' => 'right',
+                    ),
+                )
+            );
         } else {
             $header_arr = array_merge(
                 $header_arr,
                 array(
-                array(
-                    'text'  => $LANG_SHOP['total'] . '&nbsp;' .
-                    \Shop\Icon::getHTML(
-                        'question',
-                        'tooltip',
-                        array(
-                            'title' => $LANG_SHOP_HELP['orderlist_total']
-                        )
+                    array(
+                        'text'  => $LANG_SHOP['item_total'] . '&nbsp;' .
+                        \Shop\Icon::getHTML(
+                            'question',
+                            'tooltip',
+                            array(
+                                'title' => $LANG_SHOP_HELP['orderlist_total']
+                            )
+                        ),
+                        //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                        'field' => 'sales_amt',
+                        'sort'  => true,
+                        'align' => 'right',
                     ),
-                    //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                'field' => 'sales_amt',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_SHOP['status'],
-                'field' => 'status',
-                'sort'  => true,
-            ),
-        ) );
+                    array(
+                        'text'  => $LANG_SHOP['status'],
+                        'field' => 'status',
+                        'sort'  => true,
+                    ),
+                )
+            );
         }
 
         if ($this->isAdmin) {

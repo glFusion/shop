@@ -261,6 +261,35 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.3.0')) {
+        $current_ver = '1.3.0';
+        // Update the state tables for taxing S&H only if not
+        // already done
+//        if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
+            // US states that tax shipping and handling
+            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+                INNER JOIN {$_TABLES['shop.countries']} c
+                    ON c.country_id = s.country_id
+                SET s.tax_shipping = 1, s.tax_handling = 1
+                WHERE c.alpha2 = 'US' AND s.iso_code in (
+                    'AR', 'CA', 'CT', 'FL', 'GA', 'HI', 'IL', 'IA', 'KS',
+                    'KY', 'MD', 'MA', 'MS', 'MO', 'NE', 'NJ', 'NM', 'NY',
+                    'NC', 'ND', 'OH', 'PA', 'RI', 'SD', 'TN', 'TX', 'VT',
+                    'WA', 'WV', 'WI', 'DC'
+                )";
+            // US states that tax only handling
+            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+                INNER JOIN {$_TABLES['shop.countries']} c
+                    ON c.country_id = s.country_id
+                SET s.tax_handling = 1
+                WHERE c.alpha2 = 'US' AND s.iso_code in (
+                    'AZ', 'MD', 'NV', 'VA'
+                )";
+        //        }
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     // Copy the "not available" image if not already in place.
     if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
         COM_errorLog("Copying missing not-available image");

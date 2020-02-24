@@ -54,6 +54,8 @@ class RegionBase
         $id = DB_escapeString($id);
         switch ($varname) {     // allow only valid field names
         case static::$KEY . '_enabled':
+        case 'tax_shipping':
+        case 'tax_handling':
             // Determing the new value (opposite the old)
             $oldvalue = $oldvalue == 1 ? 1 : 0;
             $newvalue = $oldvalue == 1 ? 0 : 1;
@@ -63,6 +65,7 @@ class RegionBase
                 WHERE " . static::$KEY . "_id IN ($id)";
             // Ignore SQL errors since varname is indeterminate
             //echo $sql;die;
+            //COM_errorLog($sql);
             DB_query($sql, 1);
             if (DB_error()) {
                 SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);

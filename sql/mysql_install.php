@@ -213,6 +213,8 @@ $_SQL = array(
   `shipper_id` int(3) unsigned DEFAULT '0',
   `discount_code` varchar(20) DEFAULT NULL,
   `discount_pct` decimal(4,2) DEFAULT '0.00',
+  `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
   KEY `order_date` (`order_date`)
@@ -273,6 +275,7 @@ $_SQL = array(
   `notify_buyer` tinyint(1) NOT NULL DEFAULT '1',
   `notify_admin` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`),
   KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
 
@@ -694,6 +697,27 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
     "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
+$SHOP_UPGRADE['1.3.0'] = array(
+    "CREATE TABLE `{$_TABLES['shop.payments']}` (
+      `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `pmt_order_id` varchar(40) DEFAULT NULL,
+      `pmt_ts` int(11) unsigned DEFAULT NULL,
+      `pmt_gateway` varchar(12) DEFAULT NULL,
+      `pmt_amount` decimal(12,4) DEFAULT NULL,
+      `pmt_ref_id` varchar(255) DEFAULT NULL,
+      `pmt_method` varchar(32) DEFAULT NULL,
+      `pmt_comment` text,
+      `pmt_uid` int(11) unsigned NOT NULL DEFAULT '0',
+      PRIMARY KEY (`pmt_id`),
+      KEY `order_id` (`pmt_order_id`)
+    ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
+    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
+    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
+    "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
+);
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -714,5 +738,6 @@ $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
+$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][0];
 
 ?>

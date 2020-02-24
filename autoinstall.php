@@ -165,6 +165,8 @@ $tables = array(
     'discountcodes', 'regions', 'countries', 'states',
     // v1.2.0
     'shop.features', 'shop.features_values', 'shop.prodXfeat', 'shop.zone_rules',
+    // v1.3.0
+    'shop.payments',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(

@@ -1,5 +1,9 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.3.0
+  * Enable sales tax charges on shipping and handling.
+  * Add invoicing via Paypal invoice API.
+
 ## v1.2.0
 Release TBD
 

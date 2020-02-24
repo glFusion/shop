@@ -564,6 +564,7 @@ class Address
     /**
      * Get the city, state, zip line, formatted by country.
      *
+     * @param   string  $sep    Optional override to default separator
      * @return  string  Formatted string for city, state, zip
      */
     private function getCityLine($sep="\n")

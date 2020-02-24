@@ -147,15 +147,8 @@
             <td colspan="1" class="alignright">{dc_amt}</td>
         </tr>
         <tr>
-            <td colspan="4" class="alignright">Net Items</td>
+            <td colspan="4" class="alignright">{$LANG_SHOP['net_items']}</td>
             <td colspan="1" class="alignright">{net_items}</td>
-        </tr>
-{!endif}
-{!if cart_tax}
-        <tr>
-          <td colspan="4" class="alignright">{lang_tax_on_items}</td>
-          <td class="alignright">{cart_tax}</td>
-          <td></td>
         </tr>
 {!endif}
 {!!if {shipper_id} > 0 || {shipping} > 0 !!}
@@ -166,13 +159,28 @@
 {!endif}
           </td>
           <td class="alignright">{shipping}</td>
-          <td></td>
+          <td style="padding-left:10px;" class="alignleft">
+{!if tax_shipping}
+            <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+{!endif}
+          </td>
         </tr>
 {!endif}
 {!if handling}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
           <td class="alignright">{handling}</td>
+          <td style="padding-left:10px;" class="alignleft">
+{!if tax_handling}
+            <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+{!endif}
+          </td>
+        </tr>
+{!endif}
+{!if cart_tax}
+        <tr>
+          <td colspan="4" class="alignright">{$LANG_SHOP['sales_tax']}</td>
+          <td class="alignright">{cart_tax}</td>
           <td></td>
         </tr>
 {!endif}

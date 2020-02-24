@@ -45,8 +45,13 @@ class Payment
      * @var integer */
     private $uid = 0;
 
-    private $method;
-    private $comment;
+    /** Payment method.
+     * @var string */
+    private $method = '';
+
+    /** Comment made with the payment.
+     * @var string */
+    private $comment = '';
 
     /**
      * Set internal variables from a data array.
@@ -61,8 +66,8 @@ class Payment
                 ->setTS($A['pmt_ts'])
                 ->setGateway($A['pmt_gateway'])
                 ->setOrderID($A['pmt_order_id'])
-                ->setComment($A['comment'])
-                ->setMethod($A['method'])
+                ->setComment($A['pmt_comment'])
+                ->setMethod($A['pmt_method'])
                 ->setUid($A['uid']);
         }
     }
@@ -109,9 +114,9 @@ class Payment
      * @param   integer $ts     Timestamp
      * @return  object  $this
      */
-    public function setTS($timestamp)
+    public function setTS($ts)
     {
-        $this->ts = (int)$timestamp;
+        $this->ts = (int)$ts;
         return $this;
     }
 
@@ -342,6 +347,34 @@ class Payment
                 $done[$Pmt->getRefId()] = 'done';
             }
         }
+    }
+
+
+    /**
+     * Get all the payment objects for a specific order.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  array       Array of Payment objects
+     */
+    public static function getByOrder($order_id)
+    {
+        global $_TABLES;
+        static $P = array();
+
+        if (isset($P[$order_id])) {
+            return $P[$order_id];
+        }
+
+        $P[$order_id] = array();
+        $order_id = DB_escapeString($order_id);
+        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
+            WHERE pmt_order_id = '$order_id'
+            ORDER BY pmt_ts ASC";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $P[$order_id][] = new self($A);
+        }
+        return $P[$order_id];
     }
 
 }

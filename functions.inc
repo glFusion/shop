@@ -812,6 +812,8 @@ function plugin_autouninstall_shop()
             'shop.features_values',
             'shop.prodXfeat',
             'shop.zone_rules',
+            // v1.3.0
+            'shop.payments',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(

@@ -957,6 +957,7 @@ class OrderItem
     public function setTaxRate($rate)
     {
         $this->tax_rate = (float)$rate;
+        $this->setTax($this->quantity * $this->net_price * $this->tax_rate);
         return $this;
     }
 

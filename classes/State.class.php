@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -60,6 +60,14 @@ class State extends RegionBase
      * @var object */
     private $Country;
 
+    /** Does this state charge tax on shipping?
+     * @var boolean */
+    private $tax_shipping = 0;
+
+    /** Does this state charge tax on handling?
+     * @var boolean */
+    private $tax_handling = 0;
+
 
     /**
      * Create an object and set the variables.
@@ -73,7 +81,9 @@ class State extends RegionBase
             ->setCountryISO($A['country_iso'])
             ->setISO($A['iso_code'])
             ->setName($A['state_name'])
-            ->setEnabled($A['state_enabled']);
+            ->setEnabled($A['state_enabled'])
+            ->setTaxHandling($A['tax_handling'])
+            ->setTaxShipping($A['tax_shipping']);
     }
 
 
@@ -82,13 +92,17 @@ class State extends RegionBase
      * The code may be a combination of country and state ISO, such as
      * `US-CA`, or a DB record ID for the state.
      *
-     * @param   string  $code   State iso_code and country iso_code
+     * @param   mixed   $code    Record ID, Address object or country-state code
      * @return  object  Country object
      */
     public static function getInstance($code)
     {
         global $_TABLES;
         static $instances = array();
+
+        if ($code instanceof Address) {
+            $code = $code->getCountry() . '-' . $code->getState();
+        }
 
         if (isset($instances[$code])) {
             return $instances[$code];
@@ -302,6 +316,54 @@ class State extends RegionBase
 
 
     /**
+     * Set the tax_shipping flag.
+     *
+     * @param   boolean $flag   True to tax shipping, False if not
+     * @return  object  $this
+     */
+    public function setTaxShipping($flag)
+    {
+        $this->tax_shipping = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Check if this state charges tax on shipping.
+     *
+     * @return  integer     1 if tax is charged, 0 if not.
+     */
+    public function taxesShipping()
+    {
+        return $this->tax_shipping ? 1 : 0;
+    }
+
+
+    /**
+     * Set the tax_handling flag.
+     *
+     * @param   boolean $flag   True to tax handling, False if not
+     * @return  object  $this
+     */
+    public function setTaxHandling($flag)
+    {
+        $this->tax_handling = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Check if this state charges tax on handling charges.
+     *
+     * @return  integer     1 if tax is charged, 0 if not.
+     */
+    public function taxesHandling()
+    {
+        return $this->tax_handling ? 1 : 0;
+    }
+
+
+    /**
      * Get all the state objects as an array.
      *
      * @param   string  $country    ISO code for a country
@@ -378,6 +440,8 @@ class State extends RegionBase
             'state_name'    => $this->getName(),
             'iso_code'      => $this->getISO(),
             'ena_chk'       => $this->state_enabled ? 'checked="checked"' : '',
+            'tx_shp_chk'    => $this->tax_shipping ? 'checked="checked"' : '',
+            'tx_hdl_chk'    => $this->tax_handling ? 'checked="checked"' : '',
             'country_options' => Country::optionLIst($this->country_iso, false),
             'doc_url'       => SHOP_getDocUrl('state_form'),
         ) );
@@ -418,7 +482,9 @@ class State extends RegionBase
         $sql2 = "country_id = {$this->getCountryID()},
             iso_code = '" . DB_escapeString($this->getISO()) . "',
             state_name = '" . DB_escapeString($this->getName()) . "',
-            state_enabled = " . (int)$this->state_enabled;
+            state_enabled = {$this->getEnabled()},
+            tax_shipping = {$this->taxesShipping()},
+            tax_handling = {$this->taxesShipping()}";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -449,7 +515,8 @@ class State extends RegionBase
 
         $display = '';
         $country_id = (int)$country_id;
-        $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code, c.country_name
+        $sql = "SELECT s.state_id, s.state_name, s.state_enabled, s.iso_code,
+                s.tax_shipping, s.tax_handling, c.country_name
             FROM {$_TABLES['shop.states']} s
             LEFT JOIN {$_TABLES['shop.countries']} c
                 ON c.country_id = s.country_id";
@@ -483,7 +550,19 @@ class State extends RegionBase
                 'align' => 'center',
             ),
             array(
-                'text'  => 'Enabled',
+                'text'  => $LANG_SHOP['tax_shipping'],
+                'field' => 'tax_shipping',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['tax_handling'],
+                'field' => 'tax_handling',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['enabled'],
                 'field' => 'state_enabled',
                 'sort'  => true,
                 'align' => 'center',
@@ -572,6 +651,8 @@ class State extends RegionBase
             break;
 
         case 'state_enabled':
+        case 'tax_shipping':
+        case 'tax_handling':
             if ($fieldvalue == '1') {
                 $switch = 'checked="checked"';
                 $enabled = 1;
@@ -581,7 +662,7 @@ class State extends RegionBase
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
                     id=\"togenabled{$A['state_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['state_id']}\",\"state_enabled\",".
+                    onclick='SHOP_toggle(this,\"{$A['state_id']}\",\"{$fieldname}\",".
                     "\"state\");' />" . LB;
             break;
         default:

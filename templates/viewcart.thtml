@@ -111,14 +111,22 @@
 {!endif}
         </td>
         <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
-        <td></td>
+        <td>
+{!if tax_shipping}
+          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+{!endif}
+        </td>
       </tr>
 {!endif}
 {!if handling}
       <tr>
         <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
         <td colspan="1" class="alignright">{handling}</td>
-        <td></td>
+        <td>
+{!if tax_handling}
+          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+{!endif}
+        </td>
       </tr>
 {!endif}
       <tr>
