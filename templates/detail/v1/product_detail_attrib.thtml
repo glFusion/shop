@@ -9,6 +9,7 @@
 </div>
 {!endif}
 <form id="add_cart_{frm_id}" action="{site_url}/shop/index.php" method="post">
+  <input type="hidden" name="item_number" value="{id}" />
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}

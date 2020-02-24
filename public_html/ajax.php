@@ -128,7 +128,7 @@ case 'validateOpts':
         ) );
     } else {
         // Product has no options, just check the product object
-        $output = Shop\Product::getInstance($_GET['item_number'])->Validate(array(
+        $output = Shop\Product::getByID($_GET['item_number'])->Validate(array(
             'quantity' => $_GET['quantity'],
         ) );
     }
