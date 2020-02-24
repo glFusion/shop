@@ -2578,7 +2578,7 @@ class Product // extends DBO
         if ($isadmin) return true;  // Admin can always view and order
 
         // Check the user's permission, if not admin
-        if (!$isadmin  && !$this->hasAccess()) {
+        if (!$this->hasAccess()) {
             return false;
         }
 
@@ -4022,7 +4022,7 @@ class Product // extends DBO
      */
     public function getOnhand()
     {
-        if ($this->Variant !== NULL) {
+        if ($this->Variant !== NULL && $this->Variant->getID() > 0) {
             return $this->Variant->getOnhand();
         } else {
             return $this->onhand;
