@@ -1078,10 +1078,9 @@ class IPN
     {
         $cls = __NAMESPACE__ . '\\ipn\\' . $name;
         if (class_exists($cls)) {
-            COM_errorLog("got ipn");
             return new $cls($vars);
         } else {
-            COM_errorLog("$cls doesn't exist");
+            SHOP_log("IPN::getInstance() - $cls doesn't exist");
             return NULL;
         }
         return $ipns[$name];

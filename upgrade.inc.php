@@ -440,6 +440,8 @@ function SHOP_remove_old_files()
         $_CONF['path_html'] . 'shop' => array(
             // 1.2.0
             'js/country_state.js',
+            'docs/english/attribute_form.html',
+	    'js/toggleEnabled.js',
         ),
         // admin/plugins/shop
         $_CONF['path_html'] . 'admin/plugins/shop' => array(
@@ -448,7 +450,10 @@ function SHOP_remove_old_files()
 
     foreach ($paths as $path=>$files) {
         foreach ($files as $file) {
-            @unlink("$path/$file");
+            if (is_file("$path/$file")) {
+                SHOP_log("removing $path/$file");
+                @unlink("$path/$file");
+            }
         }
     }
 }

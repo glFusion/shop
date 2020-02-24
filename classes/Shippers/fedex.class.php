@@ -246,7 +246,7 @@ class fedex extends \Shop\Shipper
                 );
             }
         } else {
-            COM_errorLog(print_r($response,true));
+            SHOP_log(print_r($response,true));
             $Tracking->addError('Non-successful response received.');
         }
         $Tracking->setCache($this->key, $track_num);

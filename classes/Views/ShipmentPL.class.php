@@ -132,7 +132,7 @@ class ShipmentPL
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            COM_errorLog($e);
+            SHOP_log($e);
             return false;
         }
 
@@ -149,7 +149,7 @@ class ShipmentPL
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                COM_errorLog($e);
+                SHOP_log($e);
                 return false;
             }
         }

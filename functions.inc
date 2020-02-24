@@ -216,7 +216,6 @@ function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
             )
             . COM_siteFooter();
     } else {        // success - update the comment counter for this item
-        COM_errorLog("Returning to " . SHOP_URL . "/detail.php?item_id=$item_id");
         return COM_refresh(SHOP_URL . "/detail.php?item_id=$item_id");
     }
 }

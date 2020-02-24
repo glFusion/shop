@@ -218,7 +218,6 @@ class Product extends \Shop\Image
         $sql = "UPDATE {$_TABLES['shop.images']}
             SET product_id = '$item_id'
             WHERE nonce = '$nonce'";
-        //COM_errorLog($sql);
         DB_query($sql);
     }
 

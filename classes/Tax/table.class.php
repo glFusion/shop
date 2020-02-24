@@ -397,7 +397,7 @@ class table extends \Shop\Tax
             special_rate = {$A['special_rate']}";
         DB_query($sql);
         if (DB_error()) {
-            COM_errorLog("Error saving tax rate: $sql");
+            SHOP_log("Error saving tax rate: $sql");
             return false;
         } else {
             return true;

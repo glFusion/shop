@@ -119,7 +119,7 @@ class stripe extends \Shop\IPN
     {
         // Get the payment intent from Stripe
         $trans = $this->GW->getPayment($this->getTxnId());
-        COM_errorLog("got transaction: " . var_dump($trans, true));
+        SHOP_log("got Stripe transaction: " . var_dump($trans, true), SHOP_LOG_DEBUG);
         $this->_payment = $trans;
 
         if (!$trans || $trans->status != 'succeeded') {
@@ -192,7 +192,7 @@ class stripe extends \Shop\IPN
             );
             return false;
         } elseif (!$this->isUniqueTxnId()) {
-            COM_errorLog("Duplicate Txn ID " . $this->getTxnId());
+            SHOP_log("Duplicate Txn ID " . $this->getTxnId());
             $logId = $this->Log(false);
             return false;
         } else {

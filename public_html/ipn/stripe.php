@@ -26,7 +26,6 @@ try {
     $event = \Stripe\Webhook::constructEvent(
         $payload, $sig_header, $GW->getWebhookSecret()
     );
-    COM_errorLog("created event");
 } catch(\UnexpectedValueException $e) {
     // Invalid payload
     SHOP_log("Unexpected Value received from Stripe");

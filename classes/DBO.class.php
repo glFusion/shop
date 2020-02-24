@@ -130,7 +130,6 @@ trait DBO
         $sql = "UPDATE {$_TABLES[static::$TABLE]}
                 SET $varname = $newvalue
                 WHERE $f_id = '$id'";
-        //COM_errorLog($sql);;
         // Ignore SQL errors since varname is indeterminate
         DB_query($sql, 1);
         if (DB_error()) {
