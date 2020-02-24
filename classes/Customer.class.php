@@ -501,14 +501,13 @@ class Customer
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
             'country_options' => Country::optionList(
-                SHOP_getVar($A, 'country', 'string', '')
+                SHOP_getVar($A, 'country', 'string', $_SHOP_CONF['country'], false)
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
         ) );
         $T->parse('output','address');
         return $T->finish($T->get_var('output'));
-
     }
 
 
