@@ -1580,7 +1580,6 @@ class Gateway
         switch($fieldname) {
         case 'edit':
             if ($A['enabled'] !== 'na') {
-                com_errorLog($A['id']);
                 $retval .= COM_createLink(
                     Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
                     SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
