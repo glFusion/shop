@@ -184,6 +184,17 @@ class Zone
 
 
     /**
+     * Get the rule name/description
+     *
+     * @return  string      Name/description of rule
+     */
+    public function getDscp()
+    {
+        return $this->rule_name;
+    }
+
+
+    /**
      * Check whether sales are allowed to a region based on this rule.
      *
      * @param   object  $Addr   Address object

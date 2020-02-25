@@ -101,6 +101,10 @@
         {description}
     </div>
 
+      <div style="clear:right;padding-top:25px;">
+        {prod_det_blk}
+      </div>
+
 {!if rating_bar}
     <div class="shopRatingBar detail v1">{rating_bar}</div>
 {!endif}
