@@ -48,7 +48,7 @@ class Address
      * @var string */
     private $zip;
 
-   /** Country code.
+    /** Country code.
      * @var string */
     private $country;
 
