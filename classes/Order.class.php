@@ -1140,7 +1140,11 @@ class Order
                 WHERE order_id = '$db_order_id';
                 COMMIT;";
             DB_query($sql);
-            $this->order_seq = (int)DB_getItem($_TABLES['shop.orders'], 'order_seq', "order_id = '{$db_order_id}'");
+            $this->order_seq = (int)DB_getItem(
+                $_TABLES['shop.orders'],
+                'order_seq',
+                "order_id = '{$db_order_id}'"
+            );
         } else {
             // Update the status but leave the sequence alone
             $sql = "UPDATE {$_TABLES['shop.orders']} SET
@@ -1244,16 +1248,10 @@ class Order
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        // Nothing to do if the status hasn't changed and we're not
-        // forcing a notification.
-        if (!$force && $status == $this->getStatus()) {
-            return;
-        }
-
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
         $notify_admin = OrderStatus::getInstance($status)->notifyAdmin();
-        if (!$notify_buyer && !$notify_admin) {
+        if (!$force && !$notify_buyer && !$notify_admin) {
             return;
         }
 
@@ -2110,8 +2108,8 @@ class Order
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
-        // Save the base charge (order total - current shipping charge).
-        $base_chg = $this->gross_items + $this->handling + $this->tax;
+        // Save the base charge (total items and handling, exclude tax if present)
+        $base_chg = $this->gross_items + $this->handling;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';

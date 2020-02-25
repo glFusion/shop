@@ -693,6 +693,7 @@ $LANG_SHOP_HELP = array(
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
 'gw_bb2_instr' => 'Your IPN URL is %s.<br />Be sure to whitelist it in your Bad Behavior plugin configuration.',
+'gw_wh_instr' => 'You must set up the IPN URL as a webhook with the gateway provider.',
 'gc_message' => 'Enter an optional message to be sent to the recipient (no HTML).',
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',

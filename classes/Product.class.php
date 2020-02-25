@@ -1709,16 +1709,21 @@ class Product // extends DBO
         ) );
 
         $Features = $this->getFeatures();
-        if (count($Features) > 0) {
-            $T->set_var('has_features', true);
-            $T->set_block('prod_info', 'FeatList', 'FL');
-            foreach ($Features as $FT) {
+        $zonerule_dscp = $this->getRule()->getDscp();
+        $T->set_block('prod_info', 'FeatList', 'FL');
+        foreach ($Features as $FT) {
+            $T->set_var(array(
+                'ft_name' => $FT->getName(),
+                'fv_text' => $FT->getValue(),
+            ) );
+            $T->parse('FL', 'FeatList', true);
+        }
+        if ($zonerule_dscp != '') {
                 $T->set_var(array(
-                    'ft_name' => $FT->getName(),
-                    'fv_text' => $FT->getValue(),
-                ) );
-                $T->parse('FL', 'FeatList', true);
-            }
+                'ft_name' => $LANG_SHOP['restrictions'],
+                'fv_text' => $zonerule_dscp
+            ) );
+            $T->parse('FL', 'FeatList', true);
         }
         $T->set_var(array(
             'prod_det_blk'  => $T->parse('product', 'prod_info'),
@@ -2042,8 +2047,10 @@ class Product // extends DBO
     public function canBuyNow()
     {
         if (
-            !$this->canOrder()          // Can't be ordered, unavailable
-            || $this->hasOptions()   // no attributes to select
+            $this->isTaxable()          // need address in cart for tax
+            || $this->rule_id > 0       // has an active zone rule
+            || !$this->canOrder()       // Can't be ordered at all, unavailable
+            || $this->hasOptions()      // no attributes to select
             || $this->hasDiscounts()    // no quantity-based discounts
             || $this->hasCustomFields() // no text fields to fill in
             || $this->hasSpecialFields()    // no special fields to fill in
@@ -2685,7 +2692,7 @@ class Product // extends DBO
      */
     public function isTaxable()
     {
-        return $this->taxable;
+        return $this->taxable ? 1 : 0;
     }
 
 

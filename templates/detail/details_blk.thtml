@@ -33,15 +33,11 @@
         <label>SKU:</label>
         <span id="sku">{sku}</span>
         </p>
-{!if has_features}
-        <div style="clear:both;height:10px;"></div>
 <!-- BEGIN FeatList -->
         <p>
         <label>{ft_name}:</label> {fv_text}
         </p>
 <!-- END FeatList -->
-{!endif}
-
     </li>
 
 {# Brand info, if available #}
