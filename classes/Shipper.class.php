@@ -140,8 +140,8 @@ class Shipper
             $this->enabled = 1;
             $this->name = '';
             $this->use_fixed = 1;
-            $this->valid_from = self::MIN_DATETIME;
-            $this->valid_to = self::MAX_DATETIME;
+            $this->setValidFrom(NULL);
+            $this->setValidTo(NULL);
             $this->grp_access = 2;    // Default = All users
             $this->min_units = self::MIN_UNITS;
             $this->max_units = 1000000;
@@ -387,6 +387,8 @@ class Shipper
      */
     private function setValidFrom($value)
     {
+        global $_CONF;
+
         if (empty($value)) {
             $value = self::MIN_DATETIME;
         }
@@ -403,6 +405,8 @@ class Shipper
      */
     private function setValidTo($value)
     {
+        global $_CONF;
+
         if (empty($value)) {
             $value = self::MAX_DATETIME;
         }
