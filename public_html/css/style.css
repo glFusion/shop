@@ -891,3 +891,24 @@ button:disabled {
 tr.embargo {
     background: #ddd;
 }
+
+dl#featurelist {
+  width: 100%;
+  overflow: hidden;
+  padding: 0;
+  margin: 0
+}
+dl#featurelist dt {
+  float: left;
+  width: 30%;
+  /* adjust the width; make sure the total of both is 100% */
+  padding: 0;
+  margin: 0
+}
+dl#featurelist dd {
+  float: left;
+  width: 70%;
+  /* adjust the width; make sure the total of both is 100% */
+  padding: 0;
+  margin: 0
+}

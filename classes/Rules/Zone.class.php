@@ -42,6 +42,10 @@ class Zone
      * @var string */
     private $rule_name = '';
 
+    /** Rule description.
+     * @var string */
+    private $rule_dscp = '';
+
     /** Indicate wheter rule is `allow` or `deny`.
      * @var boolean */
     private $allow = 0;
@@ -77,6 +81,7 @@ class Zone
         if (is_array($A)) {
             $this->rule_id = (int)$A['rule_id'];
             $this->rule_name = $A['rule_name'];
+            $this->rule_dscp = $A['rule_dscp'];
             $this->regions = @json_decode($A['regions'], true);
             if (!is_array($this->regions)) {
                 $this->regions = array();
@@ -190,7 +195,7 @@ class Zone
      */
     public function getDscp()
     {
-        return $this->rule_name;
+        return $this->rule_dscp == '' ? $this->rule_name : $this->rule_dscp;
     }
 
 
@@ -345,6 +350,7 @@ class Zone
 
         if (is_array($A)) {
             $this->rule_name = $A['rule_name'];
+            $this->rule_dscp = $A['rule_dscp'];
             $this->allow = (int)$A['allow'];
             $this->enabled = isset($A['enabled']) ? 1 : 0;
         }
@@ -357,6 +363,7 @@ class Zone
             $sql3 = " WHERE rule_id='{$this->rule_id}'";
         }
         $sql2 = "rule_name = '" . DB_escapeString($this->rule_name) . "',
+            rule_dscp = '" . DB_escapeString($this->rule_dscp) . "',
             allow = " . (int)$this->allow . ",
             enabled = " . (int)$this->enabled . ",
             regions = '" . DB_escapeString(json_encode($this->regions)) . "',
@@ -546,6 +553,7 @@ class Zone
         $T->set_var(array(
             'rule_id'   => $this->rule_id,
             'rule_name' => $this->rule_name,
+            'rule_dscp' => $this->rule_dscp,
             'type_sel' . $this->allow => 'checked="checked"',
             'ena_chk'   => $this->enabled ? 'checked="checked"' : '',
             'doc_url'   => SHOP_getDocURL('zone_rules', $_CONF['language']),
