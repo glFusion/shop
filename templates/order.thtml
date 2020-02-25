@@ -184,13 +184,11 @@
           <td></td>
         </tr>
 {!endif}
-{!if good_items}
         <tr>
           <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
           <td class="alignright"><b>{total}</b></td>
           <td></td>
         </tr>
-{!endif}
 {!if apply_gc}
         <tr>
           <td colspan="4" class="alignright">{$LANG_SHOP['apply_gc']}</td>

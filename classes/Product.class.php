@@ -1481,7 +1481,7 @@ class Product // extends DBO
                 }
             }
             // Set the default if a default isn't specified or valid
-            if ($this->Variant == NULL) {
+            if ($this->Variant == NULL ||  $this->Variant->getID() < 1) {
                 $this->Variant = reset($this->Variants);
             }
         } else {
@@ -1550,7 +1550,7 @@ class Product // extends DBO
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
-        if ($this->Variant) {
+        if ($this->Variant && $this->Variant->getID() > 0) {
             $VarOptions = $this->Variant->getOptions();
         }
         foreach ($this->OptionGroups as $OG) {
@@ -1625,7 +1625,7 @@ class Product // extends DBO
         $all_images = array();      // for json list of all image information
         $all_image_ids = array();   // for json list of image IDs
         $showImages = $this->getImages();
-        if ($this->Variant !== NULL) {
+        if ($this->Variant !== NULL && $this->Variant->getID() > 0) {
             $ids = $this->Variant->getImageIDs();
             if (!empty($ids)) {
                 $showImages = array();
@@ -2625,7 +2625,7 @@ class Product // extends DBO
     public function getMaxOrderQty()
     {
         $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
-        if ($this->Variant) {
+        if ($this->Variant && $this->Variant->getID() > 0) {
             $onhand = $this->Variant->getOnhand();
         } else {
             $onhand = $this->onhand;
@@ -4192,7 +4192,7 @@ class Product // extends DBO
     public function getVariantImages()
     {
         $retval = $this->getImages();
-        if ($this->Variant) {
+        if ($this->Variant && $this->Variant->getID() > 0) {
             $ids = $this->Variant->getImageIDs();
             if (!empty($ids)) {
                 $retval = array();
