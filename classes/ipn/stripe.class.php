@@ -124,6 +124,7 @@ class stripe extends \Shop\IPN
 
         if (!$trans || $trans->status != 'succeeded') {
             // Payment verification failed.
+            SHOP_log('ipn\stripe::Verify() failed', SHOP_LOG_DEBUG);
             return false;
         }
         $this->ipn_data['txn'] = $trans;
