@@ -2042,7 +2042,8 @@ class Product // extends DBO
     public function canBuyNow()
     {
         if (
-            !$this->canOrder()          // Can't be ordered, unavailable
+            $this->isTaxable()       // need address in cart for tax
+            || !$this->canOrder()          // Can't be ordered, unavailable
             || $this->hasOptions()   // no attributes to select
             || $this->hasDiscounts()    // no quantity-based discounts
             || $this->hasCustomFields() // no text fields to fill in
@@ -2685,7 +2686,7 @@ class Product // extends DBO
      */
     public function isTaxable()
     {
-        return $this->taxable;
+        return $this->taxable ? 1 : 0;
     }
 
 
