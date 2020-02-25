@@ -264,7 +264,10 @@ class stripe extends \Shop\Gateway
      */
     protected function getInstructions()
     {
-        return $this->adminWarnBB();
+        global $LANG_SHOP_HELP;
+
+        return '<ul><li>' . $this->adminWarnBB() . '</li><li>' .
+            $LANG_SHOP_HELP['gw_wh_instr'] . '</li></ul>';
     }
 
 }
