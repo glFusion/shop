@@ -2031,8 +2031,8 @@ class Order
         $T = SHOP_getTemplate('shipping_method', 'form');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
-        // Save the base charge (order total - current shipping charge).
-        $base_chg = $this->gross_items + $this->handling + $this->tax;
+        // Save the base charge (total items and handling, exclude tax if present)
+        $base_chg = $this->gross_items + $this->handling;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
