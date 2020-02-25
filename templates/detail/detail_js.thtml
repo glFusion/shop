@@ -56,14 +56,14 @@ function ProcessForm(form)
         data: data,
         success: function(result) {
             try {
-                $("span#onhand").text(result.onhand);
-                $("span#leadtime").text(result.leadtime);
+                $("#onhand").text(result.onhand);
+                $("#leadtime").text(result.leadtime);
                 orig_price = result.orig_price.toFixed({cur_decimals});
                 sale_price = result.sale_price.toFixed({cur_decimals});
                 $("#price").html(sale_price);
                 $("#price_was").html(orig_price);
-                $("span#weight").text(result.weight);
-                $("span#sku").text(result.sku);
+                $("#weight").text(result.weight);
+                $("#sku").text(result.sku);
                 SHOP_changeImages(result.images);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {

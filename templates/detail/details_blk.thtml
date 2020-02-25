@@ -7,9 +7,10 @@
 </ul>
 <ul id="prod_details" class="uk-switcher uk-margin">
     <li>
+      <dl id="featurelist">
 {!if brand_id}
-        <p>
-        <label class="prod_det_blk">{$LANG_SHOP['brand']}:</label>
+        <dt>{$LANG_SHOP['brand']}:</dt>
+        <dd>
         <a href="{site_url}/shop/index.php?products&brand={brand_id}">
 {!if brand_logo_url}
         <img class="shopLogoImage small" src="{brand_logo_url}" />
@@ -17,26 +18,21 @@
         {brand_name}
 {!endif}
         </a>
-        </p>
+        </dd>
 {!endif}
 {!if track_onhand}
-        <p>
-        <label>{$LANG_SHOP['onhand']}:</label>
-        <span id="onhand">{onhand}</span><span style="margin-left:20px;" id="leadtime">{lead_time}</span>
-        </p>
-        <p>
-        <label>{$LANG_SHOP['weight']}:</label>
+        <dt>{$LANG_SHOP['onhand']}:</dt>
+        <dd id="onhand">{onhand}</span><span style="margin-left:20px;" id="leadtime">{lead_time}</dd>
+        <dt>{$LANG_SHOP['weight']}:</dt>
+        <dd>
         <span id="weight">{weight}</span> {weight_unit}
-        </p>
+        </dd>
 {!endif}
-        <p>
-        <label>SKU:</label>
-        <span id="sku">{sku}</span>
-        </p>
+        <dt>SKU:</dt>
+        <dd id="sku">{sku}</dd>
 <!-- BEGIN FeatList -->
-        <p>
-        <label>{ft_name}:</label> {fv_text}
-        </p>
+        <dt>{ft_name}</dt>
+        <dd>{fv_text}</dd>
 <!-- END FeatList -->
     </li>
 
