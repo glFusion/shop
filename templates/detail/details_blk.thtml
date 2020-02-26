@@ -23,6 +23,8 @@
 {!if track_onhand}
         <dt>{$LANG_SHOP['onhand']}:</dt>
         <dd id="onhand">{onhand}</span><span style="margin-left:20px;" id="leadtime">{lead_time}</dd>
+{!endif}
+{!if is_physical}
         <dt>{$LANG_SHOP['weight']}:</dt>
         <dd>
         <span id="weight">{weight}</span> {weight_unit}
