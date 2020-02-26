@@ -330,7 +330,7 @@ function SHOP_do_upgrade($dvlp = false)
 function SHOP_do_upgrade_sql($version, $ignore_error = false)
 {
     global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
-echo "executing upgrade sql for $version" . "<br />\n";
+
     // If no sql statements passed in, return success
     if (!is_array($SHOP_UPGRADE[$version])) {
         return true;
