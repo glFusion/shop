@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner
  * @package     shop
- * @varsion     v1.1.0
+ * @varsion     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -35,7 +35,7 @@ $expected = array(
     'update', 'checkout', 'savebillto', 'saveshipto', 'delete', 'nextstep',
     'empty',
     // Views
-    'view',
+    'cancel', 'view',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -48,6 +48,7 @@ foreach($expected as $provided) {
         break;
     }
 }
+
 if ($action == '') {
     // Not defined in $_POST or $_GET
     // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
@@ -196,7 +197,8 @@ case 'nextstep':
     break;
 
 default:
-    $view = 'view';
+    //$view = 'view';
+    $view = $action;
     break;
 }
 
@@ -204,18 +206,19 @@ switch ($view) {
 case 'none':
     break;
 
-case 'view':
-default:
-    $id = COM_getArgument('id');
-    SHOP_setUrl($_SERVER['request_uri']);
-    if (!empty($id)) {
-        $token = COM_getArgument('token');
-        $Cart = \Shop\Cart::getInstance(0, $id);
-        if ($token == $Cart->token) {
-            \Shop\Cart::setFinal($id, false);
+case 'cancel':
+    list($cart_id, $token) = explode('/', $actionval);
+    if (!empty($cart_id)) {
+        $Cart = \Shop\Cart::getInstance(0, $cart_id);
+        if ($token == $Cart->getToken()) {
+            \Shop\Cart::setFinal($cart_id, false);
             $Cart->setToken();
         }
     }
+    // fall through to view cart
+case 'view':
+default:
+    SHOP_setUrl($_SERVER['request_uri']);
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
 

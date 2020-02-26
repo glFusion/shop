@@ -3,9 +3,9 @@
  * Gateway implementation for Square (squareup.com).
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -468,21 +468,6 @@ class square extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         return '';
-    }
-
-
-    /**
-     * Set the return URL after payment is made.
-     *
-     * @param   string  $cart_id    Cart order ID
-     * @param   string  $token      Order token, to verify accessa
-     * @return  string      URL to pass to the gateway as the return URL
-     */
-    protected function returnUrl($cart_id, $token)
-    {
-        return $this->ipn_url . '?thanks=' . $this->gw__name .
-            '&o=' . $cart_id .
-            '&t=' . $token;
     }
 
 }   // class square

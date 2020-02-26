@@ -10,7 +10,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -192,9 +192,10 @@ case 'emptycart':
 
 case 'thanks':
     // Allow for no thanksVars function
+    list($gw_name, $order_id, $token) = explode('/', $actionval);
     $message = $LANG_SHOP['thanks_title'];
-    if (!empty($actionval)) {
-        $gw = \Shop\Gateway::getInstance($actionval);
+    if (!empty($gw_name)) {
+        $gw = Shop\Gateway::getInstance($gw_name);
         if ($gw !== NULL) {
             $tVars = $gw->thanksVars();
             if (!empty($tVars)) {
@@ -208,20 +209,20 @@ case 'thanks':
 
             // Update the cart to "pending" at this point if not already
             // done via payment notification.
-            $order_id = SHOP_getVar($_GET, 'o');
-            $token = SHOP_getVar($_GET, 't');
             if (!empty($order_id) && !empty($token)) {
-                $Order = \Shop\Order::getInstance($order_id);
+                $Order = Shop\Order::getInstance($order_id);
                 // Since this is public-facing, make sure it only updates from
                 // 'cart' to 'pending'
-                if ($Order->getStatus() == 'cart') {
-                    if ($Order->canView($token)) {
-                        $Order->updateStatus('pending', false, false);
-                    }
+                if (
+                    $Order->getStatus() == 'cart' &&
+                    $Order->canView($token)
+                ) {
+                    $Order->updateStatus('pending', false, false);
                 }
             }
         }
     }
+    $Cart = Shop\Cart::getInstance();   // generate a new cart
     $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
     $view = 'products';
     break;

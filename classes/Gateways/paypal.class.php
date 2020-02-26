@@ -472,7 +472,7 @@ class paypal extends \Shop\Gateway
             $vars['item_name'] = htmlspecialchars($P->short_description);
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
-            $vars['return'] = SHOP_URL . '/index.php?thanks=paypal';
+            $vars['return'] = $this->returnUrl('', '');
             $vars['cancel_return'] = $P->getCancelUrl();
             $vars['amount'] = $P->getPrice();
 
@@ -603,9 +603,13 @@ class paypal extends \Shop\Gateway
         }
         $cmd = '_xclick';       // default Paypal command type
         if (isset($attribs['cmd'])) {
-            $valid_cmds = array('_xclick', '_cart', '_oe-gift-certificate',
-                '_xclick-subscriptions', '_xclick-auto-billing',
-                '_xclick-payment-plan', '_donations');
+            $valid_cmds = array(
+                '_xclick', '_cart', '_oe-gift-certificate',
+                '_xclick-subscriptions',
+                '_xclick-auto-billing',
+                '_xclick-payment-plan',
+                '_donations',
+            );
             if (in_array($attribs['cmd'], $valid_cmds)) {
                 $cmd = $attribs['cmd'];
             }
@@ -618,7 +622,7 @@ class paypal extends \Shop\Gateway
             'currency_code' => $this->currency_code,
             'custom'        => $this->PrepareCustom(),
             'return'        => isset($attribs['return']) ? $attribs['return'] :
-                            SHOP_URL . '/index.php?thanks=paypal',
+                            $this->returnUrl('', ''),
             'rm'            => 1,
             'notify_url'    => $this->ipn_url,
             'amount'        => $amount,
