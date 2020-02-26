@@ -18,8 +18,10 @@ namespace Shop;
  * Class for product attribute groups.
  * @package shop
  */
-class ProductOptionGroup// extends DBO
+class ProductOptionGroup
 {
+    use DBO;        // Import database operations
+
     /** Table key, used by DBO class.
      * @var string */
     protected static $TABLE = 'shop.prod_opt_grps';
@@ -282,7 +284,7 @@ class ProductOptionGroup// extends DBO
             pog_orderby='{$this->pog_orderby}'";
         $sql = $sql1 . $sql2 . $sql3;
         SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        DB_query($sql, 1);
         $err = DB_error();
         if ($err == '') {
             if ($this->isNew) {
