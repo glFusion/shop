@@ -12,6 +12,7 @@ Release TBD
   * New reorder report listing items at or below their reorder qty.
   * Allow plugins to use the catalog display by calling index.php with `category=pi_name`.
   * Restrict product sales by region.
+  * Fixes to gateway return urls to remove url parameters.
 
 ## v1.1.2
 Release 2020-02-15
