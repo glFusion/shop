@@ -408,6 +408,7 @@ class Customer
         $addr_id = $Def->getID();
         $count = 0;
         $def_addr = 0;
+        $selAddress = new Address;     // start with an empty address selected
 
         $T->set_block('address', 'SavedAddress', 'sAddr');
         foreach($this->addresses as $ad_id => $address) {
@@ -427,6 +428,7 @@ class Customer
             ) {
                 $ad_checked = 'checked="checked"';
                 $addr_id = $ad_id;
+                $selAddress = $address;
             } else {
                 $ad_checked = '';
             }
@@ -459,9 +461,21 @@ class Customer
             $hiddenvars .= $var . LB;
         }
 
+        $country = $selAddress->getCountry();
+        if ($country == '') {
+            // To show the state selection if applicable
+            $Company = new Company;
+            $country = $Company->getCountry();
+        }
+        if ($country == '') {
+            // Still empty (shop address not configured)? Use a default value
+            $country = 'US';
+        }
+        // Get the state options into a variable so the length of the options
+        // can be set in a template var, to set the visibility.
         $state_options = State::optionList(
-            SHOP_getVar($A, 'country', 'string', $_SHOP_CONF['country'], false),
-            SHOP_getVar($A, 'state', 'string', $_SHOP_CONF['state'], false)
+            SHOP_getVar($A, 'country', 'string', $country, false),
+            SHOP_getVar($A, 'state', 'string', $selAddress->getState(), false)
         );
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -501,14 +515,13 @@ class Customer
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
             'country_options' => Country::optionList(
-                SHOP_getVar($A, 'country', 'string', '')
+                SHOP_getVar($A, 'country', 'string', $country, false)
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
         ) );
         $T->parse('output','address');
         return $T->finish($T->get_var('output'));
-
     }
 
 
