@@ -6,9 +6,9 @@
  * by Josh Pendergrass <cendent AT syndicate-gaming DOT com>
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -74,7 +74,7 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($cart->uid != $uid) {
+        if ($cart->uid != $uid || $cart->status != 'cart') {
             self::_expireCookie();
             $cart = new self();
         }
@@ -1070,10 +1070,8 @@ class Cart extends Order
      */
     public function cancelUrl()
     {
-        return COM_buildUrl(
-             SHOP_URL . '/cart.php?mode=cart&id=' . urlencode($this->CartID()) .
-             '&token=' . urlencode($this->token)
-         );
+        return SHOP_URL . '/cart.php?cancel=' . urlencode($this->order_id) .
+            '/' . urlencode($this->token);
     }
 
 }   // class Cart

@@ -1685,6 +1685,8 @@ class Gateway
 
     /**
      * Set the return URL after payment is made.
+     * Creates url parameters `gwname/order/token` for gateways that might
+     * have issues with normal URL parameters.
      *
      * @param   string  $cart_id    Cart order ID
      * @param   string  $token      Order token, to verify accessa
@@ -1693,8 +1695,8 @@ class Gateway
     protected function returnUrl($cart_id, $token)
     {
         return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
-            '&o=' . $cart_id .
-            '&t=' . $token;
+            '/' . $cart_id .
+            '/' . $token;
     }
 
 

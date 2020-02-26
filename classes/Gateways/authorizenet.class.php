@@ -3,9 +3,9 @@
  * Class to manage Authorize.Net Hosted Accept payments.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2012-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
@@ -125,7 +125,6 @@ class authorizenet extends \Shop\Gateway
         $total_amount = 0;
         $line_items = array();
         $Cur = \Shop\Currency::getInstance();
-
         $return_opts = array(
             'url'       => $this->returnUrl($cart->order_id, $cart->token),
             'cancelUrl' => $cart->cancelUrl(),
@@ -185,7 +184,7 @@ class authorizenet extends \Shop\Gateway
                         'name' => 'Shipping',
                     ),
                     'customer' => array(
-                        'id' => $cart->uid,
+                        'id' => $cart->getUid(),
                         'email' => $cart->buyer_email,
                     ),
                 ),
@@ -215,7 +214,6 @@ class authorizenet extends \Shop\Gateway
                 ),
             ),
         );
-
         $jsonEncoded = json_encode($json, JSON_UNESCAPED_SLASHES);
 
         $ch = curl_init();
@@ -361,20 +359,6 @@ class authorizenet extends \Shop\Gateway
     protected function getInstructions()
     {
         return $this->adminWarnBB();
-    }
-
-
-    /**
-     * Set the return URL after payment is made.
-     * Authorize.net can't accept the url parameters.
-     *
-     * @param   string  $cart_id    Cart order ID
-     * @param   string  $token      Order token, to verify accessa
-     * @return  string      URL to pass to the gateway as the return URL
-     */
-    protected function returnUrl($cart_id, $token)
-    {
-        return SHOP_URL . '/index.php?thanks=' . $this->gw_name;
     }
 
 }   // class authorizenet
