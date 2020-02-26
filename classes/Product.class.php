@@ -754,6 +754,17 @@ class Product
 
 
     /**
+     * Get the filename for a downloadable product.
+     *
+     * @return  string      Filename
+     */
+    public function getFilename()
+    {
+        return $this->file;
+    }
+
+
+    /**
      * Load the product attributs into the options array.
      *
      * @return  object  $this

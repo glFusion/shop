@@ -30,7 +30,7 @@ class OrderItem
 
     /** Product object.
      * @var object */
-    private $product = NULL;
+    private $Product = NULL;
 
     /** Product variant ID.
      * @var integer */
@@ -79,12 +79,12 @@ class OrderItem
             } else {
                 $this->options = $this->getOptions();
             }
-            $this->product = $this->getProduct();
+            $this->Product = $this->getProduct();
         } elseif (is_array($oi_id) && isset($oi_id['product_id'])) {
             // Got an item record, just set the variables
             $this->setVars($oi_id);
-            $this->product = $this->getProduct();
-            $this->base_price = $this->product->price;
+            $this->Product = $this->getProduct();
+            $this->base_price = $this->Product->price;
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
                 if (isset($oi_id['variant']) && $oi_id['variant'] > 0) {
@@ -310,10 +310,10 @@ class OrderItem
      */
     public function getProduct()
     {
-        if ($this->product === NULL) {
-            $this->product = Product::getByID($this->product_id);
+        if ($this->Product === NULL) {
+            $this->Product = Product::getByID($this->product_id);
         }
-        return $this->product;
+        return $this->Product;
     }
 
 
@@ -360,13 +360,13 @@ class OrderItem
         foreach ($opts as $opt_id=>$OIO) {
             $retval[] = $OIO->oio_name . ': ' . $OIO->oio_value;
             /*if (isset($this->getProduct()->Options[$opt_id])) {
-                $retval[] = $this->product->Options[$opt_id]['attr_name'] . ': ' .
-                    $this->product->Options[$opt_id]['attr_value'];
+                $retval[] = $this->Product->Options[$opt_id]['attr_name'] . ': ' .
+                    $this->Product->Options[$opt_id]['attr_value'];
             }*/
         }
 
         // Add custom text strings
-        /*$cust = explode('|', $this->product->custom);
+        /*$cust = explode('|', $this->Product->custom);
         foreach ($cust as $id=>$str) {
             if (
                 isset($this->extras['custom'][$id]) &&
@@ -439,9 +439,9 @@ class OrderItem
         }
 
         $purchase_ts = SHOP_now()->toUnix();
-        //$shipping = $this->product->getShipping($this->quantity);
+        //$shipping = $this->Product->getShipping($this->quantity);
         $shipping = 0;
-        $handling = $this->product->getHandling($this->quantity);
+        $handling = $this->Product->getHandling($this->quantity);
         $this->options_text = $this->getOptionsText();
 
         if ($this->id > 0) {
@@ -478,8 +478,8 @@ class OrderItem
                 //shipping = {$shipping},
                 //handling = {$handling},
             // add an expiration date if appropriate
-        if ($this->product->expiration > 0) {
-            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->product->expiration * 86400));
+        if ($this->Product->expiration > 0) {
+            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->expiration * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -510,7 +510,7 @@ class OrderItem
     {
         if ($newqty > 0) {
             $this->quantity = (float)$newqty;
-            $this->handling = $this->product->getHandling($newqty);
+            $this->handling = $this->Product->getHandling($newqty);
             $this->price = $this->getItemPrice();
         }
         return $this;
@@ -557,7 +557,7 @@ class OrderItem
      */
     public function getWeight()
     {
-        $weight = $this->product->getWeight();
+        $weight = $this->Product->getWeight();
         if ($this->variant_id > 0) {
             $weight += ProductVariant::getInstance($this->variant_id)->getWeight();
         }
@@ -575,7 +575,7 @@ class OrderItem
             // Check that the order is paid
             !$this->getOrder()->isPaid() ||
             // Check if product is not a download
-            $this->product->file == '' ||
+            $this->Product->getFilename() == '' ||
             // or is expired
             ( $this->expiration > 0 && $this->expiration < time() )
         ) {
@@ -593,7 +593,7 @@ class OrderItem
      */
     public function getShippingUnits()
     {
-        $units = $this->product->shipping_units;
+        $units = $this->Product->shipping_units;
         if ($this->variant_id > 0) {
             $units += ProductVariant::getInstance($this->variant_id)->getShippingUnits();
         }
@@ -609,7 +609,7 @@ class OrderItem
      */
     public function getShippingAmt()
     {
-        return $this->product->shipping_amt * $this->quantity;
+        return $this->Product->shipping_amt * $this->quantity;
     }
 
 
@@ -816,7 +816,7 @@ class OrderItem
      */
     public function getItemPrice()
     {
-        return $this->product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
+        return $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
     }
 
 
