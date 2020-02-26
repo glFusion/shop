@@ -17,9 +17,9 @@ namespace Shop;
  * Class for product.
  * @package shop
  */
-class Product // extends DBO
+class Product
 {
-    use DBO;
+    use DBO;    // Import common DB actions like toggling fields
 
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
@@ -165,12 +165,11 @@ class Product // extends DBO
 
     /** A single product variant attached to this product.
      * @var object */
-    private $Variant;
-
+    private $Variant = NULL;
 
     /** Product features to be shown in the detail page.
      * @var array */
-    private $Features;
+    private $Features = array();
 
 
     /**
@@ -1366,12 +1365,13 @@ class Product // extends DBO
     /**
      * Sets a boolean field to the opposite of the supplied value.
      *
+     * @uses    DBO::_toggle()
      * @param   integer $oldvalue   Old (current) value
      * @param   string  $varname    Name of DB field to set
      * @param   integer $id         ID number of element to modify
      * @return  integer     New value, or old value upon failure
      */
-    protected static function X_toggle($oldvalue, $varname, $id)
+    private static function toggleField($oldvalue, $varname, $id)
     {
         $newval = self::_toggle($oldvalue, $varname, $id);
         if ($newval != $oldvalue) {
@@ -1392,7 +1392,7 @@ class Product // extends DBO
      */
     public static function toggleEnabled($oldvalue, $id)
     {
-        return self::X_toggle($oldvalue, 'enabled', $id);
+        return self::toggleField($oldvalue, 'enabled', $id);
     }
 
 
@@ -1406,9 +1406,8 @@ class Product // extends DBO
      */
     public static function toggleFeatured($oldvalue, $id)
     {
-        return self::_toggle($oldvalue, 'featured', $id);
+        return self::toggleField($oldvalue, 'featured', $id);
     }
-
 
 
     /**
@@ -1481,7 +1480,7 @@ class Product // extends DBO
                 }
             }
             // Set the default if a default isn't specified or valid
-            if ($this->Variant == NULL ||  $this->Variant->getID() < 1) {
+            if (!$this->hasVariant()) {
                 $this->Variant = reset($this->Variants);
             }
         } else {
@@ -1550,7 +1549,7 @@ class Product // extends DBO
         $this->_orig_price = $this->price;
         $T->set_block('product', 'OptionGroup', 'AG');
         $Sale = $this->getSale();   // Get the effective sale pricing.
-        if ($this->Variant && $this->Variant->getID() > 0) {
+        if ($this->hasVariant()) {
             $VarOptions = $this->Variant->getOptions();
         }
         foreach ($this->OptionGroups as $OG) {
@@ -1568,7 +1567,7 @@ class Product // extends DBO
                 // Check that the option is included in the variant, this could
                 // get out of sync if variants are created with more options
                 // later and the default variant doesn' thave them.
-                if ($this->Variant && isset($VarOptions[$OG->getName()])) {
+                if ($this->hasVariant() && isset($VarOptions[$OG->getName()])) {
                     $sel_opt = $VarOptions[$OG->getName()]->getID();
                 } else {
                     $sel_opt = 0;
@@ -1625,7 +1624,7 @@ class Product // extends DBO
         $all_images = array();      // for json list of all image information
         $all_image_ids = array();   // for json list of image IDs
         $showImages = $this->getImages();
-        if ($this->Variant !== NULL && $this->Variant->getID() > 0) {
+        if ($this->hasVariant()) {
             $ids = $this->Variant->getImageIDs();
             if (!empty($ids)) {
                 $showImages = array();
@@ -1755,8 +1754,10 @@ class Product // extends DBO
         }
 
         // Show the user comments if enabled globally and for this product
-        if (plugin_commentsupport_shop() &&
-                $this->comments_enabled != SHOP_COMMENTS_DISABLED) {
+        if (
+            plugin_commentsupport_shop() &&
+            $this->comments_enabled != SHOP_COMMENTS_DISABLED
+        ) {
                 // if enabled or closed
             if ($_CONF['commentsloginrequired'] == 1 && COM_isAnonUser()) {
                 // Set mode to "disabled"
@@ -1764,9 +1765,13 @@ class Product // extends DBO
             } else {
                 $mode = $this->comments_enabled;
             }
-            $T->set_var('usercomments',
-                CMT_userComments($prod_id, $this->short_description, $_SHOP_CONF['pi_name'],
-                    '', '', 0, 1, false, false, $mode));
+            $T->set_var(
+                'usercomments',
+                CMT_userComments(
+                    $prod_id, $this->short_description, $_SHOP_CONF['pi_name'],
+                    '', '', 0, 1, false, false, $mode
+                )
+            );
         }
 
         if ($this->isAdmin) {
@@ -1815,15 +1820,14 @@ class Product // extends DBO
         $dh = opendir($_SHOP_CONF['download_path']);
         if ($dh) {
             while ($file = readdir($dh)) {
-                if ($file == '.' || $file == '..')
+                if ($file == '.' || $file == '..') {    // skip directories
                     continue;
-
+                }
                 $sel = $file == $this->file ? 'selected="selected" ' : '';
                 $retval .= "<option value=\"$file\" $sel>$file</option>\n";
             }
             closedir($dh);
         }
-
         return $retval;
     }
 
@@ -2614,7 +2618,7 @@ class Product // extends DBO
     public function getQuantityBO($qty)
     {
         if ($this->track_onhand) {
-            $avail = $this->Variant ? $this->Variant->getOnhand() : $this->onhand;
+            $avail = $this->hasVariant() ? $this->Variant->getOnhand() : $this->onhand;
             return max($qty - $avail, 0);
         } else {
             return 0;
@@ -2632,7 +2636,7 @@ class Product // extends DBO
     public function getMaxOrderQty()
     {
         $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
-        if ($this->Variant && $this->Variant->getID() > 0) {
+        if ($this->hasVariant()) {
             $onhand = $this->Variant->getOnhand();
         } else {
             $onhand = $this->onhand;
@@ -4029,7 +4033,7 @@ class Product // extends DBO
      */
     public function getOnhand()
     {
-        if ($this->Variant !== NULL && $this->Variant->getID() > 0) {
+        if ($this->hasVariant()) {
             return $this->Variant->getOnhand();
         } else {
             return $this->onhand;
@@ -4199,7 +4203,7 @@ class Product // extends DBO
     public function getVariantImages()
     {
         $retval = $this->getImages();
-        if ($this->Variant && $this->Variant->getID() > 0) {
+        if ($this->hasVariant()) {
             $ids = $this->Variant->getImageIDs();
             if (!empty($ids)) {
                 $retval = array();
@@ -4209,6 +4213,19 @@ class Product // extends DBO
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Check if this product instance has a valid product variant set.
+     * ProductVariant::getInstance() may return an empty object so checking
+     * if $this->Variant != NULL isn't sufficient.
+     *
+     * @reeturn boolean     True if a Variant is set, False if not
+     */
+    public function hasVariant()
+    {
+        return ($this->Variant && $this->Variant->getID() > 0);
     }
 
 }
