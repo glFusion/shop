@@ -65,7 +65,8 @@ $LANG_SHOP = array (
 'admin_hdr_wfadmin' => 'Enable, Disable, and Re-order the items that must be completed before checkout. Workflow items cannot be deleted. &quot;Confirm Order&quot; is always the last item in the workflow.',
 'admin_hdr_wfstatus' => 'Update order status values. You can disable unused statuses and indicate whether the buyer and/or administrator is notified when a status becomes active.',
 'username'          => 'User Name',
-'pmt_status'        => 'Payment Status',
+//'pmt_status'        => 'Payment Status',
+'payments'          => 'Payments',
 'status'            => 'Status',
 'update_status'     => 'Update Status',
 'purchaser'         => 'Purchaser',
@@ -266,7 +267,7 @@ $LANG_SHOP = array (
     'processing' => 'Processing',
     'closed'    => 'Closed',
     'refunded'  => 'Refunded',
-    'invliced'  => 'Invoiced',
+    'invoiced'  => 'Invoiced',
 ),
 'message' => 'Message',
 'timestamp' => 'Timestamp',
@@ -672,6 +673,8 @@ $LANG_SHOP = array (
 'restrictions' => 'Restrictions',
 'none_defined' => 'No %s have been defined.',
 'incl_nontax' => 'Include non-taxable sales?',
+'ipn_pmt_comment' => 'Recorded by IPN message',
+'gc_pmt_comment' => 'Applied from gift card balance',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

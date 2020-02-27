@@ -462,6 +462,17 @@ class IPN
 
 
     /**
+     * Get the gateway object for this IPN message.
+     *
+     * @return  object      IPN object
+     */
+    public function getGW()
+    {
+        return $this->GW;
+    }
+
+
+    /**
      * Set the payment currency object.
      *
      * @param   string  $code   Currency code, empty for site default
@@ -1252,12 +1263,14 @@ class IPN
      */
     protected function recordPayment()
     {
+        global $LANG_SHOP;
+
         $Pmt = new Payment;
         $Pmt->setRefID($this->getTxnId())
             ->setAmount($this->getPmtGross())
-            ->setGateway($this->getGwName())
-            ->setMethod($this->gw_id)
-            ->setComment('Recorded by IPN message')
+            ->setGateway($this->gw_id)
+            ->setMethod($this->GW->getDisplayName())
+            ->setComment($LANG_SHOP['ipn_pmt_comment'])
             ->setOrderID($this->Order->getOrderId());
         return $Pmt->Save();
     }
