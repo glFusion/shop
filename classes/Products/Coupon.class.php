@@ -474,7 +474,7 @@ class Coupon extends \Shop\Product
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
-        $coupons = \Shop\Cache::get($cache_key);
+        //$coupons = \Shop\Cache::get($cache_key);
         $today = date('Y-m-d');
         if ($coupons === NULL) {
             // cache not found, read all non-expired coupons
