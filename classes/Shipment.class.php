@@ -386,8 +386,7 @@ class Shipment
      */
     public static function adminList($order_id='')
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
-            $LANG32;
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP, $LANG_ADMIN;
 
         $sql = "SELECT shp.*, ord.billto_name, ord.shipto_name
             FROM {$_TABLES['shop.shipments']} shp
@@ -476,7 +475,7 @@ class Shipment
         );
 
         $query_arr = array(
-            'table' => 'shop.shopments',
+            'table' => 'shop.shipments',
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => $filter,
