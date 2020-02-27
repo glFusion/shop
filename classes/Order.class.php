@@ -1030,7 +1030,7 @@ class Order
             }
         }
 
-        // Instantiate a date objet to handle formatting of log timestamps
+        // Instantiate a date object to handle formatting of log timestamps
         $dt = new \Date('now', $_USER['tzid']);
         $log = $this->getLog();
         $T->set_block('order', 'LogMessages', 'Log');
@@ -1980,20 +1980,13 @@ class Order
 
     /**
      * Check if this order is paid.
-     * The status may be one of several values like "shipped", "closed", etc.
-     * but should not be "cart" or "pending".
+     * Starting with v1.3.0 the payment table is checked for total payments.
      *
      * @return  boolean     True if not a cart or pending order, false otherwise
      */
     public function isPaid()
     {
-        switch ($this->status) {
-        case 'cart':
-        case 'pending':
-            return false;
-        default:
-            return true;
-        }
+        return $this->getAmountPaid() >= $this->total;
     }
 
 
