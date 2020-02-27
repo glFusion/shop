@@ -15,15 +15,13 @@
  */
 namespace Shop;
 
+
 /**
  * Class for product feature values.
  * @package shop
  */
 class FeatureValue
 {
-    protected static $TABLE = 'shop.features_values';
-    protected static $F_ID = 'ft_id';
-
     /** Record ID.
      * @var integer */
     private $fv_id;
