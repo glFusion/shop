@@ -22,27 +22,27 @@ class Payment
 {
     /** Payment record ID in the database.
      * @var integer */
-    private $pmt_id;
+    private $pmt_id = 0;
 
     /** Transaction reference ID provided by the payment gateway.
      * @var string */
-    private $ref_id;
+    private $ref_id = '';
 
     /** Timestamp for when the payment notification was received.
      * @var integer */
-    private $ts;
+    private $ts = 0;
 
     /** Gross amount of the payment.
      * @var float */
-    private $amount;
+    private $amount = 0;
 
     /** Payment Gateway ID.
      * @var string */
-    private $gw_id;
+    private $gw_id = '';
 
     /** Order ID.
      * @var string */
-    private $order_id;
+    private $order_id = '';
 
     /** Entering user ID, for manually-entered payments.
      * Zero indicates payment by IPN or webhook
@@ -56,6 +56,7 @@ class Payment
     /** Comment made with the payment.
      * @var string */
     private $comment = '';
+
 
     /**
      * Set internal variables from a data array.
@@ -75,6 +76,8 @@ class Payment
                 ->setComment($A['pmt_comment'])
                 ->setMethod($A['pmt_method'])
                 ->setUid($A['uid']);
+        } else {
+            $this->ts = time();
         }
     }
 
@@ -120,8 +123,13 @@ class Payment
      * @param   string  $ref_id     Reference ID
      * @return  object  $this
      */
-    public function setRefID($ref_id)
+    public function setRefID($ref_id = '')
     {
+        if ($ref_id == '') {
+            // create a dummy reference, used for non-IPN payments,
+            // e.g. gift cards and manual entries.
+            $ref_id = uniqid();
+        }
         $this->ref_id = $ref_id;
         return $this;
     }
@@ -193,6 +201,30 @@ class Payment
 
 
     /**
+     * Get the payment method.
+     *
+     * @return  string      Payment method
+     */
+    public function getMethod()
+    {
+        return $this->method;
+    }
+
+
+    /**
+     * Get the display payment method.
+     * This will be the gateway, if any, or the pmt_method field for manual
+     * entries.
+     *
+     * @return  string      Payment method for display
+     */
+    public function getDisplayMethod()
+    {
+        return empty($this->method) ? $this->gw_id : $this->method;
+    }
+
+
+    /**
      * Set the submitting user ID.
      *
      * @param   integer $uid    User ID
@@ -215,6 +247,17 @@ class Payment
     {
         $this->comment = $comment;
         return $this;
+    }
+
+
+    /**
+     * Get the comment text for the payment.
+     *
+     * @return  string      Comment
+     */
+    public function getComment()
+    {
+        return $this->comment;
     }
 
 
@@ -280,7 +323,7 @@ class Payment
      */
     public function getTS()
     {
-        return $this->ts;
+        return (int)$this->ts;
     }
 
 
@@ -306,7 +349,7 @@ class Payment
         global $_TABLES;
 
         $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
-            pmt_ts = UNIX_TIMESTAMP(),
+            pmt_ts = {$this->getTS()},
             pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
             pmt_amount = '" . $this->getAmount() . "',
             pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
@@ -325,10 +368,11 @@ class Payment
 
     /**
      * Migrate payment information from the IPN log to the Payments table.
+     * This is done during upgrade to v1.3.0.
      */
     public static function loadFromIPN()
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']}
             ORDER BY ts ASC";
@@ -337,15 +381,12 @@ class Payment
         $Pmt = new self;
         $done = array();        // Avoid duplicates
         while ($A = DB_fetchArray($res, false)) {
-            //            if (empty($A['gateway']) || empty($A['order_id'])) {
             $ipn_data = @unserialize($A['ipn_data']);
             if (empty($A['gateway']) || empty($ipn_data)) {
-                //echo "Skipping id {$A['id']} - empty\n";
                 continue;
             }
             $cls = 'Shop\\ipn\\' . $A['gateway'];
             if (!class_exists($cls)) {
-                //echo "Skipping id {$A['id']} - class $cls does not exist\n";
                 continue;
             }
             $ipn = new $cls($ipn_data);
@@ -355,12 +396,13 @@ class Payment
                 $pmt_gross = $ipn->getPmtGross();
             }
             if ($pmt_gross < .01) {
-                //echo "Skipping id {$A['id']} - amount is empty\n";
                 continue;
             }
 
             if (!empty($A['order_id'])) {
                 $order_id = $A['order_id'];
+            } elseif ($ipn->getOrderId() != '') {
+                $order_id = $ipn->getOrderID();
             } elseif ($ipn->getTxnId() != '') {
                 $order_id = DB_getItem(
                     $_TABLES['shop.orders'],
@@ -375,9 +417,52 @@ class Payment
                     ->setAmount($pmt_gross)
                     ->setTS($A['ts'])
                     ->setGateway($A['gateway'])
-                    ->setOrderID($order_id);
-                $Pmt->Save();
+                    ->setMethod($ipn->getGW()->getDisplayName())
+                    ->setOrderID($order_id)
+                    ->setComment('Imported from IPN log')
+                    ->Save();
                 $done[$Pmt->getRefId()] = 'done';
+            }
+        }
+
+        // Get all the "payments" via coupons.
+        $sql = "SELECT * FROM {$_TABLES['shop.coupon_log']}
+            WHERE msg = 'gc_applied'";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $Pmt = new self;
+            $Pmt->setRefID(uniqid())
+                ->setAmount($A['amount'])
+                ->setTS($A['ts'])
+                ->setGateway('coupon')
+                ->setMethod('Apply Coupon')
+                ->setComment($LANG_SHOP['gc_pmt_comment'])
+                ->setOrderID($A['order_id'])
+                ->Save();
+        }
+
+        // Now get all the orders that are marked "paid" and make sure there's
+        // a payment record for each.
+        $sql = "SELECT order_id, order_total, by_gc
+            FROM {$_TABLES['shop.orders']}
+            WHERE status IN ('paid','shipped','complete','processing')";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $total_paid = (float)DB_getItem(
+                $_TABLES['shop.payments'],
+                'SuM(pmt_amount)',
+                "pmt_order_id = '" . DB_escapeString($A['order_id']) . "'"
+            );
+            $fill_amt = (float)$A['order_total'] - (float)$A['by_gc'] - $total_paid;
+            if ($fill_amt > 0) {
+                $Pmt = new self;
+                $Pmt->setRefID($A['order_id'] . '-' . uniqid())
+                    ->setAmount($fill_amt)
+                    ->setTS(time())
+                    ->setGateway('system')
+                    ->setOrderID($A['order_id'])
+                    ->setComment('Added by system to match paid order')
+                    ->Save();
             }
         }
     }
@@ -421,6 +506,171 @@ class Payment
         global $_TABLES;
 
         DB_query("TRUNCATE {$_TABLES['shop.payments']}");
+    }
+
+
+    /**
+     * Show an admin list of payments.
+     *
+     * @param   string  $order_id   Order ID to limit listing
+     * @return  string      HTML for payment list
+     */
+    public static function adminList($order_id='')
+    {
+        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
+            $LANG32;
+            $sql = "SELECT pmt.* FROM {$_TABLES['shop.payments']} pmt";
+
+        $header_arr = array(
+            /*array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'sort'  => false,
+                'align' => 'center',
+            ),
+            array(
+                'text'  => '',
+                'field' => 'action',
+                'sort'  => false,
+            ),*/
+            array(
+                'text'  => 'ID',
+                'field' => 'pmt_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['order'],
+                'field' => 'pmt_order_id',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['datetime'],
+                'field' => 'pmt_ts',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['gateway'],
+                'field' => 'pmt_gateway',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['pmt_method'],
+                'field' => 'pmt_method',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['comment'],
+                'field' => 'pmt_comment',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['amount'],
+                'field' => 'pmt_amount',
+                'sort'  => true,
+                'align' => 'right',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'sort'  => 'false',
+                'align' => 'center',
+            ),
+        );
+        $extra = array();
+        $defsort_arr = array(
+            'field' => 'pmt_ts',
+            'direction' => 'DESC',
+        );
+
+        if ($order_id != 'x') {
+            $filter = "WHERE pmt.pmt_order_id = '" . DB_escapeString($order_id) . "'";
+            $title = $LANG_SHOP['order'] . ' ' . $order_id;
+        } else {
+            $filter = '';
+            $title = '';
+        }
+
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+
+        $options = array(
+            'chkselect' => 'true',
+            'chkname'   => 'payments',
+            'chkfield'  => 'pmt_id',
+            //'chkactions' => $prt_pl,
+        );
+        $query_arr = array(
+            'table' => 'shop.payments',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => $filter,
+        );
+        $text_arr = array(
+            'has_extras' => false,
+            'has_limit' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=x',
+        );
+
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_payments',
+            array(__CLASS__,  'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', $extra, $options, ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the options admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        static $Cur = NULL;
+
+        if ($Cur === NULL) {
+            $Cur = Currency::getInstance();
+        }
+        $retval = '';
+
+        switch($fieldname) {
+        case 'edit':
+            $retval .= COM_createLink(
+                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
+                SHOP_ADMIN_URL . "/index.php?editshipment={$A['shipment_id']}"
+            );
+            break;
+
+        case 'pmt_order_id':
+            $retval .= COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
+            );
+            break;
+        case 'pmt_amount':
+            $retval = $Cur->FormatValue($fieldvalue);
+            break;
+
+        case 'pmt_ts':
+            $D = new \Date($fieldvalue, $_CONF['timezone']);
+            $retval = $D->toMySQL(true);
+            break;
+
+        default:
+            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
+            break;
+        }
+        return $retval;
     }
 
 }
