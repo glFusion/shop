@@ -512,7 +512,7 @@ case 'sendcards':
             'amount'    => $amt,
             'members'   => $uids,
             'group_id'  => $gid,
-            'exp'       => $exp,
+            'expires'   => $exp,
             'notify'    => true,
         ),
         $output,
