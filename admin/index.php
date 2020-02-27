@@ -69,7 +69,8 @@ $expected = array(
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
-    'shiporder', 'editshipment', 'shipment_pl', 'order_pl', 'shipments', 'ord_ship',
+    'shiporder', 'editshipment', 'shipment_pl', 'order_pl',
+    'shipments', 'ord_ship', 'ord_pmts',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'editregion', 'editcountry', 'editstate',
@@ -1035,6 +1036,18 @@ case 'editshipment':
         $V->setShipmentID($shipment_id);
         $content = $V->Render($action);
     }
+    break;
+
+case 'payments':
+case 'ord_pmts':
+    // View payments on an order
+    if ($actionval != 'x') {
+        $Order = Shop\Order::getInstance($actionval);
+        $content .= Shop\Menu::viewOrder($view, $Order);
+    } else {
+        $content .= Shop\Menu::adminOrders($view);
+    }
+    $content .= Shop\Payment::adminList($actionval);
     break;
 
 case 'shipments':

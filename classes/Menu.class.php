@@ -328,6 +328,11 @@ class Menu
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'shipments' ? true : false,
             ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=x',
+                'text' => $LANG_SHOP['payments'],
+                'active' => $view == 'ord_pmts' ? true : false,
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }
@@ -359,6 +364,11 @@ class Menu
                 'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->order_id,
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'ord_ship' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->order_id,
+                'text' => $LANG_SHOP['payments'],
+                'active' => $view == 'ord_pmts' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
