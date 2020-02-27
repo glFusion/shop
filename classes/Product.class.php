@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -154,6 +154,10 @@ class Product
     /** Zone rule ID.
      * @var integer */
     private $zone_rule = 0;
+
+    /** Quantity discount array (qty->percent).
+     * @var array */
+    private $qty_discounts = array();
 
     /** Related category objects.
      * @var array */
@@ -483,15 +487,6 @@ class Product
             $this->properties[$var] = $value;
             break;
 
-        case 'qty_discounts':
-            if (!is_array($value)) {
-                $value = @unserialize($value);
-                if ($value === false) $value = array();
-            }
-            ksort($value);
-            $this->properties[$var] = $value;
-            break;
-
         case 'id':
             // Item ID may be a string if this is a plugin,
             // otherwise sanitize as an integer.
@@ -570,7 +565,7 @@ class Product
         // From the DB there's a single serialized string
         if ($fromDB) {
             // unserialization happens in __set()
-            $this->qty_discounts = $row['qty_discounts'];
+            $this->setQtyDiscounts($row['qty_discounts']);
             $this->dt_add = $row['dt_add'];
         } else {
             $this->dt_add = SHOP_now()->toMySQL();
@@ -582,7 +577,7 @@ class Product
                     $qty_discounts[$disc_qty] = abs($row['disc_amt'][$i]);
                 }
             }
-            $this->qty_discounts = $qty_discounts;
+            $this->setQtyDiscounts($qty_discounts);
         }
 
         $this->votes = isset($row['votes']) ? $row['votes'] : 0;
@@ -900,9 +895,7 @@ class Product
         }
 
         // Serialize the quantity discount array
-        $qty_discounts = $this->qty_discounts;
-        if (!is_array($qty_discounts)) $qty_discounts = array();
-        $qty_discounts = DB_escapeString(@serialize($qty_discounts));
+        $qty_discounts = DB_escapeString(@serialize($this->qty_discounts));
 
         // Insert or update the record, as appropriate
         if ($this->id > 0) {
@@ -1966,6 +1959,29 @@ class Product
 
 
     /**
+     * Set the quantity discounts array.
+     * Expects an array or serialized string. If neither are passed in
+     * then the discounts are set to an empty array.
+     *
+     * @param   array|string    $val    Array or serialized string
+     * @return  object  $this
+     */
+    private function setQtyDiscounts($val)
+    {
+        // Force $val to be an array.
+        if (!is_array($val)) {
+            $val = @unserialize($val);
+            if ($value === false) {
+                $value = array();
+            }
+        }
+        ksort($val);
+        $this->qty_discounts = $val;
+        return $this;
+    }
+
+
+    /**
      * Determine if this product has any quantity-based discounts.
      * Used to display "discounts available" message in the product liet.
      *
@@ -1973,9 +1989,7 @@ class Product
      */
     public function hasDiscounts()
     {
-        // Have to assign to temp var to get empty() to work
-        $discounts = $this->qty_discounts;
-        return empty($discounts) ? false : true;
+        return empty($this->qty_discounts) ? false : true;
     }
 
 
@@ -2016,6 +2030,7 @@ class Product
      * @param   string  $fld_name   Field Name
      * @param   string  $fld_lang   Field prompt, language string
      * @param   array   $opts       Array of option name=>value
+     * @return  object  $this
      */
     public function addSpecialField($fld_name, $fld_lang = '', $opts=array())
     {
@@ -2023,7 +2038,7 @@ class Product
 
         if (array_key_exists($fld_name, $this->special_fields)) {
             // Only add if the field doesn't already exist
-            return;
+            return $this;
         }
 
         if (empty($fld_lang)) {
@@ -2048,6 +2063,7 @@ class Product
         if (!array_key_exists('type', $this->special_fields[$fld_name])) {
             $this->special_fields[$fld_name]['type'] = 'text';
         }
+        return $this;
     }
 
 
@@ -2087,14 +2103,12 @@ class Product
     {
         $retval = 0;
 
-        if (is_array($this->qty_discounts)) {
-            foreach ($this->qty_discounts as $qty=>$discount) {
-                $qty = (int)$qty;
-                if ($quantity < $qty) {     // haven't reached this discount level
-                    break;
-                } else {
-                    $retval = (float)$discount;
-                }
+        foreach ($this->qty_discounts as $qty=>$discount) {
+            $qty = (int)$qty;
+            if ($quantity < $qty) {     // haven't reached this discount level
+                break;
+            } else {
+                $retval = (float)$discount;
             }
         }
         return $retval;
