@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,6 +13,8 @@
  *
  */
 namespace Shop\Products;
+use Shop\Payment;   // to record application of coupon amounts
+
 
 /**
  * Class for coupons.
@@ -283,15 +285,19 @@ class Coupon extends \Shop\Product
      */
     public static function Apply($amount, $uid = 0, $Order = NULL)
     {
-        global $_TABLES, $_USER;
+        global $_TABLES, $_USER, $LANG_SHOP;
 
         if ($uid == 0) $uid = $_USER['uid'];
         $order_id = '';
-        if (is_object($Order) && !$Order->isNew) {
+        if (is_object($Order) && !$Order->isNew()) {
             $order_id = DB_escapeString($Order->order_id);
             $uid = $Order->uid;
         }
-        if ($uid < 2) return 0;
+        if ($uid < 2 || $amount == 0) {
+            // Nothing to do if amount is zero, and anon users not supported
+            // at this time.
+            return 0;
+        }
         $coupons = self::getUserCoupons($uid);
         $remain = (float)$amount;
         $applied = 0;
@@ -316,6 +322,19 @@ class Coupon extends \Shop\Product
             DB_query($sql);
             if ($remain == 0) break;
         }
+
+        if ($applied > 0) {
+            // Record one payment record for the coupon
+            $Pmt = new Payment;
+            $Pmt->setRefID(uniqid())
+                ->setAmount($applied)
+                ->setGateway('coupon')
+                ->setMethod('Apply Coupon')
+                ->setComment($LANG_SHOP['gc_pmt_comment'])
+                ->setOrderID($order_id)
+                ->Save();
+        }
+
         \Shop\Cache::clear('coupons_' . $uid);
         return $remain;     // Return unapplied balance
     }
