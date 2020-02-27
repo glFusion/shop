@@ -3,9 +3,9 @@
  * Class to handle coupon operations.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -188,6 +188,10 @@ class Coupon extends \Shop\Product
         } while (DB_count($_TABLES['shop.coupons'], 'code', $code));
 
         $uid = (int)$uid;
+        if (empty($exp)) {
+            // Just in case an empty string gets passed in.
+            $exp = self::MAX_EXP;
+        }
         $exp = DB_escapeString($exp);
         $amount = (float)$amount;
         $sql = "INSERT INTO {$_TABLES['shop.coupons']} SET
@@ -230,8 +234,13 @@ class Coupon extends \Shop\Product
         $res = DB_query($sql);
         if (DB_numRows($res) == 0) {
             SHOP_log("Attempting to redeem coupon $code, not found in database", SHOP_LOG_ERROR);
-            return array(3, sprintf(
-                $LANG_SHOP['coupon_apply_msg3'], \Shop\Company::getInstance()->getEmail()));
+            return array(
+                3,
+                sprintf(
+                    $LANG_SHOP['coupon_apply_msg3'],
+                    \Shop\Company::getInstance()->getEmail()
+                )
+            );
         } else {
             $A = DB_fetchArray($res, false);
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
@@ -252,7 +261,13 @@ class Coupon extends \Shop\Product
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
-        return array(0, sprintf($LANG_SHOP['coupon_apply_msg0'], \Shop\Currency::getInstance()->Format($A['amount'])));
+        return array(
+            0,
+            sprintf(
+                $LANG_SHOP['coupon_apply_msg0'],
+                \Shop\Currency::getInstance()->Format($A['amount'])
+            )
+        );
     }
 
 
@@ -459,7 +474,7 @@ class Coupon extends \Shop\Product
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
-        $coupons = \Shop\Cache::get($cache_key);
+        //$coupons = \Shop\Cache::get($cache_key);
         $today = date('Y-m-d');
         if ($coupons === NULL) {
             // cache not found, read all non-expired coupons
@@ -467,7 +482,7 @@ class Coupon extends \Shop\Product
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
                 WHERE status='" . self::VALID . "' AND redeemer = '$uid'";
             if (!$all) {
-                $sql .= " AND expires >= '$today' AND balance > 0";
+                $sql .= " AND (expires = '0000-00-00' OR expires >= '$today') AND balance > 0";
             }
             $sql .= " ORDER BY redeemed ASC";
             //echo $sql;die;
