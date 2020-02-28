@@ -453,6 +453,7 @@ class Cart extends Order
                 // Done already if $del_order is set
                 Cache::deleteOrder($this->order_id);
             }
+            Tracker::getInstance()->clearCart();
             return array();
         } else {
             return $this->getItems();
