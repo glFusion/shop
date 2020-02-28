@@ -2169,6 +2169,12 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
 }
 
 
+function plugin_getheadercode_shop()
+{
+    return Shop\Tracker::getInstance()->getCode();
+}
+
+
 /**
  * Get an array variable, first checking whether it's set.
  * If `$emptyok` is set then the default value is returned when the variable

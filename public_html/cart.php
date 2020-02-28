@@ -211,7 +211,8 @@ case 'cancel':
     if (!empty($cart_id)) {
         $Cart = \Shop\Cart::getInstance(0, $cart_id);
         if ($token == $Cart->getToken()) {
-            \Shop\Cart::setFinal($cart_id, false);
+            \Shop\Cart::setFinal($cart_id, 'cart');
+            Shop\Tracker::getInstance()->cancelOrder();
             $Cart->setToken();
         }
     }

@@ -731,6 +731,7 @@ class Order
         $this->isFinalView = false;
         $is_invoice = true;    // normal view/printing view
         $icon_tooltips = array();
+        $use_tracker = false;
 
         switch ($view) {
         case 'adminview':
@@ -748,10 +749,12 @@ class Order
                 ->calcTotalCharges()
                 ->Save();
             $tplname = 'order';
+            $use_tracker = true;
             break;
         case 'viewcart':
             $this->tax_rate = 0;
             $tplname = 'viewcart';
+            $use_tracker = true;
             break;
         case 'packinglist':
             // Print a packing list. Same as print view but no prices or fees shown.
@@ -805,6 +808,9 @@ class Order
         $has_sale_items = false;
         $item_net = 0;
         $good_items = 0;        // Count non-embargoed items
+        if ($use_tracker) {
+            Tracker::getInstance()->addCart($this);
+        }
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             $P->setVariant($item->getVariantID());

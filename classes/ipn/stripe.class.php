@@ -49,11 +49,14 @@ class stripe extends \Shop\IPN
         $this->gw_id = 'stripe';
         parent::__construct();  // construct without IPN data.
 
-        $this->_event = $A;        
+        $this->_event = $A;
+        COM_errorLog("event: " . print_r($this->_event->data,true));
         $session = $this->_event->data->object;
         $order_id = $session->client_reference_id;
         $this->ipn_data['order_id'] = $order_id;
         $this->setTxnId($session->payment_intent);
+        $this->session_id = $this->_event->data->object->metadata->session_id;
+        COM_errorLog("Session ID is " . $this->session_id);
 
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);

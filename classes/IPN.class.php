@@ -108,6 +108,10 @@ class IPN
      * @var string */
     private $status = '';
 
+    /** Session ID, used to correlate purchases with user sessions.
+     * @var string */
+    protected $session_id;
+
     /**
      * Holder for the complete IPN data array.
      * Used only for recording the raw data; no processing is done on this data
@@ -1272,6 +1276,7 @@ class IPN
             ->setMethod($this->GW->getDisplayName())
             ->setComment($LANG_SHOP['ipn_pmt_comment'])
             ->setOrderID($this->Order->getOrderId());
+        \Shop\Tracker::getInstance()->confirmOrder($this->Order, $this->session_id);
         return $Pmt->Save();
     }
 
