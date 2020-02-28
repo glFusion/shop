@@ -1344,8 +1344,8 @@ class Order
                     foreach ($Packages as $Pkg) {
                         $T->set_var(array(
                             'shipment_date' => $shp_dt,
-                            'shipper_name'  => $Pkg->shipper_info,
-                            'tracking_num'  => $Pkg->tracking_num,
+                            'shipper_name'  => $Pkg->getShipperInfo(),
+                            'tracking_num'  => $Pkg->getTrackingNum(),
                             'tracking_url'  => $Pkg->getTrackingURL(false),
                         ) );
                         $shp_dt = '';
