@@ -259,7 +259,7 @@ class Sales
         }
         $cats = array_reverse($cats);
         foreach ($cats as $cat) {
-            $sales = self::getCategory($cat->cat_id);
+            $sales = self::getCategory($cat->getID());
             foreach ($sales as $obj) {
                 if ($obj->start->toUnix() < $now && $obj->end->toUnix() > $now) {
                     $SaleObj = $obj;

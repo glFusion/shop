@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -131,7 +131,7 @@ class Catalog
 
         // If a cat ID is requested but doesn't exist or the user can't access
         // it, redirect to the homepage.
-        if ($Cat->cat_id > 0 && ($Cat->isNew || !$Cat->hasAccess())) {
+        if ($Cat->getID() > 0 && ($Cat->isNew() || !$Cat->hasAccess())) {
             echo COM_refresh(SHOP_URL);
             exit;
         }
@@ -139,12 +139,12 @@ class Catalog
         // Get the root category and see if the requested category is root.
         $RootCat = Category::getRoot();
         if ($this->brand_id == 0) {       // no brand limit, check for a category ID
-            $cat_name = $Cat->cat_name;
-            $cat_desc = $Cat->description;
+            $cat_name = $Cat->getName();
+            $cat_desc = $Cat->getDscp();
             $cat_img_url = $Cat->getImage()['url'];
-            if ($Cat->parent_id > 0) {
+            if ($Cat->getParentID() > 0) {
                 // Get the sql to limit by category
-                $tmp = Category::getTree($Cat->cat_id);
+                $tmp = Category::getTree($Cat->getID());
                 $cats = array();
                 foreach ($tmp as $xcat_id=>$info) {
                     $cats[] = $xcat_id;
@@ -172,15 +172,15 @@ class Catalog
 
         // Display top-level categories
         $A = array(
-            $RootCat->cat_id => array(
-                'name' => $RootCat->cat_name,
+            $RootCat->getID() => array(
+                'name' => $RootCat->getName(),
             ),
         );
         $tmp = $RootCat->getChildren();
         foreach ($tmp as $tmp_cat_id=>$C) {
-            if ($C->parent_id == $RootCat->cat_id && $C->hasAccess()) {
-                $A[$C->cat_id] = array(
-                    'name' => $C->cat_name,
+            if ($C->getParentID() == $RootCat->getID() && $C->hasAccess()) {
+                $A[$C->getID()] = array(
+                    'name' => $C->getName(),
                     'count' => $C->cnt,
                 );
             }
@@ -206,7 +206,7 @@ class Catalog
             foreach ($A as $category => $info) {
                 if (isset($info['url'])) {
                     $url = $info['url'];
-                } elseif ($category == $RootCat->cat_id) {
+                } elseif ($category == $RootCat->getID()) {
                     $url = SHOP_URL;
                 } else {
                     $url = SHOP_URL . '/index.php?category=' . urlencode($category);
@@ -472,7 +472,7 @@ class Catalog
             $_SHOP_CONF['show_plugins']&&
             $page == 1 &&
             $this->brand_id == 0 &&
-            ( $this->cat_id == 0 || $this->cat_id == $RootCat->cat_id ) &&
+            ( $this->cat_id == 0 || $this->cat_id == $RootCat->getID()) &&
             empty($search)
         ) {
             $this->getPluginProducts($T);
@@ -647,9 +647,9 @@ class Catalog
             }
             $T->set_var(array(
                 'item_id'       => $Cat->cat_id,
-                'short_description' => htmlspecialchars($Cat->cat_name),
+                'short_description' => htmlspecialchars($Cat->getName()),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
-                'item_url'      => SHOP_URL . '/index.php?category='. $Cat->cat_id,
+                'item_url'      => SHOP_URL . '/index.php?category='. $Cat->getID(),
                 'small_pic'     => $Cat->getImage()['url'],
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             ) );

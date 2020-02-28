@@ -108,9 +108,9 @@ class shop extends BaseDriver
         foreach ($cats as $Cat) {
             if ($Cat->hasAccess($this->groups)) {
                 $retval[] = array(
-                    'id'        => $Cat->cat_id,
-                    'title'     => $Cat->cat_name,
-                    'uri'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
+                    'id'        => $Cat->getID(),
+                    'title'     => $Cat->getName(),
+                    'uri'       => SHOP_URL . '/index.php?category=' . $Cat->getID(),
                     'date'      => false,
                     'image_uri' => $Cat->getImage()['url'],
                 );

@@ -534,7 +534,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         case 'paypal_cat':
             $id = COM_applyFilter($autotag['parm1'], true);
             $Cat = Shop\Category::getInstance($id);
-            if (!$Cat->isNew) {
+            if (!$Cat->isNew()) {
                 $url = SHOP_URL.'/index.php?category='.$id;
                 if (empty($autotag['parm2'])) {
                     $linktext = DB_getItem($_TABLES['shop.categories'],
@@ -1093,7 +1093,7 @@ function phpblock_shop_categories()
 
     if (!SHOP_access_check()) return '';
 
-    $parents = '0, ' . Shop\Category::getRoot()->cat_id;
+    $parents = '0, ' . Shop\Category::getRoot()->getID();
     $sql = "SELECT c.*, (
         SELECT count(p.id)
         FROM {$_TABLES['shop.products']} p

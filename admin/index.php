@@ -154,10 +154,10 @@ case 'deletecatimage':
 
 case 'deletecat':
     $C = \Shop\Category::getInstance($_REQUEST['cat_id']);
-    if ($C->parent_id == 0) {
+    if ($C->getParentID() == 0) {
         COM_setMsg($LANG_SHOP['dscp_root_cat'], 'error');
     } elseif (\Shop\Category::isUsed($_REQUEST['cat_id'])) {
-        COM_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->cat_name), 'error');
+        COM_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->getName()), 'error');
     } else {
         $C->Delete();
     }

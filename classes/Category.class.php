@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,14 +13,15 @@
  */
 namespace Shop;
 
+
 /**
  * Class for product categories.
  * Each product belongs to one category.
  * @package shop
  */
-class Category// extends DBO
+class Category
 {
-    use DBO;
+    use DBO;        // import generic database operations
 
     /** Key field name.
      * @var string */
@@ -30,25 +31,66 @@ class Category// extends DBO
      * @var string */
     protected static $F_ID = 'cat_id';
 
-    /** Property fields accessed via `__set()` and `__get()`.
-     * @var array */
-    var $properties = array();
+    /** Category ID.
+     * @var integer */
+    private $cat_id = 0;
+
+    /** Parent Category ID.
+     * @var integer */
+    private $parent_id = 0;
+
+    /** Category Name.
+     * @var string */
+    private $cat_name = '';
+
+    /** Category text description.
+     * @var string */
+    private $dscp = '';
+
+    /** Category group access. Default is "all users".
+     * @var integer */
+    private $grp_access = 2;
+
+    /** Image filename.
+     * @var string */
+    private $image = '';
+
+    /** Enabled flag.
+     * @var boolean */
+    private $enabled = 1;
+
+    /** Display name for option lists. Includes indenting.
+     * @var string */
+    private $disp_name = '';
+
+    /** Left value for MPTT.
+     * @var integer */
+    private $lft = 0;
+
+    /** Right value for MPTT.
+     * @var integer */
+    private $rgt = 0;
+
+    /** Google taxonomy string.
+     * @var string */
+    private $google_taxonomy = '';
 
     /** Indicate whether the current user is an administrator.
      * @var boolean */
-    var $isAdmin;
+    private $isAdmin;
 
     /** Indicate whether this is a new record or not.
      * @var boolean */
-    var $isNew;
+    private $isNew;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
-    var $Errors = array();
+    private $Errors = array();
 
     /** Base tag for caching.
      * @var string */
     private static $tag = 'ppcat_';
+
 
     /**
      * Constructor.
@@ -61,13 +103,12 @@ class Category// extends DBO
     {
         global $_USER, $_VARS;
 
-        $this->properties = array();
         $this->isNew = true;
 
         $this->cat_id = 0;
         $this->parent_id = 0;
         $this->cat_name = '';
-        $this->description = '';
+        $this->dscp = '';
         $this->grp_access = 2;  // All users have access by default
         $this->image = '';
         $this->enabled = 1;
@@ -88,61 +129,6 @@ class Category// extends DBO
 
 
     /**
-     * Set a property's value.
-     *
-     * @param   string  $var    Name of property to set.
-     * @param   mixed   $value  New value for property.
-     */
-    public function __set($var, $value)
-    {
-        switch ($var) {
-        case 'cat_id':
-        case 'parent_id':
-        case 'grp_access':
-        case 'lft':
-        case 'rgt':
-            // Integer values
-            $this->properties[$var] = (int)$value;
-            break;
-
-        case 'cat_name':
-        case 'description':
-        case 'image':
-        case 'disp_name':   // display name in option list
-        case 'google_taxonomy':
-            // String values
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'enabled':
-            // Boolean values
-            $this->properties[$var] = $value == 1 ? 1 : 0;
-            break;
-
-        default:
-            // Undefined values (do nothing)
-            break;
-        }
-    }
-
-
-    /**
-     * Get the value of a property.
-     *
-     * @param   string  $var    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
-     */
-    public function __get($var)
-    {
-        if (array_key_exists($var, $this->properties)) {
-            return $this->properties[$var];
-        } else {
-            return NULL;
-        }
-    }
-
-
-    /**
      * Sets all variables to the matching values from the supplied array.
      *
      * @param   array   $row    Array of values, from DB or $_POST
@@ -154,7 +140,7 @@ class Category// extends DBO
 
         $this->cat_id = $row['cat_id'];
         $this->parent_id = $row['parent_id'];
-        $this->description = $row['description'];
+        $this->dscp = $row['description'];
         $this->enabled = $row['enabled'];
         $this->cat_name = $row['cat_name'];
         $this->grp_access = $row['grp_access'];
@@ -221,6 +207,17 @@ class Category// extends DBO
 
 
     /**
+     * Determine if this category is a new record, or one that was not found
+     *
+     * @return  integer     1 if new, 0 if existing
+     */
+    public function isNew()
+    {
+        return $this->isNew ? 1 : 0;
+    }
+
+
+    /**
      * Save the current values to the database.
      *
      * @param  array   $A      Optional array of values from $_POST
@@ -259,7 +256,7 @@ class Category// extends DBO
             }
             $sql2 = "parent_id='" . $this->parent_id . "',
                 cat_name='" . DB_escapeString($this->cat_name) . "',
-                description='" . DB_escapeString($this->description) . "',
+                description='" . DB_escapeString($this->dscp) . "',
                 enabled='{$this->enabled}',
                 grp_access ='{$this->grp_access}',
                 image='" . DB_escapeString($this->image) . "',
@@ -428,7 +425,7 @@ class Category// extends DBO
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'cat_name'      => $this->cat_name,
-            'description'   => $this->description,
+            'description'   => $this->dscp,
             'ena_chk'       => $this->enabled == 1 ? 'checked="checked"' : '',
             'old_parent'    => $this->parent_id,
             'old_grp'       => $this->grp_access,
@@ -1214,6 +1211,28 @@ class Category// extends DBO
     public function getName()
     {
         return $this->cat_name;
+    }
+
+
+    /**
+     * Get the parent category ID.
+     *
+     * @return  integer     Parent ID
+     */
+    public function getParentID()
+    {
+        return (int)$this->parent_id;
+    }
+
+
+    /**
+     * Get the category description.
+     *
+     * @return  string      Category description
+     */
+    public function getDscp()
+    {
+        return $this->dscp;
     }
 
 
