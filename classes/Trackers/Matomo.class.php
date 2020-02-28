@@ -24,7 +24,7 @@ class Matomo extends \Shop\Tracker
     }
 
 
-    public function addCode($code_txt)
+    private function addCode($code_txt)
     {
         $this->codes[] = $code_txt;
         return $this;
@@ -104,12 +104,21 @@ class Matomo extends \Shop\Tracker
             $net_items += $Item->getNetPrice() * $Item->getQuantity();
         }
         $this->addCode("_paq.push(['trackEcommerceCartUpdate', {$net_items}]);");
+        return $this;
+    }
+
+
+    public function delCart($sku)
+    {
+        $this->addCode("_paq.push(['removeEcommerceItem', '$sku']");
+        return $this;
     }
 
 
     public function clearCart()
     {
-        $this->addCode("_paq.push(['clearEcommerceCart']);");
+        $this->addCode("_paq.push(['clearEcommerceCart']");
+        return $this;
     }
 
 
@@ -153,21 +162,7 @@ class Matomo extends \Shop\Tracker
             'rand=' . rand(100,900),
         );
         $params = implode('&', $params);
-        return self::curlExec($this->getMatomoUrl() . '/matomo.php?' . $params);
-    }
-
-
-    private function curlExec($url)
-    {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        $result = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        if ($code != 200) {
-            SHOP_log("Error sending tracking code to Matomo: code $code", SHOP_LOG_ERROR);
-            return false;
-        }
-        return true;
+        return self::_curlExec($this->getMatomoUrl() . '/matomo.php?' . $params);
     }
 
 }
