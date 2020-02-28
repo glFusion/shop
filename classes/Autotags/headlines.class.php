@@ -114,7 +114,7 @@ class headlines
         if ($category > 0) {
             $objects = \Shop\Category::getTree($category);
             foreach ($objects as $Obj) {
-                $cats[] = $Obj->getCatID();
+                $cats[] = $Obj->getID();
             }
             if (!empty($cats)) {
                 $cats = DB_escapeString(implode(',', $cats));
