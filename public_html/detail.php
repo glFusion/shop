@@ -48,15 +48,6 @@ if (isset($_GET['query'])) {
     $query = COM_getArgument('query');
 }
 
-$display = \Shop\Menu::siteHeader();
-$display .= \Shop\Menu::pageTitle();
-if (!empty($msg)) {
-    //msg block
-    $display .= COM_startBlock('','','blockheader-message.thtml');
-    $display .= $msg;
-    $display .= COM_endBlock('blockfooter-message.thtml');
-}
-
 $content = '';
 $breadcrumbs = '';
 if (!empty($id)) {
@@ -86,6 +77,14 @@ if (empty($breadcrumbs)) {
 }
 
 SHOP_setUrl();
+$display = \Shop\Menu::siteHeader();
+$display .= \Shop\Menu::pageTitle();
+if (!empty($msg)) {
+    //msg block
+    $display .= COM_startBlock('','','blockheader-message.thtml');
+    $display .= $msg;
+    $display .= COM_endBlock('blockfooter-message.thtml');
+}
 $display .= $breadcrumbs;
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
