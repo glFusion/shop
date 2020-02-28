@@ -2,7 +2,7 @@
 
 namespace Shop\Trackers;
 
-class Matomo
+class Matomo extends \Shop\Tracker
 {
 
     private $codes = array();
@@ -24,15 +24,6 @@ class Matomo
     }
 
 
-    public static function getInstance()
-    {
-        static $M = NULL;
-        if ($M === NULL) {
-            $M = new self;
-        }
-        return $M;
-    }
-
     public function addCode($code_txt)
     {
         $this->codes[] = $code_txt;
@@ -51,7 +42,7 @@ class Matomo
         $T->set_var(array(
             'matomo_url'    => $_CONF['site_url'] . '/matomo/',
             'matomo_site_id' => 1,
-            '_id'           => session_id(),
+            '_id'           => self::makeCid(),
             'code_txt'      => $code_txt,
         ) );
         
@@ -124,6 +115,7 @@ class Matomo
 
     public function confirmOrder($Ord, $session_id)
     {
+        $cid = self::makeCid($session_id);
         $net_items = 0;
         $items = array();
         foreach ($Ord->getItems() as $Item) {
@@ -148,15 +140,17 @@ class Matomo
         $params = array(
             'url=' . urlencode('https://gldev.leegarner.com/shop/ipn/paypal.php'),
             'idgoal=0',
+            'action_name=Order/Confirm',
             'idsite=' . $this->getSiteID(),
             'rec=1',
-            '_id=' . $session_id,
+            '_id=' . $cid,
             'ec_id='  . $Ord->getOrderID(),
             'ec_items=' . $items,
             'revenue=' . $Ord->getTotal(),
             'ec_tx=' . $Ord->getTax(),
             'ec_sh=' . $Ord->getShipping(),
             'ec_st=' . $net_items,
+            'rand=' . rand(100,900),
         );
         $params = implode('&', $params);
         return self::curlExec($this->getMatomoUrl() . '/matomo.php?' . $params);
