@@ -71,7 +71,7 @@ class Product
 
     /** Array of error messages/
      * @var array */
-    var $Errors = array();
+    private $Errors = array();
 
     /** Array of buttons.
      * @var array */
@@ -1447,6 +1447,8 @@ class Product
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER;
 
         USES_lib_comments();
+
+        Tracker::getInstance()->addProductView($this);
 
         $prod_id = $this->id;
         if (!$this->canDisplay()) {
@@ -2833,7 +2835,7 @@ class Product
 
 
     /**
-     * Get the product short description. Allows for an override.
+     * Get the product full description. Allows for an override.
      *
      * @param   string  $override  Optional description override
      * @return  string              Product sort description
