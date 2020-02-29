@@ -164,7 +164,7 @@ $tables = array(
     'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
     'discountcodes', 'regions', 'countries', 'states',
     // v1.2.0
-    'shop.features', 'shop.features_values', 'shop.prodXfeat', 'shop.zone_rules',
+    'features', 'features_values', 'prodXfeat', 'zone_rules',
     // v1.3.0
     'shop.payments',
 );

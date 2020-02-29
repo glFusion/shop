@@ -6,7 +6,7 @@
   * Link to customer in order report now filters report.
 
 ## v1.2.0
-Release TBD
+Release 2020-02-29
 
   * Add product image sorting.
   * Add static features/attributes.
