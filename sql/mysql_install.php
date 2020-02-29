@@ -383,7 +383,7 @@ $_SQL = array(
   KEY `is_brand` (`is_brand`,`name`)
 ) ENGINE=MyISAM",
 
-'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.variants']}
+'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.product_variants']} (
   `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(11) unsigned NOT NULL,
   `sku` varchar(64) DEFAULT NULL,
@@ -394,7 +394,7 @@ $_SQL = array(
   `reorder` int(10) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
-  `img_ids` varchar(255) DEFAULT NULL,
+  `img_ids` text NOT NULL,
   `dscp` text NOT NULL,
   PRIMARY KEY (`pv_id`),
   KEY `prod_id` (`item_id`)
