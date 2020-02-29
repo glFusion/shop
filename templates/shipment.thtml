@@ -87,8 +87,6 @@
 {!endif}
   </div>
 </div>
-{!if shipment_id}
-{!else}
 <button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
 {!if shipment_id}
   name="updateshipment"
@@ -97,7 +95,6 @@
   name="addshipment"
 {!endif}
     >{$LANG_ADMIN['submit']}</button>
-{!endif}
 {!if shipment_id}
 <button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
     name="del_shipment" value="{shipment_id}"

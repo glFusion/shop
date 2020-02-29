@@ -470,6 +470,23 @@ class square extends \Shop\Gateway
         return '';
     }
 
+
+    /**
+     * Set the return URL after payment is made.
+     * Square adds transaction information and returns directly to the IPN
+     * url for processing.
+     *
+     * @param   string  $cart_id    Cart order ID
+     * @param   string  $token      Order token, to verify accessa
+     * @return  string      URL to pass to the gateway as the return URL
+     */
+    protected function returnUrl($cart_id, $token)
+    {
+        return $this->ipn_url . '?thanks=' . $this->gw_name .
+            '&o=' . $cart_id .
+            '&t=' . $token;
+    }
+
 }   // class square
 
 ?>
