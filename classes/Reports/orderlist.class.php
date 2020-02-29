@@ -140,9 +140,12 @@ class orderlist extends \Shop\Report
         }
 
         if ($this->isAdmin) {
-            $this->setExtra('uid_link', $_CONF['site_url'] . '/users.php?mode=profile&uid=');
+            $form_url = SHOP_ADMIN_URL . '/report.php?' . $_SERVER['query_string'];
+            $q_str = $_GET;
+            unset($q_str['uid']);
+            $q_str = http_build_query($q_str);
+            $this->setExtra('uid_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid=');
             $listOptions = $this->_getListOptions();
-            $form_url = SHOP_ADMIN_URL . '/report.php?run=' . $this->key;
         } else {
             $listOptions = '';
             $form_url = '';

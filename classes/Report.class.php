@@ -824,7 +824,7 @@ class Report
                 $fieldvalue = $A['billto_name'];
             }
             $retval = str_replace('"', '&quot;', $fieldvalue);
-            if (isset($extra['uid_link']) && $A['uid'] > 1) {
+            if (isset($extra['uid_link'])) {
                 $retval = COM_createLink(
                     $retval,
                     $extra['uid_link'] . $A['uid']
