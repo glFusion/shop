@@ -548,14 +548,19 @@ class Payment
                 'field' => 'pmt_ts',
                 'sort'  => true,
             ),
-            array(
+            /*array(
                 'text'  => $LANG_SHOP['gateway'],
                 'field' => 'pmt_gateway',
                 'sort'  => true,
-            ),
+            ),*/
             array(
                 'text'  => $LANG_SHOP['pmt_method'],
                 'field' => 'pmt_method',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['txn_id'],
+                'field' => 'pmt_ref_id',
                 'sort'  => true,
             ),
             array(
@@ -661,6 +666,14 @@ class Payment
             $retval = $Cur->FormatValue($fieldvalue);
             break;
 
+        case 'pmt_ref_id':
+            if (!empty($fieldvalue)) {
+                $retval = COM_createLink(
+                    $fieldvalue,
+                    SHOP_ADMIN_URL . '/index.php?ipndetail=x&txn_id=' . $fieldvalue
+                );
+            }
+            break;
         case 'pmt_ts':
             $D = new \Date($fieldvalue, $_CONF['timezone']);
             $retval = $D->toMySQL(true);
