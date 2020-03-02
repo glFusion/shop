@@ -99,7 +99,7 @@ class stripe extends \Shop\Gateway
 
         static $have_js = false;
 
-        if (!$this->_Supports('checkout')) {
+        if (!$this->Supports('checkout')) {
             return '';
         }
 
@@ -165,9 +165,12 @@ class stripe extends \Shop\Gateway
         $this->session = \Stripe\Checkout\Session::create(array(
             'payment_method_types' => ['card'],
             'line_items' => $line_items,
-            'success_url' => $_CONF['site_url'],        // todo
+            'success_url' => $this->returnUrl($cartID, $cart->getToken()),
             'cancel_url' => $cart->cancelUrl(),
             'client_reference_id' => $cartID,
+            'metadata' => array(
+                'session_id' => \Shop\Tracker::getInstance()->makeCid(),
+            ),
         ) );
 
         if (!$have_js) {

@@ -180,6 +180,7 @@ class paypal extends \Shop\Gateway
             'uid' => $_USER['uid'],
             'transtype' => 'cart_upload',
             'cart_id' => $cartID,
+            'session_id' => \Shop\Tracker::getInstance()->makeCid(),
         );
         $custom_arr = array_merge($custom_arr, $cart->custom_info);
 
