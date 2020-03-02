@@ -166,7 +166,7 @@ $tables = array(
     // v1.2.0
     'features', 'features_values', 'prodXfeat', 'zone_rules',
     // v1.3.0
-    'shop.payments',
+    'payments',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
