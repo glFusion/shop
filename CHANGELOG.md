@@ -5,9 +5,12 @@
   * Add invoicing via Paypal invoice API.
   * Link to customer in order report now filters report.
 
+## v1.2.1
+Release 2020-03-02
+  * Make sure `supplier_id` and `brand_id` fields are added.
+
 ## v1.2.0
 Release 2020-02-29
-
   * Add product image sorting.
   * Add static features/attributes.
   * Add Supplier Reference field to products and variants for ordering.
