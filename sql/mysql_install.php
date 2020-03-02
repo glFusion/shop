@@ -483,9 +483,6 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0",
-    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
@@ -625,6 +622,9 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0",
+    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     $_SHOP_SAMPLEDATA['shop.regions'],       // these may need to change if data changes
     $_SHOP_SAMPLEDATA['shop.countries'],
     $_SHOP_SAMPLEDATA['shop.states'],
