@@ -579,24 +579,7 @@ class Gateway
 
 
     /**
-     * Check if the current gateway supports a specific button type.
-     *
-     * @uses    self::Supports()
-     * @param   string  $btn_type   Button type to check
-     * @return  boolean             True if the button is supported
-     */
-    protected function _Supports($btn_type)
-    {
-        $arr_parms = array(
-            'enabled' => $this->enabled,
-            'services' => $this->services,
-        );
-        return self::Supports($btn_type, $arr_parms);
-    }
-
-
-    /**
-     * Check if a gateway from the $_SHOP_CONF array supports a button type.
+     * Check if a gateway supports a button type.
      * The $gw_info parameter should be the array of info for a single gateway
      * if only that gateway is to be checked.
      *
@@ -899,7 +882,7 @@ class Gateway
     {
         global $_SHOP_CONF, $_USER;
 
-        if (!$this->_Supports('checkout')) return '';
+        if (!$this->Supports('checkout')) return '';
 
         $gateway_vars = $this->gatewayVars($cart);
         $T = SHOP_getTemplate('btn_checkout', 'btn', 'templates/buttons');
@@ -1398,12 +1381,10 @@ class Gateway
      * Set a gateway ID as the selected one to remember between orders.
      *
      * @param   string  $gw_id  Gateway ID
-     * @return  object  $this
      */
     public static function setSelected($gw_id)
     {
         SESS_setVar('shop_gateway_sel', $gw_id);
-        return $this;
     }
 
 

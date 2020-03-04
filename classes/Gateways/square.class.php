@@ -117,7 +117,7 @@ class square extends \Shop\Gateway
     /**
      * Get the form variables for the purchase button.
      *
-     * @uses    Gateway::_Supports()
+     * @uses    Gateway::Supports()
      * @uses    _encButton()
      * @uses    getActionUrl()
      * @param   object  $cart   Shopping cart object
@@ -127,7 +127,7 @@ class square extends \Shop\Gateway
     {
         global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
-        if (!$this->_Supports('checkout')) {
+        if (!$this->Supports('checkout')) {
             return '';
         }
 
