@@ -1,4 +1,5 @@
 {# begin {templatelocation} #}
+{!if show_header}
 {!if is_admin_report}
 <div style="float:left;">
 <h1>{report_title}</h1>
@@ -12,5 +13,6 @@
 </div>
 {!endif}
 <div style="clear:both;"></div>
+{!endif}
 {output}
 {# begin {templatelocation} #}

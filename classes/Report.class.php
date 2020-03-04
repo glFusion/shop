@@ -60,8 +60,7 @@ class Report
      * @var string */
     protected $type = 'html';
 
-    /**
-     * Allowed order statuses to show in the config form.
+    /** Allowed order statuses to show in the config form.
      * @var array */
     protected $allowed_statuses = array();
 
@@ -75,27 +74,29 @@ class Report
      * @var array */
     protected $extra = array();
 
-    /**
-     * Indicate if this is an administrator report or regular user
+    /** Indicate if this is an administrator report or regular user.
      * @var boolean */
     protected $isAdmin = false;
-    /**
-     * Indicate whether the config uses date ranges.
+
+    /** Indicate if the report header should be shown.
+     * Suppress header if report is embedded in another function such as
+     * a normal admin list.
+     * @var boolean */
+    protected $showHeader = true;
+
+    /** Indicate whether the config uses date ranges.
      * @var boolean */
     protected $filter_dates = true;
 
-    /**
-     * Indicate whether the config uses order statuses.
+    /** Indicate whether the config uses order statuses.
      * @var boolean */
     protected $filter_status = true;
 
-    /**
-     * Indicate whether the report can filter on user ID.
+    /**Indicate whether the report can filter on user ID.
      * @var boolean */
     protected $filter_uid = true;
 
-    /**
-     * Indicate whether the report can filter on user ID.
+    /** Indicate whether the report can filter on user ID.
      * @var boolean */
     protected $filter_item = false;
 
@@ -103,8 +104,7 @@ class Report
      * @var boolean */
     protected $sel_output = true;
 
-    /**
-     * User ID, used if filter_uid is true.
+    /** User ID, used if filter_uid is true.
      * @var integer */
     protected $uid;
 
@@ -128,6 +128,7 @@ class Report
      * Set parameters in object and session vars.
      *
      * @param   array   $get    Array of parameters, typically $_GET
+     * @return  object  $this
      */
     public function setParams($get)
     {
@@ -145,6 +146,7 @@ class Report
         $dates = $this->getDates($period, $from, $to);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
+        return $this;
     }
 
 
@@ -419,6 +421,7 @@ class Report
             'filter_uid'    => $this->filter_uid,
             'filter_item'   => $this->filter_item,
             'is_admin_report' => $this->isAdmin,
+            'show_header'   => $this->showHeader,
         ) );
         return $T;
     }
@@ -643,11 +646,13 @@ class Report
      * Called by child classes that want to restrict the order status options.
      *
      * @param   array   $allowed    Allowed statuses to include in report.
+     * @return  object  $this
      */
     public function setAllowedStatuses($allowed = array())
     {
         $this->allowed_statuses = $allowed;
         self::_setSessVar('orderstatus', $this->allowed_statuses);
+        return $this;
     }
 
 
@@ -693,11 +698,26 @@ class Report
      * Set the admin status, used to determine return URLs
      *
      * @param   boolean $isAdmin    True for admin access, False for user
+     * @return  object  $this
      */
     public function setAdmin($isAdmin)
     {
         $this->isAdmin = $isAdmin ? true : false;
         $this->setExtra('isAdmin', $this->isAdmin);
+        return $this;
+    }
+
+
+    /**
+     * Set the show_header flag.
+     *
+     * @param   boolean $flag   True to show the report header, False to not
+     * @return  object  $this
+     */
+    public function setShowHeader($flag)
+    {
+        $this->showHeader = $flag ? 1 : 0;
+        return $this;
     }
 
 
