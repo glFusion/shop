@@ -187,6 +187,7 @@ class reorder extends \Shop\Report
      */
     protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
+        $retval = NULL;
         switch ($fieldname) {
         case 'onhand':
             $retval = is_null($A['sku']) ? (float)$A['onhand'] : (float)$A['pv_onhand'];
@@ -247,8 +248,6 @@ class reorder extends \Shop\Report
         }
         return $retval;
     }
-
-
 
 }
 

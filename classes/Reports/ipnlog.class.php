@@ -274,6 +274,7 @@ class ipnlog extends \Shop\Report
     {
         global $LANG_SHOP;
 
+        $retval = NULL;
         switch ($fieldname) {
         case 'ipn_id':
             $retval = COM_createLink(
