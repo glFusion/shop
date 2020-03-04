@@ -136,10 +136,10 @@ class payment extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $where = "WHERE ts BETWEEN {$this->startDate->toUnix()} AND {$this->endDate->toUnix()}";
-        if ($order_id != 'x') {
-            $where .= "WHERE pmt.pmt_order_id = '" . DB_escapeString($order_id) . "'";
-            $title = $LANG_SHOP['order'] . ' ' . $order_id;
+        $filter = "WHERE pmt_ts BETWEEN {$this->startDate->toUnix()} AND {$this->endDate->toUnix()}";
+        if ($this->order_id != 'x') {
+            $filter .= " AND pmt.pmt_order_id = '" . DB_escapeString($this->order_id) . "'";
+            $title = $LANG_SHOP['order'] . ' ' . $this->order_id;
         } else {
             $title = '';
         }
@@ -153,18 +153,16 @@ class payment extends \Shop\Report
             'chkselect' => 'true',
             'chkname'   => 'payments',
             'chkfield'  => 'pmt_id',
-            //'chkactions' => $prt_pl,
         );
-        $filter = '';
         if (!empty($this->gateway)) {
             $filter .= " AND pmt_gateway = '" . DB_escapeString($this->gateway) . "'";
         }
         if ($this->pmt_type > -1) {
             $filter .= " AND is_money = '{$this->pmt_type}'";
         }
-        if (!empty($filter)) {
+        /*if (!empty($filter)) {
             $filter = 'WHERE 1=1' . $filter;
-        }
+        }*/
         $query_arr = array(
             'table' => 'shop.payments',
             'sql' => $sql,
@@ -244,7 +242,7 @@ class payment extends \Shop\Report
         case 'pmt_order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
+                SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $fieldvalue
             );
             break;
 
