@@ -12,7 +12,6 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Currency;
 use Shop\Company;
 use Shop\Country;
 use Shop\State;
@@ -230,7 +229,6 @@ class tax extends \Shop\Report
         $total_shipping = 0;
         $total_total = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
-        $Cur = \Shop\Currency::getInstance();
 
         switch ($this->type) {
         case 'html':
@@ -278,12 +276,12 @@ class tax extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'taxable'       => $Cur->FormatValue($A['net_taxable']),
-                    'nontax'        => $Cur->FormatValue($A['net_nontax']),
-                    'tax'           => $Cur->FormatValue($A['tax']),
-                    'shipping'      => $Cur->FormatValue($A['shipping']),
-                    'handling'      => $Cur->FormatValue($A['handling']),
-                    'total'         => $Cur->FormatValue($A['order_total']),
+                    'taxable'       => self::formatMoney($A['net_taxable']),
+                    'nontax'        => self::formatMoney($A['net_nontax']),
+                    'tax'           => self::formatMoney($A['tax']),
+                    'shipping'      => self::formatMoney($A['shipping']),
+                    'handling'      => self::formatMoney($A['handling']),
+                    'total'         => self::formatMoney($A['order_total']),
                     'region'        => $A['shipto_state'] . ', ' . $A['shipto_country'],
                     'zip'           => $A['shipto_zip'],
                     'nl'            => "\n",
@@ -302,12 +300,12 @@ class tax extends \Shop\Report
         $T->set_var(array(
             'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
-            'total_taxable'     => $Cur->FormatValue($total_taxable),
-            'total_nontax'      => $Cur->FormatValue($total_nontax),
-            'total_tax'         => $Cur->FormatValue($total_tax),
-            'total_shipping'    => $Cur->FormatValue($total_shipping),
-            'total_handling'    => $Cur->FormatValue($total_handling),
-            'total_total'       => $Cur->FormatValue($total_total),
+            'total_taxable'     => self::formatMoney($total_taxable),
+            'total_nontax'      => self::formatMoney($total_nontax),
+            'total_tax'         => self::formatMoney($total_tax),
+            'total_shipping'    => self::formatMoney($total_shipping),
+            'total_handling'    => self::formatMoney($total_handling),
+            'total_total'       => self::formatMoney($total_total),
             'nl'                => "\n",
         ) );
         $T->parse('output', 'report');
@@ -351,6 +349,6 @@ class tax extends \Shop\Report
         return $retval;
     }
 
-}   // class orderlist
+}
 
 ?>

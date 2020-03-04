@@ -135,7 +135,6 @@ class coupons extends \Shop\Report
         );
         $this->setExtra('class', __CLASS__);
 
-        $Cur = \Shop\Currency::getInstance();
         $T = $this->getTemplate();
         switch ($this->type) {
         case 'html':
@@ -165,10 +164,10 @@ class coupons extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $dt->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => $Cur->FormatValue($A['sales_amt']),
-                    'tax'           => $Cur->FormatValue($A['tax']),
-                    'shipping'      => $Cur->FormatValue($A['shipping']),
-                    'total'         => $Cur->FormatValue($order_total),
+                    'sales_amt'     => self::formatMoney($A['sales_amt']),
+                    'tax'           => self::formatMoney($A['tax']),
+                    'shipping'      => self::formatMoney($A['shipping']),
+                    'total'         => self::formatMoney($order_total),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
@@ -203,11 +202,6 @@ class coupons extends \Shop\Report
     {
         global $LANG_SHOP;
 
-        static $Cur = NULL;
-        if ($Cur === NULL) {
-            $Cur = \Shop\Currency::getInstance();
-        }
-
         $retval = NULL;
         switch ($fieldname) {
         case 'msg':
@@ -238,7 +232,7 @@ class coupons extends \Shop\Report
                 $fieldvalue *= -1;
                 break;
             }
-            $retval = $Cur->FormatValue($fieldvalue);
+            $retval = self::formatMoney($fieldvalue);
             break;
 
         case 'code':
@@ -273,6 +267,6 @@ class coupons extends \Shop\Report
         return $title;
     }
 
-}   // class orderlist
+}
 
 ?>

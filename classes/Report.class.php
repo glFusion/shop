@@ -720,7 +720,6 @@ class Report
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
 
         static $dt = NULL;
-        static $Cur = NULL;
         $retval = '';
 
         // Calls a class-specific field function, if defined.
@@ -737,9 +736,6 @@ class Report
         if ($dt === NULL) {
             // Instantiate a date object once
             $dt = new \Date('now', $_USER['tzid']);
-        }
-        if ($Cur === NULL) {
-            $Cur = Currency::getInstance();
         }
 
         switch($fieldname) {
@@ -772,7 +768,6 @@ class Report
             break;
 
         case 'sales_amt':
-            $Cur = Currency::getInstance($A['currency']);
             if (!$extra['isAdmin']) {
                 $total = (float)$fieldvalue;
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
@@ -814,7 +809,8 @@ class Report
         case 'net_taxable':
         case 'net_nontax':
         case 'tax':
-            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
+        case 'paid':
+            $retval = self::formatMoney($fieldvalue);
             break;
 
         case 'customer':
@@ -845,6 +841,22 @@ class Report
 
 
     /**
+     * Format a money field.
+     *
+     * @param   float   $amt    Amount
+     * @return  string  Formatted currency string
+     */
+    protected static function formatMoney($amt)
+    {
+        static $Cur = NULL;
+        if ($Cur === NULL) {
+            $Cur = Currency::getInstance();
+        }
+        return $Cur->FormatValue((float)$amt);
+    }
+
+
+    /**
      * Safety function in case the child class doesn't have this.
      * If a class name is in the $extra array, this may be called and
      * just returns NULL to use the default field function above.
@@ -869,7 +881,7 @@ class Report
      * @param   string  $key    Name of parameter
      * @param   mixed   $value  Value of parameter
      */
-    protected function setParam($key, $value)
+    public function setParam($key, $value)
     {
         $this->$key = $value;
         self::_setSessVar($key, $value);
