@@ -349,11 +349,7 @@ class Menu
     {
         global $LANG_SHOP;
 
-        $retval = COM_startBlock(
-            $LANG_SHOP['order'] . ' ' . $Order->order_id, '',
-            COM_getBlockTemplate('_admin_block', 'header')
-        );
-
+        $retval = '';
         $menu_arr = array(
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->order_id,
@@ -372,6 +368,10 @@ class Menu
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
+        $retval .= COM_startBlock(
+            $LANG_SHOP['order'] . ' ' . $Order->order_id, '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
         $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $retval;
     }
