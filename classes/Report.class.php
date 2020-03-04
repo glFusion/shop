@@ -779,13 +779,13 @@ class Report
                     $total -= $disc_amt;
                     $tip .= '<tr><td>' . $LANG_SHOP['discount'] .
                         ': </td><td style=&quot;text-align:right&quot;>- ' .
-                        $Cur->FormatValue($disc_amt) . '</td></tr>' . LB;
+                        self::formatMoney($disc_amt) . '</td></tr>' . LB;
                 }
                 foreach (array('tax', 'shipping', 'handling') as $fld) {
                     if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
                         $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
-                                $Cur->FormatValue($A[$fld]) .
+                                self::formatMoney($A[$fld]) .
                                 '</td></tr>' . LB;
                         $total += (float)$A[$fld];
                     }
@@ -796,9 +796,9 @@ class Report
                         $Cur->Format($total) . '</td></tr>' . LB;
                 }
                 $tip .= '</table>' . LB;
-                $retval = '<span class="tooltip" title="' . $tip . '">' . $Cur->FormatValue($fieldvalue) . '</span>';
+                $retval = '<span class="tooltip" title="' . $tip . '">' . self::formatMoney($fieldvalue) . '</span>';
             } else {
-                $retval = $Cur->FormatValue($fieldvalue);
+                $retval = self::formatMoney($fieldvalue);
             }
             break;
 
