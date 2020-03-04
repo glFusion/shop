@@ -322,7 +322,8 @@ $_SQL = array(
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`),
   KEY `owner` (`redeemer`,`balance`,`expires`),
-  KEY `purchased` (`purchased`)
+  KEY `purchased` (`purchased`),
+  KEY `expires` (`expires`)
 ) ENGINE=MyIsam",
 
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
@@ -703,6 +704,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pmt_order_id` varchar(40) DEFAULT NULL,
       `pmt_ts` int(11) unsigned DEFAULT NULL,
+      `is_money` tinyint(1) unsigned NOT NULL DEFAULT 1,
       `pmt_gateway` varchar(12) DEFAULT NULL,
       `pmt_amount` decimal(12,4) DEFAULT NULL,
       `pmt_ref_id` varchar(255) DEFAULT NULL,
@@ -718,6 +720,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
