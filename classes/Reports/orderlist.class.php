@@ -3,15 +3,16 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+
 
 /**
  * Class for Order History Report.
@@ -94,8 +95,20 @@ class orderlist extends \Shop\Report
                         'align' => 'right',
                     ),
                     array(
-                        'text'  => $LANG_SHOP['total'] . 'X',
+                        'text'  => $LANG_SHOP['total'],
                         'field' => 'order_total',
+                        'sort'  => false,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['paid'],
+                        'field' => 'paid',
+                        'sort'  => false,
+                        'align' => 'right',
+                    ),
+                    array(
+                        'text'  => $LANG_SHOP['balance'],
+                        'field' => 'balance',
                         'sort'  => false,
                         'align' => 'right',
                     ),
@@ -160,7 +173,10 @@ class orderlist extends \Shop\Report
                 SELECT sum(itm.price * itm.quantity)
                 FROM {$_TABLES['shop.orderitems']} itm
                 WHERE itm.order_id = ord.order_id
-            ) as sales_amt
+            ) as sales_amt,
+            ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
+                WHERE pmt.pmt_order_id = ord.order_id
+            ) as paid
             FROM {$_TABLES['shop.orders']} ord ";
         $orderstatus = $this->allowed_statuses;
         if (empty($orderstatus)) {
@@ -208,7 +224,6 @@ class orderlist extends \Shop\Report
         $total_shipping = 0;
         $total_total = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
-        $Cur = \Shop\Currency::getInstance();
 
         switch ($this->type) {
         case 'html':
@@ -239,6 +254,11 @@ class orderlist extends \Shop\Report
             );
             break;
         case 'csv':
+            $total_sales = 0;
+            $total_tax = 0;
+            $total_shipping = 0;
+            $total_paid = 0;
+            $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
             $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
@@ -256,10 +276,11 @@ class orderlist extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'sales_amt'     => $Cur->FormatValue($A['sales_amt']),
-                    'tax'           => $Cur->FormatValue($A['tax']),
-                    'shipping'      => $Cur->FormatValue($A['shipping']),
-                    'total'         => $Cur->FormatValue($order_total),
+                    'sales_amt'     => self::formatMoney($A['sales_amt']),
+                    'tax'           => self::formatMoney($A['tax']),
+                    'shipping'      => self::formatMoney($A['shipping']),
+                    'total'         => self::formatMoney($order_total),
+                    'paid'          => self::formatMoney($A['paid']),
                     'nl'            => "\n",
                 ) );
                 $T->parse('row', 'ItemRow', true);
@@ -267,6 +288,7 @@ class orderlist extends \Shop\Report
                 $total_tax += $A['tax'];
                 $total_shipping += $A['shipping'];
                 $total_total += $order_total;
+                $total_paid += $A['paid'];
             }
             break;
         }
@@ -274,10 +296,11 @@ class orderlist extends \Shop\Report
         $T->set_var(array(
             'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
-            'total_sales'       => $Cur->FormatValue($total_sales),
-            'total_tax'         => $Cur->FormatValue($total_tax),
-            'total_shipping'    => $Cur->FormatValue($total_shipping),
-            'total_total'       => $Cur->FormatValue($total_total),
+            'total_sales'       => self::formatMoney($total_sales),
+            'total_tax'         => self::formatMoney($total_tax),
+            'total_shipping'    => self::formatMoney($total_shipping),
+            'total_total'       => self::formatMoney($total_total),
+            'total_paid'        => self::formatMoney($total_paid),
             'nl'                => "\n",
         ) );
         $T->parse('output', 'report');
@@ -300,7 +323,12 @@ class orderlist extends \Shop\Report
      */
     protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_SHOP_CONF, $_USER;
+
+        if ($dt === NULL) {
+            // Instantiate a date object once
+            $dt = new \Date('now', $_USER['tzid']);
+        }
 
         $retval = NULL;
         switch ($fieldname) {
@@ -308,9 +336,20 @@ class orderlist extends \Shop\Report
             $retval = '<span style="white-space:nowrap" class="nowrap">';
             $retval .= \Shop\Order::linkPrint($A['order_id']);
             if ($extra['isAdmin']) {
-                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']); 
+                $retval .= '&nbsp;' . \Shop\Order::linkPackingList($A['order_id']);
             }
             $retval .= '</span>';
+            break;
+        case 'balance':
+            $bal = $A['order_total'] - $A['paid'];
+            $retval = self::formatMoney($bal);
+            break;
+        case 'order_date':
+            $dt->setTimestamp($fieldvalue);
+            $retval = '<span class="tooltip" title="' .
+                $dt->format($_SHOP_CONF['datetime_fmt'], false) . '<br />' .
+                $dt->format($_SHOP_CONF['datetime_fmt'], true) . '">' .
+                $dt->format('Y-m-d', true) . '</span>';
             break;
         }
         return $retval;
