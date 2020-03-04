@@ -760,7 +760,7 @@ class Coupon extends \Shop\Product
             DB_query($sql1);
             self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
         }
-        if (count($A) > 0) {
+        if (DB_numRows($res) > 0) {
             // If there were any updates, clear the coupon cache
             \Shop\Cache::clear('coupons');
         }
