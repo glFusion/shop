@@ -328,9 +328,13 @@ $LANG_SHOP = array (
         'name' => 'Item Purchase History',
         'dscp' => 'List the purchases made for a single item.',
     ),
-    'ipnlog' => array(
+    'payment' => array(
         'name' => 'Payment Listing',
         'dscp' => 'List payments received during a time period.',
+    ),
+    'ipnlog' => array(
+        'name' => 'IPN Log',
+        'dscp' => 'List IPN messages received during a time period.',
     ),
     'pendingship' => array(
         'name' => 'All Pending Shipments',
@@ -675,6 +679,7 @@ $LANG_SHOP = array (
 'incl_nontax' => 'Include non-taxable sales?',
 'ipn_pmt_comment' => 'Recorded by IPN message',
 'gc_pmt_comment' => 'Applied from gift card balance',
+'paid' => 'Paid',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
