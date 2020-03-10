@@ -2157,7 +2157,8 @@ class Product
         }
         if ($this->override_price && isset($override['price'])) {
             // If an override price is specified, just return it.
-            return round((float)$override['price'], Currency::getInstance()->Decimals());
+            $this->price = (float)$override['price'];
+            return round($this->price, Currency::getInstance()->Decimals());
         } else {
             // Otherwise start with the effective sale price
             $price = $this->getSalePrice();
@@ -2864,6 +2865,17 @@ class Product
     public function getReorder()
     {
         return (float)$this->reorder;
+    }
+
+
+    /**
+     * Get the button type to use for the purchase link.
+     *
+     * @return  string      Button type, e.g. `buy_now`
+     */
+    public function getBtnType()
+    {
+        return $this->btn_type;
     }
 
 
@@ -3913,7 +3925,7 @@ class Product
     /**
      * Get the DB record ID for the product.
      *
-     * @return  integer     DB record ID.
+     * @return  integer|string  DB record ID, or string if plugin item.
      */
     public function getID()
     {
@@ -4251,6 +4263,12 @@ class Product
     public function hasVariant()
     {
         return ($this->Variant && $this->Variant->getID() > 0);
+    }
+
+
+    public function isNew()
+    {
+        return $this->isNew ? 1 : 0;
     }
 
 }

@@ -239,7 +239,7 @@ class Plugin extends \Shop\Product
     public function getPrice($options = array(), $quantity = 1, $override = array())
     {
         if ($this->override_price && isset($override['price'])) {
-            return (float)$override['price'];
+            $this->price = (float)$override['price'];
         } else {
             if (isset($override['uid'])) {
                 $this->pi_info['mods']['uid'] = $override['uid'];
@@ -252,11 +252,10 @@ class Plugin extends \Shop\Product
                 $svc_msg
             );
             if ($status == PLG_RET_OK && isset($A['price'])) {
-                return $A['price'];
-            } else {
-                return $this->price;
+                $this->price = (float)$A['price'];
             }
         }
+        return $this->price;
     }
 
 

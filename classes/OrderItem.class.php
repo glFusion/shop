@@ -82,9 +82,13 @@ class OrderItem
             $this->Product = $this->getProduct();
         } elseif (is_array($oi_id) && isset($oi_id['product_id'])) {
             // Got an item record, just set the variables
+            $overrides = array();
+            if (isset($oi_id['price'])) {
+                $overrides['price'] = $oi_id['price'];
+            }
             $this->setVars($oi_id);
             $this->Product = $this->getProduct();
-            $this->base_price = $this->Product->price;
+            $this->base_price = $this->Product->getPrice(array(), 1, $overrides);
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
                 if (isset($oi_id['variant']) && $oi_id['variant'] > 0) {
@@ -171,7 +175,7 @@ class OrderItem
      * Set the object variables from an array.
      *
      * @param   array   $A      Array of values
-     * @return  boolean     True on success, False if $A is not an array
+     * @return  object  $this
      */
     public function setVars($A)
     {
@@ -182,7 +186,7 @@ class OrderItem
             }
         }
         $this->variant_id = (int)$A['variant_id'];
-        return true;
+        return $this;
     }
 
 
@@ -504,7 +508,7 @@ class OrderItem
      * anyway to update shipping, tax, etc.
      *
      * @param   integer $newqty New quantity
-     * @return  object          Updated item object
+     * @return  object  $this
      */
     public function setQuantity($newqty)
     {
@@ -521,10 +525,12 @@ class OrderItem
      * Public accessor to set the item price.
      *
      * @param   float   $newprice   New price to set
+     * @return  object  $this
      */
     public function setPrice($newprice)
     {
         $this->price = $newprice;
+        return $this;
     }
 
 
@@ -532,10 +538,12 @@ class OrderItem
      * Public accessor to set the qty discount.
      *
      * @param   float   $disc   Discount to set
+     * @return  object  $this
      */
     public function setDiscount($disc)
     {
         $this->qty_discount = $disc;
+        return $this;
     }
 
 
