@@ -242,8 +242,7 @@ class IPN
      */
     public function getPmtHandling()
     {
-        $this->pmt_handling = (float)$amount;
-        return $this;
+        return (float)$this->pmt_handling;
     }
 
 
@@ -716,7 +715,7 @@ class IPN
         // For each item purchased, create an order item
         foreach ($this->items as $id=>$item) {
             $P = Product::getByID($item['item_number']);
-            if ($P->isNew) {
+            if ($P->isNew()) {
                 $this->Error("Item {$item['item_number']} not found - txn " .
                         $this->getTxnId());
                 continue;
@@ -926,9 +925,11 @@ class IPN
             }
 
             // Get the product record and custom strings
-            if (isset($item['extras']['custom']) &&
-                    is_array($item['extras']['custom']) &&
-                    !empty($item['extras']['custom'])) {
+            if (
+                isset($item['extras']['custom']) &&
+                is_array($item['extras']['custom']) &&
+                !empty($item['extras']['custom'])
+            ) {
                 foreach ($item['extras']['custom'] as $cust_id=>$cust_val) {
                     $option_desc[] = $P->getCustom($cust_id) . ': ' . $cust_val;
                 }
