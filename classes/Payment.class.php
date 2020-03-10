@@ -248,7 +248,7 @@ class Payment
      * @param   integer $uid    User ID
      * @return  object  $this
      */
-    private function setUid($uid)
+    public function setUid($uid)
     {
         $this->uid = (int)$uid;
         return $this;

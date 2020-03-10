@@ -1268,6 +1268,7 @@ class IPN
 
         $Pmt = new Payment;
         $Pmt->setRefID($this->getTxnId())
+            ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)
             ->setMethod($this->GW->getDisplayName())
