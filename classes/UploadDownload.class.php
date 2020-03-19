@@ -253,6 +253,7 @@ class UploadDownload
      * Defines superset of available Mime types.
      *
      * @param   array   $mimeTypes  Array of ($type=>array(ext,ext,etc.))
+     * @return  object  $this
      */
     public function setAvailableMimeTypes($mimeTypes = array())
     {
@@ -289,6 +290,7 @@ class UploadDownload
         } else {
             $this->_availableMimeTypes = self::_fixMimeArrayCase($mimeTypes);
         }
+        return $this;
     }
 
 
@@ -585,11 +587,13 @@ class UploadDownload
     /**
      * Sets $_FILES fieldname.
      *
-     * @param   string    $fieldname of $_FILES array
+     * @param   string  $fieldname  Index into $_FILES array
+     * @return  object  $this
      */
     public function setFieldName($fieldname)
     {
         $this->_fieldName = $fieldname;
+        return $this;
     }
 
 
@@ -597,58 +601,57 @@ class UploadDownload
      * Sets mode to allow any mime type.
      *
      * @param   boolean $switch  True to turn on, false to turn off
+     * @return  object  $this
      */
     public function setAllowAnyMimeType($switch)
     {
         $this->_allowAnyType = $switch ? true : false;
+        return $this;
     }
 
 
     /**
-     * Sets mode to automatically resize images that are either too wide or
-     * too tall.
+     * Sets mode to automatically resize images that are too large.
      *
      * @param   boolean $switch  True to turn on, false to turn off
+     * @return  object  $this
      */
     public function setAutomaticResize($switch)
     {
         $this->_autoResize = $switch;
+        return $this;
     }
 
 
     /**
      * Allows you to override default max file size.
      *
-     * @param   int     $size_in_bytes      Max. size for uploaded files
-     * @return  boolean true if we set it OK, otherwise false
+     * @param   integer $size_in_bytes  Max. size for uploaded files
+     * @return  object  $this
      */
     public function setMaxFileSize($size_in_bytes)
     {
-        if (!is_numeric($size_in_bytes)) {
-            return false;
+        if (is_numeric($size_in_bytes)) {
+            $this->_maxFileSize = (int)$size_in_bytes;
         }
-        $this->_maxFileSize = $size_in_bytes;
-        return true;
+        return $this;
     }
 
 
     /**
      * Allows you to override default max. image dimensions.
      *
-     * @param   int    $width_pixels    Max. width allowed
-     * @param   int    $height_pixels   Max. height allowed
-     * @return  boolean true if we set values OK, otherwise false
+     * @param   integer $width_pixels    Max. width allowed
+     * @param   integer $height_pixels   Max. height allowed
+     * @return  object  $this
      */
     public function setMaxDimensions($width_pixels, $height_pixels)
     {
-        if (!is_numeric($width_pixels) AND !is_numeric($height_pixels)) {
-            return false;
+        if (is_numeric($width_pixels) && is_numeric($height_pixels)) {
+            $this->_maxImageWidth = (int)$width_pixels;
+            $this->_maxImageHeight = (int)$height_pixels;
         }
-
-        $this->_maxImageWidth = $width_pixels;
-        $this->_maxImageHeight = $height_pixels;
-
-        return true;
+        return $this;
     }
 
 
@@ -660,8 +663,8 @@ class UploadDownload
      */
     public function setMaxFileUploads($maxfiles)
     {
-        $this->_maxFileUploadsPerForm = $maxfiles;
-        return true;
+        $this->_maxFileUploadsPerForm = (int)$maxfiles;
+        return $this;
     }
 
 
@@ -669,13 +672,12 @@ class UploadDownload
      * Allows you to keep the original (unscaled) image.
      *
      * @param   boolean   $keepit   true = keep original, false = don't
-     * @return  boolean   true if we set values OK, otherwise false
+     * @return  object  $this
      */
     public function keepOriginalImage($keepit)
     {
         $this->_keepOriginalImage = $keepit ? true : false;
-
-        return true;
+        return $this;
     }
 
 
@@ -684,18 +686,17 @@ class UploadDownload
      * This is only good for those who are paranoid.
      *
      * @param   array   $validIPS   Array of valid IP addresses to allow file uploads from
-     * @return  boolean returns true if we successfully limited the IP's, otherwise false
+     * @return  object  $this
      */
     public function limitByIP($validIPS = array('127.0.0.1'))
     {
         if (is_array($validIPS)) {
             $this->_limitByIP = true;
             $this->_allowedIPS = $validIPS;
-            return true;
         } else {
             $this->_addError('Bad call to method limitByIP(), must pass array of valid IP addresses');
-            return false;
         }
+        return $this;
     }
 
 
@@ -706,10 +707,12 @@ class UploadDownload
      * NOTE: this only affects the actual file upload process.
      *
      * @param   boolean     $switch     true or false
+     * @return  object  $this
      */
     public function setContinueOnError($switch)
     {
         $this->_continueOnError = $switch ? true : false;
+        return $this;
     }
 
 
@@ -717,7 +720,7 @@ class UploadDownload
      * Sets log file.
      *
      * @param   string  $logFile    Fully qualified path to log files
-     * @return  boolean returns true if we set the log file, otherwise false
+     * @return  object  $this
      */
     public function setLogFile($logFile = '')
     {
@@ -725,10 +728,9 @@ class UploadDownload
             // Log file doesn't exist, produce warning
             $this->_addWarning('Log file, ' . $logFile . ' does not exists, setLogFile() method failed');
             $this->_doLogging = false;
-            return false;
         }
         $this->_logFile = $logFile;
-        return true;
+        return $this;
     }
 
 
@@ -736,6 +738,7 @@ class UploadDownload
      * Enables/disables logging of errors and warnings.
      *
      * @param   boolean     $switch     flag, true or false
+     * @return  object  $this
      */
     public function setLogging($switch)
     {
@@ -747,6 +750,7 @@ class UploadDownload
             }
             $this->_doLogging = false;
         }
+        return $this;
     }
 
 
@@ -765,6 +769,7 @@ class UploadDownload
      * Will force the debug messages in this class to be printed.
      *
      * @param   boolean     $switch     flag, true or false
+     * @return  object  $this
      */
     public function setDebug($switch)
     {
@@ -775,6 +780,7 @@ class UploadDownload
         } else {
             $this->_debug = false;
         }
+        return $this;
     }
 
 
@@ -786,8 +792,8 @@ class UploadDownload
      */
     public function printErrors($verbose=false)
     {
+        $retval = '';
         if (isset($this->_errors) && is_array($this->_errors)) {
-            $retval = '';
             foreach ($this->_errors as $msg) {
                 if ($verbose) {
                     print "$msg<br />\n";
@@ -795,8 +801,8 @@ class UploadDownload
                     $retval .= "$msg<br />\n";
                 }
             }
-            return $retval;
         }
+        return $retval;
     }
 
 
@@ -888,6 +894,7 @@ class UploadDownload
      * Sets allowed mime types for this instance.
      *
      * @param   array   allowedMimeTypes        Array of allowed mime types
+     * @return  object  $this
      */
     public function setAllowedMimeTypes($mimeTypes = array())
     {
@@ -901,6 +908,7 @@ class UploadDownload
         } else {
             $this->_allowedMimeTypes = self::_fixMimeArrayCase($mimeTypes);
         }
+        return $this;
     }
 
 
@@ -912,6 +920,7 @@ class UploadDownload
      * @param   array   $arr    Array to affect, by reference
      * @param   string  $mime   Mime-Type to be added
      * @param   string|array    $exts   One or more extensions to be added
+     * @return  object  $this
      */
     private function _addMimeType(&$arr, $mime, $exts)
     {
@@ -934,6 +943,7 @@ class UploadDownload
                 $arr[$mime][] = $ext;
             }
         }
+        return $this;
     }
 
 
@@ -943,11 +953,12 @@ class UploadDownload
      * @uses    self::_addMimeType()
      * @param   string  $mime   Mime type
      * @param   string|array  $exts   File extension
+     * @return  object  $this
      */
     public function addAllowedMimeType($mime, $exts)
     {
         $this->_addMimeType($this->_allowedMimeTypes, $mime, $exts);
-        return;
+        return $this;
     }
 
 
@@ -963,6 +974,7 @@ class UploadDownload
      * @param   string  $mime       Mime type
      * @param   string|array    $exts       One or more file extensions
      * @param   boolean $allowed    True to also add to the allowed mime types
+     * @return  object  $this
      */
     public function addAvailableMimeType($mime, $exts, $allowed=true)
     {
@@ -970,6 +982,7 @@ class UploadDownload
         if ($allowed) {
             $this->_addMimeType($this->addAllowedMimeType, $mime, $exts);
         }
+        return $this;
     }
 
 
@@ -1031,23 +1044,19 @@ class UploadDownload
      * Sets file path.
      *
      * @param   string  $path   Directory on server to store uploaded files
-     * @return  boolean     True if we successfully set path otherwise false
+     * @return  object  $this
      */
     public function setPath($path)
     {
         $path = rtrim($path, '/') . '/';
         if (!is_dir($path)) {
             $this->_addError('Specified upload directory, ' . $path . ' is not a valid directory');
-            return false;
-        }
-
-        if (!is_writable($path)) {
+        } elseif (!is_writable($path)) {
             $this->_addError('Specified upload directory, ' . $path. ' exists but is not writable');
-            return false;
+        } else {
+            $this->_filePath = $path;
         }
-
-        $this->_filePath = $path;
-        return true;
+        return $this;
     }
 
 
@@ -1068,6 +1077,7 @@ class UploadDownload
      * files a warning will be generated but processing will continue.
      *
      * @param   string|array    $fileNames      A string or string array of file names
+     * @return  object  $this
      */
     public function setFileNames($fileNames = 'glfusion_uploadedfile')
     {
@@ -1077,6 +1087,7 @@ class UploadDownload
         } else {
             $this->_fileNames = array($fileNames);
         }
+        return $this;
     }
 
 
@@ -1090,6 +1101,7 @@ class UploadDownload
      * is called right after setFileNames().
      *
      * @param   string|array    $perms      A string or string array of file permissions
+     * @return  object  $this
      */
     public function setPerms($perms)
     {
@@ -1099,6 +1111,7 @@ class UploadDownload
         } else {
             $this->_permissions = array($perms);
         }
+        return $this;
     }
 
 
@@ -1352,11 +1365,11 @@ class UploadDownload
      *
      * @comment NOOP compatibility function
      * @param   string    $path_to_mogrify    Absolute path to mogrify
-     * @return  boolean   True if set, false otherwise
+     * @return  object  $this
      */
     public function setMogrifyPath($path_to_mogrify)
     {
-        return true;
+        return $this;
     }
 
     /**
@@ -1364,11 +1377,11 @@ class UploadDownload
      *
      * @comment NOOP compatibility function
      * @param   string    $path_to_netpbm    Absolute path to netpbm dir
-     * @return  boolean   True if set, false otherwise
+     * @return  object  $this
      */
     public function setNetPBM($path_to_netpbm)
     {
-        return true;
+        return $this;
     }
 
 
@@ -1376,11 +1389,11 @@ class UploadDownload
      * Configure upload to use GD library.
      *
      * @comment NOOP compatibility function
-     * @return  boolean     True if set, false otherwise
+     * @return  object  $this
      */
     function setGDLib()
     {
-        return true;
+        return $this;
     }
 
 
@@ -1389,9 +1402,11 @@ class UploadDownload
      *
      * @comment NOOP compatibility function
      * @param   boolean $switch     flag, true or false
+     * @return  object  $this
      */
     public function setIgnoreMimeCheck($switch)
     {
+        return $this;
     }
 
 
@@ -1402,11 +1417,11 @@ class UploadDownload
      *
      * @comment NOOP compatibility function
      * @param   int       $quality  JPEG quality (0-100)
-     * @return  boolean   true if we set values OK, otherwise false
+     * @return  object  $this
      */
     public function setJpegQuality($quality)
     {
-        return true;
+        return $This;
     }
 
 
