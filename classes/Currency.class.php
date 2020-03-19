@@ -3,9 +3,9 @@
  * Class to handle currency display.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2014-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2014-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -460,6 +460,26 @@ class Currency
         return $retval;
     }
 
+
+    /**
+     * Format a money field using the default currency type.
+     *
+     * @param   float   $amt    Amount
+     * @param   boolean $sign   True to show currency sign
+     * @return  string  Formatted currency string
+     */
+    public static function formatMoney($amt, $sign=false)
+    {
+        static $Cur = NULL;
+        if ($Cur === NULL) {
+            $Cur = self::getInstance();
+        }
+        if ($sign) {
+            return $Cur->Format((float)$amt);
+        } else {
+            return $Cur->FormatValue((float)$amt);
+        }
+    }
 
 }
 
