@@ -135,6 +135,11 @@ class Order
      * @var boolean */
     private $hasInvalid = false;
 
+    /** Amount paid on the order. Not part of the order record.
+     * @var float */
+    private $_amt_paid = 0;
+
+
     /**
      * Set internal variables and read the existing order if an id is provided.
      *
@@ -287,8 +292,12 @@ class Order
         $cache_key = 'order_' . $this->order_id;
         //$A = Cache::get($cache_key);
         //if ($A === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.orders']}
-                    WHERE order_id='{$this->order_id}'";
+            $sql = "SELECT ord.*,
+                    ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
+                    WHERE pmt.pmt_order_id = ord.order_id
+                    ) as amt_paid
+                    FROM {$_TABLES['shop.orders']} ord
+                    WHERE ord.order_id='{$this->order_id}'";
             //echo $sql;die;
             $res = DB_query($sql);
             if (!$res) return false;    // requested order not found
@@ -534,6 +543,9 @@ class Order
         $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
         $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
+        if (isset($A['amt_paid'])) {    // only present in DB record
+            $this->_amt_paid = (float)$A['paid'];
+        }
         return $this;
     }
 
@@ -1217,7 +1229,7 @@ class Order
      *
      * @return  array   Array of DB fields.
      */
-    public function getLastLog()
+    public function XgetLastLog()
     {
         global $_TABLES, $_SHOP_CONF, $_USER;
 
@@ -1986,7 +1998,7 @@ class Order
      */
     public function isPaid()
     {
-        return $this->getAmountPaid() >= $this->total;
+        return $this->_amt_paid >= $this->total;
     }
 
 
@@ -2562,19 +2574,18 @@ class Order
         $T->set_file('html', 'shipping_block.thtml');
         $T->set_block('html', 'Packages', 'packages');
         foreach ($Shipments as $Shipment) {
-            $Dt = new \Date($Shipment->ts, $_CONF['timezone']);
             $Packages = $Shipment->getPackages();
             if (empty($Packages)) {
                 // Create a dummy package so something shows for the shipment
-                $Packages[]= new ShipmentPackage();
+                $Packages = array(new ShipmentPackage());
             }
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
-                $Sh = Shipper::getInstance($Pkg->getShipperID());
-                $url = $Sh->getTrackingUrl($Pkg->getTrackingNum());
+                $Shipper = Shipper::getInstance($Pkg->getShipperID());
+                $url = $Shipper->getTrackingUrl($Pkg->getTrackingNum());
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
-                    'ship_date'     => $Dt->toMySQL(true),
+                    'ship_date'     => $Shipment->getDate()->toMySQL(true),
                     'shipment_id'   => $Shipment->getID(),
                     'shipper_info'  => $Pkg->getShipperInfo(),
                     'tracking_num'  => $Pkg->getTrackingNum(),
@@ -3022,13 +3033,9 @@ class Order
      */
     public function getAmountPaid()
     {
-        $amount = 0;
-        $pmts = $this->getPayments();
-        foreach ($pmts as $Pmt) {
-            $amount += $Pmt->getAmount();
-        }
-        return $amount;
+        return (float)$this->_amt_paid;
     }
+
 }
 
 ?>
