@@ -13,13 +13,13 @@
  */
 namespace Shop\Gateways;
 
+
 /**
  * Class for check payments.
  * @package shop
  */
 class check extends \Shop\Gateway
 {
-
     /**
      * Constructor.
      * Sets gateway-specific variables and calls the parent constructor.
@@ -276,7 +276,7 @@ class check extends \Shop\Gateway
             return '';
         }
         $Order = \Shop\Order::getInstance($cart_id);
-        if ($Order->isNew) {
+        if ($Order->isNew()) {
             return '';
         }
 
@@ -289,6 +289,7 @@ class check extends \Shop\Gateway
         ) );
         $T->parse('output', 'remit');
         $content = $T->finish($T->get_var('output'));
+        $Order->setStatus('pending')->Save();
         $content .= $Order->View();
         return $content;
     }
