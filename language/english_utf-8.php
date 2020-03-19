@@ -717,6 +717,7 @@ $LANG_SHOP_HELP = array(
 'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
 'hlp_rules_noitems' => 'One or more of the items on your order cannot be shipped to your selected shipping address. Please edit the order or shipping information.',
 'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
+'pending' => 'Processing will begin once payment is received.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

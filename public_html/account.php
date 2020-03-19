@@ -114,7 +114,14 @@ default:
     $R = \Shop\Report::getInstance('orderlist');
     $R->setAdmin(false);
     $R->setParams($_POST);
-    $R->setAllowedStatuses(array('invoiced','paid','processing','closed','refunded'));
+    $R->setAllowedStatuses(array(
+        'invoiced',
+        'paid',
+        'processing',
+        'closed',
+        'refunded',
+        'pending',
+    ));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];
     $page_title = $LANG_SHOP['purchase_history'];

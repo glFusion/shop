@@ -3,15 +3,16 @@
  * Class to manage reports.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+
 
 /**
  * Select and run reports.
@@ -737,7 +738,7 @@ class Report
      */
     public static function getReportField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
         static $dt = NULL;
         $retval = '';
@@ -783,7 +784,14 @@ class Report
             if ($extra['isAdmin']) {
                 $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
             } else {
-                $retval = OrderStatus::getDscp($fieldvalue);
+                $txt = OrderStatus::getDscp($fieldvalue);
+                if (isset($LANG_SHOP_HELP[$fieldvalue])) {
+                    $tip = $LANG_SHOP_HELP[$fieldvalue];
+                    $retval = '<span class="tooltip" title="' . $tip . '">' .
+                        $txt . '</span>';
+                } else {
+                    $retval = $txt;
+                }
             }
             break;
 
@@ -793,7 +801,7 @@ class Report
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
                 $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' .
-                    $Cur->Format($fieldvalue) . '</td></tr>' . LB;
+                    self::formatMoney($fieldvalue) . '</td></tr>' . LB;
                 $disc_amt = $A['gross_items'] - $A['net_nontax'] - $A['net_taxable'];
                 if ($disc_amt > 0) {
                     $total -= $disc_amt;
@@ -813,7 +821,7 @@ class Report
                 if ($total > $fieldvalue) {
                     $tip .= '<tr><td>' . $LANG_SHOP['total'] .
                         ': </td><td style=&quot;text-align:right&quot;>' .
-                        $Cur->Format($total) . '</td></tr>' . LB;
+                        self::formatMoney($total) . '</td></tr>' . LB;
                 }
                 $tip .= '</table>' . LB;
                 $retval = '<span class="tooltip" title="' . $tip . '">' . self::formatMoney($fieldvalue) . '</span>';
@@ -862,17 +870,14 @@ class Report
 
     /**
      * Format a money field.
+     * Helper function to access the Currency class from various namespaces.
      *
      * @param   float   $amt    Amount
      * @return  string  Formatted currency string
      */
     protected static function formatMoney($amt)
     {
-        static $Cur = NULL;
-        if ($Cur === NULL) {
-            $Cur = Currency::getInstance();
-        }
-        return $Cur->FormatValue((float)$amt);
+        return Currency::formatMoney($amt);
     }
 
 
