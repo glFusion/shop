@@ -381,7 +381,7 @@
                 >
                     <br /><button class="uk-button uk-button-mini uk-button-primary"
                         onclick="return setDefImg({img_id});">{$LANG_SHOP['set_as_def']}</button>
-                </span>a
+                </span>
 {!endif}
               </figcaption>
             </figure>
