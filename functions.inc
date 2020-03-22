@@ -641,7 +641,7 @@ function plugin_dopluginsearch_shop(
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['prodXcat']} pxc
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
                 ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON pxc.cat_id=c.cat_id
