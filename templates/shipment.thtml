@@ -1,107 +1,104 @@
 {# begin {templatelocation} #}
 <form id="shipmentform" method="post" action="{site_admin_url}/plugins/shop/index.php">
-<input type="hidden" name="order_id" value="{order_id}" />
-<input type="hidden" name="shipment_id" value="{shipment_id}" />
-<div class="shopOrderContainer">
-  <h1 class="aligncenter">{page_title}</h1>
-    {linkPackingList}
+    <input type="hidden" name="order_id" value="{order_id}" />
+    <input type="hidden" name="shipment_id" value="{shipment_id}" />
 
-  <div class="shopOrder">
+    <div class="shopOrder">
+        <h1 class="aligncenter">{page_title}</h1>
+        {linkPackingList}
 
-  <div>
-    <div id="shopBilling">
-      <b>{$LANG_SHOP['bill_to']}:</b>
-{!if not_final}
-      <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
-{!endif}
-      <br />
-    {billto_addr}
-    </div>
 
-    <div id="shopShipping">
-      <b>{$LANG_SHOP['ship_to']}:</b>&nbsp;
-{!if not_final}
-      <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
-{!endif}
-      <br />
-    {shipto_addr}
-    </div>
-  </div>
+        <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-small-1-1">
+            <div class="orderAddress">
+              <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
+              <br />
+              {billto_addr}
+            </div>
 
-    <div id="shopOrderNumber">
-      {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
-      {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
-    </div>
+            <div class="orderAddress">
+              <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
+              <br />
+                {shipto_addr}
+            </div>
+        </div>
 
-    <div class="shopOrderItems">
-      <table>
-        <tr>
-          <th class="aligncenter">{$LANG_SHOP['description']}</th>
-          <th style="width:10%" class="aligncenter">{$LANG_SHOP['ordered']}</th>
-          <th style="width:10%" class="aligncenter">{$LANG_SHOP['shipped']}</th>
-        </tr>
-        <!-- BEGIN ItemRow -->
-        <tr>
-          <td>
-            {item_dscp}
+        <div id="shopOrderNumber">
+            {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
+            {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+        </div>
+
+        <div class="cart">
+            <div class="cart-items">
+                <div class="label-row">
+                    <div class="grid">
+                        <div class="td cart-item-product">{$LANG_SHOP['description']}</div>
+                        <div class="td cart-item-quantity">{$LANG_SHOP['ordered']}</div>
+                        <div class="td cart-item-total">{$LANG_SHOP['shipped']}</div>
+                    </div>
+                </div>
+
+<!-- BEGIN ItemRow -->
+                <div class="cart-item">
+                    <div class="grid">
+                        <div class="td cart-item-product">
+                            <div class="cart-item-title">
+                                {item_dscp}
 {!if sku}
-        <br />{sku}
+                                <br />{sku}
 {!endif}
-        <!-- BEGIN ItemOptions -->
-            <div class="ItemOptions">{option_dscp}</div>
-        <!-- END ItemOptions -->
-          </td>
-          <td class="aligncenter">{ordered}</td>
-          <td class="aligncenter">
+                                {item_options}
+                            </div>
+                        </div>
+                        <div class="td cart-item-quantity">{ordered}</div>
+
+                        <div class="td cart-item-total">
 {!if can_ship}
 {!if newship}
-            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
-            <input type="hidden" name="maxship[{oi_id}]" value="{toship}" />
+                            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
+                            <input type="hidden" name="maxship[{oi_id}]" value="{toship}" />
 {!else}
-            {toship}
+                            {toship}
 {!endif}
 {!else}
-            {toship_text}
+                            {toship_text}
 {!endif}
-          </td>
-        </tr>
-        <tr class="shopItemRowSpacer"></tr>
-        <!-- END ItemRow -->
-      </table>
+                        </div>
+<!-- END ItemRow -->
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <div id="trackinginfo">
-    {tracking_form}
-  </div>
+    <div id="trackinginfo">
+        {tracking_form}
+    </div>
 
 {!if ship_method}
-    <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
+        <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
 {!endif}
 
-  <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
+    <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
 {!if order_instr}
-    {order_instr}
+        {order_instr}
 {!else}
-    <span class="orderInstructions">{$LANG_SHOP['none']}</span>
+        <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
-  </div>
-</div>
-<button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
+    </div>
+    <button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
 {!if shipment_id}
-  name="updateshipment"
-    onclick="return delIfNothingShipped();"
+        name="updateshipment"
+        onclick="return delIfNothingShipped();"
 {!else}
-  name="addshipment"
+        name="addshipment"
 {!endif}
-    >{$LANG_ADMIN['submit']}</button>
+        >{$LANG_ADMIN['submit']}</button>
 {!if shipment_id}
-<button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
-    name="del_shipment" value="{shipment_id}"
-    onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_ADMIN['delete']}</button>
+    <button style="float:right;" type="submit" class="uk-button uk-button-danger" id="btn_delete"
+        name="del_shipment" value="{shipment_id}"
+        onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_ADMIN['delete']}</button>
 {!endif}
-<button style="float:none;" type="submit" class="uk-button" name="cancel"
-    onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
+    <button style="float:none;" type="submit" class="uk-button" name="cancel"
+        onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
 </form>
 <script type="text/javascript">
 function delIfNothingShipped()

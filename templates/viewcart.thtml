@@ -1,147 +1,122 @@
 {# begin {templatelocation} #}
 <a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-success">
-  <i class="uk-icon uk-icon-backward"></i>
-  {$LANG_SHOP['continue_shopping']}
+    <i class="uk-icon uk-icon-backward"></i>
+    {$LANG_SHOP['continue_shopping']}
 </a>
 <div style="text-align:center; margin-left:auto;">
     <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
-  <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
-    <input type="hidden" name="order_id" value="{order_number}" />
+    <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
+        <input type="hidden" name="order_id" value="{order_number}" />
 
-    <table id="shopViewCartTable" class="shopViewCartTable">
-      <tr>
-{!if have_images}
-        <th style="width:120px;"></th>
-{!else}
-        <th></th>
-{!endif}
-        <th class="aligncenter">{$LANG_SHOP['description']}</th>
-        <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
-        <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
-        <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
-        <th style="width:5%" class="aligncenter"></th>
-        <th style="width:5%;" class="aligncenter">
-{!if icon_dscp}
-            <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
-{!endif}
-        </th>
-      </tr>
-      <!-- BEGIN ItemRow -->
-      <tr>
-        <td>
+        <div class="cart">
+            <div class="cart-items">
+                <div class="label-row">
+                    <div class="grid">
+                        <div class="td cart-item-product">{$LANG_SHOP['description']}</div>
+                        <div class="td cart-item-price">{$LANG_SHOP['price']}</div>
+                        <div class="td cart-item-quantity">{$LANG_SHOP['quantity']}</div>
+                        <div class="td cart-item-total">{$LANG_SHOP['total']}</div>
+                    </div>
+                </div>
+<!-- BEGIN ItemRow -->
+                <div class="cart-item">
+                    <div class="grid">
+                        <div class="td cart-item-product">
+                            <div class="cart-item-image">
 {!if item_link}
-            <a href="{item_link}">{img_url}</a>
+                                <a href="{item_link}">{img_url}</a>
 {!else}
-            {img_url}
+                                {img_url}
 {!endif}
-        </td>
-        <td class="alignleft">
+                            </div>
+                            <div class="cart-item-title">
 {!if item_link}
-          <a href="{item_link}">{item_dscp}</a>
+                                <a href="{item_link}">{item_dscp}</a>
 {!else}
-          {item_dscp}
+                                {item_dscp}
 {!endif}
-          {item_options}
-        </td>
-        <td class="alignright">{item_price}</td>
-        <td class="alignright">
+                                {item_options}
+                            </div>
+                        </div>
+                        <div class="td cart-item-price">
+                            {item_price}
+                        </div>
+                        <div class="td cart-item-quantity">
 {!if fixed_q}
-          <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
-          {item_quantity}
+                            <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
+                            {item_quantity}
 {!else}
-          <input style="text-align:right;" type="number" id="f_qty_{cart_item_id}"
-                onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
+                            <input style="text-align:right;" type="number" id="f_qty_{cart_item_id}"
+                                onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
-                max="{max_ord_qty}"
+                                max="{max_ord_qty}"
 {!endif}
-                name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-small"/>
+                                name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-small"/>
 {!endif}
-        </td>
-        <td class="alignright">{item_total}</td>
-        <td class="aligncenter" style="width:32px;white-space:nowrap;">
-          <a href="{del_item_url}"><i
-              class="uk-icon uk-icon-remove uk-text-danger  tooltip" title="{$LANG_SHOP['delete']}"></i></a>
-        </td>
-        <td class="aligncenter">
-{!if taxable}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
-{!endif}
-{!if discount_tooltip}
-          <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
-{!endif}
-{!if sale_tooltip}
-          <span class="tooltip" title="{sale_tooltip}">{sale_icon}</span>
-{!endif}
-{!if msg_bo}
-          <span class="tooltip" title="{msg_bo}">{bo_icon}</span>
-{!endif}
-        </td>
-      </tr>
-      <!-- END ItemRow -->
+                            <a href="{del_item_url}"><i
+                                class="uk-icon uk-icon-remove uk-text-danger tooltip"
+                                title="{$LANG_SHOP['delete']}"></i></a>
+                        </div>
+                        <div class="td cart-item-total money">
+                            <div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
+                        </div>
+                    </div>
+                </div>
+<!-- END ItemRow -->
+            </div>
+
+            <div class="cart-total">
 {!if subtotal}
-      <tr>
-        <td colspan="4" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
-        <td colspan="1" class="alignright"><b>{subtotal}</b></td>
-        <td></td>
-      </tr>
+                <div class="grid">
+                    <div class="cart-total-info subtotal">{$LANG_SHOP['item_total']}</div>
+                    <div class="cart-item-total money">{subtotal}</div>
+                </div>
 {!endif}
 {!if dc_row_vis}
-        <tr>
-            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']} ({discount_code})</td>
-            <td colspan="1" class="alignright">{dc_amt}</td>
-        </tr>
-{!endif}
-{!if Xtax_items}
-      <tr>
-        <td colspan="4" class="alignright">{lang_tax_on_items}</td>
-        <td colspan="1" class="alignright">TBD</td>
-        <td></td>
-      </tr>
+                <div class="grid">
+                    <div class="cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code})</div>
+                    <div class="cart-item-total money">{dc_amt}</div>
+                </div>
 {!endif}
 {!!if {ship_select} != "" !!}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}: {ship_select}</td>
-        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
-      </tr>
+                <div class="grid">
+                    <div class="cart-total-info">{$LANG_SHOP['shipping']}: {ship_select}</div>
+                    <div id="shipping_cell" class="cart-item-total money">{shipping}</div>
+                </div>
 {!!elseif {shipper_id} > 0 || {shipping} > 0 !!}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
+                <div class="grid">
+                    <div class="cart-total-info">{$LANG_SHOP['shipping']}
 {!if ship_method}
-({ship_method})
+                        ({ship_method})
 {!endif}
-        </td>
-        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
-        <td>
+                    <div id="shipping_cell" class="cart-item-total money">{shipping}</div>
+                </div>
 {!if tax_shipping}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+                <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
-        </td>
-      </tr>
 {!endif}
 {!if handling}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
-        <td colspan="1" class="alignright">{handling}</td>
-        <td>
+                <div class="grid">
+                    <div class="cart-total-info">{$LANG_SHOP['handling']}</div
+                    <div class="cart-item-total money">{handling}</div>
+                </div>
 {!if tax_handling}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+                <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
-        </td>
-      </tr>
 {!endif}
-      <tr>
-        <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
-        <td colspan="1" class="alignright"><b>
+                <div class="grid">
+                    <div class="cart-total-info subtotal">{$LANG_SHOP['total']}</div>
+                    <div class="cart-item-total money">
 {!if not_final}
-            {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
+                        {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
 {!else}
-        {total_sign} {total}
+                        {total_sign} {total}
 {!endif}
-        </b></td>
-        <td></td>
-      </tr>
-
-    </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="uk-grid orderInstructions">
         <div class="uk-width-1-2 orderInstructions">
 {!if discount_code_fld}
