@@ -2627,6 +2627,8 @@ class Order
 
     /**
      * Get the total number of items yet to be shipped.
+     * Returns max items to ship or zero, if for some reason extra shipments
+     * were created.
      * Only considers physical products.
      *
      * @return  integer     Total items (quantitity) to be shipped
@@ -2641,7 +2643,7 @@ class Order
                 $shipped_items += ShipmentItem::getItemsShipped($oi_id);
             }
         }
-        return ($gross_items - $shipped_items);
+        return max(0, $gross_items - $shipped_items);
     }
 
 
