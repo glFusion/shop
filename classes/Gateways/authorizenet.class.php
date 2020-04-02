@@ -331,7 +331,7 @@ class authorizenet extends \Shop\Gateway
     public function getLogo()
     {
         global $_CONF;
-        return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" alt="Authorize.Net Logo" style="width:160px;height:40px;border:0;" />';
+        return '<img src="https://www.authorize.net/content/dam/anet-redesign/reseller/authorizenet-200x50.png" alt="Authorize.Net" style="width:160px;height:40px;border:0;" />';
         //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;border:0"/>';
     }
 
