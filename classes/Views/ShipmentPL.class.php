@@ -82,10 +82,10 @@ class ShipmentPL
         foreach ($this->Shipment->Packages as $Pkg) {
             $T->set_var(array(
                 'shipper_code'  => $Pkg->getShipper()->code,
-                'shipper_name'  => $Pkg->shipper_info,
-                'tracking_num'  => $Pkg->tracking_num,
-                'pkg_id'        => $Pkg->pkg_id,
-                'tracking_url'  => Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num),
+                'shipper_name'  => $Pkg->getShipperInfo(),
+                'tracking_num'  => $Pkg->getTrackingNumber(),
+                'pkg_id'        => $Pkg->getID(),
+                'tracking_url'  => Shipper::getInstance($Pkg->getShipperID())->getTrackingUrl($Pkg->getTrackingNumber()),
             ) );
             $T->parse('TP', 'trackingPackages', true);
         }

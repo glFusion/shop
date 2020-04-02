@@ -585,6 +585,17 @@ class Shipment
         DB_query("TRUNCATE {$_TABLES['shop.shipment_packages']}");
     }
 
+
+    /**
+     * Check if this is a new record. Used to validate that a record was read.
+     *
+     * @return  boolean     True if new, False if existing
+     */
+    public function isNew()
+    {
+        return $this->shipment_id == 0;
+    }
+
 }
 
 ?>

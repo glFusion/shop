@@ -242,7 +242,7 @@ class ShipmentPackage
      *
      * @return  string      Tracking number
      */
-    public function getTrackingNum()
+    public function getTrackingNumber()
     {
         return $this->tracking_num;
     }

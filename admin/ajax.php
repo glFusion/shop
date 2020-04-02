@@ -305,7 +305,7 @@ case 'add_tracking':
         if ($SP->Save($_POST)) {
             if ($SP->getShipperID() > 0) {
                 $shipper_code = Shop\Shipper::getInstance($SP->getShipperID())->getCode();
-                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNum());
+                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNumber());
             } else {
                 $shipper_code = '';
                 $tracking_url = '';
@@ -315,7 +315,7 @@ case 'add_tracking':
                 'shipper_id'    => $SP->getShipperID(),
                 'pkg_id'        => $SP->getID(),
                 'shipper_name'  => $SP->getShipperInfo(),
-                'tracking_num'  => $SP->getTrackingNum(),
+                'tracking_num'  => $SP->getTrackingNumber(),
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );

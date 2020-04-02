@@ -1429,7 +1429,7 @@ class Order
                         $T->set_var(array(
                             'shipment_date' => $shp_dt,
                             'shipper_name'  => $Pkg->getShipperInfo(),
-                            'tracking_num'  => $Pkg->getTrackingNum(),
+                            'tracking_num'  => $Pkg->getTrackingNumber(),
                             'tracking_url'  => $Pkg->getTrackingURL(false),
                         ) );
                         $shp_dt = '';
@@ -2582,13 +2582,13 @@ class Order
             $show_ship_info = true;
             foreach ($Packages as $Pkg) {
                 $Shipper = Shipper::getInstance($Pkg->getShipperID());
-                $url = $Shipper->getTrackingUrl($Pkg->getTrackingNum());
+                $url = $Shipper->getTrackingUrl($Pkg->getTrackingNumber());
                 $T->set_var(array(
                     'show_ship_info' => $show_ship_info,
                     'ship_date'     => $Shipment->getDate()->toMySQL(true),
                     'shipment_id'   => $Shipment->getID(),
                     'shipper_info'  => $Pkg->getShipperInfo(),
-                    'tracking_num'  => $Pkg->getTrackingNum(),
+                    'tracking_num'  => $Pkg->getTrackingNumber(),
                     'shipper_id'    => $Pkg->getShipperID(),
                     'tracking_url'  => $url,
                     'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
