@@ -1678,7 +1678,7 @@ class Product
 
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
-            'cur_code'          => $Cur->code,   // USD, etc.
+            'cur_code'          => $Cur->getCode(),   // USD, etc.
             'frm_id'            => COM_sanitizeID($prod_id, false),
             'id'                => $prod_id,
             'name'              => $name,
