@@ -32,6 +32,10 @@
 {!endif}
         <dt>SKU:</dt>
         <dd id="sku">{sku}</dd>
+{!if categories}
+        <dt>{$LANG_SHOP['categories']}:</dt>
+        <dd>{cat_names}</dd>
+{!endif}
 <!-- BEGIN FeatList -->
         <dt>{ft_name}</dt>
         <dd>{fv_text}</dd>
