@@ -29,8 +29,9 @@ class payment extends \Shop\Report
     protected $gateway = '';
 
     /** Payment type filter.
+     * `-1` indicates all types.
      * @var integer */
-    protected $pmt_type = 0;
+    protected $pmt_type = -1;
 
 
     /**
