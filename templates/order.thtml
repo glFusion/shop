@@ -69,7 +69,7 @@
 
         <div class="cart">
             <div class="cart-items">
-                <div class="grid uk-grid uk-margin uk-hidden-small">
+                <div class="uk-grid uk-margin uk-hidden-small">
                     <div class="uk-width-medium-3-6">{$LANG_SHOP['description']}</div>
                     <div class="uk-width-medium-1-6">{$LANG_SHOP['price']}</div>
                     <div class="uk-width-medium-1-6">{$LANG_SHOP['quantity']}</div>
@@ -127,17 +127,17 @@
                 </div>
 {!endif}
 {!if dc_row_vis}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code})</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{dc_amt}</div>
                 </div>
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['net_items']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{net_items}</div>
                 </div>
 {!endif}
 {!!if {shipper_id} > 0 || {shipping} > 0 !!}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">
                         {$LANG_SHOP['shipping']}:
 {!if ship_method}
@@ -148,7 +148,7 @@
                 </div>
 {!endif}
 {!if handling}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['handling']}</div
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{handling}</div>
                 </div>
@@ -157,21 +157,21 @@
 {!endif}
 {!endif}
 {!if cart_tax}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
                 </div>
 {!endif}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['total']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{total_sign} {total}</div>
                 </div>
 {!if apply_gc}
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['apply_gc']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">-&nbsp;{apply_gc}</div>
                 </div>
-                <div class="uk-grid">
+                <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['pmt_total']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{net_total}</div>
                 </div>
