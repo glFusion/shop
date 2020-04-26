@@ -250,7 +250,6 @@ function removeAddress(addr_id)
   </div>
 {!endif}
 
-{hiddenvars}
   <input type="hidden" name="next_step" value="{next_step}" />
   <div class="uk-form-row" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
@@ -262,6 +261,7 @@ function removeAddress(addr_id)
       <button class="uk-button" type="submit" name="nextstep">{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
+{hiddenvars}
 </form>
 <script type="text/javascript">
 {!if addr_id}
@@ -299,4 +299,4 @@ function validateAddress(form)
     return;
 }
 </script>
- {# begin {templatelocation} #}
+ {# end {templatelocation} #}

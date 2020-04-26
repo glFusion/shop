@@ -6,7 +6,6 @@
 {!if link_admin}
   <a href="{site_admin_url}/plugins/shop/index.php"
     class="uk-button uk-button-danger uk-button-mini">{$LANG_SHOP['mnu_admin']}</a>
-  </a>
 {!endif}
 {!if link_catalog}
   <a href="{site_url}/shop/index.php" class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['storefront']}</a>

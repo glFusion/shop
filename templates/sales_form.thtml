@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <form id="shopsalesform" class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
-  <input type="hidden" name="id" value="{disc_id}" />
+  <input type="hidden" name="id" value="{sale_id}" />
   <fieldset>
 
   <div class="uk-form-row">

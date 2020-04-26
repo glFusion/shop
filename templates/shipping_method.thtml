@@ -1,17 +1,17 @@
 {# begin {templatelocation} #}
 {!if multi}
     <div class="uk-button uk-button-small uk-form-select" data-uk-form-select>
-      <span></span>
-      <i class="uk-icon-caret-down"></i>
-      <select name="shipper_id" onchange="SHOP_updateShipping(this)">
+        <span></span>
+        <i class="uk-icon-caret-down"></i>
+        <select name="shipper_id" onchange="SHOP_updateShipping(this)">
 <!-- BEGIN shipMethodSelect -->
-        <option value="{method_id}" {method_sel}>{method_name} : {method_rate}</option>
+            <option value="{method_id}" {method_sel}>{method_name} : {method_rate}</option>
 <!-- END shipMethodSelect -->
-      </select>
+        </select>
     </div>
 {!else}
-<input type="hidden" name="shipper_id" value="{method_id}" />
-{method_name}
+    <input type="hidden" name="shipper_id" value="{method_id}" />
+    {method_name}
 {!endif}
 <script>
 var shipper_json = '{shipper_json}';
