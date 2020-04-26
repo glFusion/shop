@@ -571,7 +571,7 @@ class IPN
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
-        if ($P->isNew) {
+        if ($P->isNew()) {
             SHOP_log("Product {$args['item_id']} not found in catalog", SHOP_LOG_ERROR);
             return;      // no product found to add
         }
@@ -595,7 +595,7 @@ class IPN
             'shipping'  => isset($args['shipping']) ? $args['shipping'] : 0,
             'handling'  => isset($args['handling']) ? $args['handling'] : 0,
             //'tax'       => $tax,
-            'taxable'   => $P->taxable ? 1 : 0,
+            'taxable'   => $P->isTaxable() ? 1 : 0,
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
             'extras'    => isset($args['extras']) ? $args['extras'] : '',
             'overrides' => $overrides,
@@ -759,8 +759,8 @@ class IPN
 
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
-            $this->Order->by_gc = $by_gc;
-            \Shop\Products\Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
+            $this->Order->setByGC($by_gc);
+            \Shop\Products\Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
@@ -775,8 +775,8 @@ class IPN
                 }
             }
 
-            $this->Order->pmt_method = $this->gw_id;
-            $this->Order->pmt_txn_id = $this->txn_id;
+            $this->Order->setPmtMethod($this->gw_id);
+            $this->Order->setPmtTxnID($this->txn_id);
             $this->Order->Save();
 
             // Handle the purchase for each order item
@@ -839,8 +839,8 @@ class IPN
         );
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
-            if ($this->Order->order_id != '') {
-                $this->Order->log_user = $this->GW->getDscp();
+            if ($this->Order->getOrderID() != '') {
+                $this->Order->setLogUser($this->GW->getDscp());
             }
             return 2;
         }
@@ -859,9 +859,9 @@ class IPN
             $this->Cart = NULL;
         }
 
-        $this->Order->uid = $this->uid;
-        $this->Order->buyer_email = $this->payer_email;
-        $this->Order->status = 'pending';
+        $this->Order->setUID($this->uid);
+        $this->Order->setBuyerEmail($this->payer_email);
+        $this->Order->setStatus('pending');
         if ($uid > 1) {
             $U = Customer::getInstance($uid);
         }
@@ -879,7 +879,7 @@ class IPN
             $BillTo = $U->getDefaultAddress('billto');
         }
         if (is_array($BillTo)) {
-            $this->Order->setBilling($BillTo);
+            $this->Order->setBillto($BillTo);
         }
 
         $ShipTo = $this->shipto;
@@ -890,19 +890,19 @@ class IPN
             }
         }
         if (is_array($ShipTo)) {
-            $this->Order->setShipping($ShipTo);
+            $this->Order->setShipto($ShipTo);
         }
         if (isset($this->shipto['phone'])) {
-            $this->Order->phone = $this->shipto['phone'];
+            $this->Order->setPhone($this->shipto['phone']);
         }
-        $this->Order->pmt_method = $this->gw_id;
-        $this->Order->pmt_txn_id = $this->txn_id;
-        $this->Order->shipping = $this->pmt_shipping;
-        $this->Order->handling = $this->pmt_handling;
-        $this->Order->buyer_email = $this->payer_email;
-        $this->Order->log_user = $this->GW->getDscp();
+        $this->Order->setPmtMethod($this->gw_id)
+            ->setPmtTxnID($this->txn_id)
+            ->setShipping($this->pmt_shipping)
+            ->setHandling($this->pmt_handling)
+            ->setBuyerEmail($this->payer_email)
+            ->setLogUser($this->GW->getDscp());
 
-        $this->Order->items = array();
+        //$this->Order->items = array();
         foreach ($this->items as $id=>$item) {
             $options = DB_escapeString($item['options']);
             $option_desc = array();
@@ -935,7 +935,7 @@ class IPN
                 }
             }
             $args = array(
-                'order_id' => $this->Order->order_id,
+                'order_id' => $this->Order->getorderID(),
                 'product_id' => $item['item_number'],
                 'description' => $item['short_description'],
                 'quantity' => $item['quantity'],
@@ -944,7 +944,7 @@ class IPN
                 'status' => 'pending',
                 'token' => md5(time()),
                 'price' => $item['price'],
-                'taxable' => $P->taxable,
+                'taxable' => $P->isTaxable(),
                 'options' => $options,
                 'options_text' => $option_desc,
                 'extras' => $item['extras'],

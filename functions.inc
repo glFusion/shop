@@ -245,23 +245,26 @@ function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $v
         return $retval;
 
     $P = new Shop\Product($id);
-    if ($P->isNew)
+    if ($P->isNew()) {
         return $retval;
+    }
 
     $allowed = 1;
 
     if ($allowed == 1) {
         $delete_option = plugin_ismoderator_shop();
-        $retval .= CMT_userComments($id, $title, $_SHOP_CONF['pi_name'], $order, $format,
-                                     $cid, $page, $view, $delete_option,
-                                     $P->comments_enabled, $_USER['uid']);
+        $retval .= CMT_userComments(
+            $id, $title, $_SHOP_CONF['pi_name'], $order, $format,
+            $cid, $page, $view, $delete_option,
+            $P->commentsEnabled() , $_USER['uid']);
     } else {
-        $retval .= COM_startBlock($LANG_ACCESS['accessdenied'], '',
-                        COM_getBlockTemplate ('_msg_block', 'header'))
-                . $LANG_ACCESS['storydenialmsg']
-                . COM_endBlock(COM_getBlockTemplate ('_msg_block', 'footer'));
+        $retval .= COM_startBlock(
+            $LANG_ACCESS['accessdenied'], '',
+            COM_getBlockTemplate('_msg_block', 'header')
+        )
+        . $LANG_ACCESS['storydenialmsg']
+        . COM_endBlock(COM_getBlockTemplate ('_msg_block', 'footer'));
     }
-
     return $retval;
 }
 
@@ -514,7 +517,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             default:
                 // Default tag [shop:prod_id]is a product link
                 $P  = Shop\Product::getByID($id);
-                if (!$P->isNew) {
+                if (!$P->isNew()) {
                     $url = $P->getLink();
                     //$url = COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
                     // Allow the author to use different text for the link.  Default
@@ -972,16 +975,16 @@ function phpblock_shop_cart_contents()
         if ($item->options != '') $item_id .= '|' . $item->options;
         $P = Shop\Product::getByID($item_id);
 
-        $item_total = (float)$item->price * $item->quantity;
+        $item_total = (float)$item->getPrice() * $item->getQuantity();
         $T->set_var(array(
             'item_id'       => $item_id,
 //            'options'       => $P->getOptionDisplay($item),
-            'item_name'     => $item->description,
-            'price'         => $Cur->FormatValue($item->price),
-            'quantity'      => $item->quantity,
+            'item_name'     => $item->getDscp(),
+            'price'         => $Cur->FormatValue($item->getPrice()),
+            'quantity'      => $item->getQuantity(),
             'item_total'    => $Cur->FormatValue($item_total),
 //            'pi_url'        => SHOP_URL,
-            'item_link'     => $P->getLink($item->id, $cart->token),
+            'item_link'     => $P->getLink($item->getID(), $cart->token),
         ) );
         $T->parse('cRow', 'CartRow', true);
         $total += $item_total;
@@ -1163,22 +1166,22 @@ function phpblock_shop_popular()
     if ($limit < 1)
         $limit = 1;
 
-    $sql = "SELECT DISTINCT
-                pr.id,
+    $sql = "SELECT DISTINCT (pr.id),
                 (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pr.id = pxc.product_id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON pr.cat_id=c.cat_id
+                ON c.cat_id = pxc.cat_id
             WHERE pr.enabled=1
-            AND (c.enabled=1 OR c.enabled IS NULL)
-            AND pr.show_popular = 1 " .
+            AND pr.show_popular = 1
+            AND (c.enabled=1 OR c.enabled IS NULL) " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " HAVING cnt > 0
             ORDER BY cnt DESC
             LIMIT $limit";
     //echo $sql;die;
-
     $retval = SHOP_phpblock_product($sql);
     return $retval;
 }
@@ -1202,13 +1205,14 @@ function phpblock_shop_recent($cat='')
     if ($limit < 1)
         $limit = 1;
 
-    $sql = "SELECT DISTINCT
-                pr.id,
+    $sql = "SELECT DISTINCT (pr.id),
                 (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pr.id = pxc.product_id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON pr.cat_id=c.cat_id
+                ON pr.cat_id=c.cat_id
             WHERE pr.enabled=1
             AND (c.enabled=1 OR c.enabled IS NULL)
             AND pr.show_popular = 1 " .
@@ -1345,7 +1349,7 @@ function SHOP_phpblock_product($sql)
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
             $P = Shop\Product::getByID($A['id']);
             $isOnSale = $P->isOnSale();
-            $price = $P->price;
+            $price = $P->getPrice();
             if ($isOnSale) {
                 $price_was = $price;
                 $price = $P->getSalePrice();
@@ -1354,9 +1358,9 @@ function SHOP_phpblock_product($sql)
             $price_was = $price_was > 0 ? Shop\Currency::getInstance()->Format($price_was) : '';
 
             $T->set_var(array(
-                'name'      => $P->name,
+                'name'      => $P->getName(),
                 'item_url'  => $P->getLink(),
-                'descrip'   => $P->short_description,
+                'descrip'   => $P->getShortDscp(),
                 'price'     => $price,
                 'price_was' => $price_was,
                 'currency'  => $_SHOP_CONF['currency'],
@@ -1805,7 +1809,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
             $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
             $LT->set_var('gc_bal', Shop\Currency::getInstance()->Format($gc_bal));
         }
-        if (!empty($U->cart)) {
+        if (!empty($U->getCart())) {
             $cart = true;
             $LT->set_var('cart', true);
         } else {
@@ -2128,7 +2132,7 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
     $U = Shop\Customer::getInstance($uid);
-    foreach ($U->addresses as $addr) {
+    foreach ($U->getAddresses() as $addr) {
         foreach (Shop\Customer::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));

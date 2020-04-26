@@ -212,8 +212,9 @@ class Cart extends Order
 
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
-            $this->items[$have_id]->quantity += $quantity;
-            $new_quantity = $this->items[$have_id]->quantity;
+            $new_quantity = $this->items[$have_id]->getQuantity();
+            $new_quantity += $quantity;
+            $this->items[$have_id]->setQuantity($new_quantity);
             $need_save = true;      // Need to save the cart
         } elseif ($quantity == 0) {
             return false;
@@ -255,12 +256,10 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$item) {
-            if ($item->product_id == $item_number) {
+        foreach ($this->items as $id=>$$item) {
+            if ($item->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
-                foreach ($updates as $fld=>$val) {
-                    $this->items[$id]->$fld = $val;
-                }
+                $item->updateItem($updates);
                 break;
             }
         }
@@ -443,7 +442,7 @@ class Cart extends Order
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == 'cart') {
             foreach ($this->items as $Item) {
-                OrderItem::Delete($Item->id);
+                OrderItem::Delete($Item->getID());
             }
             $this->items = array();
             if ($del_order) {
@@ -609,10 +608,10 @@ class Cart extends Order
     {
         switch ($type) {
         case 'billto':
-            $this->setBilling($A);
+            $this->setBillto($A);
             break;
         default:
-            $this->setShipping($A);
+            $this->setShipto($A);
             break;
         }
     }
@@ -1022,7 +1021,7 @@ class Cart extends Order
                     $invalid['removed'] = array();
                 }
                 $this->Remove($id);
-                $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
+                $msg[] = $LANG_SHOP['removed'] . ': ' . $P->getShortDscp();
                 $invalid['removed'][] = $P;
             } else {
                 $this->applyQtyDiscounts($P->getId());

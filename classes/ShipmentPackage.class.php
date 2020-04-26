@@ -21,10 +21,6 @@ namespace Shop;
  */
 class ShipmentPackage
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
-
     /** Package record ID.
      * @var integer */
     private $pkg_id;

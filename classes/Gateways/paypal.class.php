@@ -187,7 +187,7 @@ class paypal extends \Shop\Gateway
             'cmd'       => '_cart',
             'upload'    => '1',
             'cancel_return' => $cart->cancelUrl(),
-            'return'    => $this->returnUrl($cart->order_id, $cart->token),
+            'return'    => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
             'rm'        => '1',     // simple GET return url
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
@@ -253,10 +253,10 @@ class paypal extends \Shop\Gateway
                 $item_amount = $item->getNetPrice();
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
-                $fields['item_name_' . $i] = htmlspecialchars($item->description);
+                $fields['item_name_' . $i] = htmlspecialchars($item->getDscp());
                 $total_amount += $item->getPrice();
-                if (isset($item->extras['custom']) && is_array($item->extras['custom'])) {
-                    foreach ($item->extras['custom'] as $id=>$val) {
+                if (is_array($item->getExtra('custom'))) {
+                    foreach ($item->getExtra('custom') as $id=>$val) {
                         $fields['on'.$oc.'_'.$i] = $P->getCustom($id);
                         $fields['os'.$oc.'_'.$i] = $val;
                         $oc++;
@@ -264,9 +264,9 @@ class paypal extends \Shop\Gateway
                 }
                 $fields['quantity_' . $i] = $item->getQuantity();
 
-                if ($item->shipping > 0) {
-                    $fields['shipping_' . $i] = $item->getShipping();
-                    $shipping += $item->shipping;
+                if ($item->getShippingAmt() > 0) {
+                    $fields['shipping_' . $i] = $item->getShippingAmt();
+                    $shipping += $item->getShipping(Amt);
                 }
                 $i++;
             }
@@ -483,8 +483,8 @@ class paypal extends \Shop\Gateway
             $vars['cmd'] = $btn_info['cmd'];
             $this->setReceiver($P->getPrice());
             $vars['business'] = $this->receiver_email;
-            $vars['item_number'] = htmlspecialchars($P->id);
-            $vars['item_name'] = htmlspecialchars($P->short_description);
+            $vars['item_number'] = htmlspecialchars($P->getID());
+            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
             $vars['return'] = $this->returnUrl('', '');
@@ -502,18 +502,18 @@ class paypal extends \Shop\Gateway
 
             $vars['notify_url'] = $this->ipn_url;
 
-            if ($P->weight > 0) {
-                $vars['weight'] = $P->weight;
+            if ($P->getWeight() > 0) {
+                $vars['weight'] = $P->getWeight();
             } else {
                 $vars['no_shipping'] = '1';
             }
 
-            switch ($P->shipping_type) {
+            switch ($P->getShippingType) {
             case 0:
                 $vars['no_shipping'] = '1';
                 break;
             case 2:
-                $shipping = \Shop\Shipper::getBestRate($P->shipping_units)->best_rate;
+                $shipping = \Shop\Shipper::getBestRate($P->getShippingUnits())->best_rate;
                 $shipping += $P->getShipping();
                 $vars['shipping'] = $shipping;
                 $vars['no_shipping'] = '1';
@@ -574,7 +574,7 @@ class paypal extends \Shop\Gateway
 
         // Set the text for the button, falling back to our Buy Now
         // phrase if not available
-        $btn_text = $P->btn_text;    // maybe provided by a plugin
+        $btn_text = $P->getBtnText();    // maybe provided by a plugin
         if ($btn_text == '') {
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];

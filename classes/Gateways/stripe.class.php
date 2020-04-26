@@ -99,7 +99,7 @@ class stripe extends \Shop\Gateway
 
         static $have_js = false;
 
-        if (!$this->_Supports('checkout')) {
+        if (!$this->Supports('checkout')) {
             return '';
         }
 
@@ -191,7 +191,7 @@ class stripe extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         $js = array(
-            'finalizeCart("' . $cart->order_id . '","' . $cart->uid . '");',
+            'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '");',
             'var stripe = Stripe("' . $this->pub_key . '");',
             "stripe.redirectToCheckout({sessionId: \"{$this->session->id}\"});",
             "return false;",

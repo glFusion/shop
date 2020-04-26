@@ -20,9 +20,58 @@ namespace Shop;
  */
 class OrderItem
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
+    /** OrderItem DB record ID.
+     * @var integer */
+    private $id = 0;
+
+    /** Product quantity.
+     * @var integer */
+    private $quantity = 0;
+
+    /** Product description.
+     * Saved with the orderitem in case the product is updated or deleted.
+     * @var string */
+    private $dscp = '';
+
+    /** Extra text values.
      * @var array */
-    private $properties = array();
+    private $extras = array();
+
+    /** Option values text.
+     * @var array */
+    private $options_text = array();
+
+    /** Base unit price of item.
+     * @var float */
+    private $base_price = 0;
+
+    /** Final price of item after sale and options.
+     * @var float */
+    private $price = 0;
+
+    /** Amount paid against the line item.
+     * @var float */
+    private $paid = 0;
+
+    /** Shipping amount for the line item.
+     * @var float */
+    private $shipping = 0;
+
+    /** Handling charge for the line item.
+     * @var float */
+    private $handling = 0;
+
+    /** Net unit price of the line item.
+     * @var float */
+    private $net_price = 0;
+
+    /** Quantity discount percentage applied to the line item.
+     * @var float */
+    private $qty_discount = 0;
+
+    /** Is the line item taxable?
+     * @var boolean */
+    private $taxable = 0;
 
     /** Array of options for this item
      * @var array */
@@ -34,15 +83,15 @@ class OrderItem
 
     /** Product variant ID.
      * @var integer */
-    private $variant_id;
+    private $variant_id = 0;
 
     /** Sales tax charged for this item.
      * @var float */
-    private $tax;
+    private $tax = 0;
 
     /** Sales tax rate for this item.
      * @var float */
-    private $tax_rate;
+    private $tax_rate = 0;
 
     /** Flag indicating the item failed a zone rule.
      * Not saved to the database.
@@ -52,7 +101,7 @@ class OrderItem
 
     /** Fields for an OrderItem record.
      * @var array */
-    private static $fields = array(
+/*   private static $fields = array(
         'id', 'order_id', 'product_id',
         'description', 'quantity', 'txn_id', 'txn_type',
         'expiration',
@@ -61,6 +110,7 @@ class OrderItem
         'options_text', 'extras', 'taxable', 'paid',
         'shipping', 'handling', 'tax', 'tax_rate',
     );
+ */
 
     /**
      * Constructor.
@@ -180,74 +230,30 @@ class OrderItem
     public function setVars($A)
     {
         if (!is_array($A)) return false;
-        foreach (self::$fields as $field) {
-            if (isset($A[$field])) {
-                $this->$field = $A[$field];
-            }
-        }
+
+        $this->id = (int)$A['id'];
+        $this->order_id = $A['order_id'];
+        $this->product_id = $A['product_id'];
+        $this->dscp = $A['description'];
+        $this->quantity = (int)$A['quantity'];
+        $this->txn_id = $A['txn_id'];
+        $this->txn_type = $A['txn_type'];
+        $this->expiration = (int)'expiration';
+        $this->base_price = (float)$A['base_price'];
+        $this->price = (float)$A['price'];
+        $this->setQtyDiscount($A['qty_discount']);
+        $this->token = $A['token'];
+        $this->net_price = (float)$A['net_price'];
+        $this->setOptionsText($A['options_text']);
+        $this->setExtras($A['extras']);
+        $this->taxable = $A['taxable'] ? 1 : 0;
+        $this->aid = (float)$A['paid'];
+        $this->shipping = (float)$A['shipping'];
+        $this->handling = (float)$A['handling'];
+        $this->tax = (float)$A['tax'];
+        $this->tax_rate = (float)$A['tax_rate'];
         $this->variant_id = (int)$A['variant_id'];
         return $this;
-    }
-
-
-    /**
-     * Setter function.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'id':
-        case 'quantity':
-            $this->properties[$key] = (int)$value;
-            break;
-        case 'extras':
-        case 'options_text':
-            if (is_string($value)) {    // convert to array
-                $value = @json_decode($value, true);
-                if (!$value) $value = array();
-            }
-            $this->properties[$key] = $value;
-            break;
-        case 'base_price':
-        case 'price':
-        case 'paid':
-        case 'shipping':
-        case 'handling':
-        case 'net_price':
-            $this->properties[$key] = (float)$value;
-            break;
-        case 'qty_discount':
-            if ($value >= 1) {
-                $value = $value / 100;  // convert to percent
-            }
-            $this->properties[$key] = round($value, 2);
-            break;
-        case 'taxable':
-            $this->properties[$key] = $value == 0 ? 0 : 1;
-            break;
-        default:
-            $this->properties[$key] = trim($value);
-            break;
-        }
-    }
-
-
-    /**
-     * Getter function.
-     *
-     * @param   string  $key    Property to retrieve
-     * @return  mixed           Value of property, NULL if undefined
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
     }
 
 
@@ -322,28 +328,13 @@ class OrderItem
 
 
     /**
-     * Get the short description. Return the long descr if not defined.
-     *
-     * @return  string  Description string
-     */
-    public function getShortDscp()
-    {
-        if ($this->short_description == '') {
-            return $this->description;
-        } else {
-            return $this->short_description;
-        }
-    }
-
-
-    /**
      * Get the item long description.
      *
      * @return  string      Item description
      */
     public function getDscp()
     {
-        return $this->description;
+        return $this->dscp;
     }
 
 
@@ -362,7 +353,7 @@ class OrderItem
             $opts = explode(',', $opts);
         }
         foreach ($opts as $opt_id=>$OIO) {
-            $retval[] = $OIO->oio_name . ': ' . $OIO->oio_value;
+            $retval[] = $OIO->getName() . ': ' . $OIO->getValue();
             /*if (isset($this->getProduct()->Options[$opt_id])) {
                 $retval[] = $this->Product->Options[$opt_id]['attr_name'] . ': ' .
                     $this->Product->Options[$opt_id]['attr_value'];
@@ -396,8 +387,8 @@ class OrderItem
     public function addOptionText($name, $value)
     {
         $OIO = new OrderItemOption;
-        $OIO->oi_id = $this->id;
-        $OIO->order_id = $this->order_id;
+        $OIO->setID($this->id);
+        //$OIO->order_id = $this->order_id;
         $OIO->setOpt(0, $name, $value);
         $this->options[] = $OIO;
         // Update the Options table now if this is an existing item,
@@ -419,12 +410,10 @@ class OrderItem
      */
     public function addSpecial($name, $value, $save=true)
     {
-        // extras is set by __set so it has to be extracted to get at
-        // the sub-elements
-        $x = $this->extras;
-        $x['special'][$name] = strip_tags($value);
-        $this->extras = $x;
-        if ($save) $this->Save();
+        $this->extras['special'][$name] = strip_tags($value);
+        if ($save) {
+            $this->Save();
+        }
     }
 
 
@@ -464,7 +453,7 @@ class OrderItem
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
                 variant_id = '" . (int)$this->variant_id . "',
-                description = '" . DB_escapeString($this->description) . "',
+                description = '" . DB_escapeString($this->dscp) . "',
                 quantity = '" . (float)$this->quantity. "',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 txn_type = '" . DB_escapeString($this->txn_type) . "',
@@ -482,8 +471,8 @@ class OrderItem
                 //shipping = {$shipping},
                 //handling = {$handling},
             // add an expiration date if appropriate
-        if ($this->Product->expiration > 0) {
-            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->expiration * 86400));
+        if ($this->Product->getExpiration() > 0) {
+            $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -517,6 +506,23 @@ class OrderItem
             $this->handling = $this->Product->getHandling($newqty);
             $this->price = $this->getItemPrice();
         }
+        return $this;
+    }
+
+
+    /**
+     * Set the quantity discount.
+     *
+     * @param   float   $value      Discount percentage
+     * @return  object  $this
+     */
+    public function setQtyDiscount($value)
+    {
+        $value = (float)$value;
+        if ($value >= 1) {
+            $value = $value / 100;  // convert to percent
+        }
+        $this->qty_discount = round($value, 2);
         return $this;
     }
 
@@ -617,7 +623,7 @@ class OrderItem
      */
     public function getShippingAmt()
     {
-        return $this->Product->shipping_amt * $this->quantity;
+        return $this->Product->getShipping($this->quantity);
     }
 
 
@@ -681,6 +687,20 @@ class OrderItem
 
 
     /**
+     * Update one or more orderitem fields from an array of updates.
+     *
+     * @param   array   $updates    Array of fld_name=>new_value
+     * @return  object  $this
+     */
+    public function updateItem($updates)
+    {
+        foreach ($updates as $fld=>$val) {
+            $this->$fld = $val;
+        }
+    }
+
+
+    /**
      * Set the provided array of options into the private var.
      *
      * @param   array   $opts   Array of ProductOptionValues
@@ -705,7 +725,7 @@ class OrderItem
                 //if ($opt_id > 0) {      // Don't set non-standard options here
                 $OIO = new OrderItemOption;
                     $OIO->setOpt($POV->getID());
-                    $OIO->oi_id = $this->id;
+                    $OIO->setOrderItemID($this->id);
                     $this->options[] = $OIO;
                 //}
             }
@@ -722,7 +742,7 @@ class OrderItem
     public function saveOptions()
     {
         foreach ($this->options as $Opt) {
-            $Opt->oi_id = $this->id;
+            $Opt->setOrderItemID($this->id);
             $Opt->Save();
         }
         return true;
@@ -758,14 +778,75 @@ class OrderItem
             $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->options as $Opt) {
                 $T->set_var(array(
-                    'opt_name'  => $Opt->oio_name,
-                    'opt_value' => strip_tags($Opt->oio_value),
+                    'opt_name'  => $Opt->getName(),
+                    'opt_value' => strip_tags($Opt->getValue()),
                 ) );
                 $T->parse('ORow', 'ItemOptions', true);
             }
             $retval .= $T->parse('output', 'options');
         }
         return $retval;
+    }
+
+
+    /**
+     * Set the Extra values into the private array.
+     *
+     * @param   string|array    $value  Extra values array or json string
+     * @return  object  $this
+     */
+    public function setExtras($value)
+    {
+        if (is_string($value)) {    // convert to array
+            $value = @json_decode($value, true);
+            if (!$value) $value = array();
+        }
+        $this->extras = $value;
+        return $this;
+    }
+
+
+    /**
+     * Get the value of some "extra" item.
+     *
+     * @param   string  $key    Item name
+     * @return  mixed       Value of extras[$key], NULL if not set
+     */
+    public function getExtra($key)
+    {
+        if (isset($thie->extras[$key])) {
+            return $this->extras[$key];
+        } else {
+            return NULL;
+        }
+    }
+
+
+    /**
+     * Get the entire "extras" array.
+     *
+     * @return  array       Array of all extra info
+     */
+    public function getExtras()
+    {
+        return $this->extras;
+    }
+
+
+    /**
+     * Set the options text values into the private array.
+     *
+     * @param   string|array    $value  Text values array or json string
+     * @return  object  $this
+     */
+    public function setOptionsText($value)
+    {
+        if (is_string($value)) {    // convert to array
+            $value = @json_decode($value, true);
+            if (!$value) $value = array();
+        }
+        $this->options_text  = $value;
+        return $this;
     }
 
 
@@ -809,7 +890,7 @@ class OrderItem
     {
         $retval = 0;
         foreach ($this->options as $OIO) {
-            $retval += $OIO->oio_price;
+            $retval += $OIO->getPrice();
         }
         return $retval;
     }

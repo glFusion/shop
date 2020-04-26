@@ -126,7 +126,7 @@ class authorizenet extends \Shop\Gateway
         $line_items = array();
         $Cur = \Shop\Currency::getInstance();
         $return_opts = array(
-            'url'       => $this->returnUrl($cart->order_id, $cart->token),
+            'url'       => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
             'cancelUrl' => $cart->cancelUrl(),
         );
 
@@ -145,18 +145,18 @@ class authorizenet extends \Shop\Gateway
             foreach ($cart->getItems() as $Item) {
                 $P = $Item->getProduct();
                 $line_items[] = array(
-                    'itemId'    => substr($P->item_id, 0, 31),
-                    'name'      => substr(strip_tags($P->short_description), 0, 31),
-                    'description' => substr(strip_tags($P->description), 0, 255),
-                    'quantity' => $Item->quantity,
-                    'unitPrice' => $Cur->FormatValue($Item->price),
-                    'taxable' => $Item->taxable ? true : false,
+                    'itemId'    => substr($P->getItemID(), 0, 31),
+                    'name'      => substr(strip_tags($P->getShortDscp()), 0, 31),
+                    'description' => substr(strip_tags($P->getDscp()), 0, 255),
+                    'quantity' => $Item->getQuantity(),
+                    'unitPrice' => $Cur->FormatValue($Item->getPrice()),
+                    'taxable' => $Item->isTaxable() ? true : false,
                 );
-                $total_amount += (float)$Item->price * (float)$Item->quantity;
+                $total_amount += $Item->getPrice()* $Item->getQuantity();
             }
-            $total_amount += $cart->shipping;
-            $total_amount += $cart->handling;
-            $total_amount += $cart->tax;
+            $total_amount += $cart->getShipping();
+            $total_amount += $cart->getHandling();
+            $total_amount += $cart->getTax();
         }
 
         $json = array(
@@ -165,27 +165,27 @@ class authorizenet extends \Shop\Gateway
                     'name' => $this->api_login,
                     'transactionKey' => $this->trans_key,
                 ),
-                'refId' => $cart->order_id,
+                'refId' => $cart->getOrderID(),
                 'transactionRequest' => array(
                     'transactionType' => 'authCaptureTransaction',
                     'amount' => $Cur->FormatValue($total_amount),
                     'order' => array(
-                        'invoiceNumber' => $cart->order_id,
+                        'invoiceNumber' => $cart->getOrderID(),
                     ),
                     'lineItems' => array(
                         'lineItem' => $line_items,
                     ),
                     'tax' => array(
-                        'amount' => $Cur->FormatValue($cart->tax),
+                        'amount' => $Cur->FormatValue($cart->getTax()),
                         'name' => 'Sales Tax',
                     ),
                     'shipping' => array(
-                        'amount' => $Cur->FormatValue($cart->shipping),
+                        'amount' => $Cur->FormatValue($cart->getShipping()),
                         'name' => 'Shipping',
                     ),
                     'customer' => array(
                         'id' => $cart->getUid(),
-                        'email' => $cart->buyer_email,
+                        'email' => $cart->getBuyerEmail(),
                     ),
                 ),
                 'hostedPaymentSettings' => array(

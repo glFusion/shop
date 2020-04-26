@@ -28,16 +28,6 @@ class Gateway
      * @var string */
     private static $TABLE = 'shop.gateways';
 
-    /**
-     * Property fields.  Accessed via __set() and __get().
-     * This is for configurable properties of the gateway- URL, testing
-     * mode, etc.  Charactistics of the gateway itself (order, enabled, name)
-     * are held in protected class variables below.
-     *
-     * @var array
-     */
-    protected $properties;
-
     /** Items on this order.
      * @var array */
     protected $items;
@@ -327,8 +317,8 @@ class Gateway
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($P->pi_name);
-        $item_id = DB_escapeString($P->item_id);
+        $pi_name = DB_escapeString($P->getPluginName());
+        $item_id = DB_escapeString($P->getItemID());
         $btn_key = DB_escapeString($btn_key);
         $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
                 "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
@@ -656,7 +646,7 @@ class Gateway
 
         // Create an order record to get the order ID
         $Order = $this->CreateOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->order_id);
+        $db_order_id = DB_escapeString($Order->getOrderID());
 
         $prod_types = 0;
 
@@ -714,9 +704,9 @@ class Gateway
                 $A = array(
                     'name' => $P->getName(),
                     'short_description' => $P->getDscp(),
-                    'expiration' => $P->expiration,
-                    'prod_type' => $P->prod_type,
-                    'file' => $P->file,
+                    'expiration' => $P->getExpiration(),
+                    'prod_type' => $P->getProductType(),
+                    'file' => $P->getFilename(),
                     'price' => $item['price'],
                 );
 
@@ -730,7 +720,7 @@ class Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= $P->prod_type;
+                $prod_types |= $P->getProductType();
             }
 
             // An invalid item number, or nothing returned for a plugin
@@ -801,8 +791,8 @@ class Gateway
 
         $ord = new Order();
         $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
-        $ord->uid = $uid;
-        $ord->status = 'pending';   // so there's something in the status field
+        $ord->setUid($uid);
+        $ord->setStatus('pending');   // so there's something in the status field
 
         if ($uid > 1) {
             $U = self::Customer($uid);
@@ -814,7 +804,7 @@ class Gateway
         }
 
         if (is_array($BillTo)) {
-            $ord->setBilling($BillTo);
+            $ord->setBillto($BillTo);
         }
 
         $ShipTo = $cart->getAddress('shipto');
@@ -822,16 +812,16 @@ class Gateway
             $ShipTo = $U->getDefaultAddress('shipto');
         }
         if (is_array($ShipTo)) {
-            $ord->setShipping($ShipTo);
+            $ord->setShipto($ShipTo);
         }
 
-        $ord->pmt_method = $this->gw_name;
-        $ord->pmt_txn_id = '';
+        $ord->setPmtMethod($this->gw_name);
+        $ord->setPmtTxnId('');
         /*$ord->tax = $this->pp_data['pmt_tax'];
         $ord->shipping = $this->pp_data['pmt_shipping'];
         $ord->handling = $this->pp_data['pmt_handling'];*/
-        $ord->buyer_email = DB_getItem($_TABLES['users'], 'email', "uid=$uid");
-        $ord->log_user = COM_getDisplayName($uid) . " ($uid)";
+        $ord->setBuyerEmail(DB_getItem($_TABLES['users'], 'email', "uid=$uid"));
+        $ord->setLogUser(COM_getDisplayName($uid) . " ($uid)");
 
         //$order_id = $ord->Save();
         //return $order_id;
@@ -1017,29 +1007,6 @@ class Gateway
             $Customer = Customer::getInstance();
         }
         return $Customer;
-    }
-
-
-    //
-    //  The following functions MUST be declared in each derived class.
-    //  There is no way that these can deliver reasonable default behavior.
-    //  Technically, __set() is optional; you can populate the $properties array
-    //  manually or use actual local variables, but to reference your
-    //  gateway's undefined local variables as $this->varname you'll need a
-    //  __set() function.  Otherwise, they'll be created on demand, but
-    //  retrieved via our __get() function which only looks at the local
-    //  $properties variable.
-    //
-
-    /**
-     * Magic setter function.
-     * Must be declared in the child object.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
-     */
-    public function __set($key, $value)
-    {
     }
 
 
@@ -1252,7 +1219,7 @@ class Gateway
      */
     public function isSandbox()
     {
-        return $this->getConfig('test_mode');
+        return $this->getConfig('test_mode') ? 1 : 0;
     }
 
 
@@ -1306,7 +1273,7 @@ class Gateway
      */
     public function getCheckoutJS($cart)
     {
-        return 'finalizeCart("' . $cart->order_id . '","' . $cart->uid . '", this); return true;';
+        return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", this); return true;';
     }
 
 

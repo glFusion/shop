@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways;
-
+use Shop\Currency;
 
 /**
  * Class for Square payment gateway.
@@ -20,7 +20,6 @@ namespace Shop\Gateways;
  */
 class square extends \Shop\Gateway
 {
-
     /** Square location value.
      * @var string */
     private $loc_id;
@@ -133,7 +132,7 @@ class square extends \Shop\Gateway
 
         $cartID = $cart->CartID();
         $shipping = 0;
-        $Cur = \Shop\Currency::getInstance();
+        $Cur = Currency::getInstance();
 
         $accessToken = $this->token;
         $locationId = $this->loc_id;

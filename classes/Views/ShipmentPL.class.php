@@ -68,10 +68,10 @@ class ShipmentPL
             $OI = $Item->getOrderItem();
             $P = $OI->getProduct();
             $T->set_var(array(
-                'oi_id'         => $OI->id,
+                'oi_id'         => $OI->getID(),
                 'item_dscp'     => htmlspecialchars($OI->description),
                 'item_options'  => $OI->getOptionDisplay(),
-                'item_quantity' => $Item->quantity,
+                'item_quantity' => $Item->getQuantity(),
                 'sku'           => $P->getSKU($OI),
             ) );
             $T->parse('iRow', 'ItemRow', true);
@@ -92,22 +92,22 @@ class ShipmentPL
 
         $Shop = \Shop\Company::getInstance();
         $T->set_var(array(
-            'shipment_id'        => $this->shipment_id,
+            'shipment_id'   => $this->shipment_id,
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
-            'order_id'      => $this->Order->order_id,
+            'order_id'      => $this->Order->getOrderID(),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
-            'status'        => $this->Order->status,
+            'status'        => $this->Order->getStatus(),
             'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
-            'tracking_info' => count($this->Shipment->Packages),
+            'tracking_info' => count($this->Shipment->getPackages()),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
 

@@ -69,8 +69,8 @@ class Shipment extends Order
         $oi_shipped = array();
         if ($this->shipment_id > 0) {
             $Shp = new \Shop\Shipment($this->shipment_id);
-            foreach ($Shp->Items as $key=>$data) {
-                $oi_shipped[$data->orderitem_id] = $key;
+            foreach ($Shp->getItems() as $key=>$data) {
+                $oi_shipped[$data->getOrderitemID()] = $key;
             }
         }
 
@@ -92,22 +92,22 @@ class Shipment extends Order
             if (!$P->isPhysical()) {
                 $T->set_var(array(
                     'can_ship' => false,
-                    'toship_text' => $LANG_SHOP['prod_types'][$P->prod_type],
+                    'toship_text' => $LANG_SHOP['prod_types'][$P->getProductType()],
                 ) );
             } else {
-                $shipped = \Shop\ShipmentItem::getItemsShipped($Item->id);
+                $shipped = \Shop\ShipmentItem::getItemsShipped($Item->getID());
                 if ($this->shipment_id > 0) {
                     // existing, adjust prev shipped down and use this ship qty
-                    if (isset($oi_shipped[$Item->id])) {
+                    if (isset($oi_shipped[$Item->getID()])) {
                         // some of the item was shipped on this shipment
-                        $toship = $Shp->Items[$oi_shipped[$Item->id]]->quantity;
+                        $toship = $Shp->getItems()[$oi_shipped[$Item->getID()]]->getQuantity();
                     } else {
                         // Item was not shipped on this order.
                         $toship = 0;
                     }
                     $newshipment = false;
                 } else {
-                    $toship = $Item->quantity - $shipped;
+                    $toship = $Item->getQuantity() - $shipped;
                     $newshipment = true;
                 }
                 $T->set_var(array(
@@ -117,11 +117,12 @@ class Shipment extends Order
                     'newship'   => $newshipment,
                 ) );
             }
+
             $T->set_var(array(
-                'oi_id'         => $Item->id,
-                'item_id'       => htmlspecialchars($Item->product_id),
-                'item_dscp'     => htmlspecialchars($Item->description),
-                'ordered'       => $Item->quantity,
+                'oi_id'         => $Item->getID(),
+                'item_id'       => htmlspecialchars($Item->getProductID()),
+                'item_dscp'     => htmlspecialchars($Item->getDscp()),
+                'ordered'       => $Item->getQuantity(),
                 'item_options'  => $Item->getOptionDisplay(),
                 'sku'           => $P->getSKU($Item),
                 'pi_url'        => SHOP_URL,
@@ -148,11 +149,11 @@ class Shipment extends Order
         }
 
         $T->set_var(array(
-            'shipment_id'        => $this->shipment_id,
+            'shipment_id'   => $this->shipment_id,
             'pi_url'        => SHOP_URL,
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
-            'order_id'      => $this->Order->order_id,
+            'order_id'      => $this->Order->getOrderID(),
             'order_instr'   => htmlspecialchars($this->instructions),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),

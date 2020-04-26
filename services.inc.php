@@ -61,10 +61,15 @@ function service_genButton_shop($args, &$output, &$svc_msg)
             }
         }
     }
-
     // Now create an add-to-cart button, if requested.
-    if (isset($args['add_cart']) && $args['add_cart'] && $_SHOP_CONF['ena_cart'] == 1) {
-        if (!isset($args['item_type'])) $args['item_type'] = SHOP_PROD_VIRTUAL;
+    if (
+        isset($args['add_cart']) &&
+        $args['add_cart'] &&
+        $_SHOP_CONF['ena_cart'] == 1
+    ) {
+        if (!isset($args['item_type'])) {
+            $args['item_type'] = SHOP_PROD_VIRTUAL;
+        }
         $btn_cls = 'orange';
         $btn_disabled = '';
         $unique = isset($args['unique']) ? 1 : 0;

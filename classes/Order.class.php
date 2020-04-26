@@ -31,10 +31,6 @@ class Order
      * @var boolean */
     private $isAdmin = false;
 
-    /** Internal properties set via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
-
     /** Flag to indicate that this order has been finalized.
      * This is not related to the order status, but only to the current view
      * in the workflow.
@@ -85,39 +81,49 @@ class Order
      * @var array */
     protected static $nonfinal_statuses = array('cart', 'pending');
 
+    /** Order number.
+     * @var string */
+    protected $order_id = '';
+
+    /** Order sequence.
+     * This is incremented when an order moves out of "pending" status
+     * and becomes a real order.
+     * @var integer */
+    protected $order_seq = 0;
+
     /** Order Date.
      * This field is defined here since it contains an object and
      * needs to be accessed directly.
      * @var object */
-    protected $order_date;
+    protected $order_date = NULL;
 
     /** Billing address object.
      * @var object */
-    protected $Billto;
+    protected $Billto = NULL;
 
     /** Shipping address object.
      * @var object */
-    protected $Shipto;
+    protected $Shipto = NULL;
 
     /** Discount code applied.
      * @var string */
-    protected $discount_code;
+    protected $discount_code = '';
 
     /** Discount percentage applied.
      * @var float */
-    protected $discount_pct;
+    protected $discount_pct = 0;
 
     /** Item total, i.e. net order amount excluding taxes and fees.
      * @var float */
-    protected $net_items;
+    protected $net_items = 0;
 
     /** Total nontaxable items.
      * @var float */
-    protected $net_nontax;
+    protected $net_nontax = 0;
 
     /** Total taxable items.
      * @var float */
-    protected $net_taxable;
+    protected $net_taxable = 0;
 
     /** Is tax charged on shipping?
      * @var boolean */
@@ -138,6 +144,10 @@ class Order
     /** Amount paid on the order. Not part of the order record.
      * @var float */
     private $_amt_paid = 0;
+
+    /** Username to show in log messages.
+     * @var string */
+    private $log_user = '';
 
 
     /**
@@ -199,55 +209,6 @@ class Order
             return $orders[$id];
         } else {
             return new self;
-        }
-    }
-
-
-    /**
-     * Set a property value.
-     *
-     * @param   string  $name   Name of property to set
-     * @param   mixed   $value  Value to set
-     */
-    public function __set($name, $value)
-    {
-        switch ($name) {
-        case 'uid':
-        case 'billto_id':
-        case 'shipto_id':
-        case 'shipper_id':
-            $this->properties[$name] = (int)$value;
-            break;
-
-        case 'tax':
-        case 'tax_rate':
-        case 'shipping':
-        case 'handling':
-        case 'by_gc':
-        case 'ship_units':
-            $this->properties[$name] = (float)$value;
-            break;
-
-        case 'order_seq':
-        default:
-            $this->properties[$name] = $value;
-            break;
-        }
-    }
-
-
-    /**
-     * Return the value of a property, or NULL if the property is not set.
-     *
-     * @param   string  $name   Name of property to retrieve
-     * @return  mixed           Value of property
-     */
-    public function __get($name)
-    {
-        if (array_key_exists($name, $this->properties)) {
-            return $this->properties[$name];
-        } else {
-            return NULL;
         }
     }
 
@@ -365,7 +326,7 @@ class Order
      *
      * @param   array   $A      Array of info, such as from $_POST
      */
-    public function setBilling($A)
+    public function setBillto($A)
     {
         global $_TABLES;
 
@@ -413,7 +374,7 @@ class Order
      * @param   array|NULL  $A      Array of info, or NULL to clear
      * @return  object      Current Order object
      */
-    public function setShipping($A)
+    public function setShipto($A)
     {
         global $_TABLES;
 
@@ -2503,6 +2464,20 @@ class Order
 
 
     /**
+     * Force the user ID to a given value.
+     * Used by the gateway to set the correct user during IPN processing.
+     *
+     * @param   integer $uid    User ID
+     * @return  object  $this
+     */
+    public function setUid($uid)
+    {
+        $this->uid = (int)$uid;
+        return $this;
+    }
+
+
+    /**
      * Get the customer (user) ID
      *
      * @return  integer     User ID
@@ -2554,6 +2529,83 @@ class Order
     public function getShipto()
     {
         return $this->Shipto;
+    }
+
+
+    /**
+     * Set the amount paid by gift card.
+     *
+     * @param   float   $amt    Amount paid by GC
+     * @return  object  $this
+     */
+    public function setByGC($amt)
+    {
+        $this->by_gc = (float)$amt;
+        return $this;
+    }
+
+
+    /**
+     * Set the payment method for the order (to be deprecated).
+     *
+     * @param   string  $method Payment method/gateway name
+     * @return  object  $this
+     */
+    public function setPmtMethod($method)
+    {
+        $this->pmt_method = $method;
+        return $this;
+    }
+
+
+    /**
+     * Set the payment transaction used to pay the order.
+     *
+     * @deprecated
+     * @param   string  $txn_id Transaction ID
+     * @return  object  $this
+     */
+    public function setPmtTxnID($txn_id)
+    {
+        $this->pmt_txn_id = $txn_id;
+        return $this;
+    }
+
+
+    /**
+     * Set the username to show in the order log entries.
+     *
+     * @param   string  $name   User/system name to show
+     * @return  object  $this
+     */
+    public function setLogUser($name)
+    {
+        $this->log_user = $name;
+        return $this;
+    }
+
+
+    /**
+     * Set the buyer's email address.
+     *
+     * @param   string  $email  Buyer email address
+     * @return  object  $this
+     */
+    public function setBuyerEmail($email)
+    {
+        $this->buyer_email = $email;
+        return $this;
+    }
+
+
+    /**
+     * Get the buyer's email address.
+     *
+     * @return  string      Buyer email address
+     */
+    public function getBuyerEmail()
+    {
+        return $this->buyer_email;
     }
 
 
@@ -2639,7 +2691,7 @@ class Order
         $shipped_items = 0;
         foreach ($this->items as $oi_id=>$data) {
             if ($data->getProduct()->isPhysical()) {
-                $gross_items += $data->quantity;
+                $gross_items += $data->getQuantity();
                 $shipped_items += ShipmentItem::getItemsShipped($oi_id);
             }
         }
@@ -2669,7 +2721,10 @@ class Order
             if (!$OI->getProduct()->isPhysical()) {
                 continue;
             }
-            if (!isset($shipped[$OI->id]) || $shipped[$OI->id] < $OI->quantity) {
+            if (
+                !isset($shipped[$OI->getID()]) ||
+                $shipped[$OI->getID()] < $OI->getQuantity()
+            ) {
                 return false;
             }
         }

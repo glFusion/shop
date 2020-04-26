@@ -49,9 +49,146 @@ class Product
      * @const integer */
     const MAX_ORDER_QTY = 99999;
 
-    /** Property fields accessed via `__set()` and `__get()`.
-     * @var array */
-    protected $properties;
+    /** Product DB record ID.
+     * @var string|integer */
+    protected $id = 0;
+
+    /** Product Type. @see functions.inc.
+     * @var integer */
+    protected $prod_type = 1;     // Physical by default
+
+    /** Number of views for this product's detail page.
+     * @var integer */
+    protected $views = 0;
+
+    /** Number of ratings given to this product.
+     * @var integer */
+    protected $votes = 0;
+
+    /** Overall rating score for this item.
+     * @var float */
+    protected $rating = 0;
+
+    /** Type of shipping available for this product.
+     * @var integer */
+    protected $shipping_type = 0;
+
+    /** Quantity currently on hand.
+     * @var integer */
+    protected $onhand = 0;
+
+    /** Flag indicating how to display out-of-stock items.
+     * @var integer */
+    protected $oversell = 0;
+
+    /** Number of days after purchase when files cannot be downloaded.
+     * @var integer */
+    protected $expiration = 0;
+
+    /** Item per-unit base price.
+     * @var float */
+    protected $price = 0;
+
+    /** Per-unit shipping weight.
+     * @var float */
+    protected $weight = 0;
+
+    /** Per-unit fixed shipping charge.
+     * @var float */
+    protected $shipping_amt = 0;
+
+    /** Number of shipping "units" per unit.
+     * @var float */
+    protected $shipping_units = 0;
+
+    /** Actual price for this product after considering sales.
+     * @var float */
+    protected $_act_price = 0;
+
+    /** Original item price before any sales.
+     * @var float */
+    protected $_orig_price = 0;
+
+    /** Date product becomes available.
+     * @var string */
+    protected $avail_beg = '1900-01-01';
+
+    /** Date product is no longer available.
+     * @var string */
+    protected $avail_end = '2037-12-31';
+
+    /** Date added to the catalog.
+     * @var string */
+    protected $dt_add = '';
+
+    /** Item description.
+     * @var string */
+    protected $description = '';
+
+    /** Item short description.
+     * @var string */
+    protected $short_description = '';
+
+    /** Filename for downloadable files.
+     * @var string */
+    protected $filename = '';
+
+    /** Search keywords not included in descriptions.
+     * @var string */
+    protected $keywords = '';
+
+    /** Button type for buy_now buttons.
+     * @var string */
+    protected $btn_type = 'buy_now';
+
+    /** Product item ID, including options.
+     * @var string */
+    protected $item_id = '';
+
+    /** Text to show on the button.
+     * @var string */
+    protected $btn_text = '';
+
+    /** Return url when buyer cancels before payment.
+     * May be overridden by plugin products.
+     * @var string */
+    protected $cancel_url = '';
+
+    /** Product name/sku.
+     * @var string */
+    protected $name = '';
+
+    /** Old sku, used when editing product.
+     * @var string */
+    protected $old_sku = '';
+
+    /** Is the product enabled (shown in catalog)?
+     * @var boolean */
+    protected $enabled = 1;
+
+    /** Is the product featured?
+     * @var boolean */
+    protected $featured = 0;
+
+    /** Is the product taxable?
+     * @var boolean */
+    protected $taxable = 0;
+
+    /** Show in the Random Product block?
+     * @var boolean */
+    protected $show_random = 0;
+
+    /** Show in the Popular Products block?
+     * @var boolean */
+    protected $show_popular = 0;
+
+    /** Are ratings enabled?
+     * @var boolean */
+    protected $rating_enabled = 1;
+
+    /** Track inventory onhand?
+     * @var boolean */
+    protected $track_onhand = 0;
 
     /** Product attributes.
      * @var array */
@@ -71,7 +208,7 @@ class Product
 
     /** Array of error messages/
      * @var array */
-    var $Errors = array();
+    protected $Errors = array();
 
     /** Array of buttons.
      * @var array */
@@ -92,88 +229,95 @@ class Product
 
     /** User ID, used for pricing.
      * @var integer */
-    private $_uid = 0;
+    protected $_uid = 0;
 
     /** Type of button to create depends on the current view- list or detail.
      * @var string */
-    private $_view = 'detail';
+    protected $_view = 'detail';
 
     /** Sale object associated with this product.
      * @var object */
-    private $Sale = NULL;
+    protected $Sale = NULL;
 
     /** Product image objects.
      * @var array */
-    private $Images = NULL;
+    protected $Images = NULL;
 
     /** Selected attributes.
      * Using a property to pass between functions.
      * @var array */
-    private $sel_opts = array();
+    protected $sel_opts = array();
 
     /** Query string, if any.
      * @var string */
-    private $query = '';
+    protected $query = '';
 
     /** OrderItem ID to get previously-ordered options.
      * @var integer */
-    private $oi_id;
+    protected $oi_id;
 
     /** Minimum allowed quantity per order.
      * @var integer */
-    private $min_ord_qty = 1;
+    protected $min_ord_qty = 1;
 
     /** Maximum allowed quantity per order.
      * @var integer */
-    private $max_ord_qty = 0;
+    protected $max_ord_qty = 0;
 
     /** Reorder quantity. Overridden by variants if any exist.
      * @var integer */
-    private $reorder;
+    protected $reorder = 0;
 
+    /** Custom text input fields solicited on the order form.
+     * @var string */
+    protected $custom = '';
     /** Supplier ID.
      * @var integer */
-    private $supplier_id = 0;
+    protected $supplier_id = 0;
 
     /** Brand ID.
      * @var integer */
-    private $brand_id = 0;
+    protected $brand_id = 0;
 
     /** Supplier Reference, e.g. model number, sku.
      * @var string */
-    private $supplier_ref = '';
+    protected $supplier_ref = '';
 
     /** Description of product lead time.
      * @var string */
-    private $lead_time = '';
+    protected $lead_time = '';
 
     /** Default Variant ID.
      * @var integer */
-    private $def_pv_id = 0;
+    protected $def_pv_id = 0;
 
     /** Zone rule ID.
      * @var integer */
-    private $zone_rule = 0;
+    protected $zone_rule = 0;
 
     /** Quantity discount array (qty->percent).
      * @var array */
-    private $qty_discounts = array();
+    protected $qty_discounts = array();
 
     /** Related category objects.
      * @var array */
-    private $Categories = NULL;
+    protected $Categories = NULL;
 
     /** Product variants for this product. Null to load only once.
      * @var array */
-    private $Variants = NULL;
+    protected $Variants = NULL;
 
     /** A single product variant attached to this product.
      * @var object */
-    private $Variant = NULL;
+    protected $Variant = NULL;
 
     /** Product features to be shown in the detail page.
      * @var array */
-    private $Features = array();
+    protected $Features = array();
+
+    /** Plugin name, if this is a plugin-provided product.
+     * @var string */
+    protected $pi_name = '';
 
 
     /**
@@ -187,49 +331,30 @@ class Product
     {
         global $_SHOP_CONF;
 
-        $this->properties = array();
         $this->isNew = true;
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
         $this->cancel_url = SHOP_URL . '/index.php';
         if (is_array($id)) {
+            // Record has already been read from the DB
             $this->setVars($id, true);
             $this->isNew = false;
         } elseif ($id == 0) {
-            $this->item_id = '';
-            $this->id = 0;
-            $this->name = '';
-            $this->cat_id = '';
-            $this->short_description = '';
-            $this->description = '';
-            $this->price = 0;
+            // No catalog item requested, return an empty object
             $this->prod_type = $_SHOP_CONF['def_prod_type'];
-            $this->weight = 0;
-            $this->file = '';
             $this->expiration = $_SHOP_CONF['def_expiration'];
             $this->enabled = $_SHOP_CONF['def_enabled'];
             $this->featured = $_SHOP_CONF['def_featured'];
             $this->taxable = $_SHOP_CONF['def_taxable'];
             $this->dt_add = SHOP_now()->toMySQL();
-            $this->views = 0;
-            $this->rating = 0;
-            $this->votes = 0;
-            $this->shipping_type = 0;
-            $this->shipping_amt = 0;
-            $this->shipping_units = 0;
-            $this->show_random = 1;
-            $this->show_popular = 1;
-            $this->keywords = '';
             $this->comments_enabled = $_SHOP_CONF['ena_comments'] == 1 ?
                     SHOP_COMMENTS_ENABLED : SHOP_COMMENTS_DISABLED;
             $this->rating_enabled = $_SHOP_CONF['ena_ratings'] == 1 ? 1 : 0;
             $this->track_onhand = $_SHOP_CONF['def_track_onhand'];
             $this->oversell = $_SHOP_CONF['def_oversell'];
             $this->qty_discounts = array();
-            $this->custom = '';
-            $this->reorder = 0;
-            $this->def_pv_id = 0;
         } else {
+            // A single item requested, read from the DB.
             $this->id = $id;
             if (!$this->Read()) {
                 $this->id = 0;
@@ -403,118 +528,91 @@ class Product
 
 
     /**
-     * Set a property's value.
+     * Set the product ID value.
+     * If a catalog item, make sure the ID is an integer.
      *
-     * @param   string  $var    Name of property to set.
-     * @param   mixed   $value  New value for property.
+     * @param   string|integer  $value  Product ID
+     * @return  object  $this
      */
-    public function __set($var, $value)
+    public function setID($value)
     {
-        switch ($var) {
-        case 'views':
-        case 'votes':
-        case 'prod_type':
-        case 'cat_id':
-        case 'shipping_type':
-        case 'comments_enabled':
-        case 'onhand':
-        case 'oversell':
-        case 'expiration':
-            // Integer values
-            $this->properties[$var] = (int)$value;
-            break;
-
-        case 'price':
-        case 'rating':
-        case 'weight':
-        case 'shipping_amt':
-        case 'shipping_units':
-        case '_act_price':      // actual price, sale or nonsale
-        case '_orig_price':     // original price
-            // Float values
-            $this->properties[$var] = (float)$value;
-            break;
-
-        case 'avail_end':
-            // available to end of time by default
-            if ($value < '1970-01-02') {
-                $value = self::MAX_DATE;
-            }
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'avail_beg':
-            // sale dates and beginning availability default to 0000-00-00
-            if (empty($value)) $value = self::MIN_DATE;
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'dt_add':
-        case 'description':
-        case 'short_description':
-        case 'file':
-        case 'keywords':
-        case 'btn_type':
-        case 'item_id':
-        case 'btn_text':
-        case 'cancel_url':
-        case 'brand':
-            // String values
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'name':
-        case 'old_sku':
-            $this->properties[$var] = trim(preg_replace("/[^A-Za-z0-9 ]/", '', $value));
-            break;
-
-        case 'enabled':
-        case 'featured':
-        case 'taxable':
-        case 'show_random':
-        case 'show_popular':
-        case 'rating_enabled':
-        case 'track_onhand':
-            // Boolean values
-            $this->properties[$var] = $value == 1 ? 1 : 0;
-            break;
-
-        case 'categories':
-            // Saving the category, or category list
-            if (!is_array($value)) {
-                $value = array($value);
-            }
-            $this->properties[$var] = $value;
-            break;
-
-        case 'id':
-            // Item ID may be a string if this is a plugin,
-            // otherwise sanitize as an integer.
-            if (!self::isPluginItem($value)) {
-                $value = (int)$value;
-            }
-
-        default:
-            // Other value types (array?). Save it as-is.
-            $this->properties[$var] = $value;
-            break;
+        if (!self::isPluginItem($value)) {
+            $value = (int)$value;
         }
+        $this->id = $value;
+        return $this;
     }
 
 
     /**
-     * Get the value of a property.
+     * Get the product ID.
+     * May be an integer for catalog items or a string for plugins.
      *
-     * @param   string  $var    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
+     * @return  string      Product ID
      */
-    public function __get($var)
+    public function getID()
     {
-        if (array_key_exists($var, $this->properties)) {
-            return $this->properties[$var];
-        } else {
-            return NULL;
+        return $this->id;
+    }
+
+
+    /**
+     * Set the product name/sku.
+     * Sanitize to valid SKU characters.
+     *
+     * @param   string  $value  Product name
+     * @return  object  $this
+     */
+    public function setSKU($value)
+    {
+        $this->name = self::sanitizeSKU($value);
+        return $this;
+    }
+
+
+    /**
+     * Sanitize the SKU to acceptable alphanumeric characters.
+     *
+     * @param   string  $sku    Actual SKU
+     * @return  string          Sanitized version
+     */
+    private static function _sanitizeSKU($sku)
+    {
+        return trim(preg_replace("/[^A-Za-z0-9 ]/", '', $sku));
+    }
+
+
+    /**
+     * Set the date when availability begins.
+     *
+     * @param   string  $value  Date string, YYYY-MM-DD format
+     * @return  object  $this
+     */
+    public function setAvailBegin($value)
+    {
+        // available to end of time by default
+        if ($value < '1970-01-02') {
+            $value = self::MAX_DATE;
         }
+        $this->avail_beg = trim($value);
+        return $this;
+    }
+
+
+    /**
+     * Set the date when availability ends.
+     *
+     * @param   string  $value  Date string, YYYY-MM-DD format
+     * @return  object  $this
+     */
+    public function setAvailEnd($value)
+    {
+        // available to end of time by default
+        if ($value < '1970-01-02') {
+            $value = self::MAX_DATE;
+        }
+        $this->avail_end = trim($value);
+        return $this;
     }
 
 
@@ -564,7 +662,6 @@ class Product
         // there will be two array variables for qty and discount percent.
         // From the DB there's a single serialized string
         if ($fromDB) {
-            // unserialization happens in __set()
             $this->setQtyDiscounts($row['qty_discounts']);
             $this->dt_add = $row['dt_add'];
         } else {
@@ -794,9 +891,8 @@ class Product
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {
-                $OG->getOptions($this->id);
                 // TODO: deprecate this array and use group/option objects
-                foreach ($OG->Options as $opt_id=>$Opt) {
+                foreach ($OG->getOptions() as $opt_id=>$Opt) {
                     $this->Options[$opt_id] = array(
                         'og_id'     => $Opt->getID(),
                         'attr_name' => $OG->getName(),
@@ -827,7 +923,7 @@ class Product
 
         // See if the name changed. If so, then the Variant skus need to be
         // updated.
-        $old_name = $this->name;
+        $old_sku = $this->name;
 
         if (is_array($A)) {
             $this->setVars($A);
@@ -904,9 +1000,9 @@ class Product
             $sql3 = " WHERE id='{$this->id}'";
             // While we're here, change the existing Variant SKUs if the
             // product SKU has changed.
-            if (empty($this->Errors) && $old_name != $this->name) {
+            if (empty($this->Errors) && $old_sku != $this->name) {
                 foreach ($this->getVariants() as $Variant) {
-                    $Variant->updateSKU($old_name, $this->name);
+                    $Variant->updateSKU($old_sku, $this->name);
                 }
             }
         } else {
@@ -1335,7 +1431,7 @@ class Product
             $T->parse('DT', 'discTable', true);
         }
 
-        $Disc = Sales::getProduct($this->id);
+        $Disc = Sales::getByProduct($this->id);
         if (!empty($Disc)) {
             $DT = SHOP_getTemplate('sales_table', 'stable');
             $DT->set_var('edit_sale_url',
@@ -1557,7 +1653,7 @@ class Product
             $VarOptions = $this->Variant->getOptions();
         }
         foreach ($this->OptionGroups as $OG) {
-            if (count($OG->Options) < 1) {
+            if (count($OG->getOptions()) < 1) {
                 // Could happen if options are removed leaving an empty option group.
                 continue;
             }
@@ -1576,15 +1672,15 @@ class Product
                 } else {
                     $sel_opt = 0;
                 }
-                foreach ($OG->Options as $Opt) {
+                foreach ($OG->getOptions() as $Opt) {
                     if (in_array($Opt->getID(), $this->sel_opts)) {
                         $sel_opt = $Opt->getID();
                     }
                 }
                 if (!$sel_opt) {    // no selected attribute found
-                    $sel_opt = reset($OG->Options)->getID();
+                    $sel_opt = reset($OG->getOptions())->getID();
                 }
-                foreach ($OG->Options as $Opt) {
+                foreach ($OG->getOptions() as $Opt) {
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
                         'opt_str'  => htmlspecialchars($Opt->getValue()),
@@ -1596,7 +1692,7 @@ class Product
                 $pv_opts[] = $sel_opt;
                 break;
             case 'checkbox':
-                foreach ($OG->Options as $Opt) {
+                foreach ($OG->getOptions() as $Opt) {
                     $checked = in_array($Opt->getID(), $this->sel_opts) ? 'checked="checked"' : '';
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
@@ -1608,7 +1704,7 @@ class Product
                 break;
 
             case 'text':
-                $display_name = current($OG->Options)->getValue();
+                $display_name = current($OG->getOptions())->getValue();
                 $T->set_var('var_name', 'text_option_' . $OG->getID());
                 break;
             }
@@ -1710,6 +1806,20 @@ class Product
             //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
             'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_tim'], $this->LeadTime()) . ')' : '',
         ) );
+
+        if (!empty($this->Categories)) {
+            $T->set_var('categories', true);
+            $T->set_block('prod_info', 'CatList', 'CL');
+            $catnames = array();
+            foreach ($this->Categories as $Cat) {
+                $catnames[] = COM_createLink(
+                    $Cat->getName(),
+                    SHOP_URL . '/index.php?category=' . $Cat->getID()
+                );
+            }
+            $catnames = implode(', ', $catnames);
+            $T->set_Var('cat_names', $catnames);
+        }
 
         $Features = $this->getFeatures();
         $zonerule_dscp = $this->getRule()->getDscp();
@@ -2218,10 +2328,10 @@ class Product
         // Skip any that don't have a sku value set
         foreach ($item->options as $opt_id=>$OIO) {
             if (
-                isset($this->Options[$OIO->pov_id]) &&
-                $this->Options[$OIO->pov_id]['sku'] != ''
+                isset($this->Options[$OIO->getID()]) &&
+                $this->Options[$OIO->getID()]['sku'] != ''
             ) {
-                $sku .= '-' . $this->Options[$OIO->pov_id]['sku'];
+                $sku .= '-' . $this->Options[$OIO->getID()]['sku'];
             }
         }
         return $sku;
@@ -2395,8 +2505,8 @@ class Product
     public function getOption($key)
     {
         foreach ($this->OptionGroups as $OG) {
-            if (isset($OG->Options[$key])) {
-                return $OG->Options[$key];
+            if (isset($OG->getOptions()[$key])) {
+                return $OG->getOptions()[$key];
             }
         }
         return false;
@@ -2484,7 +2594,6 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $old_name = $this->name;
         $this->name = $this->name . uniqid();
         $this->Save();
         if ($this->id < 1) {
@@ -3242,6 +3351,12 @@ class Product
     }
 
 
+    public function commentsEnabled()
+    {
+        return $this->comments_enabled ? 1 : 0;
+    }
+
+
     /**
      * Get the rating bar, if supported.
      *
@@ -3923,17 +4038,6 @@ class Product
 
 
     /**
-     * Get the DB record ID for the product.
-     *
-     * @return  integer|string  DB record ID, or string if plugin item.
-     */
-    public function getID()
-    {
-        return $this->id;
-    }
-
-
-    /**
      * Get the item ID for the product.
      *
      * @return  mixed       Item ID
@@ -3941,6 +4045,34 @@ class Product
     public function getItemID()
     {
         return $this->item_id;
+    }
+
+
+    /**
+     * Get the short description/product name.
+     *
+     * @return  string      Short description
+     */
+    public function getShortDscp()
+    {
+        return $this->short_description;
+    }
+
+
+    /**
+     * Check if the quantity onhand is being tracked.
+     *
+     * @return  boolean     1 if tracking, 0 if not
+     */
+    public function trackOnhand()
+    {
+        return $this->track_onhand ? 1 : 0;
+    }
+
+
+    public function getBtnText()
+    {
+        return $this->btn_text;
     }
 
 
@@ -4250,6 +4382,17 @@ class Product
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the expiration days for this product.
+     *
+     * @return  integer     Number of days to expire downloads.
+     */
+    public function getExpiration()
+    {
+        return (int)$this->expiration;
     }
 
 

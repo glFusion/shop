@@ -13,6 +13,7 @@
  */
 namespace Shop;
 
+
 /**
  * Class for product options - color, size, etc.
  * @package shop
@@ -26,7 +27,6 @@ class ProductOptionValue
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
     private $Errors = array();
-
 
     /** Record ID.
      * @var integer */

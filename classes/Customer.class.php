@@ -20,9 +20,25 @@ namespace Shop;
  */
 class Customer
 {
-    /** User ID
+    /** User ID.
     * @var integer */
-    private $uid;
+    private $uid = 0;
+
+    /** User Name.
+     * @var string */
+    private $username = '';
+
+    /** Full name.
+     * @var string */
+    private $fullname = '';
+
+    /** Email address.
+     * @var string */
+    private $email = '';
+
+    /** Language.
+     * @var string */
+    private $language = '';
 
     /** Addresses stored for this user.
     * @var array */
@@ -36,9 +52,10 @@ class Customer
      * @var boolean */
     private $isNew = true;
 
-    /** Internal properties accessed via `__set()` and `__get()`.
+    /** Shopping cart information.
      * @var array */
-    private $properties = array();
+    private $cart = array();
+
 
     /** Form action URL when saving profile information.
      * @var string */
@@ -64,62 +81,11 @@ class Customer
     {
         global $_USER;
 
-        $uid = (int)$uid;
         if ($uid < 1) {
-            $uid = (int)$_USER['uid'];
+            $uid = $_USER['uid'];
         }
-        $this->uid = $uid;  // Save the user ID
+        $this->uid = (int)$uid;  // Save the user ID
         $this->ReadUser();  // Load the user's stored addresses
-    }
-
-
-    /**
-     * Set a property's value.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set
-     */
-    public function __set($key, $value)
-    {
-        global $_CONF;
-
-        switch ($key) {
-        case 'cart':
-            // Check if the cart is being passed as an array or is already
-            // serialized
-            if (is_string($value)) {
-                $value = @unserialize($value);
-                if (!$value) $value = array();
-            }
-            $this->properties[$key] = $value;
-            break;
-        case 'language':
-            if (empty($value)) {
-                // Use default if no user language specified.
-                $value = $_CONF['language'];
-            }
-        case 'username':
-        case 'fullname':
-        case 'email':
-            $this->properties[$key] = $value;
-            break;
-        }
-    }
-
-
-    /**
-     * Get a property's value.
-     *
-     * @param   string  $key    Name of property to retrieve
-     * @return  mixed       Value of property, NULL if not set
-     */
-    public function __get($key)
-    {
-        if (isset($this->properties[$key])) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
     }
 
 
@@ -147,9 +113,7 @@ class Customer
         );
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
-            $cart = @unserialize($A['cart']);
-            if (!$cart) $cart = array();
-            $this->cart = $cart;
+            $this->setCart($A['cart']);
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
@@ -157,12 +121,6 @@ class Customer
             $this->isNew = false;
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
-            /*$res = DB_query(
-                "SELECT * FROM {$_TABLES['shop.address']} WHERE uid=$uid"
-            );
-            while ($A = DB_fetchArray($res, false)) {
-                $this->addresses[$A['id']] = $A;
-            }*/
         } else {
             $this->cart = array();
             $this->isNew = true;
@@ -170,6 +128,39 @@ class Customer
             $this->pref_gw = '';
             $this->saveUser();      // create a user record
         }
+    }
+
+
+    /**
+     * Set the cart array.
+     *
+     * @param   string|array    Array, or serialized string
+     * @return  object  $this
+     */
+    public function setCart($value)
+    {
+        // Check if the cart is being passed as an array or is already
+        // serialized
+        if (is_string($value)) {
+            $value = @unserialize($value);
+            if (!$value) {
+                // deserialization failed
+                $value = array();
+            }
+        }
+        $this->cart = $value;
+        return $this;
+    }
+
+
+    /**
+     * Get the cart contents.
+     *
+     * @return  array       Cart information
+     */
+    public function getCart()
+    {
+        return $this->cart;
     }
 
 
@@ -200,19 +191,17 @@ class Customer
         } else {
             return array();
         }
+    }
 
-        $cache_key = 'shop.address_' . $add_id;
-        $A = Cache::get($cache_key);
-        if ($A === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.address']}
-                WHERE id = $add_id";
-            $A = DB_fetchArray(DB_query($sql), false);
-            if (empty($A)) {
-                $A = array();
-            }
-            Cache::set($cache_key, $A, 'user_' . $A['uid']);
-        }
-        return $A;
+
+    /**
+     * Get all the customer addresses. Used with privacy export.
+     *
+     * @return  array       Array of addresses
+     */
+    public function getAddresses()
+    {
+        return $this->addresses;
     }
 
 

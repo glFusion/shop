@@ -413,23 +413,23 @@ class Catalog
             }
             $prodrows++;
             $T->set_var(array(
-                'item_id'       => $P->id,
+                'item_id'       => $P->getID(),
                 'name'          => htmlspecialchars($P->getName()),
-                'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
+                'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
                 'item_url'      => $P->getLink(0, $query_str),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
-                'track_onhand'  => $P->track_onhand ? 'true' : '',
-                'qty_onhand'    => $P->onhand,
+                'track_onhand'  => $P->trackOnhand() ? 'true' : '',
+                'qty_onhand'    => $P->getOnhand(),
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
                 'price'         => $P->getDisplayPrice(),
-                'orig_price'    => $P->getDisplayPrice($P->price),
+                'orig_price'    => $P->getDisplayPrice($P->getPrice()),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
-                'onhand'        => $P->track_onhand ? $P->onhand : '',
+                'onhand'        => $P->trackOnhand() ? $P->getOnhand() : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
-                'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
+                'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
                 'oos'           => !$P->isInStock(),
@@ -444,7 +444,11 @@ class Catalog
 
             // Get the product buttons for the list
             $T->set_block('product', 'BtnBlock', 'Btn');
-            if (!$P->hasOptions() && !$P->hasCustomFields() && !$P->hasSpecialFields()) {
+            if (
+                !$P->hasOptions() &&
+                !$P->hasCustomFields() &&
+                !$P->hasSpecialFields()
+            ) {
                 // Buttons only show in the list if there are no options to select
                 $buttons = $P->PurchaseLinks('list');
                 foreach ($buttons as $name=>$html) {

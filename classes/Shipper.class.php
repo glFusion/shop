@@ -611,7 +611,7 @@ class Shipper
      */
     public static function getShippersForOrder($Order)
     {
-        $cache_key = 'shipping_order_' . $Order->order_id;
+        $cache_key = 'shipping_order_' . $Order->getOrderID();
         $shippers = Cache::get($cache_key);
         if (is_array($shippers)) {
             return $shippers;
@@ -626,14 +626,15 @@ class Shipper
         $items = array();
         foreach ($Order->getItems() as $id=>$Item) {
             $P = $Item->getProduct();
-            $single_units = $P->shipping_units;
-            $item_units = $single_units * $Item->quantity;
-            $fixed_shipping += $P->getShipping($Item->quantity);
+            $qty = $Item->getQuantity();
+            $single_units = $P->getShippingUnits();
+            $item_units = $single_units * $qty;
+            $fixed_shipping += $P->getShipping($qty);
             $total_units += $item_units;
-            for ($i = 0; $i < $Item->quantity; $i++) {
+            for ($i = 0; $i < $qty; $i++) {
                 $items[] = array(
                     'orderitem_id' => $id,
-                    'item_name'     => $Item->description,
+                    'item_name'     => $Item->getDscp(),
                     'single_units' => $single_units,
                     'packed'    => false,
                 );
