@@ -1,0 +1,22 @@
+{# begin {templatelocation} #}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['gateway']}:</label>
+    <div class="uk-form-controls">
+      <select name="gateway">
+        <option value="">{$LANG_SHOP['all']}</option>
+<!-- BEGIN gw_opts -->
+        <option value="{gw_name}" {sel}>{gw_dscp}</option>
+<!-- END gw_opts -->
+      </select>
+    </div>
+  </div>
+
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['type']}:</label>
+    <div class="uk-form-controls">
+        <input type="radio" name="pmt_type" value="1" {pt_sel_1} /> Money
+        <input type="radio" name="pmt_type" value="0" {pt_sel_0} /> Other Credits
+        <input type="radio" name="pmt_type" value="-1" {pt_sel_-1} /> Either
+    </div>
+  </div>
+{# end {templatelocation} #}

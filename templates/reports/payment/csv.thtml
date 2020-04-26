@@ -1,0 +1,5 @@
+"{$LANG_SHOP['order_number']}","{$LANG_SHOP['datetime']}","{$LANG_SHOP['pmt_method']}","{$LANG_SHOP['txn_id']}","{$LANG_SHOP['comment']}","{$LANG_SHOP['amount']}"{nl}
+<!-- BEGIN ItemRow -->
+"{order_id}","{datetime}","{pmt_method}","{txn_id}","{comment}","{amount}"{nl}
+<!-- END ItemRow -->
+"{$LANG_SHOP['total']}","","","","","{total_paid}"{nl}
