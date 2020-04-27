@@ -129,6 +129,12 @@ class OrderItemOption
     }
 
 
+    /**
+     * Set the OrderItem record ID property.
+     *
+     * @param   integer $id     OrderItem record ID
+     * @return  object  $this
+     */
     public function setOrderItemID($id)
     {
         $this->oi_id = (int)$id;

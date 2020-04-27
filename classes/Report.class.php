@@ -65,13 +65,11 @@ class Report
      * @var array */
     protected $allowed_statuses = array();
 
-    /**
-     * Array of status selections.
+    /** Array of status selections.
      * @var array */
     protected $statuses = array();
 
-    /**
-     * Extra values to pass into getReportField() verbatim.
+    /** Extra values to pass into getReportField() verbatim.
      * @var array */
     protected $extra = array();
 
@@ -93,7 +91,7 @@ class Report
      * @var boolean */
     protected $filter_status = true;
 
-    /**Indicate whether the report can filter on user ID.
+    /** Indicate whether the report can filter on user ID.
      * @var boolean */
     protected $filter_uid = true;
 

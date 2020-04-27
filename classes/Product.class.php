@@ -3351,6 +3351,11 @@ class Product
     }
 
 
+    /**
+     * Check if comments are enabled for this product.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
     public function commentsEnabled()
     {
         return $this->comments_enabled ? 1 : 0;
@@ -4070,6 +4075,11 @@ class Product
     }
 
 
+    /**
+     * Get the text to show in the purchase button.
+     *
+     * @return  string      Button text
+     */
     public function getBtnText()
     {
         return $this->btn_text;
@@ -4409,6 +4419,11 @@ class Product
     }
 
 
+    /**
+     * Check if this is a new product record, possibly from a failed search.
+     *
+     * @return  integer     1 if new, 0 if existing (from database)
+     */
     public function isNew()
     {
         return $this->isNew ? 1 : 0;
