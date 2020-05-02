@@ -352,24 +352,24 @@ class Menu
         $retval = '';
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->order_id,
+                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['order'],
                 'active' => $view == 'order' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->order_id,
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'ord_ship' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->order_id,
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'ord_pmts' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
         $retval .= COM_startBlock(
-            $LANG_SHOP['order'] . ' ' . $Order->order_id, '',
+            $LANG_SHOP['order'] . ' ' . $Order->getOrderID(), '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
         $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));

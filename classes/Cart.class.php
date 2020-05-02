@@ -131,9 +131,9 @@ class Cart extends Order
                 'item_number'   => $Item->product_id,
                 'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
-                'extras'        => $Item->extras,
-                'description'   => $Item->description,
-                'quantity'      => $Item->quantity,
+                'extras'        => $Item->getExtras(),
+                'description'   => $Item->getDscp(),
+                'quantity'      => $Item->getQuantity(),
             );
             $this->addItem($args);
         }

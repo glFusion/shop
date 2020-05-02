@@ -564,14 +564,14 @@ class Catalog
                     $T->set_var(array(
                         'id'        => $P->getID(),     // required
                         'item_id'   => $P->getItemID(), // required
-                        'name'      => $P->short_description,
-                        'short_description' => $P->short_description,
+                        'name'      => $P->getDscp(),
+                        'short_description' => $P->getDscp(),
                         'encrypted' => '',
                         'item_url'  => $P->getLink(0, $query_str),
                         'track_onhand' => '',   // not available for plugins
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
-                        'nonce'     => $Cart->makeNonce($P->id . $P->getName()),
+                        'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
                         'can_add_cart'  => true,
                         'rating_bar' => $P->ratingBar(true),
                     ) );
