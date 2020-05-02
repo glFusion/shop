@@ -722,6 +722,10 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
 );
+$SHOP_UPGRADE['1.4.0'] = array(
+    "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
+    "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
+);
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.

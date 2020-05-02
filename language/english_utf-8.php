@@ -65,7 +65,7 @@ $LANG_SHOP = array (
 'admin_hdr_wfadmin' => 'Enable, Disable, and Re-order the items that must be completed before checkout. Workflow items cannot be deleted. &quot;Confirm Order&quot; is always the last item in the workflow.',
 'admin_hdr_wfstatus' => 'Update order status values. You can disable unused statuses and indicate whether the buyer and/or administrator is notified when a status becomes active.',
 'username'          => 'User Name',
-//'pmt_status'        => 'Payment Status',
+//'pmt_status'        => 'ayment Status',
 'payments'          => 'Payments',
 'status'            => 'Status',
 'update_status'     => 'Update Status',
@@ -262,12 +262,11 @@ $LANG_SHOP = array (
 'todo_migrate_pp' => 'You may want to migrate from the Paypal plugin via the Maintenance menu.',
 'orderstatus'   => array(
     'pending'   => 'Pending',
-    'paid'      => 'Paid',
-    'shipped'   => 'Shipped',
+    'invoiced'  => 'Invoiced',
     'processing' => 'Processing',
+    'shipped'   => 'Shipped',
     'closed'    => 'Closed',
     'refunded'  => 'Refunded',
-    'invoiced'  => 'Invoiced',
 ),
 'message' => 'Message',
 'timestamp' => 'Timestamp',
@@ -681,6 +680,8 @@ $LANG_SHOP = array (
 'gc_pmt_comment' => 'Applied from gift card balance',
 'paid' => 'Paid',
 'remove_item' => 'Remove this item',
+'is_money' => 'Monetary payment',
+'add_payment' => 'Add a Payment',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -719,6 +720,7 @@ $LANG_SHOP_HELP = array(
 'hlp_rules_noitems' => 'One or more of the items on your order cannot be shipped to your selected shipping address. Please edit the order or shipping information.',
 'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
 'pending' => 'Processing will begin once payment is received.',
+'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

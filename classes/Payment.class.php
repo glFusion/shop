@@ -69,8 +69,8 @@ class Payment
      */
     public function __construct($A=NULL)
     {
-        $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
         if (is_array($A)) {
+            $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
             $this->setPmtID($pmt_id)
                 ->setRefID($A['pmt_ref_id'])
                 ->setAmount($A['pmt_amount'])
@@ -83,6 +83,7 @@ class Payment
                 ->setUid($A['uid']);
         } else {
             $this->ts = time();
+            $this->ref_id = COM_makeSid() . rand(100,999);
         }
     }
 
@@ -391,6 +392,7 @@ class Payment
         $res = DB_query($sql);
         if (!DB_error()) {
             $this->setPmtId(DB_insertID());
+            Order::getInstance($this->order_id)->UpdatePmtStatus();
         }
         return $this;
     }
@@ -503,6 +505,33 @@ class Payment
     }
 
 
+    public function pmtForm()
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'pmt_form.thtml');
+        $T->set_var(array(
+            'pmt_id' => $this->pmt_id,
+            'order_id' => $this->order_id,
+            'amount' => $this->amount,
+            'ref_id' => $this->ref_id,
+            'money_chk' => $this->is_money ? 'checked="checked"' : '',
+        ) );
+        $Gateways = Gateway::getAll();
+        $T->set_block('form', 'GatewayOpts', 'gwo');
+        foreach ($Gateways as $GW) {
+            $T->set_var(array(
+                'gw_id' => $GW->getName(),
+                'gw_dscp' => $GW->getDscp(),
+                'selected' => $GW->getName() == $this->gw_id ? 'selected="selected"' : '',
+            ) );
+            $T->parse('gwo', 'GatewayOpts', true);
+        }
+        $T->parse('output', 'form');
+        $form = $T->finish($T->get_var('output'));
+        return $form;
+    }
+
+
     /**
      * Purge all payments from the database.
      * No safety check or confirmation is done; that should be done before
@@ -525,6 +554,8 @@ class Payment
      */
     public static function adminList($order_id='')
     {
+        global $LANG_SHOP;
+
         $R = \Shop\Report::getInstance('payment');
         if ($R === NULL) {
             return '';
@@ -532,11 +563,22 @@ class Payment
         if (!empty($order_id)) {
             $R->setParam('order_id', $order_id);
         }
+        if ($order_id != 'x') {
+            $new_btn = COM_createLink(
+                $LANG_SHOP['add_payment'],
+                SHOP_ADMIN_URL . '/index.php?newpayment=' . $order_id,
+                array(
+                    'class' => 'uk-button uk-button-success',
+                )
+            );
+        } else {
+            $new_btn = '';
+        }
         $R->setAdmin(true)
             // Params usually from GET but could be POSTed
             ->setParams($_REQUEST)
             ->setShowHeader(false);
-        return $R->Render();
+        return $new_btn . $R->Render();
     }
 
 }

@@ -798,16 +798,13 @@ class IPN
             return false;
         }
 
-        // Update the status last since it sends the notification.
-        $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp());
-        $this->recordPayment();
+        $this->recordPayment();     // Also updates order status
         if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
             // If this paid order has only downloadable items, them mark
             // it closed since there's no further action needed.
             // Notification should have been done above, set notify to false to
             // avoid duplicates.
             $this->setStatus(self::CLOSED);
-            $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp(), false);
         }
         return true;
     }  // function handlePurchase

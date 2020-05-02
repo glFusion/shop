@@ -505,7 +505,7 @@ class Order
         $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         if (isset($A['amt_paid'])) {    // only present in DB record
-            $this->_amt_paid = (float)$A['paid'];
+            $this->_amt_paid = (float)$A['amt_paid'];
         }
         return $this;
     }
@@ -972,6 +972,8 @@ class Order
             'tax_icon'  => $LANG_SHOP['tax'][0],
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
+            'amt_paid' => $Currency->Format($this->_amt_paid),
+            'is_paid' => $this->_amt_paid >= $this->total,
         ) );
 
             if (!$this->no_shipping) {
@@ -1073,6 +1075,27 @@ class Order
 
 
     /**
+     * If the order is paid, move its status from `pending` to `processing`.
+     * Only updates the order if the status is pending, not if it has already
+     * been move further along.
+     *
+     * @param   string  $order_id   Order ID to check
+     * @return  boolean     True if status is changed, False if left as-is
+     */
+    public function updatePmtStatus($order_id)
+    {
+        if (
+            $this->getStatus() == 'pending' &&
+            $this->isPaid()
+        ) {
+            $this->updateStatus('processing');
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
      * Update the order's status flag to a new value.
      * If the new status isn't really new, the order is unchanged and "true"
      * is returned.  If this is called by some automated process, $log can
@@ -1088,6 +1111,11 @@ class Order
     public function updateStatus($newstatus, $log = true, $notify=true)
     {
         global $_TABLES, $LANG_SHOP;
+
+        // When orders are paid by IPN, move the status to "processing"
+        if ($newstatus == 'paid') {
+            $newstatus = 'processing';
+        }
 
         $oldstatus = $this->status;
         // If the status isn't really changed, don't bother updating anything
@@ -1356,7 +1384,7 @@ class Order
 
             $ext = $item->getQuantity() * $item->getPrice();
             $item_total += $ext;
-            $item_descr = $item->getShortDscp();
+            $item_descr = $item->getDscp();
             $options_text = $item->getOptionDisplay();
 
             $T->set_block('msg_body', 'ItemList', 'List');

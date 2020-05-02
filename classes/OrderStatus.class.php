@@ -80,8 +80,8 @@ class OrderStatus extends Workflow
             $statuses = array();
             $sql = "SELECT *
                     FROM {$_TABLES[self::$TABLE]}
+                    WHERE enabled = 1
                     ORDER BY orderby ASC";
-                    //WHERE enabled = 1
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
