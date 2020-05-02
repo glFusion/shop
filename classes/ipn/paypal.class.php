@@ -283,7 +283,7 @@ class paypal extends \Shop\IPN
                     'item_id'   => $item_id,
                     'quantity'  => $item->getQuantity(),
                     'price'     => $item->getPrice(),
-                    'item_name' => $item->getShortDscp(),
+                    'item_name' => $item->getDscp(),
                     'shipping'  => $item->getShippingAmt(),
                     'handling'  => $item->getHandling(),
                     'tax'       => $item->getTax(),
