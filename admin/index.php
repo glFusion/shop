@@ -61,6 +61,7 @@ $expected = array(
     'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
     'rule_del', 'rule_add', 'rule_save',
+    'savepayment', 'delpayment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other', 'gwadmin', 'gwedit',
@@ -70,7 +71,7 @@ $expected = array(
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl',
-    'shipments', 'ord_ship', 'ord_pmts',
+    'shipments', 'ord_ship', 'ord_pmts', 'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'editregion', 'editcountry', 'editstate',
@@ -754,6 +755,20 @@ case 'disa_state':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
     break;
 
+case 'savepayment':
+    $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
+    $Pmt->setAmount($_POST['amount'])
+        ->setMethod($_POST['gw_id'])
+        ->setGateway($_POST['gw_id'])
+        ->setRefID($_POST['ref_id'])
+        ->setOrderID($_POST['order_id'])
+        ->setUID($_USER['uid'])
+        ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
+        ->setComment($_POST['comment']);
+    $Pmt->Save();
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_POST['order_id']);
+    break;
+
 default:
     $view = $action;
     break;
@@ -1197,6 +1212,12 @@ case 'states':
 case 'regions':
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Region::adminList();
+    break;
+
+case 'newpayment':
+    $Pmt = new Shop\Payment;
+    $Pmt->setOrderID($actionval);
+    $content .= $Pmt->pmtForm();
     break;
 
 case 'none':
