@@ -721,8 +721,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
-);
-$SHOP_UPGRADE['1.4.0'] = array(
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
 );
