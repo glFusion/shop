@@ -99,6 +99,11 @@ class Report
      * @var boolean */
     protected $filter_item = false;
 
+    /** Status selected to filter paid vs. unpaid orders.
+     * 1 = unpaid, 2 = paid, 4 = either
+     * @var integer */
+    protected $paid_status = 4;
+
     /** Indicate whether the report supports multiplt output types
      * @var boolean */
     protected $sel_output = true;
@@ -145,6 +150,7 @@ class Report
         $dates = $this->getDates($period, $from, $to);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
+        $this->paid_status = SHOP_getVar($get, 'paid', 'integer', 4);
         return $this;
     }
 
@@ -336,6 +342,7 @@ class Report
             'filter_status' => $this->filter_status,
             'filter_uid'    => $this->filter_uid,
             'filter_item'   => $this->filter_item,
+            'pd_chk_' . $this->paid_status => 'checked="checked"',
             'sel_output'    => $this->sel_output,
             'report_configs' => $this->getReportConfig(),
         ) );
@@ -666,7 +673,7 @@ class Report
         global $LANG_SHOP;
 
         $this->statuses = array();
-        $statuses = \Shop\OrderStatus::getAll();
+        $statuses = OrderStatus::getAll();
         $status_sess = self::_getSessVar('orderstatus');
         foreach ($statuses as $key=>$data) {
             // Check if this is in the allowed statuses array

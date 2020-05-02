@@ -202,6 +202,11 @@ class orderlist extends \Shop\Report
         if ($this->uid > 0) {
             $where .= " AND uid = {$this->uid}";
         }
+        if ($this->paid_status == 2) {
+            $where .= " HAVING paid >= sales_amt";
+        } elseif ($this->paid_status == 1) {
+            $where .= " HAVING paid < sales_amt";
+        }
         $query_arr = array(
             'table' => 'shop.orders',
             'sql' => $sql,

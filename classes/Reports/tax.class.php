@@ -36,9 +36,10 @@ class tax extends \Shop\Report
     {
         // This report doesn't show shipped or closed statuses.
         $this->allowed_statuses = array(
-            'paid',
             'processing',
-            'shipped', 'closed', 'complete',
+            'shipped',
+            'closed',
+            'complete',
         );
         $this->filter_uid = false;
         parent::__construct();
