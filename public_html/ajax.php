@@ -51,7 +51,7 @@ case 'addcartitem':
     $Cart = Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
-        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->order_id}, should be $nonce", SHOP_LOG_ERROR);
+        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->getOrderID()}, should be $nonce", SHOP_LOG_ERROR);
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }

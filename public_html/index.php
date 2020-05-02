@@ -129,7 +129,7 @@ case 'saveshipto':
         break;
     }
     $U = \Shop\Customer::getInstance();
-    if ($U->uid > 1) {      // only save addresses for logged-in users
+    if ($U->getUid() > 1) {      // only save addresses for logged-in users
         $addr_id = $U->saveAddress($_POST, $addr_type);
         if ($addr_id[0] < 0) {
             if (!empty($addr_id[1]))
