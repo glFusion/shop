@@ -682,6 +682,7 @@ $LANG_SHOP = array (
 'remove_item' => 'Remove this item',
 'is_money' => 'Monetary payment',
 'add_payment' => 'Add a Payment',
+'paid_only' => 'Paid Only',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
