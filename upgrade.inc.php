@@ -277,7 +277,7 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = '1.3.0';
         // Update the state tables for taxing S&H only if not
         // already done
-//        if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
+        if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
             // US states that tax shipping and handling
             $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
                 INNER JOIN {$_TABLES['shop.countries']} c
@@ -297,7 +297,7 @@ function SHOP_do_upgrade($dvlp = false)
                 WHERE c.alpha2 = 'US' AND s.iso_code in (
                     'AZ', 'MD', 'NV', 'VA'
                 )";
-        //        }
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if (!SHOP_do_set_version($current_ver)) return false;
     }
