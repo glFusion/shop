@@ -474,7 +474,7 @@ case 'toggle':
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            $newval = \Shop\OrderStatus::Toggle($_POST['id'], $field, $_POST['oldval']);
+            $newval = Shop\OrderStatus::Toggle($_POST['oldval'], $field, $_POST['id']);
             break;
         default:
             exit;
@@ -490,7 +490,7 @@ case 'toggle':
         break;
 
     case 'region':
-        $newval = \Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
     case 'country':
