@@ -52,7 +52,7 @@ class reorder extends \Shop\Report
         $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
             short_description as dscp, p.supplier_ref, pv.supplier_ref as pv_ref,
             pv.pv_id, pv.sku, pv.onhand as pv_onhand, pv.reorder as pv_reorder,
-            s.company as supplier
+            s.sup_id as supplier_id, s.company as supplier
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.product_variants']} pv
                 ON p.id = pv.item_id
@@ -76,11 +76,6 @@ class reorder extends \Shop\Report
                 'sort'  => true,
             ),
             array(
-                'text'  => $LANG_SHOP['supplier_ref'],
-                'field' => 'supplier_ref',
-                'sort'  => true,
-            ),
-            array(
                 'text'  => $LANG_SHOP['onhand'],
                 'field' => 'onhand',
                 'sort'  => true,
@@ -95,6 +90,11 @@ class reorder extends \Shop\Report
             array(
                 'text'  => $LANG_SHOP['supplier'],
                 'field' => 'supplier',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
                 'sort'  => true,
             ),
         );
@@ -130,6 +130,13 @@ class reorder extends \Shop\Report
 
         switch ($this->type) {
         case 'html':
+            $q_str = $_GET;
+            if (!isset($q_str['run'])) {
+                $q_str['run'] = 'reorder';
+            }
+            unset($q_str['supplier_id']);
+            $q_str = http_build_query($q_str);
+            $this->setExtra('bysup_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&supplier_id=');
             $T->set_var(
                 'output',
                 \ADMIN_list(
@@ -189,6 +196,18 @@ class reorder extends \Shop\Report
     {
         $retval = NULL;
         switch ($fieldname) {
+        case 'name':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $A['id']
+            );
+            break;
+        case 'supplier':
+            $retval = COM_createLink(
+                $fieldvalue,
+                $extra['bysup_link'] . $A['supplier_id']
+            );
+            break;
         case 'onhand':
             $retval = is_null($A['sku']) ? (float)$A['onhand'] : (float)$A['pv_onhand'];
             break;
