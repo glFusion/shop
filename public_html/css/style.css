@@ -178,8 +178,8 @@ ul.shopProductThumbWrapper {
 }
 li.shopProductThumb {
     float: left;
-    margin-right: .25em;
-    display: inline;
+    margin-right: 4px;
+    margin-bottom: 4px;
 }
 li.shopProductThumb input[type="checkbox"][id^="img_cb"] {
   display: none;
