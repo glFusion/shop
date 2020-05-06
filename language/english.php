@@ -123,6 +123,7 @@ $LANG_SHOP = array (
     'checkout'  => 'Checkout',
     'external'  => 'External Products',
     'free'      => 'Free Purchase',
+    'terms'     => 'Invoice Terms',
 ),
 'prod_type'         => 'Product Type',
 'prod_types'        => array(
@@ -668,6 +669,17 @@ $LANG_SHOP = array (
 'restrictions' => 'Restrictions',
 'none_defined' => 'No %s have been defined.',
 'incl_nontax' => 'Include non-taxable sales?',
+'payments' => 'Payments',
+'tax_shipping' => 'Shipping Tax',
+'tax_handling' => 'Handling Tax',
+'net_items' => 'Net Items',
+'ipn_pmt_comment' => 'Recorded by IPN message',
+'gc_pmt_comment' => 'Applied from gift card balance',
+'paid' => 'Paid',
+'remove_item' => 'Remove this item',
+'is_money' => 'Monetary payment',
+'add_payment' => 'Add a Payment',
+'paid_only' => 'Paid Only',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -705,6 +717,8 @@ $LANG_SHOP_HELP = array(
 'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
 'hlp_rules_noitems' => 'One or more of the items on your order cannot be shipped to your selected shipping address. Please edit the order or shipping information.',
 'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
+'pending' => 'Processing will begin once payment is received.',
+'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

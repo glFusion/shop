@@ -183,6 +183,8 @@ class terms extends \Shop\Gateway
 
     /**
      * Process the order confirmation. Called via AJAX.
+     * Gets the actual payment gateway name from the config and
+     * calls on it to create the invoice.
      *
      * @param   string  $order_id   Order ID
      * @return  boolean     True on success, False on error

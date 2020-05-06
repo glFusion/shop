@@ -124,6 +124,7 @@ $LANG_SHOP = array (
     'checkout'  => 'Checkout',
     'external'  => 'External Products',
     'free'      => 'Free Purchase',
+    'terms'     => 'Invoice Terms',
 ),
 'prod_type'         => 'Product Type',
 'prod_types'        => array(
