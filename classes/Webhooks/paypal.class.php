@@ -52,16 +52,16 @@ class paypal extends \Shop\Webhook
      */
     public function Dispatch()
     {
-            $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
-            if  ($resource) {
-                $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
-                if ($invoice) {
-                    $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
-                    if ($detail) {
-                        $this->setOrderID(SHOP_getVar($detail, 'reference'));
-                    }
+        $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
+        if  ($resource) {
+            $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
+            if ($invoice) {
+                $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
+                if ($detail) {
+                    $this->setOrderID(SHOP_getVar($detail, 'reference'));
                 }
             }
+        }
         switch ($this->getEvent()) {
         case self::EV_PAYMENT:
             if ($invoice) {

@@ -259,14 +259,21 @@ class Order
                     ) as amt_paid
                     FROM {$_TABLES['shop.orders']} ord
                     WHERE ord.order_id='{$this->order_id}'";
+            //COM_errorLog($sql);
             //echo $sql;die;
             $res = DB_query($sql);
-            if (!$res) return false;    // requested order not found
+            if (!$res) {
+                return false;    // requested order not found
+            }
             $A = DB_fetchArray($res, false);
-            if (empty($A)) return false;
+            if (empty($A)) {
+                return false;
+            }
         //    Cache::set($cache_key, $A, 'orders');
             //}
-        if ($this->setVars($A)) $this->isNew = false;
+            if ($this->setVars($A)) {
+                $this->isNew = false;
+            }
 
         // Now load the items
         //$cache_key = 'items_order_' . $this->order_id;
@@ -1079,13 +1086,15 @@ class Order
      * Only updates the order if the status is pending, not if it has already
      * been move further along.
      *
-     * @param   string  $order_id   Order ID to check
      * @return  boolean     True if status is changed, False if left as-is
      */
-    public function updatePmtStatus($order_id)
+    public function updatePmtStatus()
     {
         if (
-            $this->getStatus() == 'pending' &&
+            (
+                $this->getStatus() == 'pending' ||
+                $this->getStatus() == 'invoiced'
+            ) &&
             $this->isPaid()
         ) {
             $this->updateStatus('processing');

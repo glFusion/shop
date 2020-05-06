@@ -392,7 +392,7 @@ class Payment
         $res = DB_query($sql);
         if (!DB_error()) {
             $this->setPmtId(DB_insertID());
-            Order::getInstance($this->order_id)->UpdatePmtStatus();
+            Order::getInstance($this->order_id)->updatePmtStatus();
         }
         return $this;
     }
