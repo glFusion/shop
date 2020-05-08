@@ -337,40 +337,57 @@ class Order
     {
         global $_TABLES;
 
-        $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
-        if ($addr_id == 0) {
-            $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
-        }
-        if ($addr_id > 0) {
-            // If set, the user has selected an existing address. Read
-            // that value and use it's values.
-            Cart::setSession('billing', $addr_id);
-        }
+        $have_address = false;
+        if (is_object($A)) {
+            $this->billto_id        = $A->getID();
+            $this->billto_name      = $A->getName();
+            $this->billto_company   = $A->getCompany();
+            $this->billto_address1  = $A->getAddress1();
+            $this->billto_address2  = $A->getAddress2();
+            $this->billto_city      = $A->getCity();
+            $this->billto_state     = $A->getState();
+            $this->billto_country   = $A->getCountry();
+            $this->billto_zip       = $A->getPostal();
+            $have_address = true;
+        } else {
+            $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
+            if ($addr_id == 0) {
+                $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
+            }
+            if ($addr_id > 0) {
+                // If set, the user has selected an existing address. Read
+                // that value and use it's values.
+                Cart::setSession('billing', $addr_id);
+            }
 
-        if (!empty($A)) {
-            $this->billto_id        = $addr_id;
-            $this->billto_name      = SHOP_getVar($A, 'name');
-            $this->billto_company   = SHOP_getVar($A, 'company');
-            $this->billto_address1  = SHOP_getVar($A, 'address1');
-            $this->billto_address2  = SHOP_getVar($A, 'address2');
-            $this->billto_city      = SHOP_getVar($A, 'city');
-            $this->billto_state     = SHOP_getVar($A, 'state');
-            $this->billto_country   = SHOP_getVar($A, 'country');
-            $this->billto_zip       = SHOP_getVar($A, 'zip');
+            if (!empty($A)) {
+                $this->billto_id        = $addr_id;
+                $this->billto_name      = SHOP_getVar($A, 'name');
+                $this->billto_company   = SHOP_getVar($A, 'company');
+                $this->billto_address1  = SHOP_getVar($A, 'address1');
+                $this->billto_address2  = SHOP_getVar($A, 'address2');
+                $this->billto_city      = SHOP_getVar($A, 'city');
+                $this->billto_state     = SHOP_getVar($A, 'state');
+                $this->billto_country   = SHOP_getVar($A, 'country');
+                $this->billto_zip       = SHOP_getVar($A, 'zip');
+            $have_address = true;
+            }
         }
-        $sql = "UPDATE {$_TABLES['shop.orders']} SET
-            billto_id   = '{$this->shipto_id}',
-            billto_name = '" . DB_escapeString($this->billto_name) . "',
-            billto_company = '" . DB_escapeString($this->billto_company) . "',
-            billto_address1 = '" . DB_escapeString($this->billto_address1) . "',
-            billto_address2 = '" . DB_escapeString($this->billto_address2) . "',
-            billto_city = '" . DB_escapeString($this->billto_city) . "',
-            billto_state = '" . DB_escapeString($this->billto_state) . "',
-            billto_country = '" . DB_escapeString($this->billto_country) . "',
-            billto_zip = '" . DB_escapeString($this->billto_zip) . "'
-            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        DB_query($sql);
-        //Cache::delete('order_' . $this->order_id);
+        if ($have_address) {
+            $sql = "UPDATE {$_TABLES['shop.orders']} SET
+                billto_id   = '{$this->shipto_id}',
+                billto_name = '" . DB_escapeString($this->billto_name) . "',
+                billto_company = '" . DB_escapeString($this->billto_company) . "',
+                billto_address1 = '" . DB_escapeString($this->billto_address1) . "',
+                billto_address2 = '" . DB_escapeString($this->billto_address2) . "',
+                billto_city = '" . DB_escapeString($this->billto_city) . "',
+                billto_state = '" . DB_escapeString($this->billto_state) . "',
+                billto_country = '" . DB_escapeString($this->billto_country) . "',
+                billto_zip = '" . DB_escapeString($this->billto_zip) . "'
+                WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
+            DB_query($sql);
+            //Cache::delete('order_' . $this->order_id);
+        }
         return $this;
     }
 
@@ -385,6 +402,7 @@ class Order
     {
         global $_TABLES;
 
+        $have_address = false;
         if ($A === NULL) {
             // Clear out the shipping address
             $this->shipto_id        = 0;
@@ -396,6 +414,7 @@ class Order
             $this->shipto_state     = '';
             $this->shipto_country   = '';
             $this->shipto_zip       = '';
+            $have_address = true;
         } elseif (is_array($A)) {
             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
             if ($addr_id == 0) {
@@ -421,24 +440,45 @@ class Order
                     ->withOrder($this)
                     ->getRate()
                 );
+                $have_address = true;
             }
+        } elseif (is_object($A)) {
+            $this->shipto_id        = $A->getID();
+            $this->shipto_name      = $A->getName();
+            $this->shipto_company   = $A->getCompany();
+            $this->shipto_address1  = $A->getAddress1();
+            $this->shipto_address2  = $A->getAddress2();
+            $this->shipto_city      = $A->getCity();
+            $this->shipto_state     = $A->getState();
+            $this->shipto_country   = $A->getCountry();
+            $this->shipto_zip       = $A->getPostal();
+            $this->Shipto = $A;
+            $this->setTaxRate(
+                Tax::getProvider()
+                ->withOrder($this)
+                ->getRate()
+            );
+            $have_address = true;
         }
-        $sql = "UPDATE {$_TABLES['shop.orders']} SET
-            shipto_id   = '{$this->shipto_id}',
-            shipto_name = '" . DB_escapeString($this->shipto_name) . "',
-            shipto_company = '" . DB_escapeString($this->shipto_company) . "',
-            shipto_address1 = '" . DB_escapeString($this->shipto_address1) . "',
-            shipto_address2 = '" . DB_escapeString($this->shipto_address2) . "',
-            shipto_city = '" . DB_escapeString($this->shipto_city) . "',
-            shipto_state = '" . DB_escapeString($this->shipto_state) . "',
-            shipto_country = '" . DB_escapeString($this->shipto_country) . "',
-            shipto_zip = '" . DB_escapeString($this->shipto_zip) . "',
-            tax_rate = '{$this->tax_rate}',
-            tax = '{$this->tax}'
-            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        DB_query($sql);
-        SHOP_log($sql, SHOP_LOG_DEBUG);
-        //Cache::delete('order_' . $this->order_id);
+
+        if ($have_address) {
+            $sql = "UPDATE {$_TABLES['shop.orders']} SET
+                shipto_id   = '{$this->shipto_id}',
+                shipto_name = '" . DB_escapeString($this->shipto_name) . "',
+                shipto_company = '" . DB_escapeString($this->shipto_company) . "',
+                shipto_address1 = '" . DB_escapeString($this->shipto_address1) . "',
+                shipto_address2 = '" . DB_escapeString($this->shipto_address2) . "',
+                shipto_city = '" . DB_escapeString($this->shipto_city) . "',
+                shipto_state = '" . DB_escapeString($this->shipto_state) . "',
+                shipto_country = '" . DB_escapeString($this->shipto_country) . "',
+                shipto_zip = '" . DB_escapeString($this->shipto_zip) . "',
+                tax_rate = '{$this->tax_rate}',
+                tax = '{$this->tax}'
+                WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
+            DB_query($sql);
+            SHOP_log($sql, SHOP_LOG_DEBUG);
+            //Cache::delete('order_' . $this->order_id);
+        }
         return $this;
     }
 
@@ -1972,6 +2012,23 @@ class Order
     }
 
 
+    /**
+     * Check if there are any taxable items on this order.
+     *
+     * @return  integer     Number of taxable items
+     */
+    public function hasTaxable()
+    {
+        $retval = 0;
+        foreach ($this->items as $id=>$item) {
+            if ($item->getProduct()->isTaxable()) {
+                $retval += $item->getQuantity();
+            }
+        }
+        return $retval;
+    }
+
+ 
     /**
      * Check if this order has only downloadable items.
      *

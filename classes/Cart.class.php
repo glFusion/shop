@@ -1073,6 +1073,64 @@ class Cart extends Order
             '/' . urlencode($this->token);
     }
 
+
+    /**
+     * See if the buyer is able to skip directly to the order confirmation.
+     * Typically possible for simple virtual items or downloads tha thave
+     * no billing, shipping or tax, and where only one payment gateway and
+     * no discounts are applicable.
+     *
+     * @return  boolean     True if cart editing page can be skipped
+     */
+    public function canFastCheckout()
+    {
+        global $_SHOP_CONF;
+
+        $Gateways = Gateway::getAll();
+        if (
+            // todo: no gift cards, no active discount codes
+            COM_isAnonUser() ||         // can't be anonymous, need email addr
+            !$_SHOP_CONF['allow_fast_checkout'] ||  // not configured
+            count(Gateways) > 1 ||      // must have only one gateway
+            $this->hasPhysical() ||     // need shipping addr
+            $this->hasTaxable() ||      // need shipping addr
+            (
+                $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
+                count(Products\Coupon::getUserCoupons() > 0)
+            ) ||
+            DiscountCode::countCurrent() > 0    // have active codes
+        ) {
+            return false;
+        }
+
+        // Get the first gateway (should be only one anyway
+        $gateway = array_shift($Gateways);
+
+        // Get the customer information to set addresses and email addr
+        $Customer = Customer::getInstance($this->uid);
+        $Addresses = $Customer->getAddresses();
+        if (empty($Addresses)) {
+            return false;
+        }
+        $Address = array_shift($Addresses);
+        $this->setBillto($Address);
+        $this->setShipto($Address);
+
+        // Go ahead and save the gateway as preferred for future use
+        $Customer->setPrefGW($gateway->getName())
+            ->saveUser();
+
+        // Populate required elements of this order
+        $this->setGateway($gateway->getName())
+            ->setGC(0)
+            ->setEmail($Customer->getEmail())
+            ->setShipper(0);
+        $this->instructions = '';
+
+        SHOP_setUrl(SHOP_URL . '/index.php');
+        return true;
+    }
+
 }   // class Cart
 
 ?>

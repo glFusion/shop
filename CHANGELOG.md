@@ -1,6 +1,9 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.3.0
+Release TBD
+  * Add fast-checkout where the order allows it.
+  * Add invoicing via Paypal.
   * Enable sales tax charges on shipping and handling.
   * Add invoicing via Paypal invoice API.
   * Link to customer in order report now filters report.

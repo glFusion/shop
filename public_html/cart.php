@@ -35,7 +35,7 @@ $expected = array(
     'update', 'checkout', 'savebillto', 'saveshipto', 'delete', 'nextstep',
     'empty',
     // Views
-    'cancel', 'view',
+    'editcart', 'cancel', 'view',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -49,12 +49,18 @@ foreach($expected as $provided) {
     }
 }
 
+//echo $action;die;
 if ($action == '') {
     // Not defined in $_POST or $_GET
     // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
     COM_setArgNames(array('action', 'id', 'token'));
     $action = COM_getArgument('action');
 }
+if ($action == '') {
+    // Still no defined action, set to "view"
+    $action = 'view';
+}
+
 switch ($action) {
 case 'update':
     Shop\Cart::getInstance()->Update($_POST);
@@ -217,10 +223,15 @@ case 'cancel':
     }
     // fall through to view cart
 case 'view':
+case 'editcart':
 default:
     SHOP_setUrl($_SERVER['request_uri']);
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
+    if ($view != 'editcart' && $Cart->canFastCheckout()) {
+        $content .= $Cart->getView(1);
+        break;
+    }
 
     // Validate the cart items
     $invalid = $Cart->updateItems();

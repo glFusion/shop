@@ -3,15 +3,15 @@
 {!if is_admin}
 {!else}
     <div style="display:inline-block;">
-  {!if return_url}
+{!if return_url}
       <a href="{return_url}" class="uk-button uk-button-small">
         <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['go_back']}
       </a>
-  {!else}
+{!else}
       <a href="{site_url}/shop" class="uk-button uk-button-small">
         <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['storefront']}
       </a>
-  {!endif}
+{!endif}
     </div>
   <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!endif}
@@ -213,9 +213,9 @@
   {!if checkout}
     <div id="orderPmtMethod">{pmt_logo}</div>
     <div style="float:left;">
-      <button class="uk-button uk-button-primary" type="submit" name="viewcart"
+      <button class="uk-button uk-button-primary" type="submit" name="editcart"
         value="{$LANG_SHOP['viewcart']}"
-        onclick="document.location.href='{pi_url}/cart.php';">{$LANG_SHOP['edit_order']}</button>
+        onclick="document.location.href='{pi_url}/cart.php?editcart';">{$LANG_SHOP['edit_order']}</button>
     </div>
     <div class="shopOrderButtons">
       {gateway_vars}

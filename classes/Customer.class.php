@@ -230,6 +230,17 @@ class Customer
 
 
     /**
+     * Get the customer's email address.
+     *
+     * @return  string      Email address
+     */
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+
+    /**
      * Save the current values to the database.
      * The $A parameter must contain the addr_id value if updating.
      *
