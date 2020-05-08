@@ -416,13 +416,17 @@ class MigratePP
         global $_TABLES;
 
         COM_errorLog("Migrating Option Values ...");
+        if (self::tableHasIndex('shop.prod_opt_vals', 'item_id')) {
+            self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`");
+        }
+        if (self::tableHasIndex('shop.prod_opt_vals', 'pog_value')) {
+            // Drop key so duplicate values can be created, it will be
+            // replaced in createVariants()
+            self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `pog_value`");
+        }
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.prod_opt_vals']}",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD attr_name varchar(40)",
-            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
-            // Drop key so duplicate values can be created, it will be
-            // replaced in createVariants()
-            "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `pog_value`",
             "INSERT INTO {$_TABLES['shop.prod_opt_vals']}
                 SELECT  attr_id as pov_id, 0 as pog_id, item_id, attr_value as pov_value,
                 orderby, attr_price as pov_price, enabled, '' as sku, attr_name
@@ -461,7 +465,8 @@ class MigratePP
         }
         self::_dbExecute("TRUNCATE {$_TABLES['shop.product_variants']}");
         self::_dbExecute("TRUNCATE {$_TABLES['shop.variantXopt']}");
-        self::_dbExecute("ALTER IGNORE TABLE {$_TABLES['shop.prod_opt_vals']}
+        // This index was deleted if existing in migrateOptionValues()...
+        self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
             ADD UNIQUE `pog_value` (`pog_id`, `pov_value`)");
         foreach ($allvals as $pog_id=>$vals) {
             foreach ($vals as $val=>$info) {
@@ -531,6 +536,7 @@ class MigratePP
                 (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name
                 SET pov.pog_id = pog.pog_id",
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name",
+            // Safe since it was deleted in migrateOptionValues() above:
             "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)",
         ) );
     }
@@ -744,6 +750,24 @@ class MigratePP
             }
         }
         return $retval;
+    }
+
+
+    /**
+     * Check if a table has a specific index defined.
+     *
+     * @param   string  $table      Key into `$_TABLES` array
+     * @param   string  $idx_name   Index name
+     * @return  integer     Number of rows (fields) in the index
+     */
+    private static function _tableHasIndex($table, $idx_name)
+    {
+        global $_TABLES;
+
+        $sql = "SHOW INDEX FROM {$_TABLES[$table]}
+            WHERE key_name = '" . DB_escapeString($idx_name) . "'";
+        $res = DB_query($sql);
+        return DB_numRows($res);
     }
 
 }

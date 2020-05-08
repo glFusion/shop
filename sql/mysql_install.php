@@ -155,7 +155,8 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`),
+  UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -501,7 +502,6 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `pov_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",
-    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
     "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",

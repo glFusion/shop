@@ -67,6 +67,7 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.0.0')) {
         $current_ver = '1.0.0';
+
         if (!DB_checkTableExists('shop.prod_opt_grps')) {
             // Initial populate of the new attribute group table
             // The table won't exist yet, these statememts get appended
@@ -275,11 +276,19 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.3.0')) {
         $current_ver = '1.3.0';
+
+        // Add the unique item_id index back to the option values table.
+        // Was added during previous upgrades but not new installations.
+        if (!_SHOP_tableHasIndex('shop.prod_opt_vals', 'item_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
+                ADDUNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
+        }
+
         // Update the state tables for taxing S&H only if not
         // already done
         if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
             // US states that tax shipping and handling
-            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.states']} s
                 INNER JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
                 SET s.tax_shipping = 1, s.tax_handling = 1
@@ -290,7 +299,7 @@ function SHOP_do_upgrade($dvlp = false)
                     'WA', 'WV', 'WI', 'DC'
                 )";
             // US states that tax only handling
-            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.states']} s
                 INNER JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
                 SET s.tax_handling = 1
