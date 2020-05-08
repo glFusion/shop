@@ -279,7 +279,7 @@ function SHOP_do_upgrade($dvlp = false)
 
         // Add the unique item_id index back to the option values table.
         // Was added during previous upgrades but not new installations.
-        if (!_SHOP_tableHasIndex('shop.prod_opt_vals', 'item_id')) {
+        if (!_SHOPtableHasIndex('shop.prod_opt_vals', 'item_id')) {
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
                 ADDUNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
         }
