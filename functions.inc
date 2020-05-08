@@ -1743,7 +1743,7 @@ function plugin_configmanager_select_currency_shop()
     $A = array();
     $tmp = Shop\Currency::getAll();
     foreach ($tmp as $code => $data) {
-        $A["{$code} - {$data->name}"] = $code;
+        $A["{$code} - {$data->getName()}"] = $code;
     }
     return $A;
 }
