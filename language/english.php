@@ -826,6 +826,7 @@ $LANG_confignames['shop'] = array(
     'smartystreets_token' => 'SmartyStreets Token',
     'tax_taxcloud_id' => 'TaxCloud Login ID',
     'tax_taxcloud_key' => 'TaxCloud API Key',
+    'ena_fast_checkout' => 'Enable fast-checkout if possible',
 );
 
 /** Language strings for the subgroup names in the config section */

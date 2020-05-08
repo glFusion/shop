@@ -339,6 +339,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'ena_fast_checkout',
+        'default_value' => '0',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 2,
+        'sort' => 270,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array(
         'name' => 'fs_paths',               // Paths fieldset

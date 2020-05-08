@@ -1090,7 +1090,7 @@ class Cart extends Order
         if (
             // todo: no gift cards, no active discount codes
             COM_isAnonUser() ||         // can't be anonymous, need email addr
-            !$_SHOP_CONF['allow_fast_checkout'] ||  // not configured
+            !$_SHOP_CONF['ena_fast_checkout'] ||  // not configured
             count(Gateways) > 1 ||      // must have only one gateway
             $this->hasPhysical() ||     // need shipping addr
             $this->hasTaxable() ||      // need shipping addr
