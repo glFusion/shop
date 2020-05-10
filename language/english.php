@@ -680,6 +680,15 @@ $LANG_SHOP = array (
 'is_money' => 'Monetary payment',
 'add_payment' => 'Add a Payment',
 'paid_only' => 'Paid Only',
+'def_billto' => 'Default Billing Address?',
+'def_shipto' => 'Default Shipping Address?',
+'as_entered' => 'As Entered',
+'validated' => 'Validated',
+'hdr_def_billto' => 'Default<br/>Billing',
+'hdr_def_shipto' => 'Default<br/>Shipping',
+'address' => 'Address',
+'edit_address' => 'Edit an Address',
+'addresses' => 'Addresses',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

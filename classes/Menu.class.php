@@ -37,13 +37,16 @@ class Menu
                 'url'  => SHOP_URL . '/index.php',
                 'text' => $LANG_SHOP['back_to_catalog'],
             ),
-        );
-
-        $active = $view == 'orderhist' ? true : false;
-        $menu_arr[] = array(
-            'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
-            'text' => $LANG_SHOP['purchase_history'],
-            'active' => $active,
+            array(
+                'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
+                'text' => $LANG_SHOP['purchase_history'],
+                'active' => $view == 'orderhist' ? true : false,
+            ),
+            array(
+                'url' => COM_buildUrl(SHOP_URL . '/account.php?mode=addresses'),
+                'text' => $LANG_SHOP['addresses'],
+                'active' => $view == 'addresses' ? true : false,
+            ),
         );
 
         // Show the Gift Cards menu item only if enabled.

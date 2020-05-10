@@ -264,9 +264,9 @@ class Customer
             return array(-1, $msg);
         }
 
-        if (isset($A['is_default'])) {
+        /*if (isset($A['is_default'])) {
             $Address->setDefault($type);
-        }
+        }*/
         $addr_id = $Address->Save();
         return array($addr_id, $msg);
     }
@@ -417,6 +417,7 @@ class Customer
             if ($address->isDefault($type)) {
                 $is_default = true;
                 $def_addr = $ad_id;
+                $defAddress = $address;
             } else {
                 $is_default = false;
             }
@@ -445,6 +446,8 @@ class Customer
                 'ad_country' => $address->getCountry(),
                 'ad_zip'    => $address->getPostal(),
                 'ad_phone'  => $address->getPhone(),
+                'ad_billto_def' => $address->isDefaultBillto(),
+                'ad_shipto_def' => $address->isDefaultShipto(),
                 'ad_checked' => $ad_checked,
                 'del_icon'  => Icon::getHTML(
                     'delete', 'tooltip',
@@ -481,24 +484,23 @@ class Customer
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             'billship'      => $type,
-            'order_id'      => $this->order_id,
+            //'order_id'      => $this->order_id,
             'sel_addr_text' => $LANG_SHOP['sel_' . $type . '_addr'],
             'addr_type'     => $LANG_SHOP[$type . '_info'],
             'ad_type'       => $type,
             'allow_default' => $this->uid > 1 ? 'true' : '',
             'have_addresses' => $count > 0 ? 'true' : '',
             'addr_id'   => empty($addr_id) ? '' : $addr_id,
-            'name'      => isset($A['name']) ? $A['name'] : '',
+            /*'name'      => isset($A['name']) ? $A['name'] : '',
             'company'   => isset($A['company']) ? $A['company'] : '',
             'address1'  => isset($A['address1']) ? $A['address1'] : '',
             'address2'  => isset($A['address2']) ? $A['address2'] : '',
-            'city'      => isset($A['city']) ? $A['city'] : '',
-            'state'     => isset($A['state']) ? $A['state'] : '',
-            'zip'       => isset($A['zip']) ? $A['zip'] : '',
+            'city'      => isset($A['city']) ? $A['city'] : '',*/
+            //'state'     => isset($A['state']) ? $A['state'] : '',
+            //'zip'       => isset($A['zip']) ? $A['zip'] : '',
             'country'   => isset($A['country']) ? $A['country'] : '',
-            'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
-                                'checked="checked"' : '',
-
+            /*'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
+            'checked="checked"' : '',*/
             'req_street'    => $_SHOP_CONF['get_street'] == 2 ? 'true' : '',
             'req_city'      => $_SHOP_CONF['get_city'] == 2 ? 'true' : '',
             'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',

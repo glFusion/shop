@@ -2,6 +2,7 @@
 
 ## v1.3.0
 Release TBD
+  * Add interface for customers to edit addresses outside of orders.
   * Add fast-checkout where the order allows it.
   * Add invoicing via Paypal.
   * Enable sales tax charges on shipping and handling.

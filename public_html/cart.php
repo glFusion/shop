@@ -176,7 +176,7 @@ case 'saveshipto':
         $view = $addr_type;
         break;
     }
-    $U = \Shop\Customer::getInstance();
+    $U = Shop\Customer::getInstance();
     if ($U->getUid() > 1) {      // only save addresses for logged-in users
         $addr_id = $U->saveAddress($addr, $addr_type);
         if ($addr_id[0] < 0) {
@@ -189,7 +189,7 @@ case 'saveshipto':
             $_POST['useaddress'] = $addr_id[0];
         }
     }
-    $Cart = \Shop\Cart::getInstance();
+    $Cart = Shop\Cart::getInstance();
     $Cart->setAddress($addr, $addr_type);
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     $content = $Cart->getView($next_step);

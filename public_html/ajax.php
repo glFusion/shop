@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -147,15 +147,18 @@ case 'validateAddress':
     $A1 = new Shop\Address($_POST);
     $A2 = $A1->Validate();
     if (!$A1->Matches($A2)) {
+        $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
         $T = new Template(SHOP_PI_PATH . '/templates');
         $T->set_file('popup', 'address_select.thtml');
         $T->set_var(array(
             'address1_html' => $A1->toHTML(),
-            'address1_json' => htmlentities($A1->toJSON()),
+            'address1_json' => htmlentities($A1->toJSON(false)),
             'address2_html' => $A2->toHTML(),
-            'address2_json' => htmlentities($A2->toJSON()),
+            'address2_json' => htmlentities($A2->toJSON(false)),
             'ad_type'       => $_POST['ad_type'],
             'next_step'     => $_POST['next_step'],
+            'save_url'      => $save_url,
+            'save_btn_name' => SHOP_getVar($_POST, 'save_btn_name', 'string,', 'save'),
         ) );
         $output['status']  = false;
         $output['form'] = $T->parse('output', 'popup');
@@ -168,6 +171,25 @@ case 'getStateOpts':
         'opts' => Shop\State::optionList(
             SHOP_getVar($_GET, 'country_iso', 'string', '')
         ),
+    );
+    break;
+
+case 'setDefAddr':
+    $addr_id = SHOP_getVar($_POST, 'addr_id', 'integer');
+    if ($addr_id < 1) {
+        $ouptut = array(
+            'status' => 0,
+            'statusMessage' => 'Invalid address ID given',
+        );
+        break;
+    }
+    $type = SHOP_getVar($_POST, 'addr_type');
+    $status = Shop\Address::getInstance($addr_id)
+        ->setDefault($type)
+        ->Save();
+    $output = array(
+        'status' => $status,
+        'statusMessage' => $status ? 'Address Updated' : 'An error occurred',
     );
     break;
 

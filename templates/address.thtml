@@ -26,6 +26,10 @@ function updateForm(id)
         document.getElementById("countryDefault").value = document.getElementById("ad_country["+id+"]").value;
         document.getElementById("stateDefault").value = document.getElementById("ad_state["+id+"]").value;
         document.getElementById("addr_id").value = id;
+        chk_val = document.getElementById("ad_billto_def[" + id + "]").value;
+        $("#billto_def").prop("checked", chk_val == 1 ? true : false);
+        chk_val = document.getElementById("ad_shipto_def[" + id + "]").value;
+        $("#shipto_def").prop("checked", chk_val == 1 ? true : false);
     }
 }
 
@@ -98,6 +102,8 @@ function removeAddress(addr_id)
     <input type="hidden" name="ad_zip[{id}]" id="ad_zip[{id}]" value="{ad_zip}" />
     <input type="hidden" name="ad_phone[{id}]" id="ad_phone[{id}]" value="{ad_phone}" />
     <input type="hidden" name="ad_country[{id}]" id="ad_country[{id}]" value="{ad_country}" />
+    <input type="hidden" name="ad_billto_def[{id}]" id="ad_billto_def[{id}]" value="{ad_billto_def}" />
+    <input type="hidden" name="ad_shipto_def[{id}]" id="ad_shipto_def[{id}]" value="{ad_shipto_def}" />
     <br />
   </div>
   <!-- END SavedAddress -->
@@ -241,11 +247,32 @@ function removeAddress(addr_id)
   <input type="hidden" id="phone" name="phone" value="" />
 {!endif}
 
-{!if allow_default}
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['def_billto']}</label>
+        <div class="uk-form-controls">
+            <input type="checkbox" id="billto_def" name="billto_def" value="1" {billto_chk} />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['def_shipto']}</label>
+        <div class="uk-form-controls">
+            <input type="checkbox" id="shipto_def" name="shipto_def" value="1" {shipto_chk} />
+        </div>
+    </div>
+
+
+{!if allow_defaultX}
   <div class="uk-form-row">
     <label class="uk-form-label">{$LANG_SHOP['make_def_addr']}</label>
     <div class="uk-form-controls">
-      <input type="checkbox" name="is_default" value="1" {def_checked} />
+{!!if {ad_type} == "billto" !!}
+      <input type="checkbox" id="def_cbox" name="billto_def" value="1" {def_checked} />
+      <input type="hidden" name="shipto_def" value="{shipto_val}" />
+{!else}
+      <input type="checkbox" id="def_cbox" name="shipto_def" value="1" {def_checked} />
+      <input type="hidden" name="billto_def" value="{billto_val}" />
+{!endif}
     </div>
   </div>
 {!endif}
