@@ -1089,21 +1089,21 @@ class Cart extends Order
         $Gateways = Gateway::getAll();
         if (
             // todo: no gift cards, no active discount codes
-            COM_isAnonUser() ||         // can't be anonymous, need email addr
             !$_SHOP_CONF['ena_fast_checkout'] ||  // not configured
-            count(Gateways) > 1 ||      // must have only one gateway
+            COM_isAnonUser() ||         // can't be anonymous, need email addr
+            count($Gateways) > 1 ||     // must have only one gateway
             $this->hasPhysical() ||     // need shipping addr
             $this->hasTaxable() ||      // need shipping addr
+            DiscountCode::countCurrent() > 0 || // have active codes
             (
                 $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
                 count(Products\Coupon::getUserCoupons() > 0)
-            ) ||
-            DiscountCode::countCurrent() > 0    // have active codes
+            )
         ) {
             return false;
         }
 
-        // Get the first gateway (should be only one anyway
+        // Get the first gateway (should be only one anyway)
         $gateway = array_shift($Gateways);
 
         // Get the customer information to set addresses and email addr
