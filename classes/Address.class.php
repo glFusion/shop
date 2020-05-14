@@ -813,7 +813,6 @@ class Address
      */
     public function toArray()
     {
-        COM_errorLog("User ID: " . $this->uid);
         return array(
             'addr_id'   => $this->addr_id,
             'uid'       => $this->uid,
