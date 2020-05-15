@@ -40,27 +40,27 @@ class Webhook
 
     /** Webhook Reference ID.
      * @var string */
-    protected $whID;
+    protected $whID = '';
 
     /** Webhook source, eg. gateway name.
      * @var string */
-    protected $whSource;
+    protected $whSource = '';
 
     /** Event type, e.g. "payment received".
      * @var string */
-    protected $whEvent;
+    protected $whEvent = '';
 
     /** Order ID related to this notification.
      * @var string */
-    protected $whOrderID;
+    protected $whOrderID = '';
 
     /** Total Payment Amount.
      * @var float */
-    protected $whPmtTotal;
+    protected $whPmtTotal = 0;
 
     /** Status of webhook verification via callback.
      * @var boolean */
-    protected $whVerified;
+    protected $whVerified = 0;
 
 
     /**
@@ -240,7 +240,7 @@ class Webhook
      */
     public function getPayment()
     {
-        return $this->whPmtTotal;
+        return (float)$this->whPmtTotal;
     }
 
 
@@ -297,6 +297,7 @@ class Webhook
         $ipn->setOrderID($this->whOrderID)
             ->setTxnID($this->whID)
             ->setGateway($this->whSource)
+            ->setEvent($this->whEvent)
             ->setVerified($this->isVerified())
             ->setData($this->whData);
         return $ipn->Write();
