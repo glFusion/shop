@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -553,6 +553,7 @@ class Order
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         if (isset($A['amt_paid'])) {    // only present in DB record
             $this->_amt_paid = (float)$A['amt_paid'];
+            $this->total = (float)$A['order_total'];
         }
         return $this;
     }
