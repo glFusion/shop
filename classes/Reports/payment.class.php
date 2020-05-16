@@ -138,7 +138,7 @@ class payment extends \Shop\Report
         );
 
         $filter = "WHERE pmt_ts BETWEEN {$this->startDate->toUnix()} AND {$this->endDate->toUnix()}";
-        if ($this->order_id != 'x') {
+        if ($this->order_id != 'x' && !empty($this->order_id)) {
             $filter .= " AND pmt.pmt_order_id = '" . DB_escapeString($this->order_id) . "'";
             $title = $LANG_SHOP['order'] . ' ' . $this->order_id;
         } else {
