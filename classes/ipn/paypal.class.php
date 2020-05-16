@@ -285,7 +285,7 @@ class paypal extends \Shop\IPN
                     'price'     => $item->getPrice(),
                     'item_name' => $item->getDscp(),
                     'shipping'  => $item->getShippingAmt(),
-                    'handling'  => $item->getHandling(),
+                    'handling'  => $item->getHandlingAmt(),
                     'tax'       => $item->getTax(),
                     'extras'    => $item->getExtras(),
                 );

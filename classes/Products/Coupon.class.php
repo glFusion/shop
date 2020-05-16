@@ -290,8 +290,8 @@ class Coupon extends \Shop\Product
         if ($uid == 0) $uid = $_USER['uid'];
         $order_id = '';
         if (is_object($Order) && !$Order->isNew()) {
-            $order_id = DB_escapeString($Order->order_id);
-            $uid = $Order->uid;
+            $order_id = DB_escapeString($Order->getOrderID());
+            $uid = $Order->getUid();
         }
         if ($uid < 2 || $amount == 0) {
             // Nothing to do if amount is zero, and anon users not supported
@@ -353,12 +353,12 @@ class Coupon extends \Shop\Product
         global $LANG_SHOP;
 
         $status = 0;
-        $amount = (float)$Item->price;
+        $amount = (float)$Item->getPrice();
         $special = SHOP_getVar($Item->extras, 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
         $sender_name = SHOP_getVar($special, 'sender_name', 'string');
         $msg = SHOP_getVar($special, 'message', 'string');
-        $uid = $Item->getOrder()->uid;
+        $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial

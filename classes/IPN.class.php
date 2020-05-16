@@ -22,7 +22,7 @@
  * @filesource
  */
 namespace Shop;
-
+use Logger\IPN as logIPN;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -80,6 +80,10 @@ class IPN
      * @var string */
     private $txn_id = '';
 
+    /** Payment date/time.
+     * @var object */
+    private $txn_date = NULL;
+
     /** Payer email.
      * @var string */
     private $payer_email = '';
@@ -107,6 +111,10 @@ class IPN
     /** Payment status string.
      * @var string */
     private $status = '';
+
+    /** Event or message type for logging. Normally `payment`.
+     * @var string */
+    private $event = 'payment';
 
     /**
      * Holder for the complete IPN data array.
@@ -154,6 +162,7 @@ class IPN
     * @var object */
     protected $Cart;
 
+
     /**
      * Set up variables received in the IPN message.
      * Stores the complete IPN message in ipn_data.
@@ -171,6 +180,9 @@ class IPN
 
         // Create a gateway object to get some of the config values
         $this->GW = Gateway::getInstance($this->gw_id);
+        // If the transaction date wasn't set by the handler,
+        // make sure it's set here.
+        $this->setTxnDate();
     }
 
 
@@ -385,6 +397,32 @@ class IPN
     public function getParentTxnId()
     {
         return $this->parent_txn_id;
+    }
+
+
+    /**
+     * Set the transaction date/time.
+     *
+     * @param   string|integer  $dt     Datetime string or timestamp
+     * @return  object  $this
+     */
+    public function setTxnDate($dt='now')
+    {
+        global $_CONF;
+
+        $this->txn_date = new \Date($dt, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the transaction date object.
+     *
+     * @return  object      Date object
+     */
+    public function getTxnDate()
+    {
+        return $this->txn_date;
     }
 
 
@@ -624,24 +662,15 @@ class IPN
         } else {
             $verified = 0;
         }
-
-        // Log to database
-        $sql = "INSERT INTO {$_TABLES['shop.ipnlog']} SET
-                ip_addr = '{$_SERVER['REMOTE_ADDR']}',
-                ts = UNIX_TIMESTAMP(),
-                verified = $verified,
-                txn_id = '" . DB_escapeString($this->txn_id) . "',
-                gateway = '{$this->gw_id}',
-                ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
-        if ($this->Order !== NULL) {
-            $sql .= ", order_id = '" . DB_escapeString($this->Order->getOrderId()) . "'";
-        }
-        // Ignore DB error in order to not block IPN
-        DB_query($sql, 1);
-        if (DB_error()) {
-            SHOP_log("Shop\IPN::Log() SQL error: $sql", SHOP_LOG_ERROR);
-        }
-        return DB_insertId();
+        $order_id = $this->Order !== NULL ? DB_escapeString($this->Order->getOrderId()) : '';
+        $ipn = new logIPN();
+        $ipn->setOrderID($order_id)
+            ->setTxnID($this->txn_id)
+            ->setGateway($this->gw_id)
+            ->setEvent($this->event)
+            ->setVerified($verified())
+            ->setData($this->ipn_data);
+        return $ipn->Write();
     }
 
 
@@ -721,27 +750,27 @@ class IPN
                 continue;
             }
 
-            $this->items[$id]['prod_type'] = $P->prod_type;
+            $this->items[$id]['prod_type'] = $P->getProductType();
             SHOP_log("Shop item " . $item['item_number'], SHOP_LOG_DEBUG);
 
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->file;
+                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->getFilename();
                 $token_base = $this->getTxnId() . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
             } else {
                 $token = '';
             }
-            if (is_numeric($P->expiration) && $P->expiration > 0) {
-                $this->items[$id]['expiration'] = $P->expiration;
+            if ($P->getExpiration() > 0) {
+                $this->items[$id]['expiration'] = $P->getExpiration();
             }
 
             // If a custom name was supplied by the gateway's IPN processor,
             // then use that.  Otherwise, plug in the name from inventory or
             // the plugin, for the notification email.
             if (empty($item['name'])) {
-                $this->items[$id]['name'] = $P->short_description;
+                $this->items[$id]['name'] = $P->getShortDscp();
             }
         }   // foreach item
 

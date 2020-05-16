@@ -29,6 +29,7 @@ $_SQL = array(
   `verified` tinyint(1) DEFAULT '0',
   `txn_id` varchar(255) DEFAULT NULL,
   `gateway` varchar(25) DEFAULT NULL,
+  `event` varchar(40) DEFAULT 'payment',
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -723,6 +724,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

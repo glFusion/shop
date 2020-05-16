@@ -2459,7 +2459,7 @@ class Product
         // update the qty on hand, if tracking and not already zero
         if ($this->track_onhand && $this->getOnhand() > 0) {
             $sql = "UPDATE {$_TABLES['shop.products']} SET
-                    onhand = GREATEST(0, onhand - {$Item->quantity})
+                    onhand = GREATEST(0, onhand - {$Item->getQuantity()})
                     WHERE id = '{$this->id}'";
             Cache::clear('products');
             Cache::clear('sitemap');
@@ -3138,6 +3138,17 @@ class Product
             $retval = ($this->prod_type & SHOP_PROD_DOWNLOAD) == SHOP_PROD_DOWNLOAD;
         }
         return $retval;
+    }
+
+
+    /**
+     * Get the product type.
+     *
+     * @return  intger  Product type.
+     */
+    public function getProductType()
+    {
+        return (int)$this->prod_type;
     }
 
 

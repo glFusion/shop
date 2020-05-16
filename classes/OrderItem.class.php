@@ -628,6 +628,17 @@ class OrderItem
 
 
     /**
+     * Get the handling charge for this item.
+     *
+     * @return  float       Total handling charge for this line item
+     */
+    public function getHandlingAmt()
+    {
+        return (float)$this->handling;
+    }
+
+
+    /**
      * Set the item as "embargoed" due to failing a zone rule.
      *
      * @param   boolean $flag   True to prevent ordering this item
