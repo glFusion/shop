@@ -22,7 +22,7 @@
  * @filesource
  */
 namespace Shop;
-use Logger\IPN as logIPN;
+use Shop\Logger\IPN as logIPN;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -668,7 +668,7 @@ class IPN
             ->setTxnID($this->txn_id)
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
-            ->setVerified($verified())
+            ->setVerified($verified)
             ->setData($this->ipn_data);
         return $ipn->Write();
     }
