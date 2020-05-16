@@ -389,7 +389,7 @@ class check extends \Shop\Gateway
 
             // An invalid item number, or nothing returned for a plugin
             if (empty($A)) {
-                //$this->Error("Item {$item['item_number']} not found");
+                SHOP_log("Item {$item['item_number']} not found");
                 continue;
             }
 

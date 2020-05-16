@@ -115,9 +115,10 @@ class terms extends \Shop\Gateway
 
 
     /**
-     * No config fields for the Terms gateway.
+     * Get all the configuration fields specifiec to this gateway.
      *
-     * @return  array   Empty array
+     * @param   string  $env    Environment (test, prod or global)
+     * @return  array   Array of fields (name=>field_info)
      */
     public function getConfigFields($env='global')
     {

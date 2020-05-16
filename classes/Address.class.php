@@ -101,6 +101,12 @@ class Address
     }
 
 
+    /**
+     * Set all the properties from a provided array.
+     *
+     * @param   array   $data   Array of property name->value pairs
+     * @return  object  $this
+     */
     public function setVars($data)
     {
         $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
