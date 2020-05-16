@@ -59,13 +59,19 @@ class stripe extends \Shop\Gateway
         $this->gw_url = SHOP_URL . '/ipn/stripe.php';
 
         $this->cfgFields = array(
-            'pub_key_prod'  => 'password',
-            'sec_key_prod'  => 'password',
-            'hook_sec_prod' => 'password',
-            'pub_key_test'  => 'password',
-            'sec_key_test'  => 'password',
-            'hook_sec_test' => 'password',
-            'test_mode'     => 'checkbox',
+            'prod' => array(
+                'pub_key'  => 'password',
+                'sec_key'  => 'password',
+                'hook_sec' => 'password',
+            ),
+            'test' => array(
+                'pub_key'  => 'password',
+                'sec_key'  => 'password',
+                'hook_sec' => 'password',
+            ),
+            'global' => array(
+                'test_mode' => 'checkbox',
+            ),
         );
 
         // Set the only service supported
@@ -73,7 +79,11 @@ class stripe extends \Shop\Gateway
 
         parent::__construct();
 
-        if ($this->getConfig('test_mode') == 1) {
+        $this->pub_key = $this->getConfig('pub_key');
+        $this->sec_key = $this->getConfig('sec_key');
+        $this->hook_sec = $this->getConfig('hook_sec');
+//        var_dump($this->sec_key);die;
+        /*if ($this->getConfig('test_mode') == 1) {
             $this->pub_key = $this->getConfig('pub_key_test');
             $this->sec_key = $this->getConfig('sec_key_test');
             $this->hook_sec = $this->getConfig('hook_sec_test');
@@ -81,7 +91,7 @@ class stripe extends \Shop\Gateway
             $this->pub_key = $this->getConfig('pub_key_prod');
             $this->sec_key = $this->getConfig('sec_key_prod');
             $this->hook_sec = $this->getConfig('hook_sec_prod');
-        }
+        }*/
         \Stripe\Stripe::setApiKey($this->sec_key);
     }
 
@@ -124,18 +134,18 @@ class stripe extends \Shop\Gateway
         } else {
             foreach ($cart->getItems() as $Item) {
                 $P = $Item->getProduct();
-                $Item->Price = $P->getPrice($Item->options);
-                $opts = $P->getOptionDesc($Item->options);
-                $dscp = $Item->description;
+                $Item->Price = $P->getPrice($Item->getOptions());
+                $opts = $P->getOptionDesc($Item->getOptions());
+                $dscp = $Item->getDscp();
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
                 }
                 $line_items[] = array(
-                    'name'      => $Item->description,
+                    'name'      => $Item->getDscp(),
                     'description' => $dscp,
-                    'amount'    => $Cur->toInt($Item->Price),
+                    'amount'    => $Cur->toInt($Item->getPrice()),
                     'currency'  => strtolower($Cur),
-                    'quantity'  => $Item->quantity,
+                    'quantity'  => $Item->getQuantity(),
                 );
             }
 
@@ -145,7 +155,7 @@ class stripe extends \Shop\Gateway
                 $line_items[] = array(
                     'name'      => '__tax',
                     'description' => $LANG_SHOP['tax'],
-                    'amount'    => $cart->tax * pow(10, $Cur->decimals),
+                    'amount'    => $cart->getTax() * pow(10, $Cur->Decimals()),
                     'currency'  => strtolower($Cur),
                     'quantity'  => 1,
                 );
@@ -154,7 +164,7 @@ class stripe extends \Shop\Gateway
                 $line_items[] = array(
                     'name'      => '__shipping',
                     'description' => $LANG_SHOP['shipping'],
-                    'amount'    => $cart->shipping * pow(10, $Cur->decimals),
+                    'amount'    => $cart->getShipping() * pow(10, $Cur->Decimals()),
                     'currency'  => strtolower($Cur),
                     'quantity'  => 1,
                 );

@@ -46,12 +46,16 @@ class terms extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->config = array(
-            'gateway'   => '',
-            'net_days'  => 30,
+            'global' => array(
+                'gateway'   => '',
+                'net_days'  => 30,
+            ),
         );
         $this->cfgFields= array(
-            'gateway'   => 'select',
-            'net_days'  => 'string',
+            'global' => array(
+                'gateway'   => 'select',
+                'net_days'  => 'string',
+            ),
         );
         $this->services = array(
             'checkout'  => 1,
@@ -115,24 +119,38 @@ class terms extends \Shop\Gateway
      *
      * @return  array   Empty array
      */
-    public function getConfigFields()
+    public function getConfigFields($env='global')
     {
+        global $LANG_SHOP;
+
         $fields = array();
-        foreach($this->config as $name=>$value) {
+        foreach($this->config[$env] as $name=>$value) {
             $other_label = '';
             switch ($name) {
             case 'gateway':
-                $field = '<select name="' . $name . '">' . LB;
+                $field = '<select name="' . $name . '[global]">' . LB;
+                if ($this->gw_name == '') {
+                    $sel = 'selected="selected"';
+                } else {
+                    $sel = '';
+                }
+                $field .= '<option value=""' . $sel . '>-- ' .
+                    $LANG_SHOP['none'] . ' --</option>' . LB;
                 foreach (self::getAll() as $gw) {
+                    if ($gw->gw_name == $this->getConfig('gateway')) {
+                        $sel = 'selected="selected"';
+                    } else {
+                        $sel = '';
+                    }
                     if ($gw->Supports($this->gw_name)) {
-                        $field .= '<option value="' . $gw->gw_name . '">' .
+                        $field .= '<option value="' . $gw->gw_name . '" ' . $sel . '>' .
                             $gw->gw_desc . '</option>' . LB;
                     }
                 }
                 $field .= '</select>' . LB;
                 break;
             default:
-                $field = '<input type="text" name="' . $name . '" value="' .
+                $field = '<input type="text" name="' . $name . '[global]" value="' .
                     $value . '" size="60" />';
                 break;
             }

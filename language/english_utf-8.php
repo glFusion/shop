@@ -693,6 +693,10 @@ $LANG_SHOP = array (
 'address' => 'Address',
 'edit_address' => 'Edit an Address',
 'addresses' => 'Addresses',
+'global' => 'Global',
+'prod' => 'Production',
+'test' => 'Sandbox',
+'gw_test_mode'     => 'Testing (Sandbox) Mode?',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

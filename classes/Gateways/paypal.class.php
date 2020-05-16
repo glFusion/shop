@@ -60,36 +60,49 @@ class paypal extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields= array(
-            'bus_prod_email'    => 'string',
-            'micro_prod_email'  => 'string',
-            'bus_test_email'    => 'string',
-            'micro_test_email'  => 'string',
-            'test_mode'         => 'checkbox',
-            'micro_threshold'   => 'string',
-            'encrypt'           => 'checkbox',
-            'pp_cert'           => 'string',
-            'pp_cert_id'        => 'string',
-            'micro_cert_id'     => 'string',
-            'sandbox_main_cert' => 'string',
-            'sandbox_micro_cert' => 'string',
-            'prv_key'           => 'string',
-            'pub_key'           => 'string',
-            'prod_url'          => 'string',
-            'sandbox_url'       => 'string',
-            'api_username'      => 'password',
-            'api_password'      => 'password',
-            'api_sig'           => 'password',
-            'sandbox_webhook_id' => 'string',
-            'prod_webhook_id'   => 'string',
-            'api_sig'           => 'password',
+            'prod' => array(
+                'receiver_email'    => 'string',
+                'micro_receiver_email'  => 'string',
+                'endpoint'          => 'string',
+                'webhook_id'   => 'string',
+                'api_username'      => 'password',
+                'api_password'      => 'password',
+                'pp_cert'           => 'string',
+                'pp_cert_id'        => 'string',
+                'micro_cert_id'     => 'string',
+            ),
+            'test' => array(
+                'receiver_email'    => 'string',
+                'micro_receiver_email'  => 'string',
+                'endpoint'       => 'string',
+                'webhook_id' => 'string',
+                'api_username'      => 'password',
+                'api_password'      => 'password',
+                'pp_cert' => 'string',
+                'pp_cert_id'        => 'string',
+                'micro_cert_id'     => 'string',
+            ),
+            'global' => array(
+                'test_mode'         => 'checkbox',
+                'micro_threshold'   => 'string',
+                'encrypt'           => 'checkbox',
+                'prv_key'           => 'string',
+                'pub_key'           => 'string',
+            ),
         );
 
         // Set defaults
         $this->config = array(
-            'micro_threshold'   => '10',
-            'test_mode'         => '1',
-            'prod_url'          => 'https://www.paypal.com',
-            'sandbox_url'       => 'https://www.sandbox.paypal.com',
+            'global' => array(
+                'micro_threshold'   => '10',
+                'test_mode'         => '1',
+            ),
+            'prod' => array(
+                'endpoint' => 'https://www.paypal.com',
+            ),
+            'test' => array(
+                'endpoint' => 'https://www.sandbox.paypal.com',
+            ),
         );
 
         // This gateway can service all button type by default
@@ -106,13 +119,14 @@ class paypal extends \Shop\Gateway
         // Call the parent constructor to initialize the common variables.
         parent::__construct();
 
+        $this->gw_url = $this->getConfig('endpoint');
         // Set the gateway URL depending on whether we're in test mode or not
         if ($this->getConfig('test_mode') == 1) {
-            $this->gw_url = $this->getConfig('sandbox_url');
+            //$this->gw_url = $this->getConfig('sandbox_url');
             $this->postback_url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
             $this->api_url = 'https://api.sandbox.paypal.com';
         } else {
-            $this->gw_url = $this->getConfig('prod_url');
+            //$this->gw_url = $this->getConfig('prod_url');
             $this->postback_url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
             $this->api_url = 'https://api.paypal.com';
         }
@@ -125,7 +139,7 @@ class paypal extends \Shop\Gateway
 
         // Set defaults, just to make sure something is set
         $this->cert_id = $this->getConfig('pp_cert_id');
-        $this->receiver_email = $this->getConfig('bus_prod_email');
+        $this->receiver_email = $this->getConfig('receiver_email');
     }
 
 
@@ -287,9 +301,9 @@ class paypal extends \Shop\Gateway
         // be used for this purchase
         $this->setReceiver($total_amount);
         $fields['business'] = $this->receiver_email;
-        if (empty($fields['business']))
+        if (empty($fields['business'])) {
             return '';
-
+        }
         $gatewayVars = array();
         $enc_btn = '';
         if ($this->getConfig('encrypt')) {
@@ -770,10 +784,8 @@ class paypal extends \Shop\Gateway
     public function isBusinessEmail($email)
     {
         switch ($email) {
-        case $this->getConfig('bus_prod_email'):
-        case $this->getConfig('micro_prod_email'):
-        case $this->getConfig('bus_test_email'):
-        case $this->getConfig('micro_test_email'):
+        case $this->getConfig('receiver_email'):
+        case $this->getConfig('micro_receiver_email'):
             $retval = true;
             break;
         default:
@@ -826,31 +838,23 @@ class paypal extends \Shop\Gateway
      * Sets the receiver_email and cert_id properties.
      *
      * @param   float   $amount     Total puchase amount.
+     * @return  object  $this
      */
     private function setReceiver($amount)
     {
-        // Available receiver_email addresses
-        $aEmail = array(
-            array('bus_prod_email', 'micro_prod_email'),
-            array('bus_test_email', 'micro_test_email'),
-        );
-
-        // Available cert_id properties
-        $aCert = array(
-            array('pp_cert_id', 'micro_cert_id'),
-            array('sandbox_main_cert', 'sandbox_micro_cert'),
-        );
-
-        // Set the array keys based on test mode and amount
-        $kTest = $this->isSandbox() ? 1 : 0;
-        $kAmount = $amount < $this->getConfig('micro_threshold') ? 1 : 0;
-        $this->receiver_email = !empty($this->getConfig($aEmail[$kTest][$kAmount])) ?
-                $this->getConfig($aEmail[$kTest][$kAmount]) :
-                $this->getConfig($aEmail[$kTest][0]);
-
-        $this->cert_id = !empty($this->getConfig($aCert[$kTest][$kAmount])) ?
-                $this->getConfig($aCert[$kTest][$kAmount]) :
-                $this->getConfig($aCert[$kTest][0]);
+        // If the order amount exceeds the micro account threshold,
+        // or no micro receiver email is specified, return prod.
+        if (
+            $amount >= $this->getConfig['micro_threshold'] ||
+            empty($this->getConfig('micro_receiver_email'))
+        ) {
+            $this->receiver_email = $this->getConfig('receiver_email');
+            $this->cert_id = $this->getConfig('pp_cert_id');
+        } else {
+            $this->receiver_email = $this->getConfig('micro_receiver_email');
+            $this->cert_id = $this->getConfig('micro_cert_id');
+        }
+        return $this;
     }
 
 
@@ -1138,15 +1142,11 @@ class paypal extends \Shop\Gateway
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
-            /*        echo "Failed to send invoice\n";
-                    var_dump($http_code);
-            var_dump($send_response);*/
                     SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
                     return false;
                 }
             }
         } else {
-//            var_dump($inv);
             SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
             SHOP_Log("Data: " . var_export($inv, true));
             return false;
@@ -1173,11 +1173,7 @@ class paypal extends \Shop\Gateway
      */
     public function getWebhookID()
     {
-        if ($this->getConfig('test_mode')) {
-            return $this->getConfig('sandbox_webhook_id');
-        } else {
-            return $this->getConfig('prod_webhook_id');
-        }
+        return $this->getConfig('webhook_id');
     }
 
 

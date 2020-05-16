@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -768,6 +768,150 @@ class MigratePP
             WHERE key_name = '" . DB_escapeString($idx_name) . "'";
         $res = DB_query($sql);
         return DB_numRows($res);
+    }
+
+
+    /**
+     * Convert the gateway configurations from earlier version to 1.3.0.
+     * This allows the tabbed interface for test and prod environments.
+     */
+    public static function gwConvertConfig130()
+    {
+        global $_TABLES;
+
+        foreach (array('authorizenet', 'paypal', 'square', 'stripe') as $gw) {
+            $cfg = DB_getItem($_TABLES['shop.gateways'], 'config', "id='$gw'");
+            $cfg = unserialize($cfg);
+            if (!$cfg || isset($cfg['prod']) || isset($cfg['test'])) {
+                // Skip if already done
+                continue;
+            }
+            $test_mode = $cfg['test_mode'] ? 1 : 0;
+            $fn = 'cfg_convert_' . $gw;
+            if (method_exists(__CLASS__, $fn)) {
+                $cfgFields = self::$fn($cfg);
+                $config = DB_escapeString(serialize($cfgFields));
+                DB_query("UPDATE {$_TABLES['shop.gateways']} SET
+                    config = '$config', test_mode = '$test_mode'
+                    WHERE id='$gw'");
+            }
+        }
+    }
+
+
+    /**
+     * Convert the gateway config for authorize.net to 1.3.0
+     *
+     * @param   array   $cfg    Original config values
+     * @return  array           New config values
+     */
+    private static function cfg_convert_authorizenet($cfg)
+    {
+        $cfgFields= array(
+            'prod' => array(
+                'api_login'    => $cfg['prod_api_login'],
+                'trans_key'    => $cfg['prod_trans_key'],
+                'hash_key'     => $cfg['prod_hash_key'],
+            ),
+            'test' => array(
+                'api_login'    => $cfg['test_api_login'],
+                    'trans_key'    => $cfg['test_trans_key'],
+                    'hash_key'     => $cfg['test_hash_key'],
+            ),
+        );
+        return $cfgFields;
+    }
+
+
+    /**
+     * Convert the gateway config for Stripe to 1.3.0
+     *
+     * @param   array   $cfg    Original config values
+     * @return  array           New config values
+     */
+    private static function cfg_convert_stripe($cfg)
+    {
+        $cfgFields = array(
+            'prod' => array(
+                'pub_key'  => $cfg['pub_key_prod'],
+                'sec_key'  => $cfg['sec_key_prod'],
+                'hook_sec' => $cfg['hook_sec_prod'],
+            ),
+            'test' => array(
+                'pub_key'  => $cfg['pub_key_test'],
+                'sec_key'  => $cfg['sec_key_test'],
+                'hook_sec' => $cfg['hook_sec_test'],
+            ),
+        );
+        return $cfgFields;
+    }
+
+
+    /**
+     * Convert the gateway config for Square to 1.3.0
+     *
+     * @param   array   $cfg    Original config values
+     * @return  array           New config values
+     */
+    private function cfg_convert_square($cfg)
+    {
+        $cfgFields = array(
+            'prod' => array(
+                'loc_id'   => $cfg['sb_loc_id'],
+                'appid'    => $cfg['sb_appid'],
+                'token'    => $cfg['sb_token'],
+            ),
+            'test' => array(
+                'loc_id'     => $cfg['prod_loc_id'],
+                'appid'      => $cfg['prod_appid'],
+                'token'      => $cfg['prod_token'],
+            ),
+        );
+        return $cfgFields;
+    }
+
+
+    /**
+     * Convert the gateway config for Paypal to 1.3.0
+     *
+     * @param   array   $cfg    Original config values
+     * @return  array           New config values
+     */
+    private static function cfg_convert_paypal($cfg)
+    {
+        $cfgFields= array(
+            'prod' => array(
+                'receiver_email'    => $cfg['bus_prod_email'],
+                'micro_receiver_email'  => $cfg['micro_prod_email'],
+                'micro_cert_id'     => $cfg['micro_cert_id'],
+                'endpoint'          => $cfg['prod_url'],
+                'webhook_id'   => '',
+                'pp_cert'           => $cfg['pp_cert'],
+                'pp_cert_id'        => $cfg['pp_cert_id'],
+                'micro_cert'        => $cfg['micro_cert'],
+                'micro_cert_id'     => $cfg['micro_cert_id'],
+                'api_username'      => '',
+                'api_password'      => '',
+            ),
+            'test' => array(
+                'receiver_email'    => $cfg['bus_test_email'],
+                'micro_receiver_email'  => $cfg['micro_test_email'],
+                'pp_cert'           => $cfg['pp_cert'],
+                'pp_cert_id'        => $cfg['pp_cert_id'],
+                'micro_cert'        => $cfg['micro_cert'],
+                'micro_cert_id'     => $cfg['micro_cert_id'],
+                'webhook_id' => '',
+                'api_username'      => '',
+                'api_password'      => '',
+            ),
+            'global' => array(
+                'micro_threshold'   => $cfg['micro_threshold'],
+                'encrypt'           => $cfg['encrypt'],
+                'prv_key'           => $cfg['prv_key'],
+                'pub_key'           => $cfg['pub_key'],
+            ),
+        );
+        return $cfgFields;
     }
 
 }

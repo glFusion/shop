@@ -61,13 +61,19 @@ class square extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields = array(
-            'sb_loc_id'     => 'password',
-            'sb_appid'      => 'password',
-            'sb_token'      => 'password',
-            'prod_loc_id'   => 'password',
-            'prod_appid'    => 'password',
-            'prod_token'    => 'password',
-            'test_mode'     => 'checkbox',
+            'prod' => array(
+                'loc_id'   => 'password',
+                'appid'    => 'password',
+                'token'    => 'password',
+            ),
+            'test' => array(
+                'loc_id'     => 'password',
+                'appid'      => 'password',
+                'token'      => 'password',
+            ),
+            'global' => array(
+                'test_mode' => 'checkbox',
+            ),
         );
 
         // Set the only service supported
@@ -77,17 +83,20 @@ class square extends \Shop\Gateway
         parent::__construct();
 
         // Set the gateway URL depending on whether we're in test mode or not
+        $this->loc_id = $this->getConfig('loc_id');
+        $this->appid = $this->getConfig('appid');
+        $this->token = $this->getConfig('token');
         if ($this->isSandbox()) {
             // Test settings
-            $this->loc_id = $this->getConfig('sb_loc_id');
+            /*$this->loc_id = $this->getConfig('sb_loc_id');
             $this->appid = $this->getConfig('sb_appid');
-            $this->token = $this->getConfig('sb_token');
+            $this->token = $this->getConfig('sb_token');*/
             $this->api_url = 'https://connect.squareupsandbox.com';
         } else {
             // Production settings
-            $this->loc_id = $this->getConfig('prod_loc_id');
+/*            $this->loc_id = $this->getConfig('prod_loc_id');
             $this->appid = $this->getConfig('prod_appid');
-            $this->token = $this->getConfig('prod_token');
+$this->token = $this->getConfig('prod_token');*/
             $this->api_url = 'https://connect.squareup.com';
         }
         $this->gw_url = NULL;   // Normal gateway action url not used
@@ -168,19 +177,19 @@ class square extends \Shop\Gateway
 
                 $PriceMoney = new \SquareConnect\Model\Money;
                 $PriceMoney->setCurrency($this->currency_code);
-                $Item->Price = $P->getPrice($Item->options);
-                $PriceMoney->setAmount($Cur->toInt($Item->price));
+                $Item->Price = $P->getPrice($Item->getOptions);
+                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
                 //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
                 $itm = new \SquareConnect\Model\OrderLineItem;
 
-                $opts = $P->getOptionDesc($Item->options);
-                $dscp = $Item->description;
+                $opts = $P->getOptionDesc($Item->getOptions());
+                $dscp = $Item->getDscp();
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
                 }
                 $itm->setUid($idx);
                 $itm->setName($dscp);
-                $itm->setQuantity((string)$Item->quantity);
+                $itm->setQuantity((string)$Item->getQuantity());
                 $itm->setBasePriceMoney($PriceMoney);
 
                 // Add tax, if applicable
@@ -200,7 +209,7 @@ class square extends \Shop\Gateway
                     $itm->setTaxes(array($taxObj));
                     $itm->setTotalTaxMoney($tax);
                 }*/
-                $shipping += $Item->shipping;
+                $shipping += $Item->getShippingAmt();
 
                 //Puts our line item object in an array called lineItems.
                 array_push($lineItems, $itm);
@@ -211,7 +220,7 @@ class square extends \Shop\Gateway
         if ($cart->tax > 0) {
             $TaxMoney = new \SquareConnect\Model\Money;
             $TaxMoney->setCurrency($this->currency_code)
-                ->setAmount($Cur->toInt($cart->tax));
+                ->setAmount($Cur->toInt($cart->getTax()));
             $itm = new \SquareConnect\Model\OrderLineItem;
             $itm->setName($LANG_SHOP['tax'])
                 ->setUid('__tax')
@@ -246,7 +255,7 @@ class square extends \Shop\Gateway
             ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
             ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
             ->setOrder($order)          //this is the order we created in the previous step
-            ->setRedirectUrl($this->returnUrl($cart->order_id, $cart->token));
+            ->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
 
         $url = '';
         $gatewayVars = array();
@@ -395,7 +404,6 @@ class square extends \Shop\Gateway
      */
     public function getActionUrl()
     {
-        //return 'https://connect.squareup.com/v2/checkout';
         return $this->api_url . '/v2/checkout';
     }
 

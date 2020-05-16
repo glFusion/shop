@@ -59,15 +59,21 @@ class authorizenet extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields= array(
-            'prod_api_login'    => 'password',
-            'prod_trans_key'    => 'password',
-            'test_api_login'    => 'password',
-            'test_trans_key'    => 'password',
-//            'prod_md5_hash'     => '',
-//            'test_md5_hash'     => '',
-            'test_mode'         => 'checkbox',
-            'test_hash_key'     => 'password',
-            'prod_hash_key'     => 'password',
+            'prod' => array(
+                'api_login'    => 'password',
+                'trans_key'    => 'password',
+    //            'md5_hash'     => '',
+                'hash_key'     => 'password',
+            ),
+            'test' => array(
+                'api_login'    => 'password',
+                'trans_key'    => 'password',
+    //            'md5_hash'     => '',
+                'hash_key'     => 'password',
+            ),
+            'global' => array(
+                'test_mode' => 'checkbox',
+            ),
         );
 
         // Set the supported services as this gateway only supports cart checkout
@@ -81,16 +87,16 @@ class authorizenet extends \Shop\Gateway
 
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
+        $this->api_login    = trim($this->getConfig('api_login'));
+        $this->trans_key    = trim($this->getConfig('trans_key'));
+        $this->hash_key     = trim($this->getconfig('hash_key'));
         if ($this->isSandbox()) {
-            $this->api_login    = trim($this->getConfig('test_api_login'));
-            $this->trans_key    = trim($this->getConfig('test_trans_key'));
-            $this->hash_key     = trim($this->getconfig('test_hash_key'));
             $this->token_url = 'https://apitest.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://test.authorize.net/payment/payment';
         } else {
-            $this->api_login    = trim($this->getConfig('prod_api_login'));
+            /*$this->api_login    = trim($this->getConfig('prod_api_login'));
             $this->trans_key    = trim($this->getConfig('prod_trans_key'));
-            $this->hash_key     = trim($this->getconfig('prod_hash_key'));
+            $this->hash_key     = trim($this->getconfig('prod_hash_key'));*/
             $this->token_url = 'https://api.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://accept.authorize.net/payment/payment';
         }

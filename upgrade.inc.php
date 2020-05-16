@@ -308,6 +308,8 @@ function SHOP_do_upgrade($dvlp = false)
                 )";
         }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        // Convert the gateway configurations
+        Paypal\MigratePP::gwConvertConfig130();
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
