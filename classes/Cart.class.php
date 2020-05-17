@@ -1056,6 +1056,14 @@ class Cart extends Order
                 $errors['payer_email'] = $LANG_SHOP['err_missing_email'];
             }
         }
+
+        if ($this->hasPhysical()) {
+            $Addr = new Address($this->Shipto);
+            if ($Addr->isValid(true) != '') {
+                $errors['shipto'] = $LANG_SHOP['req_shipto'];
+            }
+        }
+
         if (!empty($errors)) {
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
             COM_setMsg($msg, 'error');

@@ -797,7 +797,7 @@ class Address
             foreach (array('billto', 'shipto') as $type) {
                 if ($this->isDefault($type)) {
                     $sql = "UPDATE {$_TABLES['shop.address']}
-                        SET {$type}_def = 0 WHERE 
+                        SET {$type}_def = 0 WHERE
                         uid = {$this->uid}
                         AND addr_id <> {$this->addr_id}
                         AND {$type}_def = 1";
@@ -841,29 +841,44 @@ class Address
      *
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid()
+    public function isValid($required=false)
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
         $invalid = array();
         $retval = '';
 
-        if ($this->name == '' && $this->company == '') {
+        if (empty($this->name) && empty($this->company)) {
             $invalid[] = 'name_or_company';
         }
-        if ($_SHOP_CONF['get_street'] == 2 && $this->address1 == '') {
+        if (
+            ($required || $_SHOP_CONF['get_street'] == 2)
+            && empty($this->address1)
+        ) {
             $invalid[] = 'address1';
         }
-        if ($_SHOP_CONF['get_city'] == 2 && $this->city == '') {
+        if (
+            ($required || $_SHOP_CONF['get_city'] == 2)
+            && empty($this->city)
+        ) {
             $invalid[] = 'city';
         }
-        if ($_SHOP_CONF['get_state'] == 2 && $this->state == '') {
+        if (
+            ($required || $_SHOP_CONF['get_state'] == 2)
+            && empty($this->state)
+        ) {
             $invalid[] = 'state';
         }
-        if ($_SHOP_CONF['get_postal'] == 2 && $this->zip == '') {
+        if (
+            ($required || $_SHOP_CONF['get_postal'] == 2)
+            && empty($this->zip)
+        ) {
             $invalid[] = 'zip';
         }
-        if ($_SHOP_CONF['get_country'] == 2 && $this->country == '') {
+        if (
+            ($required || $_SHOP_CONF['get_country'] == 2)
+            && $this->country == ''
+        ) {
             $invalid[] = 'country';
         }
 
