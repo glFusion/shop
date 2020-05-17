@@ -963,11 +963,11 @@ class Order
             //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
         } else {
             $lang_tax_on_items = $LANG_SHOP['sales_tax'];*/
-        if ($view == 'viewcart') {
+        /*if ($view == 'viewcart') {
             // Back out sales tax if tax is not charged. This happens when viewing the cart
             // and a tax amount gets set, but shouldn't be shown in the order yet.
             $this->total -= $this->tax;
-        }
+        }*/
 
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
@@ -2170,7 +2170,7 @@ class Order
         $T->set_block('form', 'shipMethodSelect', 'row');
 
         // Save the base charge (total items and handling, exclude tax if present)
-        $base_chg = $this->gross_items + $this->handling;
+        $base_chg = $this->gross_items + $this->handling + $this->tax;
         $ship_rates = array();
         foreach ($shippers as $shipper) {
             $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
