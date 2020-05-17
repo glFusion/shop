@@ -697,6 +697,8 @@ $LANG_SHOP = array (
 'prod' => 'Production',
 'test' => 'Sandbox',
 'gw_test_mode'     => 'Testing (Sandbox) Mode?',
+'req_shipto' => 'A valid shipping address is required.',
+'req_billto' => 'A valid billing address is required.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
