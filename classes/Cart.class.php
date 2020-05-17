@@ -533,7 +533,10 @@ class Cart extends Order
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
             $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
-            if (empty($gateways)) return NULL;  // no available gateways
+            if (empty($gateways)) {
+                return NULL;  // no available gateways
+            }
+
             if ($this->total == 0) {
                 // Automatically select the "free" gateway if appropriate.
                 // Other gateways shouldn't be shown anyway.

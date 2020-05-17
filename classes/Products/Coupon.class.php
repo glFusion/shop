@@ -644,11 +644,13 @@ class Coupon extends \Shop\Product
         $items = $cart->getItems();
         foreach ($items as $item) {
             $P = $item->getProduct();
-            if ($P->isNew || $P->prod_type == SHOP_PROD_COUPON) {
-                $gc_can_apply -= $P->getPrice($item->options, $item->quantity) * $item->quantity;
+            if ($P->isNew() || $P->getProductType() == SHOP_PROD_COUPON) {
+                $gc_can_apply -= $P->getPrice($item->getOptions, $item->getQuantity()) * $item->getQuantity();
             }
         }
-        if ($gc_can_apply < 0) $gc_can_apply = 0;
+        if ($gc_can_apply < 0) {
+            $gc_can_apply = 0;
+        }
         return $gc_can_apply;
     }
 

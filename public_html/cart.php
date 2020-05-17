@@ -191,8 +191,9 @@ case 'saveshipto':
     }
     $Cart = Shop\Cart::getInstance();
     $Cart->setAddress($addr, $addr_type);
-    $next_step = SHOP_getVar($_POST, 'next_step', 'integer');
-    $content = $Cart->getView($next_step);
+    //$next_step = SHOP_getVar($_POST, 'next_step', 'integer');
+    //$content = $Cart->getView($next_step);
+    $content = $Cart->getView(0);
     $view = 'none';
     break;
 

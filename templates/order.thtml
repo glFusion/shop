@@ -2,18 +2,18 @@
 <div class="shopOrderContainer">
 {!if is_admin}
 {!else}
-    <div style="display:inline-block;">
+<div style="display:inline-block;">
 {!if return_url}
-      <a href="{return_url}" class="uk-button uk-button-small">
-        <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['go_back']}
-      </a>
+<a href="{return_url}" class="uk-button uk-button-small">
+<i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['go_back']}
+</a>
 {!else}
-      <a href="{site_url}/shop" class="uk-button uk-button-small">
-        <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['storefront']}
-      </a>
+<a href="{site_url}/shop" class="uk-button uk-button-small">
+<i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['storefront']}
+</a>
 {!endif}
-    </div>
-  <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
+</div>
+<h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!endif}
 {!if not_final}
     <div class="shopOrderButtons">
@@ -42,7 +42,7 @@
     <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1">
     <div class="orderAddress">
       <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
-{!if not_final}
+{!if Xnot_final}
       <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
       <br />
@@ -51,7 +51,7 @@
 
     <div class="orderAddress">
       <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
-{!if not_final}
+{!if Xnot_final}
       <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
       <br />
