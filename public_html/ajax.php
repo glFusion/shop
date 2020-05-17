@@ -90,6 +90,16 @@ case 'addcartitem':
     );
     break;
 
+case 'setShipper':
+    $cart_id = SHOP_getVar($_POST, 'cart_id');
+    $status = Shop\Cart::getInstance($cart_id)
+        ->setShipper($_POST['shipper_id'])
+        ->Save();
+    $output = array(
+        'status' => $status,
+    );
+    break;
+
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
     $status = Shop\Gateway::getInstance(

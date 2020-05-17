@@ -193,7 +193,8 @@ case 'saveshipto':
     $Cart->setAddress($addr, $addr_type);
     //$next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     //$content = $Cart->getView($next_step);
-    $content = $Cart->getView(0);
+    //$content = $Cart->getView(0);
+    COM_refresh(SHOP_URL . '/cart.php');
     $view = 'none';
     break;
 

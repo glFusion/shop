@@ -246,9 +246,31 @@ function SHOP_updateShipping(e)
     }
 
     var newship = e.options[e.selectedIndex].value;
-    var obj = JSON.parse(shipper_json);
+    var dataS = {
+        "shipper_id": newship,
+        "cart_id": "{order_number}",
+    };
+    data = $.param(dataS);
+
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=setShipper",
+        data: data,
+        success: function(result) {
+            try {
+                UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
+                location.reload(true);
+            } catch(err) {
+            }
+        }
+    });
+    return false;
+
+
+    /*var obj = JSON.parse(shipper_json);
     document.getElementById("ord_total_span").innerHTML = obj[newship].total;
-    document.getElementById("shipping_cell").innerHTML = obj[newship].amount;
+    document.getElementById("shipping_cell").innerHTML = obj[newship].amount;*/
 }
 function updateDCButton()
 {
