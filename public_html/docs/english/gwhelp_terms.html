@@ -16,7 +16,7 @@
   <div class="tm-wrapper">
     <nav class="uk-navbar uk-navbar-attached tm-navbar uk-margin-bottom">
       <div class="uk-navbar-brand tm-navbar-brand">
-        glFusion Shop Plugin - Stripe Gateway Configuration
+        glFusion Shop Plugin - Net Terms Gateway Configuration
       </div>
       <div class="uk-navbar-flip uk-hidden-small">
         <div class="uk-navbar-content tm-navbar-content" style="text-shadow:none;">
@@ -27,24 +27,17 @@
 
     <div class="uk-container uk-container-center uk-margin-bottom">
 
-      <dl id="desc_pub_key">
-          <dt>Public API Key</dt>
-          <dd>Enter your API key here.</dd>
-      </dl>
-
-      <dl id="desc_sec_key">
-          <dt>Secret API Key</dt>
-          <dd>Enter your Secret key here.</dd>
-      </dl>
-
-      <dl id="desc_hook_sec">
-          <dt>Webhook Secret</dt>
-          <dd>Enter your Webhook Secret here.</dd>
-      </dl>
-
+        <dl id="desc_gateway">
+            <dt>Gateway</dt>
+            <dd>Select the payment gateway which will be used to process invoices.</dd>
+        </dl>
+        <dl id="desc_net_days">
+            <dt>Net Days</dt>
+            <dd>Enter the number of days for terms, e.g. &quot;30&quot; for &quot;Net 30 Days&quot;.</dd>
+        </dl>
       <dl id="desc_test_mode">
           <dt>Testing (Sandbox) Mode?</dt>
-          <dd>Check this box during testing. The Sandbox credentials and other values will be used instead of Production.</dd>
+          <dd>No effect for this gateway, the test setting of the chosen processing gateway is used.</dd>
       </dl>
 
       <dl id="desc_enabled">
