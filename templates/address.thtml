@@ -285,7 +285,7 @@ function removeAddress(addr_id)
         onclick="javascript:validateAddress(this.form);return false;"
         >{$LANG_ADMIN['submit']}</button>
       <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
-      <button class="uk-button" type="submit" name="nextstep">{$LANG_ADMIN['cancel']}</button>
+      <button class="uk-button" type="submit" name="nextstep" onclick="history.go(-1);">{$LANG_ADMIN['cancel']}</button>
     </div>
   </div>
 {hiddenvars}
@@ -321,6 +321,11 @@ function validateAddress(form)
             }
             catch(err) {
             }
+        },
+        error: function(a,b,c) {
+            console.log(a);
+            console.log(b);
+            console.log(c);
         }
     });
     return;
