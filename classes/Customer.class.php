@@ -399,14 +399,29 @@ class Customer
 
         // Set the address to select by default. Start by using the one
         // already stored in the cart, if any.
+        $have_address = false;
         if (empty(array_filter($A))) {
             // No address specified, get the customer's default address
             $Def = $this->getDefaultAddress($type);
         } else {
             // Cart has an address, retrieve it to use as the default
             $Def = new Address($A);
+            $have_address = true;
         }
         $addr_id = $Def->getID();
+        if ($addr_id > 0) {
+            $have_address = true;
+        }
+        /* TODO: future use
+         * if (!$have_address) {
+            $loc = GeoLookup::getProvider()->geoLocate();
+            if ($loc['ip'] != '') {
+                $A['country'] = $loc['country_code'];
+                $A['state'] = $loc['state_code'];
+                $A['city'] = $loc['city_name'];
+            }
+        }*/
+
         $count = 0;
         $def_addr = 0;
         $selAddress = new Address;     // start with an empty address selected
@@ -491,13 +506,13 @@ class Customer
             'allow_default' => $this->uid > 1 ? 'true' : '',
             'have_addresses' => $count > 0 ? 'true' : '',
             'addr_id'   => empty($addr_id) ? '' : $addr_id,
-            /*'name'      => isset($A['name']) ? $A['name'] : '',
+            'name'      => isset($A['name']) ? $A['name'] : '',
             'company'   => isset($A['company']) ? $A['company'] : '',
             'address1'  => isset($A['address1']) ? $A['address1'] : '',
             'address2'  => isset($A['address2']) ? $A['address2'] : '',
-            'city'      => isset($A['city']) ? $A['city'] : '',*/
-            //'state'     => isset($A['state']) ? $A['state'] : '',
-            //'zip'       => isset($A['zip']) ? $A['zip'] : '',
+            'city'      => isset($A['city']) ? $A['city'] : '',
+            'state'     => isset($A['state']) ? $A['state'] : '',
+            'zip'       => isset($A['zip']) ? $A['zip'] : '',
             'country'   => isset($A['country']) ? $A['country'] : '',
             /*'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
             'checked="checked"' : '',*/
