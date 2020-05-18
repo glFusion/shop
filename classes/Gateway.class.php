@@ -202,11 +202,8 @@ class Gateway
                     foreach ($props as $key=>$value) {
                         if (array_key_exists($key, $this->cfgFields[$env])) {
                             if ($this->cfgFields[$env][$key] == 'password') {
-                                // Decrypt the value. If decryption fails then the
-                                // string may not have been encrypted so use the
-                                // original.
                                 $decrypted = COM_decrypt($value);
-                                if ($decrypted !== '') {
+                                if ($decrypted !== false) {
                                     $value = $decrypted;
                                 }
                             }
