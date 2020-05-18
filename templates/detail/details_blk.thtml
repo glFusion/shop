@@ -31,7 +31,7 @@
         </dd>
 {!endif}
         <dt>SKU:</dt>
-        <dd id="sku">{sku}</dd>
+        <dd id="sku">{sku}&nbsp;</dd>
 {!if categories}
         <dt>{$LANG_SHOP['categories']}:</dt>
         <dd>{cat_names}</dd>

@@ -63,7 +63,7 @@ function ProcessForm(form)
                 $("#price").html(sale_price);
                 $("#price_was").html(orig_price);
                 $("#weight").text(result.weight);
-                $("#sku").text(result.sku);
+                $("#sku").html(result.sku+"&nbsp;");
                 SHOP_changeImages(result.images);
                 // Enable or disable the purchase buttons
                 if (result.allowed) {
