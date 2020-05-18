@@ -615,7 +615,7 @@ class Gateway
     /**
      * Return the order status to be set when an IPN message is received.
      * The default is to mark the order "closed" for downloadable items,
-     * since no further processing is needed, and "paid" for other items.
+     * since no further processing is needed, and "processing" for other items.
      *
      * @param   object  $Order  Order object
      * @return  string          Status of the order
@@ -623,9 +623,9 @@ class Gateway
     public function getPaidStatus($Order)
     {
         if ($Order->hasPhysical()) {
-            $retval = Order::PROCESSING;
+            $retval = Order::STATUS_PROCESSING;
         } else {
-            $retval = Order::CLOSED;
+            $retval = Order::STATUS_CLOSED;
         }
         return $retval;
     }

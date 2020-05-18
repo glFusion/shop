@@ -39,10 +39,10 @@ if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
  */
 class IPN
 {
-    const PAID = 'paid';
-    const PENDING = 'pending';
-    const REFUNDED = 'refunded';
-    const CLOSED = 'closed';
+    const STATUS_PAID = 'paid';
+    const STATUS_PENDING = 'pending';
+    const STATUS_REFUNDED = 'refunded';
+    const STATUS_CLOSED = 'closed';
 
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
@@ -569,10 +569,10 @@ class IPN
     public function setStatus($status)
     {
         switch ($status) {
-        case self::PENDING:
-        case self::PAID:
-        case self::REFUNDED:
-        case self::CLOSED:
+        case self::STATUS_PENDING:
+        case self::STATUS_PAID:
+        case self::STATUS_REFUNDED:
+        case self::STATUS_CLOSED:
             $this->status = $status;
             break;
         default:
@@ -833,7 +833,7 @@ class IPN
             // it closed since there's no further action needed.
             // Notification should have been done above, set notify to false to
             // avoid duplicates.
-            $this->setStatus(self::CLOSED);
+            $this->setStatus(self::STATUS_CLOSED);
         }
         return true;
     }  // function handlePurchase

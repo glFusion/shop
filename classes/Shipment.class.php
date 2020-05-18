@@ -272,9 +272,9 @@ class Shipment
                 }
             }
             if ($this->Order->isShippedComplete()) {
-                $this->Order->updateStatus('shipped');
+                $this->Order->updateStatus(Order::STATUS_SHIPPED);
             } else {
-                $this->Order->updateStatus('processing');
+                $this->Order->updateStatus(Order::STATUS_PROCESSING);
             }
             return true;
         } else {
@@ -446,7 +446,7 @@ class Shipment
             $Order = Order::getInstance($order_id);
             if (!$Order->isShippedComplete()) {
                 $ship_btn = '<a class="uk-button uk-button-success" href="' .
-                    SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->order_id .
+                    SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->getOrderID() .
                     '">' . $LANG_SHOP['shiporder'] . '</a>';
             }
         } else {

@@ -19,9 +19,9 @@ namespace Shop;
  */
 class Order
 {
-    const PROCESSING = 'processing';
-    const SHIPPED = 'shipped';
-    const CLOSED = 'closed';
+    const STATUS_PROCESSING = 'processing';
+    const STATUS_SHIPPED = 'shipped';
+    const STATUS_CLOSED = 'closed';
 
     /** Session variable name for storing cart info.
      * @var string */
@@ -1133,6 +1133,7 @@ class Order
     {
         if (
             (
+                $this->getStatus() == 'cart' ||
                 $this->getStatus() == 'pending' ||
                 $this->getStatus() == 'invoiced'
             ) &&
@@ -2805,10 +2806,10 @@ class Order
         $Shipments = $this->getShipments();
         foreach ($Shipments as $Shipment) {
             foreach ($Shipment->getItems() as $SI) {
-                if (!isset($shipped[$SI->orderitem_id])) {
-                    $shipped[$SI->orderitem_id] = $SI->quantity;
+                if (!isset($shipped[$SI->getOrderItemID()])) {
+                    $shipped[$SI->getOrderItemID()] = $SI->getQuantity();
                 } else {
-                    $shipped[$SI->orderitem_id] += $SI->quantity;
+                    $shipped[$SI->getOrderItemID()] += $SI->getQuantity();
                 }
             }
         }
