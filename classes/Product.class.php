@@ -312,8 +312,9 @@ class Product
     protected $Variant = NULL;
 
     /** Product features to be shown in the detail page.
+     * NULL indicates that the features haven't been loaded yet.
      * @var array */
-    protected $Features = array();
+    protected $Features = NULL;
 
     /** Plugin name, if this is a plugin-provided product.
      * @var string */
@@ -654,6 +655,9 @@ class Product
         $this->custom = $row['custom'];
         $this->avail_beg = $row['avail_beg'];
         $this->avail_end = $row['avail_end'];
+        if ($this->avail_end < $this->avail_beg) {
+            $this->avail_end = self::MAX_DATE;
+        }
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
         $this->reorder = (int)$row['reorder'];
