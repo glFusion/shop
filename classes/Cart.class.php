@@ -1058,7 +1058,7 @@ class Cart extends Order
         }
 
         if ($this->hasPhysical()) {
-            $Addr = new Address($this->Shipto);
+            $Addr = new Address($this->Shipto->toArray());
             if ($Addr->isValid(true) != '') {
                 $errors['shipto'] = $LANG_SHOP['req_shipto'];
             }
