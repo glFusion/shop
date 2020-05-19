@@ -786,13 +786,12 @@ class MigratePP
                 // Skip if already done
                 continue;
             }
-            $test_mode = $cfg['test_mode'] ? 1 : 0;
             $fn = 'cfg_convert_' . $gw;
             if (method_exists(__CLASS__, $fn)) {
                 $cfgFields = self::$fn($cfg);
                 $config = DB_escapeString(serialize($cfgFields));
                 DB_query("UPDATE {$_TABLES['shop.gateways']} SET
-                    config = '$config', test_mode = '$test_mode'
+                    config = '$config'
                     WHERE id='$gw'");
             }
         }
@@ -815,8 +814,11 @@ class MigratePP
             ),
             'test' => array(
                 'api_login'    => $cfg['test_api_login'],
-                    'trans_key'    => $cfg['test_trans_key'],
-                    'hash_key'     => $cfg['test_hash_key'],
+                'trans_key'    => $cfg['test_trans_key'],
+                'hash_key'     => $cfg['test_hash_key'],
+            ),
+            'global' => array(
+                'test_mode' => $cfg['test_mode'],
             ),
         );
         return $cfgFields;
@@ -842,6 +844,9 @@ class MigratePP
                 'sec_key'  => $cfg['sec_key_test'],
                 'hook_sec' => $cfg['hook_sec_test'],
             ),
+            'global' => array(
+                'test_mode' => $cfg['test_mode'],
+            ),
         );
         return $cfgFields;
     }
@@ -865,6 +870,9 @@ class MigratePP
                 'loc_id'     => $cfg['prod_loc_id'],
                 'appid'      => $cfg['prod_appid'],
                 'token'      => $cfg['prod_token'],
+            ),
+            'global' => array(
+                'test_mode'  => $cfg['test_mode'],
             ),
         );
         return $cfgFields;
@@ -909,6 +917,7 @@ class MigratePP
                 'encrypt'           => $cfg['encrypt'],
                 'prv_key'           => $cfg['prv_key'],
                 'pub_key'           => $cfg['pub_key'],
+                'test_mode'         => $cfg['test_mode'],
             ),
         );
         return $cfgFields;
