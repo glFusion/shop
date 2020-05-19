@@ -412,15 +412,14 @@ class Customer
         if ($addr_id > 0) {
             $have_address = true;
         }
-        /* TODO: future use
-         * if (!$have_address) {
-            $loc = GeoLookup::getProvider()->geoLocate();
+        if (!$have_address) {
+            $loc = GeoLocate::getProvider()->geoLocate();
             if ($loc['ip'] != '') {
                 $A['country'] = $loc['country_code'];
                 $A['state'] = $loc['state_code'];
                 $A['city'] = $loc['city_name'];
             }
-        }*/
+        }
 
         $count = 0;
         $def_addr = 0;

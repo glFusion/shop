@@ -1136,6 +1136,63 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+
+    // Geolocation API selection
+    array(
+        'name' => 'sg_geo',
+        'default_value' => NULL,
+        'type' => 'subgroup',
+        'subgroup' => 40,
+        'fieldset' => 0,
+        'selection_array' => NULL,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'fs_geo',
+        'default_value' => NULL,
+        'type' => 'fieldset',
+        'subgroup' => 40,
+        'fieldset' => 10,
+        'selection_array' => NULL,
+        'sort' => 0,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'ipgeo_provider',
+        'default_value' => '',
+        'type' => 'select',
+        'subgroup' => 40,
+        'fieldset' => 10,
+        'selection_array' => 0,     // helper function
+        'sort' => 10,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'ipgeo_api_key',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 40,
+        'fieldset' => 10,
+        'selection_array' => 0,
+        'sort' => 20,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
+        'name' => 'ipstack_api_key',
+        'default_value' => '',
+        'type' => 'passwd',
+        'subgroup' => 40,
+        'fieldset' => 10,
+        'selection_array' => 0,
+        'sort' => 30,
+        'set' => true,
+        'group' => 'shop',
+    ),
 );
 
 

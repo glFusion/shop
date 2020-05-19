@@ -49,8 +49,8 @@ define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
 
 // Order status codes
-define('SHOP_STATUS_OPEN', 0);
-define('SHOP_STATUS_PAID', 1);
+//define('SHOP_STATUS_OPEN', 0);
+//define('SHOP_STATUS_PAID', 1);
 
 // Log levels to emulate glFusion 2.0+ logging
 define('SHOP_LOG_DEBUG',    100);
@@ -1447,10 +1447,11 @@ function plugin_user_login_shop($uid)
     if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
 
     $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
-    if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-    $user_cart->Merge($anon_cart);
-    $user_cart->Validate(true);
+    if (!empty($anon_cart)) {
+        $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+        $user_cart->Merge($anon_cart);
+        $user_cart->Validate(true);
+    }
 }
 
 
@@ -1728,6 +1729,27 @@ function plugin_configmanager_select_list_tpl_ver_shop()
         $tmp = explode('/', $dir);
         $opt = end($tmp);
         $A[$opt] = $opt;
+    }
+    return $A;
+}
+
+
+/**
+ * Select the geolocation provider to use.
+ *
+ * @return  array   $option => path
+ */
+function plugin_configmanager_select_ipgeo_provider_shop()
+{
+    global $LANG_SHOP;
+
+    $A = array('--' . $LANG_SHOP['none'] . '--' => '');
+    $files = glob(__DIR__ . '/classes/Geo/*.class.php');
+    foreach ($files as $file) {
+        $tmp = explode('/', $file);
+        $opt = explode('.', end($tmp))[0];
+        $provider = Shop\GeoLocate::getProvider($opt)->getProviderName();
+        $A[$provider] = $opt;
     }
     return $A;
 }

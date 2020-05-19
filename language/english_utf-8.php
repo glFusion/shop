@@ -847,6 +847,9 @@ $LANG_confignames['shop'] = array(
     'tax_taxcloud_id' => 'TaxCloud Login ID',
     'tax_taxcloud_key' => 'TaxCloud API Key',
     'ena_fast_checkout' => 'Enable fast-checkout if possible',
+    'ipgeo_api_key' => 'IPGeo API Key',
+    'ipstack_api_key' => 'IPStack API Key',
+    'ipgeo_provider' => 'Geolocation Provider',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -855,6 +858,7 @@ $LANG_configsubgroups['shop'] = array(
     'sg_shop'   => 'Shop Information',
     'sg_gc'     => 'Gift Cards',
     'sg_tax'    => 'Sales Tax',
+    'sg_geo'    => 'Geolocation',
 );
 
 /** Language strings for the field set names in the config section */
@@ -875,6 +879,9 @@ $LANG_fs['shop'] = array(
     'fs_tax_avatax' => 'Avatax Settings',
     'fs_tax_taxjar' => 'Taxjar Settings',
     'fs_tax_taxcloud' => 'TaxCloud Settings',
+    'fs_geo'    => 'Geolocation Settings',
+    'fs_geo_ipgeo' => 'IPGeo',
+    'fs_geo_ipstack' => 'IPStack',
 );
 
 /**

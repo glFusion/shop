@@ -731,6 +731,12 @@ $LANG_SHOP_HELP = array(
 'gw_test_mode' => 'Testing (Sandbox) Mode?',
 'req_shipto' => 'A valid shipping address is required.',
 'req_billto' => 'A valid billing address is required.',
+'global' => 'Global',
+'prod' => 'Production',
+'test' => 'Sandbox',
+'gw_test_mode' => 'Testing (Sandbox) Mode?',
+'req_shipto' => 'A valid shipping address is required.',
+'req_billto' => 'A valid billing address is required.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -840,6 +846,9 @@ $LANG_confignames['shop'] = array(
 'tax_taxcloud_id' => 'TaxCloud Login ID',
 'tax_taxcloud_key' => 'TaxCloud API Key',
 'ena_fast_checkout' => 'Enable fast-checkout if possible',
+'ipgeo_api_key' => 'IPGeo API Key',
+'ipstack_api_key' => 'IPStack API Key',
+'ipgeo_provider' => 'Geolocation Provider',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -867,6 +876,9 @@ $LANG_fs['shop'] = array(
 'fs_tax_avatax' => 'Avatax Settings',
 'fs_tax_taxjar' => 'Taxjar Settings',
 'fs_tax_taxcloud' => 'TaxCloud Settings',
+'fs_geo' => 'Geolocation Settings',
+'fs_geo_ipgeo' => 'IPGeo',
+'fs_geo_ipstack' => 'IPStack',
 );
 
 /**
