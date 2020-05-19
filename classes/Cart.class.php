@@ -117,18 +117,18 @@ class Cart extends Order
         if ($_USER['uid'] < 2) return;
 
         $AnonCart = self::getInstance(1, $cart_id);
-        if (empty($AnonCart->items)) {
+        if (empty($AnonCart->getItems())) {
             return;
         }
 
         // Merge the items into the user cart
-        foreach ($AnonCart->items as $Item) {
+        foreach ($AnonCart->getItems() as $Item) {
             $opts = array();
-            foreach ($Item->options as $Opt) {
-                $opts[] = $Opt->attr_id;
+            foreach ($Item->getOptions() as $Opt) {
+                $opts[] = $Opt->getOptionID();
             }
             $args = array(
-                'item_number'   => $Item->product_id,
+                'item_number'   => $Item->getProductID(),
                 'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
                 'extras'        => $Item->getExtras(),
