@@ -47,7 +47,7 @@ class Report
 
     /** Period designator from the selection form.
      * @var string */
-    protected $period;
+    protected $period = '';
 
     /** Starting date.
      * @var object */
@@ -187,8 +187,7 @@ class Report
             ) );
             $T->parse('rlist', 'reportList', true);
         }
-        $retval .= $T->parse('output', 'list');
-        return $retval;
+        return $T->parse('output', 'list');
     }
 
 

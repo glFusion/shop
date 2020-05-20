@@ -33,6 +33,10 @@ class payment extends \Shop\Report
      * @var integer */
     protected $pmt_type = -1;
 
+    /** Order ID if viewing payments against one order only.
+     * @var string */
+    protected $order_id = '';
+
 
     /**
      * Constructor. Set overrides for parent class.
@@ -83,7 +87,7 @@ class payment extends \Shop\Report
      */
     public function Render()
     {
-        global $_TABLES, $_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP, $LANG_ADMIN, $_SHOP_CONF;
 
         $sql = "SELECT pmt.* FROM {$_TABLES['shop.payments']} pmt";
 
@@ -173,7 +177,7 @@ class payment extends \Shop\Report
         $text_arr = array(
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&perod=' . $period . '&gateway=' . $gateway,
+                '&perod=' . $this->period . '&gateway=' . $this->gateway,
         );
 
         $T = $this->getTemplate();
@@ -236,7 +240,7 @@ class payment extends \Shop\Report
      */
     protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_CONF;
 
         $retval = NULL;
         switch ($fieldname) {

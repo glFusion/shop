@@ -23,6 +23,11 @@ class reorder extends \Shop\Report
      * @var string */
     protected $icon = 'barcode';
 
+    /** Suppplier ID to limit report.
+     * @var integer */
+    protected $supplier_id = 0;
+
+
     /**
      * Constructor.
      */
@@ -123,7 +128,7 @@ class reorder extends \Shop\Report
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&supplier_id=' . $this->supliser_id,
+                '&supplier_id=' . $this->supplier_id,
             'has_limit' => true,
             'has_paging' => true,
         );
@@ -155,7 +160,7 @@ class reorder extends \Shop\Report
                     'item_name'     => $A['name'],
                     'dscp'          => $this->remQuote($A['short_description']),
                     'sku'           => $this->remQuote($A['sku']),
-                    'supplier_ref'  => empty($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'],
+                    'supplier_ref'  => empty($A['pv_ref']) ? $A['supplier_ref'] : $A['pv_ref'],
                     'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['pv_onhand'],
                     'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['pv_reorder'],
                     'supplier'      => $A['supplier'],
@@ -168,8 +173,6 @@ class reorder extends \Shop\Report
 
         $T->set_var(array(
             'report_key' => $this->key,
-            'item_id'   => $this->item_id,
-            'item_dscp' => $this->item_dscp,
             'startDate' => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'   => $this->endDate->format($_CONF['shortdate'], true),
             'nl'        => "\n",
@@ -217,7 +220,7 @@ class reorder extends \Shop\Report
             break;
 
         case 'supplier_ref':
-            $retval = is_null($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'];
+            $retval = is_null($A['pv_ref']) ? $A['supplier_ref'] : $A['pv_ref'];
             break;
         }
         return $retval;

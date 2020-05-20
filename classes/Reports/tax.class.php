@@ -230,16 +230,21 @@ class tax extends \Shop\Report
         $total_shipping = 0;
         $total_total = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
+        $total_taxable = 0;
+        $total_nontax = 0;
+        $total_handling = 0;
 
         switch ($this->type) {
         case 'html':
             $this->setExtra('class', __CLASS__);
             // Get the totals, have to use a separate query for this.
-            $s = "SELECT SUM(itm.quantity * itm.price) as total_sales,
-                SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
+            $sql = "SELECT SUM(itm.quantity * itm.price) as total_sales,
+                SUM(ord.tax) as total_tax,
+                SUM(ord.shipping) as total_shipping
                 FROM {$_TABLES['shop.orders']} ord
                 LEFT JOIN {$_TABLES['shop.orderitems']} itm
-                    ON item.order_id = ord.order_id {$query_arr['default_filter']}";
+                    ON itm.order_id = ord.order_id
+                {$query_arr['default_filter']}";
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);

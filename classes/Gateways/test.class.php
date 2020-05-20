@@ -84,9 +84,10 @@ class test extends \Shop\Gateway
     /**
      * No config fields for the test gateway.
      *
+     * @param   string  $env    Environment (not used here)
      * @return  array   Empty array
      */
-    public function getConfigFields()
+    protected function getConfigFields($env='global')
     {
         return array();
     }

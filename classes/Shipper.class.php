@@ -1061,7 +1061,7 @@ class Shipper
      */
     public static function carrierList()
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_SHOP_CONF;
 
         $carriers = self::getCarrierNames();
         $data_arr = array();
@@ -1101,7 +1101,10 @@ class Shipper
             ),
         );
         $text_arr = '';
-        $defsort_arr = '';
+        $defsort_arr = array(
+            'field' => 'code',
+            'direction' => 'ASC',
+        );
         $retval = ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_carrierlist',
             array(__CLASS__,  'getAdminField'),
@@ -1366,7 +1369,10 @@ class Shipper
             // Get all items at once
             return $this->_config;
             // Get a single item
-        } elseif (array_key_exists($cfgItem, $this->_config)) {
+        } elseif (
+            is_array($this->_config) &&
+            array_key_exists($cfgItem, $this->_config)
+        ) {
             return $this->_config[$cfgItem];
         } else {
             // Item specified but not found, return empty string
@@ -1552,8 +1558,7 @@ class Shipper
             $T->parse('IRow', 'ItemRow', true);
         }
         $T->parse('output', 'form');
-        $retval .= $T->finish($T->get_var('output'));
-
+        $retval = $T->finish($T->get_var('output'));
         return $retval;
     }
 

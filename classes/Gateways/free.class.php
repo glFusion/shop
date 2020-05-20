@@ -87,9 +87,10 @@ class free extends \Shop\Gateway
     /**
      * No config fields for the free gateway.
      *
+     * @param   string  $env    Environment (not used here)
      * @return  array   Empty array
      */
-    public function getConfigFields()
+    public function getConfigFields($env='global')
     {
         return array();
     }
