@@ -24,6 +24,10 @@ class OrderItem
      * @var integer */
     private $id = 0;
 
+    /** Product record ID or string for a plugin item.
+     * @var mixed */
+    private $product_id = 0;
+
     /** Product quantity.
      * @var integer */
     private $quantity = 0;
@@ -48,10 +52,6 @@ class OrderItem
     /** Final price of item after sale and options.
      * @var float */
     private $price = 0;
-
-    /** Amount paid against the line item.
-     * @var float */
-    private $paid = 0;
 
     /** Shipping amount for the line item.
      * @var float */
@@ -107,7 +107,7 @@ class OrderItem
         'expiration',
         'base_price', 'price', 'qty_discount', 'token', 'net_price',
         //'options',
-        'options_text', 'extras', 'taxable', 'paid',
+        'options_text', 'extras', 'taxable',
         'shipping', 'handling', 'tax', 'tax_rate',
     );
  */
@@ -157,12 +157,15 @@ class OrderItem
                 // Existing orderitem record, get the existing options
                 $this->options = $this->getOptions();
             }
-            $extras = json_decode($oi_id['extras'], true);
+            $extras = @json_decode($oi_id['extras'], true);
+            if ($extras === NULL) {
+                $extras = array();
+            }
             if (
-                isset($oi_id['extras']['custom']) && 
-                !empty($oi_id['extras']['custom'])
+                isset($extras['custom']) && 
+                !empty($extras['custom'])
             ) {
-                $cust = $oi_id['extras']['custom'];
+                $cust = $extras['custom'];
                 $P = Product::getByID($this->product_id);
                 foreach ($P->getCustom() as $id=>$name) {
                     if (isset($cust[$id]) && !empty($cust[$id])) {
@@ -229,30 +232,32 @@ class OrderItem
      */
     public function setVars($A)
     {
-        if (!is_array($A)) return false;
-
-        $this->id = (int)$A['id'];
-        $this->order_id = $A['order_id'];
-        $this->product_id = $A['product_id'];
-        $this->dscp = $A['description'];
-        $this->quantity = (int)$A['quantity'];
-        $this->txn_id = $A['txn_id'];
-        $this->txn_type = $A['txn_type'];
-        $this->expiration = (int)'expiration';
-        $this->base_price = (float)$A['base_price'];
-        $this->price = (float)$A['price'];
-        $this->setQtyDiscount($A['qty_discount']);
-        $this->token = $A['token'];
-        $this->net_price = (float)$A['net_price'];
-        $this->setOptionsText($A['options_text']);
-        $this->setExtras($A['extras']);
-        $this->taxable = $A['taxable'] ? 1 : 0;
-        $this->aid = (float)$A['paid'];
-        $this->shipping = (float)$A['shipping'];
-        $this->handling = (float)$A['handling'];
-        $this->tax = (float)$A['tax'];
-        $this->tax_rate = (float)$A['tax_rate'];
-        $this->variant_id = (int)$A['variant_id'];
+        if (!is_array($A)) {
+            return $this;
+        }
+        $this->id = SHOP_getVar($A, 'id', 'integer');
+        $this->order_id = SHOP_getVar($A, 'order_id');
+        $this->product_id = SHOP_getVar($A, 'product_id');
+        $this->dscp = SHOP_getVar($A, 'description');
+        $this->quantity = SHOP_getVar($A, 'quantity', 'integer');
+        $this->txn_id = SHOP_getVar($A, 'txn_id');
+        $this->txn_type = SHOP_getVar($A, 'txn_type');
+        $this->expiration = SHOP_getVar($A, 'expiration', 'integer');
+        $this->base_price = SHOP_getVar($A, 'base_price', 'float');
+        $this->price = SHOP_getVar($A, 'price', 'float');
+        $this->setQtyDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
+        $this->token = SHOP_getVar($A, 'token');
+        $this->net_price = SHOP_getVar($A, 'net_price', 'float');
+        $this->setOptionsText(SHOP_getVar($A, 'options_text'));
+        if (array_key_exists('extras', $A)) {
+            $this->setExtras($A['extras']);
+        }
+        $this->taxable = SHOP_getVar($A, 'taxable', 'integer') ? 1 : 0;
+        $this->shipping = SHOP_getVar($A, 'shipping', 'float');
+        $this->handling = SHOP_getVar($A, 'handling', 'float');
+        $this->tax = SHOP_getVar($A, 'tax', 'float');
+        $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float');
+        $this->variant_id = SHOP_getVar($A, 'variant_id', 'integer');
         return $this;
     }
 
@@ -305,11 +310,20 @@ class OrderItem
         // Now get the actual option object requested.
         // There's no easy index for this.
         foreach($this->options as $Opt) {
-            if ($Opt->$key == $val) {
-                return $Opt;
+            switch ($key) {
+            case 'og_id':
+                if ($Opt->getID() == $val) {
+                    return $Opt;
+                }
+                break;
+            case 'og_name':
+                if ($Opt->getName() == $val) {
+                    return $Opt;
+                }
+                break;
             }
         }
-        return NULL;
+        return NULL;    // Not found
     }
 
 
@@ -475,7 +489,6 @@ class OrderItem
             $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
@@ -772,6 +785,21 @@ class OrderItem
 
 
     /**
+     * Get the option IDs as a string for the product ID.
+     *
+     * @return  string      Comma-separated list of option IDs
+     */
+    public function getOptionIdString()
+    {
+        $ids = array();
+        foreach ($this->getOptions() as $Opt) {
+            $ids[] = $Opt->getOptionID();
+        }
+        return implode(',', $ids);
+    }
+
+
+    /**
      * Get the options display to be shown in the cart and on the order.
      * Returns a string like so:
      *      -- option1: option1_value
@@ -810,8 +838,8 @@ class OrderItem
     {
         if (is_string($value)) {    // convert to array
             $value = @json_decode($value, true);
-            if (!$value) $value = array();
         }
+        if (!$value) $value = array();
         $this->extras = $value;
         return $this;
     }

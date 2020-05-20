@@ -32,6 +32,10 @@ class Catalog
      * @var object */
     private $Cart = NULL;
 
+    /** Query string received from the URL.
+     * @var string */
+    private $query_str = '';
+
 
     /**
      * Set the brand ID to limit results.
@@ -72,8 +76,9 @@ class Catalog
      */
     public function defaultCatalog()
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $LANG_SHOP;
 
+        $content = '';
         if (
             ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
             $this->cat_id == 0 &&
@@ -181,7 +186,7 @@ class Catalog
             if ($C->getParentID() == $RootCat->getID() && $C->hasAccess()) {
                 $A[$C->getID()] = array(
                     'name' => $C->getName(),
-                    'count' => $C->cnt,
+                    //'count' => $C->cnt,
                 );
             }
         }
@@ -291,7 +296,7 @@ class Catalog
             !empty($_REQUEST['query']) &&
             !isset($_REQUEST['clearsearch'])
         ) {
-            $query_str = urlencode($_REQUEST['query']);
+            $this->query_str = urlencode($_REQUEST['query']);
             $search = DB_escapeString($_REQUEST['query']);
             $fields = array(
                 'p.name', 'c.cat_name', 'p.short_description', 'p.description',
@@ -303,8 +308,6 @@ class Catalog
             }
             $srch = ' AND (' . implode(' OR ', $srches) . ')';
             $sql .= $srch;
-        } else {
-            $query_str = '';
         }
         $pagenav_args = array();
         if ($this->cat_id > 0) {
@@ -371,7 +374,7 @@ class Catalog
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
             'currency'      => $_SHOP_CONF['currency'],
-            'breadcrumbs'   => $cthis->at_id > 0 ? $Cat->Breadcrumbs() : '',
+            'breadcrumbs'   => $this->cat_id > 0 ? $Cat->Breadcrumbs() : '',
             'search_text'   => $search,
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             'sortby_options' => $sortby_options,
@@ -383,7 +386,7 @@ class Catalog
             'brand_logo_url' => $brand_logo_url,
             'brand_dscp'    => $brand_dscp,
             'brand_name'    => $brand_name,
-            'query'         => $query_str,
+            'query'         => $this->query_str,
         ) );
 
         if (!empty($cat_name)) {
@@ -418,7 +421,7 @@ class Catalog
                 'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => $P->getLink(0, $query_str),
+                'item_url'      => $P->getLink(0, $this->query_str),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
                 'qty_onhand'    => $P->getOnhand(),
@@ -485,7 +488,7 @@ class Catalog
         //$T->parse('output', 'wrapper');
         $display .= $T->parse('', 'wrapper');
 
-        if ($catrows == 0 && COM_isAnonUser()) {
+        if ($prodrows == 0 && COM_isAnonUser()) {
             $T->set_var('anon_and_empty', 'true');
         }
 
@@ -567,7 +570,7 @@ class Catalog
                         'name'      => $P->getDscp(),
                         'short_description' => $P->getDscp(),
                         'encrypted' => '',
-                        'item_url'  => $P->getLink(0, $query_str),
+                        'item_url'  => $P->getLink(0, $this->query_str),
                         'track_onhand' => '',   // not available for plugins
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
@@ -598,7 +601,7 @@ class Catalog
                         }
                     }
                     $T->clear_var('Btn');
-                    $prodrows++;
+                    //$prodrows++;
                     $T->parse('PI', 'ProductItems', true);
                 }   // foreach plugin_data
 

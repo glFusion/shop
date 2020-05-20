@@ -109,6 +109,8 @@ class Address
      */
     public function setVars($data)
     {
+        global $_SHOP_CONF;
+
         $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
             ->setID(SHOP_getVar($data, 'addr_id', 'integer'))
             ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))

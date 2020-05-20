@@ -493,9 +493,9 @@ class Coupon extends \Shop\Product
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
-        //$coupons = \Shop\Cache::get($cache_key);
         $today = date('Y-m-d');
-        if ($coupons === NULL) {
+        /*$coupons = \Shop\Cache::get($cache_key);
+        if ($coupons === NULL) {*/
             // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
@@ -510,7 +510,7 @@ class Coupon extends \Shop\Product
                 $coupons[] = $A;
             }
             $updatecache = true;
-        } else {
+        /*} else {
             // Check the cached expiration dates in case any expired.
             foreach ($coupons as $idx=>$coupon) {
                 if ($coupon['expires'] < $today) {
@@ -529,7 +529,7 @@ class Coupon extends \Shop\Product
                 array('coupons', 'coupons_' . $uid),
                 3600
             );
-        }
+        }*/
         return $coupons;
     }
 
@@ -718,7 +718,7 @@ class Coupon extends \Shop\Product
         $sql = "UPDATE {$_TABLES['shop.coupons']}
             SET status = '$newstatus'
             WHERE code = '$code'";
-        if ($newestatus == self::VOID) {
+        if ($newstatus == self::VOID) {
             $log_code = 'gc_voided';
             $sql .= ' AND balance > 0';
         } else {

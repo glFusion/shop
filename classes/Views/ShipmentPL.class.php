@@ -3,7 +3,7 @@
  * Class to create a packing list for a single shipment.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.0.0
  * @since       v1.0.0
@@ -69,7 +69,7 @@ class ShipmentPL
             $P = $OI->getProduct();
             $T->set_var(array(
                 'oi_id'         => $OI->getID(),
-                'item_dscp'     => htmlspecialchars($OI->description),
+                'item_dscp'     => htmlspecialchars($OI->getDscp()),
                 'item_options'  => $OI->getOptionDisplay(),
                 'item_quantity' => $Item->getQuantity(),
                 'sku'           => $P->getSKU($OI),
@@ -81,7 +81,7 @@ class ShipmentPL
         $T->set_block('order', 'trackingPackages', 'TP');
         foreach ($this->Shipment->Packages as $Pkg) {
             $T->set_var(array(
-                'shipper_code'  => $Pkg->getShipper()->code,
+                'shipper_code'  => $Pkg->getShipper()->getCode(),
                 'shipper_name'  => $Pkg->getShipperInfo(),
                 'tracking_num'  => $Pkg->getTrackingNumber(),
                 'pkg_id'        => $Pkg->getID(),
@@ -106,11 +106,10 @@ class ShipmentPL
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'status'        => $this->Order->getStatus(),
-            'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
+            'ship_method'   => Shipper::getInstance($this->Order->getShipperID())->getName(),
             'tracking_info' => count($this->Shipment->getPackages()),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
-
         $T->parse('output', 'order');
         $form = $T->finish($T->get_var('output'));
         return $form;

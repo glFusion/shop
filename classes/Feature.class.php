@@ -480,6 +480,7 @@ class Feature
         //$cache_key = 'ft_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
+        $grps = array();
         $sql = "SELECT  pf.prod_id, pf.ft_id, pf.fv_id,
                 f.ft_name, f.orderby,
                 IFNULL(pf.fv_text, fv.fv_value) AS fv_text

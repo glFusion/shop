@@ -227,6 +227,8 @@ class Report
      */
     protected function setStartDate($dt)
     {
+        global $_CONF;
+
         $this->startDate = new \Date($dt, $_CONF['timezone']);
     }
 
@@ -238,6 +240,8 @@ class Report
      */
     protected function setEndDate($dt)
     {
+        global $_CONF;
+
         $this->endDate = new \Date($dt, $_CONF['timezone']);
     }
 
@@ -466,6 +470,7 @@ class Report
     {
         global $LANG_SHOP;
 
+        $retval = '';
         foreach ($LANG_SHOP['periods'] as $key=>$text) {
             if ($key == 'cust' && !$incl_cust) {
                 continue;

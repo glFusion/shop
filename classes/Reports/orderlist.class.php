@@ -153,7 +153,7 @@ class orderlist extends \Shop\Report
         }
 
         if ($this->isAdmin) {
-            $form_url = SHOP_ADMIN_URL . '/report.php?' . $_SERVER['query_string'];
+            $form_url = SHOP_ADMIN_URL . '/report.php?' . $_SERVER['QUERY_STRING'];
             // Rebuild the query string, excluding the uid parameter, and make
             // sure the report name is present.
             $q_str = $_GET;
@@ -233,17 +233,18 @@ class orderlist extends \Shop\Report
         $total_tax = 0;
         $total_shipping = 0;
         $total_total = 0;
+        $total_paid = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
 
         switch ($this->type) {
         case 'html':
             $this->setExtra('class', __CLASS__);
             // Get the totals, have to use a separate query for this.
-            $s = "SELECT SUM(itm.quantity * itm.price) as total_sales,
+            $sql = "SELECT SUM(itm.quantity * itm.price) as total_sales,
                 SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
                 FROM {$_TABLES['shop.orders']} ord
                 LEFT JOIN {$_TABLES['shop.orderitems']} itm
-                    ON item.order_id = ord.order_id {$query_arr['default_filter']}";
+                    ON itm.order_id = ord.order_id {$query_arr['default_filter']}";
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
@@ -267,7 +268,6 @@ class orderlist extends \Shop\Report
             $total_sales = 0;
             $total_tax = 0;
             $total_shipping = 0;
-            $total_paid = 0;
             $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
@@ -335,6 +335,7 @@ class orderlist extends \Shop\Report
     {
         global $LANG_SHOP, $_SHOP_CONF, $_USER;
 
+        static $dt = NULL;
         if ($dt === NULL) {
             // Instantiate a date object once
             $dt = new \Date('now', $_USER['tzid']);

@@ -76,14 +76,14 @@ class State extends RegionBase
      */
     public function __construct($A)
     {
-        $this->setID($A['state_id'])
-            ->setCountryID($A['country_id'])
-            ->setCountryISO($A['country_iso'])
-            ->setISO($A['iso_code'])
-            ->setName($A['state_name'])
-            ->setEnabled($A['state_enabled'])
-            ->setTaxHandling($A['tax_handling'])
-            ->setTaxShipping($A['tax_shipping']);
+        $this->setID(SHOP_getVar($A, 'state_id', 'integer'))
+            ->setCountryID(SHOP_getVar($A, 'country_id', 'integer'))
+            ->setCountryISO(SHOP_getVar($A, 'country_iso'))
+            ->setISO(SHOP_getVar($A, 'iso_code'))
+            ->setName(SHOP_getVar($A, 'state_name'))
+            ->setEnabled(SHOP_getVar($A,'state_enabled', 'integer', 1))
+            ->setTaxHandling(SHOP_getVar($A, 'tax_handling', 'integer'))
+            ->setTaxShipping(SHOP_getVar($A, 'tax_shipping', 'integer'));
     }
 
 

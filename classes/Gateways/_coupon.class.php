@@ -156,9 +156,10 @@ class _coupon extends \Shop\Gateway
      * Check that the current user is allowed to use this gateway.
      * Coupons can be used by anyone.
      *
+     * @param   float   $total  Total order amount (not used here)
      * @return  boolean     True if access is allowed, False if not
      */
-    public function hasAccess()
+    public function hasAccess($total = 0)
     {
         return true;
     }

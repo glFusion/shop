@@ -134,12 +134,12 @@ class Currency
         $this->code_placement = $A['code_placement'];
         $this->decimals = (int)$A['decimals'];
         $this->rounding_step = (float)$A['rounding_step'];
-        $this->thousands_sep = $A['thousanes_step'];
-        $this->decimal_sep = $A['decimal_step'];
+        $this->thousands_sep = $A['thousands_sep'];
+        $this->decimal_sep = $A['decimal_sep'];
         $this->major_unit = $A['major_unit'];
         $this->minor_unit = $A['minor_unit'];
         $this->conversion_rate = $A['conversion_rate'];
-        $this->conversion_ts = $A['conversoin_ts'];
+        $this->conversion_ts = $A['conversion_ts'];
         return $this;
     }
 

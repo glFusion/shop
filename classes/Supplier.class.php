@@ -95,6 +95,8 @@ class Supplier extends Address
      */
     private function setAddress($data)
     {
+        global $_SHOP_CONF;
+
         return $this->setID(SHOP_getVar($data, 'sup_id', 'integer'))
             ->setName(SHOP_getVar($data, 'name'))
             ->setCompany(SHOP_getVar($data, 'company'))

@@ -1276,6 +1276,7 @@ class ProductVariant
         } else {
             $query_arr['default_filter'] = 'WHERE 1=1';
         }
+        $filter = NULL;
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pvlist',
             array(__CLASS__,  'getAdminField'),

@@ -186,6 +186,10 @@ class Product
      * @var boolean */
     protected $rating_enabled = 1;
 
+    /** Are comments enabled?
+     * @var integer */
+    protected $comments_enabled = 0;
+
     /** Track inventory onhand?
      * @var boolean */
     protected $track_onhand = 0;
@@ -593,7 +597,7 @@ class Product
     {
         // available to end of time by default
         if ($value < '1970-01-02') {
-            $value = self::MAX_DATE;
+            $value = self::MIN_DATE;
         }
         $this->avail_beg = trim($value);
         return $this;
@@ -635,7 +639,6 @@ class Product
         $this->featured = isset($row['featured']) ? $row['featured'] : 0;
         $this->name = $row['name'];
         $this->old_sku = SHOP_getVar($row, 'old_sku');
-        $this->cat_id = $row['cat_id'];
         $this->short_description = $row['short_description'];
         $this->price = $row['price'];
         $this->file = $row['file'];
@@ -653,8 +656,8 @@ class Product
         $this->onhand = $row['onhand'];
         $this->oversell = isset($row['oversell']) ? $row['oversell'] : 0;
         $this->custom = $row['custom'];
-        $this->avail_beg = $row['avail_beg'];
-        $this->avail_end = $row['avail_end'];
+        $this->setAvailBegin($row['avail_beg']);
+        $this->setAvailEnd($row['avail_end']);
         if ($this->avail_end < $this->avail_beg) {
             $this->avail_end = self::MAX_DATE;
         }
@@ -671,26 +674,28 @@ class Product
         } else {
             $this->dt_add = SHOP_now()->toMySQL();
             $qty_discounts = array();
-            for ($i = 0; $i < count($row['disc_qty']); $i++) {
-                $disc_qty = (int)$row['disc_qty'][$i];
-                if ($disc_qty < 1) continue;
-                if (isset($row['disc_amt'][$i])) {
-                    $qty_discounts[$disc_qty] = abs($row['disc_amt'][$i]);
+            if (isset($row['disc_qty']) && is_array($row['disc_qty'])) {
+                for ($i = 0; $i < count($row['disc_qty']); $i++) {
+                    $disc_qty = (int)$row['disc_qty'][$i];
+                    if ($disc_qty < 1) continue;
+                    if (isset($row['disc_amt'][$i])) {
+                        $qty_discounts[$disc_qty] = abs($row['disc_amt'][$i]);
+                    }
                 }
             }
             $this->setQtyDiscounts($qty_discounts);
         }
 
-        $this->votes = isset($row['votes']) ? $row['votes'] : 0;
-        $this->rating = isset($row['rating']) ? $row['rating'] : 0;
-        $this->comments_enabled = $row['comments_enabled'];
+        $this->votes = SHOP_getVar($row, 'votes', 'integer');
+        $this->rating = SHOP_getVar($row, 'rating', 'float');
+        $this->comments_enabled = (int)$row['comments_enabled'];
         $this->rating_enabled = isset($row['rating_enabled']) ? $row['rating_enabled'] : 0;
         $this->btn_type = $row['buttons'];
         $this->setSupplierID($row['supplier_id'])
             ->setBrandID($row['brand_id'])
             ->setSupplierRef($row['supplier_ref'])
             ->setLeadTime($row['lead_time'])
-            ->setDefVariantID($row['def_pv_id'])
+            ->setDefVariantID(SHOP_getVar($row, 'def_pv_id', 'integer'))
             ->setRuleID($row['zone_rule']);
 
         if ($fromDB) {
@@ -719,7 +724,7 @@ class Product
 
         $cache_key = self::_makeCacheKey($id);
         //$row = Cache::get($cache_key);
-        if ($row === NULL) {
+        //if ($row === NULL) {
             $result = DB_query("SELECT *
                         FROM {$_TABLES['shop.products']}
                         WHERE id='$id'");
@@ -728,7 +733,7 @@ class Product
             } else {
                 $row = DB_fetchArray($result, false);
             }
-        }
+        //}
         if (!empty($row)) {
             $this->isNew = false;
             $this->setVars($row, true)
@@ -932,6 +937,7 @@ class Product
         if (is_array($A)) {
             $this->setVars($A);
         }
+
         $nonce = SHOP_getVar($A, 'nonce');
         $this->Errors = $this->_Validate();
         if (!empty($errs)) {
@@ -1311,7 +1317,6 @@ class Product
             'product_id'    => $this->id,
             'old_sku'       => $this->name,
             'name'          => htmlspecialchars($this->name, ENT_QUOTES, COM_getEncodingt()),
-            'category'      => $this->cat_id,
             'short_description' => htmlspecialchars($this->short_description, ENT_QUOTES, COM_getEncodingt()),
             'description'   => htmlspecialchars($this->description, ENT_QUOTES, COM_getEncodingt()),
             'price'         => Currency::getInstance()->FormatValue($this->price),
@@ -1320,7 +1325,6 @@ class Product
             'action_url'    => SHOP_ADMIN_URL . '/index.php',
             'file_selection' => $this->FileSelector(),
             'keywords'      => htmlspecialchars($this->keywords, ENT_QUOTES, COM_getEncodingt()),
-            'cat_select'    => Category::optionList($this->cat_id),
             'currency'      => $_SHOP_CONF['currency'],
             //'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('product_form',
@@ -1352,7 +1356,7 @@ class Product
             'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
             'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'nonce'         => Images\Product::makeNonce(),
-            'brand'         => $this->brand,
+            'brand'         => $this->brand_id,
             'min_ord_qty'   => $this->min_ord_qty,
             'max_ord_qty'   => $this->max_ord_qty,
             'available_cats' => $allcats_sel,
@@ -1548,9 +1552,10 @@ class Product
 
         USES_lib_comments();
 
+        $retval = '';
         $prod_id = $this->id;
         if (!$this->canDisplay()) {
-            return '';
+            return $retval;
         }
 
         // Get the currency object which is used repeatedly
@@ -1634,10 +1639,12 @@ class Product
             $T->set_block('product', 'CustAttrib', 'cAttr');
             $text_field_names = explode('|', $this->custom);
             foreach ($text_field_names as $id=>$text_field_name) {
+                $val = '';
                 if ($OI) {
-                    $val = $OI->getOptionByOG(0, $text_field_name)->oio_value;
-                } else {
-                    $val = '';
+                    $opt = $OI->getOptionByOG(0, $text_field_name);
+                    if ($opt) {
+                        $val = $opt->getValue();
+                    }
                 }
                 $T->set_var(array(
                     'fld_id'    => "cust_text_fld_$id",
@@ -1676,15 +1683,16 @@ class Product
                 } else {
                     $sel_opt = 0;
                 }
-                foreach ($OG->getOptions() as $Opt) {
+                $ogOpts = $OG->getOptions();
+                foreach ($ogOpts as $Opt) {
                     if (in_array($Opt->getID(), $this->sel_opts)) {
                         $sel_opt = $Opt->getID();
                     }
                 }
                 if (!$sel_opt) {    // no selected attribute found
-                    $sel_opt = reset($OG->getOptions())->getID();
+                    $sel_opt = reset($ogOpts)->getID();
                 }
-                foreach ($OG->getOptions() as $Opt) {
+                foreach ($ogOpts as $Opt) {
                     $T->set_var(array(
                         'opt_id'   => $Opt->getID(),
                         'opt_str'  => htmlspecialchars($Opt->getValue()),
@@ -1808,7 +1816,7 @@ class Product
             'weight_unit'       => $_SHOP_CONF['weight_unit'],
             'sku'               => $this->getName(),
             //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
-            'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_tim'], $this->LeadTime()) . ')' : '',
+            'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->LeadTime()) . ')' : '',
         ) );
 
         if (!empty($this->Categories)) {
@@ -2085,8 +2093,8 @@ class Product
         // Force $val to be an array.
         if (!is_array($val)) {
             $val = @unserialize($val);
-            if ($value === false) {
-                $value = array();
+            if ($val === false) {
+                $val = array();
             }
         }
         ksort($val);
@@ -2193,7 +2201,7 @@ class Product
     {
         if (
             $this->isTaxable()          // need address in cart for tax
-            || $this->rule_id > 0       // has an active zone rule
+            || $this->zone_rule > 0       // has an active zone rule
             || !$this->canOrder()       // Can't be ordered at all, unavailable
             || $this->hasOptions()      // no attributes to select
             || $this->hasDiscounts()    // no quantity-based discounts
@@ -3039,6 +3047,17 @@ class Product
 
 
     /**
+     * Get the shipping type for this product.
+     *
+     * @return  integer     Shipping type code
+     */
+    public function getShippingType()
+    {
+        return (int)$this->shipping_type;
+    }
+
+
+    /**
      * Get the total handling fee for this item based on quantity purchased
      *
      * @param   integer $qty    Quantity purchased
@@ -3046,7 +3065,8 @@ class Product
      */
     public function getHandling($qty = 1)
     {
-        return (float)$this->handling * $qty;
+        return 0;   // not implemented yet
+        //return (float)$this->handling * $qty;
     }
 
 
@@ -3541,7 +3561,8 @@ class Product
      */
     public static function adminList($cat_id=0)
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
+            $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $display = '';
         $sql = "SELECT
@@ -4180,7 +4201,10 @@ class Product
      */
     public function getFirstCategory()
     {
-        return reset($this->getCategories());
+        // Need to call getCategories() to be certain the categories
+        // have been loaded.
+        $Cats = $this->getCategories();
+        return reset($Cats);
     }
 
 

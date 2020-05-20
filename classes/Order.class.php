@@ -339,7 +339,7 @@ class Order
 
         $have_address = false;
         if (is_object($A)) {
-            $this->billto_id        = $A->getID();
+            /*$this->billto_id        = $A->getID();
             $this->billto_name      = $A->getName();
             $this->billto_company   = $A->getCompany();
             $this->billto_address1  = $A->getAddress1();
@@ -347,7 +347,8 @@ class Order
             $this->billto_city      = $A->getCity();
             $this->billto_state     = $A->getState();
             $this->billto_country   = $A->getCountry();
-            $this->billto_zip       = $A->getPostal();
+            $this->billto_zip       = $A->getPostal();*/
+            $this->Billto = $A;
             $have_address = true;
         } else {
             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
@@ -358,9 +359,10 @@ class Order
                 // If set, the user has selected an existing address. Read
                 // that value and use it's values.
                 Cart::setSession('billing', $addr_id);
+                $this->Billto = new Address($A);
             }
 
-            if (!empty($A)) {
+            /*if (!empty($A)) {
                 $this->billto_id        = $addr_id;
                 $this->billto_name      = SHOP_getVar($A, 'name');
                 $this->billto_company   = SHOP_getVar($A, 'company');
@@ -371,19 +373,19 @@ class Order
                 $this->billto_country   = SHOP_getVar($A, 'country');
                 $this->billto_zip       = SHOP_getVar($A, 'zip');
             $have_address = true;
-            }
+            }*/
         }
         if ($have_address) {
             $sql = "UPDATE {$_TABLES['shop.orders']} SET
-                billto_id   = '{$this->shipto_id}',
-                billto_name = '" . DB_escapeString($this->billto_name) . "',
-                billto_company = '" . DB_escapeString($this->billto_company) . "',
-                billto_address1 = '" . DB_escapeString($this->billto_address1) . "',
-                billto_address2 = '" . DB_escapeString($this->billto_address2) . "',
-                billto_city = '" . DB_escapeString($this->billto_city) . "',
-                billto_state = '" . DB_escapeString($this->billto_state) . "',
-                billto_country = '" . DB_escapeString($this->billto_country) . "',
-                billto_zip = '" . DB_escapeString($this->billto_zip) . "'
+                billto_id   = '{$this->Billto->getID()}',
+                billto_name = '" . DB_escapeString($this->Billto->getName()) . "',
+                billto_company = '" . DB_escapeString($this->Billto->getCompany()) . "',
+                billto_address1 = '" . DB_escapeString($this->Billto->getAddress1()) . "',
+                billto_address2 = '" . DB_escapeString($this->Billto->getAddress2()) . "',
+                billto_city = '" . DB_escapeString($this->Billto->getCity()) . "',
+                billto_state = '" . DB_escapeString($this->Billto->getState()) . "',
+                billto_country = '" . DB_escapeString($this->Billto->getCountry()) . "',
+                billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'
                 WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
             DB_query($sql);
             //Cache::delete('order_' . $this->order_id);
@@ -404,8 +406,9 @@ class Order
 
         $have_address = false;
         if ($A === NULL) {
+            $this->Shipto = new Address;
             // Clear out the shipping address
-            $this->shipto_id        = 0;
+            /*$this->shipto_id        = 0;
             $this->shipto_name      = '';
             $this->shipto_company   = '';
             $this->shipto_address1  = '';
@@ -413,7 +416,7 @@ class Order
             $this->shipto_city      = '';
             $this->shipto_state     = '';
             $this->shipto_country   = '';
-            $this->shipto_zip       = '';
+            $this->shipto_zip       = '';*/
             $have_address = true;
         } elseif (is_array($A)) {
             $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
@@ -423,9 +426,11 @@ class Order
             if ($addr_id > 0) {
                 // If set, read and use an existing address
                 Cart::setSession('shipping', $addr_id);
-            }
-            if (!empty($A)) {
-                $this->shipto_id        = $addr_id;
+                $this->Shipto = new Address($addr_id);
+            } else {
+                $this->Shipto = new Address($A);
+            //if (!empty($A)) {
+                /*$this->shipto_id        = $addr_id;
                 $this->shipto_name      = SHOP_getVar($A, 'name');
                 $this->shipto_company   = SHOP_getVar($A, 'company');
                 $this->shipto_address1  = SHOP_getVar($A, 'address1');
@@ -434,7 +439,7 @@ class Order
                 $this->shipto_state     = SHOP_getVar($A, 'state');
                 $this->shipto_country   = SHOP_getVar($A, 'country');
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
-                $this->Shipto = new Address($A);
+                $this->Shipto = new Address($A);*/
                 $this->setTaxRate(
                     Tax::getProvider()
                     ->withOrder($this)
@@ -443,7 +448,7 @@ class Order
                 $have_address = true;
             }
         } elseif (is_object($A)) {
-            $this->shipto_id        = $A->getID();
+            /*$this->shipto_id        = $A->getID();
             $this->shipto_name      = $A->getName();
             $this->shipto_company   = $A->getCompany();
             $this->shipto_address1  = $A->getAddress1();
@@ -451,7 +456,7 @@ class Order
             $this->shipto_city      = $A->getCity();
             $this->shipto_state     = $A->getState();
             $this->shipto_country   = $A->getCountry();
-            $this->shipto_zip       = $A->getPostal();
+            $this->shipto_zip       = $A->getPostal();*/
             $this->Shipto = $A;
             $this->setTaxRate(
                 Tax::getProvider()
@@ -464,14 +469,14 @@ class Order
         if ($have_address) {
             $sql = "UPDATE {$_TABLES['shop.orders']} SET
                 shipto_id   = '{$this->shipto_id}',
-                shipto_name = '" . DB_escapeString($this->shipto_name) . "',
-                shipto_company = '" . DB_escapeString($this->shipto_company) . "',
-                shipto_address1 = '" . DB_escapeString($this->shipto_address1) . "',
-                shipto_address2 = '" . DB_escapeString($this->shipto_address2) . "',
-                shipto_city = '" . DB_escapeString($this->shipto_city) . "',
-                shipto_state = '" . DB_escapeString($this->shipto_state) . "',
-                shipto_country = '" . DB_escapeString($this->shipto_country) . "',
-                shipto_zip = '" . DB_escapeString($this->shipto_zip) . "',
+                shipto_name = '" . DB_escapeString($this->Shipto->getName()) . "',
+                shipto_company = '" . DB_escapeString($this->Shipto->getCompany()) . "',
+                shipto_address1 = '" . DB_escapeString($this->Shipto->getAddress1()) . "',
+                shipto_address2 = '" . DB_escapeString($this->Shipto->getAddress2()) . "',
+                shipto_city = '" . DB_escapeString($this->Shipto->getCity()) . "',
+                shipto_state = '" . DB_escapeString($this->Shipto->getState()) . "',
+                shipto_country = '" . DB_escapeString($this->Shipto->getCountry()) . "',
+                shipto_zip = '" . DB_escapeString($this->Shipto->getPostal()) . "',
                 tax_rate = '{$this->tax_rate}',
                 tax = '{$this->tax}'
                 WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
@@ -693,7 +698,7 @@ class Order
                 "pmt_txn_id = '" . DB_escapeString($this->pmt_txn_id) . "'",
                 "pmt_method = '" . DB_escapeString($this->pmt_method) . "'",
                 "by_gc = '{$this->by_gc}'",
-                "phone = '" . DB_escapeString($this->phone) . "'",
+                //"phone = '" . DB_escapeString($this->phone) . "'",
                 "tax = '{$this->tax}'",
                 "shipping = '{$this->shipping}'",
                 "handling = '{$this->handling}'",
@@ -771,6 +776,7 @@ class Order
             $tplname = 'order';
             break;
         case 'viewcart':
+            $this->checkRules();
             $this->tax_rate = 0;
             $tplname = 'viewcart';
             break;
@@ -826,6 +832,7 @@ class Order
         $has_sale_items = false;
         $item_net = 0;
         $good_items = 0;        // Count non-embargoed items
+        $discount_items = 0;
         foreach ($this->items as $item) {
             $P = $item->getProduct();
             $P->setVariant($item->getVariantID());
@@ -1082,6 +1089,9 @@ class Order
         switch ($view) {
         case 'viewcart':
             $T->set_var('gateway_radios', $this->getCheckoutRadios());
+            if ($this->hasInvalid) {
+                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
+            }
             break;
         case 'checkout':
             $T->set_var('checkout', true);
@@ -1099,7 +1109,6 @@ class Order
         default:
             break;
         }
-
         $status = $this->status;
         if ($this->pmt_method != '') {
             $gw = Gateway::getInstance($this->pmt_method);
@@ -1675,7 +1684,7 @@ class Order
                 // get the first shipper available, which will be the best rate.
                 $shipper = reset($shippers);
                 $this->ship_method = $shipper->getName();
-                $this->shipping = $shipper->getOrderShipping->total_rate;
+                $this->shipping = $shipper->getOrderShipping()->total_rate;
             }
         } else {
             $this->shipping = 0;
@@ -2416,7 +2425,7 @@ class Order
 
         $total_qty = $this->getTotalBaseItems($item_id);
         foreach ($this->items as $key=>$OI) {
-            if ($OI->product_id != $item_id) continue;
+            if ($OI->getProductID() != $item_id) continue;
             $qty_discount = $P->getDiscount($total_qty);
             $new_price = $P->getDiscountedPrice($total_qty, $OI->getOptionsPrice());
             $OI->setPrice($new_price);
@@ -3019,6 +3028,18 @@ class Order
     {
         return Currency::getInstance($this->currency);
     }
+
+
+    /**
+     * Get the record ID of the requested shipper.
+     *
+     * @return  integer      Shipper record ID
+     */
+    public function getShipperID()
+    {
+        return (int)$this->shipper_id;
+    }
+
 
 
     /**

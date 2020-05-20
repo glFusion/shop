@@ -12,11 +12,12 @@
  * @filesource
  */
 namespace Shop\Gateways;
-
 use Shop\Company;
 use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
+use Shop\Shipper;
+
 
 /**
  * Class for Paypal payment gateway
@@ -522,12 +523,12 @@ class paypal extends \Shop\Gateway
                 $vars['no_shipping'] = '1';
             }
 
-            switch ($P->getShippingType) {
+            switch ($P->getShippingType()) {
             case 0:
                 $vars['no_shipping'] = '1';
                 break;
             case 2:
-                $shipping = \Shop\Shipper::getBestRate($P->getShippingUnits())->best_rate;
+                $shipping = Shipper::getBestRate($P->getShippingUnits())->best_rate;
                 $shipping += $P->getShipping();
                 $vars['shipping'] = $shipping;
                 $vars['no_shipping'] = '1';

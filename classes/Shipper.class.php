@@ -76,8 +76,9 @@ class Shipper
     private $use_fixed;
 
     /** Std class to accumulate order shipping prices for the shipper.
+     * This is manipulated as a public variable within this class.
      * @var object */
-    private $ordershipping;
+    public $ordershipping;
 
     /** Earliest date/time that this shipper can be used.
      * @var object */
@@ -153,6 +154,10 @@ class Shipper
                 ),
             );
         }
+        // Initialize the object to hold shipping data for an order
+        $this->ordershipping = new \stdClass;
+        $this->ordershipping->packages = 0;
+        $this->ordershipping->total_rate = 1000000;
     }
 
 
@@ -235,12 +240,15 @@ class Shipper
                 $A['valid_to'] = trim($A['valid_to']) . ' 23:59:59';
             }
         } else {
-            $rates = json_decode($A['rates']);
-            if ($rates === NULL) $rates = array();
+            $rates = array();
+            if (isset($A['rates'])) {
+                $rates = json_decode($A['rates']);
+                if ($rates === NULL) $rates = array();
+            }
             $this->rates = $rates;
         }
-        $this->setValidFrom($A['valid_from']);
-        $this->setValidTo($A['valid_to']);
+        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', '1900-01-01'));
+        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', '9999-12-31'));
     }
 
 
@@ -486,7 +494,7 @@ class Shipper
 
         $cache_key = 'shippers_all_' . (int)$valid;
         $now = time();
-//        $shippers = Cache::get($cache_key);
+        $shippers = Cache::get($cache_key);
         if ($shippers === NULL) {
             $shippers = array();
             $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
@@ -611,6 +619,8 @@ class Shipper
      */
     public static function getShippersForOrder($Order)
     {
+        global $LANG_SHOP;
+
         $cache_key = 'shipping_order_' . $Order->getOrderID();
         $shippers = Cache::get($cache_key);
         if (is_array($shippers)) {
@@ -705,7 +715,7 @@ class Shipper
     {
         $this->ordershipping = new \stdClass;
         $this->ordershipping->total_rate = NULL;
-        $this->ordershippping->packages = array();
+        $this->ordershipping->packages = array();
 
         // Get the package types into an array to track how much space is used
         // as items are packed.

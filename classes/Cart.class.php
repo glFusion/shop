@@ -310,7 +310,7 @@ class Cart extends Order
         $items = $A['quantity'];
         if (!is_array($items)) {
             // No items in the cart?
-            return $this->m_cart;
+            return $this;
         }
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
@@ -344,7 +344,7 @@ class Cart extends Order
                     $this->tainted = true;
                 }
             }
-            $this->applyQtyDiscounts($this->items[$id]->product_id);
+            $this->applyQtyDiscounts($this->items[$id]->getProductID());
         }
         $this->calcItemTotals();
 
@@ -378,7 +378,7 @@ class Cart extends Order
         $this->validateDiscountCode($dc);
 
         $this->Save();  // Save cart vars, if changed, and update the timestamp
-        return $this->m_cart;
+        return $this;
     }
 
 

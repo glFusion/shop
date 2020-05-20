@@ -34,7 +34,7 @@ define('SHOP_PI_PATH', __DIR__);
 define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
 /** Define URL to plugin admin interface */
 define('SHOP_ADMIN_URL',
-        "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
+    "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
 
 // Define product types
 define('SHOP_PROD_PHYSICAL',  1);
@@ -971,8 +971,11 @@ function phpblock_shop_cart_contents()
     $total = 0;
     $Cur = Shop\Currency::getInstance($cart->currency);
     foreach ($cart->getItems() as $id=>$item) {
-        $item_id = $item->product_id;
-        if ($item->options != '') $item_id .= '|' . $item->options;
+        $item_id = $item->getProductID();
+        $optid_str = $item->getOptionIdString();
+        if (!empty($optid_str)) {
+            $item_id .= '|' . $optid_str;
+        }
         $P = Shop\Product::getByID($item_id);
 
         $item_total = (float)$item->getPrice() * $item->getQuantity();
@@ -1353,6 +1356,8 @@ function SHOP_phpblock_product($sql)
             if ($isOnSale) {
                 $price_was = $price;
                 $price = $P->getSalePrice();
+            } else {
+                $price_was = 0;
             }
             $price = $price > 0 ? Shop\Currency::getInstance()->Format($price) : '';
             $price_was = $price_was > 0 ? Shop\Currency::getInstance()->Format($price_was) : '';
@@ -1966,7 +1971,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF, $_USER, $_GROUPS;
 
     $properties = explode(',', $what);
-    $fields = array('p.id');        // always get item id
+    $fields = array('p.id', 'p.name');  // always get item name and id
     $retval = array();
     $buildingSearchIndex = false;
 
@@ -1989,6 +1994,8 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
         } else {
             return NULL;
         }
+    } else {
+        $cat_where = '';
     }
 
     foreach ($properties as $p) {
@@ -2103,7 +2110,6 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 break;
             }
         }
-
         $url_id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
         $props['url'] = COM_buildUrl(
             $_CONF['site_url'] . '/shop/detail.php?id=' . urlencode($url_id)
@@ -2418,7 +2424,7 @@ function SHOP_getRatedIds($pi_name)
 {
     static $retval = array();
 
-    if (!array_key_exists($retval, $pi_name)) {
+    if (!array_key_exists($pi_name, $retval)) {
         $retval[$pi_name] = RATING_getRatedIds($pi_name);
     }
     return $retval[$pi_name];
