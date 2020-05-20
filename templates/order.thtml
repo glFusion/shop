@@ -85,7 +85,12 @@
                     <div class="uk-grid">
                         <div class="uk-width-1-1 uk-width-medium-1-2 cart-item-product">
                             <div class="cart-item-image">
-{!if item_link}
+{!if embargoed}
+                                <a href="{del_item_url}">
+                                    <i class="uk-icon uk-icon-ban uk-icon-medium uk-text-danger tooltip"
+                                    title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
+                                </a>
+{!elseif item_link}
                                 <a href="{item_link}">{img_url}</a>
 {!else}
                                 {img_url}
@@ -177,13 +182,6 @@
                 </div>
 {!endif}
             </div>
-
-{!if Xembargoed}
-              <a href="{del_item_url}">
-                <i class="uk-icon uk-icon-ban uk-text-danger uk-icon-medium tooltip"
-                title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
-              </a>
-{!endif}
     </div>
   </div>
 

@@ -6,7 +6,7 @@
 <div style="text-align:center; margin-left:auto;">
     <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
 {!if rules_msg}
-    <div class="uk-alert uk-alert-danger">{rules_msg}</div>
+    <div class="uk-alert uk-alert-danger alignleft">{rules_msg}</div>
 {!endif}
 
     <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
@@ -41,7 +41,11 @@
                     <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 <!-- BEGIN ItemRow -->
+{!if embargoed}
+                <div class="cart-item embargo">
+{!else}
                 <div class="cart-item">
+{!endif}
                     <div class="uk-grid uk-margin">
                         <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
                             <div class="cart-item-image">
