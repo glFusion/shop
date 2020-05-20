@@ -725,6 +725,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
+    "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
