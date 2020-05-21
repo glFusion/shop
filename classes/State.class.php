@@ -379,6 +379,7 @@ class State extends RegionBase
         $cache_key = 'shop.states.' . $country . '_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
+            $retval = array();
             $sql = "SELECT s.state_name, s.iso_code
                 FROM {$_TABLES['shop.states']} s
                 LEFT JOIN {$_TABLES['shop.countries']} c
@@ -396,7 +397,7 @@ class State extends RegionBase
             while ($A = DB_fetchArray($res, false)) {
                 $retval[$A['iso_code']] = new self($A);
             }
-//            Cache::set($cache_key, $retval, 'regions', 43200);
+            Cache::set($cache_key, $retval, 'regions', 43200);
         }
         return $retval;
     }

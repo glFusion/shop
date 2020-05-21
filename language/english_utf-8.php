@@ -180,6 +180,7 @@ $LANG_SHOP = array (
 'options_msg'       => 'Adding attributes will prevent encrypted buttons from being created.',
 'new_opt'           => 'New Option Value',
 'new_variant'       => 'New Variant',
+'edit_variant'      => 'Edit Variant',
 'edit_opt'          => 'Edit Option',
 'new_og'            => 'New Option Group',
 'edit_og'           => 'Edit Option Group',
@@ -699,6 +700,7 @@ $LANG_SHOP = array (
 'gw_test_mode'     => 'Testing (Sandbox) Mode?',
 'req_shipto' => 'A valid shipping address is required.',
 'req_billto' => 'A valid billing address is required.',
+'add_to_rule' => 'Add to Rule',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

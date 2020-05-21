@@ -712,8 +712,7 @@ class ProductVariant
 
         $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
-        $retval .= $T->finish($T->get_var('output'));
-        return $retval;
+        return $T->finish($T->get_var('output'));
     }
 
 

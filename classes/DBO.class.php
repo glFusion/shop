@@ -63,7 +63,6 @@ trait DBO
             $sql = "UPDATE {$_TABLES[static::$TABLE]}
                     SET $f_orderby = $f_orderby $oper 11
                     WHERE $f_id = '" . DB_escapeString($id) . "'";
-            //echo $sql;die;
             DB_query($sql);
             self::ReOrder();
         }
@@ -93,7 +92,7 @@ trait DBO
         $order = 10;
         $stepNumber = 10;
         while ($A = DB_fetchArray($result, false)) {
-            if ($A['orderby'] != $order) {  // only update incorrect ones
+            if ($A[$f_orderby] != $order) {  // only update incorrect ones
                 $sql = "UPDATE $table
                     SET $f_orderby = '$order'
                     WHERE $f_id = '" . DB_escapeString($A[$f_id]) . "'";
@@ -155,6 +154,30 @@ trait DBO
     public static function Toggle($oldval, $field, $id)
     {
         return self::_toggle($oldval, $field, $id);
+    }
+
+
+    /**
+     * Convert a UTC-based datetime string or timestamp value to a Date object.
+     * Used to read UTC datetimes from MySQL and apply the local timezone.
+     *
+     * @param   string|integer  $utc    UTC-based datetime string or timestamp
+     * @param   string  $tz         Timezone string, NULL to use UTC
+     * @return  object      Date object with the date/time and timezone set
+     */
+    private static function dateFromValue($utc, $tz=NULL)
+    {
+        global $_CONF;
+
+        if ($tz === NULL) {
+            $tz = $_CONF['timezone'];
+        }
+        // If $utc is a string will be assumed to be a local time, if the TZ
+        // is passed to the contructor. Adding the TZ later works for both
+        // strings and timestamp values.
+        $dt = new \Date($utc);
+        $dt->setTimeZone(new \DateTimeZone($tz));
+        return $dt;
     }
 
 }

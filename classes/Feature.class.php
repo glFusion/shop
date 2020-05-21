@@ -390,6 +390,8 @@ class Feature
         $extra = array(
             'count' => DB_count($_TABLES['shop.features']),
         );
+        $text_arr = array();
+        $filter = '';
         $options = array('chkdelete' => true, 'chkfield' => 'ft_id');
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_feat_list',

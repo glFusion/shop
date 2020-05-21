@@ -2258,7 +2258,9 @@ class Product
     public function getDiscountedPrice($qty=1, $opts_price=0)
     {
         $price = $this->getSale()->calcPrice($this->price + $opts_price);
-        return Currency::getInstance()->RoundVal($price * (1 - ($this->getDiscount($qty) / 100)));
+        return Currency::getInstance()->RoundVal(
+            $price * (1 - ($this->getDiscount($qty) / 100))
+        );
     }
 
 

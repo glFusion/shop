@@ -431,10 +431,6 @@ class Zone
             ),
         );
 
-        $defsort_arr = array(
-            'field' => 'rule_id',
-            'direction' => 'ASC',
-        );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_rule'],
@@ -444,12 +440,18 @@ class Zone
                 'class' => 'uk-button uk-button-success',
             )
         );
+        $text_arr = array();
         $query_arr = array(
             'table' => 'shop.zone_rules',
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => '',
         );
+        $defsort_arr = array(
+            'field' => 'rule_id',
+            'direction' => 'ASC',
+        );
+        $filter = array();
         $extra = array(
             'count' => DB_count($_TABLES[static::$TABLE]),
         );
@@ -520,7 +522,7 @@ class Zone
             }
             $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
                 data-uk-tooltip
-                id=\"togenabled{$A['id']}\"
+                id=\"togenabled{$A['rule_id']}\"
                 title=\"$tip\"
                 onclick='SHOP_toggle(this,\"{$A['rule_id']}\",\"{$fieldname}\",".
                 "\"zone_rule\");' />" . LB;

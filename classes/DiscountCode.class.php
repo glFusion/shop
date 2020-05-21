@@ -465,7 +465,7 @@ class DiscountCode
         $T = SHOP_getTemplate('discount_code', 'form');
         $retval = '';
         $T->set_var(array(
-            'code_id'       => $this->id,
+            'code_id'       => $this->code_id,
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('discount_code',

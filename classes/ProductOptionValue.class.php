@@ -304,8 +304,6 @@ class ProductOptionValue
             'pog_name'      => ProductOptionGroup::getInstance($this->pog_id)->getName(),
             'pov_value'     => $this->pov_value,
             'pov_price'     => $this->pov_price,
-            'product_select' => COM_optionList($_TABLES['shop.products'],
-                    'id,name', $this->item_id),
             'option_group_select' => COM_optionList(
                         $_TABLES['shop.prod_opt_grps'],
                         'pog_id,pog_name',
@@ -479,7 +477,7 @@ class ProductOptionValue
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink($LANG_SHOP['new_opt'],
-            SHOP_ADMIN_URL . '/index.php?pov_edit=0&item_id=' . $sel_prod_id,
+            SHOP_ADMIN_URL . '/index.php?pov_edit=0',
             array(
                 'style' => 'float:left;',
                 'class' => 'uk-button uk-button-success',

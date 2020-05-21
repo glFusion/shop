@@ -311,12 +311,12 @@ class ProductOptionGroup
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = SHOP_getTemplate('option_grp_form', 'form');
-        $id = $this->og_id;
+        $id = $this->pog_id;
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->og_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->pog_name);
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_og']);
         }
@@ -416,13 +416,18 @@ class ProductOptionGroup
                 'class' => 'uk-button uk-button-success',
             )
         );
+        $text_arr = array();
         $query_arr = array(
             'table' => 'shop.prod_opt_grps',
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => '',
         );
-        $options = array('chkdelete' => true, 'chkfield' => 'og_id');
+        $filter = '';
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'pog_id',
+        );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_og_list',
             array(__CLASS__,  'getAdminField'),
