@@ -99,8 +99,8 @@ class stripe extends \Shop\IPN
                 'quantity'  => $item->getQuantity(),
                 'price'     => $item->getNetPrice(),
                 'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShippingAmt(),
-                'handling'  => $item->getHandlingAmt(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
                 'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
@@ -215,8 +215,8 @@ class stripe extends \Shop\IPN
                 'quantity'  => $item->getQuantity(),
                 'price'     => $item->getPrice(),
                 'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShippingAmt(),
-                'handling'  => $item->getHandlingAmt(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
                 'extras'    => $item->getExtras(),
             );
             $this->addItem($args);

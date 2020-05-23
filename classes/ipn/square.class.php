@@ -47,13 +47,13 @@ class square extends \Shop\IPN
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if (!$this->Order || $this->Order->isNew) return NULL;
+        if (!$this->Order || $this->Order->isNew()) return NULL;
 
-        $this->setOrderId($this->Order->order_id)
+        $this->setOrderId($this->Order->getOrderID())
             ->setTxnId(SHOP_getVar($A, 'transactionId'))
-            ->setEmail($this->Order->buyer_email)
-            ->setPayerName($_USER['fullname'])
-            ->setStatus($status);
+            ->setEmail($this->Order->getBuyerEmail())
+            ->setPayerName($_USER['fullname']);
+            //->setStatus($status);
         $this->gw_name = $this->GW->getName();;
 
         $billto = $this->Order->getAddress('billto');
@@ -85,19 +85,21 @@ class square extends \Shop\IPN
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
 
+        $total_shipping = 0;
+        $total_handling = 0;
         foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->product_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->getShortDscp(),
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getProductID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getNetPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
-            $total_shipping += $item->shipping;
-            $total_handling += $item->handling;
+            $total_shipping += $item->getShipping();
+            $total_handling += $item->getHandling();
         }
         $this->setPmtShipping($total_shipping)
             ->setPmtHandling($total_handling);
@@ -206,19 +208,21 @@ class square extends \Shop\IPN
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
-        foreach ($this->Cart as $idx=>$item) {
+        $total_shipping = 0;
+        $total_handling = 0;
+        foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->item_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->name,
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getProductID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
-            $total_shipping += $item->shipping;
-            $total_handling += $item->handling;
+            $total_shipping += $item->getShipping();
+            $total_handling += $item->getHandling();
         }
 
         if (!$this->Verify()) {

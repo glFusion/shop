@@ -634,7 +634,7 @@ class OrderItem
      *
      * @return  float       Total fixed shipping cost (per-product * quantity)
      */
-    public function getShippingAmt()
+    public function getShipping()
     {
         return $this->Product->getShipping($this->quantity);
     }
@@ -645,7 +645,7 @@ class OrderItem
      *
      * @return  float       Total handling charge for this line item
      */
-    public function getHandlingAmt()
+    public function getHandling()
     {
         return (float)$this->handling;
     }
@@ -1060,7 +1060,7 @@ class OrderItem
      */
     public function setTax($tax)
     {
-        $this->tax = (float)$this->getOrder()->getCurrency()->formatValue($tax);
+        $this->tax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
         return $this;
     }
 

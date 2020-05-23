@@ -82,13 +82,13 @@ class paypal extends \Shop\IPN
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->setStatus(self::PENDING);
+            $this->setStatus(self::STATUS_PENDING);
             break;
         case 'Completed':
-            $this->setStatus(self::PAID);
+            $this->setStatus(self::STATUS_PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(self::REFUNDED);
+            $this->setSTatus(self::STATUS_REFUNDED);
             break;
         }
 
@@ -276,16 +276,20 @@ class paypal extends \Shop\IPN
 
             foreach ($Cart as $item) {
                 $item_id = $item->getProductID();
-                if ($item->getOptions() != '') {
-                    $item_id .= '|' . $item->getOptions();
+                $options = $item->getOptions();
+                if (!empty($options)) {
+                    if (is_array($options)) {
+                        $options = implode(',', $options);
+                    }
+                    $item_id .= '|' . $options;
                 }
                 $args = array(
                     'item_id'   => $item_id,
                     'quantity'  => $item->getQuantity(),
                     'price'     => $item->getPrice(),
                     'item_name' => $item->getDscp(),
-                    'shipping'  => $item->getShippingAmt(),
-                    'handling'  => $item->getHandlingAmt(),
+                    'shipping'  => $item->getShipping(),
+                    'handling'  => $item->getHandling(),
                     'tax'       => $item->getTax(),
                     'extras'    => $item->getExtras(),
                 );

@@ -49,9 +49,27 @@ class internal extends \Shop\IPN
         $this->gw_id = '_internal';
         parent::__construct($A);
 
+        // Set the custom data into an array. If it can't be unserialized,
+        // then treat it as a single value which contains only the user ID.
+        if (isset($A['custom'])) {
+            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
+            if (!$this->custom) {
+                $this->custom = array('uid' => $A['custom']);
+            }
+        } else {
+            $this->custom = array();
+        }
+
         // Get the IPN type, default to "cart" for backward compatibility
         $this->ipn_type = SHOP_getVar($this->ipn_data, 'ipn_type', 'string', 'cart');
-        $this->setPmtGross($this->ipn_data['pmt_gross'])
+        if (isset($this->ipn_data['pmt_gros'])) {
+            $pmt_gross = $this->ipn_data['pmt_gross'];
+        } elseif (isset($custom['by_gc'])) {
+            $pmt_gross = $custom['by_gc'];
+        } else {
+            $pmt_gross = 0;
+        }
+        $this->setPmtGross($pmt_gross)
             ->setPmtTax(SHOP_getVar($this->ipn_data, 'tax', 'float'))
             ->setPmtShipping(SHOP_getVar($this->ipn_data, 'shipping', 'float'))
             ->setPmtHandling(SHOP_getVar($this->ipn_data, 'handling', 'float'))
@@ -60,16 +78,8 @@ class internal extends \Shop\IPN
         $this->gw_name = $this->GW->getName();
         $this->gw_desc = $this->GW->getDscp();
 
-        // Set the custom data into an array. If it can't be unserialized,
-        // then treat it as a single value which contains only the user ID.
-        if (isset($A['custom'])) {
-            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->custom) {
-                $this->custom = array('uid' => $A['custom']);
-            }
-        }
         $this->setUid($this->custom['uid'])
-            ->setStatus(self::PAID);
+            ->setStatus(self::STATUS_PAID);
     }
 
 
