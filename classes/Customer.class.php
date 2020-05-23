@@ -451,6 +451,7 @@ class Customer
             $T->set_var(array(
                 'id'        => $address->getID(),
                 'ad_type'   => $type,
+                'ad_full'   => $address->toText('all', ', '),
                 'ad_name'   => $address->getName(),
                 'ad_company' => $address->getCompany(),
                 'ad_addr_1' => $address->getAddress1(),

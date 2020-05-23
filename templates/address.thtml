@@ -76,22 +76,14 @@ function removeAddress(addr_id)
   <div class="shopContent">
     <p>{sel_addr_text}</p>
     <div class="shopSavedAddress" id="use_addr0">
-      <input type="radio" name="useaddress" value="0" {none_chk}
-       onclick="updateForm(0);" /><i>&nbsp;{$LANG_SHOP['new_address']}</i>
+      <input id="addr_rad0" type="radio" name="useaddress" value="0" {none_chk}
+       onclick="updateForm(0);" /><label for="addr_rad0"><i>&nbsp;&nbsp;{$LANG_SHOP['new_address']}</i></label>
     </div>
   <!-- BEGIN SavedAddress -->
   <div class="shopSavedAddress" id="use_addr{id}">
-    <input type="radio" name="useaddress" value="{id}" {ad_checked}
+    <input id="addr_rad{id}" type="radio" name="useaddress" value="{id}" {ad_checked}
        onclick="updateForm({id});"
-        />&nbsp;{ad_name},
-{!if ad_company}
-    {ad_company},
-{!endif}
-    {ad_addr_1},
-{!if ad_addr_2}
-    {ad_addr_2},
-{!endif}
-    {ad_city}, {ad_state} {ad_zip}
+        /><label for="addr_rad{id}">&nbsp;&nbsp;{ad_full}</label>
     {del_icon}
     <input type="hidden" name="ad_name[{id}]" id="ad_name[{id}]" value="{ad_name}" />
     <input type="hidden" name="ad_company[{id}]" id="ad_company[{id}]" value="{ad_company}" />
