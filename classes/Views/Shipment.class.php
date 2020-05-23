@@ -154,7 +154,7 @@ class Shipment extends Order
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_id'      => $this->Order->getOrderID(),
-            'order_instr'   => htmlspecialchars($this->instructions),
+            'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),

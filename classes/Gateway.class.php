@@ -38,7 +38,7 @@ class Gateway
 
     /** The long name or description of the gateway, e.g. "Amazon SimplePay".
      * @var string */
-    protected $gw_desc = '';
+    protected $gw_desc = 'Unknown Payment Gateway';
 
     /** The provider name, e.g. "Amazon" or "Shop".
      * @var string; */
@@ -816,7 +816,7 @@ class Gateway
         }
 
         $ord->setPmtMethod($this->gw_name);
-        $ord->setPmtTxnId('');
+        //$ord->setPmtTxnId('');
         /*$ord->tax = $this->pp_data['pmt_tax'];
         $ord->shipping = $this->pp_data['pmt_shipping'];
         $ord->handling = $this->pp_data['pmt_handling'];*/
@@ -1127,7 +1127,7 @@ class Gateway
             }
             $fields[$name] = array(
                 'param_field'   => $field,
-                'other_label'   => $other_label,
+                //'other_label'   => '',
                 'doc_url'       => '',
             );
         }
@@ -1154,7 +1154,7 @@ class Gateway
             if (class_exists($gw)) {
                 $gateways[$gw_name] = new $gw($A);
             } else {
-                $gateways[$gw_name] = NULL;
+                $gateways[$gw_name] = new self;
             }
         }
         return $gateways[$gw_name];
@@ -1741,6 +1741,19 @@ class Gateway
     public function processOrder($order_id)
     {
         return true;
+    }
+
+
+    /**
+     * Check if the gateway is valid by checking that $gw_name is set.
+     * Used in case getInstance() returns a generic gateway instance when
+     * the requested gateway is not available.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function isValid()
+    {
+        return $this->gw_name != '';
     }
 
 }   // class Gateway

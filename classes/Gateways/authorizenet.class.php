@@ -293,13 +293,11 @@ class authorizenet extends \Shop\Gateway
         if (!is_array($data)) {
             return array();
         }
-
-        list($currency, $amount) = explode(' ', $data['transactionAmount']);
         $retval = array(
-            'pmt_gross'     => $data['x_amount'],
+            'pmt_gross'     => 0,
             'verified'      => 'verified',
-            'pmt_status'    => 'complete',
-            'buyer_email'   => $data['x_email'],
+            'pmt_status'    => $data['status'],
+            'buyer_email'   => '',
         );
         return $retval;
     }

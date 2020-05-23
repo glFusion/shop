@@ -237,6 +237,7 @@ class table extends \Shop\Tax
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
 
+        $retval = '';
         switch($fieldname) {
         case 'edit':
             $retval .= COM_createLink(
@@ -323,8 +324,7 @@ class table extends \Shop\Tax
             'special_rate' => $A['special_rate'],
             'doc_url' => SHOP_getDocUrl('edit_tax'),
          ) );
-        $retval .= $T->parse('output', 'form');
-        return $retval;
+        return $T->parse('output', 'form');
     }
 
 

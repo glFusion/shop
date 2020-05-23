@@ -151,7 +151,7 @@ class stripe extends \Shop\Gateway
 
             // Add line items to represent tax and shipping.
             // These are included in "all items" above when using a coupon.
-            if ($cart->tax > 0) {
+            if ($cart->getTax() > 0) {
                 $line_items[] = array(
                     'name'      => '__tax',
                     'description' => $LANG_SHOP['tax'],
@@ -160,7 +160,7 @@ class stripe extends \Shop\Gateway
                     'quantity'  => 1,
                 );
             }
-            if ($cart->shipping > 0) {
+            if ($cart->getShipping() > 0) {
                 $line_items[] = array(
                     'name'      => '__shipping',
                     'description' => $LANG_SHOP['shipping'],

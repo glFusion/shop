@@ -210,18 +210,17 @@ class paypal extends \Shop\Gateway
             'custom'    => str_replace('"', '\'', serialize($custom_arr)),
             'invoice'   => $cartID,
         );
-
-        $address = $cart->getAddress('shipto');
+        $address = $cart->getShipto();
         if (!empty($address)) {
-            $np = explode(' ', $address['name']);
+            $np = explode(' ', $address->getName());
             $fields['first_name'] = isset($np[0]) ? htmlspecialchars($np[0]) : '';
             $fields['last_name'] = isset($np[1]) ? htmlspecialchars($np[1]) : '';
-            $fields['address1'] = htmlspecialchars($address['address1']);
-            $fields['address2'] = htmlspecialchars($address['address2']);
-            $fields['city'] = htmlspecialchars($address['city']);
-            $fields['state'] = htmlspecialchars($address['state']);
-            $fields['country'] = htmlspecialchars($address['country']);
-            $fields['zip'] = htmlspecialchars($address['zip']);
+            $fields['address1'] = htmlspecialchars($address->getAddress1());
+            $fields['address2'] = htmlspecialchars($address->getAddress2());
+            $fields['city'] = htmlspecialchars($address->getCity());
+            $fields['state'] = htmlspecialchars($address->getState());
+            $fields['country'] = htmlspecialchars($address->getCountry());
+            $fields['zip'] = htmlspecialchars($address->getPostal());
         }
 
         $i = 1;     // Item counter for paypal variables
@@ -246,12 +245,11 @@ class paypal extends \Shop\Gateway
                 if ($item->getQuantity() == 0) {
                     continue;
                 }
-                $item_count++;
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
-                $P = \Shop\Product::getByID($item->product_id, $custom_arr);
-                $db_item_id = DB_escapeString($item->product_id);
+                $P = \Shop\Product::getByID($item->getProductID(), $custom_arr);
+                $db_item_id = DB_escapeString($item->getProductID());
                 $oc = 0;
                 $oio_arr = array();
                 foreach ($item->options as $OIO) {
@@ -279,9 +277,9 @@ class paypal extends \Shop\Gateway
                 }
                 $fields['quantity_' . $i] = $item->getQuantity();
 
-                if ($item->getShippingAmt() > 0) {
-                    $fields['shipping_' . $i] = $item->getShippingAmt();
-                    $shipping += $item->getShipping(Amt);
+                if ($item->getShipping() > 0) {
+                    $fields['shipping_' . $i] = $item->getShipping();
+                    $shipping += $item->getShipping();
                 }
                 $i++;
             }
@@ -872,12 +870,33 @@ class paypal extends \Shop\Gateway
         if (!is_array($data)) {
             return array();
         }
-
+        $pmt_gross = 0;
+        $verified = 'true';
+        $pmt_status = 'paid';
+        $buyer_email = '';
+        if (isset($data['event_type'])) {   // webhook
+            if (isset($data['resource']['invoice']['payments']['transactions'])) {
+                $info = array_pop($data['resource']['invoice']['payments']['transactions']);
+                $pmt_gross = (float)$info['amount']['value'];
+            }
+            if (isset($data['resource']['invoice']
+                ['primary_recipients']
+                [0]['billing_info']['email_address'])) {
+                $buyer_email = $data['resource']['invoice']
+                    ['primary_recipients']
+                    [0]['billing_info']['email_address'];
+            }
+        } else {        // regular IPN
+            $pmt_gross = $data['mc_gross'] . ' ' . $data['mc_currency'];
+            $verified = $data['payer_status'];
+            $pmt_status = $data['payment_status'];
+            $buyer_email = $data['payer_email'];
+        }
         $retval = array(
-            'pmt_gross'     => $data['mc_gross'] . ' ' . $data['mc_currency'],
-            'verified'      => $data['payer_status'],
-            'pmt_status'    => $data['payment_status'],
-            'buyer_email'   => $data['payer_email'],
+            'pmt_gross'     => $pmt_gross,
+            'verified'      => $verified,
+            'pmt_status'    => $pmt_status,
+            'buyer_email'   => $buyer_email,
         );
         return $retval;
     }

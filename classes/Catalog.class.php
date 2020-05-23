@@ -119,7 +119,7 @@ class Catalog
         // If a string is submitted as the category ID, treat it as a plugin and
         // show all the products under that category.
         if (!is_int($this->cat_id) && !empty($this->cat_id)) {
-            $display .= $T->parse('', 'start');
+            $display = $T->parse('', 'start');
             $this->getPluginProducts($T, $this->cat_id);
             $T->set_block('wrapper', 'ProductItems', 'PI');
             $display .= $T->parse('', 'wrapper');

@@ -65,7 +65,7 @@ if ($mode == '') {
         } elseif (isset($_GET[$varname])) {
             $$varname = COM_applyFilter($_GET[$varname]);
         } else {
-            $$varname = COM_getArgument($varname);
+            $varname = COM_getArgument($varname);
         }
     }
 }
@@ -137,6 +137,7 @@ case 'deladdr':
     break;
 
 case 'savevalidated':
+case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
         $addr = json_decode($_POST['addr'][$actionval], true);
     } else {
@@ -193,7 +194,7 @@ case 'addresses':
 case 'orderhist':
 case 'history':
 default:
-    SHOP_setUrl($_SERVER['request_uri']);
+    SHOP_setUrl($_SERVER['REQUEST_URI']);
     $content .= \Shop\Menu::User($mode);
     $R = \Shop\Report::getInstance('orderlist');
     $R->setAdmin(false);

@@ -105,7 +105,7 @@ case 'checkout':
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
-        Shop\Customer::getInstance($cart->uid)
+        Shop\Customer::getInstance($Cart->uid)
             ->setPrefGW($gateway)
             ->saveUser();
     }
@@ -170,7 +170,8 @@ case 'saveshipto':
     } else {
         $addr = $_POST;
     }
-    $status = \Shop\Customer::isValidAddress($addr);
+    $Address = new Shop\Address($addr);
+    $status = $Address->isValid($addr);
     if ($status != '') {
         $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
         $view = $addr_type;
@@ -217,17 +218,17 @@ case 'none':
 case 'cancel':
     list($cart_id, $token) = explode('/', $actionval);
     if (!empty($cart_id)) {
-        $Cart = \Shop\Cart::getInstance(0, $cart_id);
+        $Cart = Shop\Cart::getInstance(0, $cart_id);
         if ($token == $Cart->getToken()) {
-            \Shop\Cart::setFinal($cart_id, false);
-            $Cart->setToken();
+            $Cart->setFinal($cart_id, false)
+                ->setToken();
         }
     }
     // fall through to view cart
 case 'view':
 case 'editcart':
 default:
-    SHOP_setUrl($_SERVER['request_uri']);
+    SHOP_setUrl($_SERVER['REQUEST_URI']);
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
     if ($view != 'editcart' && $Cart->canFastCheckout()) {

@@ -192,7 +192,10 @@ case 'emptycart':
 
 case 'thanks':
     // Allow for no thanksVars function
-    list($gw_name, $order_id, $token) = explode('/', $actionval);
+    $parts = explode('/', $actionval);
+    $gw_name = $parts[0];
+    $order_id = isset($parts[1]) ? $parts[1] : '';
+    $toke = isset($parts[2]) ? $parts[2] : '';
     $message = $LANG_SHOP['thanks_title'];
     if (!empty($gw_name)) {
         $gw = Shop\Gateway::getInstance($gw_name);
@@ -280,7 +283,13 @@ case 'shipto':
     // there after submission
     $step = 8;     // form will return to ($step + 1)
     $U = Shop\Customer::getInstance();
-    $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($view);
+    if (isset($_POST['address'])) {
+        $A = $_POST;
+    } elseif ($view == 'billto') {
+        $A = Shop\Cart::getInstance()->getBillto()->toArray();
+    } else {
+        $A = Shop\Cart::getInstance()->getShipto()->toArray();
+    }
     $content .= $U->AddressForm($view, $A, $step);
     break;
 
@@ -345,7 +354,7 @@ case 'viewcart':
     SHOP_setUrl($_SERVER['request_uri']);
     $cid = SHOP_getVar($_REQUEST, 'cid');
     if (!empty($cid)) {
-        \Shop\Cart::setFinal($cid, false);
+        Shop\Cart::getInstance($cid)->setFinal(false);
         COM_refresh(SHOP_URL. '/index.php?view=cart');
     }
     $menu_opt = $LANG_SHOP['viewcart'];

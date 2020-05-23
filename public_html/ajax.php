@@ -102,10 +102,10 @@ case 'setShipper':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $status = Shop\Gateway::getInstance(
-        Shop\Order::getInstance($cart_id)->getInfo('gateway')
-    )->processOrder($cart_id);
-    Shop\Cart::setFinal($cart_id);
+    $Cart = Shop\Cart::getInstance($cart_id);
+    $status = Shop\Gateway::getInstance($Cart->getInfo('gateway'))
+        ->processOrder($cart_id);
+    $Cart->setFinal();
     $output = array(
         'status' => $status,
     );
@@ -211,6 +211,7 @@ default:
 if ($output === NULL) {
     $ouptut = array('status' => false);
 }
+
 header('Content-Type: application/json');
 header("Cache-Control: no-cache, must-revalidate");
 //A date in the past

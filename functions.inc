@@ -969,7 +969,7 @@ function phpblock_shop_cart_contents()
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
-    $Cur = Shop\Currency::getInstance($cart->currency);
+    $Cur = $cart->getCurrency();
     foreach ($cart->getItems() as $id=>$item) {
         $item_id = $item->getProductID();
         $optid_str = $item->getOptionIdString();
@@ -1830,7 +1830,6 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         $LT->set_file(array(
             'block' => 'profileblock.thtml',
         ));
-        $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
         $U = Shop\Customer::getInstance($uid);
         if ($_SHOP_CONF['gc_enabled']) {
             $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
