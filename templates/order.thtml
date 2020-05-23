@@ -191,16 +191,18 @@
 {!else}
     <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
-{!if pmt_method}
-    <p id="orderPaymentMethod">
-        <b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
-    {!if is_admin}
-    {!if pmt_txn_id}
-    , {$LANG_SHOP['trans_id']}
-    <a href="{ipn_det_url}">{pmt_txn_id}</a>
-    {!endif}
-    {!endif}
-    </p>
+    <div id="orderPaymentMethod" style="margin-top:10px;">
+        <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}</span><br />
+{!if is_admin}
+        <span><b>{$LANG_SHOP['payments']}:</b><br />
+<!-- BEGIN Payments -->
+        {gw_name}
+{!if pmt_txn_id}
+, {$LANG_SHOP['trans_id']}
+<a href="{ipn_det_url}">{pmt_txn_id}</a>
+{!endif}
+<br />
+<!-- END Payments -->
 {!endif}
     <p>
         <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
