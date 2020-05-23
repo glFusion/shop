@@ -328,7 +328,7 @@ class Coupon extends \Shop\Product
             $Pmt = new Payment;
             $Pmt->setRefID(uniqid())
                 ->setAmount($applied)
-                ->setGateway('coupon')
+                ->setGateway('_coupon')
                 ->setMethod('Apply Coupon')
                 ->setComment($LANG_SHOP['gc_pmt_comment'])
                 ->setOrderID($order_id)
