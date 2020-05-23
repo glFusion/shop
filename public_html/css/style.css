@@ -896,8 +896,8 @@ ul.product-flags li {
 button:disabled {
     cursor: not-allowed;
 }
-tr.embargo {
-    background: #ddd;
+div.embargo {
+    background: #fcc;
 }
 
 dl#featurelist {
