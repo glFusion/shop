@@ -433,7 +433,7 @@ class Cart extends Order
      * Empty and destroy the cart.
      *
      * @param   boolean $del_order  True to delete any related order
-     * @return  array       Empty cart array
+     * @return  object  $this
      */
     public function Clear($del_order = true)
     {
@@ -448,14 +448,9 @@ class Cart extends Order
             if ($del_order) {
                 DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
                 self::delAnonCart();
-            } else {
-                // Done already if $del_order is set
-                Cache::deleteOrder($this->order_id);
             }
-            return array();
-        } else {
-            return $this->getItems();
         }
+        return $this;
     }
 
 
@@ -621,26 +616,6 @@ class Cart extends Order
 
 
     /**
-     * Get the requested address array.
-     *
-     * @param   string  $type   Type of address, billing or shipping
-     * @return  array           Array of address elements
-     */
-    public function getAddress($type)
-    {
-        if ($type != 'billto') $type = 'shipto';
-        $A = array();
-        foreach ($this->_addr_fields as $fld) {
-            $var = $type . '_' . $fld;
-            $A[$fld] = $this->$var;
-        }
-        $var = $type . '_id';
-        $A['addr_id'] = $this->$var;
-        return $A;
-    }
-
-
-    /**
      * Get a cart ID for a given user.
      * Gets the latest cart, and cleans up extra carts that may accumulate
      * due to expired sessions.
@@ -785,8 +760,6 @@ class Cart extends Order
             if (!$C->isNew && $C->uid == 1) {
                 Order::Delete($cart_id);
             }
-            // Always clear clear the cache to be sure
-            Cache::deleteOrder($cart_id);
         }
     }
 
@@ -813,26 +786,23 @@ class Cart extends Order
      * Pass $status = false to revert back to a cart, e.g. if the purchase is cancelled.
      * Also removes the cart_id cookie for anonymous users.
      *
-     * @param   string  $cart_id    Cart ID to update
      * @param   string  $status     Status to set, default is "pending"
+     * @return  object  $this
      */
-    public static function setFinal($cart_id, $status='pending')
+    public function setFinal($status='pending')
     {
         global $_TABLES, $LANG_SHOP, $_CONF;
 
-        $Order = self::getInstance(0, $cart_id);
-        if ($Order->isNew) {
+        if ($this->isNew()) {
             SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
             // Cart not found, do nothing
-            return $Order->getStatus();
+            return $this;
         }
 
-        //$oldstatus = $Order->status;
-        //$newstatus = $status ? 'pending' : 'cart';
-        //$Order->status = $newstatus;
-        $Order->order_date->setTimestamp(time());
-        $Order->Save();
-        self::setSession('order_id', $cart_id);
+        $newstatus = $status ? 'pending' : 'cart';
+        $oldstatus = $this->status;
+        $this->setOrderDate()->Save();
+        self::setSession('order_id', $this->order_id);
 
         /*if ($newstatus != 'cart') {
             // Make sure the cookie gets deleted also
@@ -843,11 +813,10 @@ class Cart extends Order
             // delete all open user carts except this one
             self::deleteUser(0, $cart_id);
         }*/
-        Cache::delete('order_' . $cart_id);
         // Is it really necessary to log that it changed from a cart to pending?
         //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
-        SHOP_log("Cart $cart_id status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
-        return;
+        SHOP_log("Cart {$this->order_id} status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
+        return $this;
     }
 
 
