@@ -76,6 +76,13 @@ class Address
      * @var string */
     protected $table = 'shop.addresses';
 
+    /** Address field names.
+     * @var array */
+    protected $_fields = array(
+        'name', 'company', 'address1', 'address2',
+        'city', 'state', 'zip', 'country',
+    );
+
 
     /**
      * Load the supplied address values, if any, into the properties.
@@ -706,7 +713,8 @@ class Address
 
         if (!isset($parts[$this->name])) {
             $parts[$this->name] = array();
-            $status = PLG_invokeService('lglib', 'parseName',
+            $status = LGLIB_invokeService(
+                'lglib', 'parseName',
                 array(
                     'name' => $this->name,
                 ),
@@ -822,8 +830,7 @@ class Address
     public function toArray()
     {
         return array(
-            'addr_id'   => $this->addr_id,
-            'uid'       => $this->uid,
+            'id'        => $this->addr_id,
             'name'      => $this->name,
             'company'   => $this->company,
             'address1'  => $this->address1,
@@ -832,9 +839,24 @@ class Address
             'state'     => $this->state,
             'zip'       => $this->zip,
             'country'   => $this->country,
-            'billto_def' => $this->isDefaultBillto(),
-            'shipto_def' => $this->isDefaultShipto(),
         );
+    }
+
+
+    public function fromArray($A, $prefix='')
+    {
+        if ($prefix !== '') {
+            $prefix .= '_';
+        }
+        foreach ($this->_fields as $fldname) {
+            $var = $prefix . $fldname;
+            if (isset($A[$var])) {
+                $this->$fldname = $A[$var];
+            } else {
+                $this->$fldname = '';
+            }
+        }
+        return $this;
     }
 
 
