@@ -621,11 +621,12 @@ class Shipper
     {
         global $LANG_SHOP;
 
-        $cache_key = 'shipping_order_' . $Order->getOrderID();
+        /*$cache_key = 'shipping_order_' . $Order->getOrderID();
         $shippers = Cache::get($cache_key);
         if (is_array($shippers)) {
             return $shippers;
         }
+         */
 
         // Get all the order items into a simple array where they can be
         // ordered by unit count and marked when packed.
@@ -1003,6 +1004,10 @@ class Shipper
                 'align' => 'center',
             ),
             array(
+                'text'  => $LANG_SHOP['carrier'],
+                'field' => 'module_code',
+            ),
+            array(
                 'text'  => $LANG_SHOP['name'],
                 'field' => 'name',
             ),
@@ -1173,6 +1178,10 @@ class Shipper
             $retval = $grp_names[$fieldvalue];
             break;
  */
+        case 'module_code':
+            $retval = strtoupper($fieldvalue);
+            break;
+
         case 'config':
             $retval = $fieldvalue;
             break;

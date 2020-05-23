@@ -8,7 +8,7 @@
       <span id="module_code" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <select name="module_code">
+      <select required name="module_code">
       <option value="">--{$LANG_SHOP['other']}--</option>
 <!-- BEGIN shipperCodes -->
       <option value="{module_code}" {selected}>{module_name} ({module_code})</option>
