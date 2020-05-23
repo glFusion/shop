@@ -80,7 +80,7 @@ class Payment
                 ->setOrderID($A['pmt_order_id'])
                 ->setComment($A['pmt_comment'])
                 ->setMethod($A['pmt_method'])
-                ->setUid($A['uid']);
+                ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
             $this->ref_id = COM_makeSid() . rand(100,999);
@@ -468,7 +468,7 @@ class Payment
                 ->setAmount($A['amount'])
                 ->setTS($A['ts'])
                 ->setIsMoney(false)
-                ->setGateway('coupon')
+                ->setGateway('_coupon')
                 ->setMethod('Apply Coupon')
                 ->setComment($LANG_SHOP['gc_pmt_comment'])
                 ->setOrderID($A['order_id'])
