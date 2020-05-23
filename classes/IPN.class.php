@@ -23,6 +23,7 @@
  */
 namespace Shop;
 use Shop\Logger\IPN as logIPN;
+use Shop\Products\Coupon;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -789,7 +790,7 @@ class IPN
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
             $this->Order->setByGC($by_gc);
-            \Shop\Products\Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
@@ -803,9 +804,6 @@ class IPN
                     );
                 }
             }
-
-            $this->Order->setPmtMethod($this->gw_id);
-            $this->Order->setPmtTxnID($this->txn_id);
             $this->Order->Save();
 
             // Handle the purchase for each order item
@@ -1198,11 +1196,11 @@ class IPN
             $credit = (float)$this->credits[$key];
             switch ($key) {
             case 'gc':
-                if (\Shop\Products\Coupon::verifyBalance($by_gc, $this->uid)) {
+                if (Coupon::verifyBalance($credit, $this->uid)) {
                     $retval[$key] = $credit;
                 } else {
-                    $gc_bal = \Shop\Products\Coupon::getUserBalance($this->uid);
-                    SHOP_log("Insufficient Gift Card Balance, need $by_gc, have $gc_bal", SHOP_LOG_DEBUG);
+                    $gc_bal = Coupon::getUserBalance($this->uid);
+                    SHOP_log("Insufficient Gift Card Balance, need $credit, have $gc_bal", SHOP_LOG_DEBUG);
                     $retval[$key] = 0;
                 }
                 break;
