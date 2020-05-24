@@ -147,11 +147,11 @@ $this->token = $this->getConfig('prod_token');*/
         $locationId = $this->loc_id;
 
         // Create and configure a new API client object
-        $defaultApiConfig = new \SquareConnect\Configuration();
-        $defaultApiConfig->setAccessToken($accessToken);
-        $defaultApiConfig->setHost($this->api_url);
-        $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
-        $checkoutClient = new \SquareConnect\Api\CheckoutApi($defaultApiClient);
+        $ApiConfig = new \SquareConnect\Configuration();
+        $ApiConfig->setAccessToken($accessToken);
+        $ApiConfig->setHost($this->api_url);
+        $ApiClient = new \SquareConnect\ApiClient($ApiConfig);
+        $checkoutClient = new \SquareConnect\Api\CheckoutApi($ApiClient);
 
         $lineItems = array();
         $by_gc = $cart->getInfo('apply_gc');
@@ -168,29 +168,39 @@ $this->token = $this->getConfig('prod_token');*/
             //Puts our line item object in an array called lineItems.
             array_push($lineItems, $itm);
         } else {
-            $shipping = $cart->shipping;
-            $tax = $cart->tax;
+            $shipping = $cart->getShipping();
+            $tax = $cart->getTax();
             $idx = -1;
             foreach ($cart->getItems() as $Item) {
                 $idx++;
                 $P = $Item->getProduct();
-
-                $PriceMoney = new \SquareConnect\Model\Money;
-                $PriceMoney->setCurrency($this->currency_code);
-                $Item->Price = $P->getPrice($Item->getOptions);
-                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
-                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-                $itm = new \SquareConnect\Model\OrderLineItem;
-
                 $opts = $P->getOptionDesc($Item->getOptions());
                 $dscp = $Item->getDscp();
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
                 }
+
+                $lineItems[] = array(
+                    'name' => $dscp,
+                    'quantity' => (string)$Item->getQuantity(),
+                    'base_price_money' => array(
+                        'amount' => $Cur->toInt($Item->getPrice()),
+                        'currency' => $this->currency_code,
+                    ),
+                );
+
+                /*$PriceMoney = new \SquareConnect\Model\Money;
+                $PriceMoney->setCurrency($this->currency_code);
+                $Item->Price = $P->getPrice($Item->getOptions());
+                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
+                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+                $itm = new \SquareConnect\Model\OrderLineItem;
+
                 $itm->setUid($idx);
                 $itm->setName($dscp);
                 $itm->setQuantity((string)$Item->getQuantity());
                 $itm->setBasePriceMoney($PriceMoney);
+                */
 
                 // Add tax, if applicable
                 /*if ($Item->taxable) {
@@ -209,15 +219,15 @@ $this->token = $this->getConfig('prod_token');*/
                     $itm->setTaxes(array($taxObj));
                     $itm->setTotalTaxMoney($tax);
                 }*/
-                $shipping += $Item->getShippingAmt();
+                $shipping += $Item->getShipping();
 
                 //Puts our line item object in an array called lineItems.
-                array_push($lineItems, $itm);
+                //array_push($lineItems, $itm);
             }
         }
 
         // Add a line item for the total tax charge
-        if ($cart->tax > 0) {
+        if ($cart->getTax() > 0) {
             $TaxMoney = new \SquareConnect\Model\Money;
             $TaxMoney->setCurrency($this->currency_code)
                 ->setAmount($Cur->toInt($cart->getTax()));
@@ -243,20 +253,42 @@ $this->token = $this->getConfig('prod_token');*/
         }
 
         // Create an Order object using line items from above
-        $order = new \SquareConnect\Model\CreateOrderRequest();
-        $order
+        $order = new \SquareConnect\Model\CreateOrderRequest(array(
+            'idempotency_key' => uniqid(),
+            'order' => array(
+                'order' => array(
+                    'location_id' => $locationId,
+                    'reference_id' => $cart->cartID(),
+                    'line_items' => $lineItems,
+                ),
+            ),
+        ) );
+        //$order = new \SquareConnect\Model\CreateOrderRequest();
+        /*$order
             ->setIdempotencyKey(uniqid())
             ->setReferenceId($cart->cartID())
             //sets the lineItems array in the order object
-            ->setLineItems($lineItems);
+            ->setLineItems($lineItems);*/
 
-        $checkout = new \SquareConnect\Model\CreateCheckoutRequest();
-        $checkout
+        $checkout = new \SquareConnect\Model\CreateCheckoutRequest(array(
+            'idempotency_key' => uniqid(),
+            'order' => array(
+                'order' => array(
+                    'location_id' => $locationId,
+                    'reference_id' => $cart->cartID(),
+                    'line_items' => $lineItems,
+                ),
+            ),
+            'redirect_url' => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
+            'pre_populate_buyer_email' => $cart->getInfo('payer_email'),
+        ) );
+
+        /*$checkout
             ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
             ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
             ->setOrder($order)          //this is the order we created in the previous step
             ->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
-
+         */
         $url = '';
         $gatewayVars = array();
         try {
@@ -451,15 +483,21 @@ $this->token = $this->getConfig('prod_token');*/
         if (empty($trans_id)) {
             return false;
         }
-        // Create and configure a new API client object
-        $defaultApiConfig = new \SquareConnect\Configuration();
-        $defaultApiConfig->setAccessToken($this->token);
-        $defaultApiConfig->setHost($this->api_url);
-        $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
 
-        $api = new \SquareConnect\Api\TransactionsApi();
-        $api->setApiClient($defaultApiClient);
-        $resp = $api->retrieveTransaction($this->loc_id, $trans_id);
+        $apiConfig = new \SquareConnect\Configuration();
+        $apiConfig->setAccessToken($this->token);
+        $apiConfig->setHost($this->api_url);
+        $apiClient = new \SquareConnect\ApiClient($apiConfig);
+
+        // Create and configure a new API client object
+        $api = new \SquareConnect\Api\OrdersApi($apiClient);
+        $body = new \SquareConnect\Model\BatchRetrieveOrdersRequest();
+        $order_ids = array($trans_id);
+        //$order_ids = json_encode($order_ids);
+        $body->setOrderIds($order_ids);
+        $resp = $api->batchRetrieveOrders($this->loc_id, $body);
+
+        //$resp = $api->retrieveTransaction($this->loc_id, $trans_id);
         $resp = json_decode($resp,true);
         return $resp;
     }

@@ -9,7 +9,7 @@ namespace SquareConnect\Model;
 
 use \ArrayAccess;
 /**
- * CashPaymentDetails Class Doc Comment
+ * GetBankAccountResponse Class Doc Comment
  *
  * @category Class
  * @package  SquareConnect
@@ -17,15 +17,15 @@ use \ArrayAccess;
  * @license  http://www.apache.org/licenses/LICENSE-2.0 Apache License v2
  * @link     https://squareup.com/developers
  */
-class CashPaymentDetails implements ArrayAccess
+class GetBankAccountResponse implements ArrayAccess
 {
     /**
       * Array of property to type mappings. Used for (de)serialization 
       * @var string[]
       */
     static $swaggerTypes = array(
-        'buyer_supplied_money' => '\SquareConnect\Model\Money',
-        'change_back_money' => '\SquareConnect\Model\Money'
+        'errors' => '\SquareConnect\Model\Error[]',
+        'bank_account' => '\SquareConnect\Model\BankAccount'
     );
   
     /** 
@@ -33,8 +33,8 @@ class CashPaymentDetails implements ArrayAccess
       * @var string[] 
       */
     static $attributeMap = array(
-        'buyer_supplied_money' => 'buyer_supplied_money',
-        'change_back_money' => 'change_back_money'
+        'errors' => 'errors',
+        'bank_account' => 'bank_account'
     );
   
     /**
@@ -42,8 +42,8 @@ class CashPaymentDetails implements ArrayAccess
       * @var string[]
       */
     static $setters = array(
-        'buyer_supplied_money' => 'setBuyerSuppliedMoney',
-        'change_back_money' => 'setChangeBackMoney'
+        'errors' => 'setErrors',
+        'bank_account' => 'setBankAccount'
     );
   
     /**
@@ -51,20 +51,20 @@ class CashPaymentDetails implements ArrayAccess
       * @var string[]
       */
     static $getters = array(
-        'buyer_supplied_money' => 'getBuyerSuppliedMoney',
-        'change_back_money' => 'getChangeBackMoney'
+        'errors' => 'getErrors',
+        'bank_account' => 'getBankAccount'
     );
   
     /**
-      * $buyer_supplied_money The amount and currency of the money supplied by the buyer.
-      * @var \SquareConnect\Model\Money
+      * $errors Information on errors encountered during the request.
+      * @var \SquareConnect\Model\Error[]
       */
-    protected $buyer_supplied_money;
+    protected $errors;
     /**
-      * $change_back_money The amount of change due back to the buyer. Read Only field calculated from the amount_money and buyer_supplied_money fields.
-      * @var \SquareConnect\Model\Money
+      * $bank_account The requested `BankAccount` object.
+      * @var \SquareConnect\Model\BankAccount
       */
-    protected $change_back_money;
+    protected $bank_account;
 
     /**
      * Constructor
@@ -73,54 +73,54 @@ class CashPaymentDetails implements ArrayAccess
     public function __construct(array $data = null)
     {
         if ($data != null) {
-            if (isset($data["buyer_supplied_money"])) {
-              $this->buyer_supplied_money = $data["buyer_supplied_money"];
+            if (isset($data["errors"])) {
+              $this->errors = $data["errors"];
             } else {
-              $this->buyer_supplied_money = null;
+              $this->errors = null;
             }
-            if (isset($data["change_back_money"])) {
-              $this->change_back_money = $data["change_back_money"];
+            if (isset($data["bank_account"])) {
+              $this->bank_account = $data["bank_account"];
             } else {
-              $this->change_back_money = null;
+              $this->bank_account = null;
             }
         }
     }
     /**
-     * Gets buyer_supplied_money
-     * @return \SquareConnect\Model\Money
+     * Gets errors
+     * @return \SquareConnect\Model\Error[]
      */
-    public function getBuyerSuppliedMoney()
+    public function getErrors()
     {
-        return $this->buyer_supplied_money;
+        return $this->errors;
     }
   
     /**
-     * Sets buyer_supplied_money
-     * @param \SquareConnect\Model\Money $buyer_supplied_money The amount and currency of the money supplied by the buyer.
+     * Sets errors
+     * @param \SquareConnect\Model\Error[] $errors Information on errors encountered during the request.
      * @return $this
      */
-    public function setBuyerSuppliedMoney($buyer_supplied_money)
+    public function setErrors($errors)
     {
-        $this->buyer_supplied_money = $buyer_supplied_money;
+        $this->errors = $errors;
         return $this;
     }
     /**
-     * Gets change_back_money
-     * @return \SquareConnect\Model\Money
+     * Gets bank_account
+     * @return \SquareConnect\Model\BankAccount
      */
-    public function getChangeBackMoney()
+    public function getBankAccount()
     {
-        return $this->change_back_money;
+        return $this->bank_account;
     }
   
     /**
-     * Sets change_back_money
-     * @param \SquareConnect\Model\Money $change_back_money The amount of change due back to the buyer. Read Only field calculated from the amount_money and buyer_supplied_money fields.
+     * Sets bank_account
+     * @param \SquareConnect\Model\BankAccount $bank_account The requested `BankAccount` object.
      * @return $this
      */
-    public function setChangeBackMoney($change_back_money)
+    public function setBankAccount($bank_account)
     {
-        $this->change_back_money = $change_back_money;
+        $this->bank_account = $bank_account;
         return $this;
     }
     /**
