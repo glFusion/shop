@@ -203,6 +203,7 @@ default:
         'invoiced',
         'paid',
         'processing',
+        'shipped',
         'closed',
         'refunded',
         'pending',
