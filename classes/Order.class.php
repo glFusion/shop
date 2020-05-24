@@ -1227,6 +1227,7 @@ class Order
         }
 
         $oldstatus = $this->status;
+
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
         if ($oldstatus == $newstatus) {
@@ -1262,9 +1263,9 @@ class Order
         //echo $sql;die;
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         if (DB_error()) {
+            $this->status = $oldstatus;     // update in-memory object
             return $oldstatus;
         }
-        $this->status = $newstatus;     // update in-memory object
         $msg = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
         if ($log) {
             $this->Log($msg, $log_user);
