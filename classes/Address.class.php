@@ -843,6 +843,13 @@ class Address
     }
 
 
+    /**
+     * Load data from an array into the object.
+     *
+     * @param   array   $A      Array of data
+     * @param   string  $prefix Optional prefix used in array indexes
+     * @return  object  $this
+     */
     public function fromArray($A, $prefix='')
     {
         if ($prefix !== '') {
@@ -863,6 +870,7 @@ class Address
     /**
      * Validate the address components.
      *
+     * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
     public function isValid($required=false)

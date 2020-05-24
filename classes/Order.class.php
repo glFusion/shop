@@ -1899,6 +1899,7 @@ class Order
      * to the Address class.
      *
      * @param   string  $type   Type of address, billing or shipping
+     * @param   array   $A      Data array, such as the order record
      * @return  array           Array of name=>value address elements
      */
     public function getAddress($type, $A=NULL)

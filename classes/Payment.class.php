@@ -505,6 +505,11 @@ class Payment
     }
 
 
+    /**
+     * Create a form to enter payments manually.
+     *
+     * @return  string      HTML for payment form
+     */
     public function pmtForm()
     {
         $T = new \Template(__DIR__ . '/../templates');
