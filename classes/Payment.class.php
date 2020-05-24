@@ -331,7 +331,7 @@ class Payment
      */
     public function getAmount()
     {
-        return $this->amount;
+        return (float)$this->amount;
     }
 
 
