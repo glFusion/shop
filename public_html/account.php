@@ -65,7 +65,7 @@ if ($mode == '') {
         } elseif (isset($_GET[$varname])) {
             $$varname = COM_applyFilter($_GET[$varname]);
         } else {
-            $varname = COM_getArgument($varname);
+            $$varname = COM_getArgument($varname);
         }
     }
 }
