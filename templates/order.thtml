@@ -70,9 +70,9 @@
         <div class="cart">
             <div class="cart-items">
                 <div class="uk-grid uk-margin uk-hidden-small">
-                    <div class="uk-width-medium-3-6">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-6">{$LANG_SHOP['price']}</div>
-                    <div class="uk-width-medium-1-6">{$LANG_SHOP['quantity']}</div>
+                    <div class="uk-width-medium-3-6 aligncenter">{$LANG_SHOP['description']}</div>
+                    <div class="uk-width-medium-1-6 cart-item-price">{$LANG_SHOP['price']}</div>
+                    <div class="uk-width-medium-1-6 cart-item-quantity">{$LANG_SHOP['quantity']}</div>
                     <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 
