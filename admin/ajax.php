@@ -238,7 +238,7 @@ case 'updatestatus':
         $order_id = $_POST['order_id'];
         $showlog = $_POST['showlog'] == 1 ? 1 : 0;
         $ord = \Shop\Order::getInstance($order_id);
-        if ($ord->isNew)  {     // non-existant order
+        if ($ord->isNew())  {     // non-existant order
             $L = array(
                 'showlog' => 0,
             );
@@ -248,7 +248,7 @@ case 'updatestatus':
             $L['order_id'] = $order_id;
             $L['username'] = COM_getDisplayName($_USER['uid']) . ' (' . $_USER['uid'] . ')';
             $L['statusMessage'] = NULL;
-            $oldstatus = $ord->status;
+            $oldstatus = $ord->getStatus();
             if ($ord->updateStatus($newstatus) != $oldstatus) {
                 $L['newstatus'] = $newstatus;
                 $L['statusMessage'] = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);

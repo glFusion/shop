@@ -31,6 +31,11 @@ class ShipmentPL
     protected $Order;
 
 
+    /** Shipment record ID.
+     * @var integer */
+    private $shipment_id = 0;
+
+
     /**
      * Set internal variables and read the existing order if an id is provided.
      *
@@ -99,7 +104,7 @@ class ShipmentPL
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
             'order_id'      => $this->Order->getOrderID(),
-            'order_instr'   => htmlspecialchars($this->instructions),
+            'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],

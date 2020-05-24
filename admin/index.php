@@ -608,7 +608,7 @@ case 'del_shipment':
 case 'addshipment':
     $S = Shop\Shipment::create($_POST['order_id']);
     if ($S->Save($_POST)) {
-        COM_refresh(SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?order=' . $S->order_id));
+        COM_refresh(SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?order=' . $S->getOrderID()));
     } else {
         COM_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
@@ -1047,7 +1047,7 @@ case 'editshipment':
             SHOP_setUrl($_REQUEST['ret_url']);
         }
         $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\Shipment($S->order_id);
+        $V = new Shop\Views\Shipment($S->getOrderID());
         $V->setShipmentID($shipment_id);
         $content = $V->Render($action);
     }

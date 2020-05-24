@@ -39,6 +39,26 @@ class Shipment
         'tracking_num', 'comment',
     );
 
+    /** Shipment record ID.
+     * @var integer */
+    private $shipment_id = 0;
+
+    /** Related order ID.
+     * @var string */
+    private $order_id = '';
+
+    /** Shipment timestamp.
+     * @var integer */
+    private $ts = 0;
+
+    /** Shipment comment.
+     * @var string */
+    private $comment = '';
+
+    /** Shipping address.
+     * @var string */
+    private $shipping_address = '';
+
 
     /**
      * Constructor.
@@ -131,6 +151,17 @@ class Shipment
     public function getID()
     {
         return (int)$this->shipment_id;
+    }
+
+
+    /**
+     * Get the order ID related to this shipment.
+     *
+     * @return  string      Order record ID
+     */
+    public function getOrderID()
+    {
+        return $this->order_id;
     }
 
 
@@ -243,10 +274,11 @@ class Shipment
             $sql1 = "INSERT INTO {$_TABLES['shop.shipments']} ";
             $sql3 = '';
         }
-        $shipping_addr = $this->Order->getAddress('shipping');
+        $this->shipping_addr = $this->Order->getShipto()->toArray();
         $sql2 = "SET 
             order_id = '" . DB_escapeString($this->order_id) . "',
             ts = UNIX_TIMESTAMP(),
+            shipping_address = '" . DB_escapeString(json_encode($this->shipping_addr)) . "',
             comment = '" . DB_escapeString($this->comment) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -448,6 +480,8 @@ class Shipment
                 $ship_btn = '<a class="uk-button uk-button-success" href="' .
                     SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->getOrderID() .
                     '">' . $LANG_SHOP['shiporder'] . '</a>';
+            } else {
+                $ship_btn = '';
             }
         } else {
             $filter = '';
