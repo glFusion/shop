@@ -72,7 +72,7 @@
                             <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
                             {item_quantity}
 {!else}
-                            <input style="text-align:right;" type="number" id="f_qty_{cart_item_id}"
+                            <input style="width:60px;text-align:right;" type="number" id="f_qty_{cart_item_id}"
                                 onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
                                 max="{max_ord_qty}"
