@@ -1157,12 +1157,13 @@ class Order
                 //'ipn_det_url' => IPN::getDetailUrl($this->pmt_txn_id, 'txn_id'),
             ) );
         }
-            $T->set_block('order', 'Payments', 'pmtRow');
+        $T->set_block('order', 'Payments', 'pmtRow');
         foreach ($Payments as $Payment) {
             $T->set_var(array(
                 'gw_name' => Gateway::getInstance($Payment->getGateway())->getDscp(),
                 'ipn_det_url' => IPN::getDetailUrl($Payment->getRefID(), 'txn_id'),
                 'pmt_txn_id' => $Payment->getRefID(),
+                'pmt_amount' => $Currency->formatValue($Payment->getAmount()),
             ) );
             $T->parse('pmtRow', 'Payments', true);
         }
@@ -1646,18 +1647,12 @@ class Order
     {
         global $_TABLES, $_CONF;
 
-        $order_id = DB_escapeString($this->order_id);
-        $cache_key = 'orderlog_' . $order_id;
-        $log = Cache::get($cache_key);
-        if ($log === NULL) {
-            $log = array();
-            $sql = "SELECT * FROM {$_TABLES['shop.order_log']}
-                    WHERE order_id = '$order_id'";
-            $res = DB_query($sql);
-            while ($L = DB_fetchArray($res, false)) {
-                $log[] = $L;
-            }
-            Cache::set($cache_key, $log, 'order_log');
+        $log = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.order_log']}
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
+        $res = DB_query($sql);
+        while ($L = DB_fetchArray($res, false)) {
+            $log[] = $L;
         }
         return $log;
     }
