@@ -173,8 +173,7 @@ $this->token = $this->getConfig('prod_token');*/
             $idx = -1;
             foreach ($cart->getItems() as $Item) {
                 $idx++;
-                $P = $Item->getProduct();
-                $opts = $P->getOptionDesc($Item->getOptions());
+                $opts = implode(', ', $Item->getOptionsText());
                 $dscp = $Item->getDscp();
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
