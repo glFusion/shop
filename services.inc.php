@@ -4,9 +4,9 @@
  * This is used to supply Shop functions to other plugins.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -156,13 +156,18 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
     }
 
     $type = isset($args['type']) ? $args['type'] : '';
+    $id = isset($args['id']) ? $args['id'] : '';
     $url = '';
 
     switch ($type) {
     case 'ipn':
-        $id = isset($args['id']) ? $args['id'] : '';
         if ($id != '') {
             $url = Shop\IPN::getDetailUrl($id);
+        }
+        break;
+    case 'order':
+        if ($id != '') {
+            $url = COM_buldUrl(SHOP_URL . '/order.php?view=' . $id);
         }
         break;
     case 'checkout':
