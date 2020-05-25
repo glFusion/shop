@@ -36,6 +36,12 @@ class Plugin extends \Shop\Product
      * @var boolean */
     private $isUnique = true;
 
+    /** Indicate whether this product can have a discount code applied.
+     * Default is true for backward compatibility. Plugins can turn this off.
+     * @var boolean */
+    private $canApplyDC = true;
+
+
     /**
      * Constructor.
      * Creates an object for a plugin product and gets data from the
@@ -100,6 +106,9 @@ class Plugin extends \Shop\Product
             // Set enabled flag, assume true unless set
             $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
             $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
+            if (array_key_exists($A['canApplyDC'] && !$A['canApplyDC'])) {
+                $this->canApplyDC = false;
+            }
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -371,6 +380,16 @@ class Plugin extends \Shop\Product
         return $parts[1] == $this->pi_info['item_id'][0];
     }
 
+
+    /**
+     * Check if a discount code can be applied to this product.
+     *
+     * @return  boolean     True if a code can apply, False if not
+     */
+    public function canApplyDiscountCode()
+    {
+        return $this->canApplyDC;
+    }
 
 }   // class Plugin
 

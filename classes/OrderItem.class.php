@@ -459,8 +459,8 @@ class OrderItem
             $sql3 = '';
         }
         $dc_pct = $this->getOrder()->getDiscountPct() / 100;
-        if ($dc_pct > 0) {
-            $this->net_price = $this->price * (1 - $dc_pct);
+        if ($dc_pct > 0 && $this->Product->canApplyDiscountCode()) {
+            $this->applyDiscountPct($dc_pct);
         } else {
             $this->net_price = $this->price;
         }
@@ -1046,8 +1046,15 @@ class OrderItem
      */
     public function applyDiscountPct($pct)
     {
-        $price = $this->getPrice() * (100 - $pct) / 100;
-        $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+        // Normally this should be a percentage, but in case a whole number
+        // is provided, convert it
+        if ($pct > 1) {
+            $pct = $pct / 100;
+        }
+        if ($this->Product->canApplyDiscountCode()) {
+            $price = $this->getPrice() * (1 - $pct);
+            $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+        }
         return $this;
     }
 

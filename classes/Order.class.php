@@ -1047,7 +1047,7 @@ class Order
             'tax_items'     => $this->tax_items,
             'discount_code_fld' => $this->canShowDiscountEntry(),
             'discount_code' => $this->getDiscountCode(),
-            'dc_row_vis'    => $this->getDiscountAmount(),
+            'dc_row_vis'    => $this->getDiscountCode(),
             'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
             'net_items'     => $Currency->Format($this->net_items),
             'good_items'    => $good_items,
@@ -2074,7 +2074,7 @@ class Order
         return $retval;
     }
 
- 
+
     /**
      * Check if this order has only downloadable items.
      *

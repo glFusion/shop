@@ -2,6 +2,7 @@
 
 ## v1.3.0
 Release TBD
+  * Discounts may not be applied to all products, e.g. gift cards.
   * Remove `paid` as an order status, check total paid instead.
   * Update Square API to 3.20200325.0.
   * Add interface for customers to edit addresses outside of orders.

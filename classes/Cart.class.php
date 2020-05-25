@@ -344,7 +344,7 @@ class Cart extends Order
                     $this->tainted = true;
                 }
             }
-            $this->applyQtyDiscounts($this->items[$id]->getProductID());
+            $this->applyQtyDiscounts($item_id);
         }
         $this->calcItemTotals();
 
@@ -376,7 +376,6 @@ class Cart extends Order
             $dc = $this->getDiscountCode();
         }
         $this->validateDiscountCode($dc);
-
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this;
     }

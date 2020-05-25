@@ -4470,6 +4470,17 @@ class Product
         return $this->isNew ? 1 : 0;
     }
 
+
+    /**
+     * Check if a discount code can be applied to this product.
+     *
+     * @return  boolean     True if a code can apply, False if not
+     */
+    public function canApplyDiscountCode()
+    {
+        return true;
+    }
+
 }
 
 ?>

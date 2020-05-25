@@ -1024,6 +1024,17 @@ class Coupon extends \Shop\Product
         return $retval;
     }
 
+
+    /**
+     * Check if a discount code can be applied to this product.
+     *
+     * @return  boolean     True if a code can apply, False if not
+     */
+    public function canApplyDiscountCode()
+    {
+        return false;
+    }
+
 }
 
 ?>
