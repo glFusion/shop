@@ -106,7 +106,7 @@ class Plugin extends \Shop\Product
             // Set enabled flag, assume true unless set
             $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
             $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
-            if (array_key_exists($A['canApplyDC'] && !$A['canApplyDC'])) {
+            if (array_key_exists('canApplyDC', $A) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
          } else {
