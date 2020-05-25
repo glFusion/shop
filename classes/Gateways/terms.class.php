@@ -23,8 +23,7 @@ use Shop\Gateway;
  */
 class terms extends \Shop\Gateway
 {
-    /**
-     * Number of days for net terms, default = "Net 30"
+    /** Number of days for net terms, default = "Net 30"
      * @var integer */
     private $net_days = 30;
 
@@ -215,6 +214,19 @@ class terms extends \Shop\Gateway
             return false;           // unconfigured
         }
         return Gateway::getInstance($gw_name)->createInvoice($order_id);
+    }
+
+
+    /**
+     * Get the logo (display string) to show in the gateway radio buttons.
+     *
+     * @return  string      Description string
+     */
+    public function getLogo()
+    {
+        global $LANG_SHOP;
+
+        return sprintf($LANG_SHOP['net_x_days'], $this->net_days);
     }
 
 }

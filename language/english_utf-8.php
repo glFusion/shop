@@ -702,6 +702,7 @@ $LANG_SHOP = array (
 'req_billto' => 'A valid billing address is required.',
 'add_to_rule' => 'Add to Rule',
 'see_more_brand' => 'See more from this brand',
+'net_x_days' => 'Net %d Days',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
