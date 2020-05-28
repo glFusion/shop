@@ -998,7 +998,6 @@ class paypal extends \Shop\Gateway
             SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
             return false;
         }
-        echo "Token: $access_token\n";
 
         $Shop = new Company();
         $Order = Order::getInstance($order_num);
@@ -1044,7 +1043,7 @@ class paypal extends \Shop\Gateway
                             'postal_code'       => $Billto->getPostal(),
                             'country_code'      => $Billto->getCountry(),
                         ),
-                        'email_address' => $Order->buyer_email,
+                        'email_address' => $Order->getBuyerEmail(),
                     ),
                     'shipping_info' => array(
                         'name' => array(
