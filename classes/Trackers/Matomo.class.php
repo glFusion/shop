@@ -7,11 +7,6 @@ class Matomo extends \Shop\Tracker
 
     private $codes = array();
 
-    public function __construct()
-    {
-    }
-
-
     private function getSiteID()
     {
         return "1";
@@ -35,8 +30,8 @@ class Matomo extends \Shop\Tracker
     {
         global $_CONF;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T->set_file('tracker', 'matomo_tracking.thtml');
+        $T = new \Template(SHOP_PI_PATH . '/templates/trackers');
+        $T->set_file('tracker', 'matomo.thtml');
 
         $code_txt = implode("\n", $this->codes);
         $T->set_var(array(
@@ -47,6 +42,7 @@ class Matomo extends \Shop\Tracker
         ) );
         
         $T->parse('output', 'tracker');
+        //var_dump($T->finish ($T->get_var('output')));die;
         return $T->finish ($T->get_var('output'));
     }
 
@@ -77,6 +73,7 @@ class Matomo extends \Shop\Tracker
         $sku = $Item->getProductId();
         $dscp = $Item->getDscp();
         $price = $Item->getPrice();
+        $qty = $Item->getQuantity();
         $cats = array();
         foreach ($Item->getProduct()->getCategories() as $Cat) {
             $cats[] = $Cat->getName();
@@ -96,7 +93,7 @@ class Matomo extends \Shop\Tracker
     }
 
 
-    public function addCart($Ord)
+    public function addCartView($Ord)
     {
         $net_items = 0;
         foreach ($Ord->getItems() as $Item) {
@@ -163,6 +160,18 @@ class Matomo extends \Shop\Tracker
         );
         $params = implode('&', $params);
         return self::_curlExec($this->getMatomoUrl() . '/matomo.php?' . $params);
+    }
+
+
+    public function addCategoryView($cat_name)
+    {
+        $this->addCode("_paq.push(['setEcommerceView',
+            productSku = false,
+            productName = false,
+            category = '{$cat_name}'
+            ]);"
+        );
+        return $this;
     }
 
 }

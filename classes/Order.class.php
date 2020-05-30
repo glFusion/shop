@@ -345,6 +345,7 @@ class Order
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
+        Tracker::getInstance()->addCartItem($OI->getProduct());
         //$this->Save();
     }
 
@@ -868,7 +869,7 @@ class Order
         $item_net = 0;
         $good_items = 0;        // Count non-embargoed items
         if ($use_tracker) {
-            Tracker::getInstance()->addCart($this);
+            Tracker::getInstance()->addCartView($this);
         }
         $discount_items = 0;
         foreach ($this->items as $item) {

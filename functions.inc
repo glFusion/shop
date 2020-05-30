@@ -102,6 +102,17 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
 require_once __DIR__ . '/classes/Autoload.class.php';
 Shop\Autoload::register();
 
+/*
+if (
+    isset($_SHOP_CONF['tracker']) &&
+    $_SHOP_CONF['tracker'] != ''
+) {
+    $Cart = Shop\Cart::getInstance();
+    if (!$Cart->isNew()) {
+        Shop\Tracker::getInstance()->addCartView($Cart);
+    }
+}
+ */
 
 /**
  * Show the product catalog in the centerblock.

@@ -4,11 +4,14 @@ namespace Shop;
 
 class Tracker
 {
-    public function getInstance()
+    public static function getInstance()
     {
+        global $_SHOP_CONF;
+
         static $T = NULL;
         if ($T === NULL) {
-            $cls = '\\Shop\\Trackers\\Matomo';
+            $tracker = ucfirst($_SHOP_CONF['tracker']);
+            $cls = '\\Shop\\Trackers\\' . $tracker;
             if (class_exists($cls)) {
                 $T = new $cls;
             } else {
@@ -24,6 +27,7 @@ class Tracker
     {
         return '';
     }
+
 
     public static function makeCid($session_id=NULL)
     {
@@ -46,7 +50,7 @@ class Tracker
     }
 
 
-    public function addCart($Ord)
+    public function addCartView($Ord)
     {
         return $this;
     }
