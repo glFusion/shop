@@ -329,12 +329,14 @@ class Shipment
         // Check that only physical items are being shipped.
         // Remove any download or virtual items. If the resulting dataset has
         // no items, return false.
-        foreach ($form['ship_qty'] as $oi_id=>$qty) {
-            if (!OrderItem::getInstance($oi_id)->getProduct()->isPhysical()) {
-                unset($form['ship_qty'][$oi_id]);
-            }
-            if (empty($form['ship_qty'])) {
-                return false;
+        if (isset($form['ship_qty']) && is_array($form['ship_qty'])) {
+            foreach ($form['ship_qty'] as $oi_id=>$qty) {
+                if (!OrderItem::getInstance($oi_id)->getProduct()->isPhysical()) {
+                    unset($form['ship_qty'][$oi_id]);
+                }
+                if (empty($form['ship_qty'])) {
+                    return false;
+                }
             }
         }
 
