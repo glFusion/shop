@@ -395,6 +395,7 @@ class Catalog
                 'cat_desc'  => $cat_desc,
                 'cat_img_url' => $cat_img_url,
             ) );
+            Tracker::getInstance()->addCategoryView($cat_name);
         } else {
             $T->set_var('title', $LANG_SHOP['blocktitle']);
         }
