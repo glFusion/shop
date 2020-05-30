@@ -1302,7 +1302,7 @@ class IPN
             ->setMethod($this->GW->getDisplayName())
             ->setComment($LANG_SHOP['ipn_pmt_comment'])
             ->setOrderID($this->Order->getOrderId());
-        \Shop\Tracker::getInstance()->confirmOrder($this->Order, $this->session_id);
+        Tracker::getInstance()->confirmOrder($this->Order, $this->session_id);
         return $Pmt->Save();
     }
 
