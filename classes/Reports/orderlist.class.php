@@ -153,7 +153,6 @@ class orderlist extends \Shop\Report
         }
 
         if ($this->isAdmin) {
-            $form_url = SHOP_ADMIN_URL . '/report.php?' . $_SERVER['QUERY_STRING'];
             // Rebuild the query string, excluding the uid parameter, and make
             // sure the report name is present.
             $q_str = $_GET;
@@ -162,6 +161,7 @@ class orderlist extends \Shop\Report
             }
             unset($q_str['uid']);
             $q_str = http_build_query($q_str);
+            $form_url = SHOP_ADMIN_URL . '/report.php?' . $q_str;
             $this->setExtra('uid_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid=');
             $listOptions = $this->_getListOptions();
         } else {
