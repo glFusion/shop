@@ -41,7 +41,6 @@ class pendingship extends \Shop\Report
 
         // This report doesn't show shipped or closed statuses.
         $this->allowed_statuses = array(
-            'paid',
             'processing',
         );
         $this->filter_dates = false;
@@ -118,8 +117,7 @@ class pendingship extends \Shop\Report
 
         $text_arr = array(
             'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&item_id=' . $Item->id,
+            'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key,
             'has_limit' => true,
             'has_paging' => true,
         );
@@ -130,7 +128,7 @@ class pendingship extends \Shop\Report
             SHOP_setUrl();
             $this->extra['class'] = __CLASS__;
             $T->set_var(array(
-                'report_title' => sprintf($this->getTitle(), $Item->name),
+                'report_title' => sprintf($this->getTitle()),
                 'output'    => \ADMIN_list(
                     'shop_rep_' . $this->key,
                     array('\Shop\Report', 'getReportField'),
@@ -167,7 +165,6 @@ class pendingship extends \Shop\Report
             break;
         }
             $T->set_var(array(
-                'item_name'     => $Item->name,
                 'report_key'    => $this->key,
                 'nl'            => "\n",
             ) );

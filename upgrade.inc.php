@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -67,6 +67,7 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.0.0')) {
         $current_ver = '1.0.0';
+
         if (!DB_checkTableExists('shop.prod_opt_grps')) {
             // Initial populate of the new attribute group table
             // The table won't exist yet, these statememts get appended
@@ -247,6 +248,18 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.2.0')) {
         $current_ver = '1.2.0';
+        if (!_SHOPtableHasColumn('shop.address', 'brand_id')) {
+            array_splice(
+                $SHOP_UPGRADE[$current_ver],
+                "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0"
+            );
+        }
+        if (!_SHOPtableHasColumn('shop.address', 'supplier_id')) {
+            array_splice(
+                $SHOP_UPGRADE[$current_ver],
+                "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0 AFTER brand_id"
+            );
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         // Load the variant descriptions into the new field.
         // Must be done after executing the upgrade SQL.
@@ -263,11 +276,19 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.3.0')) {
         $current_ver = '1.3.0';
+
+        // Add the unique item_id index back to the option values table.
+        // Was added during previous upgrades but not new installations.
+        if (!_SHOPtableHasIndex('shop.prod_opt_vals', 'item_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
+                ADDUNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
+        }
+
         // Update the state tables for taxing S&H only if not
         // already done
-//        if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
+        if (!_SHOPtableHasColumn('shop.states', 'tax_shipping')) {
             // US states that tax shipping and handling
-            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.states']} s
                 INNER JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
                 SET s.tax_shipping = 1, s.tax_handling = 1
@@ -278,15 +299,17 @@ function SHOP_do_upgrade($dvlp = false)
                     'WA', 'WV', 'WI', 'DC'
                 )";
             // US states that tax only handling
-            $SHOP_UPGRADE['1.3.0'][] = "UPDATE {$_TABLES['shop.states']} s
+            $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.states']} s
                 INNER JOIN {$_TABLES['shop.countries']} c
                     ON c.country_id = s.country_id
                 SET s.tax_handling = 1
                 WHERE c.alpha2 = 'US' AND s.iso_code in (
                     'AZ', 'MD', 'NV', 'VA'
                 )";
-        //        }
+        }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        // Convert the gateway configurations
+        Shop\MigratePP::gwConvertConfig130();
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 

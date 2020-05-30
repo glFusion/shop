@@ -290,8 +290,8 @@ class Coupon extends \Shop\Product
         if ($uid == 0) $uid = $_USER['uid'];
         $order_id = '';
         if (is_object($Order) && !$Order->isNew()) {
-            $order_id = DB_escapeString($Order->order_id);
-            $uid = $Order->uid;
+            $order_id = DB_escapeString($Order->getOrderID());
+            $uid = $Order->getUid();
         }
         if ($uid < 2 || $amount == 0) {
             // Nothing to do if amount is zero, and anon users not supported
@@ -328,7 +328,7 @@ class Coupon extends \Shop\Product
             $Pmt = new Payment;
             $Pmt->setRefID(uniqid())
                 ->setAmount($applied)
-                ->setGateway('coupon')
+                ->setGateway('_coupon')
                 ->setMethod('Apply Coupon')
                 ->setComment($LANG_SHOP['gc_pmt_comment'])
                 ->setOrderID($order_id)
@@ -353,12 +353,12 @@ class Coupon extends \Shop\Product
         global $LANG_SHOP;
 
         $status = 0;
-        $amount = (float)$Item->price;
+        $amount = (float)$Item->getPrice();
         $special = SHOP_getVar($Item->extras, 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
         $sender_name = SHOP_getVar($special, 'sender_name', 'string');
         $msg = SHOP_getVar($special, 'message', 'string');
-        $uid = $Item->getOrder()->uid;
+        $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial
@@ -493,9 +493,9 @@ class Coupon extends \Shop\Product
         $all = $all ? 1 : 0;
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
-        //$coupons = \Shop\Cache::get($cache_key);
         $today = date('Y-m-d');
-        if ($coupons === NULL) {
+        /*$coupons = \Shop\Cache::get($cache_key);
+        if ($coupons === NULL) {*/
             // cache not found, read all non-expired coupons
             $coupons = array();
             $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
@@ -510,7 +510,7 @@ class Coupon extends \Shop\Product
                 $coupons[] = $A;
             }
             $updatecache = true;
-        } else {
+        /*} else {
             // Check the cached expiration dates in case any expired.
             foreach ($coupons as $idx=>$coupon) {
                 if ($coupon['expires'] < $today) {
@@ -529,7 +529,7 @@ class Coupon extends \Shop\Product
                 array('coupons', 'coupons_' . $uid),
                 3600
             );
-        }
+        }*/
         return $coupons;
     }
 
@@ -644,11 +644,13 @@ class Coupon extends \Shop\Product
         $items = $cart->getItems();
         foreach ($items as $item) {
             $P = $item->getProduct();
-            if ($P->isNew || $P->prod_type == SHOP_PROD_COUPON) {
-                $gc_can_apply -= $P->getPrice($item->options, $item->quantity) * $item->quantity;
+            if ($P->isNew() || $P->getProductType() == SHOP_PROD_COUPON) {
+                $gc_can_apply -= $P->getPrice($item->getOptions, $item->getQuantity()) * $item->getQuantity();
             }
         }
-        if ($gc_can_apply < 0) $gc_can_apply = 0;
+        if ($gc_can_apply < 0) {
+            $gc_can_apply = 0;
+        }
         return $gc_can_apply;
     }
 
@@ -716,7 +718,7 @@ class Coupon extends \Shop\Product
         $sql = "UPDATE {$_TABLES['shop.coupons']}
             SET status = '$newstatus'
             WHERE code = '$code'";
-        if ($newestatus == self::VOID) {
+        if ($newstatus == self::VOID) {
             $log_code = 'gc_voided';
             $sql .= ' AND balance > 0';
         } else {
@@ -760,7 +762,7 @@ class Coupon extends \Shop\Product
             DB_query($sql1);
             self::writeLog($c, $A['redeemer'], $A['balance'], 'gc_expired');
         }
-        if (count($A) > 0) {
+        if (DB_numRows($res) > 0) {
             // If there were any updates, clear the coupon cache
             \Shop\Cache::clear('coupons');
         }
@@ -1020,6 +1022,17 @@ class Coupon extends \Shop\Product
         }
 
         return $retval;
+    }
+
+
+    /**
+     * Check if a discount code can be applied to this product.
+     *
+     * @return  boolean     True if a code can apply, False if not
+     */
+    public function canApplyDiscountCode()
+    {
+        return false;
     }
 
 }

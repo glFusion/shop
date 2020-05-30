@@ -24,35 +24,47 @@ class ProductOptionGroup
 
     /** Table key, used by DBO class.
      * @var string */
-    protected static $TABLE = 'shop.prod_opt_grps';
+    private static $TABLE = 'shop.prod_opt_grps';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    protected static $F_ID = 'pog_id';
+    private static $F_ID = 'pog_id';
 
     /** Order field name, useb by DBO class.
      * @var string */
-    protected static $F_ORDERBY = 'pog_orderby';
+    private static $F_ORDERBY = 'pog_orderby';
 
     /** Tag array used with caching, for consistency.
      * @var array */
-    static $TAGS = array('products', 'options');
+    private static $TAGS = array('products', 'options');
 
-    /** Property fields accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties;
+    /** Option Group record ID.
+     * @var integer */
+    private $pog_id = 0;
+
+    /** Option Group display order.
+     * @var integer */
+    private $pog_orderby = 9999;
+
+    /** Field type, e.g. `select`, `radio`, etc.
+     * @var string */
+    private $pog_type = 'select';
+
+    /** Name of option group.
+     * @var string */
+    private $pog_name = '';
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    public $isNew;
+    private $isNew;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
-    public $Errors = array();
+    private  $Errors = array();
 
     /** Array of Option objects under this Option Group for a specific product.
      * @var array */
-    public $Options = array();
+    private $Options = array();
 
     /**
      * Constructor.
@@ -63,69 +75,18 @@ class ProductOptionGroup
      */
     public function __construct($id=0)
     {
-        $this->properties = array();
         $this->isNew = true;
 
         if (is_array($id)) {
             $this->setVars($id);
         } else {
             $id = (int)$id;
-            if ($id < 1) {
-                // New entry, set defaults
-                $this->pog_id = 0;
-                $this->pog_name = '';
-                $this->pog_type = 'select';
-                $this->pog_orderby = 9999;
-            } else {
-                $this->pog_id = $id;
+            if ($id >= 1) {
+                $this->pog_id = (int)$id;
                 if (!$this->Read()) {
                     $this->pog_id = 0;
                 }
             }
-        }
-    }
-
-
-    /**
-     * Set a property's value.
-     *
-     * @param   string  $key    Name of property to set.
-     * @param   mixed   $value  New value for property.
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'pog_id':
-        case 'pog_orderby':
-            // Integer values
-            $this->properties[$key] = (int)$value;
-            break;
-
-        case 'pog_type':
-        case 'pog_name':
-            // String values
-            $this->properties[$key] = trim($value);
-            break;
-
-        default:
-            // Undefined values (do nothing)
-            break;
-        }
-    }
-
-
-    /**
-     * Get the value of a property.
-     *
-     * @param   string  $key    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
         }
     }
 
@@ -185,10 +146,10 @@ class ProductOptionGroup
         if (!is_array($A)) {
             return;
         }
-        $this->pog_id = $A['pog_id'];
+        $this->pog_id = (int)$A['pog_id'];
         $this->pog_type = $A['pog_type'];
         $this->pog_name = $A['pog_name'];
-        $this->pog_orderby = $A['pog_orderby'];
+        $this->pog_orderby = (int)$A['pog_orderby'];
     }
 
 
@@ -350,12 +311,12 @@ class ProductOptionGroup
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
         $T = SHOP_getTemplate('option_grp_form', 'form');
-        $id = $this->og_id;
+        $id = $this->pog_id;
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->og_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->pog_name);
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_og']);
         }
@@ -455,13 +416,18 @@ class ProductOptionGroup
                 'class' => 'uk-button uk-button-success',
             )
         );
+        $text_arr = array();
         $query_arr = array(
             'table' => 'shop.prod_opt_grps',
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => '',
         );
-        $options = array('chkdelete' => true, 'chkfield' => 'og_id');
+        $filter = '';
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'pog_id',
+        );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_og_list',
             array(__CLASS__,  'getAdminField'),
@@ -605,8 +571,13 @@ class ProductOptionGroup
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $grps[$A['pog_id']] = new self($A['pog_id']);
+                $grps[$A['pog_id']]->setOptionValues(
+                    ProductOptionValue::getByProduct($prod_id, $A['pog_id'])
+                );
             }
             Cache::set($cache_key, $grps, self::$TAGS);
+        } else {
+            $x = new ProductOptionValue;    // just to get the class loaded.
         }
         return $grps;
     }
@@ -616,13 +587,24 @@ class ProductOptionGroup
      * Get all the options related to this OptionGroup for a specific product.
      * Returns the results as well as sets the public Options property.
      *
-     * @param   integer $prod_id    Product ID
      * @return  array       Array of Option objects
      */
-    public function getOptions($prod_id)
+    public function getOptions()
     {
-        $this->Options = ProductOptionValue::getByProduct($prod_id, $this->pog_id);
         return $this->Options;
+    }
+
+
+    /**
+     * Set the option values related to this option group.
+     *
+     * @param   array   $OptValues  Array of ProductOptionValue objects
+     * @return  object  $this
+     */
+    public function setOptionValues($OptValues)
+    {
+        $this->Options = $OptValues;
+        return $this;
     }
 
 

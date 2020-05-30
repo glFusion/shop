@@ -1,12 +1,22 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.3.0
+Release TBD
+  * Discounts may not be applied to all products, e.g. gift cards.
+  * Remove `paid` as an order status, check total paid instead.
+  * Update Square API to 3.20200325.0.
+  * Add interface for customers to edit addresses outside of orders.
+  * Add fast-checkout where the order allows it.
   * Enable sales tax charges on shipping and handling.
   * Add invoicing via Paypal invoice API.
+  * Link to customer in order report now filters report.
+
+## v1.2.1
+Release 2020-03-02
+  * Make sure `supplier_id` and `brand_id` fields are added.
 
 ## v1.2.0
-Release TBD
-
+Release 2020-02-29
   * Add product image sorting.
   * Add static features/attributes.
   * Add Supplier Reference field to products and variants for ordering.

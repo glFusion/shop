@@ -3,15 +3,16 @@
  * Class to manage reports.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+
 
 /**
  * Select and run reports.
@@ -46,7 +47,7 @@ class Report
 
     /** Period designator from the selection form.
      * @var string */
-    protected $period;
+    protected $period = '';
 
     /** Starting date.
      * @var object */
@@ -60,51 +61,54 @@ class Report
      * @var string */
     protected $type = 'html';
 
-    /**
-     * Allowed order statuses to show in the config form.
+    /** Allowed order statuses to show in the config form.
      * @var array */
     protected $allowed_statuses = array();
 
-    /**
-     * Array of status selections.
+    /** Array of status selections.
      * @var array */
     protected $statuses = array();
 
-    /**
-     * Extra values to pass into getReportField() verbatim.
+    /** Extra values to pass into getReportField() verbatim.
      * @var array */
     protected $extra = array();
 
-    /**
-     * Indicate if this is an administrator report or regular user
+    /** Indicate if this is an administrator report or regular user.
      * @var boolean */
     protected $isAdmin = false;
-    /**
-     * Indicate whether the config uses date ranges.
+
+    /** Indicate if the report header should be shown.
+     * Suppress header if report is embedded in another function such as
+     * a normal admin list.
+     * @var boolean */
+    protected $showHeader = true;
+
+    /** Indicate whether the config uses date ranges.
      * @var boolean */
     protected $filter_dates = true;
 
-    /**
-     * Indicate whether the config uses order statuses.
+    /** Indicate whether the config uses order statuses.
      * @var boolean */
     protected $filter_status = true;
 
-    /**
-     * Indicate whether the report can filter on user ID.
+    /** Indicate whether the report can filter on user ID.
      * @var boolean */
     protected $filter_uid = true;
 
-    /**
-     * Indicate whether the report can filter on user ID.
+    /** Indicate whether the report can filter on user ID.
      * @var boolean */
     protected $filter_item = false;
+
+    /** Status selected to filter paid vs. unpaid orders.
+     * 1 = unpaid, 2 = paid, 4 = either
+     * @var integer */
+    protected $paid_status = 4;
 
     /** Indicate whether the report supports multiplt output types
      * @var boolean */
     protected $sel_output = true;
 
-    /**
-     * User ID, used if filter_uid is true.
+    /** User ID, used if filter_uid is true.
      * @var integer */
     protected $uid;
 
@@ -128,6 +132,7 @@ class Report
      * Set parameters in object and session vars.
      *
      * @param   array   $get    Array of parameters, typically $_GET
+     * @return  object  $this
      */
     public function setParams($get)
     {
@@ -145,6 +150,8 @@ class Report
         $dates = $this->getDates($period, $from, $to);
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
+        $this->paid_status = SHOP_getVar($get, 'paid', 'integer', 4);
+        return $this;
     }
 
 
@@ -180,8 +187,7 @@ class Report
             ) );
             $T->parse('rlist', 'reportList', true);
         }
-        $retval .= $T->parse('output', 'list');
-        return $retval;
+        return $T->parse('output', 'list');
     }
 
 
@@ -220,6 +226,8 @@ class Report
      */
     protected function setStartDate($dt)
     {
+        global $_CONF;
+
         $this->startDate = new \Date($dt, $_CONF['timezone']);
     }
 
@@ -231,6 +239,8 @@ class Report
      */
     protected function setEndDate($dt)
     {
+        global $_CONF;
+
         $this->endDate = new \Date($dt, $_CONF['timezone']);
     }
 
@@ -335,6 +345,7 @@ class Report
             'filter_status' => $this->filter_status,
             'filter_uid'    => $this->filter_uid,
             'filter_item'   => $this->filter_item,
+            'pd_chk_' . $this->paid_status => 'checked="checked"',
             'sel_output'    => $this->sel_output,
             'report_configs' => $this->getReportConfig(),
         ) );
@@ -419,6 +430,7 @@ class Report
             'filter_uid'    => $this->filter_uid,
             'filter_item'   => $this->filter_item,
             'is_admin_report' => $this->isAdmin,
+            'show_header'   => $this->showHeader,
         ) );
         return $T;
     }
@@ -457,6 +469,7 @@ class Report
     {
         global $LANG_SHOP;
 
+        $retval = '';
         foreach ($LANG_SHOP['periods'] as $key=>$text) {
             if ($key == 'cust' && !$incl_cust) {
                 continue;
@@ -643,11 +656,13 @@ class Report
      * Called by child classes that want to restrict the order status options.
      *
      * @param   array   $allowed    Allowed statuses to include in report.
+     * @return  object  $this
      */
     public function setAllowedStatuses($allowed = array())
     {
         $this->allowed_statuses = $allowed;
         self::_setSessVar('orderstatus', $this->allowed_statuses);
+        return $this;
     }
 
 
@@ -662,7 +677,7 @@ class Report
         global $LANG_SHOP;
 
         $this->statuses = array();
-        $statuses = \Shop\OrderStatus::getAll();
+        $statuses = OrderStatus::getAll();
         $status_sess = self::_getSessVar('orderstatus');
         foreach ($statuses as $key=>$data) {
             // Check if this is in the allowed statuses array
@@ -693,11 +708,26 @@ class Report
      * Set the admin status, used to determine return URLs
      *
      * @param   boolean $isAdmin    True for admin access, False for user
+     * @return  object  $this
      */
     public function setAdmin($isAdmin)
     {
         $this->isAdmin = $isAdmin ? true : false;
         $this->setExtra('isAdmin', $this->isAdmin);
+        return $this;
+    }
+
+
+    /**
+     * Set the show_header flag.
+     *
+     * @param   boolean $flag   True to show the report header, False to not
+     * @return  object  $this
+     */
+    public function setShowHeader($flag)
+    {
+        $this->showHeader = $flag ? 1 : 0;
+        return $this;
     }
 
 
@@ -717,10 +747,9 @@ class Report
      */
     public static function getReportField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_USER;
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
         static $dt = NULL;
-        static $Cur = NULL;
         $retval = '';
 
         // Calls a class-specific field function, if defined.
@@ -737,9 +766,6 @@ class Report
         if ($dt === NULL) {
             // Instantiate a date object once
             $dt = new \Date('now', $_USER['tzid']);
-        }
-        if ($Cur === NULL) {
-            $Cur = Currency::getInstance();
         }
 
         switch($fieldname) {
@@ -767,30 +793,36 @@ class Report
             if ($extra['isAdmin']) {
                 $retval = OrderStatus::Selection($A['order_id'], 0, $fieldvalue);
             } else {
-                $retval = OrderStatus::getDscp($fieldvalue);
+                $txt = OrderStatus::getDscp($fieldvalue);
+                if (isset($LANG_SHOP_HELP[$fieldvalue])) {
+                    $tip = $LANG_SHOP_HELP[$fieldvalue];
+                    $retval = '<span class="tooltip" title="' . $tip . '">' .
+                        $txt . '</span>';
+                } else {
+                    $retval = $txt;
+                }
             }
             break;
 
         case 'sales_amt':
-            $Cur = Currency::getInstance($A['currency']);
             if (!$extra['isAdmin']) {
                 $total = (float)$fieldvalue;
                 $tip = '<table width=&quot;50%&quot; align=&quot;center&quot;>' . LB;
                 $tip .= '<tr><td>' . $LANG_SHOP['item_total'] .
                     ': </td><td style=&quot;text-align:right&quot;>' .
-                    $Cur->Format($fieldvalue) . '</td></tr>' . LB;
+                    self::formatMoney($fieldvalue) . '</td></tr>' . LB;
                 $disc_amt = $A['gross_items'] - $A['net_nontax'] - $A['net_taxable'];
                 if ($disc_amt > 0) {
                     $total -= $disc_amt;
                     $tip .= '<tr><td>' . $LANG_SHOP['discount'] .
                         ': </td><td style=&quot;text-align:right&quot;>- ' .
-                        $Cur->FormatValue($disc_amt) . '</td></tr>' . LB;
+                        self::formatMoney($disc_amt) . '</td></tr>' . LB;
                 }
                 foreach (array('tax', 'shipping', 'handling') as $fld) {
                     if (isset($A[$fld]) && is_numeric($A[$fld]) && $A[$fld] > 0) {
                         $tip .= '<tr><td>' . $LANG_SHOP[$fld] .
                                 ': </td><td style=&quot;text-align:right&quot;>' .
-                                $Cur->FormatValue($A[$fld]) .
+                                self::formatMoney($A[$fld]) .
                                 '</td></tr>' . LB;
                         $total += (float)$A[$fld];
                     }
@@ -798,12 +830,12 @@ class Report
                 if ($total > $fieldvalue) {
                     $tip .= '<tr><td>' . $LANG_SHOP['total'] .
                         ': </td><td style=&quot;text-align:right&quot;>' .
-                        $Cur->Format($total) . '</td></tr>' . LB;
+                        self::formatMoney($total) . '</td></tr>' . LB;
                 }
                 $tip .= '</table>' . LB;
-                $retval = '<span class="tooltip" title="' . $tip . '">' . $Cur->FormatValue($fieldvalue) . '</span>';
+                $retval = '<span class="tooltip" title="' . $tip . '">' . self::formatMoney($fieldvalue) . '</span>';
             } else {
-                $retval = $Cur->FormatValue($fieldvalue);
+                $retval = self::formatMoney($fieldvalue);
             }
             break;
 
@@ -814,7 +846,8 @@ class Report
         case 'net_taxable':
         case 'net_nontax':
         case 'tax':
-            $retval = Currency::getInstance($A['currency'])->FormatValue((float)$fieldvalue);
+        case 'paid':
+            $retval = self::formatMoney($fieldvalue);
             break;
 
         case 'customer':
@@ -824,7 +857,7 @@ class Report
                 $fieldvalue = $A['billto_name'];
             }
             $retval = str_replace('"', '&quot;', $fieldvalue);
-            if (isset($extra['uid_link']) && $A['uid'] > 1) {
+            if (isset($extra['uid_link'])) {
                 $retval = COM_createLink(
                     $retval,
                     $extra['uid_link'] . $A['uid']
@@ -841,6 +874,19 @@ class Report
             break;
         }
         return $retval;
+    }
+
+
+    /**
+     * Format a money field.
+     * Helper function to access the Currency class from various namespaces.
+     *
+     * @param   float   $amt    Amount
+     * @return  string  Formatted currency string
+     */
+    protected static function formatMoney($amt)
+    {
+        return Currency::formatMoney($amt);
     }
 
 
@@ -869,7 +915,7 @@ class Report
      * @param   string  $key    Name of parameter
      * @param   mixed   $value  Value of parameter
      */
-    protected function setParam($key, $value)
+    public function setParam($key, $value)
     {
         $this->$key = $value;
         self::_setSessVar($key, $value);

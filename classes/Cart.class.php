@@ -117,23 +117,23 @@ class Cart extends Order
         if ($_USER['uid'] < 2) return;
 
         $AnonCart = self::getInstance(1, $cart_id);
-        if (empty($AnonCart->items)) {
+        if (empty($AnonCart->getItems())) {
             return;
         }
 
         // Merge the items into the user cart
-        foreach ($AnonCart->items as $Item) {
+        foreach ($AnonCart->getItems() as $Item) {
             $opts = array();
-            foreach ($Item->options as $Opt) {
-                $opts[] = $Opt->attr_id;
+            foreach ($Item->getOptions() as $Opt) {
+                $opts[] = $Opt->getOptionID();
             }
             $args = array(
-                'item_number'   => $Item->product_id,
+                'item_number'   => $Item->getProductID(),
                 'variant'       => $Item->getVariantId(),
                 'attributes'    => $opts,
-                'extras'        => $Item->extras,
-                'description'   => $Item->description,
-                'quantity'      => $Item->quantity,
+                'extras'        => $Item->getExtras(),
+                'description'   => $Item->getDscp(),
+                'quantity'      => $Item->getQuantity(),
             );
             $this->addItem($args);
         }
@@ -212,8 +212,9 @@ class Cart extends Order
 
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
-            $this->items[$have_id]->quantity += $quantity;
-            $new_quantity = $this->items[$have_id]->quantity;
+            $new_quantity = $this->items[$have_id]->getQuantity();
+            $new_quantity += $quantity;
+            $this->items[$have_id]->setQuantity($new_quantity);
             $need_save = true;      // Need to save the cart
         } elseif ($quantity == 0) {
             return false;
@@ -255,12 +256,10 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$item) {
-            if ($item->product_id == $item_number) {
+        foreach ($this->items as $id=>$$item) {
+            if ($item->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
-                foreach ($updates as $fld=>$val) {
-                    $this->items[$id]->$fld = $val;
-                }
+                $item->updateItem($updates);
                 break;
             }
         }
@@ -311,7 +310,7 @@ class Cart extends Order
         $items = $A['quantity'];
         if (!is_array($items)) {
             // No items in the cart?
-            return $this->m_cart;
+            return $this;
         }
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
@@ -345,7 +344,7 @@ class Cart extends Order
                     $this->tainted = true;
                 }
             }
-            $this->applyQtyDiscounts($this->items[$id]->product_id);
+            $this->applyQtyDiscounts($item_id);
         }
         $this->calcItemTotals();
 
@@ -377,9 +376,8 @@ class Cart extends Order
             $dc = $this->getDiscountCode();
         }
         $this->validateDiscountCode($dc);
-
         $this->Save();  // Save cart vars, if changed, and update the timestamp
-        return $this->m_cart;
+        return $this;
     }
 
 
@@ -434,7 +432,7 @@ class Cart extends Order
      * Empty and destroy the cart.
      *
      * @param   boolean $del_order  True to delete any related order
-     * @return  array       Empty cart array
+     * @return  object  $this
      */
     public function Clear($del_order = true)
     {
@@ -443,21 +441,16 @@ class Cart extends Order
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == 'cart') {
             foreach ($this->items as $Item) {
-                OrderItem::Delete($Item->id);
+                OrderItem::Delete($Item->getID());
             }
             $this->items = array();
             if ($del_order) {
                 DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
                 self::delAnonCart();
-            } else {
-                // Done already if $del_order is set
-                Cache::deleteOrder($this->order_id);
             }
             Tracker::getInstance()->clearCart();
-            return array();
-        } else {
-            return $this->getItems();
         }
+        return $this;
     }
 
 
@@ -535,7 +528,10 @@ class Cart extends Order
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
             $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
-            if (empty($gateways)) return NULL;  // no available gateways
+            if (empty($gateways)) {
+                return NULL;  // no available gateways
+            }
+
             if ($this->total == 0) {
                 // Automatically select the "free" gateway if appropriate.
                 // Other gateways shouldn't be shown anyway.
@@ -610,32 +606,12 @@ class Cart extends Order
     {
         switch ($type) {
         case 'billto':
-            $this->setBilling($A);
+            $this->setBillto($A);
             break;
         default:
-            $this->setShipping($A);
+            $this->setShipto($A);
             break;
         }
-    }
-
-
-    /**
-     * Get the requested address array.
-     *
-     * @param   string  $type   Type of address, billing or shipping
-     * @return  array           Array of address elements
-     */
-    public function getAddress($type)
-    {
-        if ($type != 'billto') $type = 'shipto';
-        $A = array();
-        foreach ($this->_addr_fields as $fld) {
-            $var = $type . '_' . $fld;
-            $A[$fld] = $this->$var;
-        }
-        $var = $type . '_id';
-        $A['addr_id'] = $this->$var;
-        return $A;
     }
 
 
@@ -784,8 +760,6 @@ class Cart extends Order
             if (!$C->isNew && $C->uid == 1) {
                 Order::Delete($cart_id);
             }
-            // Always clear clear the cache to be sure
-            Cache::deleteOrder($cart_id);
         }
     }
 
@@ -812,26 +786,23 @@ class Cart extends Order
      * Pass $status = false to revert back to a cart, e.g. if the purchase is cancelled.
      * Also removes the cart_id cookie for anonymous users.
      *
-     * @param   string  $cart_id    Cart ID to update
      * @param   string  $status     Status to set, default is "pending"
+     * @return  object  $this
      */
-    public static function setFinal($cart_id, $status='pending')
+    public function setFinal($status='pending')
     {
         global $_TABLES, $LANG_SHOP, $_CONF;
 
-        $Order = self::getInstance(0, $cart_id);
-        if ($Order->isNew) {
+        if ($this->isNew()) {
             SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
             // Cart not found, do nothing
-            return $Order->getStatus();
+            return $this;
         }
 
-        //$oldstatus = $Order->status;
-        //$newstatus = $status ? 'pending' : 'cart';
-        //$Order->status = $newstatus;
-        $Order->order_date->setTimestamp(time());
-        $Order->Save();
-        self::setSession('order_id', $cart_id);
+        $newstatus = $status ? 'pending' : 'cart';
+        $oldstatus = $this->status;
+        $this->setOrderDate()->Save();
+        self::setSession('order_id', $this->order_id);
 
         /*if ($newstatus != 'cart') {
             // Make sure the cookie gets deleted also
@@ -842,11 +813,10 @@ class Cart extends Order
             // delete all open user carts except this one
             self::deleteUser(0, $cart_id);
         }*/
-        Cache::delete('order_' . $cart_id);
         // Is it really necessary to log that it changed from a cart to pending?
         //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
-        SHOP_log("Cart $cart_id status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
-        return;
+        SHOP_log("Cart {$this->order_id} status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
+        return $this;
     }
 
 
@@ -1023,7 +993,7 @@ class Cart extends Order
                     $invalid['removed'] = array();
                 }
                 $this->Remove($id);
-                $msg[] = $LANG_SHOP['removed'] . ': ' . $P->short_description;
+                $msg[] = $LANG_SHOP['removed'] . ': ' . $P->getShortDscp();
                 $invalid['removed'][] = $P;
             } else {
                 $this->applyQtyDiscounts($P->getId());
@@ -1055,6 +1025,14 @@ class Cart extends Order
                 $errors['payer_email'] = $LANG_SHOP['err_missing_email'];
             }
         }
+
+        if ($this->hasPhysical()) {
+            $Addr = new Address($this->Shipto->toArray());
+            if ($Addr->isValid(true) != '') {
+                $errors['shipto'] = $LANG_SHOP['req_shipto'];
+            }
+        }
+
         if (!empty($errors)) {
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
             COM_setMsg($msg, 'error');
@@ -1073,6 +1051,64 @@ class Cart extends Order
     {
         return SHOP_URL . '/cart.php?cancel=' . urlencode($this->order_id) .
             '/' . urlencode($this->token);
+    }
+
+
+    /**
+     * See if the buyer is able to skip directly to the order confirmation.
+     * Typically possible for simple virtual items or downloads tha thave
+     * no billing, shipping or tax, and where only one payment gateway and
+     * no discounts are applicable.
+     *
+     * @return  boolean     True if cart editing page can be skipped
+     */
+    public function canFastCheckout()
+    {
+        global $_SHOP_CONF;
+
+        $Gateways = Gateway::getAll();
+        if (
+            // todo: no gift cards, no active discount codes
+            !$_SHOP_CONF['ena_fast_checkout'] ||  // not configured
+            COM_isAnonUser() ||         // can't be anonymous, need email addr
+            count($Gateways) > 1 ||     // must have only one gateway
+            $this->hasPhysical() ||     // need shipping addr
+            $this->hasTaxable() ||      // need shipping addr
+            DiscountCode::countCurrent() > 0 || // have active codes
+            (
+                $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
+                count(Products\Coupon::getUserCoupons() > 0)
+            )
+        ) {
+            return false;
+        }
+
+        // Get the first gateway (should be only one anyway)
+        $gateway = array_shift($Gateways);
+
+        // Get the customer information to set addresses and email addr
+        $Customer = Customer::getInstance($this->uid);
+        $Addresses = $Customer->getAddresses();
+        if (empty($Addresses)) {
+            return false;
+        }
+        $Address = array_shift($Addresses);
+        $this->setBillto($Address);
+        $this->setShipto($Address);
+
+        // Go ahead and save the gateway as preferred for future use
+        $Customer->setPrefGW($gateway->getName())
+            ->saveUser();
+
+        // Populate required elements of this order
+        $this->setGateway($gateway->getName())
+            ->setGC(0)
+            ->setEmail($Customer->getEmail())
+            ->setShipper(0);
+        $this->instructions = '';
+
+        SHOP_setUrl(SHOP_URL . '/index.php');
+        return true;
     }
 
 }   // class Cart

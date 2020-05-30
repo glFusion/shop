@@ -1,61 +1,108 @@
 {# begin {templatelocation} #}
-<h2>{gw_description}</h2>
+<div class="uk-grid uk-grid-width-1-2">
+    <div>
+        <h2>{gw_description}</h2>
+    </div>
+    <div>
+{!if doc_url}
+        <a href="#" onclick="popupWindow('{doc_url}', 'Help', 640, 480, 1);return false;" class="toolbar">{$LANG_SHOP['clk_help']}</a>
+{!endif}
+    </div>
+</div>
 {!if gw_instr}
 <div class="uk-alert"><span class="uk-text-danger" style="font-weight:bold;">{gw_instr}</span></div>
 {!endif}
-{!if doc_url}
-<a href="#" onclick="popupWindow('{doc_url}', 'Help', 640, 480, 1);return false;" class="toolbar">{$LANG_SHOP['clk_help']}</a>
-{!endif}
 <form action="{pi_admin_url}/index.php" method="post" class="uk-form uk-form-horizontal">
-  <input type="hidden" name="gw_id" value="{gw_id}" />
-<!-- BEGIN ItemRow -->
-  <div class="uk-form-row">
-    <label class="uk-form-label" for="{field_name}">{param_name}:
-    </label>
-    <div class="uk-form-controls">
-      {param_field}
-      <span id="{field_name}" class="tooltip_cfg tooltipstered"></span>
-    </div>
-  </div>
-<!-- END ItemRow -->
-  <div class="uk-form-row">
-    <label class="uk-form-label" for="enabled">{$LANG_SHOP['enabled']}:
-    </label>
-    <div class="uk-form-controls">
-      <input id="enabled" type="checkbox" name="enabled" value="1" {enabled_chk} />
-      <span id="enabled" class="tooltip_cfg tooltipstered"></span>
-    </div>
-  </div>
+    <input type="hidden" name="gw_id" value="{gw_id}" />
+    <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#gateway-form',swiping:false}">
+        <li id="tab-global" {tabactive_global}><a href="#">{$LANG_SHOP['global']}</a></li>
+{!if have_prod}
+        <li id="tab-prod" {tabactive_prod}><a href="#">{$LANG_SHOP['prod']}</a></li>
+{!endif}
+{!if have_test}
+        <li id="tab-test" {tabactive_test}><a href="#">{$LANG_SHOP['test']}</a></li>
+{!endif}
+    </ul>
+    <ul id="gateway-form" class="uk-switcher uk-margin">
+    <li>
+<!-- BEGIN globalRow -->
+        <div class="uk-form-row">
+            <label class="uk-form-label" for="{field_name}">{param_name}:</label>
+            <div class="uk-form-controls">
+                {param_field}
+                <span id="{field_name}" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
+<!-- END globalRow -->
+{#        <div class="uk-form-row">
+            <label class="uk-form-label" for="f_test_mode">{$LANG_SHOP['gw_test_mode']}:</label>
+            <div class="uk-form-controls">
+                <input id="f_test_mode" type="checkbox" name="test_mode" value="1" {test_mode_chk} />
+                <span id="test_mode" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
+#}
+        <div class="uk-form-row">
+            <label class="uk-form-label" for="f_enabled">{$LANG_SHOP['enabled']}:</label>
+            <div class="uk-form-controls">
+                <input id="f_enabled" type="checkbox" name="enabled" value="1" {enabled_chk} />
+                <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
+        <div class="uk-form-row">
+            <label class="uk-form-label">{$LANG_SHOP['txt_buttons']}:</label>
+            <div class="uk-form-controls">
+                {svc_checkboxes}
+                <span id="services" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
 
-  <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_SHOP['txt_buttons']}:
-    </label>
-    <div class="uk-form-controls">
-      {svc_checkboxes}
-      <span id="services" class="tooltip_cfg tooltipstered"></span>
-    </div>
-  </div>
+        <div class="uk-form-row">
+            <label class="uk-form-label">{$LANG_SHOP['grp_access']}:</label>
+            <div class="uk-form-controls">
+                <select name="grp_access">
+                    {grp_access_sel}
+                </select>
+                <span id="grp_access" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
 
-  <div class="uk-form-row">
-    <label class="uk-form-label">{$LANG_SHOP['grp_access']}:
-    </label>
-    <div class="uk-form-controls">
-      <select name="grp_access">
-        {grp_access_sel}
-      </select>
-      <span id="grp_access" class="tooltip_cfg tooltipstered"></span>
-    </div>
-  </div>
+        <div class="uk-form-row">
+            <label class="uk-form-label" for="orderby">{$LANG_SHOP['orderby']}:</label>
+            <div class="uk-form-controls">
+                <input id="orderby" type="text" size="3" name="orderby" value="{orderby}" />
+                <span id="order" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
 
-  <div class="uk-form-row">
-    <label class="uk-form-label" for="orderby">{$LANG_SHOP['orderby']}:
-    </label>
-    <div class="uk-form-controls">
-      <input id="orderby" type="text" size="3" name="orderby" value="{orderby}" />
-      <span id="order" class="tooltip_cfg tooltipstered"></span>
-    </div>
-  </div>
-
+    </li>
+{!if have_prod}
+    <li>
+<!-- BEGIN prodRow -->
+        <div class="uk-form-row">
+            <label class="uk-form-label" for="{field_name}">{param_name}:</label>
+            <div class="uk-form-controls">
+                {param_field}
+                <span id="{field_name}" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
+<!-- END prodRow -->
+    </li>
+{!endif}
+{!if have_test}
+    <li>
+<!-- BEGIN testRow -->
+        <div class="uk-form-row">
+            <label class="uk-form-label" for="{field_name}">{param_name}:</label>
+            <div class="uk-form-controls">
+                {param_field}
+                <span id="{field_name}" class="tooltip_cfg tooltipstered"></span>
+            </div>
+        </div>
+<!-- END testRow -->
+    </li>
+{!endif}
+</ul>
   <div class="uk-form-row">
     <div class="uk-form-controls">
       <button type="submit" name="gwsave" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>

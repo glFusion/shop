@@ -57,6 +57,10 @@ class Payment
      * @var string */
     private $comment = '';
 
+    /** Flag to indicate whether this is a money payment, or other credit type.
+     * @var boolean */
+    private $is_money = 1;
+
 
     /**
      * Set internal variables from a data array.
@@ -65,19 +69,21 @@ class Payment
      */
     public function __construct($A=NULL)
     {
-        $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
         if (is_array($A)) {
+            $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
             $this->setPmtID($pmt_id)
                 ->setRefID($A['pmt_ref_id'])
                 ->setAmount($A['pmt_amount'])
                 ->setTS($A['pmt_ts'])
+                ->setIsMoney($A['is_money'])
                 ->setGateway($A['pmt_gateway'])
                 ->setOrderID($A['pmt_order_id'])
                 ->setComment($A['pmt_comment'])
                 ->setMethod($A['pmt_method'])
-                ->setUid($A['uid']);
+                ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
+            $this->ref_id = COM_makeSid() . rand(100,999);
         }
     }
 
@@ -144,6 +150,19 @@ class Payment
     public function setTS($ts)
     {
         $this->ts = (int)$ts;
+        return $this;
+    }
+
+
+    /**
+     * Set the `is_money` flag value.
+     *
+     * @param   integer $flag   1 if payment is money, 0 for other credit
+     * @return  object  $this
+     */
+    public function setIsMoney($flag)
+    {
+        $this->is_money = $flag ? 1 : 0;
         return $this;
     }
 
@@ -230,7 +249,7 @@ class Payment
      * @param   integer $uid    User ID
      * @return  object  $this
      */
-    private function setUid($uid)
+    public function setUid($uid)
     {
         $this->uid = (int)$uid;
         return $this;
@@ -312,7 +331,7 @@ class Payment
      */
     public function getAmount()
     {
-        return $this->amount;
+        return (float)$this->amount;
     }
 
 
@@ -324,6 +343,17 @@ class Payment
     public function getTS()
     {
         return (int)$this->ts;
+    }
+
+
+    /**
+     * Check if this payment is money or other credit.
+     *
+     * @return  integer     1 for a money payment 0 for other credit
+     */
+    public function isMoney()
+    {
+        return $this->is_money ? 1 : 0;
     }
 
 
@@ -350,6 +380,7 @@ class Payment
 
         $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
             pmt_ts = {$this->getTS()},
+            is_money = {$this->isMoney()},
             pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
             pmt_amount = '" . $this->getAmount() . "',
             pmt_ref_id = '" . DB_escapeString($this->getRefID()) . "',
@@ -361,6 +392,7 @@ class Payment
         $res = DB_query($sql);
         if (!DB_error()) {
             $this->setPmtId(DB_insertID());
+            Order::getInstance($this->order_id)->updatePmtStatus();
         }
         return $this;
     }
@@ -416,6 +448,7 @@ class Payment
                 $Pmt->setRefID($A['txn_id'])
                     ->setAmount($pmt_gross)
                     ->setTS($A['ts'])
+                    ->setIsMoney(true)
                     ->setGateway($A['gateway'])
                     ->setMethod($ipn->getGW()->getDisplayName())
                     ->setOrderID($order_id)
@@ -434,36 +467,12 @@ class Payment
             $Pmt->setRefID(uniqid())
                 ->setAmount($A['amount'])
                 ->setTS($A['ts'])
-                ->setGateway('coupon')
+                ->setIsMoney(false)
+                ->setGateway('_coupon')
                 ->setMethod('Apply Coupon')
                 ->setComment($LANG_SHOP['gc_pmt_comment'])
                 ->setOrderID($A['order_id'])
                 ->Save();
-        }
-
-        // Now get all the orders that are marked "paid" and make sure there's
-        // a payment record for each.
-        $sql = "SELECT order_id, order_total, by_gc
-            FROM {$_TABLES['shop.orders']}
-            WHERE status IN ('paid','shipped','complete','processing')";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $total_paid = (float)DB_getItem(
-                $_TABLES['shop.payments'],
-                'SuM(pmt_amount)',
-                "pmt_order_id = '" . DB_escapeString($A['order_id']) . "'"
-            );
-            $fill_amt = (float)$A['order_total'] - (float)$A['by_gc'] - $total_paid;
-            if ($fill_amt > 0) {
-                $Pmt = new self;
-                $Pmt->setRefID($A['order_id'] . '-' . uniqid())
-                    ->setAmount($fill_amt)
-                    ->setTS(time())
-                    ->setGateway('system')
-                    ->setOrderID($A['order_id'])
-                    ->setComment('Added by system to match paid order')
-                    ->Save();
-            }
         }
     }
 
@@ -497,6 +506,38 @@ class Payment
 
 
     /**
+     * Create a form to enter payments manually.
+     *
+     * @return  string      HTML for payment form
+     */
+    public function pmtForm()
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'pmt_form.thtml');
+        $T->set_var(array(
+            'pmt_id' => $this->pmt_id,
+            'order_id' => $this->order_id,
+            'amount' => $this->amount,
+            'ref_id' => $this->ref_id,
+            'money_chk' => $this->is_money ? 'checked="checked"' : '',
+        ) );
+        $Gateways = Gateway::getAll();
+        $T->set_block('form', 'GatewayOpts', 'gwo');
+        foreach ($Gateways as $GW) {
+            $T->set_var(array(
+                'gw_id' => $GW->getName(),
+                'gw_dscp' => $GW->getDscp(),
+                'selected' => $GW->getName() == $this->gw_id ? 'selected="selected"' : '',
+            ) );
+            $T->parse('gwo', 'GatewayOpts', true);
+        }
+        $T->parse('output', 'form');
+        $form = $T->finish($T->get_var('output'));
+        return $form;
+    }
+
+
+    /**
      * Purge all payments from the database.
      * No safety check or confirmation is done; that should be done before
      * calling this function.
@@ -511,166 +552,38 @@ class Payment
 
     /**
      * Show an admin list of payments.
+     * Leverages the payment report module.
      *
-     * @param   string  $order_id   Order ID to limit listing
+     * @param   string  $order_id   Optional Order ID to limit listing
      * @return  string      HTML for payment list
      */
     public static function adminList($order_id='')
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN,
-            $LANG32;
-            $sql = "SELECT pmt.* FROM {$_TABLES['shop.payments']} pmt";
+        global $LANG_SHOP;
 
-        $header_arr = array(
-            /*array(
-                'text'  => $LANG_ADMIN['edit'],
-                'field' => 'edit',
-                'sort'  => false,
-                'align' => 'center',
-            ),
-            array(
-                'text'  => '',
-                'field' => 'action',
-                'sort'  => false,
-            ),*/
-            array(
-                'text'  => 'ID',
-                'field' => 'pmt_id',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['order'],
-                'field' => 'pmt_order_id',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['datetime'],
-                'field' => 'pmt_ts',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['gateway'],
-                'field' => 'pmt_gateway',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['pmt_method'],
-                'field' => 'pmt_method',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['comment'],
-                'field' => 'pmt_comment',
-                'sort'  => true,
-            ),
-            array(
-                'text'  => $LANG_SHOP['amount'],
-                'field' => 'pmt_amount',
-                'sort'  => true,
-                'align' => 'right',
-            ),
-            array(
-                'text'  => $LANG_ADMIN['delete'],
-                'field' => 'delete',
-                'sort'  => 'false',
-                'align' => 'center',
-            ),
-        );
-        $extra = array();
-        $defsort_arr = array(
-            'field' => 'pmt_ts',
-            'direction' => 'DESC',
-        );
-
+        $R = \Shop\Report::getInstance('payment');
+        if ($R === NULL) {
+            return '';
+        }
+        if (!empty($order_id)) {
+            $R->setParam('order_id', $order_id);
+        }
         if ($order_id != 'x') {
-            $filter = "WHERE pmt.pmt_order_id = '" . DB_escapeString($order_id) . "'";
-            $title = $LANG_SHOP['order'] . ' ' . $order_id;
+            $new_btn = COM_createLink(
+                $LANG_SHOP['add_payment'],
+                SHOP_ADMIN_URL . '/index.php?newpayment=' . $order_id,
+                array(
+                    'class' => 'uk-button uk-button-success',
+                )
+            );
         } else {
-            $filter = '';
-            $title = '';
+            $new_btn = '';
         }
-
-        $display = COM_startBlock(
-            '', '',
-            COM_getBlockTemplate('_admin_block', 'header')
-        );
-
-        $options = array(
-            'chkselect' => 'true',
-            'chkname'   => 'payments',
-            'chkfield'  => 'pmt_id',
-            //'chkactions' => $prt_pl,
-        );
-        $query_arr = array(
-            'table' => 'shop.payments',
-            'sql' => $sql,
-            'query_fields' => array(),
-            'default_filter' => $filter,
-        );
-        $text_arr = array(
-            'has_extras' => false,
-            'has_limit' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=x',
-        );
-
-        $display .= ADMIN_list(
-            $_SHOP_CONF['pi_name'] . '_payments',
-            array(__CLASS__,  'getAdminField'),
-            $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', $extra, $options, ''
-        );
-        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
-        return $display;
-    }
-
-
-    /**
-     * Get an individual field for the options admin list.
-     *
-     * @param   string  $fieldname  Name of field (from the array, not the db)
-     * @param   mixed   $fieldvalue Value of the field
-     * @param   array   $A          Array of all fields from the database
-     * @param   array   $icon_arr   System icon array (not used)
-     * @return  string              HTML for field display in the table
-     */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
-    {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
-        static $Cur = NULL;
-
-        if ($Cur === NULL) {
-            $Cur = Currency::getInstance();
-        }
-        $retval = '';
-
-        switch($fieldname) {
-        case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?editshipment={$A['shipment_id']}"
-            );
-            break;
-
-        case 'pmt_order_id':
-            $retval .= COM_createLink(
-                $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue
-            );
-            break;
-        case 'pmt_amount':
-            $retval = $Cur->FormatValue($fieldvalue);
-            break;
-
-        case 'pmt_ts':
-            $D = new \Date($fieldvalue, $_CONF['timezone']);
-            $retval = $D->toMySQL(true);
-            break;
-
-        default:
-            $retval = htmlspecialchars($fieldvalue, ENT_QUOTES, COM_getEncodingt());
-            break;
-        }
-        return $retval;
+        $R->setAdmin(true)
+            // Params usually from GET but could be POSTed
+            ->setParams($_REQUEST)
+            ->setShowHeader(false);
+        return $new_btn . $R->Render();
     }
 
 }

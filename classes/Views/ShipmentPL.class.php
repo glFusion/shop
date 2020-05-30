@@ -3,7 +3,7 @@
  * Class to create a packing list for a single shipment.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.0.0
  * @since       v1.0.0
@@ -29,6 +29,11 @@ class ShipmentPL
     /** Order object.
      * @var object */
     protected $Order;
+
+
+    /** Shipment record ID.
+     * @var integer */
+    private $shipment_id = 0;
 
 
     /**
@@ -68,10 +73,10 @@ class ShipmentPL
             $OI = $Item->getOrderItem();
             $P = $OI->getProduct();
             $T->set_var(array(
-                'oi_id'         => $OI->id,
-                'item_dscp'     => htmlspecialchars($OI->description),
+                'oi_id'         => $OI->getID(),
+                'item_dscp'     => htmlspecialchars($OI->getDscp()),
                 'item_options'  => $OI->getOptionDisplay(),
-                'item_quantity' => $Item->quantity,
+                'item_quantity' => $Item->getQuantity(),
                 'sku'           => $P->getSKU($OI),
             ) );
             $T->parse('iRow', 'ItemRow', true);
@@ -81,36 +86,35 @@ class ShipmentPL
         $T->set_block('order', 'trackingPackages', 'TP');
         foreach ($this->Shipment->Packages as $Pkg) {
             $T->set_var(array(
-                'shipper_code'  => $Pkg->getShipper()->code,
-                'shipper_name'  => $Pkg->shipper_info,
-                'tracking_num'  => $Pkg->tracking_num,
-                'pkg_id'        => $Pkg->pkg_id,
-                'tracking_url'  => Shipper::getInstance($Pkg->shipper_id)->getTrackingUrl($Pkg->tracking_num),
+                'shipper_code'  => $Pkg->getShipper()->getCode(),
+                'shipper_name'  => $Pkg->getShipperInfo(),
+                'tracking_num'  => $Pkg->getTrackingNumber(),
+                'pkg_id'        => $Pkg->getID(),
+                'tracking_url'  => Shipper::getInstance($Pkg->getShipperID())->getTrackingUrl($Pkg->getTrackingNumber()),
             ) );
             $T->parse('TP', 'trackingPackages', true);
         }
 
         $Shop = \Shop\Company::getInstance();
         $T->set_var(array(
-            'shipment_id'        => $this->shipment_id,
+            'shipment_id'   => $this->shipment_id,
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
-            'order_id'      => $this->Order->order_id,
-            'order_instr'   => htmlspecialchars($this->instructions),
+            'order_id'      => $this->Order->getOrderID(),
+            'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
             'shop_phone'    => $_SHOP_CONF['shop_phone'],
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
-            'status'        => $this->Order->status,
-            'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
-            'tracking_info' => count($this->Shipment->Packages),
+            'status'        => $this->Order->getStatus(),
+            'ship_method'   => Shipper::getInstance($this->Order->getShipperID())->getName(),
+            'tracking_info' => count($this->Shipment->getPackages()),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
-
         $T->parse('output', 'order');
         $form = $T->finish($T->get_var('output'));
         return $form;

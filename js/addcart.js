@@ -177,3 +177,33 @@ function chgCountrySel(newcountry)
     return;
 }
 
+function SHOPvalidateAddress(form)
+{
+    if (typeof(form) == 'undefined') {
+        return;
+    }
+    data = $("#" + form.id).serialize();
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status != true) {
+                    modal = UIkit.modal.blockUI(result.form);
+                } else {
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "{action}";
+                    input.value = "x";;
+                    form.appendChild(input);
+                    form.submit();
+                }
+            }
+            catch(err) {
+            }
+        }
+    });
+    return;
+}

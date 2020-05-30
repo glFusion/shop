@@ -212,13 +212,15 @@ class Image extends UploadDownload
     {
         global $_SHOP_CONF;
 
+        $default = array(
+            'url'   => '',
+            'width' => 0,
+            'height' => 0,
+        );
+
         // If the filename is empty, return nothing.
         if ($filename == '') {
-            return array(
-                'url'   => '',
-                'width' => 0,
-                'height' => 0,
-            );
+            return $default;
         }
         if ($width == 0 && $height == 0) {
             // Default to a standard display size if no sizes given
@@ -234,7 +236,11 @@ class Image extends UploadDownload
             'height'    => $height,
         );
         $status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
-        return $output;
+        if ($status == PLG_RET_OK) {
+            return $output;
+        } else {
+            return $default;
+        }
     }
 
 }

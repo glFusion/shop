@@ -82,13 +82,13 @@ class paypal extends \Shop\IPN
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->setStatus(self::PENDING);
+            $this->setStatus(self::STATUS_PENDING);
             break;
         case 'Completed':
-            $this->setStatus(self::PAID);
+            $this->setStatus(self::STATUS_PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(self::REFUNDED);
+            $this->setSTatus(self::STATUS_REFUNDED);
             break;
         }
 
@@ -260,7 +260,7 @@ class paypal extends \Shop\IPN
             // shopping cart
             // Create a cart and read the info from the cart table.
             $this->Order = $this->getOrder();
-            if (!$this->Order || $this->Order->isNew) {
+            if (!$this->Order || $this->Order->isNew()) {
                 $this->handleFailure(NULL, "Order ID {$this->order_id} not found for cart purchases");
                 return false;
             }
@@ -270,24 +270,28 @@ class paypal extends \Shop\IPN
                 ->setPmtHandling($this->Order->getInfo('handling'));
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                SHOP_log("Empty Cart for id {$this->Order->order_id}", SHOP_LOG_ERROR);
+                SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
                 return false;
             }
 
             foreach ($Cart as $item) {
-                $item_id = $item->product_id;
-                if ($item->options != '') {
-                    $item_id .= '|' . $item->options;
+                $item_id = $item->getProductID();
+                $options = $item->getOptions();
+                if (!empty($options)) {
+                    if (is_array($options)) {
+                        $options = implode(',', $options);
+                    }
+                    $item_id .= '|' . $options;
                 }
                 $args = array(
                     'item_id'   => $item_id,
-                    'quantity'  => $item->quantity,
-                    'price'     => $item->price,
-                    'item_name' => $item->getShortDscp(),
-                    'shipping'  => $item->shipping,
-                    'handling'  => $item->handling,
-                    'tax'       => $item->tax,
-                    'extras'    => $item->extras,
+                    'quantity'  => $item->getQuantity(),
+                    'price'     => $item->getPrice(),
+                    'item_name' => $item->getDscp(),
+                    'shipping'  => $item->getShipping(),
+                    'handling'  => $item->getHandling(),
+                    'tax'       => $item->getTax(),
+                    'extras'    => $item->getExtras(),
                 );
                 $this->addItem($args);
             }

@@ -1,26 +1,19 @@
 <?php
 /**
  * This file contains the Square IPN class.
- * It is used with orders that have zero balances and thus don't go through
- * an actual payment processor.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner
+ * @copyright   Copyright (c) 2018-2020 Lee Garner
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\ipn;
-
 use \Shop\Cart;
 
-// this file can't be used on its own
-if (!defined ('GVERSION')) {
-    die ('This file can not be used on its own.');
-}
 
 /**
  *  Class to provide IPN for internal-only transactions,
@@ -47,13 +40,13 @@ class square extends \Shop\IPN
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if (!$this->Order || $this->Order->isNew) return NULL;
+        if (!$this->Order || $this->Order->isNew()) return NULL;
 
-        $this->setOrderId($this->Order->order_id)
+        $this->setOrderId($this->Order->getOrderID())
             ->setTxnId(SHOP_getVar($A, 'transactionId'))
-            ->setEmail($this->Order->buyer_email)
-            ->setPayerName($_USER['fullname'])
-            ->setStatus($status);
+            ->setEmail($this->Order->getBuyerEmail());
+            //->setPayerName($_USER['fullname']);
+            //->setStatus($status);
         $this->gw_name = $this->GW->getName();;
 
         $billto = $this->Order->getAddress('billto');
@@ -85,19 +78,21 @@ class square extends \Shop\IPN
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
 
+        $total_shipping = 0;
+        $total_handling = 0;
         foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->product_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->getShortDscp(),
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getProductID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getNetPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
-            $total_shipping += $item->shipping;
-            $total_handling += $item->handling;
+            $total_shipping += $item->getShipping();
+            $total_handling += $item->getHandling();
         }
         $this->setPmtShipping($total_shipping)
             ->setPmtHandling($total_handling);
@@ -106,40 +101,47 @@ class square extends \Shop\IPN
 
     /**
      * Verify the transaction.
-     * This just checks that a valid cart_id was received along with other
-     * variables.
+     * Checks that a valid, unique transaction was received and checks the
+     * payment values.
      *
-     * @return  boolean         true if successfully validated, false otherwise
+     * @return  boolean     True if successfully validated, false otherwise
      */
     private function Verify()
     {
-        // Gets the transaction via the Square API to get the real values.
-        SHOP_log("transaction ID: " . $this->getTxnId());
-        sleep(3);
-        $trans = $this->GW->getTransaction($this->getTxnId());
+        // Even test transactions have to be unique
+        if (!$this->isUniqueTxnId()) {
+            return false;
+        }
 
-        SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
+        // Retrieve the transaction from Square.
+        $trans = $this->GW->getTransaction($this->getTxnId());
+        //SHOP_log(var_export($trans,true), SHOP_LOG_DEBUG);
         $this->status = 'pending';
         if ($trans) {
-            // Get through the top-level array var
-            $trans= SHOP_getVar($trans, 'transaction', 'array');
-            if (empty($trans)) return false;
-
-            $tenders = SHOP_getVar($trans, 'tenders', 'array');
+            // Get values from the returned array
+            // Must have orders=>0=>(tenders,reference_id)
+            $trans = SHOP_getVar($trans, 'orders', 'array');
+            if (empty($trans) || !isset($trans[0])) {
+                return false;
+            }
+            $order = $trans[0];
+            $tenders = SHOP_getVar($order, 'tenders', 'array');
             if (empty($tenders)) return false;
 
-            $order_id = SHOP_getVar($trans, 'reference_id');
+            $order_id = SHOP_getVar($order, 'reference_id');
             if (empty($order_id)) return false;
 
-            $this->setStatus(self::PAID);
+            $this->setStatus(self::STATUS_PAID);
+            $total_paid = 0;
             $pmt_gross = 0;
             foreach ($tenders as $tender) {
                 if ($tender['card_details']['status'] == 'CAPTURED') {
                     $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
-                    $pmt_gross += $C->fromInt($tender['amount_money']['amount']);
-                    //$pmt_fee += $C->fromInt($tender['processing_fee_money']['amount']);
+                    // Set $pmt_gross each time to capture the last amount paid.
+                    $pmt_gross = $C->fromInt($tender['amount_money']['amount']);
+                    $total_paid += $pmt_gross;
                 } else {
-                    $this->setStatus(self::PENDING);
+                    $this->setStatus(self::STATUS_PENDING);
                 }
             }
             $this->setPmtGross($pmt_gross);
@@ -206,19 +208,21 @@ class square extends \Shop\IPN
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
-        foreach ($this->Cart as $idx=>$item) {
+        $total_shipping = 0;
+        $total_handling = 0;
+        foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->item_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->name,
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getProductID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
-            $total_shipping += $item->shipping;
-            $total_handling += $item->handling;
+            $total_shipping += $item->getShipping();
+            $total_handling += $item->getHandling();
         }
 
         if (!$this->Verify()) {

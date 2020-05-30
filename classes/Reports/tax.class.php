@@ -12,7 +12,6 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Currency;
 use Shop\Company;
 use Shop\Country;
 use Shop\State;
@@ -37,9 +36,10 @@ class tax extends \Shop\Report
     {
         // This report doesn't show shipped or closed statuses.
         $this->allowed_statuses = array(
-            'paid',
             'processing',
-            'shipped', 'closed', 'complete',
+            'shipped',
+            'closed',
+            'complete',
         );
         $this->filter_uid = false;
         parent::__construct();
@@ -230,17 +230,29 @@ class tax extends \Shop\Report
         $total_shipping = 0;
         $total_total = 0;
         $order_date = clone $_CONF['_now'];   // Create an object to be updated later
-        $Cur = \Shop\Currency::getInstance();
+        $total_taxable = 0;
+        $total_nontax = 0;
+        $total_handling = 0;
+
+        $sql = "SELECT ord.net_taxable + ord.net_nontax as total_sales,
+            ord.net_taxable, ord.net_nontax,
+            SUM(ord.tax) as total_tax,
+            SUM(ord.shipping) as total_shipping,
+            ord.order_id, ord.order_date, ord.shipto_name, ord.shipto_company,
+            ord.shipto_state, ord.shipto_country, ord.shipto_zip,
+            ord.tax, ord.shipping, ord.handling, ord.order_total
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.orderitems']} itm
+                ON itm.order_id = ord.order_id";
+//            SUM(IF(itm.taxable > 0, itm.quantity * itm.net_price, 0)) as net_taxable,
+//            SUM(IF(itm.taxable = 0, itm.quantity * itm.net_price, 0)) as net_nontax,
+        //$sql .= ' ' . $query_arr['default_filter'];
+        //echo $sql;die;
 
         switch ($this->type) {
         case 'html':
             $this->setExtra('class', __CLASS__);
             // Get the totals, have to use a separate query for this.
-            $s = "SELECT SUM(itm.quantity * itm.price) as total_sales,
-                SUM(ord.tax) as total_tax, SUM(ord.shipping) as total_shipping
-                FROM {$_TABLES['shop.orders']} ord
-                LEFT JOIN {$_TABLES['shop.orderitems']} itm
-                    ON item.order_id = ord.order_id {$query_arr['default_filter']}";
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
@@ -263,8 +275,9 @@ class tax extends \Shop\Report
             break;
         case 'csv':
             // Assemble the SQL manually from the Admin list components
-            $sql .= ' ' . $query_arr['default_filter'];
-            $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
+            $sql .= " {$query_arr['default_filter']}
+                GROUP BY ord.order_id
+                ORDER BY {$defsort_arr['field']} {$defsort_arr['direction']}";
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {
@@ -278,12 +291,12 @@ class tax extends \Shop\Report
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'taxable'       => $Cur->FormatValue($A['net_taxable']),
-                    'nontax'        => $Cur->FormatValue($A['net_nontax']),
-                    'tax'           => $Cur->FormatValue($A['tax']),
-                    'shipping'      => $Cur->FormatValue($A['shipping']),
-                    'handling'      => $Cur->FormatValue($A['handling']),
-                    'total'         => $Cur->FormatValue($A['order_total']),
+                    'taxable'       => self::formatMoney($A['net_taxable']),
+                    'nontax'        => self::formatMoney($A['net_nontax']),
+                    'tax'           => self::formatMoney($A['tax']),
+                    'shipping'      => self::formatMoney($A['shipping']),
+                    'handling'      => self::formatMoney($A['handling']),
+                    'total'         => self::formatMoney($A['order_total']),
                     'region'        => $A['shipto_state'] . ', ' . $A['shipto_country'],
                     'zip'           => $A['shipto_zip'],
                     'nl'            => "\n",
@@ -302,12 +315,12 @@ class tax extends \Shop\Report
         $T->set_var(array(
             'startDate'         => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'           => $this->endDate->format($_CONF['shortdate'], true),
-            'total_taxable'     => $Cur->FormatValue($total_taxable),
-            'total_nontax'      => $Cur->FormatValue($total_nontax),
-            'total_tax'         => $Cur->FormatValue($total_tax),
-            'total_shipping'    => $Cur->FormatValue($total_shipping),
-            'total_handling'    => $Cur->FormatValue($total_handling),
-            'total_total'       => $Cur->FormatValue($total_total),
+            'total_taxable'     => self::formatMoney($total_taxable),
+            'total_nontax'      => self::formatMoney($total_nontax),
+            'total_tax'         => self::formatMoney($total_tax),
+            'total_shipping'    => self::formatMoney($total_shipping),
+            'total_handling'    => self::formatMoney($total_handling),
+            'total_total'       => self::formatMoney($total_total),
             'nl'                => "\n",
         ) );
         $T->parse('output', 'report');
@@ -351,6 +364,6 @@ class tax extends \Shop\Report
         return $retval;
     }
 
-}   // class orderlist
+}
 
 ?>

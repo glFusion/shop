@@ -24,7 +24,7 @@ COM_errorLog(var_export($json,true));
 //exit;
 COM_errorLog("HEADERS: " . var_export($_SERVER,true));
 $WH = new Shop\Webhooks\paypal($json);
-$WH->setHeaders($headers);
+$WH->setHeaders();
 if ($WH->Verify()) {
     $WH->Dispatch();
 }

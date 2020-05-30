@@ -23,6 +23,11 @@ class reorder extends \Shop\Report
      * @var string */
     protected $icon = 'barcode';
 
+    /** Suppplier ID to limit report.
+     * @var integer */
+    protected $supplier_id = 0;
+
+
     /**
      * Constructor.
      */
@@ -52,7 +57,7 @@ class reorder extends \Shop\Report
         $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
             short_description as dscp, p.supplier_ref, pv.supplier_ref as pv_ref,
             pv.pv_id, pv.sku, pv.onhand as pv_onhand, pv.reorder as pv_reorder,
-            s.company as supplier
+            s.sup_id as supplier_id, s.company as supplier
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.product_variants']} pv
                 ON p.id = pv.item_id
@@ -76,11 +81,6 @@ class reorder extends \Shop\Report
                 'sort'  => true,
             ),
             array(
-                'text'  => $LANG_SHOP['supplier_ref'],
-                'field' => 'supplier_ref',
-                'sort'  => true,
-            ),
-            array(
                 'text'  => $LANG_SHOP['onhand'],
                 'field' => 'onhand',
                 'sort'  => true,
@@ -95,6 +95,11 @@ class reorder extends \Shop\Report
             array(
                 'text'  => $LANG_SHOP['supplier'],
                 'field' => 'supplier',
+                'sort'  => true,
+            ),
+            array(
+                'text'  => $LANG_SHOP['supplier_ref'],
+                'field' => 'supplier_ref',
                 'sort'  => true,
             ),
         );
@@ -123,13 +128,20 @@ class reorder extends \Shop\Report
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&supplier_id=' . $this->supliser_id,
+                '&supplier_id=' . $this->supplier_id,
             'has_limit' => true,
             'has_paging' => true,
         );
 
         switch ($this->type) {
         case 'html':
+            $q_str = $_GET;
+            if (!isset($q_str['run'])) {
+                $q_str['run'] = 'reorder';
+            }
+            unset($q_str['supplier_id']);
+            $q_str = http_build_query($q_str);
+            $this->setExtra('bysup_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&supplier_id=');
             $T->set_var(
                 'output',
                 \ADMIN_list(
@@ -148,7 +160,7 @@ class reorder extends \Shop\Report
                     'item_name'     => $A['name'],
                     'dscp'          => $this->remQuote($A['short_description']),
                     'sku'           => $this->remQuote($A['sku']),
-                    'supplier_ref'  => empty($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'],
+                    'supplier_ref'  => empty($A['pv_ref']) ? $A['supplier_ref'] : $A['pv_ref'],
                     'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['pv_onhand'],
                     'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['pv_reorder'],
                     'supplier'      => $A['supplier'],
@@ -161,8 +173,6 @@ class reorder extends \Shop\Report
 
         $T->set_var(array(
             'report_key' => $this->key,
-            'item_id'   => $this->item_id,
-            'item_dscp' => $this->item_dscp,
             'startDate' => $this->startDate->format($_CONF['shortdate'], true),
             'endDate'   => $this->endDate->format($_CONF['shortdate'], true),
             'nl'        => "\n",
@@ -187,7 +197,20 @@ class reorder extends \Shop\Report
      */
     protected static function fieldFunc($fieldname, $fieldvalue, $A, $icon_arr, $extra)
     {
+        $retval = NULL;
         switch ($fieldname) {
+        case 'name':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $A['id']
+            );
+            break;
+        case 'supplier':
+            $retval = COM_createLink(
+                $fieldvalue,
+                $extra['bysup_link'] . $A['supplier_id']
+            );
+            break;
         case 'onhand':
             $retval = is_null($A['sku']) ? (float)$A['onhand'] : (float)$A['pv_onhand'];
             break;
@@ -197,7 +220,7 @@ class reorder extends \Shop\Report
             break;
 
         case 'supplier_ref':
-            $retval = is_null($A['pv_ref']) ? $A['suppliser_ref'] : $A['pv_ref'];
+            $retval = is_null($A['pv_ref']) ? $A['supplier_ref'] : $A['pv_ref'];
             break;
         }
         return $retval;
@@ -247,8 +270,6 @@ class reorder extends \Shop\Report
         }
         return $retval;
     }
-
-
 
 }
 

@@ -1,200 +1,213 @@
 {# begin {templatelocation} #}
 <a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-success">
-  <i class="uk-icon uk-icon-backward"></i>
-  {$LANG_SHOP['continue_shopping']}
+    <i class="uk-icon uk-icon-backward"></i>
+    {$LANG_SHOP['continue_shopping']}
 </a>
 <div style="text-align:center; margin-left:auto;">
     <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
-  <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
-    <input type="hidden" name="order_id" value="{order_number}" />
+{!if rules_msg}
+    <div class="uk-alert uk-alert-danger alignleft">{rules_msg}</div>
+{!endif}
 
-    <table id="shopViewCartTable" class="shopViewCartTable">
-      <tr>
-{!if have_images}
-        <th style="width:120px;"></th>
+    <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
+        <div class="orderAddress">
+            <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
+{!if not_final}
+                <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
+{!endif}
+            <br />
+            {billto_addr}
+        </div>
+
+        <div class="orderAddress">
+            <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
+{!if not_final}
+                <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
+{!endif}
+            <br />
+            {shipto_addr}
+        </div>
+    </div>
+
+    <form action="{pi_url}/cart.php" method="post" class="uk-form shopViewCart" id="shopCartForm">
+        <input type="hidden" name="order_id" value="{order_number}" />
+
+        <div class="cart">
+            <div class="cart-items">
+                <div class="uk-grid uk-margin uk-hidden-small">
+                    <div class="uk-width-medium-3-6">{$LANG_SHOP['description']}</div>
+                    <div class="uk-width-medium-1-6">{$LANG_SHOP['price']}</div>
+                    <div class="uk-width-medium-1-6">{$LANG_SHOP['quantity']}</div>
+                    <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
+                </div>
+<!-- BEGIN ItemRow -->
+{!if embargoed}
+                <div class="cart-item embargo">
 {!else}
-        <th></th>
+                <div class="cart-item">
 {!endif}
-        <th class="aligncenter">{$LANG_SHOP['description']}</th>
-        <th style="width:10%" class="alignright">{$LANG_SHOP['price']}</th>
-        <th style="width:15%" class="alignright">{$LANG_SHOP['quantity']}</th>
-        <th style="width:10%" class="alignright">{$LANG_SHOP['total']}</th>
-        <th style="width:5%" class="aligncenter"></th>
-        <th style="width:5%;" class="aligncenter">
-{!if icon_dscp}
-            <i class="uk-icon uk-icon-question-circle tooltip" title="{icon_dscp}"></i>
-{!endif}
-        </th>
-      </tr>
-      <!-- BEGIN ItemRow -->
-      <tr>
-        <td>
+                    <div class="uk-grid uk-margin">
+                        <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
+                            <div class="cart-item-image">
 {!if item_link}
-            <a href="{item_link}">{img_url}</a>
+                                <a href="{item_link}">{img_url}</a>
 {!else}
-            {img_url}
+                                {img_url}
 {!endif}
-        </td>
-        <td class="alignleft">
+                            </div>
+                            <div class="cart-item-title">
 {!if item_link}
-          <a href="{item_link}">{item_dscp}</a>
+                                <a href="{item_link}">{item_dscp}</a>
 {!else}
-          {item_dscp}
+                                {item_dscp}
 {!endif}
-          {item_options}
-        </td>
-        <td class="alignright">{item_price}</td>
-        <td class="alignright">
+                                {item_options}
+                            </div>
+                        </div>
+                        <div class="uk-width-medium-1-6 uk-width-1-2 cart-item-price">
+                            {item_price}
+                        </div>
+                        <div class="uk-width-medium-1-6 uk-width-1-2 cart-item-quantity">
 {!if fixed_q}
-          <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
-          {item_quantity}
+                            <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
+                            {item_quantity}
 {!else}
-          <input style="text-align:right;" type="number" id="f_qty_{cart_item_id}"
-                onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
+                            <input style="width:60px;text-align:right;" type="number" id="f_qty_{cart_item_id}"
+                                onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
-                max="{max_ord_qty}"
+                                max="{max_ord_qty}"
 {!endif}
-                name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-small"/>
+                                name="quantity[{cart_item_id}]" value="{item_quantity}" class="uk-form-width-mini"/>
 {!endif}
-        </td>
-        <td class="alignright">{item_total}</td>
-        <td class="aligncenter" style="width:32px;white-space:nowrap;">
-          <a href="{del_item_url}"><i
-              class="uk-icon uk-icon-remove uk-text-danger  tooltip" title="{$LANG_SHOP['delete']}"></i></a>
-        </td>
-        <td class="aligncenter">
-{!if taxable}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
-{!endif}
-{!if discount_tooltip}
-          <span class="tooltip" title="{discount_tooltip}">{discount_icon}</span>
-{!endif}
-{!if sale_tooltip}
-          <span class="tooltip" title="{sale_tooltip}">{sale_icon}</span>
-{!endif}
-{!if msg_bo}
-          <span class="tooltip" title="{msg_bo}">{bo_icon}</span>
-{!endif}
-        </td>
-      </tr>
-      <!-- END ItemRow -->
+                            <a href="{del_item_url}"><i
+                                class="uk-icon uk-icon-remove uk-text-danger tooltip"
+                                title="{$LANG_SHOP['remove_item']}"></i></a>
+                        </div>
+                        <div class="uk-width-medium-1-6 uk-width-1-1 cart-item-total money">
+                            <div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
+                        </div>
+                    </div>
+                </div>
+<!-- END ItemRow -->
+            </div>
+
+            <div class="cart-total">
 {!if subtotal}
-      <tr>
-        <td colspan="4" class="alignright"><b>{$LANG_SHOP['item_total']}</b></td>
-        <td colspan="1" class="alignright"><b>{subtotal}</b></td>
-        <td></td>
-      </tr>
+                <div class="uk-grid">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['item_total']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{subtotal}</div>
+                </div>
+{!endif}
+{!if cart_tax}
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
+                </div>
 {!endif}
 {!if dc_row_vis}
-        <tr>
-            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']} ({discount_code})</td>
-            <td colspan="1" class="alignright">{dc_amt}</td>
-        </tr>
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code})</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{dc_amt}</div>
+                </div>
 {!endif}
-{!if Xtax_items}
-      <tr>
-        <td colspan="4" class="alignright">{lang_tax_on_items}</td>
-        <td colspan="1" class="alignright">TBD</td>
-        <td></td>
-      </tr>
-{!endif}
+
 {!!if {ship_select} != "" !!}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}: {ship_select}</td>
-        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
-      </tr>
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['shipping']}: {ship_select}</div>
+                    <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping}</div>
+                </div>
 {!!elseif {shipper_id} > 0 || {shipping} > 0 !!}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['shipping']}
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['shipping']}
 {!if ship_method}
-({ship_method})
+                        ({ship_method})
 {!endif}
-        </td>
-        <td id="shipping_cell" colspan="1" class="alignright">{shipping}</td>
-        <td>
+                    </div>
+                    <div id="shipping_cell">{shipping}</div>
 {!if tax_shipping}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+                <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
-        </td>
-      </tr>
 {!endif}
 {!if handling}
-      <tr>
-        <td colspan="4" class="alignright">{$LANG_SHOP['handling']}</td>
-        <td colspan="1" class="alignright">{handling}</td>
-        <td>
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['handling']}</div
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{handling}</div>
+                </div>
 {!if tax_handling}
-          <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+                <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
-        </td>
-      </tr>
 {!endif}
-      <tr>
-        <td colspan="4" class="alignright"><b>{$LANG_SHOP['total']}</b></td>
-        <td colspan="1" class="alignright"><b>
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['total']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">
 {!if not_final}
-            {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
+                        {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
 {!else}
-        {total_sign} {total}
+                        {total_sign} {total}
 {!endif}
-        </b></td>
-        <td></td>
-      </tr>
-
-    </table>
-    <div class="uk-grid orderInstructions">
-        <div class="uk-width-1-2 orderInstructions">
-{!if discount_code_fld}
-            {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
-                oninput="updateDCButton();return false;" />
-            <button id="dc_validate" name="update"
-                class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
-{!endif}
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="uk-width-1-2 orderInstructions">{$LANG_SHOP['order_instr']}:<br />
-            <textarea name="order_instr" rows="4" cols="80">{order_instr}</textarea>
+    </div>
+    <div class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2 orderInstructions">
+        <div class="uk-push-1-2">
+            <div>
+                {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
+                    oninput="updateDCButton();return false;" />
+                <button id="dc_validate" name="update"
+                    class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
+            </div>
+            <div class="orderInstructions">
+                {$LANG_SHOP['order_instr']}:<br />
+                <textarea name="order_instr" rows="4" style="width:100%">{order_instr}</textarea>
+            </div>
+            <div class="orderInstructions">
+                <button style="float:none;" type="submit"
+                    class="uk-button uk-button-primary" name="update" id="updatebtn">
+                <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}
+                </button>
+{!if gateway_radios}
+                <input type="hidden" name="next_step" value="{next_step}" />
+                <button style="float:none;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="checkout">
+                    <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}
+                </button>
+{!endif}
+                <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
+                    onclick="document.location.href='{pi_url}/cart.php?empty=x';">
+                    <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}
+                </button>
+            </div>
+        </div>
+
+        <div class="uk-pull-1-2">
+            <div class="gwRadiosOuter">
+                <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning"></i>&nbsp;&nbsp;
+                {$LANG_SHOP['hlp_gw_select']}<br />
+{!if gateway_radios}
+                {gateway_radios}
+{!if allow_gc}
+                <div class="enterGC shopGatewayRadios">{$LANG_SHOP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
+                    <button type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem"
+                        onclick="shopApplyGC('shopCartForm');return false;">{$LANG_SHOP['apply']}</button>
+                    <input type="hidden" name="refresh" value="viewcart" />
+                </div>
+{!endif}
+{!else}
+                <div class="uk-alert uk-alert-danger">{$LANG_SHOP['todo_nogateways']}</div>
+{!endif}
+            </div>
+            <div class="gwRadiosOuter">
+                <a name="anchor_payer_email"></a>
+                <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
+                <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
+                <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
+                    name="payer_email" size="40" value="{payer_email}"/>
+                <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+            </div>
         </div>
     </div>
     <input type="hidden" name="custom" value='{custom}' />
-    <button style="float:none;" type="submit" class="uk-button uk-button-primary" name="update" id="updatebtn">
-        <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}</button>
-{!if gateway_radios}
-    <input type="hidden" name="next_step" value="{next_step}" />
-    <button style="float:none;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="checkout">
-        <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}</button>
-{!endif}
-    <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
-        onclick="document.location.href='{pi_url}/cart.php?empty=x';">
-        <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}</button>
-    <div class="uk-width-1-1 uk-margin">
-      <div class="uk-width-2-3 uk-margin floatleft">
-        <div class="gwRadiosOuter">
-          <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning"></i>&nbsp;&nbsp;
-          {$LANG_SHOP['hlp_gw_select']}<br />
-{!if gateway_radios}
-          {gateway_radios}
-{!if allow_gc}
-          <div class="enterGC shopGatewayRadios">{$LANG_SHOP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
-            <button type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem"
-                onclick="shopApplyGC('shopCartForm');return false;">{$LANG_SHOP['apply']}</button>
-            <input type="hidden" name="refresh" value="viewcart" />
-          </div>
-{!endif}
-{!else}
-          <div class="uk-alert uk-alert-danger">{$LANG_SHOP['todo_nogateways']}</div>
-{!endif}
-        </div>
-        <div class="gwRadiosOuter">
-          <a name="anchor_payer_email"></a>
-          <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
-          <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
-          <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
-            name="payer_email" size="40" value="{payer_email}"/>
-          <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
-        </div>
-      </div>
-
-    </div>
   </form>
 {!if tc_link}
   <div class="shopTOCLink">
@@ -237,9 +250,31 @@ function SHOP_updateShipping(e)
     }
 
     var newship = e.options[e.selectedIndex].value;
-    var obj = JSON.parse(shipper_json);
+    var dataS = {
+        "shipper_id": newship,
+        "cart_id": "{order_number}",
+    };
+    data = $.param(dataS);
+
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=setShipper",
+        data: data,
+        success: function(result) {
+            try {
+                UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
+                location.reload(true);
+            } catch(err) {
+            }
+        }
+    });
+    return false;
+
+
+    /*var obj = JSON.parse(shipper_json);
     document.getElementById("ord_total_span").innerHTML = obj[newship].total;
-    document.getElementById("shipping_cell").innerHTML = obj[newship].amount;
+    document.getElementById("shipping_cell").innerHTML = obj[newship].amount;*/
 }
 function updateDCButton()
 {

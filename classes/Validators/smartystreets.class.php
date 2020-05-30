@@ -137,7 +137,7 @@ class smartystreets
         if (isset($decoded[0]['delivery_line_1'])) {
             $this->Address->setAddress1($decoded[0]['delivery_line_1']);
         }
-        if (isset($$decoded[0]['delivery_line_2'])) {
+        if (isset($decoded[0]['delivery_line_2'])) {
             $this->Address->setAddress2($decoded[0]['delivery_line_2']);
         } else {
             $this->Address->setAddress2('');

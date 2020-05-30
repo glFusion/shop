@@ -9,25 +9,24 @@ namespace SquareConnect\Model;
 
 use \ArrayAccess;
 /**
- * @deprecated
- * CreateOrderRequestModifier Class Doc Comment
+ * CatalogCustomAttributeDefinitionSelectionConfigCustomAttributeSelection Class Doc Comment
  *
  * @category Class
  * @package  SquareConnect
  * @author   Square Inc.
  * @license  http://www.apache.org/licenses/LICENSE-2.0 Apache License v2
  * @link     https://squareup.com/developers
+ * Note: This endpoint is in beta.
  */
-class CreateOrderRequestModifier implements ArrayAccess
+class CatalogCustomAttributeDefinitionSelectionConfigCustomAttributeSelection implements ArrayAccess
 {
     /**
       * Array of property to type mappings. Used for (de)serialization 
       * @var string[]
       */
     static $swaggerTypes = array(
-        'catalog_object_id' => 'string',
-        'name' => 'string',
-        'base_price_money' => '\SquareConnect\Model\Money'
+        'uid' => 'string',
+        'name' => 'string'
     );
   
     /** 
@@ -35,9 +34,8 @@ class CreateOrderRequestModifier implements ArrayAccess
       * @var string[] 
       */
     static $attributeMap = array(
-        'catalog_object_id' => 'catalog_object_id',
-        'name' => 'name',
-        'base_price_money' => 'base_price_money'
+        'uid' => 'uid',
+        'name' => 'name'
     );
   
     /**
@@ -45,9 +43,8 @@ class CreateOrderRequestModifier implements ArrayAccess
       * @var string[]
       */
     static $setters = array(
-        'catalog_object_id' => 'setCatalogObjectId',
-        'name' => 'setName',
-        'base_price_money' => 'setBasePriceMoney'
+        'uid' => 'setUid',
+        'name' => 'setName'
     );
   
     /**
@@ -55,26 +52,20 @@ class CreateOrderRequestModifier implements ArrayAccess
       * @var string[]
       */
     static $getters = array(
-        'catalog_object_id' => 'getCatalogObjectId',
-        'name' => 'getName',
-        'base_price_money' => 'getBasePriceMoney'
+        'uid' => 'getUid',
+        'name' => 'getName'
     );
   
     /**
-      * $catalog_object_id The catalog object ID of a `CatalogModifier`.
+      * $uid Unique ID set by Square.
       * @var string
       */
-    protected $catalog_object_id;
+    protected $uid;
     /**
-      * $name Only used for ad hoc modifiers. The name of the modifier. `name` cannot exceed 255 characters.  Do not provide a value for `name` if you provide a value for `catalog_object_id`.
+      * $name Selection name, unique within `allowed_selections`. Required. Min length of 1, max length of 255.
       * @var string
       */
     protected $name;
-    /**
-      * $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined `CatalogModifier` price.
-      * @var \SquareConnect\Model\Money
-      */
-    protected $base_price_money;
 
     /**
      * Constructor
@@ -83,40 +74,35 @@ class CreateOrderRequestModifier implements ArrayAccess
     public function __construct(array $data = null)
     {
         if ($data != null) {
-            if (isset($data["catalog_object_id"])) {
-              $this->catalog_object_id = $data["catalog_object_id"];
+            if (isset($data["uid"])) {
+              $this->uid = $data["uid"];
             } else {
-              $this->catalog_object_id = null;
+              $this->uid = null;
             }
             if (isset($data["name"])) {
               $this->name = $data["name"];
             } else {
               $this->name = null;
             }
-            if (isset($data["base_price_money"])) {
-              $this->base_price_money = $data["base_price_money"];
-            } else {
-              $this->base_price_money = null;
-            }
         }
     }
     /**
-     * Gets catalog_object_id
+     * Gets uid
      * @return string
      */
-    public function getCatalogObjectId()
+    public function getUid()
     {
-        return $this->catalog_object_id;
+        return $this->uid;
     }
   
     /**
-     * Sets catalog_object_id
-     * @param string $catalog_object_id The catalog object ID of a `CatalogModifier`.
+     * Sets uid
+     * @param string $uid Unique ID set by Square.
      * @return $this
      */
-    public function setCatalogObjectId($catalog_object_id)
+    public function setUid($uid)
     {
-        $this->catalog_object_id = $catalog_object_id;
+        $this->uid = $uid;
         return $this;
     }
     /**
@@ -130,31 +116,12 @@ class CreateOrderRequestModifier implements ArrayAccess
   
     /**
      * Sets name
-     * @param string $name Only used for ad hoc modifiers. The name of the modifier. `name` cannot exceed 255 characters.  Do not provide a value for `name` if you provide a value for `catalog_object_id`.
+     * @param string $name Selection name, unique within `allowed_selections`. Required. Min length of 1, max length of 255.
      * @return $this
      */
     public function setName($name)
     {
         $this->name = $name;
-        return $this;
-    }
-    /**
-     * Gets base_price_money
-     * @return \SquareConnect\Model\Money
-     */
-    public function getBasePriceMoney()
-    {
-        return $this->base_price_money;
-    }
-  
-    /**
-     * Sets base_price_money
-     * @param \SquareConnect\Model\Money $base_price_money The base price for the modifier.  `base_price_money` is required for ad hoc modifiers. If both `catalog_object_id` and `base_price_money` are set, `base_price_money` will override the predefined `CatalogModifier` price.
-     * @return $this
-     */
-    public function setBasePriceMoney($base_price_money)
-    {
-        $this->base_price_money = $base_price_money;
         return $this;
     }
     /**

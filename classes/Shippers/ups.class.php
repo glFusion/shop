@@ -190,13 +190,14 @@ class ups extends \Shop\Shipper
                 fclose ( $fw );*/
 
                 // get response status
-                $resp = new SimpleXMLElement ( $response );
-                $Tracking->addMeta($LANG_SHOP['tracking_num'], (string)$resp->Shipment->Package->TrackingNumber);
-                $Tracking->addMeta($LANG_SHOP['carrier'], self::getCarrierName());
+                $resp = new SimpleXMLElement ($response);
                 if ((string)$resp->Response->ResponseStatusCode == '0') {
                     $Tracking->addError($resp->Response->Error->ErrorCode . ': ' . $resp->Response->Error->ErrorDescription);
                     return $Tracking;
                 }
+                // Response is OK, populate the display
+                $Tracking->addMeta($LANG_SHOP['tracking_num'], (string)$resp->Shipment->Package->TrackingNumber);
+                $Tracking->addMeta($LANG_SHOP['carrier'], self::getCarrierName());
                 $Tracking->addMeta($LANG_SHOP['service'], $resp->Shipment->Service->Description);
                 if ($resp->Shipment->Package->DeliveryIndicator == 'Y') {
                     $Tracking->addMeta($LANG_SHOP['expected_dely'], (string)$this->_formatDate($resp->Shipment->Package->DeliveryDate), 'date');

@@ -179,7 +179,7 @@ class Order
             }
             $item_total = $item->price * $item->quantity;
             $this->subtotal += $item_total;
-            if ($P->taxable) {
+            if ($P->isTaxable()) {
                 $this->tax_items++;       // count the taxable items for display
             }
             $T->set_var(array(
@@ -192,7 +192,7 @@ class Order
                 'item_total'    => $Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
-                'taxable'       => $this->tax_rate > 0 ? $P->taxable : 0,
+                'taxable'       => $this->tax_rate > 0 ? $P->isTaxable() : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,

@@ -15,6 +15,7 @@ namespace Shop\Webhooks;
 use Shop\Payment;
 use Shop\Order;
 
+
 /**
  * Paypal webhook class.
  * @package shop
@@ -39,8 +40,8 @@ class paypal extends \Shop\Webhook
         // If so, extract the key fields and set Webhook variables.
         $data = $this->getData();
         if ($data) {     // Indicates that the blob was decoded
-            $this->setID(SHOP_getVar($this->getData(), 'id'));
-            $this->setEvent(SHOP_getVar($this->getData(), 'event_type'));
+            $this->setID(SHOP_getVar($data, 'id'));
+            $this->setEvent(SHOP_getVar($data, 'event_type'));
         }
     }
 
@@ -52,16 +53,16 @@ class paypal extends \Shop\Webhook
      */
     public function Dispatch()
     {
-            $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
-            if  ($resource) {
-                $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
-                if ($invoice) {
-                    $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
-                    if ($detail) {
-                        $this->setOrderID(SHOP_getVar($detail, 'reference'));
-                    }
+        $resource = SHOP_getVar($this->getData(), 'resource', 'array', NULL);
+        if  ($resource) {
+            $invoice = SHOP_getVar($resource, 'invoice', 'array', NULL);
+            if ($invoice) {
+                $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
+                if ($detail) {
+                    $this->setOrderID(SHOP_getVar($detail, 'reference'));
                 }
             }
+        }
         switch ($this->getEvent()) {
         case self::EV_PAYMENT:
             if ($invoice) {
@@ -70,6 +71,7 @@ class paypal extends \Shop\Webhook
                     // Get just the latest payment.
                     // If there are multiple payments for the order, all are included.
                     $payment = array_pop($payments['transactions']);
+                    $this->logIPN();
                     $Pmt = new Payment;
                     $Pmt->setRefID($this->getID())
                         ->setAmount($payment['amount']['value'])
@@ -83,7 +85,7 @@ class paypal extends \Shop\Webhook
             break;
 
         case self::EV_CREATED:
-            COM_errorLog("Invlice created for {$this->getOrderID()}");
+            COM_errorLog("Invoice created for {$this->getOrderID()}");
             $Order = Order::getInstance($this->getOrderID());
             if (!$Order->isNew()) {
                 $Order->updateStatus('invoiced');
@@ -132,11 +134,11 @@ class paypal extends \Shop\Webhook
             'cert_url' => $this->getHeader('Paypal-Cert-Url'),
             'auth_algo' => $this->getHeader('Paypal-Auth-Algo'),
             'transmission_sig' => $this->getHeader('Paypal-Transmission-Sig'),
-            'webhook_id' => '7AL053045J1030934',
-            //'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
+            //'webhook_id' => '7AL053045J1030934',
+            'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
             'webhook_event' => $this->getData(),
         );
-        //var_dump($body);die;
+
         $body = json_encode($body, JSON_UNESCAPED_SLASHES);
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $gw->getApiUrl() . '/v1/notifications/verify-webhook-signature');
@@ -151,16 +153,15 @@ class paypal extends \Shop\Webhook
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $status = false;
         if ($code != 200) {
-            var_dump($code);
-            var_dump($result);
+            SHOP_log("Error $code : $result");
             $status = false;
         } else {
             $result = @json_decode($result, true);
             if (!$result) {
-                COM_errorLog("Paypal WebHook verification result: Code $code, Data " . print_r($result,true));
+                COM_errorLog("Error: Code $code, Data " . print_r($result,true));
                 $status = false;
             } else {
-                var_dump($result);
+                SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
                 $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
             }
         }

@@ -142,8 +142,8 @@ class Tracking
 
         if (!empty($this->errors)) {
             $err_msg = '<p>' . implode('</p><p>', $this->errors) . '</p>';
+            $T->set_var('err_msg', $err_msg);
         }
-        $T->set_var('err_msg', $err_msg);
         $T->parse('output', 'tracking');
         return $T->finish($T->get_var('output'));
     }

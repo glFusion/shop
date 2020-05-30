@@ -28,46 +28,30 @@ class Gateway
      * @var string */
     private static $TABLE = 'shop.gateways';
 
-    /**
-     * Property fields.  Accessed via __set() and __get().
-     * This is for configurable properties of the gateway- URL, testing
-     * mode, etc.  Charactistics of the gateway itself (order, enabled, name)
-     * are held in protected class variables below.
-     *
-     * @var array
-     */
-    protected $properties;
-
     /** Items on this order.
      * @var array */
-    protected $items;
-
-    /** Error string or value, to be accessible by the calling routines.
-     * @var mixed */
-    public  $Error;
+    protected $items = array();
 
     /** The short name of the gateway, e.g. "shop" or "amazon".
      * @var string */
-    protected $gw_name;
+    protected $gw_name = '';
 
     /** The long name or description of the gateway, e.g. "Amazon SimplePay".
-     * @var string*/
-    protected $gw_desc;
+     * @var string */
+    protected $gw_desc = 'Unknown Payment Gateway';
 
     /** The provider name, e.g. "Amazon" or "Shop".
      * @var string; */
-    protected $gw_provider;
+    protected $gw_provider = '';
 
     /** Services (button types) provided by the gateway.
      * This is an array of button_name=>0/1 to indicate which services are available.
-     * @var array
-     */
+     * @var array */
     protected $services = NULL;
 
     /** The gateway's configuration items.
      * This is an associative array of name=>value elements.
-     * @var array
-     */
+     * @var array */
     protected $config = array();
 
     /** Configuration item names, to create the config form.
@@ -76,7 +60,7 @@ class Gateway
 
     /** The URL to the gateway's IPN processor.
      * @var string */
-    protected $ipn_url;
+    protected $ipn_url = '';
 
     /** Indicator of whether the gateway is enabled at all.
      * @var boolean */
@@ -84,19 +68,22 @@ class Gateway
 
     /** Order in which the gateway is selected.
      * Gateways are selected from lowest to highest order.
-     * @var integer
-     */
-    protected $orderby;
+     * @var integer */
+    protected $orderby = 999;
+
+    /** Environment configuration for prod or test.
+     * Also contains global settings. This is a subset of `$config`.
+     * @var array */
+    private $envconfig = array();
 
     /**
      * This is an array of custom data to be passed to the gateway.
      * How it is passed is up to the gateway, which uses the PrepareCustom()
      * function to get the array data into the desired format. AddCustom()
      * can be used to add items to the array.
-     *
      * @var array
      */
-    protected $custom;
+    protected $custom = array();
 
     /**
      * The URL to the payment gateway. This must be set by the derived class.
@@ -105,13 +92,11 @@ class Gateway
      *
      * @var string
      */
-    protected $gw_url;
+    protected $gw_url = '';
 
-    /**
-     * The postback URL for verification of IPN messages.
+    /** The postback URL for verification of IPN messages.
      * If not set the value of gw_url will be used.
-     * @var string
-     */
+     * @var string */
     protected $postback_url = NULL;
 
     /** Checkout button url.
@@ -128,13 +113,13 @@ class Gateway
 
     /** Language strings specific to this gateway.
      * @var array */
-    protected $lang;
+    protected $lang = array();
 
     /** ID of user group authorized to use this gateway.
      * This may be used for non-upfront payment terms such as check,
      * net 30 or COD.
      * @var integer */
-    protected $grp_access;
+    protected $grp_access = 0;
 
 
     /**
@@ -195,6 +180,7 @@ class Gateway
             $res = DB_query($sql);
             if ($res) $A = DB_fetchArray($res, false);
         }
+
         if (!empty($A)) {
             $this->orderby = (int)$A['orderby'];
             $this->enabled = (int)$A['enabled'];
@@ -207,25 +193,27 @@ class Gateway
                     }
                 }
             }
-
-            $props = @unserialize($A['config']);
-            if ($props) {
-                foreach ($props as $key=>$value) {
-                    if (array_key_exists($key, $this->cfgFields)) {
-                        if ($this->cfgFields[$key] == 'password') {
-                            // Decrypt the value. If decryption fails then the
-                            // string may not have been encrypted so use the
-                            // original.
-                            $decrypted = COM_decrypt($value);
-                            if ($decrypted !== '') {
-                                $value = $decrypted;
+            $cfg_arr = @unserialize($A['config']);
+            if ($cfg_arr) {
+                foreach ($cfg_arr as $env=>$props) {
+                    if (!is_array($props)) {
+                        continue;   // something bad happened
+                    }
+                    foreach ($props as $key=>$value) {
+                        if (array_key_exists($key, $this->cfgFields[$env])) {
+                            if ($this->cfgFields[$env][$key] == 'password') {
+                                $decrypted = COM_decrypt($value);
+                                if ($decrypted !== false) {
+                                    $value = $decrypted;
+                                }
                             }
+                            $this->config[$env][$key] = $value;
                         }
-                        $this->config[$key] = $value;
                     }
                 }
             }
         }
+        $this->setEnv();
 
         // The user ID is usually required, and doesn't hurt to add it here.
         $this->AddCustom('uid', $_USER['uid']);
@@ -327,8 +315,8 @@ class Gateway
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($P->pi_name);
-        $item_id = DB_escapeString($P->item_id);
+        $pi_name = DB_escapeString($P->getPluginName());
+        $item_id = DB_escapeString($P->getItemID());
         $btn_key = DB_escapeString($btn_key);
         $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
                 "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
@@ -361,7 +349,7 @@ class Gateway
             ON DUPLICATE KEY UPDATE
                 button = '{$btn_value}'";
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
     }
 
@@ -381,23 +369,25 @@ class Gateway
             $this->enabled = isset($A['enabled']) ? 1 : 0;
             $this->orderby = (int)$A['orderby'];
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
+            $this->test_mode = SHOP_getVar($A, 'test_mode', 'integer');
             $services = SHOP_getVar($A, 'service', 'array');
         }
-        foreach ($this->cfgFields as $name=>$type) {
-            switch ($type) {
-            case 'checkbox':
-                $value = isset($A[$name]) ? 1 : 0;
-                break;
-            case 'password':
-                $value = COM_encrypt($A[$name]);
-                break;
-             default:
-                $value = $A[$name];
-                break;
+        foreach ($this->cfgFields as $env=>$flds) {
+            foreach ($flds as $name=>$type) {
+                switch ($type) {
+                case 'checkbox':
+                    $value = isset($A[$name][$env]) ? 1 : 0;
+                    break;
+                case 'password':
+                    $value = COM_encrypt($A[$name][$env]);
+                    break;
+                default:
+                    $value = $A[$name][$env];
+                    break;
+                }
+                $this->setConfig($name, $value, $env);
             }
-            $this->setConfig($name, $value);
         }
-
         $config = @serialize($this->config);
         if (!$config) return false;
 
@@ -413,7 +403,7 @@ class Gateway
                 grp_access = '{$this->grp_access}'
                 WHERE id='$id'";
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         self::ClearButtonCache();   // delete all buttons for this gateway
         if (DB_error()) {
@@ -530,7 +520,8 @@ class Gateway
                     {$this->getEnabled()},
                     '" . DB_escapeString($this->gw_desc) . "',
                     '" . DB_escapeString($config) . "',
-                    '" . DB_escapeString($services) . "'
+                    '" . DB_escapeString($services) . "',
+                    1
                 )";
             DB_query($sql);
             Cache::clear('gateways');
@@ -579,24 +570,7 @@ class Gateway
 
 
     /**
-     * Check if the current gateway supports a specific button type.
-     *
-     * @uses    self::Supports()
-     * @param   string  $btn_type   Button type to check
-     * @return  boolean             True if the button is supported
-     */
-    protected function _Supports($btn_type)
-    {
-        $arr_parms = array(
-            'enabled' => $this->enabled,
-            'services' => $this->services,
-        );
-        return self::Supports($btn_type, $arr_parms);
-    }
-
-
-    /**
-     * Check if a gateway from the $_SHOP_CONF array supports a button type.
+     * Check if a gateway supports a button type.
      * The $gw_info parameter should be the array of info for a single gateway
      * if only that gateway is to be checked.
      *
@@ -638,7 +612,7 @@ class Gateway
     /**
      * Return the order status to be set when an IPN message is received.
      * The default is to mark the order "closed" for downloadable items,
-     * since no further processing is needed, and "paid" for other items.
+     * since no further processing is needed, and "processing" for other items.
      *
      * @param   object  $Order  Order object
      * @return  string          Status of the order
@@ -646,9 +620,9 @@ class Gateway
     public function getPaidStatus($Order)
     {
         if ($Order->hasPhysical()) {
-            $retval = Order::PROCESSING;
+            $retval = Order::STATUS_PROCESSING;
         } else {
-            $retval = Order::CLOSED;
+            $retval = Order::STATUS_CLOSED;
         }
         return $retval;
     }
@@ -673,13 +647,12 @@ class Gateway
 
         // Create an order record to get the order ID
         $Order = $this->CreateOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->order_id);
+        $db_order_id = DB_escapeString($Order->getOrderID());
 
         $prod_types = 0;
 
         // For each item purchased, record purchase in purchase table
         foreach ($items as $id=>$item) {
-            //SHOP_log("Processing item: $id", SHOP_LOG_DEBUG);
             list($item_number, $item_opts) = SHOP_explode_opts($id, true);
 
             // If the item number is numeric, assume it's an
@@ -731,9 +704,9 @@ class Gateway
                 $A = array(
                     'name' => $P->getName(),
                     'short_description' => $P->getDscp(),
-                    'expiration' => $P->expiration,
-                    'prod_type' => $P->prod_type,
-                    'file' => $P->file,
+                    'expiration' => $P->getExpiration(),
+                    'prod_type' => $P->getProductType(),
+                    'file' => $P->getFilename(),
                     'price' => $item['price'],
                 );
 
@@ -747,7 +720,7 @@ class Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= $P->prod_type;
+                $prod_types |= $P->getProductType();
             }
 
             // An invalid item number, or nothing returned for a plugin
@@ -818,8 +791,8 @@ class Gateway
 
         $ord = new Order();
         $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
-        $ord->uid = $uid;
-        $ord->status = 'pending';   // so there's something in the status field
+        $ord->setUid($uid);
+        $ord->setStatus('pending');   // so there's something in the status field
 
         if ($uid > 1) {
             $U = self::Customer($uid);
@@ -831,7 +804,7 @@ class Gateway
         }
 
         if (is_array($BillTo)) {
-            $ord->setBilling($BillTo);
+            $ord->setBillto($BillTo);
         }
 
         $ShipTo = $cart->getAddress('shipto');
@@ -839,16 +812,16 @@ class Gateway
             $ShipTo = $U->getDefaultAddress('shipto');
         }
         if (is_array($ShipTo)) {
-            $ord->setShipping($ShipTo);
+            $ord->setShipto($ShipTo);
         }
 
-        $ord->pmt_method = $this->gw_name;
-        $ord->pmt_txn_id = '';
+        $ord->setPmtMethod($this->gw_name);
+        //$ord->setPmtTxnId('');
         /*$ord->tax = $this->pp_data['pmt_tax'];
         $ord->shipping = $this->pp_data['pmt_shipping'];
         $ord->handling = $this->pp_data['pmt_handling'];*/
-        $ord->buyer_email = DB_getItem($_TABLES['users'], 'email', "uid=$uid");
-        $ord->log_user = COM_getDisplayName($uid) . " ($uid)";
+        $ord->setBuyerEmail(DB_getItem($_TABLES['users'], 'email', "uid=$uid"));
+        $ord->setLogUser(COM_getDisplayName($uid) . " ($uid)");
 
         //$order_id = $ord->Save();
         //return $order_id;
@@ -899,7 +872,7 @@ class Gateway
     {
         global $_SHOP_CONF, $_USER;
 
-        if (!$this->_Supports('checkout')) return '';
+        if (!$this->Supports('checkout')) return '';
 
         $gateway_vars = $this->gatewayVars($cart);
         $T = SHOP_getTemplate('btn_checkout', 'btn', 'templates/buttons');
@@ -1037,29 +1010,6 @@ class Gateway
     }
 
 
-    //
-    //  The following functions MUST be declared in each derived class.
-    //  There is no way that these can deliver reasonable default behavior.
-    //  Technically, __set() is optional; you can populate the $properties array
-    //  manually or use actual local variables, but to reference your
-    //  gateway's undefined local variables as $this->varname you'll need a
-    //  __set() function.  Otherwise, they'll be created on demand, but
-    //  retrieved via our __get() function which only looks at the local
-    //  $properties variable.
-    //
-
-    /**
-     * Magic setter function.
-     * Must be declared in the child object.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
-     */
-    public function __set($key, $value)
-    {
-    }
-
-
     /**
      * Get the variables to display with the IPN log.
      * This gets the variables from the gateway's IPN data into standard
@@ -1116,22 +1066,29 @@ class Gateway
         ), false, false);
 
         $fields = $this->getConfigFields();
-        $T->set_block('tpl', 'ItemRow', 'IRow');
-        foreach ($fields as $name=>$field) {
-            // Format the parameter name nicely for the form
-            if (isset($this->lang[$name])) {
-                $prompt = $this->lang[$name];
-            } else {
-                $parts = array_map('ucfirst', explode('_', $name));
-                $prompt = implode(' ', $parts);
+        foreach ($this->cfgFields as $env=>$flds) {
+            $fields = $this->getConfigFields($env);
+            if (empty($fields)) {
+                continue;
             }
-            $T->set_var(array(
-                'param_name'    => $prompt,
-                'field_name'    => $name,
-                'param_field'   => $field['param_field'],
-                'other_label'   => isset($field['other_label']) ? $field['other_label'] : '',
-            ) );
-            $T->parse('IRow', 'ItemRow', true);
+            $T->set_var('have_' . $env, true);
+            $T->set_block('tpl', $env . 'Row', 'Row' . $env);
+            foreach ($fields as $name=>$field) {
+                // Format the parameter name nicely for the form
+                if (isset($this->lang[$name])) {
+                    $prompt = $this->lang[$name];
+                } else {
+                    $parts = array_map('ucfirst', explode('_', $name));
+                    $prompt = implode(' ', $parts);
+                }
+                $T->set_var(array(
+                    'param_name'    => $prompt,
+                    'field_name'    => $name,
+                    'param_field'   => $field['param_field'],
+                    'other_label'   => isset($field['other_label']) ? $field['other_label'] : '',
+                ) );
+                $T->parse('Row' . $env, $env . 'Row', true);
+            }
         }
         $T->parse('output', 'tpl');
         $form = $T->finish($T->get_var('output'));
@@ -1143,30 +1100,34 @@ class Gateway
      * Get all the configuration fields specifiec to this gateway.
      * Can be overridden by a specific gateway if necessary
      *
+     * @param   string  $env    Environment (test, prod or global)
      * @return  array   Array of fields (name=>field_info)
      */
-    protected function getConfigFields()
+    protected function getConfigFields($env='global')
     {
         $fields = array();
-        //foreach($this->getConfig() as $name=>$value) {
-        foreach ($this->cfgFields as $name=>$type) {
+        if (!array_key_exists($env, $this->cfgFields)) {
+            return $fields;
+        }
+        foreach ($this->cfgFields[$env] as $name=>$type) {
+            $fld_name = "{$name}[{$env}]";
             switch ($type) {
             case 'checkbox':
-                $field = '<input type="checkbox" name="' . $name .
+                $field = '<input type="checkbox" name="' . $fld_name .
                     '" value="1" ';
-                if ($this->getConfig($name) == 1) {
+                if ($this->config[$env][$name] == 1) {
                     $field .= 'checked="checked" ';
                 }
                 $field .= '/>';
                 break;
             default:
-                $field = '<input type="text" name="' . $name . '" value="' .
-                    $this->getConfig($name) . '" size="60" />';
+                $field = '<input type="text" name="' . $fld_name . '" value="' .
+                    $this->config[$env][$name] . '" size="60" />';
                 break;
             }
             $fields[$name] = array(
                 'param_field'   => $field,
-                'other_label'   => $other_label,
+                //'other_label'   => '',
                 'doc_url'       => '',
             );
         }
@@ -1193,7 +1154,7 @@ class Gateway
             if (class_exists($gw)) {
                 $gateways[$gw_name] = new $gw($A);
             } else {
-                $gateways[$gw_name] = NULL;
+                $gateways[$gw_name] = new self;
             }
         }
         return $gateways[$gw_name];
@@ -1243,6 +1204,7 @@ class Gateway
 
     /**
      * Get the value of a single configuration item.
+     * setEnv() must be called first to set up the environment config.
      *
      * @param   string  $cfgItem    Name of field to get
      * @return  mixed       Value of field, empty string if not defined
@@ -1251,10 +1213,10 @@ class Gateway
     {
         if ($cfgItem == '') {
             // Get all items at once
-            return $this->config;
+            return $this->envconfig;
             // Get a single item
-        } elseif (array_key_exists($cfgItem, $this->config)) {
-            return $this->config[$cfgItem];
+        } elseif (array_key_exists($cfgItem, $this->envconfig)) {
+            return $this->envconfig[$cfgItem];
         } else {
             // Item specified but not found, return empty string
             return '';
@@ -1269,7 +1231,53 @@ class Gateway
      */
     public function isSandbox()
     {
-        return $this->getConfig('test_mode');
+        if (
+            isset($this->config['global']['test_mode']) &&
+            $this->config['global']['test_mode']
+        ) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Get the configuration settings for a specific environment.
+     *
+     * @param   string  $env    Environment (test, prod or global)
+     * @return  array       Configuration array
+     */
+    public function getEnvConfig($env='global')
+    {
+        return $this->config[$env];
+    }
+
+
+    /**
+     * Set the current environment, normally 'prod' or 'test'.
+     * Gets the environment configuration into the `envconfig` property
+     * and merges in the global configuration.
+     * If an environment is not specified, either 'test' or 'prod is selected
+     * based on the `test_mode` setting.
+     *
+     * @param   string  $env    Selected Environment
+     * @return  object  $this
+     */
+    public function setEnv($env=NULL)
+    {
+        if ($env === NULL) {
+            $env = $this->isSandbox() ? 'test' : 'prod';
+        }
+        $cfg = array();
+        if (isset($this->config[$env])) {
+            $cfg = $this->config[$env];
+        }
+        if (isset($this->config['global'])) {
+            $cfg = array_merge($cfg, $this->config['global']);
+        }
+        $this->envconfig = $cfg;
+        return $this;
     }
 
 
@@ -1323,7 +1331,7 @@ class Gateway
      */
     public function getCheckoutJS($cart)
     {
-        return 'finalizeCart("' . $cart->order_id . '","' . $cart->uid . '", this); return true;';
+        return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", this); return true;';
     }
 
 
@@ -1385,11 +1393,12 @@ class Gateway
      *
      * @param   string  $key    Name of configuration item
      * @param   mixed   $value  Value to set
+     * @param   string  $env    Environment (test, prod or global)
      * @return  object  $this
      */
-    public function setConfig($key, $value)
+    public function setConfig($key, $value, $env)
     {
-        $this->config[$key] = $value;
+        $this->config[$env][$key] = $value;
         return $this;
     }
 
@@ -1398,12 +1407,10 @@ class Gateway
      * Set a gateway ID as the selected one to remember between orders.
      *
      * @param   string  $gw_id  Gateway ID
-     * @return  object  $this
      */
     public static function setSelected($gw_id)
     {
         SESS_setVar('shop_gateway_sel', $gw_id);
-        return $this;
     }
 
 
@@ -1432,6 +1439,8 @@ class Gateway
 
     /**
      * Check if this gateway allows an order to be processed without an IPN msg.
+     * Orders fully paid by gift card or otherwise free get processed without
+     * a payment gateway being used.
      *
      * @return  boolean     True if no IPN required, default = false
      */
@@ -1673,6 +1682,7 @@ class Gateway
     /**
      * Check that the current user is allowed to use this gateway.
      * This limits access to special gateways like 'check' or 'terms'.
+     * Actual gateways such as Paypal also won't handle an amount of zero.
      *
      * @param   float   $total  Total order amount
      * @return  boolean     True if access is allowed, False if not
@@ -1731,6 +1741,19 @@ class Gateway
     public function processOrder($order_id)
     {
         return true;
+    }
+
+
+    /**
+     * Check if the gateway is valid by checking that $gw_name is set.
+     * Used in case getInstance() returns a generic gateway instance when
+     * the requested gateway is not available.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function isValid()
+    {
+        return $this->gw_name != '';
     }
 
 }   // class Gateway

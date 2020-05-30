@@ -28,24 +28,14 @@
     <div class="uk-container uk-container-center uk-margin-bottom">
       <h1>glFusion Shop Plugin Configuration</h1>
 
-      <dl id="desc_bus_prod_email">
+      <dl id="desc_receiver_email">
         <dt>Main Business Email</dt>
         <dd>This is the &quot;Regular&quot; account e-mail for PayPal.  If you have only one account, this must contain it even if it is a &quot;micro-payment&quot; account.</dd>
       </dl>
 
-      <dl id="desc_micro_prod_email">
-        <dt>Production Micro-Payment Email</dt>
-        <dd>This is your Production &quot;Micro-payment&quot; account e-mail, if you have one. If you don't have a micro-payment account, this should contain you regular account email.</dd>
-      </dl>
-
-      <dl id="desc_bus_test_email">
-        <dt>Sandbox Business Email</dt>
-        <dd>This is the &quot;Regular Sandbox&quot; account e-mail with PayPal. This is used for testing.</dd>
-      </dl>
-
-      <dl id="desc_micro_test_email">
-        <dt>Sandbox Micro-Payment Email</dt>
-        <dd>This is your Sandbox &quot;Micro-payment&quot; account e-mail, if you have one. If you don't have a micro-payment account, this should contain you regular account email. This is used for testing.</dd>
+      <dl id="desc_micro_receiver_email">
+        <dt>Micro-Payment Email</dt>
+        <dd>This is your &quot;Micro-payment&quot; account e-mail, if you have one. If you don't have a micro-payment account, this should contain you regular account email.</dd>
       </dl>
 
       <dl id="desc_test_mode">
@@ -80,16 +70,6 @@ If encryption fails, regular HTML buttons are used.  Encryption requires several
         <dd>If you use micro-payments, you must upload your public certificate to <b>both</b> accounts.  Enter the certificate ID created by PayPal for your micro-payment account.</dd>
       </dl>
 
-      <dl id="desc_sandbox_main_cert">
-        <dt>Sandbox Certificate ID</dt>
-        <dd>Enter the certificate ID created by PayPal and assigned to your public key <b>for your Main Sandbox account</b>. This is required so that PayPal can decrypt your encrypted button data.</dd>
-      </dl>
-
-      <dl id="desc_sandbox_micro_cert">
-        <dt>Sandbox Micro-Payment Certificate ID</dt>
-        <dd>If you use micro-payments, you must upload your public certificate to <b>both</b> accounts. Enter the certificate ID created by PayPal for your <b>Sandbox</b> micro-paymanet account.</dd>
-      </dl>
-
       <dl id="desc_prv_key">
         <dt>Private Key File</dt>
         <dd>Enter the complete path to your private SSL key file. This file <b>must</b> be readable by your web server and should <b>not</b> be placed in a publically-accessible directory. The security of your encrypted PayPal buttons depends upon this key remaining private.</dd>
@@ -100,14 +80,9 @@ If encryption fails, regular HTML buttons are used.  Encryption requires several
         <dd>Enter the complete path to the public SSL key file that you've provided to Paypal. This file <b>must</b> be readable by your web server and should <b>not</b> be placed in a publically-accessible directory, despite its name.</dd>
       </dl>
 
-      <dl id="desc_prod_url">
-        <dt>PayPal URL- Production</dt>
-        <dd>Enter the production PayPal URL, e.g. &quot;https://www.paypal.com&quot;</dd>
-      </dl>
-
-      <dl id="desc_sandbox_url">
-        <dt>PayPal URL- Sandbox</dt>
-        <dd>Enter the PayPal Sandbox URL, e.g. &quot;https://www.sandbox.paypal.com&quot;</dd>
+      <dl id="desc_endpoint">
+        <dt>PayPal URL</dt>
+        <dd>Enter the PayPal URL, e.g. &quot;https://www.paypal.com&quot; (for production).</dd>
       </dl>
 
       <dl id="desc_enabled">
@@ -120,6 +95,16 @@ If encryption fails, regular HTML buttons are used.  Encryption requires several
         <dd><p>Select the buttons that are supported by this gateway. This is primarily meant to reduce clutter in blocks and product lists, where you may want only one gateway handling immediate purchases. In some cases, a gateway may not be able to handle a type of service, such as donations.</p>
 <p>If this is the only gateway in use, then all button types should be checked.</p>
         </dd>
+      </dl>
+
+      <dl id="desc_api_username">
+          <dt>API Username</dt>
+          <dd>Enter the API username associated with your application at Paypal. Required to use the Net Terms payment gateway.</dd>
+      </dl>
+
+      <dl id="desc_api_password">
+          <dt>API Password</dt>
+          <dd>Enter the API password for your application. Required to use the Net Terms payment gateway.</dd>
       </dl>
 
       <dl id="desc_grp_access">

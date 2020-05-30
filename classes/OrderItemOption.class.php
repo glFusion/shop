@@ -28,18 +28,33 @@ class OrderItemOption
      * @var boolean */
     private $isEmpty = true;
 
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
+    /** OrderItemOption DB record ID.
+     * @var integer */
+    private $oio_id = 0;
 
-    /** Fields for an OrderItemOption record.
-     * @var array */
-    private static $fields = array(
-        'oio_id', 'oi_id',
-        'pog_id', 'pov_id',
-        'oio_name', 'oio_value',
-        'oio_price',
-    );
+    /** Related OrderItem DB record ID.
+     * @var integer */
+    private $oi_id = 0;
+
+    /** ProductOptionGroup record ID.
+     * @var integer */
+    private $pog_id = 0;
+
+    /** ProductOptionValue record ID.
+     * @var integer */
+    private $pov_id = 0;
+
+    /** Option Name for display.
+     * @var string */
+    private $oio_name = '';
+
+    /** Option Value.
+     * @var string */
+    private $oio_value = '';
+
+    /** Incremental option price.
+     * @var float */
+    private $oio_price = 0;
 
     /**
      * Constructor.
@@ -99,72 +114,45 @@ class OrderItemOption
      * Set the object variables from an array.
      *
      * @param   array   $A      Array of values
-     * @return  boolean     True on success, False if $A is not an array
+     * @return  object  $this
      */
     public function setVars($A)
     {
-        if (!is_array($A)) return false;
-        foreach (self::$fields as $field) {
-            if (isset($A[$field])) {
-                $this->$field = $A[$field];
-            }
-        }
-        return true;
+        $this->oio_id = (int)$A['oio_id'];
+        $this->oi_id = (int)$A['oi_id'];
+        $this->pog_id = (int)$A['pog_id'];
+        $this->pov_id = (int)$A['pov_id'];
+        $this->oio_name = $A['oio_name'];
+        $this->oio_value = $A['oio_value'];
+        $this->oio_price = $A['oio_price'];
+        return $this;
     }
 
 
     /**
-     * Setter function.
+     * Set the OrderItem record ID property.
      *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
+     * @param   integer $id     OrderItem record ID
+     * @return  object  $this
      */
-    public function __set($key, $value)
+    public function setOrderItemID($id)
     {
-        switch ($key) {
-        case 'oio_id':
-        case 'oi_id':
-        case 'pog_id':
-        case 'pov_id':
-            $this->properties[$key] = (int)$value;
-            break;
-        case 'oio_price':
-            $this->properties[$key] = (float)$value;
-            break;
-        default:
-            $this->properties[$key] = trim($value);
-            break;
-        }
-    }
-
-
-    /**
-     * Getter function.
-     *
-     * @param   string  $key    Property to retrieve
-     * @return  mixed           Value of property, NULL if undefined
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        $this->oi_id = (int)$id;
+        return $this;
     }
 
 
     /**
      * Get the options associated with an order item.
      *
-     * @param   object  $Item   OrderItem
+     * @param   object  $Item   OrderItem object
      * @return  array       Array of OrderItemOption objects
      */
     public static function getOptionsForItem($Item)
     {
         global $_TABLES;
 
-        if ($Item->id < 1) {
+        if ($Item->getID() < 1) {
             // Catch bad or empty Item objects
             return $retval;
         }
@@ -173,7 +161,7 @@ class OrderItemOption
         //if ($retval === NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oi_id = {$Item->id}
+                WHERE oi_id = {$Item->getID()}
                 ORDER BY oio_id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {

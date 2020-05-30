@@ -76,26 +76,49 @@ class Address
      * @var string */
     protected $table = 'shop.addresses';
 
+    /** Address field names.
+     * @var array */
+    protected $_fields = array(
+        'name', 'company', 'address1', 'address2',
+        'city', 'state', 'zip', 'country',
+    );
+
 
     /**
      * Load the supplied address values, if any, into the properties.
      * `$data` may be an array or a json_encoded string.
      *
      * @param   string|array    $data   Address data
-     * @return  object          $this
      */
     public function __construct($data=array())
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $_USER;
 
         if (!is_array($data)) {
             // Allow for a JSON string to be provided.
             $data = json_decode($data, true);
         }
-        if (!is_array($data)) {
-            $data = array();
+        if (is_array($data)) {
+            $this->setVars($data);
         }
-        return $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
+        if ($this->uid < 1) {
+            // in case an empty object is being created, set the user ID
+            $this->setUid($_USER['uid']);
+        }
+    }
+
+
+    /**
+     * Set all the properties from a provided array.
+     *
+     * @param   array   $data   Array of property name->value pairs
+     * @return  object  $this
+     */
+    public function setVars($data)
+    {
+        global $_SHOP_CONF;
+
+        $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
             ->setID(SHOP_getVar($data, 'addr_id', 'integer'))
             ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
             ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'))
@@ -106,7 +129,10 @@ class Address
             ->setCity(SHOP_getVar($data, 'city'))
             ->setState(SHOP_getVar($data, 'state'))
             ->setPostal(SHOP_getVar($data, 'zip'))
-            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']));
+            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']))
+            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
+            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'));
+        return $this;
     }
 
 
@@ -122,19 +148,23 @@ class Address
         static $addrs = array();
 
         $addr_id = (int)$addr_id;
-        if (isset($addrs[$addr_id])) {
-            return new self($addrs[$addr_id]);
-        } else {
-            $res = DB_query("SELECT *
-                FROM {$_TABLES['shop.address']}
-                WHERE addr_id = '{$addr_id}'");
-            if ($res) {
-                $A = DB_fetchArray($res, true);
-                $addrs[$addr_id] = $A;
-                return new self($A);
+        if ($addr_id > 0) {
+            if (isset($addrs[$addr_id])) {
+                return new self($addrs[$addr_id]);
             } else {
-                return new self;
+                $res = DB_query("SELECT *
+                    FROM {$_TABLES['shop.address']}
+                    WHERE addr_id = '{$addr_id}'");
+                if ($res) {
+                    $A = DB_fetchArray($res, true);
+                    $addrs[$addr_id] = $A;
+                    return new self($A);
+                } else {
+                    return new self;
+                }
             }
+        } else {
+            return new self;
         }
     }
 
@@ -683,7 +713,8 @@ class Address
 
         if (!isset($parts[$this->name])) {
             $parts[$this->name] = array();
-            $status = PLG_invokeService('lglib', 'parseName',
+            $status = LGLIB_invokeService(
+                'lglib', 'parseName',
                 array(
                     'name' => $this->name,
                 ),
@@ -701,6 +732,35 @@ class Address
 
 
     /**
+     * Edit an address record.
+     *
+     * @return  string  HTML for editing form
+     */
+    public function Edit()
+    {
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file('form', 'editaddress.thtml');
+        $T->set_var(array(
+            'addr_id' => $this->addr_id,
+            'uid' => $this->uid,
+            'name' => $this->name,
+            'company' => $this->company,
+            'address1' => $this->address1,
+            'address2' => $this->address2,
+            'city' => $this->city,
+            'state' => $this->state,
+            'zip' => $this->zip,
+            'country_options' => Country::optionList($this->country),
+            'state_options' => State::optionList($this->country, $this->state),
+            'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
+            'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
+        ) );
+        $T->parse('output', 'form');
+        return  $T->finish($T->get_var('output'));
+    }
+
+
+    /**
      * Save the address to the database.
      *
      * @return  integer     Record ID of address, zero on error
@@ -708,6 +768,11 @@ class Address
     public function Save()
     {
         global $_TABLES;
+
+        if ($this->uid < 2) {
+            // Got an invalid user ID, don't save.
+            return 0;
+        }
 
         if ($this->addr_id > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.address']} SET ";
@@ -741,16 +806,19 @@ class Address
             // If this is the new default address, turn off the other default
             foreach (array('billto', 'shipto') as $type) {
                 if ($this->isDefault($type)) {
-                    DB_query(
-                        "UPDATE {$_TABLES['shop.address']}
-                        SET {$type}_def = 0
-                        WHERE addr_id <> '" . $this->addr_id . "' AND {$type}_def = 1"
-                    );
+                    $sql = "UPDATE {$_TABLES['shop.address']}
+                        SET {$type}_def = 0 WHERE
+                        uid = {$this->uid}
+                        AND addr_id <> {$this->addr_id}
+                        AND {$type}_def = 1";
+                    DB_query($sql);
                 }
             }
+            Cache::clear('shop.user_' . $this->uid);
+            return $this->addr_id;
+        } else {
+            return 0;
         }
-        Cache::clear('shop.user_' . $this->uid);
-        return $this->addr_id;
     }
 
 
@@ -762,8 +830,7 @@ class Address
     public function toArray()
     {
         return array(
-            'addr_id'   => $this->addr_id,
-            'uid'       => $this->uid,
+            'id'        => $this->addr_id,
             'name'      => $this->name,
             'company'   => $this->company,
             'address1'  => $this->address1,
@@ -771,39 +838,79 @@ class Address
             'city'      => $this->city,
             'state'     => $this->state,
             'zip'       => $this->zip,
-            'country'       => $this->country,
+            'country'   => $this->country,
         );
+    }
+
+
+    /**
+     * Load data from an array into the object.
+     *
+     * @param   array   $A      Array of data
+     * @param   string  $prefix Optional prefix used in array indexes
+     * @return  object  $this
+     */
+    public function fromArray($A, $prefix='')
+    {
+        if ($prefix !== '') {
+            $prefix .= '_';
+        }
+        foreach ($this->_fields as $fldname) {
+            $var = $prefix . $fldname;
+            if (isset($A[$var])) {
+                $this->$fldname = $A[$var];
+            } else {
+                $this->$fldname = '';
+            }
+        }
+        return $this;
     }
 
 
     /**
      * Validate the address components.
      *
+     * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid()
+    public function isValid($required=false)
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
         $invalid = array();
         $retval = '';
 
-        if ($this->name == '' && $this->company == '') {
+        if (empty($this->name) && empty($this->company)) {
             $invalid[] = 'name_or_company';
         }
-        if ($_SHOP_CONF['get_street'] == 2 && $this->address1 == '') {
+        if (
+            ($required || $_SHOP_CONF['get_street'] == 2)
+            && empty($this->address1)
+        ) {
             $invalid[] = 'address1';
         }
-        if ($_SHOP_CONF['get_city'] == 2 && $this->city == '') {
+        if (
+            ($required || $_SHOP_CONF['get_city'] == 2)
+            && empty($this->city)
+        ) {
             $invalid[] = 'city';
         }
-        if ($_SHOP_CONF['get_state'] == 2 && $this->state == '') {
+        if (
+            ($required || $_SHOP_CONF['get_state'] == 2)
+            && empty($this->state)
+        ) {
             $invalid[] = 'state';
         }
-        if ($_SHOP_CONF['get_postal'] == 2 && $this->zip == '') {
+        if (
+            ($required || $_SHOP_CONF['get_postal'] == 2)
+            && empty($this->zip)
+        ) {
             $invalid[] = 'zip';
         }
-        if ($_SHOP_CONF['get_country'] == 2 && $this->country == '') {
+        if (
+            ($required || $_SHOP_CONF['get_country'] == 2)
+            && $this->country == ''
+        ) {
             $invalid[] = 'country';
         }
 
@@ -890,8 +997,8 @@ class Address
             ->setCountry($Addr->getCountry())
             ->setPhone($Addr->getPhone());
         if ($all) {
-            $this->setDefaultBillto($Addr->isDefaultBillto())
-                ->setDefaultShipto($Addr->isDefaultShipto())
+            $this->setBilltoDefault($Addr->isDefaultBillto())
+                ->setShiptoDefault($Addr->isDefaultShipto())
                 ->setUid($Addr->getUid());
         }
         return $this;

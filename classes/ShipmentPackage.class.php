@@ -21,10 +21,6 @@ namespace Shop;
  */
 class ShipmentPackage
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
-
     /** Package record ID.
      * @var integer */
     private $pkg_id;
@@ -242,7 +238,7 @@ class ShipmentPackage
      *
      * @return  string      Tracking number
      */
-    public function getTrackingNum()
+    public function getTrackingNumber()
     {
         return $this->tracking_num;
     }

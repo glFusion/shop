@@ -1,17 +1,19 @@
 {# begin {templatelocation} #}
     <h2>{$LANG_SHOP['select_addr']}</h2>
 <div class="uk-modal-dialog uk-width-1-1">
-    <form action="{site_url}/shop/cart.php?" method="post">
+    <form action="{save_url}" method="post">
         <input type="hidden" name="addr[1]" value="{address1_json}" />
         <input type="hidden" name="addr[2]" value="{address2_json}" />
         <input type="hidden" name="next_step" value="{next_step}" />
         <div class="uk-width-1-2" style="float:left;">
+            <h3>{$LANG_SHOP['as_entered']}:</h3>
             <p>{address1_html}</p>
             <p style="text-align:center">
                 <button class="uk-button uk-button-success" name="save{ad_type}" value="1">{$LANG_SHOP['use_this_addr']}</button>
             </p>
         </div
         <div class="uk-width-1-2" style="float:left;">
+            <h3>{$LANG_SHOP['validated']}:</h3>
             <p>{address2_html}</p>
             <p style="text-align:center">
                 <button class="uk-button uk-button-success" name="save{ad_type}" value="2">{$LANG_SHOP['use_this_addr']}</button>

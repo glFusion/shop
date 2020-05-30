@@ -3,9 +3,9 @@
  * Class to handle currency display.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2014-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2014-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -19,9 +19,69 @@ namespace Shop;
  */
 class Currency
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
+    /** Currency code.
+     * @var string */
+    private $code = '';
+
+    /** Currency symbol.
+     * @var string */
+    private $symbol = '';
+
+    /** Currency full name.
+     * @var string */
+    private $name = '';
+
+    /** Symbol placement, either `before` or `after`.
+     * @var string */
+    private $symbol_placement = 'before';
+
+    /** Space character between symbol and currency amount.
+     * @var string */
+    private $symbol_spacer = '';
+
+    /** Code placement when shown, either `before` or `after`.
+     * @var string */
+    private $code_placement = 'after';
+
+    /** Character used to separate thousands.
+     * @var string */
+    private $thousands_sep = ',';
+
+    /** Character used as a decimal point. Some use a comma.
+     * @var string */
+    private $decimals_sep = '.';
+
+    /** Major currency unit, e.g. `dollars`.
+     * @var string */
+    private $major_unit = '';
+
+    /** Minor currency unit, e.g. `cents`.
+     * @var string */
+    private $minor_unit = '';
+
+    /** Timestamp when currency was last converted.
+     * Date-time string.
+     * @var string */
+    private $conversion_ts = '';
+
+    /** ISO numeric currency code.
+     * @var integer */
+    private $numeric_code = 0;
+
+    /** Number of decimal places.
+     * @var integer */
+    private $decimals = 2;
+
+    /** Rounding of the minor unit with a currency specific step size.
+     * For example, Swiss Francs are rounded using a step size of 0.05.
+     * This means a price of 10.93 is converted to 10.95.
+     * @var float */
+    private $rounding_step = .01;
+
+    /** Conversion_rate. Not used.
+     * @var float */
+    private $conversion_rate = 0;
+
 
     /**
      * Constructor. Simply sets an initial default currency.
@@ -58,75 +118,29 @@ class Currency
 
 
     /**
-     * Set a property value.
-     *
-     * @param   string  $key    Property Name
-     * @param   mixed   $value  Property Value
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'code':
-        case 'symbol':
-        case 'name':
-        case 'symbol_placement':
-        case 'symbol_spacer':
-        case 'code_placement':
-        case 'thousands_sep':
-        case 'decimals_sep':
-        case 'major_unit':
-        case 'minor_unit':
-        case 'conversion_ts':
-            $this->properties[$key] = trim($value);
-            break;
-
-        case 'numeric_code':
-        case 'decimals':
-            $this->properties[$key] = (int)$value;
-            break;
-
-        case 'rounding_step':
-        case 'conversion_rate':
-            $this->properties[$key] = (float)$value;
-            break;
-        }
-    }
-
-
-    /**
-     * Get a property value
-     *
-     * @param   string  $key    Property Name
-     * @return  mixed           Property Value, NULL if not set
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
-    }
-
-
-    /**
      * Set all the record values into properties.
      *
      * @param   array   $A      Array of key->value pairs
+     * @return  object  $this
      */
     public function setVars($A)
     {
-        $fields = array(
-            'code', 'symbol', 'name', 'numeric_code',
-            'symbol_placement', 'symbol_spacer',
-            'code_placement', 'decimals',
-            'rounding_step', 'thousands_sep', 'decimal_sep',
-            'major_unit', 'minor_unit',
-            'conversion_rate', 'conversion_ts',
-        );
-        foreach ($fields as $field) {
-            $this->$field = $A[$field];
-        }
+        $this->code = $A['code'];
+        $this->symbol = $A['symbol'];
+        $this->name = $A['name'];
+        $this->numeric_code = (int)$A['numeric_code'];
+        $this->symbol_placement = $A['symbol_placement'];
+        $this->symbol_spacer = $A['symbol_spacer'];
+        $this->code_placement = $A['code_placement'];
+        $this->decimals = (int)$A['decimals'];
+        $this->rounding_step = (float)$A['rounding_step'];
+        $this->thousands_sep = $A['thousands_sep'];
+        $this->decimal_sep = $A['decimal_sep'];
+        $this->major_unit = $A['major_unit'];
+        $this->minor_unit = $A['minor_unit'];
+        $this->conversion_rate = $A['conversion_rate'];
+        $this->conversion_ts = $A['conversion_ts'];
+        return $this;
     }
 
 
@@ -186,7 +200,7 @@ class Currency
      */
     public function Decimals()
     {
-        return $this->decimals;
+        return (int)$this->decimals;
     }
 
 
@@ -203,7 +217,6 @@ class Currency
             if ($this->symbol_placement == 'before') {
                 $prefix .= $this->symbol . $this->symbol_spacer;
             }
-
             if ($this->code_placement == 'before') {
                 $prefix .= $this->code . $this->code_spacer;
             }
@@ -460,6 +473,26 @@ class Currency
         return $retval;
     }
 
+
+    /**
+     * Format a money field using the default currency type.
+     *
+     * @param   float   $amt    Amount
+     * @param   boolean $sign   True to show currency sign
+     * @return  string  Formatted currency string
+     */
+    public static function formatMoney($amt, $sign=false)
+    {
+        static $Cur = NULL;
+        if ($Cur === NULL) {
+            $Cur = self::getInstance();
+        }
+        if ($sign) {
+            return $Cur->Format((float)$amt);
+        } else {
+            return $Cur->FormatValue((float)$amt);
+        }
+    }
 
 }
 

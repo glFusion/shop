@@ -43,10 +43,10 @@ class authorizenet extends \Shop\IPN
 
         switch(SHOP_getVar($A, 'eventType')) {
         case 'net.authorize.payment.authcapture.created':
-            $this->setStatus(self::PAID);
+            $this->setStatus(self::STATUS_PAID);
             break;
         default:
-            $this->setStatus(self::PENDING);
+            $this->setStatus(self::STATUS_PENDING);
             break;
         }
         $this->ipn_data['status'] = $this->getStatus();
@@ -66,7 +66,7 @@ class authorizenet extends \Shop\IPN
     {
         if (
             !$this->Verify() ||
-            self::PAID != $this->getStatus() ||
+            self::STATUS_PAID != $this->getStatus() ||
             !$this->isUniqueTxnId()
         ) {
             SHOP_log(
@@ -79,7 +79,7 @@ class authorizenet extends \Shop\IPN
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->Log(true);
 
-        SHOP_log("Received $item_gross gross payment", SHOP_LOG_DEBUG);
+        SHOP_log("Received {$this->pmt_gross} gross payment", SHOP_LOG_DEBUG);
         return $this->handlePurchase();
     }
 
@@ -94,14 +94,13 @@ class authorizenet extends \Shop\IPN
      */
     private function Verify()
     {
-        /*if (isset($this->ipn_data['shop_test_ipn'])) {
+        if (isset($this->ipn_data['shop_test_ipn'])) {
             // Use the order ID provided in the constructor to get the order
             $this->Order = $this->getOrder($this->getOrderId());
             SHOP_log("Testing IPN, automatically returning true");
             return true;
-    }*/
+        }
 
-        //if ($this->isEmpty('txn_id')) {
         if (empty($this->getTxnId())) {
             SHOP_log("Authorize.net IPN: txn_id is empty", SHOP_LOG_ERROR);
             return false;

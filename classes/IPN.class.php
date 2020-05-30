@@ -22,7 +22,8 @@
  * @filesource
  */
 namespace Shop;
-
+use Shop\Logger\IPN as logIPN;
+use Shop\Products\Coupon;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -39,10 +40,10 @@ if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
  */
 class IPN
 {
-    const PAID = 'paid';
-    const PENDING = 'pending';
-    const REFUNDED = 'refunded';
-    const CLOSED = 'closed';
+    const STATUS_PAID = 'paid';
+    const STATUS_PENDING = 'pending';
+    const STATUS_REFUNDED = 'refunded';
+    const STATUS_CLOSED = 'closed';
 
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
@@ -80,6 +81,10 @@ class IPN
      * @var string */
     private $txn_id = '';
 
+    /** Payment date/time.
+     * @var object */
+    private $txn_date = NULL;
+
     /** Payer email.
      * @var string */
     private $payer_email = '';
@@ -111,6 +116,10 @@ class IPN
     /** Session ID, used to correlate purchases with user sessions.
      * @var string */
     protected $session_id;
+
+    /** Event or message type for logging. Normally `payment`.
+     * @var string */
+    private $event = 'payment';
 
     /**
      * Holder for the complete IPN data array.
@@ -158,6 +167,7 @@ class IPN
     * @var object */
     protected $Cart;
 
+
     /**
      * Set up variables received in the IPN message.
      * Stores the complete IPN message in ipn_data.
@@ -175,6 +185,9 @@ class IPN
 
         // Create a gateway object to get some of the config values
         $this->GW = Gateway::getInstance($this->gw_id);
+        // If the transaction date wasn't set by the handler,
+        // make sure it's set here.
+        $this->setTxnDate();
     }
 
 
@@ -246,8 +259,7 @@ class IPN
      */
     public function getPmtHandling()
     {
-        $this->pmt_handling = (float)$amount;
-        return $this;
+        return (float)$this->pmt_handling;
     }
 
 
@@ -394,6 +406,32 @@ class IPN
 
 
     /**
+     * Set the transaction date/time.
+     *
+     * @param   string|integer  $dt     Datetime string or timestamp
+     * @return  object  $this
+     */
+    public function setTxnDate($dt='now')
+    {
+        global $_CONF;
+
+        $this->txn_date = new \Date($dt, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the transaction date object.
+     *
+     * @return  object      Date object
+     */
+    public function getTxnDate()
+    {
+        return $this->txn_date;
+    }
+
+
+    /**
      * Set the payer's email address.
      *
      * @param   string  $email  Payer's email address
@@ -536,10 +574,10 @@ class IPN
     public function setStatus($status)
     {
         switch ($status) {
-        case self::PENDING:
-        case self::PAID:
-        case self::REFUNDED:
-        case self::CLOSED:
+        case self::STATUS_PENDING:
+        case self::STATUS_PAID:
+        case self::STATUS_REFUNDED:
+        case self::STATUS_CLOSED:
             $this->status = $status;
             break;
         default:
@@ -576,7 +614,7 @@ class IPN
         // Separate the item ID and options to get pricing
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
-        if ($P->isNew) {
+        if ($P->isNew()) {
             SHOP_log("Product {$args['item_id']} not found in catalog", SHOP_LOG_ERROR);
             return;      // no product found to add
         }
@@ -600,7 +638,7 @@ class IPN
             'shipping'  => isset($args['shipping']) ? $args['shipping'] : 0,
             'handling'  => isset($args['handling']) ? $args['handling'] : 0,
             //'tax'       => $tax,
-            'taxable'   => $P->taxable ? 1 : 0,
+            'taxable'   => $P->isTaxable() ? 1 : 0,
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
             'extras'    => isset($args['extras']) ? $args['extras'] : '',
             'overrides' => $overrides,
@@ -629,24 +667,15 @@ class IPN
         } else {
             $verified = 0;
         }
-
-        // Log to database
-        $sql = "INSERT INTO {$_TABLES['shop.ipnlog']} SET
-                ip_addr = '{$_SERVER['REMOTE_ADDR']}',
-                ts = UNIX_TIMESTAMP(),
-                verified = $verified,
-                txn_id = '" . DB_escapeString($this->txn_id) . "',
-                gateway = '{$this->gw_id}',
-                ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
-        if ($this->Order !== NULL) {
-            $sql .= ", order_id = '" . DB_escapeString($this->Order->getOrderId()) . "'";
-        }
-        // Ignore DB error in order to not block IPN
-        DB_query($sql, 1);
-        if (DB_error()) {
-            SHOP_log("Shop\IPN::Log() SQL error: $sql", SHOP_LOG_ERROR);
-        }
-        return DB_insertId();
+        $order_id = $this->Order !== NULL ? DB_escapeString($this->Order->getOrderId()) : '';
+        $ipn = new logIPN();
+        $ipn->setOrderID($order_id)
+            ->setTxnID($this->txn_id)
+            ->setGateway($this->gw_id)
+            ->setEvent($this->event)
+            ->setVerified($verified)
+            ->setData($this->ipn_data);
+        return $ipn->Write();
     }
 
 
@@ -720,33 +749,33 @@ class IPN
         // For each item purchased, create an order item
         foreach ($this->items as $id=>$item) {
             $P = Product::getByID($item['item_number']);
-            if ($P->isNew) {
+            if ($P->isNew()) {
                 $this->Error("Item {$item['item_number']} not found - txn " .
                         $this->getTxnId());
                 continue;
             }
 
-            $this->items[$id]['prod_type'] = $P->prod_type;
+            $this->items[$id]['prod_type'] = $P->getProductType();
             SHOP_log("Shop item " . $item['item_number'], SHOP_LOG_DEBUG);
 
             // If it's a downloadable item, then get the full path to the file.
             if ($P->file != '') {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->file;
+                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->getFilename();
                 $token_base = $this->getTxnId() . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
             } else {
                 $token = '';
             }
-            if (is_numeric($P->expiration) && $P->expiration > 0) {
-                $this->items[$id]['expiration'] = $P->expiration;
+            if ($P->getExpiration() > 0) {
+                $this->items[$id]['expiration'] = $P->getExpiration();
             }
 
             // If a custom name was supplied by the gateway's IPN processor,
             // then use that.  Otherwise, plug in the name from inventory or
             // the plugin, for the notification email.
             if (empty($item['name'])) {
-                $this->items[$id]['name'] = $P->short_description;
+                $this->items[$id]['name'] = $P->getShortDscp();
             }
         }   // foreach item
 
@@ -764,8 +793,8 @@ class IPN
 
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
-            $this->Order->by_gc = $by_gc;
-            \Shop\Products\Coupon::Apply($by_gc, $this->Order->uid, $this->Order);
+            $this->Order->setByGC($by_gc);
+            Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
@@ -779,9 +808,6 @@ class IPN
                     );
                 }
             }
-
-            $this->Order->pmt_method = $this->gw_id;
-            $this->Order->pmt_txn_id = $this->txn_id;
             $this->Order->Save();
 
             // Handle the purchase for each order item
@@ -803,16 +829,13 @@ class IPN
             return false;
         }
 
-        // Update the status last since it sends the notification.
-        $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp());
-        $this->recordPayment();
+        $this->recordPayment();     // Also updates order status
         if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
             // If this paid order has only downloadable items, them mark
             // it closed since there's no further action needed.
             // Notification should have been done above, set notify to false to
             // avoid duplicates.
-            $this->setStatus(self::CLOSED);
-            $this->Order->updateStatus($this->status, 'IPN: ' . $this->GW->getDscp(), false);
+            $this->setStatus(self::STATUS_CLOSED);
         }
         return true;
     }  // function handlePurchase
@@ -844,8 +867,8 @@ class IPN
         );
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
-            if ($this->Order->order_id != '') {
-                $this->Order->log_user = $this->GW->getDscp();
+            if ($this->Order->getOrderID() != '') {
+                $this->Order->setLogUser($this->GW->getDscp());
             }
             return 2;
         }
@@ -864,9 +887,9 @@ class IPN
             $this->Cart = NULL;
         }
 
-        $this->Order->uid = $this->uid;
-        $this->Order->buyer_email = $this->payer_email;
-        $this->Order->status = 'pending';
+        $this->Order->setUID($this->uid);
+        $this->Order->setBuyerEmail($this->payer_email);
+        $this->Order->setStatus('pending');
         if ($uid > 1) {
             $U = Customer::getInstance($uid);
         }
@@ -884,7 +907,7 @@ class IPN
             $BillTo = $U->getDefaultAddress('billto');
         }
         if (is_array($BillTo)) {
-            $this->Order->setBilling($BillTo);
+            $this->Order->setBillto($BillTo);
         }
 
         $ShipTo = $this->shipto;
@@ -895,19 +918,19 @@ class IPN
             }
         }
         if (is_array($ShipTo)) {
-            $this->Order->setShipping($ShipTo);
+            $this->Order->setShipto($ShipTo);
         }
         if (isset($this->shipto['phone'])) {
-            $this->Order->phone = $this->shipto['phone'];
+            $this->Order->setPhone($this->shipto['phone']);
         }
-        $this->Order->pmt_method = $this->gw_id;
-        $this->Order->pmt_txn_id = $this->txn_id;
-        $this->Order->shipping = $this->pmt_shipping;
-        $this->Order->handling = $this->pmt_handling;
-        $this->Order->buyer_email = $this->payer_email;
-        $this->Order->log_user = $this->GW->getDscp();
+        $this->Order->setPmtMethod($this->gw_id)
+            ->setPmtTxnID($this->txn_id)
+            ->setShipping($this->pmt_shipping)
+            ->setHandling($this->pmt_handling)
+            ->setBuyerEmail($this->payer_email)
+            ->setLogUser($this->GW->getDscp());
 
-        $this->Order->items = array();
+        //$this->Order->items = array();
         foreach ($this->items as $id=>$item) {
             $options = DB_escapeString($item['options']);
             $option_desc = array();
@@ -930,15 +953,17 @@ class IPN
             }
 
             // Get the product record and custom strings
-            if (isset($item['extras']['custom']) &&
-                    is_array($item['extras']['custom']) &&
-                    !empty($item['extras']['custom'])) {
+            if (
+                isset($item['extras']['custom']) &&
+                is_array($item['extras']['custom']) &&
+                !empty($item['extras']['custom'])
+            ) {
                 foreach ($item['extras']['custom'] as $cust_id=>$cust_val) {
                     $option_desc[] = $P->getCustom($cust_id) . ': ' . $cust_val;
                 }
             }
             $args = array(
-                'order_id' => $this->Order->order_id,
+                'order_id' => $this->Order->getorderID(),
                 'product_id' => $item['item_number'],
                 'description' => $item['short_description'],
                 'quantity' => $item['quantity'],
@@ -947,7 +972,7 @@ class IPN
                 'status' => 'pending',
                 'token' => md5(time()),
                 'price' => $item['price'],
-                'taxable' => $P->taxable,
+                'taxable' => $P->isTaxable(),
                 'options' => $options,
                 'options_text' => $option_desc,
                 'extras' => $item['extras'],
@@ -1175,11 +1200,11 @@ class IPN
             $credit = (float)$this->credits[$key];
             switch ($key) {
             case 'gc':
-                if (\Shop\Products\Coupon::verifyBalance($by_gc, $this->uid)) {
+                if (Coupon::verifyBalance($credit, $this->uid)) {
                     $retval[$key] = $credit;
                 } else {
-                    $gc_bal = \Shop\Products\Coupon::getUserBalance($this->uid);
-                    SHOP_log("Insufficient Gift Card Balance, need $by_gc, have $gc_bal", SHOP_LOG_DEBUG);
+                    $gc_bal = Coupon::getUserBalance($this->uid);
+                    SHOP_log("Insufficient Gift Card Balance, need $credit, have $gc_bal", SHOP_LOG_DEBUG);
                     $retval[$key] = 0;
                 }
                 break;
@@ -1271,6 +1296,7 @@ class IPN
 
         $Pmt = new Payment;
         $Pmt->setRefID($this->getTxnId())
+            ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)
             ->setMethod($this->GW->getDisplayName())

@@ -147,7 +147,7 @@ class RegionBase
      */
     protected static function getAdminListOptions()
     {
-        global $LANG_ADMIN;
+        global $LANG_ADMIN, $LANG_SHOP;
 
         $options = array(
             'chkdelete' => 'true',
@@ -166,9 +166,9 @@ class RegionBase
                 '<select name="rule_id">' . Rules\Zone::optionList() . '</select>' .
                 '<button type="submit" name="rule_add" value="' . static::$KEY . '" ' .
                 'class="uk-button uk-button-mini uk-button-primary tooltip" ' .
-                'title="XX' . $LANG_SHOP['add_to_rule'] . '">Add to rule' .
+                'title="' . $LANG_SHOP['add_to_rule'] . '">' . $LANG_SHOP['add_to_rule'] . 
                 '</button>',
-        );
+            );
         return $options;
     }
 

@@ -23,8 +23,7 @@ use Shop\Gateway;
  */
 class terms extends \Shop\Gateway
 {
-    /**
-     * Number of days for net terms, default = "Net 30"
+    /** Number of days for net terms, default = "Net 30"
      * @var integer */
     private $net_days = 30;
 
@@ -46,12 +45,16 @@ class terms extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->config = array(
-            'gateway'   => '',
-            'net_days'  => 30,
+            'global' => array(
+                'gateway'   => '',
+                'net_days'  => 30,
+            ),
         );
         $this->cfgFields= array(
-            'gateway'   => 'select',
-            'net_days'  => 'string',
+            'global' => array(
+                'gateway'   => 'select',
+                'net_days'  => 'string',
+            ),
         );
         $this->services = array(
             'checkout'  => 1,
@@ -111,28 +114,43 @@ class terms extends \Shop\Gateway
 
 
     /**
-     * No config fields for the Terms gateway.
+     * Get all the configuration fields specifiec to this gateway.
      *
-     * @return  array   Empty array
+     * @param   string  $env    Environment (test, prod or global)
+     * @return  array   Array of fields (name=>field_info)
      */
-    public function getConfigFields()
+    public function getConfigFields($env='global')
     {
+        global $LANG_SHOP;
+
         $fields = array();
-        foreach($this->config as $name=>$value) {
+        foreach($this->config[$env] as $name=>$value) {
             $other_label = '';
             switch ($name) {
             case 'gateway':
-                $field = '<select name="' . $name . '">' . LB;
+                $field = '<select name="' . $name . '[global]">' . LB;
+                if ($this->gw_name == '') {
+                    $sel = 'selected="selected"';
+                } else {
+                    $sel = '';
+                }
+                $field .= '<option value=""' . $sel . '>-- ' .
+                    $LANG_SHOP['none'] . ' --</option>' . LB;
                 foreach (self::getAll() as $gw) {
+                    if ($gw->gw_name == $this->getConfig('gateway')) {
+                        $sel = 'selected="selected"';
+                    } else {
+                        $sel = '';
+                    }
                     if ($gw->Supports($this->gw_name)) {
-                        $field .= '<option value="' . $gw->gw_name . '">' .
+                        $field .= '<option value="' . $gw->gw_name . '" ' . $sel . '>' .
                             $gw->gw_desc . '</option>' . LB;
                     }
                 }
                 $field .= '</select>' . LB;
                 break;
             default:
-                $field = '<input type="text" name="' . $name . '" value="' .
+                $field = '<input type="text" name="' . $name . '[global]" value="' .
                     $value . '" size="60" />';
                 break;
             }
@@ -183,6 +201,8 @@ class terms extends \Shop\Gateway
 
     /**
      * Process the order confirmation. Called via AJAX.
+     * Gets the actual payment gateway name from the config and
+     * calls on it to create the invoice.
      *
      * @param   string  $order_id   Order ID
      * @return  boolean     True on success, False on error
@@ -194,6 +214,19 @@ class terms extends \Shop\Gateway
             return false;           // unconfigured
         }
         return Gateway::getInstance($gw_name)->createInvoice($order_id);
+    }
+
+
+    /**
+     * Get the logo (display string) to show in the gateway radio buttons.
+     *
+     * @return  string      Description string
+     */
+    public function getLogo()
+    {
+        global $LANG_SHOP;
+
+        return sprintf($LANG_SHOP['net_x_days'], $this->net_days);
     }
 
 }

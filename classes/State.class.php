@@ -76,14 +76,14 @@ class State extends RegionBase
      */
     public function __construct($A)
     {
-        $this->setID($A['state_id'])
-            ->setCountryID($A['country_id'])
-            ->setCountryISO($A['country_iso'])
-            ->setISO($A['iso_code'])
-            ->setName($A['state_name'])
-            ->setEnabled($A['state_enabled'])
-            ->setTaxHandling($A['tax_handling'])
-            ->setTaxShipping($A['tax_shipping']);
+        $this->setID(SHOP_getVar($A, 'state_id', 'integer'))
+            ->setCountryID(SHOP_getVar($A, 'country_id', 'integer'))
+            ->setCountryISO(SHOP_getVar($A, 'country_iso'))
+            ->setISO(SHOP_getVar($A, 'iso_code'))
+            ->setName(SHOP_getVar($A, 'state_name'))
+            ->setEnabled(SHOP_getVar($A,'state_enabled', 'integer', 1))
+            ->setTaxHandling(SHOP_getVar($A, 'tax_handling', 'integer'))
+            ->setTaxShipping(SHOP_getVar($A, 'tax_shipping', 'integer'));
     }
 
 
@@ -379,6 +379,7 @@ class State extends RegionBase
         $cache_key = 'shop.states.' . $country . '_' . $enabled;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
+            $retval = array();
             $sql = "SELECT s.state_name, s.iso_code
                 FROM {$_TABLES['shop.states']} s
                 LEFT JOIN {$_TABLES['shop.countries']} c
@@ -396,7 +397,7 @@ class State extends RegionBase
             while ($A = DB_fetchArray($res, false)) {
                 $retval[$A['iso_code']] = new self($A);
             }
-//            Cache::set($cache_key, $retval, 'regions', 43200);
+            Cache::set($cache_key, $retval, 'regions', 43200);
         }
         return $retval;
     }

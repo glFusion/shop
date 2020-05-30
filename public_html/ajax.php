@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2010-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -51,7 +51,7 @@ case 'addcartitem':
     $Cart = Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
-        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->order_id}, should be $nonce", SHOP_LOG_ERROR);
+        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->getOrderID()}, should be $nonce", SHOP_LOG_ERROR);
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
@@ -90,12 +90,22 @@ case 'addcartitem':
     );
     break;
 
+case 'setShipper':
+    $cart_id = SHOP_getVar($_POST, 'cart_id');
+    $status = Shop\Cart::getInstance($cart_id)
+        ->setShipper($_POST['shipper_id'])
+        ->Save();
+    $output = array(
+        'status' => $status,
+    );
+    break;
+
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $status = Shop\Gateway::getInstance(
-        Shop\Order::getInstance($cart_id)->getInfo('gateway')
-    )->processOrder($cart_id);
-    Shop\Cart::setFinal($cart_id);
+    $Cart = Shop\Cart::getInstance($cart_id);
+    $status = Shop\Gateway::getInstance($Cart->getInfo('gateway'))
+        ->processOrder($cart_id);
+    $Cart->setFinal();
     $output = array(
         'status' => $status,
     );
@@ -147,15 +157,18 @@ case 'validateAddress':
     $A1 = new Shop\Address($_POST);
     $A2 = $A1->Validate();
     if (!$A1->Matches($A2)) {
+        $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
         $T = new Template(SHOP_PI_PATH . '/templates');
         $T->set_file('popup', 'address_select.thtml');
         $T->set_var(array(
             'address1_html' => $A1->toHTML(),
-            'address1_json' => htmlentities($A1->toJSON()),
+            'address1_json' => htmlentities($A1->toJSON(false)),
             'address2_html' => $A2->toHTML(),
-            'address2_json' => htmlentities($A2->toJSON()),
+            'address2_json' => htmlentities($A2->toJSON(false)),
             'ad_type'       => $_POST['ad_type'],
             'next_step'     => $_POST['next_step'],
+            'save_url'      => $save_url,
+            'save_btn_name' => SHOP_getVar($_POST, 'save_btn_name', 'string,', 'save'),
         ) );
         $output['status']  = false;
         $output['form'] = $T->parse('output', 'popup');
@@ -171,6 +184,25 @@ case 'getStateOpts':
     );
     break;
 
+case 'setDefAddr':
+    $addr_id = SHOP_getVar($_POST, 'addr_id', 'integer');
+    if ($addr_id < 1) {
+        $ouptut = array(
+            'status' => 0,
+            'statusMessage' => 'Invalid address ID given',
+        );
+        break;
+    }
+    $type = SHOP_getVar($_POST, 'addr_type');
+    $status = Shop\Address::getInstance($addr_id)
+        ->setDefault($type)
+        ->Save();
+    $output = array(
+        'status' => $status,
+        'statusMessage' => $status ? 'Address Updated' : 'An error occurred',
+    );
+    break;
+
 default:
     // Missing action, nothing to do
     break;
@@ -179,6 +211,7 @@ default:
 if ($output === NULL) {
     $ouptut = array('status' => false);
 }
+
 header('Content-Type: application/json');
 header("Cache-Control: no-cache, must-revalidate");
 //A date in the past

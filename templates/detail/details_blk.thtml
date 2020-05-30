@@ -11,7 +11,7 @@
 {!if brand_id}
         <dt>{$LANG_SHOP['brand']}:</dt>
         <dd>
-        <a href="{site_url}/shop/index.php?products&brand={brand_id}">
+        <a href="{site_url}/shop/index.php?products&brand={brand_id}" title="{$LANG_SHOP['see_more_brand']}" class="tooltip">
 {!if brand_logo_url}
         <img class="shopLogoImage small" src="{brand_logo_url}" />
 {!else}
@@ -31,7 +31,11 @@
         </dd>
 {!endif}
         <dt>SKU:</dt>
-        <dd id="sku">{sku}</dd>
+        <dd id="sku">{sku}&nbsp;</dd>
+{!if categories}
+        <dt>{$LANG_SHOP['categories']}:</dt>
+        <dd>{cat_names}</dd>
+{!endif}
 <!-- BEGIN FeatList -->
         <dt>{ft_name}</dt>
         <dd>{fv_text}</dd>

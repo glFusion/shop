@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways;
-
+use Shop\Currency;
 
 /**
  * Class for Square payment gateway.
@@ -20,7 +20,6 @@ namespace Shop\Gateways;
  */
 class square extends \Shop\Gateway
 {
-
     /** Square location value.
      * @var string */
     private $loc_id;
@@ -62,13 +61,19 @@ class square extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields = array(
-            'sb_loc_id'     => 'password',
-            'sb_appid'      => 'password',
-            'sb_token'      => 'password',
-            'prod_loc_id'   => 'password',
-            'prod_appid'    => 'password',
-            'prod_token'    => 'password',
-            'test_mode'     => 'checkbox',
+            'prod' => array(
+                'loc_id'   => 'password',
+                'appid'    => 'password',
+                'token'    => 'password',
+            ),
+            'test' => array(
+                'loc_id'     => 'password',
+                'appid'      => 'password',
+                'token'      => 'password',
+            ),
+            'global' => array(
+                'test_mode' => 'checkbox',
+            ),
         );
 
         // Set the only service supported
@@ -78,17 +83,20 @@ class square extends \Shop\Gateway
         parent::__construct();
 
         // Set the gateway URL depending on whether we're in test mode or not
+        $this->loc_id = $this->getConfig('loc_id');
+        $this->appid = $this->getConfig('appid');
+        $this->token = $this->getConfig('token');
         if ($this->isSandbox()) {
             // Test settings
-            $this->loc_id = $this->getConfig('sb_loc_id');
+            /*$this->loc_id = $this->getConfig('sb_loc_id');
             $this->appid = $this->getConfig('sb_appid');
-            $this->token = $this->getConfig('sb_token');
+            $this->token = $this->getConfig('sb_token');*/
             $this->api_url = 'https://connect.squareupsandbox.com';
         } else {
             // Production settings
-            $this->loc_id = $this->getConfig('prod_loc_id');
+/*            $this->loc_id = $this->getConfig('prod_loc_id');
             $this->appid = $this->getConfig('prod_appid');
-            $this->token = $this->getConfig('prod_token');
+$this->token = $this->getConfig('prod_token');*/
             $this->api_url = 'https://connect.squareup.com';
         }
         $this->gw_url = NULL;   // Normal gateway action url not used
@@ -117,7 +125,7 @@ class square extends \Shop\Gateway
     /**
      * Get the form variables for the purchase button.
      *
-     * @uses    Gateway::_Supports()
+     * @uses    Gateway::Supports()
      * @uses    _encButton()
      * @uses    getActionUrl()
      * @param   object  $cart   Shopping cart object
@@ -127,23 +135,23 @@ class square extends \Shop\Gateway
     {
         global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
 
-        if (!$this->_Supports('checkout')) {
+        if (!$this->Supports('checkout')) {
             return '';
         }
 
         $cartID = $cart->CartID();
         $shipping = 0;
-        $Cur = \Shop\Currency::getInstance();
+        $Cur = Currency::getInstance();
 
         $accessToken = $this->token;
         $locationId = $this->loc_id;
 
         // Create and configure a new API client object
-        $defaultApiConfig = new \SquareConnect\Configuration();
-        $defaultApiConfig->setAccessToken($accessToken);
-        $defaultApiConfig->setHost($this->api_url);
-        $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
-        $checkoutClient = new \SquareConnect\Api\CheckoutApi($defaultApiClient);
+        $ApiConfig = new \SquareConnect\Configuration();
+        $ApiConfig->setAccessToken($accessToken);
+        $ApiConfig->setHost($this->api_url);
+        $ApiClient = new \SquareConnect\ApiClient($ApiConfig);
+        $checkoutClient = new \SquareConnect\Api\CheckoutApi($ApiClient);
 
         $lineItems = array();
         $by_gc = $cart->getInfo('apply_gc');
@@ -160,29 +168,38 @@ class square extends \Shop\Gateway
             //Puts our line item object in an array called lineItems.
             array_push($lineItems, $itm);
         } else {
-            $shipping = $cart->shipping;
-            $tax = $cart->tax;
+            $shipping = $cart->getShipping();
+            $tax = $cart->getTax();
             $idx = -1;
             foreach ($cart->getItems() as $Item) {
                 $idx++;
-                $P = $Item->getProduct();
-
-                $PriceMoney = new \SquareConnect\Model\Money;
-                $PriceMoney->setCurrency($this->currency_code);
-                $Item->Price = $P->getPrice($Item->options);
-                $PriceMoney->setAmount($Cur->toInt($Item->price));
-                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-                $itm = new \SquareConnect\Model\OrderLineItem;
-
-                $opts = $P->getOptionDesc($Item->options);
-                $dscp = $Item->description;
+                $opts = implode(', ', $Item->getOptionsText());
+                $dscp = $Item->getDscp();
                 if (!empty($opts)) {
                     $dscp .= ' : ' . $opts;
                 }
+
+                $lineItems[] = array(
+                    'name' => $dscp,
+                    'quantity' => (string)$Item->getQuantity(),
+                    'base_price_money' => array(
+                        'amount' => $Cur->toInt($Item->getPrice()),
+                        'currency' => $this->currency_code,
+                    ),
+                );
+
+                /*$PriceMoney = new \SquareConnect\Model\Money;
+                $PriceMoney->setCurrency($this->currency_code);
+                $Item->Price = $P->getPrice($Item->getOptions());
+                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
+                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
+                $itm = new \SquareConnect\Model\OrderLineItem;
+
                 $itm->setUid($idx);
                 $itm->setName($dscp);
-                $itm->setQuantity((string)$Item->quantity);
+                $itm->setQuantity((string)$Item->getQuantity());
                 $itm->setBasePriceMoney($PriceMoney);
+                */
 
                 // Add tax, if applicable
                 /*if ($Item->taxable) {
@@ -201,18 +218,18 @@ class square extends \Shop\Gateway
                     $itm->setTaxes(array($taxObj));
                     $itm->setTotalTaxMoney($tax);
                 }*/
-                $shipping += $Item->shipping;
+                $shipping += $Item->getShipping();
 
                 //Puts our line item object in an array called lineItems.
-                array_push($lineItems, $itm);
+                //array_push($lineItems, $itm);
             }
         }
 
         // Add a line item for the total tax charge
-        if ($cart->tax > 0) {
+        if ($cart->getTax() > 0) {
             $TaxMoney = new \SquareConnect\Model\Money;
             $TaxMoney->setCurrency($this->currency_code)
-                ->setAmount($Cur->toInt($cart->tax));
+                ->setAmount($Cur->toInt($cart->getTax()));
             $itm = new \SquareConnect\Model\OrderLineItem;
             $itm->setName($LANG_SHOP['tax'])
                 ->setUid('__tax')
@@ -235,20 +252,42 @@ class square extends \Shop\Gateway
         }
 
         // Create an Order object using line items from above
-        $order = new \SquareConnect\Model\CreateOrderRequest();
-        $order
+        $order = new \SquareConnect\Model\CreateOrderRequest(array(
+            'idempotency_key' => uniqid(),
+            'order' => array(
+                'order' => array(
+                    'location_id' => $locationId,
+                    'reference_id' => $cart->cartID(),
+                    'line_items' => $lineItems,
+                ),
+            ),
+        ) );
+        //$order = new \SquareConnect\Model\CreateOrderRequest();
+        /*$order
             ->setIdempotencyKey(uniqid())
             ->setReferenceId($cart->cartID())
             //sets the lineItems array in the order object
-            ->setLineItems($lineItems);
+            ->setLineItems($lineItems);*/
 
-        $checkout = new \SquareConnect\Model\CreateCheckoutRequest();
-        $checkout
+        $checkout = new \SquareConnect\Model\CreateCheckoutRequest(array(
+            'idempotency_key' => uniqid(),
+            'order' => array(
+                'order' => array(
+                    'location_id' => $locationId,
+                    'reference_id' => $cart->cartID(),
+                    'line_items' => $lineItems,
+                ),
+            ),
+            'redirect_url' => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
+            'pre_populate_buyer_email' => $cart->getInfo('payer_email'),
+        ) );
+
+        /*$checkout
             ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
             ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
             ->setOrder($order)          //this is the order we created in the previous step
-            ->setRedirectUrl($this->returnUrl($cart->order_id, $cart->token));
-
+            ->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
+         */
         $url = '';
         $gatewayVars = array();
         try {
@@ -396,7 +435,6 @@ class square extends \Shop\Gateway
      */
     public function getActionUrl()
     {
-        //return 'https://connect.squareup.com/v2/checkout';
         return $this->api_url . '/v2/checkout';
     }
 
@@ -444,15 +482,21 @@ class square extends \Shop\Gateway
         if (empty($trans_id)) {
             return false;
         }
-        // Create and configure a new API client object
-        $defaultApiConfig = new \SquareConnect\Configuration();
-        $defaultApiConfig->setAccessToken($this->token);
-        $defaultApiConfig->setHost($this->api_url);
-        $defaultApiClient = new \SquareConnect\ApiClient($defaultApiConfig);
 
-        $api = new \SquareConnect\Api\TransactionsApi();
-        $api->setApiClient($defaultApiClient);
-        $resp = $api->retrieveTransaction($this->loc_id, $trans_id);
+        $apiConfig = new \SquareConnect\Configuration();
+        $apiConfig->setAccessToken($this->token);
+        $apiConfig->setHost($this->api_url);
+        $apiClient = new \SquareConnect\ApiClient($apiConfig);
+
+        // Create and configure a new API client object
+        $api = new \SquareConnect\Api\OrdersApi($apiClient);
+        $body = new \SquareConnect\Model\BatchRetrieveOrdersRequest();
+        $order_ids = array($trans_id);
+        //$order_ids = json_encode($order_ids);
+        $body->setOrderIds($order_ids);
+        $resp = $api->batchRetrieveOrders($this->loc_id, $body);
+
+        //$resp = $api->retrieveTransaction($this->loc_id, $trans_id);
         $resp = json_decode($resp,true);
         return $resp;
     }
@@ -468,6 +512,23 @@ class square extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         return '';
+    }
+
+
+    /**
+     * Set the return URL after payment is made.
+     * Square adds transaction information and returns directly to the IPN
+     * url for processing.
+     *
+     * @param   string  $cart_id    Cart order ID
+     * @param   string  $token      Order token, to verify accessa
+     * @return  string      URL to pass to the gateway as the return URL
+     */
+    protected function returnUrl($cart_id, $token)
+    {
+        return $this->ipn_url . '?thanks=' . $this->gw_name .
+            '&o=' . $cart_id .
+            '&t=' . $token;
     }
 
 }   // class square

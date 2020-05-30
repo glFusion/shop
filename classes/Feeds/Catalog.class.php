@@ -72,9 +72,10 @@ class Catalog
             }
             $base_price = $P->getPrice();
             $Sale = $P->getSale();
-            if (!$Sale->isNew) {
+            if (!$Sale->isNew()) {
                 $sale_price = $Cur->Format($Sale->calcPrice($base_price), false);
-                $sale_eff_dt = $Sale->start->Format(\DateTime::ATOM) . '/' . $Sale->start->Format(\DateTime::ATOM);
+                $sale_eff_dt = $Sale->getStartDate()->Format(\DateTime::ATOM) .
+                    '/' . $Sale->getStartDate()->Format(\DateTime::ATOM);
             } else {
                 $sale_price = '';
                 $sale_eff_dt = '';

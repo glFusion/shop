@@ -59,15 +59,21 @@ class authorizenet extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields= array(
-            'prod_api_login'    => 'password',
-            'prod_trans_key'    => 'password',
-            'test_api_login'    => 'password',
-            'test_trans_key'    => 'password',
-//            'prod_md5_hash'     => '',
-//            'test_md5_hash'     => '',
-            'test_mode'         => 'checkbox',
-            'test_hash_key'     => 'password',
-            'prod_hash_key'     => 'password',
+            'prod' => array(
+                'api_login'    => 'password',
+                'trans_key'    => 'password',
+    //            'md5_hash'     => '',
+                'hash_key'     => 'password',
+            ),
+            'test' => array(
+                'api_login'    => 'password',
+                'trans_key'    => 'password',
+    //            'md5_hash'     => '',
+                'hash_key'     => 'password',
+            ),
+            'global' => array(
+                'test_mode' => 'checkbox',
+            ),
         );
 
         // Set the supported services as this gateway only supports cart checkout
@@ -81,16 +87,16 @@ class authorizenet extends \Shop\Gateway
 
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
+        $this->api_login    = trim($this->getConfig('api_login'));
+        $this->trans_key    = trim($this->getConfig('trans_key'));
+        $this->hash_key     = trim($this->getconfig('hash_key'));
         if ($this->isSandbox()) {
-            $this->api_login    = trim($this->getConfig('test_api_login'));
-            $this->trans_key    = trim($this->getConfig('test_trans_key'));
-            $this->hash_key     = trim($this->getconfig('test_hash_key'));
             $this->token_url = 'https://apitest.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://test.authorize.net/payment/payment';
         } else {
-            $this->api_login    = trim($this->getConfig('prod_api_login'));
+            /*$this->api_login    = trim($this->getConfig('prod_api_login'));
             $this->trans_key    = trim($this->getConfig('prod_trans_key'));
-            $this->hash_key     = trim($this->getconfig('prod_hash_key'));
+            $this->hash_key     = trim($this->getconfig('prod_hash_key'));*/
             $this->token_url = 'https://api.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://accept.authorize.net/payment/payment';
         }
@@ -126,7 +132,7 @@ class authorizenet extends \Shop\Gateway
         $line_items = array();
         $Cur = \Shop\Currency::getInstance();
         $return_opts = array(
-            'url'       => $this->returnUrl($cart->order_id, $cart->token),
+            'url'       => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
             'cancelUrl' => $cart->cancelUrl(),
         );
 
@@ -145,18 +151,18 @@ class authorizenet extends \Shop\Gateway
             foreach ($cart->getItems() as $Item) {
                 $P = $Item->getProduct();
                 $line_items[] = array(
-                    'itemId'    => substr($P->item_id, 0, 31),
-                    'name'      => substr(strip_tags($P->short_description), 0, 31),
-                    'description' => substr(strip_tags($P->description), 0, 255),
-                    'quantity' => $Item->quantity,
-                    'unitPrice' => $Cur->FormatValue($Item->price),
-                    'taxable' => $Item->taxable ? true : false,
+                    'itemId'    => substr($P->getItemID(), 0, 31),
+                    'name'      => substr(strip_tags($P->getShortDscp()), 0, 31),
+                    'description' => substr(strip_tags($P->getDscp()), 0, 255),
+                    'quantity' => $Item->getQuantity(),
+                    'unitPrice' => $Cur->FormatValue($Item->getPrice()),
+                    'taxable' => $Item->isTaxable() ? true : false,
                 );
-                $total_amount += (float)$Item->price * (float)$Item->quantity;
+                $total_amount += $Item->getPrice()* $Item->getQuantity();
             }
-            $total_amount += $cart->shipping;
-            $total_amount += $cart->handling;
-            $total_amount += $cart->tax;
+            $total_amount += $cart->getShipping();
+            $total_amount += $cart->getHandling();
+            $total_amount += $cart->getTax();
         }
 
         $json = array(
@@ -165,27 +171,27 @@ class authorizenet extends \Shop\Gateway
                     'name' => $this->api_login,
                     'transactionKey' => $this->trans_key,
                 ),
-                'refId' => $cart->order_id,
+                'refId' => $cart->getOrderID(),
                 'transactionRequest' => array(
                     'transactionType' => 'authCaptureTransaction',
                     'amount' => $Cur->FormatValue($total_amount),
                     'order' => array(
-                        'invoiceNumber' => $cart->order_id,
+                        'invoiceNumber' => $cart->getOrderID(),
                     ),
                     'lineItems' => array(
                         'lineItem' => $line_items,
                     ),
                     'tax' => array(
-                        'amount' => $Cur->FormatValue($cart->tax),
+                        'amount' => $Cur->FormatValue($cart->getTax()),
                         'name' => 'Sales Tax',
                     ),
                     'shipping' => array(
-                        'amount' => $Cur->FormatValue($cart->shipping),
+                        'amount' => $Cur->FormatValue($cart->getShipping()),
                         'name' => 'Shipping',
                     ),
                     'customer' => array(
                         'id' => $cart->getUid(),
-                        'email' => $cart->buyer_email,
+                        'email' => $cart->getBuyerEmail(),
                     ),
                 ),
                 'hostedPaymentSettings' => array(
@@ -287,13 +293,11 @@ class authorizenet extends \Shop\Gateway
         if (!is_array($data)) {
             return array();
         }
-
-        list($currency, $amount) = explode(' ', $data['transactionAmount']);
         $retval = array(
-            'pmt_gross'     => $data['x_amount'],
+            'pmt_gross'     => 0,
             'verified'      => 'verified',
-            'pmt_status'    => 'complete',
-            'buyer_email'   => $data['x_email'],
+            'pmt_status'    => $data['status'],
+            'buyer_email'   => '',
         );
         return $retval;
     }
@@ -331,7 +335,7 @@ class authorizenet extends \Shop\Gateway
     public function getLogo()
     {
         global $_CONF;
-        return '<img src="https://www.authorize.net/content/dam/authorize/images/authorizenet_200x50.png" alt="Authorize.Net Logo" style="width:160px;height:40px;border:0;" />';
+        return '<img src="https://www.authorize.net/content/dam/anet-redesign/reseller/authorizenet-200x50.png" alt="Authorize.Net" style="width:160px;height:40px;border:0;" />';
         //return '<img src="' . $_CONF['site_url'] . '/shop/images/creditcard.svg" alt="Authorize.Net" class="tooltip" title="Authorize.Net" style="height:40px;border:0"/>';
     }
 

@@ -162,7 +162,9 @@ abstract class Tax
             return true;
         }
         foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
-            list($country, $state) = explode('-', strtoupper($str));
+            $parts = explode('-', strtoupper($str));
+            $country = $parts[0];
+            $state = isset($parts[1]) ? $parts[1] : '';
             if (
                 $this->Address->getCountry() == (string)$country
                 &&

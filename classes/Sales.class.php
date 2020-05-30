@@ -35,17 +35,37 @@ class Sales
      * @var string */
     private static $base_tag = 'sales';
 
-    /** Property fields accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties;
+    /** Sale record ID.
+     * @var integer */
+    private $sale_id = 0;
 
-    /** Indicate whether the current object is a new entry or not.
-     * @var boolean */
-    public $isNew;
+    /** Catalog item record ID.
+     * @var integer */
+    private $item_id = 0;
+
+    /** Start date.
+     * @var object */
+    private $StartDate = NULL;
+
+    /** Ending date.
+     * @var object */
+    private $EndDate = NULL;
+
+    /** Type of discount, percent or amount.
+     * @var string */
+    private $discount_type = 'none';
+
+    /** Sale name, e.g. `Father's Day Sale`.
+     * @var string */
+    private $name = '';
+
+    /** Discount amount, either dollars or a percentage.
+     * @var float */
+    private $amount = 0;
 
     /** Item type for the discount, either `product` or `category`.
      * @var string */
-    private $item_type;
+    private $item_type = 'product';
 
 
     /**
@@ -55,26 +75,17 @@ class Sales
      */
     public function __construct($A=array())
     {
-        $this->properties = array();
-        $this->isNew = true;
-
         if (is_array($A) && !empty($A)) {
             // DB record passed in, e.g. from _getSales()
             $this->setVars($A);
-            $this->isNew = false;
         } elseif (is_numeric($A) && $A > 0) {
             // single ID passed in, e.g. from admin form
-            if ($this->Read($A)) $this->isNew = false;
+            if (!$this->Read($A)) {
+                $this->sale_id = 0;
+            }
         } else {
-            // New entry, set defaults
-            $this->id = 0;
-            $this->setItemType('product');
-            $this->name = '';
-            $this->item_id = 0;
-            $this->start = '';
-            $this->end = '';
-            $this->discount_type = 'none';
-            $this->amount = 0;
+            $this->setStartDate();
+            $this->setEndDate();
         }
     }
 
@@ -110,7 +121,7 @@ class Sales
      */
     public function setVars($A, $fromDB=true)
     {
-        $this->id = SHOP_getVar($A, 'id', 'integer');
+        $this->sale_id = SHOP_getVar($A, 'id', 'integer');
         $this->setItemType(SHOP_getVar($A, 'item_type'));
         $this->discount_type = SHOP_getVar($A, 'discount_type');
         $this->amount = SHOP_getVar($A, 'amount', 'float');
@@ -148,8 +159,8 @@ class Sales
         } else {
             $this->item_id = $A['item_id'];
         }
-        $this->start = $A['start'];
-        $this->end = $A['end'];
+        $this->setStartDate($A['start']);
+        $this->setEndDate($A['end']);
     }
 
 
@@ -158,7 +169,7 @@ class Sales
      * To facilitate caching, all sales records are retrieved and the requester
      * is responsible for selecting the currently-active sale.
      *
-     * @see     self::getProduct()
+     * @see     self::getByProduct()
      * @see     self::getCategory()
      * @param   string  $type       Item type (product or category)
      * @param   integer $item_id    Product or Category ID
@@ -218,7 +229,7 @@ class Sales
      * @param   integer $item_id    Product ID
      * @return  array       Array of Sales objects
      */
-    public static function getProduct($item_id)
+    public static function getByProduct($item_id)
     {
         return self::_getSales('product', $item_id);
     }
@@ -230,7 +241,7 @@ class Sales
      * Scans for the sale with the most recent start date. For example,
      * a long-term sale could have a short "flash sale" within it.
      *
-     * @uses    self::getProduct()
+     * @uses    self::getByProduct()
      * @uses    self::getCategory()
      * @param   object  $P  Product object
      * @return  object      Sales object, empty object if not found
@@ -240,15 +251,20 @@ class Sales
         global $_CONF;
 
         $now = $_CONF['_now']->toUnix();
-        $sales = self::getProduct($P->id);
+        $sales = self::getByProduct($P->getID());
         $SaleObj = NULL;
         foreach ($sales as $obj) {
-            if ($obj->start->toUnix() < $now && $obj->end->toUnix() > $now) {
+            if (
+                $obj->getStartDate()->toUnix() < $now &&
+                $obj->getEndDate->toUnix() > $now
+            ) {
                 // Found an active product sales, return it.
                 $SaleObj = $obj;
             }
         }
-        if ($SaleObj !== NULL) return $SaleObj;
+        if ($SaleObj !== NULL) {
+            return $SaleObj;
+        }
 
         // If no product sales was found, look for a category.
         // Traverse the category tree from the current category up to
@@ -261,11 +277,16 @@ class Sales
         foreach ($cats as $cat) {
             $sales = self::getCategory($cat->getID());
             foreach ($sales as $obj) {
-                if ($obj->start->toUnix() < $now && $obj->end->toUnix() > $now) {
+                if (
+                    $obj->getStartDate()->toUnix() < $now &&
+                    $obj->getEndDate()->toUnix() > $now
+                ) {
                     $SaleObj = $obj;
                 }
             }
-            if ($SaleObj !== NULL) return $SaleObj;
+            if ($SaleObj !== NULL) {
+                return $SaleObj;
+            }
         }
         // Return an empty object so Sales::getEffective->calcPrice()
         // will work.
@@ -274,67 +295,58 @@ class Sales
 
 
     /**
-     * Set a property's value.
+     * Set the sale starting date. Use the minimum value if none provided.
      *
-     * @param   string  $var    Name of property to set.
-     * @param   mixed   $value  New value for property.
+     * @param   string  $value  Date/time string
+     * @return  object  $this
      */
-    public function __set($var, $value='')
+    public function setStartDate($value=NULL)
     {
         global $_CONF;
 
-        switch ($var) {
-        case 'id':
-        case 'item_id':
-            // Integer values
-            $this->properties[$var] = (int)$value;
-            break;
-
-        case 'start':
-            if (empty($value)) {
-                $value = self::minDateTime();
-            }
-            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
-            break;
-
-        case 'end':
-            if (empty($value)) {
-                $value = self::maxDateTime();
-            }
-            $this->properties[$var] = new \Date($value, $_CONF['timezone']);
-            break;
-
-        case 'discount_type':
-        case 'name':
-            // String values
-            $this->properties[$var] = trim($value);
-            break;
-
-        case 'amount':
-            // Floating-point values
-            $this->properties[$var] = (float)$value;
-            break;
-
-        default:
-            // Undefined values (do nothing)
-            break;
+        if (empty($value)) {
+            $value = self::minDateTime();
         }
+        $this->StartDate = new \Date($value, $_CONF['timezone']);
     }
 
 
     /**
-     *   Get the value of a property.
+     * Get the starting date.
      *
-     * @param   string  $var    Name of property to retrieve.
-     * @return  mixed           Value of property, NULL if undefined.
+     * @return  object      date object
      */
-    public function __get($var)
+    public function getStartDate()
     {
-        if (array_key_exists($var, $this->properties)) {
-            return $this->properties[$var];
-        } else {
-            return NULL;
+        return $this->StartDate;
+    }
+
+
+    /**
+     * Set the sale ending date. Use the minimum value if none provided.
+     *
+     * @param   string  $value  Date/time string
+     * @return  object  $this
+     */
+    public function setEndDate($value=NULL)
+    {
+        global $_CONF;
+
+        if (empty($value)) {
+            $value = self::maxDateTime();
         }
+        $this->EndDate = new \Date($value, $_CONF['timezone']);
+    }
+
+
+    /**
+     * Get the ending date.
+     *
+     * @return  object      date object
+     */
+    public function getEndDate()
+    {
+        return $this->EndDate;
     }
 
 
@@ -366,18 +378,18 @@ class Sales
         }
 
         // Insert or update the record, as appropriate.
-        if ($this->isNew) {
+        if ($this->isNew()) {
             $sql1 = "INSERT INTO {$_TABLES['shop.sales']}";
             $sql3 = '';
         } else {
             $sql1 = "UPDATE {$_TABLES['shop.sales']}";
-            $sql3 = " WHERE id={$this->id}";
+            $sql3 = " WHERE id={$this->sale_id}";
         }
         $sql2 = " SET item_type = '" . DB_escapeString($this->item_type) . "',
                 item_id = '{$this->item_id}',
                 name = '" . DB_escapeString($this->name) . "',
-                start = '{$this->start->toMySQL(true)}',
-                end = '{$this->end->toMySQL(true)}',
+                start = '{$this->StartDate->toMySQL(true)}',
+                end = '{$this->EndDate->toMySQL(true)}',
                 discount_type = '" . DB_escapeString($this->discount_type) . "',
                 amount = '{$this->amount}'";
         $sql = $sql1 . $sql2 . $sql3;
@@ -386,6 +398,9 @@ class Sales
         $err = DB_error();
         if ($err == '') {
             Cache::clear(self::$base_tag);
+            if ($this->isNew()) {
+                $this->sale_id = DB_insertID();
+            }
             return true;
         } else {
             return false;
@@ -444,24 +459,24 @@ class Sales
             return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
         }
 
-        if ($this->end->toMySQL(true) == self::maxDateTime()) {
+        if ($this->EndDate->toMySQL(true) == self::maxDateTime()) {
             $end_dt = '';
             $end_tm = '';
         } else {
-            $end_dt = $this->end->format('Y-m-d', true);
-            $end_tm = $this->end->format('H:i', true);
+            $end_dt = $this->EndDate->format('Y-m-d', true);
+            $end_tm = $this->EndDate->format('H:i', true);
         }
-        if ($this->start->toMySQL(true) == self::minDateTime()) {
+        if ($this->StartDate->toMySQL(true) == self::minDateTime()) {
             $st_dt = '';
             $st_tm = '';
         } else {
-            $st_dt = $this->start->format('Y-m-d', true);
-            $st_tm = $this->start->format('H:i', true);
+            $st_dt = $this->StartDate->format('Y-m-d', true);
+            $st_tm = $this->StartDate->format('H:i', true);
         }
         $T = SHOP_getTemplate('sales_form', 'form');
         $retval = '';
         $T->set_var(array(
-            'disc_id'       => $this->id,
+            'sale_id'       => $this->sale_id,
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'doc_url'       => SHOP_getDocURL('sales_form',
@@ -483,13 +498,13 @@ class Sales
             'max_date'      => self::MAX_DATE,
             'max_time'      => self::MAX_TIME,
         ) );
-        if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
+        if ($this->EndDate->format('H:i:s',true) == self::MAX_TIME) {
             $T->set_var(array(
                 'end_allday_chk' => 'checked="checked"',
                 'end_time_disabled' => 'disabled="disabled"',
             ) );
         }
-        if ($this->start->format('H:i:s',true) == self::MIN_TIME) {
+        if ($this->StartDate->format('H:i:s',true) == self::MIN_TIME) {
             $T->set_var(array(
                 'st_allday_chk' => 'checked="checked"',
                 'st_time_disabled' => 'disabled="disabled"',
@@ -683,7 +698,7 @@ class Sales
             case 'product':
                 $P = Product::getByID($fieldvalue);
                 if ($P) {
-                    $retval = $P->short_description;
+                    $retval = $P->getDscp();
                 } else {
                     $retval = 'Unknown';
                 }
@@ -692,7 +707,7 @@ class Sales
                 if ($fieldvalue == 0) {     // root category
                     $retval = $LANG_SHOP['home'];
                 } else {
-                    $retval = Category::getInstance($fieldvalue)->cat_name;
+                    $retval = Category::getInstance($fieldvalue)->getName();
                 }
                 break;
             default;
@@ -818,7 +833,7 @@ class Sales
      */
     public function getStart()
     {
-        return $this->start;
+        return $this->StartDate;
     }
 
 
@@ -829,7 +844,18 @@ class Sales
      */
     public function getEnd()
     {
-        return $this->end;
+        return $this->EndDate;
+    }
+
+
+    /**
+     * Check if this is a new record.
+     *
+     * @return  boolean     True if new, False if existing
+     */
+    public function isNew()
+    {
+        return $this->sale_id == 0;
     }
 
 }   // class Sales

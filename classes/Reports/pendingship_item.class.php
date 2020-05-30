@@ -52,7 +52,7 @@ class pendingship_item extends pendingship
                 continue;
             }
             $T->set_var(array(
-                'item_name' => $obj->name,
+                'item_name' => $obj->getName(),
                 'item_id'   => $id,
                 'selected'  => $id == $item_id ? 'selected="selected"' : '',
             ) );
@@ -138,14 +138,14 @@ class pendingship_item extends pendingship
             'sql' => $sql,
             'query_fields' => array(),
             'default_filter' => "WHERE ord.status IN ($nonshipped)
-                AND itm.product_id = '{$Item->id}'",
+                AND itm.product_id = '{$Item->getID()}'",
         );
         //echo $this->sql . ' ' . $query_arr['default_filter'];die;
 
         $text_arr = array(
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&item_id=' . $Item->id,
+                '&item_id=' . $Item->getID(),
             'has_limit' => true,
             'has_paging' => true,
         );
@@ -155,7 +155,7 @@ class pendingship_item extends pendingship
         case 'html':
             $this->extra['class'] = __CLASS__;
             $T->set_var(array(
-                'report_title' => sprintf($this->getTitle(), $Item->name),
+                'report_title' => sprintf($this->getTitle(), $Item->getName()),
                 'output'    => \ADMIN_list(
                     'shop_rep_' . $this->key,
                     array('\Shop\Report', 'getReportField'),
@@ -192,7 +192,7 @@ class pendingship_item extends pendingship
             break;
         }
             $T->set_var(array(
-                'item_name'     => $Item->name,
+                'item_name'     => $Item->getName(),
                 'report_key'    => $this->key,
                 'nl'            => "\n",
             ) );

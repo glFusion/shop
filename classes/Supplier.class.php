@@ -21,7 +21,12 @@ class Supplier extends Address
 {
     use DBO;
 
+    /** Table name, used by DBO.
+     * @var string */
     private static $TABLE = 'shop.suppliers';
+
+    /** Key field ID, used by DBO.
+     * @var string */
     private static $F_ID = 'sup_id';
 
     /** Flag indicates that this is a supplier (default)
@@ -95,6 +100,8 @@ class Supplier extends Address
      */
     private function setAddress($data)
     {
+        global $_SHOP_CONF;
+
         return $this->setID(SHOP_getVar($data, 'sup_id', 'integer'))
             ->setName(SHOP_getVar($data, 'name'))
             ->setCompany(SHOP_getVar($data, 'company'))
@@ -390,10 +397,9 @@ class Supplier extends Address
             $T->set_var('show_htmleditor', false);
             break;
         }
-
         $state_options = State::optionList(
-            SHOP_getVar($A, 'country', 'string', ''),
-            SHOP_getVar($A, 'state', 'string', '')
+            $this->getCountry(),
+            $this->getState()
         );
         $T->set_var(array(
             'entry_id'  => $this->getID(),
@@ -411,9 +417,7 @@ class Supplier extends Address
             'doc_url'   => SHOP_getDocURL('supplier_form'),
             'logo_img'  => $this->getImage()['url'],
             'dscp'      => $this->getDscp(),
-            'country_options' => Country::optionList(
-                SHOP_getVar($A, 'country', 'string', '')
-            ),
+            'country_options' => Country::optionList($this->getCountry()),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
             'lead_time' => $this->getLeadTime(),

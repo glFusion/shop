@@ -141,9 +141,10 @@ class Workflow
     {
         switch ($this->wf_name) {
         case 'billto':
+            $status = $Cart->getBillto()->isValid() == '';
+            break;
         case 'shipto':
-            $A = $Cart->getAddress($this->wf_name);
-            $status = Customer::isValidAddress($A) == '' ? true : false;
+            $status = $Cart->getShipto()->isValid() == '';
             break;
         default:
             $status = true;

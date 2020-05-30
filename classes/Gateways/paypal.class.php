@@ -12,11 +12,12 @@
  * @filesource
  */
 namespace Shop\Gateways;
-
 use Shop\Company;
 use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
+use Shop\Shipper;
+
 
 /**
  * Class for Paypal payment gateway
@@ -60,36 +61,49 @@ class paypal extends \Shop\Gateway
         // Set default values for the config items, just to be sure that
         // something is set here.
         $this->cfgFields= array(
-            'bus_prod_email'    => 'string',
-            'micro_prod_email'  => 'string',
-            'bus_test_email'    => 'string',
-            'micro_test_email'  => 'string',
-            'test_mode'         => 'checkbox',
-            'micro_threshold'   => 'string',
-            'encrypt'           => 'checkbox',
-            'pp_cert'           => 'string',
-            'pp_cert_id'        => 'string',
-            'micro_cert_id'     => 'string',
-            'sandbox_main_cert' => 'string',
-            'sandbox_micro_cert' => 'string',
-            'prv_key'           => 'string',
-            'pub_key'           => 'string',
-            'prod_url'          => 'string',
-            'sandbox_url'       => 'string',
-            'api_username'      => 'password',
-            'api_password'      => 'password',
-            'api_sig'           => 'password',
-            'sandbox_webhook_id' => 'string',
-            'prod_webhook_id'   => 'string',
-            'api_sig'           => 'password',
+            'prod' => array(
+                'receiver_email'    => 'string',
+                'micro_receiver_email'  => 'string',
+                'endpoint'          => 'string',
+                'webhook_id'   => 'string',
+                'api_username'      => 'password',
+                'api_password'      => 'password',
+                'pp_cert'           => 'string',
+                'pp_cert_id'        => 'string',
+                'micro_cert_id'     => 'string',
+            ),
+            'test' => array(
+                'receiver_email'    => 'string',
+                'micro_receiver_email'  => 'string',
+                'endpoint'       => 'string',
+                'webhook_id' => 'string',
+                'api_username'      => 'password',
+                'api_password'      => 'password',
+                'pp_cert' => 'string',
+                'pp_cert_id'        => 'string',
+                'micro_cert_id'     => 'string',
+            ),
+            'global' => array(
+                'test_mode'         => 'checkbox',
+                'micro_threshold'   => 'string',
+                'encrypt'           => 'checkbox',
+                'prv_key'           => 'string',
+                'pub_key'           => 'string',
+            ),
         );
 
         // Set defaults
         $this->config = array(
-            'micro_threshold'   => '10',
-            'test_mode'         => '1',
-            'prod_url'          => 'https://www.paypal.com',
-            'sandbox_url'       => 'https://www.sandbox.paypal.com',
+            'global' => array(
+                'micro_threshold'   => '10',
+                'test_mode'         => '1',
+            ),
+            'prod' => array(
+                'endpoint' => 'https://www.paypal.com',
+            ),
+            'test' => array(
+                'endpoint' => 'https://www.sandbox.paypal.com',
+            ),
         );
 
         // This gateway can service all button type by default
@@ -106,13 +120,14 @@ class paypal extends \Shop\Gateway
         // Call the parent constructor to initialize the common variables.
         parent::__construct();
 
+        $this->gw_url = $this->getConfig('endpoint');
         // Set the gateway URL depending on whether we're in test mode or not
         if ($this->getConfig('test_mode') == 1) {
-            $this->gw_url = $this->getConfig('sandbox_url');
+            //$this->gw_url = $this->getConfig('sandbox_url');
             $this->postback_url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
             $this->api_url = 'https://api.sandbox.paypal.com';
         } else {
-            $this->gw_url = $this->getConfig('prod_url');
+            //$this->gw_url = $this->getConfig('prod_url');
             $this->postback_url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
             $this->api_url = 'https://api.paypal.com';
         }
@@ -125,7 +140,7 @@ class paypal extends \Shop\Gateway
 
         // Set defaults, just to make sure something is set
         $this->cert_id = $this->getConfig('pp_cert_id');
-        $this->receiver_email = $this->getConfig('bus_prod_email');
+        $this->receiver_email = $this->getConfig('receiver_email');
     }
 
 
@@ -188,7 +203,7 @@ class paypal extends \Shop\Gateway
             'cmd'       => '_cart',
             'upload'    => '1',
             'cancel_return' => $cart->cancelUrl(),
-            'return'    => $this->returnUrl($cart->order_id, $cart->token),
+            'return'    => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
             'rm'        => '1',     // simple GET return url
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
@@ -196,18 +211,17 @@ class paypal extends \Shop\Gateway
             'custom'    => str_replace('"', '\'', serialize($custom_arr)),
             'invoice'   => $cartID,
         );
-
-        $address = $cart->getAddress('shipto');
+        $address = $cart->getShipto();
         if (!empty($address)) {
-            $np = explode(' ', $address['name']);
+            $np = explode(' ', $address->getName());
             $fields['first_name'] = isset($np[0]) ? htmlspecialchars($np[0]) : '';
             $fields['last_name'] = isset($np[1]) ? htmlspecialchars($np[1]) : '';
-            $fields['address1'] = htmlspecialchars($address['address1']);
-            $fields['address2'] = htmlspecialchars($address['address2']);
-            $fields['city'] = htmlspecialchars($address['city']);
-            $fields['state'] = htmlspecialchars($address['state']);
-            $fields['country'] = htmlspecialchars($address['country']);
-            $fields['zip'] = htmlspecialchars($address['zip']);
+            $fields['address1'] = htmlspecialchars($address->getAddress1());
+            $fields['address2'] = htmlspecialchars($address->getAddress2());
+            $fields['city'] = htmlspecialchars($address->getCity());
+            $fields['state'] = htmlspecialchars($address->getState());
+            $fields['country'] = htmlspecialchars($address->getCountry());
+            $fields['zip'] = htmlspecialchars($address->getPostal());
         }
 
         $i = 1;     // Item counter for paypal variables
@@ -232,12 +246,11 @@ class paypal extends \Shop\Gateway
                 if ($item->getQuantity() == 0) {
                     continue;
                 }
-                $item_count++;
                 //$item_parts = explode('|', $item['item_id']);
                 //$db_item_id = $item_parts[0];
                 //$options = isset($item_parts[1]) ? $item_parts[1] : '';
-                $P = \Shop\Product::getByID($item->product_id, $custom_arr);
-                $db_item_id = DB_escapeString($item->product_id);
+                $P = \Shop\Product::getByID($item->getProductID(), $custom_arr);
+                $db_item_id = DB_escapeString($item->getProductID());
                 $oc = 0;
                 $oio_arr = array();
                 foreach ($item->options as $OIO) {
@@ -254,10 +267,10 @@ class paypal extends \Shop\Gateway
                 $item_amount = $item->getNetPrice();
                 $fields['amount_' . $i] = $item_amount;
                 $fields['item_number_' . $i] = (int)$cart_item_id;
-                $fields['item_name_' . $i] = htmlspecialchars($item->description);
+                $fields['item_name_' . $i] = htmlspecialchars($item->getDscp());
                 $total_amount += $item->getPrice();
-                if (isset($item->extras['custom']) && is_array($item->extras['custom'])) {
-                    foreach ($item->extras['custom'] as $id=>$val) {
+                if (is_array($item->getExtra('custom'))) {
+                    foreach ($item->getExtra('custom') as $id=>$val) {
                         $fields['on'.$oc.'_'.$i] = $P->getCustom($id);
                         $fields['os'.$oc.'_'.$i] = $val;
                         $oc++;
@@ -265,9 +278,9 @@ class paypal extends \Shop\Gateway
                 }
                 $fields['quantity_' . $i] = $item->getQuantity();
 
-                if ($item->shipping > 0) {
+                if ($item->getShipping() > 0) {
                     $fields['shipping_' . $i] = $item->getShipping();
-                    $shipping += $item->shipping;
+                    $shipping += $item->getShipping();
                 }
                 $i++;
             }
@@ -288,9 +301,9 @@ class paypal extends \Shop\Gateway
         // be used for this purchase
         $this->setReceiver($total_amount);
         $fields['business'] = $this->receiver_email;
-        if (empty($fields['business']))
+        if (empty($fields['business'])) {
             return '';
-
+        }
         $gatewayVars = array();
         $enc_btn = '';
         if ($this->getConfig('encrypt')) {
@@ -467,12 +480,13 @@ class paypal extends \Shop\Gateway
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        // Make sure we want to create a buy_now-type button
-        if ($P->getPrice() == 0 || $P->isPhysical()) {
-            return '';    // Not for items that require shipping or are free
-        }
-        $btn_type = $P->btn_type;
+        $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
+
+        // Make sure we want to create a buy_now-type button
+        if ($P->isPhysical()) {
+            return '';    // Not for items that require shipping
+        }
 
         $btn_info = self::gwButtonType($btn_type);
         $this->AddCustom('transtype', $btn_type);
@@ -483,8 +497,8 @@ class paypal extends \Shop\Gateway
             $vars['cmd'] = $btn_info['cmd'];
             $this->setReceiver($P->getPrice());
             $vars['business'] = $this->receiver_email;
-            $vars['item_number'] = htmlspecialchars($P->id);
-            $vars['item_name'] = htmlspecialchars($P->short_description);
+            $vars['item_number'] = htmlspecialchars($P->getID());
+            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
             $vars['return'] = $this->returnUrl('', '');
@@ -502,18 +516,18 @@ class paypal extends \Shop\Gateway
 
             $vars['notify_url'] = $this->ipn_url;
 
-            if ($P->weight > 0) {
-                $vars['weight'] = $P->weight;
+            if ($P->getWeight() > 0) {
+                $vars['weight'] = $P->getWeight();
             } else {
                 $vars['no_shipping'] = '1';
             }
 
-            switch ($P->shipping_type) {
+            switch ($P->getShippingType()) {
             case 0:
                 $vars['no_shipping'] = '1';
                 break;
             case 2:
-                $shipping = \Shop\Shipper::getBestRate($P->shipping_units)->best_rate;
+                $shipping = Shipper::getBestRate($P->getShippingUnits())->best_rate;
                 $shipping += $P->getShipping();
                 $vars['shipping'] = $shipping;
                 $vars['no_shipping'] = '1';
@@ -574,7 +588,7 @@ class paypal extends \Shop\Gateway
 
         // Set the text for the button, falling back to our Buy Now
         // phrase if not available
-        $btn_text = $P->btn_text;    // maybe provided by a plugin
+        $btn_text = $P->getBtnText();    // maybe provided by a plugin
         if ($btn_text == '') {
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
@@ -770,10 +784,8 @@ class paypal extends \Shop\Gateway
     public function isBusinessEmail($email)
     {
         switch ($email) {
-        case $this->getConfig('bus_prod_email'):
-        case $this->getConfig('micro_prod_email'):
-        case $this->getConfig('bus_test_email'):
-        case $this->getConfig('micro_test_email'):
+        case $this->getConfig('receiver_email'):
+        case $this->getConfig('micro_receiver_email'):
             $retval = true;
             break;
         default:
@@ -826,31 +838,23 @@ class paypal extends \Shop\Gateway
      * Sets the receiver_email and cert_id properties.
      *
      * @param   float   $amount     Total puchase amount.
+     * @return  object  $this
      */
     private function setReceiver($amount)
     {
-        // Available receiver_email addresses
-        $aEmail = array(
-            array('bus_prod_email', 'micro_prod_email'),
-            array('bus_test_email', 'micro_test_email'),
-        );
-
-        // Available cert_id properties
-        $aCert = array(
-            array('pp_cert_id', 'micro_cert_id'),
-            array('sandbox_main_cert', 'sandbox_micro_cert'),
-        );
-
-        // Set the array keys based on test mode and amount
-        $kTest = $this->isSandbox() ? 1 : 0;
-        $kAmount = $amount < $this->getConfig('micro_threshold') ? 1 : 0;
-        $this->receiver_email = !empty($this->getConfig($aEmail[$kTest][$kAmount])) ?
-                $this->getConfig($aEmail[$kTest][$kAmount]) :
-                $this->getConfig($aEmail[$kTest][0]);
-
-        $this->cert_id = !empty($this->getConfig($aCert[$kTest][$kAmount])) ?
-                $this->getConfig($aCert[$kTest][$kAmount]) :
-                $this->getConfig($aCert[$kTest][0]);
+        // If the order amount exceeds the micro account threshold,
+        // or no micro receiver email is specified, return prod.
+        if (
+            $amount >= $this->getConfig['micro_threshold'] ||
+            empty($this->getConfig('micro_receiver_email'))
+        ) {
+            $this->receiver_email = $this->getConfig('receiver_email');
+            $this->cert_id = $this->getConfig('pp_cert_id');
+        } else {
+            $this->receiver_email = $this->getConfig('micro_receiver_email');
+            $this->cert_id = $this->getConfig('micro_cert_id');
+        }
+        return $this;
     }
 
 
@@ -867,12 +871,33 @@ class paypal extends \Shop\Gateway
         if (!is_array($data)) {
             return array();
         }
-
+        $pmt_gross = 0;
+        $verified = 'true';
+        $pmt_status = 'paid';
+        $buyer_email = '';
+        if (isset($data['event_type'])) {   // webhook
+            if (isset($data['resource']['invoice']['payments']['transactions'])) {
+                $info = array_pop($data['resource']['invoice']['payments']['transactions']);
+                $pmt_gross = (float)$info['amount']['value'];
+            }
+            if (isset($data['resource']['invoice']
+                ['primary_recipients']
+                [0]['billing_info']['email_address'])) {
+                $buyer_email = $data['resource']['invoice']
+                    ['primary_recipients']
+                    [0]['billing_info']['email_address'];
+            }
+        } else {        // regular IPN
+            $pmt_gross = $data['mc_gross'] . ' ' . $data['mc_currency'];
+            $verified = $data['payer_status'];
+            $pmt_status = $data['payment_status'];
+            $buyer_email = $data['payer_email'];
+        }
         $retval = array(
-            'pmt_gross'     => $data['mc_gross'] . ' ' . $data['mc_currency'],
-            'verified'      => $data['payer_status'],
-            'pmt_status'    => $data['payment_status'],
-            'buyer_email'   => $data['payer_email'],
+            'pmt_gross'     => $pmt_gross,
+            'verified'      => $verified,
+            'pmt_status'    => $pmt_status,
+            'buyer_email'   => $buyer_email,
         );
         return $retval;
     }
@@ -974,7 +999,6 @@ class paypal extends \Shop\Gateway
             SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
             return false;
         }
-        echo "Token: $access_token\n";
 
         $Shop = new Company();
         $Order = Order::getInstance($order_num);
@@ -1020,7 +1044,7 @@ class paypal extends \Shop\Gateway
                             'postal_code'       => $Billto->getPostal(),
                             'country_code'      => $Billto->getCountry(),
                         ),
-                        'email_address' => $Order->buyer_email,
+                        'email_address' => $Order->getBuyerEmail(),
                     ),
                     'shipping_info' => array(
                         'name' => array(
@@ -1138,15 +1162,11 @@ class paypal extends \Shop\Gateway
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
-            /*        echo "Failed to send invoice\n";
-                    var_dump($http_code);
-            var_dump($send_response);*/
                     SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
                     return false;
                 }
             }
         } else {
-//            var_dump($inv);
             SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
             SHOP_Log("Data: " . var_export($inv, true));
             return false;
@@ -1173,11 +1193,7 @@ class paypal extends \Shop\Gateway
      */
     public function getWebhookID()
     {
-        if ($this->getConfig('test_mode')) {
-            return $this->getConfig('sandbox_webhook_id');
-        } else {
-            return $this->getConfig('prod_webhook_id');
-        }
+        return $this->getConfig('webhook_id');
     }
 
 

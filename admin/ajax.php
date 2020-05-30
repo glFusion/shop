@@ -238,7 +238,7 @@ case 'updatestatus':
         $order_id = $_POST['order_id'];
         $showlog = $_POST['showlog'] == 1 ? 1 : 0;
         $ord = \Shop\Order::getInstance($order_id);
-        if ($ord->isNew)  {     // non-existant order
+        if ($ord->isNew())  {     // non-existant order
             $L = array(
                 'showlog' => 0,
             );
@@ -248,7 +248,7 @@ case 'updatestatus':
             $L['order_id'] = $order_id;
             $L['username'] = COM_getDisplayName($_USER['uid']) . ' (' . $_USER['uid'] . ')';
             $L['statusMessage'] = NULL;
-            $oldstatus = $ord->status;
+            $oldstatus = $ord->getStatus();
             if ($ord->updateStatus($newstatus) != $oldstatus) {
                 $L['newstatus'] = $newstatus;
                 $L['statusMessage'] = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
@@ -305,7 +305,7 @@ case 'add_tracking':
         if ($SP->Save($_POST)) {
             if ($SP->getShipperID() > 0) {
                 $shipper_code = Shop\Shipper::getInstance($SP->getShipperID())->getCode();
-                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNum());
+                $tracking_url = Shop\Shipper::getInstance($SP->getShipperID())->getTrackingUrl($SP->getTrackingNumber());
             } else {
                 $shipper_code = '';
                 $tracking_url = '';
@@ -315,7 +315,7 @@ case 'add_tracking':
                 'shipper_id'    => $SP->getShipperID(),
                 'pkg_id'        => $SP->getID(),
                 'shipper_name'  => $SP->getShipperInfo(),
-                'tracking_num'  => $SP->getTrackingNum(),
+                'tracking_num'  => $SP->getTrackingNumber(),
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
@@ -474,7 +474,7 @@ case 'toggle':
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            $newval = \Shop\OrderStatus::Toggle($_POST['id'], $field, $_POST['oldval']);
+            $newval = Shop\OrderStatus::Toggle($_POST['oldval'], $field, $_POST['id']);
             break;
         default:
             exit;
@@ -490,7 +490,7 @@ case 'toggle':
         break;
 
     case 'region':
-        $newval = \Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        $newval = Shop\Region::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
     case 'country':

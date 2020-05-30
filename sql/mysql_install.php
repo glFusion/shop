@@ -29,6 +29,7 @@ $_SQL = array(
   `verified` tinyint(1) DEFAULT '0',
   `txn_id` varchar(255) DEFAULT NULL,
   `gateway` varchar(25) DEFAULT NULL,
+  `event` varchar(40) DEFAULT 'payment',
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -155,7 +156,8 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `sku` varchar(8) DEFAULT NULL,
   PRIMARY KEY (`pov_id`),
-  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`)
+  UNIQUE KEY `pog_value` (`pog_id`,`pov_value`),
+  UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)
 ) ENGINE=MyISAM",
 
 'shop.buttons' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.buttons']}` (
@@ -322,7 +324,8 @@ $_SQL = array(
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`),
   KEY `owner` (`redeemer`,`balance`,`expires`),
-  KEY `purchased` (`purchased`)
+  KEY `purchased` (`purchased`),
+  KEY `expires` (`expires`)
 ) ENGINE=MyIsam",
 
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
@@ -386,7 +389,7 @@ $_SQL = array(
   KEY `is_brand` (`is_brand`,`name`)
 ) ENGINE=MyISAM",
 
-'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.variants']}
+'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.product_variants']} (
   `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(11) unsigned NOT NULL,
   `sku` varchar(64) DEFAULT NULL,
@@ -397,7 +400,7 @@ $_SQL = array(
   `reorder` int(10) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
-  `img_ids` varchar(255) DEFAULT NULL,
+  `img_ids` text NOT NULL,
   `dscp` text NOT NULL,
   PRIMARY KEY (`pv_id`),
   KEY `prod_id` (`item_id`)
@@ -486,9 +489,6 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.products']} ADD `brand` varchar(255) NOT NULL DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `min_ord_qty` int(3) NOT NULL DEFAULT 1",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `max_ord_qty` int(3) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0",
-    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `grp_access` int(3) UNSIGNED NOT NULL default 2",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `module_code` varchar(10) AFTER `id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} CHANGE  price price  decimal(9,4) NOT NULL default  0",
@@ -503,7 +503,6 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_price pov_price decimal(9,4) DEFAULT NULL",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `pog_id` int(11) UNSIGNED NOT NULL AFTER `pov_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD `sku` varchar(8) DEFAUlt NULL",
-    "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY IF EXISTS `item_id`",
     "ALTER TABLE {$_TABLES['shop.coupons']} DROP PRIMARY KEY",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD UNIQUE KEY `code` (`code`)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD `id` int(11) unsigned NOT NULL auto_increment PRIMARY KEY FIRST",
@@ -628,6 +627,9 @@ $SHOP_UPGRADE['1.1.0'] = array(
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP `item_id`",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `reorder` int(10) unsigned NOT NULL DEFAULT 0 after `onhand`",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0 AFTER max_ord_qty",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0 AFTER brand_id",
+    // Note: Removal of the products `brand` field happens in upgrade.php after brand_id is populated
     $_SHOP_SAMPLEDATA['shop.regions'],       // these may need to change if data changes
     $_SHOP_SAMPLEDATA['shop.countries'],
     $_SHOP_SAMPLEDATA['shop.states'],
@@ -703,6 +705,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pmt_order_id` varchar(40) DEFAULT NULL,
       `pmt_ts` int(11) unsigned DEFAULT NULL,
+      `is_money` tinyint(1) unsigned NOT NULL DEFAULT 1,
       `pmt_gateway` varchar(12) DEFAULT NULL,
       `pmt_amount` decimal(12,4) DEFAULT NULL,
       `pmt_ref_id` varchar(255) DEFAULT NULL,
@@ -718,6 +721,11 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
+    "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
+    "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
+    "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

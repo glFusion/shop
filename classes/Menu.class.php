@@ -37,13 +37,16 @@ class Menu
                 'url'  => SHOP_URL . '/index.php',
                 'text' => $LANG_SHOP['back_to_catalog'],
             ),
-        );
-
-        $active = $view == 'orderhist' ? true : false;
-        $menu_arr[] = array(
-            'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
-            'text' => $LANG_SHOP['purchase_history'],
-            'active' => $active,
+            array(
+                'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
+                'text' => $LANG_SHOP['purchase_history'],
+                'active' => $view == 'orderhist' ? true : false,
+            ),
+            array(
+                'url' => COM_buildUrl(SHOP_URL . '/account.php?mode=addresses'),
+                'text' => $LANG_SHOP['addresses'],
+                'active' => $view == 'addresses' ? true : false,
+            ),
         );
 
         // Show the Gift Cards menu item only if enabled.
@@ -349,29 +352,29 @@ class Menu
     {
         global $LANG_SHOP;
 
-        $retval = COM_startBlock(
-            $LANG_SHOP['order'] . ' ' . $Order->order_id, '',
-            COM_getBlockTemplate('_admin_block', 'header')
-        );
-
+        $retval = '';
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->order_id,
+                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['order'],
                 'active' => $view == 'order' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->order_id,
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'ord_ship' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->order_id,
+                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'ord_pmts' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
+        $retval .= COM_startBlock(
+            $LANG_SHOP['order'] . ' ' . $Order->getOrderID(), '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
         $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $retval;
     }

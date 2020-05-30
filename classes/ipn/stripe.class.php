@@ -61,12 +61,12 @@ class stripe extends \Shop\IPN
         if (!empty($order_id)) {
             $this->Order = $this->getOrder($order_id);
         }
-        if (!$this->Order || $this->Order->isNew) {
+        if (!$this->Order || $this->Order->isNew()) {
             // Invalid order specified, nothing can be done.
             return NULL;
         }
 
-        $this->setOrderId($this->Order->order_id);
+        $this->setOrderId($this->Order->getOrderID());
         $billto = $this->Order->getAddress('billto');
         $shipto = $this->Order->getAddress('shipto');
         if (empty($shipto) && !empty($billto)) {
@@ -74,10 +74,10 @@ class stripe extends \Shop\IPN
         }
 
         $this
-            ->setEmail($this->Order->buyer_email)
+            ->setEmail($this->Order->getBuyerEmail())
             ->setPayerName($_USER['fullname'])
             ->setGwName($this->GW->getName())
-            ->setStatus(self::PENDING);
+            ->setStatus(self::STATUS_PENDING);
 
         $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
@@ -92,19 +92,19 @@ class stripe extends \Shop\IPN
 
         $this->custom = array(
             'transtype' => $this->GW->getName(),
-            'uid'       => $this->Order->uid,
+            'uid'       => $this->Order->getUid(),
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
         );
 
         foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->product_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->getShortDscp(),
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getProductID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getNetPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
         }
@@ -122,7 +122,6 @@ class stripe extends \Shop\IPN
     {
         // Get the payment intent from Stripe
         $trans = $this->GW->getPayment($this->getTxnId());
-        SHOP_log("got Stripe transaction: " . var_dump($trans, true), SHOP_LOG_DEBUG);
         $this->_payment = $trans;
 
         if (!$trans || $trans->status != 'succeeded') {
@@ -134,7 +133,7 @@ class stripe extends \Shop\IPN
 
         // Verification succeeded, get payment info.
         $this
-            ->setStatus(self::PAID)
+            ->setStatus(self::STATUS_PAID)
             ->setCurrency($trans->currency)
             ->setPmtGross($this->getCurrency()->fromInt($trans->amount_received));
 
@@ -159,6 +158,7 @@ class stripe extends \Shop\IPN
         $this->ipn_data['pmt_tax'] = $this->getPmtTax();
         $this->ipn_data['pmt_gross'] = $this->getPmtGross();
         $this->ipn_data['status'] = $this->getStatus();  // to get into handlePurchase()
+        COM_errorLog("Stripo transaction verified OK");
         return true;
     }
 
@@ -205,24 +205,25 @@ class stripe extends \Shop\IPN
 
         // If no data has been received, then there's nothing to do.
         if (empty($this->_payment)) {
+            SHOP_log("Empty payment received");
             return false;
         }
+
         // Add the item to the array for the order creation.
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
-        foreach ($this->Order as $idx=>$item) {
+        foreach ($this->Order->getItems() as $idx=>$item) {
             $args = array(
-                'item_id'   => $item->item_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->name,
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'item_id'   => $item->getID(),
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
         }
-
         return $this->handlePurchase();
     }
 

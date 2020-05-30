@@ -18,8 +18,7 @@ require_once '../../lib-common.php';
 $GW = Shop\Gateway::getInstance('stripe');
 $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
 $payload = @file_get_contents('php://input');
-SHOP_log('Recieved Stripe IPN: ' . print_r($payload, true), SHOP_LOG_DEBUG);
-
+SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
 $event = null;
 
 try {
@@ -30,12 +29,12 @@ try {
     // Invalid payload
     SHOP_log("Unexpected Value received from Stripe");
     http_response_code(400); // PHP 5.4 or greater
-    exit();
+    exit;
 } catch(\Stripe\Error\SignatureVerification $e) {
     // Invalid signature
     SHOP_log("Invalid Stripe signature received");
     http_response_code(400); // PHP 5.4 or greater
-    exit();
+    exit;
 }
 
 // Handle the checkout.session.completed event

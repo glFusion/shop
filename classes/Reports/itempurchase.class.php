@@ -60,7 +60,7 @@ class itempurchase extends \Shop\Report
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
         $Item = \Shop\Product::getByID($this->item_id);
-        $this->item_dscp = $Item->short_description;
+        $this->item_dscp = $Item->getShortDscp();
         $this->item_id = DB_escapeString($this->item_id);
         $T = $this->getTemplate();
 

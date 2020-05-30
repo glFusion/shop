@@ -34,7 +34,7 @@ define('SHOP_PI_PATH', __DIR__);
 define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
 /** Define URL to plugin admin interface */
 define('SHOP_ADMIN_URL',
-        "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
+    "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
 
 // Define product types
 define('SHOP_PROD_PHYSICAL',  1);
@@ -49,8 +49,8 @@ define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
 
 // Order status codes
-define('SHOP_STATUS_OPEN', 0);
-define('SHOP_STATUS_PAID', 1);
+//define('SHOP_STATUS_OPEN', 0);
+//define('SHOP_STATUS_PAID', 1);
 
 // Log levels to emulate glFusion 2.0+ logging
 define('SHOP_LOG_DEBUG',    100);
@@ -245,23 +245,26 @@ function plugin_displaycomment_shop($id, $cid, $title, $order,$format, $page, $v
         return $retval;
 
     $P = new Shop\Product($id);
-    if ($P->isNew)
+    if ($P->isNew()) {
         return $retval;
+    }
 
     $allowed = 1;
 
     if ($allowed == 1) {
         $delete_option = plugin_ismoderator_shop();
-        $retval .= CMT_userComments($id, $title, $_SHOP_CONF['pi_name'], $order, $format,
-                                     $cid, $page, $view, $delete_option,
-                                     $P->comments_enabled, $_USER['uid']);
+        $retval .= CMT_userComments(
+            $id, $title, $_SHOP_CONF['pi_name'], $order, $format,
+            $cid, $page, $view, $delete_option,
+            $P->commentsEnabled() , $_USER['uid']);
     } else {
-        $retval .= COM_startBlock($LANG_ACCESS['accessdenied'], '',
-                        COM_getBlockTemplate ('_msg_block', 'header'))
-                . $LANG_ACCESS['storydenialmsg']
-                . COM_endBlock(COM_getBlockTemplate ('_msg_block', 'footer'));
+        $retval .= COM_startBlock(
+            $LANG_ACCESS['accessdenied'], '',
+            COM_getBlockTemplate('_msg_block', 'header')
+        )
+        . $LANG_ACCESS['storydenialmsg']
+        . COM_endBlock(COM_getBlockTemplate ('_msg_block', 'footer'));
     }
-
     return $retval;
 }
 
@@ -514,7 +517,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             default:
                 // Default tag [shop:prod_id]is a product link
                 $P  = Shop\Product::getByID($id);
-                if (!$P->isNew) {
+                if (!$P->isNew()) {
                     $url = $P->getLink();
                     //$url = COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
                     // Allow the author to use different text for the link.  Default
@@ -641,7 +644,7 @@ function plugin_dopluginsearch_shop(
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
-            LEFT JOIN {$_TABLES['prodXcat']} pxc
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
                 ON pxc.product_id = p.id
             LEFT JOIN {$_TABLES['shop.categories']} c
                 ON pxc.cat_id=c.cat_id
@@ -966,22 +969,25 @@ function phpblock_shop_cart_contents()
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
-    $Cur = Shop\Currency::getInstance($cart->currency);
+    $Cur = $cart->getCurrency();
     foreach ($cart->getItems() as $id=>$item) {
-        $item_id = $item->product_id;
-        if ($item->options != '') $item_id .= '|' . $item->options;
+        $item_id = $item->getProductID();
+        $optid_str = $item->getOptionIdString();
+        if (!empty($optid_str)) {
+            $item_id .= '|' . $optid_str;
+        }
         $P = Shop\Product::getByID($item_id);
 
-        $item_total = (float)$item->price * $item->quantity;
+        $item_total = (float)$item->getPrice() * $item->getQuantity();
         $T->set_var(array(
             'item_id'       => $item_id,
 //            'options'       => $P->getOptionDisplay($item),
-            'item_name'     => $item->description,
-            'price'         => $Cur->FormatValue($item->price),
-            'quantity'      => $item->quantity,
+            'item_name'     => $item->getDscp(),
+            'price'         => $Cur->FormatValue($item->getPrice()),
+            'quantity'      => $item->getQuantity(),
             'item_total'    => $Cur->FormatValue($item_total),
 //            'pi_url'        => SHOP_URL,
-            'item_link'     => $P->getLink($item->id, $cart->token),
+            'item_link'     => $P->getLink($item->getID(), $cart->token),
         ) );
         $T->parse('cRow', 'CartRow', true);
         $total += $item_total;
@@ -1163,22 +1169,22 @@ function phpblock_shop_popular()
     if ($limit < 1)
         $limit = 1;
 
-    $sql = "SELECT DISTINCT
-                pr.id,
+    $sql = "SELECT DISTINCT (pr.id),
                 (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pr.id = pxc.product_id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON pr.cat_id=c.cat_id
+                ON c.cat_id = pxc.cat_id
             WHERE pr.enabled=1
-            AND (c.enabled=1 OR c.enabled IS NULL)
-            AND pr.show_popular = 1 " .
+            AND pr.show_popular = 1
+            AND (c.enabled=1 OR c.enabled IS NULL) " .
             SEC_buildAccessSql('AND', 'c.grp_access') .
             " HAVING cnt > 0
             ORDER BY cnt DESC
             LIMIT $limit";
     //echo $sql;die;
-
     $retval = SHOP_phpblock_product($sql);
     return $retval;
 }
@@ -1202,13 +1208,14 @@ function phpblock_shop_recent($cat='')
     if ($limit < 1)
         $limit = 1;
 
-    $sql = "SELECT DISTINCT
-                pr.id,
+    $sql = "SELECT DISTINCT (pr.id),
                 (SELECT count(*) FROM {$_TABLES['shop.orderitems']} pu
                     WHERE product_id = pr.id) AS cnt
             FROM {$_TABLES['shop.products']} pr
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON pr.id = pxc.product_id
             LEFT JOIN {$_TABLES['shop.categories']} c
-            ON pr.cat_id=c.cat_id
+                ON pr.cat_id=c.cat_id
             WHERE pr.enabled=1
             AND (c.enabled=1 OR c.enabled IS NULL)
             AND pr.show_popular = 1 " .
@@ -1345,18 +1352,20 @@ function SHOP_phpblock_product($sql)
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
             $P = Shop\Product::getByID($A['id']);
             $isOnSale = $P->isOnSale();
-            $price = $P->price;
+            $price = $P->getPrice();
             if ($isOnSale) {
                 $price_was = $price;
                 $price = $P->getSalePrice();
+            } else {
+                $price_was = 0;
             }
             $price = $price > 0 ? Shop\Currency::getInstance()->Format($price) : '';
             $price_was = $price_was > 0 ? Shop\Currency::getInstance()->Format($price_was) : '';
 
             $T->set_var(array(
-                'name'      => $P->name,
+                'name'      => $P->getName(),
                 'item_url'  => $P->getLink(),
-                'descrip'   => $P->short_description,
+                'descrip'   => $P->getShortDscp(),
                 'price'     => $price,
                 'price_was' => $price_was,
                 'currency'  => $_SHOP_CONF['currency'],
@@ -1443,10 +1452,11 @@ function plugin_user_login_shop($uid)
     if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
 
     $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
-    if (empty($anon_cart)) return;             // save a step if there's no anon cart
-    $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-    $user_cart->Merge($anon_cart);
-    $user_cart->Validate(true);
+    if (!empty($anon_cart)) {
+        $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+        $user_cart->Merge($anon_cart);
+        $user_cart->Validate(true);
+    }
 }
 
 
@@ -1730,6 +1740,27 @@ function plugin_configmanager_select_list_tpl_ver_shop()
 
 
 /**
+ * Select the geolocation provider to use.
+ *
+ * @return  array   $option => path
+ */
+function plugin_configmanager_select_ipgeo_provider_shop()
+{
+    global $LANG_SHOP;
+
+    $A = array('--' . $LANG_SHOP['none'] . '--' => '');
+    $files = glob(__DIR__ . '/classes/Geo/*.class.php');
+    foreach ($files as $file) {
+        $tmp = explode('/', $file);
+        $opt = explode('.', end($tmp))[0];
+        $provider = Shop\GeoLocate::getProvider($opt)->getProviderName();
+        $A[$provider] = $opt;
+    }
+    return $A;
+}
+
+
+/**
  * Create a currency dropdown list for selecting the default currency.
  *
  * @return  array   Array of description => value
@@ -1739,7 +1770,7 @@ function plugin_configmanager_select_currency_shop()
     $A = array();
     $tmp = Shop\Currency::getAll();
     foreach ($tmp as $code => $data) {
-        $A["{$code} - {$data->name}"] = $code;
+        $A["{$code} - {$data->getName()}"] = $code;
     }
     return $A;
 }
@@ -1799,13 +1830,12 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         $LT->set_file(array(
             'block' => 'profileblock.thtml',
         ));
-        $LT->set_var('is_uikit', $_SHOP_CONF['_is_uikit']);
         $U = Shop\Customer::getInstance($uid);
         if ($_SHOP_CONF['gc_enabled']) {
             $gc_bal = Shop\Products\Coupon::getUserBalance($uid);
             $LT->set_var('gc_bal', Shop\Currency::getInstance()->Format($gc_bal));
         }
-        if (!empty($U->cart)) {
+        if (!empty($U->getCart())) {
             $cart = true;
             $LT->set_var('cart', true);
         } else {
@@ -1940,7 +1970,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
     global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF, $_USER, $_GROUPS;
 
     $properties = explode(',', $what);
-    $fields = array('p.id');        // always get item id
+    $fields = array('p.id', 'p.name');  // always get item name and id
     $retval = array();
     $buildingSearchIndex = false;
 
@@ -1963,6 +1993,8 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
         } else {
             return NULL;
         }
+    } else {
+        $cat_where = '';
     }
 
     foreach ($properties as $p) {
@@ -2077,7 +2109,6 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 break;
             }
         }
-
         $url_id = $_SHOP_CONF['use_sku'] ? $A['name'] : $A['id'];
         $props['url'] = COM_buildUrl(
             $_CONF['site_url'] . '/shop/detail.php?id=' . urlencode($url_id)
@@ -2128,7 +2159,7 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
     $U = Shop\Customer::getInstance($uid);
-    foreach ($U->addresses as $addr) {
+    foreach ($U->getAddresses() as $addr) {
         foreach (Shop\Customer::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));
@@ -2398,7 +2429,7 @@ function SHOP_getRatedIds($pi_name)
 {
     static $retval = array();
 
-    if (!array_key_exists($retval, $pi_name)) {
+    if (!array_key_exists($pi_name, $retval)) {
         $retval[$pi_name] = RATING_getRatedIds($pi_name);
     }
     return $retval[$pi_name];

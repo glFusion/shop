@@ -19,9 +19,21 @@ namespace Shop;
  */
 class ShipmentItem
 {
-    /** Internal properties accessed via `__set()` and `__get()`.
-     * @var array */
-    private $properties = array();
+    /** Shipment Item record ID.
+     * @var integer */
+    private $si_id = 0;
+
+    /** Shipment record ID.
+     * @var integer */
+    private $shipment_id = 0;
+
+    /** OrderItem record ID.
+     * @var integer */
+    private $orderitem_id = 0;
+
+    /** Quantity of item shipped.
+     * @var integer */
+    private $quantity = 0;
 
     /** Fields for an OrderItem record.
      * @var array */
@@ -91,11 +103,73 @@ class ShipmentItem
      */
     public static function Create($shipment_id, $oi_id, $qty)
     {
-        $Obj = new self;
-        $Obj->shipment_id = $shipment_id;
-        $Obj->orderitem_id = $oi_id;
-        $Obj->quantity = $qty;
+        $Obj = new self(array(
+            'shipment_id'   => $shipment_id,
+            'orderitem_id'  => $oi_id,
+            'quantity'      => $qty,
+        ) );
         return $Obj;
+    }
+
+
+    /**
+     * Set the shipment record ID.
+     *
+     * @param   integer $val    Shipment record ID
+     * @return  object  $this
+     */
+    private function setShipmentID($val)
+    {
+        $this->shipment_id = (int)$val;
+        return $this;
+    }
+
+
+    /**
+     * Set the orderitem record ID.
+     *
+     * @param   integer $val    Orderitem record ID
+     * @return  object  $this
+     */
+    private function setOrderitemID($val)
+    {
+        $this->orderitem_id = (int)$val;
+        return $this;
+    }
+
+
+    /**
+     * Get the OrderItem record id for this shipment item.
+     *
+     * @return  integer     Related Orderitem record ID
+     */
+    public function getOrderitemID()
+    {
+        return (int)$this->orderitem_id;
+    }
+
+
+    /**
+     * Set the quantity shipped.
+     *
+     * @param   integer $val    Quantity shipped
+     * @return  object  $this
+     */
+    private function setQuantity($val)
+    {
+        $this->quantity = (int)$val;
+        return $this;
+    }
+
+
+    /**
+     * Get the OrderItem record id for this shipment item.
+     *
+     * @return  integer     Related Orderitem record ID
+     */
+    public function getQuantity()
+    {
+        return (int)$this->quantity;
     }
 
 
@@ -166,51 +240,13 @@ class ShipmentItem
      */
     public function setVars($A)
     {
-        if (!is_array($A)) return false;
-
-        foreach (self::$fields as $field) {
-            if (isset($A[$field])) {
-                $this->$field = $A[$field];
-            }
+        if (is_array($A))  {
+            $this->si_id = isset($A['si_id']) ? (int)$A['si_id'] : 0;
+            $this->shipment_id = (int)$A['shipment_id'];
+            $this->orderitem_id = (int)$A['orderitem_id'];
+            $this->quantity = (float)$A['quantity'];
         }
-        return true;
-    }
-
-
-    /**
-     * Setter function.
-     *
-     * @param   string  $key    Name of property to set
-     * @param   mixed   $value  Value to set for property
-     */
-    public function __set($key, $value)
-    {
-        switch ($key) {
-        case 'si_id':
-        case 'shipment_id':
-        case 'quantity':
-            $this->properties[$key] = (int)$value;
-            break;
-        default:
-            $this->properties[$key] = trim($value);
-            break;
-        }
-    }
-
-
-    /**
-     * Getter function.
-     *
-     * @param   string  $key    Property to retrieve
-     * @return  mixed           Value of property, NULL if undefined
-     */
-    public function __get($key)
-    {
-        if (array_key_exists($key, $this->properties)) {
-            return $this->properties[$key];
-        } else {
-            return NULL;
-        }
+        return $this;
     }
 
 

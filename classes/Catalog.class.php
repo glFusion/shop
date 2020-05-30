@@ -32,6 +32,10 @@ class Catalog
      * @var object */
     private $Cart = NULL;
 
+    /** Query string received from the URL.
+     * @var string */
+    private $query_str = '';
+
 
     /**
      * Set the brand ID to limit results.
@@ -72,8 +76,9 @@ class Catalog
      */
     public function defaultCatalog()
     {
-        global $_SHOP_CONF;
+        global $_SHOP_CONF, $LANG_SHOP;
 
+        $content = '';
         if (
             ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
             $this->cat_id == 0 &&
@@ -114,7 +119,7 @@ class Catalog
         // If a string is submitted as the category ID, treat it as a plugin and
         // show all the products under that category.
         if (!is_int($this->cat_id) && !empty($this->cat_id)) {
-            $display .= $T->parse('', 'start');
+            $display = $T->parse('', 'start');
             $this->getPluginProducts($T, $this->cat_id);
             $T->set_block('wrapper', 'ProductItems', 'PI');
             $display .= $T->parse('', 'wrapper');
@@ -181,7 +186,7 @@ class Catalog
             if ($C->getParentID() == $RootCat->getID() && $C->hasAccess()) {
                 $A[$C->getID()] = array(
                     'name' => $C->getName(),
-                    'count' => $C->cnt,
+                    //'count' => $C->cnt,
                 );
             }
         }
@@ -291,7 +296,7 @@ class Catalog
             !empty($_REQUEST['query']) &&
             !isset($_REQUEST['clearsearch'])
         ) {
-            $query_str = urlencode($_REQUEST['query']);
+            $this->query_str = urlencode($_REQUEST['query']);
             $search = DB_escapeString($_REQUEST['query']);
             $fields = array(
                 'p.name', 'c.cat_name', 'p.short_description', 'p.description',
@@ -303,8 +308,6 @@ class Catalog
             }
             $srch = ' AND (' . implode(' OR ', $srches) . ')';
             $sql .= $srch;
-        } else {
-            $query_str = '';
         }
         $pagenav_args = array();
         if ($this->cat_id > 0) {
@@ -371,7 +374,7 @@ class Catalog
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
             'currency'      => $_SHOP_CONF['currency'],
-            'breadcrumbs'   => $cthis->at_id > 0 ? $Cat->Breadcrumbs() : '',
+            'breadcrumbs'   => $this->cat_id > 0 ? $Cat->Breadcrumbs() : '',
             'search_text'   => $search,
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             'sortby_options' => $sortby_options,
@@ -383,7 +386,7 @@ class Catalog
             'brand_logo_url' => $brand_logo_url,
             'brand_dscp'    => $brand_dscp,
             'brand_name'    => $brand_name,
-            'query'         => $query_str,
+            'query'         => $this->query_str,
         ) );
 
         if (!empty($cat_name)) {
@@ -413,23 +416,23 @@ class Catalog
             }
             $prodrows++;
             $T->set_var(array(
-                'item_id'       => $P->id,
+                'item_id'       => $P->getID(),
                 'name'          => htmlspecialchars($P->getName()),
-                'short_description' => htmlspecialchars(PLG_replacetags($P->short_description)),
+                'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => $P->getLink(0, $query_str),
+                'item_url'      => $P->getLink(0, $this->query_str),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
-                'track_onhand'  => $P->track_onhand ? 'true' : '',
-                'qty_onhand'    => $P->onhand,
+                'track_onhand'  => $P->trackOnhand() ? 'true' : '',
+                'qty_onhand'    => $P->getOnhand(),
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
                 'price'         => $P->getDisplayPrice(),
-                'orig_price'    => $P->getDisplayPrice($P->price),
+                'orig_price'    => $P->getDisplayPrice($P->getPrice()),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
-                'onhand'        => $P->track_onhand ? $P->onhand : '',
+                'onhand'        => $P->trackOnhand() ? $P->getOnhand() : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
-                'nonce'         => $Cart->makeNonce($P->id . $P->getName()),
+                'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
                 'oos'           => !$P->isInStock(),
@@ -444,7 +447,11 @@ class Catalog
 
             // Get the product buttons for the list
             $T->set_block('product', 'BtnBlock', 'Btn');
-            if (!$P->hasOptions() && !$P->hasCustomFields() && !$P->hasSpecialFields()) {
+            if (
+                !$P->hasOptions() &&
+                !$P->hasCustomFields() &&
+                !$P->hasSpecialFields()
+            ) {
                 // Buttons only show in the list if there are no options to select
                 $buttons = $P->PurchaseLinks('list');
                 foreach ($buttons as $name=>$html) {
@@ -481,7 +488,7 @@ class Catalog
         //$T->parse('output', 'wrapper');
         $display .= $T->parse('', 'wrapper');
 
-        if ($catrows == 0 && COM_isAnonUser()) {
+        if ($prodrows == 0 && COM_isAnonUser()) {
             $T->set_var('anon_and_empty', 'true');
         }
 
@@ -560,14 +567,14 @@ class Catalog
                     $T->set_var(array(
                         'id'        => $P->getID(),     // required
                         'item_id'   => $P->getItemID(), // required
-                        'name'      => $P->short_description,
-                        'short_description' => $P->short_description,
+                        'name'      => $P->getDscp(),
+                        'short_description' => $P->getDscp(),
                         'encrypted' => '',
-                        'item_url'  => $P->getLink(0, $query_str),
+                        'item_url'  => $P->getLink(0, $this->query_str),
                         'track_onhand' => '',   // not available for plugins
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
-                        'nonce'     => $Cart->makeNonce($P->id . $P->getName()),
+                        'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
                         'can_add_cart'  => true,
                         'rating_bar' => $P->ratingBar(true),
                     ) );
@@ -594,7 +601,7 @@ class Catalog
                         }
                     }
                     $T->clear_var('Btn');
-                    $prodrows++;
+                    //$prodrows++;
                     $T->parse('PI', 'ProductItems', true);
                 }   // foreach plugin_data
 

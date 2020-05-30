@@ -390,6 +390,8 @@ class Feature
         $extra = array(
             'count' => DB_count($_TABLES['shop.features']),
         );
+        $text_arr = array();
+        $filter = '';
         $options = array('chkdelete' => true, 'chkfield' => 'ft_id');
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_feat_list',
@@ -480,6 +482,7 @@ class Feature
         //$cache_key = 'ft_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
+        $grps = array();
         $sql = "SELECT  pf.prod_id, pf.ft_id, pf.fv_id,
                 f.ft_name, f.orderby,
                 IFNULL(pf.fv_text, fv.fv_value) AS fv_text

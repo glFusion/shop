@@ -758,7 +758,7 @@ class Category
     public function getPath($incl_sub = false)
     {
         $key = 'cat_path_' . $this->cat_id . '_' . (int)$incl_sub;
-        //$path = Cache::get($key);
+        $path = Cache::get($key);
         if (!$path) {
             $cats = self::getTree();    // need the full tree to find parents
             $path = array();

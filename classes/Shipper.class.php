@@ -76,8 +76,9 @@ class Shipper
     private $use_fixed;
 
     /** Std class to accumulate order shipping prices for the shipper.
+     * This is manipulated as a public variable within this class.
      * @var object */
-    private $ordershipping;
+    public $ordershipping;
 
     /** Earliest date/time that this shipper can be used.
      * @var object */
@@ -153,6 +154,10 @@ class Shipper
                 ),
             );
         }
+        // Initialize the object to hold shipping data for an order
+        $this->ordershipping = new \stdClass;
+        $this->ordershipping->packages = 0;
+        $this->ordershipping->total_rate = 1000000;
     }
 
 
@@ -235,12 +240,15 @@ class Shipper
                 $A['valid_to'] = trim($A['valid_to']) . ' 23:59:59';
             }
         } else {
-            $rates = json_decode($A['rates']);
-            if ($rates === NULL) $rates = array();
+            $rates = array();
+            if (isset($A['rates'])) {
+                $rates = json_decode($A['rates']);
+                if ($rates === NULL) $rates = array();
+            }
             $this->rates = $rates;
         }
-        $this->setValidFrom($A['valid_from']);
-        $this->setValidTo($A['valid_to']);
+        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', '1900-01-01'));
+        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', '9999-12-31'));
     }
 
 
@@ -486,7 +494,7 @@ class Shipper
 
         $cache_key = 'shippers_all_' . (int)$valid;
         $now = time();
-//        $shippers = Cache::get($cache_key);
+        $shippers = Cache::get($cache_key);
         if ($shippers === NULL) {
             $shippers = array();
             $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
@@ -611,11 +619,14 @@ class Shipper
      */
     public static function getShippersForOrder($Order)
     {
-        $cache_key = 'shipping_order_' . $Order->order_id;
+        global $LANG_SHOP;
+
+        /*$cache_key = 'shipping_order_' . $Order->getOrderID();
         $shippers = Cache::get($cache_key);
         if (is_array($shippers)) {
             return $shippers;
         }
+         */
 
         // Get all the order items into a simple array where they can be
         // ordered by unit count and marked when packed.
@@ -626,14 +637,15 @@ class Shipper
         $items = array();
         foreach ($Order->getItems() as $id=>$Item) {
             $P = $Item->getProduct();
-            $single_units = $P->shipping_units;
-            $item_units = $single_units * $Item->quantity;
-            $fixed_shipping += $P->getShipping($Item->quantity);
+            $qty = $Item->getQuantity();
+            $single_units = $P->getShippingUnits();
+            $item_units = $single_units * $qty;
+            $fixed_shipping += $P->getShipping($qty);
             $total_units += $item_units;
-            for ($i = 0; $i < $Item->quantity; $i++) {
+            for ($i = 0; $i < $qty; $i++) {
                 $items[] = array(
                     'orderitem_id' => $id,
-                    'item_name'     => $Item->description,
+                    'item_name'     => $Item->getDscp(),
                     'single_units' => $single_units,
                     'packed'    => false,
                 );
@@ -704,7 +716,7 @@ class Shipper
     {
         $this->ordershipping = new \stdClass;
         $this->ordershipping->total_rate = NULL;
-        $this->ordershippping->packages = array();
+        $this->ordershipping->packages = array();
 
         // Get the package types into an array to track how much space is used
         // as items are packed.
@@ -992,6 +1004,10 @@ class Shipper
                 'align' => 'center',
             ),
             array(
+                'text'  => $LANG_SHOP['carrier'],
+                'field' => 'module_code',
+            ),
+            array(
                 'text'  => $LANG_SHOP['name'],
                 'field' => 'name',
             ),
@@ -1050,7 +1066,7 @@ class Shipper
      */
     public static function carrierList()
     {
-        global $LANG_SHOP;
+        global $LANG_SHOP, $_SHOP_CONF;
 
         $carriers = self::getCarrierNames();
         $data_arr = array();
@@ -1090,7 +1106,10 @@ class Shipper
             ),
         );
         $text_arr = '';
-        $defsort_arr = '';
+        $defsort_arr = array(
+            'field' => 'code',
+            'direction' => 'ASC',
+        );
         $retval = ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_carrierlist',
             array(__CLASS__,  'getAdminField'),
@@ -1159,6 +1178,10 @@ class Shipper
             $retval = $grp_names[$fieldvalue];
             break;
  */
+        case 'module_code':
+            $retval = strtoupper($fieldvalue);
+            break;
+
         case 'config':
             $retval = $fieldvalue;
             break;
@@ -1355,7 +1378,10 @@ class Shipper
             // Get all items at once
             return $this->_config;
             // Get a single item
-        } elseif (array_key_exists($cfgItem, $this->_config)) {
+        } elseif (
+            is_array($this->_config) &&
+            array_key_exists($cfgItem, $this->_config)
+        ) {
             return $this->_config[$cfgItem];
         } else {
             // Item specified but not found, return empty string
@@ -1541,8 +1567,7 @@ class Shipper
             $T->parse('IRow', 'ItemRow', true);
         }
         $T->parse('output', 'form');
-        $retval .= $T->finish($T->get_var('output'));
-
+        $retval = $T->finish($T->get_var('output'));
         return $retval;
     }
 
