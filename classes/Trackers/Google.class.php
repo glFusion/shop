@@ -93,7 +93,6 @@ class Google extends \Shop\Tracker
         $net_items = 0;
         $items = array();
         foreach ($Ord->getItems() as $Item) {
-            $this->addCartItem($Item);
             $net_items += $Item->getNetPrice() * $Item->getQuantity();
             $items[] = array(
                 'id' => $Item->getProductID(),
