@@ -4,28 +4,53 @@ namespace Shop\Trackers;
 
 class Matomo extends \Shop\Tracker
 {
-
+    /** Array of code snippets to include in the tracking code.
+     * @var array */
     private $codes = array();
 
+
+    /**
+     * Get the site ID for Matomo.
+     *
+     * @return  integer     Matomo site ID
+     */
     private function getSiteID()
     {
-        return "1";
+        global $_SHOP_CONF;
+        return $_SHOP_CONF['trk_matomo_siteid'];
     }
 
 
-    private function getMatomoUrl()
+    /**
+     * Get the Matomo url.
+     *
+     * @return  string      URL to matomo installation
+     */
+    private function getAPIUrl()
     {
-        return "https://gldev.leegarner.com/matomo";
+        global $_SHOP_CONF;
+        return $_SHOP_CONF['trk_matomo_apiurl'];
     }
 
 
-    private function addCode($code_txt)
+    /**
+     * Add a single snippet to be included with the tracking code.
+     *
+     * @param   string  $code_txt   Code snippet
+     * @return  object  $this
+     */
+    private function _addCode($code_txt)
     {
         $this->codes[] = $code_txt;
         return $this;
     }
 
 
+    /**
+     * Get the final tracking code to include in the site header.
+     *
+     * @return  string      Tracking code
+     */
     public function getCode()
     {
         global $_CONF;
@@ -35,8 +60,8 @@ class Matomo extends \Shop\Tracker
 
         $code_txt = implode("\n", $this->codes);
         $T->set_var(array(
-            'matomo_url'    => $_CONF['site_url'] . '/matomo/',
-            'matomo_site_id' => 1,
+            'matomo_url'    => $this->getAPIUrl(),
+            'matomo_site_id' => $this->getSiteID(),
             '_id'           => self::makeCid(),
             'code_txt'      => $code_txt,
         ) );
@@ -47,6 +72,12 @@ class Matomo extends \Shop\Tracker
     }
 
 
+    /**
+     * Add tracking for a product view page.
+     *
+     * @param   object  $P      Product object
+     * @return  object  $this
+     */
     public function addProductView($P)
     {
         $sku = $P->getID();
@@ -58,7 +89,7 @@ class Matomo extends \Shop\Tracker
         }
         $cats = !empty($cats) ? json_encode($cats) : '';
 
-        $this->addCode("_paq.push(['setEcommerceView',
+        $this->_addCode("_paq.push(['setEcommerceView',
             '$sku',
             '$dscp',
             $cats,
@@ -68,18 +99,24 @@ class Matomo extends \Shop\Tracker
     }
 
 
-    public function addCartItem($Item)
+    /**
+     * Add a cart item to the code.
+     *
+     * @param   object  $OI     OrderItem object
+     * @return  object  $this
+     */
+    private function _addCartItem($OI)
     {
-        $sku = $Item->getProductId();
-        $dscp = $Item->getDscp();
-        $price = $Item->getPrice();
-        $qty = $Item->getQuantity();
+        $sku = $OI->getProductId();
+        $dscp = $OI->getDscp();
+        $price = $OI->getPrice();
+        $qty = $OI->getQuantity();
         $cats = array();
-        foreach ($Item->getProduct()->getCategories() as $Cat) {
+        foreach ($OI->getProduct()->getCategories() as $Cat) {
             $cats[] = $Cat->getName();
         }
         $cats = !empty($cats) ? json_encode($cats) : '';
-        $this->addCode("_paq.push(['addEcommerceItem',
+        $this->_addCode("_paq.push(['addEcommerceItem',
             '$sku',
             '$dscp',
             $cats,
@@ -88,33 +125,50 @@ class Matomo extends \Shop\Tracker
         ]);");
         
         /// Records the cart for this visit
-        //$this->addCode("_paq.push(['trackEcommerceCartUpdate', $price]);");
+        //$this->_addCode("_paq.push(['trackEcommerceCartUpdate', $price]);");
         return $this;
     }
 
 
+    /**
+     * Add tracking for a cart view page.
+     *
+     * @param   object  $Ord    Order object
+     * @return  object  $this
+     */
     public function addCartView($Ord)
     {
         $net_items = 0;
         foreach ($Ord->getItems() as $Item) {
-            $this->addCartItem($Item);
+            $this->_addCartItem($Item);
             $net_items += $Item->getNetPrice() * $Item->getQuantity();
         }
-        $this->addCode("_paq.push(['trackEcommerceCartUpdate', {$net_items}]);");
+        $this->_addCode("_paq.push(['trackEcommerceCartUpdate', {$net_items}]);");
         return $this;
     }
 
 
-    public function delCart($sku)
+    /**
+     * Record that a cart item was removed.
+     *
+     * @param   string  $sku    Item sku
+     * @return  object  $this
+     */
+    public function delCartItem($sku)
     {
-        $this->addCode("_paq.push(['removeEcommerceItem', '$sku']");
+        $this->_addCode("_paq.push(['removeEcommerceItem', '$sku']");
         return $this;
     }
 
 
+    /**
+     * Record that the cart was emptied
+     *
+     * @return  object  $this
+     */
     public function clearCart()
     {
-        $this->addCode("_paq.push(['clearEcommerceCart']");
+        $this->_addCode("_paq.push(['clearEcommerceCart']");
         return $this;
     }
 
@@ -144,6 +198,22 @@ class Matomo extends \Shop\Tracker
         }
         $items = urlencode(json_encode($items));
         $params = array(
+            'url'       => urlencode('https://gldev.leegarner.com/shop/ipn/paypal.php'),
+            'idgoal'    => 0,
+            'action_name' => 'Order/Confirm',
+            'idsite'    => $this->getSiteID(),
+            'rec'       => 1,
+            '_id'       => $cid,
+            'ec_id'     => $Ord->getOrderID(),
+            'ec_items'  => $items,
+            'revenue'   => $Ord->getTotal(),
+            'ec_tx'     => $Ord->getTax(),
+            'ec_sh'     => $Ord->getShipping(),
+            'ec_st'     => $net_items,
+            'rand'      => rand(100,900),
+            'apiv'      => 1,
+        );
+        /*$params = array(
             'url=' . urlencode('https://gldev.leegarner.com/shop/ipn/paypal.php'),
             'idgoal=0',
             'action_name=Order/Confirm',
@@ -157,15 +227,24 @@ class Matomo extends \Shop\Tracker
             'ec_sh=' . $Ord->getShipping(),
             'ec_st=' . $net_items,
             'rand=' . rand(100,900),
+            'apiv=1',
         );
-        $params = implode('&', $params);
-        return self::_curlExec($this->getMatomoUrl() . '/matomo.php?' . $params);
+        $params = implode('&', $params);*/
+        $params = http_build_query($params);
+        echo $params;die;
+        return self::_curlExec($this->getAPIUrl() . '/matomo.php?' . $params);
     }
 
 
+    /**
+     * Add tracking for a category view page.
+     *
+     * @param   string  $cat_name   Category name
+     * @return  object  $this
+     */
     public function addCategoryView($cat_name)
     {
-        $this->addCode("_paq.push(['setEcommerceView',
+        $this->_addCode("_paq.push(['setEcommerceView',
             productSku = false,
             productName = false,
             category = '{$cat_name}'
