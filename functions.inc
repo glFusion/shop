@@ -2211,9 +2211,20 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
 }
 
 
+/**
+ * Get additional code to include in the site header.
+ *
+ * @return  string      Additional header code
+ */
 function plugin_getheadercode_shop()
 {
-    return Shop\Tracker::getInstance()->getCode();
+    global $_SHOP_CONF;
+
+    if (isset($_SHOP_CONF['tracker']) && $_SHOP_CONF['tracker'] != '') {
+        return Shop\Tracker::getInstance()->getCode();
+    } else {
+        return '';
+    }
 }
 
 
