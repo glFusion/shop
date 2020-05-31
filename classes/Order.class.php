@@ -345,7 +345,7 @@ class Order
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
-        Tracker::getInstance()->addCartItem($OI->getProduct());
+        //Tracker::getInstance()->addCartItem($OI->getProduct());
         //$this->Save();
     }
 
