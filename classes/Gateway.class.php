@@ -121,6 +121,10 @@ class Gateway
      * @var integer */
     protected $grp_access = 0;
 
+    /** Flag to indicate if the gateway requires a billing address.
+     * @var boolean */
+    protected $req_billto = 0;
+
 
     /**
      * Constructor. Initializes variables.
@@ -140,8 +144,6 @@ class Gateway
         global $_SHOP_CONF, $_TABLES, $_USER;
 
         $this->properties = array();
-        $this->items = array();
-        $this->custom = array();
         if (empty($_SHOP_CONF['ipn_url'])) {
             // Use the default IPN url
             $this->ipn_url = SHOP_URL . '/ipn/' . $this->gw_name . '.php';
@@ -1736,11 +1738,11 @@ class Gateway
      * Return a dummy `true` value during AJAX finalizing cart.
      *
      * @param   string  $order_id   Order ID
-     * @return  boolean     True
+     * @return  boolean     False, indicating no action was taken
      */
     public function processOrder($order_id)
     {
-        return true;
+        return false;
     }
 
 
@@ -1754,6 +1756,17 @@ class Gateway
     public function isValid()
     {
         return $this->gw_name != '';
+    }
+
+
+    /**
+     * Check if this gateway requires a billing address.
+     *
+     * @return  boolean     True if a billing address is required
+     */
+    public function requiresBillto()
+    {
+        return $this->req_billto ? 1 : 0;
     }
 
 }   // class Gateway

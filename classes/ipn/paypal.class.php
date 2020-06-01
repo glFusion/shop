@@ -252,7 +252,7 @@ class paypal extends \Shop\IPN
             );
             $this->addItem($args);
 
-            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->code}", SHOP_LOG_DEBUG);
+            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
 
