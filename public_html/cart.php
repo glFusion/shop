@@ -49,7 +49,6 @@ foreach($expected as $provided) {
     }
 }
 
-//echo $action;die;
 if ($action == '') {
     // Not defined in $_POST or $_GET
     // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
@@ -121,7 +120,7 @@ case 'checkout':
     }
 
     if (isset($_POST['order_instr'])) {
-        $Cart->instructions = $_POST['order_instr'];
+        $Cart->setInstructions($_POST['order_instr']);
     }
     if (isset($_POST['payer_email']) && !empty($_POST['payer_email'])) {
         $Cart->setEmail($_POST['payer_email']);
@@ -139,6 +138,10 @@ case 'checkout':
         // valid error and the error messages will be displayed upon return.
         $errors = $Cart->Validate();
         if (!empty($errors)) {
+            if ($Cart->isTainted()) {
+                // Save to keep the instructions, email, etc.
+                $Cart->Save();
+            }
             COM_refresh(SHOP_URL . '/cart.php');
         }
     }
@@ -220,7 +223,7 @@ case 'cancel':
     if (!empty($cart_id)) {
         $Cart = Shop\Cart::getInstance(0, $cart_id);
         if ($token == $Cart->getToken()) {
-            $Cart->setFinal($cart_id, false)
+            $Cart->setFinal('cart')
                 ->setToken();
         }
     }
@@ -253,7 +256,6 @@ default:
     }
     break;
 }
-
 $display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::pageTitle('', 'cart');
 $display .= $content;

@@ -354,7 +354,7 @@ case 'viewcart':
     SHOP_setUrl($_SERVER['request_uri']);
     $cid = SHOP_getVar($_REQUEST, 'cid');
     if (!empty($cid)) {
-        Shop\Cart::getInstance($cid)->setFinal(false);
+        Shop\Cart::getInstance($cid)->setFinal('cart');
         COM_refresh(SHOP_URL. '/index.php?view=cart');
     }
     $menu_opt = $LANG_SHOP['viewcart'];
