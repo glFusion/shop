@@ -813,13 +813,13 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
-            if ($this->pmt_gross > 0) {
+            /*if ($this->pmt_gross > 0) {
                 $this->Order->Log(sprintf(
                     $LANG_SHOP['amt_paid_gw'],
                     $this->pmt_gross,
                     $this->GW->getDisplayName()
                 ));
-            }
+            }*/
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;
