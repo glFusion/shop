@@ -74,7 +74,7 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($cart->uid != $uid || $cart->status != 'cart') {
+        if ($cart->getUid() != $uid || $cart->getStatus() != 'cart') {
             self::_expireCookie();
             $cart = new self();
         }
@@ -799,9 +799,9 @@ class Cart extends Order
         }
 
         $newstatus = $status ? 'pending' : 'cart';
-        $oldstatus = $this->status;
+        $oldstatus = $this->getStatus();
         $this->setOrderDate()->Save();
-        self::setSession('order_id', $this->order_id);
+        self::setSession('order_id', $this->getOrderID());
 
         /*if ($newstatus != 'cart') {
             // Make sure the cookie gets deleted also
@@ -904,12 +904,12 @@ class Cart extends Order
         $canview = false;
 
         // Check that this is an existing record
-        if ($this->isNew || $this->status != 'cart') {
+        if ($this->isNew() || $this->getStatus() != 'cart') {
             $canview  = false;
-        } elseif ($this->uid > 1 && $_USER['uid'] == $this->uid) {
+        } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner
             $canview = true;
-        } elseif ($this->uid == 1 && self::getSession('order_id') == $this->order_id) {
+        } elseif ($this->getUid() == 1 && self::getSession('order_id') == $this->getOrderID()) {
             // Anonymous with this cart ID set in the session
             $canview = true;
         }
@@ -1025,10 +1025,17 @@ class Cart extends Order
             }
         }
 
-        if ($this->hasPhysical()) {
+        if ($this->requiresShipto()) {
             $Addr = new Address($this->Shipto->toArray());
             if ($Addr->isValid(true) != '') {
                 $errors['shipto'] = $LANG_SHOP['req_shipto'];
+            }
+        }
+
+        if ($this->requiresBillto()) {
+            $Addr = new Address($this->Billto->toArray());
+            if ($Addr->isValid(true) != '') {
+                $errors['billtoto'] = $LANG_SHOP['req_billto'];
             }
         }
 
