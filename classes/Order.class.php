@@ -1097,6 +1097,13 @@ class Order
             'is_paid' => $this->isPaid(),
             'pmt_status' => $this->getPaymentStatus(),
         ) );
+        if ($this->_amt_paid > 0) {
+            $paid = $this->_amt_paid * -1;
+            $T->set_var(array(
+                'pmt_amount' => $Currency->formatValue($this->_amt_paid),
+                'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
+            ) );
+        }
 
         if (!$this->no_shipping) {
             $T->set_var(array(
@@ -1209,7 +1216,7 @@ class Order
      * Only updates the order if the status is pending, not if it has already
      * been move further along.
      *
-     * @return  boolean     True if status is changed, False if left as-is
+     * @return  object  $this
      */
     public function updatePmtStatus()
     {
@@ -1231,9 +1238,8 @@ class Order
                 COM_errorLog("no physical items");
                 $this->updateStatus(self::STATUS_CLOSED);
             }
-            return true;
         }
-        return false;       // return false if no change
+        return $this;
     }
 
 
@@ -1594,6 +1600,12 @@ class Order
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_url'         => $this->buildUrl('view'),
         ) );
+        if ($this->_amt_paid > 0) {
+            $T->set_var(array(
+                'pmt_amount' => $Cur->formatValue($this->_amt_paid),
+                'due_amount' => $Cur->formatValue($total_amount - $this->_amt_paid),
+            ) );
+        }
         //), '', false, false);
 
         $this->_setAddressTemplate($T);
