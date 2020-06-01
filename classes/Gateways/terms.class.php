@@ -39,6 +39,7 @@ class terms extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'terms';
         $this->gw_desc = 'Net Terms';
+        $this->req_billto = true;
         // This gateway processes the order via AJAX and just returns to the shopping page.
         $this->gw_url = SHOP_URL . '/index.php?msg=09&plugin=shop';
 
@@ -227,6 +228,17 @@ class terms extends \Shop\Gateway
         global $LANG_SHOP;
 
         return sprintf($LANG_SHOP['net_x_days'], $this->net_days);
+    }
+
+
+    /**
+     * Override the gateway description to show the net days due.
+     *
+     * @return  string      Net X Days
+     */
+    public function getDscp()
+    {
+        return $this->getLogo();
     }
 
 }
