@@ -2394,7 +2394,7 @@ function SHOP_errMsg($msg, $title = '')
 {
     if (empty($msg)) return '';
 
-    $retval = '<span class="alert shopErrorMsg">' . "\n";
+    $retval = '<div class="uk-alert uk-alert-danger shopErrorMsg">' . LB;
     if (!empty($title)) {
         $retval .= "<p>$title</p>\n";
     }
@@ -2408,7 +2408,7 @@ function SHOP_errMsg($msg, $title = '')
     } else {
         $retval .= $msg;
     }
-    $retval .= "</span>\n";
+    $retval .= "</div>\n";
     return $retval;
 }
 
