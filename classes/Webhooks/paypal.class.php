@@ -85,7 +85,7 @@ class paypal extends \Shop\Webhook
             break;
 
         case self::EV_CREATED:
-            COM_errorLog("Invoice created for {$this->getOrderID()}");
+            SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
             $Order = Order::getInstance($this->getOrderID());
             if (!$Order->isNew()) {
                 $Order->updateStatus('invoiced');
@@ -158,7 +158,7 @@ class paypal extends \Shop\Webhook
         } else {
             $result = @json_decode($result, true);
             if (!$result) {
-                COM_errorLog("Error: Code $code, Data " . print_r($result,true));
+                SHOP_log("Error: Code $code, Data " . print_r($result,true));
                 $status = false;
             } else {
                 SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
