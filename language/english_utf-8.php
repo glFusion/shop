@@ -105,6 +105,7 @@ $LANG_SHOP = array (
     'All attempts to access this page are logged.',
 'access_denied'     => 'Access Denied',
 'select_file'       => 'Select File',
+'select_files'      => 'Select File(s)',
 'drop_or_select'    => 'Drop or select a file',
 'or_upload_new'     => 'Or, upload a new file',
 'random_product'    => 'Random Product',
@@ -703,6 +704,10 @@ $LANG_SHOP = array (
 'add_to_rule' => 'Add to Rule',
 'see_more_brand' => 'See more from this brand',
 'net_x_days' => 'Net %d Days',
+'pmt_status' => 'Payment Status',
+'partial' => 'Partial',
+'paid_full' => 'Paid in Full',
+'pmt_pending' => 'Payment is pending',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -742,6 +747,7 @@ $LANG_SHOP_HELP = array(
 'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
 'pending' => 'Processing will begin once payment is received.',
 'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
+'select_files' => 'Select one or multiple files to upload.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

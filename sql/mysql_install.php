@@ -205,6 +205,7 @@ $_SQL = array(
   `by_gc` decimal(12,4) unsigned DEFAULT NULL,
   `status` varchar(25) DEFAULT 'pending',
   `pmt_method` varchar(20) DEFAULT NULL,
+  `pmt_dscp` varchar(255) DEFAULT '',
   `pmt_txn_id` varchar(255) DEFAULT NULL,
   `instructions` text,
   `token` varchar(20) DEFAULT NULL,
@@ -266,7 +267,8 @@ $_SQL = array(
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `can_disable` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `orderby` (`orderby`)
+  KEY `orderby` (`orderby`),
+  KEY `idx_name` (`wf_name`)
 ) ENGINE=MyISAM",
 
 'shop.orderstatus' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
@@ -726,6 +728,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
+    "UPDATE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

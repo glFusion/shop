@@ -938,7 +938,7 @@ class IPN
             //list($item_number,$options) =
             //if (is_numeric($item_number)) {
             $P = Product::getByID($item['item_id'], $this->custom);
-            $item['short_description'] = $P->short_description;
+            $item['short_description'] = $P->getShortDscp();
             if (!empty($options)) {
                 // options is expected as CSV
                 $sql = "SELECT attr_name, attr_value

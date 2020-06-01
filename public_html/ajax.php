@@ -105,7 +105,10 @@ case 'finalizecart':
     $Cart = Shop\Cart::getInstance($cart_id);
     $status = Shop\Gateway::getInstance($Cart->getInfo('gateway'))
         ->processOrder($cart_id);
-    $Cart->setFinal();
+    if (!$status) {
+        // If no action taken by the gateway, set the cart status normally.
+        $Cart->setFinal();
+    }
     $output = array(
         'status' => $status,
     );

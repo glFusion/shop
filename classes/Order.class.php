@@ -23,6 +23,10 @@ class Order
     const STATUS_SHIPPED = 'shipped';
     const STATUS_CLOSED = 'closed';
 
+    /** Array of order objects used by getInstance().
+     * @var array */
+    private static $orders = array();
+
     /** Session variable name for storing cart info.
      * @var string */
     protected static $session_var = 'glShopCart';
@@ -152,6 +156,10 @@ class Order
      * @var string */
     private $instructions = '';
 
+    /** Order status string, pending, processing, shipped, etc.
+     * @var string */
+    private $status = 'cart';
+
     /** Currency code.
      * @var string */
     private $currency = '';
@@ -160,9 +168,13 @@ class Order
      * @var string */
     private $pmt_method = '';
 
+    /** Payment method text description
+     * @var string */
+    private $pmt_dscp = '';
+
     /** Experimental flag to mark whether an order needs to be saved.
      * @var boolean */
-    protected $tainted = false;
+    protected $tainted = true;
 
     /** Flag to indicate that there are invalid items on the order.
      * @var boolean */
@@ -227,19 +239,33 @@ class Order
      */
     public static function getInstance($key)
     {
-        static $orders = array();
         if (is_array($key)) {
             $id = SHOP_getVar($key, 'order_id');
         } else {
             $id = $key;
         }
         if (!empty($id)) {
-            if (!array_key_exists($id, $orders)) {
-                $orders[$id] = new self($id);
+            if (!array_key_exists($id, self::$orders)) {
+                self::$orders[$id] = new self($id);
             }
-            return $orders[$id];
+            return self::$orders[$id];
         } else {
             return new self;
+        }
+    }
+
+
+    /**
+     * Clear a cached instance of an order.
+     * Called when the order table is updated to force getInstance() to
+     * re-read the order.
+     *
+     * @return  object  $this
+     */
+    private function clearInstance()
+    {
+        if (isset(self::$orders[$this->order_id])) {
+            unset(self::$orders[$this->order_id]);
         }
     }
 
@@ -276,7 +302,6 @@ class Order
     {
         global $_TABLES;
 
-        $this->tainted = false;
         if ($id != '') {
             $this->order_id = $id;
         }
@@ -315,6 +340,7 @@ class Order
         foreach ($items as $item) {
             $this->items[$item['id']] = new OrderItem($item);
         }
+        $this->tainted = false;
         return true;
     }
 
@@ -414,6 +440,7 @@ class Order
                 billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'
                 WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
             DB_query($sql);
+            $this->clearInstance();
         }
         return $this;
     }
@@ -508,6 +535,7 @@ class Order
                 WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
             DB_query($sql);
             SHOP_log($sql, SHOP_LOG_DEBUG);
+            $this->clearInstance();
         }
         return $this;
     }
@@ -529,6 +557,7 @@ class Order
         $this->uid      = SHOP_getVar($A, 'uid', 'int');
         $this->status   = SHOP_getVar($A, 'status');
         $this->pmt_method = SHOP_getVar($A, 'pmt_method');
+        $this->pmt_dscp = SHOP_getVar($A, 'pmt_dscp');
         $this->pmt_txn_id = SHOP_getVar($A, 'pmt_txn_id');
         $this->currency = SHOP_getVar($A, 'currency', 'string', $_SHOP_CONF['currency']);
         $dt = SHOP_getVar($A, 'order_date', 'integer');
@@ -726,6 +755,7 @@ class Order
             "status = '{$this->status}'",
             //"pmt_txn_id = '" . DB_escapeString($this->pmt_txn_id) . "'",
             "pmt_method = '" . DB_escapeString($this->pmt_method) . "'",
+            "pmt_dscp = '" . DB_escapeString($this->pmt_dscp) . "'",
             "by_gc = '{$this->by_gc}'",
             //"phone = '" . DB_escapeString($this->phone) . "'",
             "tax = '{$this->tax}'",
@@ -759,7 +789,9 @@ class Order
         //echo $sql;die;
         //SHOP_log(("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
+        $this->clearInstance();
         $this->isNew = false;
+        $this->tainted = false;
         return $this->order_id;
     }
 
@@ -1048,6 +1080,8 @@ class Order
             'linkPrint'     => self::linkPrint($this->order_id, $this->token),
             'billto_addr'   => $this->Billto->toHTML(),
             'shipto_addr'   => $this->Shipto->toHTML(),
+            'billto_required' => $this->requiresBillto(),
+            'shipto_required' => $this->requiresShipto(),
             'shipment_block' => $this->getShipmentBlock(),
             'itemsToShip'   => $this->itemsToShip(),
             'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
@@ -1067,7 +1101,8 @@ class Order
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
             'amt_paid' => $Currency->Format($this->_amt_paid),
-            'is_paid' => $this->_amt_paid >= $this->total,
+            'is_paid' => $this->isPaid(),
+            'pmt_status' => $this->getPaymentStatus(),
         ) );
 
         if (!$this->no_shipping) {
@@ -1141,7 +1176,8 @@ class Order
                 if ($gw) {
                     $T->set_var(array(
                         'gateway_vars'  => $this->checkoutButton($gw),
-                        'pmt_method'    => $gw->getDscp(),
+                        'pmt_method'    => $this->pmt_method,
+                        'pmt_dscp'    => $this->pmt_dscp,
                     ) );
                 }
             }
@@ -1151,15 +1187,9 @@ class Order
         $status = $this->status;
         $Payments = $this->getPayments();
         if ($this->pmt_method != '') {
-            $gw = Gateway::getInstance($this->pmt_method);
-            if ($gw !== NULL) {
-                $pmt_method = $gw->getDscp();
-            } else {
-                $pmt_method = $this->pmt_method;
-            }
-
             $T->set_var(array(
-                'pmt_method' => $pmt_method,
+                'pmt_method' => $this->pmt_method,
+                'pmt_dscp' => $this->pmt_dscp,
                 //'pmt_txn_id' => $this->pmt_txn_id,
                 //'ipn_det_url' => IPN::getDetailUrl($this->pmt_txn_id, 'txn_id'),
             ) );
@@ -1198,11 +1228,14 @@ class Order
             ) &&
             $this->isPaid()
         ) {
+            COM_errorLog("order is paid");
             // Get the status to set. For non-physical items, the order is
             // fullfilled so close it.
             if ($this->hasPhysical()) {
+                COM_errorLog("has physical");
                 $this->updateStatus(self::STATUS_PROCESSING);
             } else {
+                COM_errorLog("no physical items");
                 $this->updateStatus(self::STATUS_CLOSED);
             }
             return true;
@@ -1280,6 +1313,7 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
+        $this->clearInstance();
         return $newstatus;
     }
 
@@ -1801,6 +1835,7 @@ class Order
         if (!DB_error()) {
             $this->token = $token;
         }
+        $this->clearInstance();
         return $this;
     }
 
@@ -1980,6 +2015,7 @@ class Order
     public function setInfo($key, $value)
     {
         $this->m_info[$key] = $value;
+        $this->tainted = true;
         return $this;
     }
 
@@ -2029,6 +2065,20 @@ class Order
 
 
     /**
+     * Set the buyer-entered special instructions.
+     *
+     * @param   string  $text   Instruction text
+     * @return  object  $this
+     */
+    public function setInstructions($text)
+    {
+        $this->instructions = $text;
+        $this->tainted = true;
+        return $this;
+    }
+
+
+    /**
      * Set the chosen payment gateway into the cart information.
      * Used so the gateway will be pre-selected if the buyer returns to the
      * cart update page.
@@ -2043,6 +2093,7 @@ class Order
             $this->tainted = true;
         }
         $this->setPmtMethod($gw_name);
+        $this->tainted = true;
         return $this;
     }
 
@@ -2099,6 +2150,25 @@ class Order
 
 
     /**
+     * Get the payment status for display on the order.
+     *
+     * @return  string      Payment status (pending, partial, paid, etc.)
+     */
+    public function getPaymentStatus()
+    {
+        global $LANG_SHOP;
+
+        if ($this->isPaid()) {
+            return $LANG_SHOP['paid'];
+        } elseif ($this->_amt_paid > 0) {
+            return $LANG_SHOP['partial'];
+        } else {
+            return $LANG_SHOP['pmt_pending'];
+        }
+    }
+
+
+    /**
      * Check if this order is paid.
      * Starting with v1.3.0 the payment table is checked for total payments.
      *
@@ -2106,7 +2176,7 @@ class Order
      */
     public function isPaid()
     {
-        return $this->_amt_paid >= $this->total;
+        return $this->_amt_paid >= $this->getTotal();
     }
 
 
@@ -2620,7 +2690,10 @@ class Order
      */
     public function setUid($uid)
     {
-        $this->uid = (int)$uid;
+        if ($this->uid != $uid) {
+            $this->uid = (int)$uid;
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -2665,6 +2738,7 @@ class Order
         } else {
             $this->order_date = new \Date($dt, $_CONF['timezone']);
         }
+        $this->tainted = true;
         return $this;
     }
 
@@ -2710,7 +2784,10 @@ class Order
      */
     public function setByGC($amt)
     {
-        $this->by_gc = (float)$amt;
+        if ($this->by_gc != $amt) {
+            $this->by_gc = (float)$amt;
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -2723,7 +2800,11 @@ class Order
      */
     public function setPmtMethod($method)
     {
-        $this->pmt_method = $method;
+        if ($this->pmt_method != $method) {
+            $this->pmt_method = $method;
+            $this->pmt_dscp = Gateway::getInstance($method)->getDscp();
+            $this->tainted = true;
+        }
         return $this;
     }
 
@@ -2969,6 +3050,7 @@ class Order
                 tax_handling = {$this->tax_handling}
             WHERE order_id = '{$this->order_id}'"
         );
+        $this->clearInstance();
         return $this;
     }
 
@@ -3021,6 +3103,14 @@ class Order
     }
 
 
+    public function setShipping($amt)
+    {
+        $this->shipping = (float)$amt;
+        $this->tainted = true;
+        return $this;
+    }
+
+
     /**
      * Get the total shipping charge for this order.
      *
@@ -3029,6 +3119,14 @@ class Order
     public function getShipping()
     {
         return (float)$this->shipping;
+    }
+
+
+    public function setHandling($amt)
+    {
+        $this->handling = (float)$amt;
+        $this->tainted = true;
+        return $this;
     }
 
 
@@ -3138,6 +3236,7 @@ class Order
                 $this->items[$id]->applyDiscountPct($this->getDiscountPct());
             }
         }
+        $this->clearInstance();
         return $this;
     }
 
@@ -3301,6 +3400,41 @@ class Order
 
 
     /**
+     * Check if this order requires a billing address to be included.
+     *
+     * @return  boolean     True if a billing address is required
+     */
+    public function requiresBillto()
+    {
+        if (
+            !empty($this->pmt_method) &&
+            Gateway::getInstance($this->pmt_method)->requiresBillto()
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Check if this order requires a shipping address to be included.
+     * Physical and taxable items require a shipping address.
+     *
+     * @return  boolean     True if a shipping address is required
+     */
+    public function requiresShipto()
+    {
+        if (
+            $this->hasTaxable() ||
+            $this->hasPhysical()
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
      * Maintenance function to sync order total fields from item records.
      *
      * @param   string  $ord_id     Optional order ID, all orders if empty
@@ -3371,11 +3505,34 @@ class Order
                     net_nontax = $net_nontax,
                     net_taxable = $net_taxable
                     WHERE order_id = '{$Ord->getOrderID()}'";
-               DB_query($sql);
+                DB_query($sql);
             }
         }
+        $this->clearInstance();
     }
 
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted()
+    {
+        return $this->tainted;
+    }
+
+
+    /**
+     * Taint this order, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint()
+    {
+        $this->tainted = true;
+        return $this;
+    }
 }
 
 ?>

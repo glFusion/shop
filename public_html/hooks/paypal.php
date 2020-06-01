@@ -16,13 +16,13 @@
 require_once '../../lib-common.php';
 
 // Get the complete IPN message prior to any processing
-COM_errorLog("Recieved Hook:");
+SHOP_log("Recieved Hook:", SHOP_LOG_DEBUG);
 $json = file_get_contents('php://input');
 //$json = @json_decode($json,true);
 //COM_errorLog($json);
-COM_errorLog(var_export($json,true));
+SHOP_log(var_export($json,true), SHOP_LOG_DEBUG);
 //exit;
-COM_errorLog("HEADERS: " . var_export($_SERVER,true));
+SHOP_log("HEADERS: " . var_export($_SERVER,true), SHOP_LOG_DEBUG);
 $WH = new Shop\Webhooks\paypal($json);
 $WH->setHeaders();
 if ($WH->Verify()) {

@@ -281,7 +281,7 @@ function SHOP_do_upgrade($dvlp = false)
         // Was added during previous upgrades but not new installations.
         if (!_SHOPtableHasIndex('shop.prod_opt_vals', 'item_id')) {
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
-                ADDUNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
+                ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
         }
 
         // Update the state tables for taxing S&H only if not
@@ -306,6 +306,35 @@ function SHOP_do_upgrade($dvlp = false)
                 WHERE c.alpha2 = 'US' AND s.iso_code in (
                     'AZ', 'MD', 'NV', 'VA'
                 )";
+        }
+        // Update the payment method full description.
+        // Saved with the order in case the gateway is changed later.
+        if (!_SHOPtableHasColumn('shop.orders', 'pmt_dscp')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.orders']}
+                ADD pmt_dscp varchar(255) DEFAULT '' AFTER pmt_method";
+            $sql = "SELECT order_id, pmt_method, info FROM {$_TABLES['shop.orders']}";
+            $res = DB_query($sql);
+            $gw_dscp = array();
+            while ($A = DB_fetchArray($res, false)) {
+                $info = @unserialize($A['info']);
+                if (!$info) {
+                    continue;
+                }
+                $pmt_method = isset($info['gateway']) ? $info['gateway'] : $A['pmt_method'];
+                $pmt_method = DB_escapeString($pmt_method);
+                if (!isset($gw_dscp[$pmt_method])) {
+                    $gw = Shop\Gateway::getInstance($pmt_method);
+                    if ($gw && $gw->isValid()) {
+                        $gw_dscp[$pmt_method] = DB_escapeString($gw->getDscp());
+                    } else {
+                        $gw_dscp[$pmt_method] = DB_escapeString($pmt_method);
+                    }
+                }
+                $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.orders']} SET
+                    pmt_dscp = '{$gw_dscp[$pmt_method]}',
+                    pmt_method = '$pmt_method'
+                    WHERE order_id = '{$A['order_id']}'";
+            }
         }
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         // Convert the gateway configurations
