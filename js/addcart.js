@@ -79,6 +79,8 @@ function finalizeCart(cart_id, uid)
         return false;
     }
 */
+    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
+    spinner.show();
     var dataS = {
         "cart_id": cart_id,
         "uid": uid,
@@ -101,6 +103,7 @@ function finalizeCart(cart_id, uid)
             } catch(err) {
                 stat = false;
             }
+            spinner.hide();
         },
         error: function(httpRequest, message, errorThrown) {
             console.log(cart_id);
@@ -108,6 +111,7 @@ function finalizeCart(cart_id, uid)
             console.log(message);
             console.log(errorThrown);
             throw errorThrown + ': ' + message;
+            spinner.hide();
             return false;
         },
     });
