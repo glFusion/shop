@@ -15,8 +15,12 @@
 {!if not_final}
                 <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
+{!if billto_addr}
             <br />
             {billto_addr}
+{!elseif billto_required}
+            <div class="uk-alert uk-alert-danger">{$LANG_SHOP['req_billto']}</div>
+{!endif}
         </div>
 
         <div class="orderAddress">
@@ -24,8 +28,12 @@
 {!if not_final}
                 <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
 {!endif}
+{!if shipto_addr}
             <br />
             {shipto_addr}
+{!elseif shipto_required}
+            <div class="uk-alert uk-alert-danger">{$LANG_SHOP['req_shipto']}</div>
+{!endif}
         </div>
     </div>
 
