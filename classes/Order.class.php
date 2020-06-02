@@ -1093,18 +1093,17 @@ class Order
             'tax_icon'  => $LANG_SHOP['tax'][0],
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
-            'amt_paid' => $Currency->Format($this->_amt_paid),
+            'amt_paid_fmt' => $Currency->Format($this->_amt_paid),
             'is_paid' => $this->isPaid(),
             'pmt_status' => $this->getPaymentStatus(),
         ) );
         if ($this->_amt_paid > 0) {
             $paid = $this->_amt_paid * -1;
             $T->set_var(array(
-                'pmt_amount' => $Currency->formatValue($this->_amt_paid),
+                'amt_paid_num' => $Currency->formatValue($this->_amt_paid),
                 'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
             ) );
         }
-
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,

@@ -181,10 +181,10 @@
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{net_total}</div>
                 </div>
 {!endif}
-{!if pmt_amount}
+{!if amt_paid_num}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['paid']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total">- {pmt_amount}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total">- {amt_paid_num}</div>
                 </div>
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['bal_due']}</div>
@@ -243,7 +243,7 @@
 {!if is_admin}
   <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
   <p>
-  {$LANG_SHOP['pmt_total']}: {amt_paid}
+  {$LANG_SHOP['pmt_total']}: {amt_paid_fmt}
 {!if is_paid}
     <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
 {!endif}
