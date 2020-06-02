@@ -789,8 +789,10 @@ class IPN
 
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
-            $this->Order->setByGC($by_gc);
-            Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            if ($by_gc > 0) {
+                $this->Order->setByGC($by_gc);
+                Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            }
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
