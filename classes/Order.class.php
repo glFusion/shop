@@ -1967,7 +1967,9 @@ class Order
         if ($type != 'billto') {
             $type = 'shipto';
         }
-        $fields = array();
+        $fields = array(
+            $type . '_id' => $A[$type . '_id'],
+        );
         foreach ($this->_addr_fields as $name) {
             $var = $type . '_' . $name;
             $fields[$var] = isset($A[$var]) ? $A[$var] : '';

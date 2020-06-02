@@ -934,14 +934,12 @@ class paypal extends \Shop\Gateway
      */
     public function getBearerToken()
     {
-        global $_SHOP_CONF;     // TODO: move tokens to gw config
-
         $ch = curl_init();
         curl_setopt_array($ch, array(
             CURLOPT_URL => $this->api_url . '/v1/oauth2/token',
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
-            CURLOPT_USERPWD => $_SHOP_CONF['pp_api_username'] . ':' . $_SHOP_CONF['pp_api_passwd'],
+            CURLOPT_USERPWD => $this->getConfig('api_username') . ':' . $this->getConfig('api_password'),
             CURLOPT_HTTPHEADER  => array (
                 'Accept: application/json',
             ),

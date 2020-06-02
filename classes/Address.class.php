@@ -855,6 +855,9 @@ class Address
         if ($prefix !== '') {
             $prefix .= '_';
         }
+        if (isset($A[$prefix . 'id'])) {
+            $this->addr_id = (int)$A[$prefix . 'id'];
+        }
         foreach ($this->_fields as $fldname) {
             $var = $prefix . $fldname;
             if (isset($A[$var])) {
