@@ -33,8 +33,6 @@ class paypal extends \Shop\Webhook
         $this->setHeaders();
         $this->setTimestamp();
         $this->setData(json_decode($blob, true));
-        //COM_errorLog('HEADERS: ' . var_export($this->getHeader(),true));
-        //COM_errorLog('DATA: ' . $blob);
 
         // Check that the blob was decoded successfully.
         // If so, extract the key fields and set Webhook variables.
@@ -124,18 +122,14 @@ class paypal extends \Shop\Webhook
      */
     public function Verify()
     {
-        //COM_errorLog("In webhook verify");
         $gw = \Shop\Gateway::getInstance($this->getSource());
-        //COM_errorLog("GW is " . print_r($gw,true));
-//        var_dump($this->getHeader());die;
         $body = array(
             'transmission_id' => $this->getHeader('Paypal-Transmission-Id'),
             'transmission_time' => $this->getHeader('Paypal-Transmission-Time'),
             'cert_url' => $this->getHeader('Paypal-Cert-Url'),
             'auth_algo' => $this->getHeader('Paypal-Auth-Algo'),
             'transmission_sig' => $this->getHeader('Paypal-Transmission-Sig'),
-            //'webhook_id' => '7AL053045J1030934',
-            'webhook_id' => $gw->getWebhookID(), //'7AL053045J1030934',
+            'webhook_id' => $gw->getWebhookID(),
             'webhook_event' => $this->getData(),
         );
 
