@@ -376,7 +376,7 @@ class Payment
      */
     public function Save()
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
             pmt_ts = {$this->getTS()},
