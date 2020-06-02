@@ -700,6 +700,7 @@ $LANG_SHOP = array (
 'partial' => 'Partial',
 'paid_full' => 'Paid in Full',
 'pmt_pending' => 'Payment is pending',
+'bal_due' => 'Balance Due',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

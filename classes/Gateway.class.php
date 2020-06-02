@@ -1150,7 +1150,7 @@ class Gateway
         global $_TABLES, $_SHOP_CONF;
         static $gateways = array();
 
-        if (!$gw_name) return NULL;
+        if (!$gw_name) return new self;
         if (!array_key_exists($gw_name, $gateways)) {
             $gw = __NAMESPACE__ . '\\Gateways\\' . $gw_name;
             if (class_exists($gw)) {

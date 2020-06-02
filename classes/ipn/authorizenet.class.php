@@ -79,7 +79,7 @@ class authorizenet extends \Shop\IPN
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->Log(true);
 
-        SHOP_log("Received {$this->pmt_gross} gross payment", SHOP_LOG_DEBUG);
+        SHOP_log("Received {$this->getPmtGross()} gross payment", SHOP_LOG_DEBUG);
         return $this->handlePurchase();
     }
 

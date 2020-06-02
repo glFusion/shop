@@ -401,13 +401,13 @@ class OrderItem
     public function addOptionText($name, $value)
     {
         $OIO = new OrderItemOption;
-        $OIO->setID($this->id);
+        $OIO->setOrderItemID($this->id);
         //$OIO->order_id = $this->order_id;
         $OIO->setOpt(0, $name, $value);
         $this->options[] = $OIO;
         // Update the Options table now if this is an existing item,
         // othewise it might not get saved.
-        if ($this->oi_id > 0) {
+        if ($this->id > 0) {
             $OIO->Save();
         }
     }

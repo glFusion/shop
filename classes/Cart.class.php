@@ -74,7 +74,7 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($cart->getUid() != $uid || $cart->getStatus() != 'cart') {
+        if ($cart->getUid() != $uid || $cart->status != 'cart') {
             self::_expireCookie();
             $cart = new self();
         }
@@ -800,7 +800,7 @@ class Cart extends Order
         }
 
         $newstatus = $status ? 'pending' : 'cart';
-        $oldstatus = $this->getStatus();
+        $oldstatus = $this->status;
         $this->setOrderDate()->Save();
         self::setSession('order_id', $this->getOrderID());
 
@@ -905,7 +905,7 @@ class Cart extends Order
         $canview = false;
 
         // Check that this is an existing record
-        if ($this->isNew() || $this->getStatus() != 'cart') {
+        if ($this->isNew() || $this->status != 'cart') {
             $canview  = false;
         } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner

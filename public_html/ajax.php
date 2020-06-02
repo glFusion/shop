@@ -102,8 +102,8 @@ case 'setShipper':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $Cart = Shop\Cart::getInstance($cart_id);
-    $status = Shop\Gateway::getInstance($Cart->getInfo('gateway'))
+    $Cart = Shop\Cart::getInstance(0, $cart_id);
+    $status = Shop\Gateway::getInstance($Cart->getPmtMethod())
         ->processOrder($cart_id);
     if (!$status) {
         // If no action taken by the gateway, set the cart status normally.

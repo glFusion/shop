@@ -793,8 +793,10 @@ class IPN
 
             // Get the gift card amount applied to this order and save it with the order record.
             $by_gc = $this->getCredit('gc');
-            $this->Order->setByGC($by_gc);
-            Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            if ($by_gc > 0) {
+                $this->Order->setByGC($by_gc);
+                Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            }
 
             // Log all non-payment credits applied to the order
             foreach ($this->credits as $key=>$val) {
@@ -817,13 +819,13 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
-            if ($this->pmt_gross > 0) {
+            /*if ($this->pmt_gross > 0) {
                 $this->Order->Log(sprintf(
                     $LANG_SHOP['amt_paid_gw'],
                     $this->pmt_gross,
                     $this->GW->getDisplayName()
                 ));
-            }
+            }*/
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;

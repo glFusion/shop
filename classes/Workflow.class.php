@@ -141,10 +141,10 @@ class Workflow
     {
         switch ($this->wf_name) {
         case 'billto':
-            $status = $Cart->getBillto()->isValid() == '';
+            $status = !$Cart->requiresBillto() || $Cart->getBillto()->isValid() == '';
             break;
         case 'shipto':
-            $status = $Cart->getShipto()->isValid() == '';
+            $status = !$Cart->requiresShipto() || $Cart->getShipto()->isValid() == '';
             break;
         default:
             $status = true;
@@ -165,9 +165,14 @@ class Workflow
     {
         global $_TABLES;
 
+        if (is_integer($id)) {
+            $key_fld = 'wf_id';
+        } else {
+            $key_fld = 'wf_name';
+        }
         $workflows = self::getAll();
         foreach ($workflows as $wf) {
-            if ($wf->wf_id == $id) {
+            if ($wf->$key_fld == $id) {
                 return $wf;
             }
         }

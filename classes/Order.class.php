@@ -158,7 +158,7 @@ class Order
 
     /** Order status string, pending, processing, shipped, etc.
      * @var string */
-    private $status = 'cart';
+    protected $status = 'cart';
 
     /** Currency code.
      * @var string */
@@ -1100,11 +1100,17 @@ class Order
             'tax_icon'  => $LANG_SHOP['tax'][0],
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
-            'amt_paid' => $Currency->Format($this->_amt_paid),
+            'amt_paid_fmt' => $Currency->Format($this->_amt_paid),
             'is_paid' => $this->isPaid(),
             'pmt_status' => $this->getPaymentStatus(),
         ) );
-
+        if ($this->_amt_paid > 0) {
+            $paid = $this->_amt_paid * -1;
+            $T->set_var(array(
+                'amt_paid_num' => $Currency->formatValue($this->_amt_paid),
+                'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
+            ) );
+        }
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
@@ -1216,10 +1222,18 @@ class Order
      * Only updates the order if the status is pending, not if it has already
      * been move further along.
      *
-     * @return  boolean     True if status is changed, False if left as-is
+     * @return  object  $this
      */
     public function updatePmtStatus()
     {
+        // Recalculate amount paid in case this order is cached.
+        $Pmts = $this->getPayments();
+        $total_paid = 0;
+        foreach ($Pmts as $Pmt) {
+            $total_paid += $Pmt->getAmount();
+        }
+        $this->_amt_paid = $total_paid;
+
         if (
             (
                 $this->getStatus() == 'cart' ||
@@ -1238,9 +1252,8 @@ class Order
                 COM_errorLog("no physical items");
                 $this->updateStatus(self::STATUS_CLOSED);
             }
-            return true;
         }
-        return false;       // return false if no change
+        return $this;
     }
 
 
@@ -1385,16 +1398,18 @@ class Order
      * @param   string  $status     Order status (pending, paid, etc.)
      * @param   string  $gw_msg     Optional gateway message to include with email
      * @param   boolean $force      True to force notification
+     * @param   boolean $toadmin    True to include admin email, default=true
+     * @return  object  $this
      */
-    public function Notify($status='', $gw_msg='', $force=false)
+    public function Notify($status='', $gw_msg='', $force=false, $toadmin=true)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
-        $notify_admin = OrderStatus::getInstance($status)->notifyAdmin();
+        $notify_admin = OrderStatus::getInstance($status)->notifyAdmin() && $toadmin;
         if (!$force && !$notify_buyer && !$notify_admin) {
-            return;
+            return $this;
         }
 
         $Shop = new Company;
@@ -1479,6 +1494,7 @@ class Order
                 SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
             }
         }
+        return $this;
     }
 
 
@@ -1601,6 +1617,12 @@ class Order
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_url'         => $this->buildUrl('view'),
         ) );
+        if ($this->_amt_paid > 0) {
+            $T->set_var(array(
+                'pmt_amount' => $Cur->formatValue($this->_amt_paid),
+                'due_amount' => $Cur->formatValue($total_amount - $this->_amt_paid),
+            ) );
+        }
         //), '', false, false);
 
         $this->_setAddressTemplate($T);
@@ -2093,7 +2115,6 @@ class Order
             $this->tainted = true;
         }
         $this->setPmtMethod($gw_name);
-        $this->tainted = true;
         return $this;
     }
 
@@ -2806,6 +2827,12 @@ class Order
             $this->tainted = true;
         }
         return $this;
+    }
+
+
+    public function getPmtMethod()
+    {
+        return $this->pmt_method;
     }
 
 

@@ -376,7 +376,7 @@ class Payment
      */
     public function Save()
     {
-        global $_TABLES;
+        global $_TABLES, $LANG_SHOP;
 
         $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
             pmt_ts = {$this->getTS()},
@@ -392,7 +392,14 @@ class Payment
         $res = DB_query($sql);
         if (!DB_error()) {
             $this->setPmtId(DB_insertID());
-            Order::getInstance($this->getOrderID())->updatePmtStatus();
+            $Order = Order::getInstance($this->getOrderID());
+            $Order->updatePmtStatus()
+                ->Log(
+                    sprintf($LANG_SHOP['amt_paid_gw'],
+                        $this->getAmount(),
+                        $this->getGateway()
+                    )
+                );
         }
         return $this;
     }
