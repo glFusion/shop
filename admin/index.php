@@ -105,13 +105,9 @@ case 'statcomment':         // update comment and status
         $Ord = Shop\Order::getInstance($order_id);
         $Ord->updateStatus($newstatus, true, false);
         $Ord->Log($comment);
-        if (!$notify) {
-            // The Notify function will send the update if notifications are
-            // set for the new status. Only include the comment if specifically
-            // requested.
-            $comment = '';
+        if ($notify) {
+            $Ord->Notify($newstatus, $comment, $notify, false);
         }
-        $Ord->Notify($newstatus, $comment, $notify);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
     break;

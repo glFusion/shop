@@ -158,7 +158,7 @@ class Order
 
     /** Order status string, pending, processing, shipped, etc.
      * @var string */
-    private $status = 'cart';
+    protected $status = 'cart';
 
     /** Currency code.
      * @var string */
@@ -1220,6 +1220,14 @@ class Order
      */
     public function updatePmtStatus()
     {
+        // Recalculate amount paid in case this order is cached.
+        $Pmts = $this->getPayments();
+        $total_paid = 0;
+        foreach ($Pmts as $Pmt) {
+            $total_paid += $Pmt->getAmount();
+        }
+        $this->_amt_paid = $total_paid;
+
         if (
             (
                 $this->getStatus() == 'cart' ||
@@ -1384,16 +1392,18 @@ class Order
      * @param   string  $status     Order status (pending, paid, etc.)
      * @param   string  $gw_msg     Optional gateway message to include with email
      * @param   boolean $force      True to force notification
+     * @param   boolean $toadmin    True to include admin email, default=true
+     * @return  object  $this
      */
-    public function Notify($status='', $gw_msg='', $force=false)
+    public function Notify($status='', $gw_msg='', $force=false, $toadmin=true)
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // Check if any notification is to be sent for this status update.
         $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
-        $notify_admin = OrderStatus::getInstance($status)->notifyAdmin();
+        $notify_admin = OrderStatus::getInstance($status)->notifyAdmin() && $toadmin;
         if (!$force && !$notify_buyer && !$notify_admin) {
-            return;
+            return $this;
         }
 
         $Shop = new Company;
@@ -1478,6 +1488,7 @@ class Order
                 SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
             }
         }
+        return $this;
     }
 
 
@@ -2098,7 +2109,6 @@ class Order
             $this->tainted = true;
         }
         $this->setPmtMethod($gw_name);
-        $this->tainted = true;
         return $this;
     }
 
@@ -2811,6 +2821,12 @@ class Order
             $this->tainted = true;
         }
         return $this;
+    }
+
+
+    public function getPmtMethod()
+    {
+        return $this->pmt_method;
     }
 
 
