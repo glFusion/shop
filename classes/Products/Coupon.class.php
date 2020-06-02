@@ -354,7 +354,7 @@ class Coupon extends \Shop\Product
 
         $status = 0;
         $amount = (float)$Item->getPrice();
-        $special = SHOP_getVar($Item->extras, 'special', 'array');
+        $special = SHOP_getVar($Item->getExtras(), 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
         $sender_name = SHOP_getVar($special, 'sender_name', 'string');
         $msg = SHOP_getVar($special, 'message', 'string');
@@ -437,7 +437,7 @@ class Coupon extends \Shop\Product
     {
         global $LANG_SHOP;
 
-        $code = SHOP_getVar($item->extras['special'], 'gc_code', 'string');
+        $code = SHOP_getVar($item->getExtras(), ['special'], 'gc_code', 'string');
         $s = '';
         if (!empty($code)) {
             $url = self::redemptionUrl($code);
