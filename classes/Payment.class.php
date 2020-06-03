@@ -372,9 +372,10 @@ class Payment
     /**
      * Save the payment object to the database.
      *
+     * @param   boolean $notify_buyer   True to notify the buyer
      * @return  object  $this
      */
-    public function Save()
+    public function Save($notify_buyer=true)
     {
         global $_TABLES, $LANG_SHOP;
 
@@ -400,6 +401,12 @@ class Payment
                         $this->getGateway()
                     )
                 );
+            $Order->Notify(
+                '',
+                $LANG_SHOP['notify_pmt_received'],
+                true,
+                false
+            );
         }
         return $this;
     }

@@ -709,6 +709,7 @@ $LANG_SHOP = array (
 'paid_full' => 'Paid in Full',
 'pmt_pending' => 'Payment is pending',
 'bal_due' => 'Balance Due',
+'notify_pmt_received' => 'Your payment has been received.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
