@@ -1235,14 +1235,11 @@ class Order
             ) &&
             $this->isPaid()
         ) {
-            COM_errorLog("order is paid");
             // Get the status to set. For non-physical items, the order is
             // fullfilled so close it.
             if ($this->hasPhysical()) {
-                COM_errorLog("has physical");
                 $this->updateStatus(self::STATUS_PROCESSING);
             } else {
-                COM_errorLog("no physical items");
                 $this->updateStatus(self::STATUS_CLOSED);
             }
         }
