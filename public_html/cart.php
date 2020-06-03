@@ -235,7 +235,7 @@ default:
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
     if ($view != 'editcart' && $Cart->canFastCheckout()) {
-        $content .= $Cart->getView(1);
+        $content .= $Cart->getView(9);
         break;
     }
 
