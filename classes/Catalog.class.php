@@ -650,12 +650,12 @@ class Catalog
 
         $T->set_block('wrapper', 'ProductItems', 'PI');
         foreach ($Cats as $Cat) {
-            if (!$Cat->hasAccess() || !Category::hasProducts($Cat->cat_id)) {
+            if (!$Cat->hasAccess() || !Category::hasProducts($Cat->getID())) {
                 // Skip categories that have no products
                 continue;
             }
             $T->set_var(array(
-                'item_id'       => $Cat->cat_id,
+                'item_id'       => $Cat->getID(),
                 'short_description' => htmlspecialchars($Cat->getName()),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'item_url'      => SHOP_URL . '/index.php?category='. $Cat->getID(),
