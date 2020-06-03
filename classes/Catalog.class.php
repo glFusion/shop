@@ -482,6 +482,8 @@ class Catalog
             ( $this->cat_id == 0 || $this->cat_id == $RootCat->getID()) &&
             empty($search)
         ) {
+            // Clear out-of-stock flag which doesn't appply to plugins
+            $T->clear_var('oos');
             $this->getPluginProducts($T);
         }
 
