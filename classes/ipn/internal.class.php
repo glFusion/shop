@@ -126,7 +126,7 @@ class internal extends \Shop\IPN
             $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
             break;
         }
-        $this->setStatus(self::PAID);
+        $this->setStatus(self::STATUS_PAID);
         return true;
     }
 
@@ -232,7 +232,7 @@ class internal extends \Shop\IPN
                 $this->setPayerName($_USER['fullname']);
             }
             $this
-                ->setOrderID($this->Order->order_id)
+                ->setOrderID($this->Order->getOrderID())
                 ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id'))
                 ->setPmtTax($this->Order->getInfo('tax'))
                 ->setStatus(SHOP_getVar($this->ipn_data, 'payment_status'));
@@ -276,22 +276,22 @@ class internal extends \Shop\IPN
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
         foreach ($Cart as $idx=>$item) {
-            $item_id = $item->product_id;
-            if ($item->options != '') {
-                $item_id .= '|' . $item->options;
+            $item_id = $item->getProductID();
+            if ($item->getOptionIdString() != '') {
+                $item_id .= '|' . $item->getOptionIdString();
             }
             $args = array(
                 'item_id'   => $item_id,
-                'quantity'  => $item->quantity,
-                'price'     => $item->price,
-                'item_name' => $item->name,
-                'shipping'  => $item->shipping,
-                'handling'  => $item->handling,
-                'extras'    => $item->extras,
+                'quantity'  => $item->getQuantity(),
+                'price'     => $item->getPrice(),
+                'item_name' => $item->getDscp(),
+                'shipping'  => $item->getShipping(),
+                'handling'  => $item->getHandling(),
+                'extras'    => $item->getExtras(),
             );
             $this->addItem($args);
-            $total_shipping += $item->shipping;
-            $total_handling += $item->handling;
+            $total_shipping += $item->getShipping();
+            $total_handling += $item->getHandling();
         }
         $this->setPmtShipping($total_shipping)
             ->setPmtHandling($total_handling);
