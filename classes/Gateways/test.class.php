@@ -38,6 +38,7 @@ class test extends \Shop\Gateway
         $this->gw_name = 'test';
         $this->gw_desc = 'Internal Testing Gateway';
         $this->gw_url = SHOP_URL . '/ipn/internal.php';
+        $this->do_redirect = false; // handled internally
         parent::__construct();
     }
 

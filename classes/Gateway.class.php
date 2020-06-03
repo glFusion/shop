@@ -125,6 +125,12 @@ class Gateway
      * @var boolean */
     protected $req_billto = 0;
 
+    /** Indicate that the checkout process redirects to the provider.
+     * Causes the spinner to stay on the page until redirected to avoid
+     * confusion for the buyer.
+     * @var boolean */
+    protected $do_redirect = true;
+
 
     /**
      * Constructor. Initializes variables.
@@ -1333,7 +1339,7 @@ class Gateway
      */
     public function getCheckoutJS($cart)
     {
-        return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", this); return true;';
+        return 'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", ' . $this->do_redirect . '); return true;';
     }
 
 

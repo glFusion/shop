@@ -60,6 +60,7 @@ class terms extends \Shop\Gateway
         $this->services = array(
             'checkout'  => 1,
         );
+        $this->do_redirect = false; // handled internally
         parent::__construct();
     }
 

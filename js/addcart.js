@@ -72,7 +72,7 @@ function blk_setvis_shop_cart(newvis)
 /**
 *   Finalize the cart.
 */
-function finalizeCart(cart_id, uid)
+function finalizeCart(cart_id, uid, redirects=false)
 {
     // First check that there is a payer email filled out.
 /*    if (document.frm_checkout.payer_email.value == "") {
@@ -103,7 +103,9 @@ function finalizeCart(cart_id, uid)
             } catch(err) {
                 stat = false;
             }
-            spinner.hide();
+            if (!redirects) {
+                spinner.hide();
+            }
         },
         error: function(httpRequest, message, errorThrown) {
             console.log(cart_id);

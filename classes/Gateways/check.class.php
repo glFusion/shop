@@ -48,6 +48,7 @@ class check extends \Shop\Gateway
 
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
+        $this->do_redirect = false; // handled internally
     }
 
 
