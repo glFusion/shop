@@ -1077,7 +1077,6 @@ class Cart extends Order
             !$_SHOP_CONF['ena_fast_checkout'] ||    // not allowed
             COM_isAnonUser() ||         // can't be anonymous, need email addr
             count($Gateways) != 1 ||    // must have only one gateway
-            $this->requiresShipto() ||  // need shipping addr
             DiscountCode::countCurrent() > 0 ||     // have active codes
             (
                 $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
@@ -1093,12 +1092,14 @@ class Cart extends Order
         // Get the customer information to set addresses and email addr
         $Customer = Customer::getInstance($this->uid);
         $Addresses = $Customer->getAddresses();
-        if (empty($Addresses)) {
+        if (!empty($Addresses)) {
+            $Address = array_shift($Addresses);
+            $this->setBillto($Address);
+            $this->setShipto($Address);
+        } elseif ($this->requiresShipto() || $this->requiresBillto()) {
+            // If addresses are requred but none found, can't fast-checkout
             return false;
         }
-        $Address = array_shift($Addresses);
-        $this->setBillto($Address);
-        $this->setShipto($Address);
 
         // Go ahead and save the gateway as preferred for future use
         $Customer->setPrefGW($gateway->getName())
@@ -1108,8 +1109,8 @@ class Cart extends Order
         $this->setGateway($gateway->getName())
             ->setGC(0)
             ->setEmail($Customer->getEmail())
-            ->setShipper(0);
-        $this->instructions = '';
+            ->setShipper(0)
+            ->setInstructions('');
 
         SHOP_setUrl(SHOP_URL . '/index.php');
         return true;
