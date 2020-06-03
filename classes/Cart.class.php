@@ -256,40 +256,14 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$$item) {
-            if ($item->getProductID() == $item_number) {
+        foreach ($this->items as $id=>$OI) {
+            if ($OI->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
-                $item->updateItem($updates);
+                $OI->updateItem($updates);
                 break;
             }
         }
         $this->Save();
-    }
-
-
-    /**
-     * View the cart.
-     * This is the first step in checkout and checks that the prices are
-     * accurate. If any are not, possibly due to expired sales or discounts,
-     * then the OrderItem record is updated with the current price before
-     * displaying.
-     *
-     * @param   string  $view   View being presented (not used)
-     * @param   integer $step   Step in the checkout process (not used)
-     * @return  string      HTML for cart view
-     */
-    public function XXView($view = 'order', $step = 0)
-    {
-        foreach ($this->items as $key=>$Item) {
-            $prod_price = $Item->getItemPrice();
-            if (!$Item->getProduct()->canOrder()) {
-                $this->Remove($Item->id);
-            } elseif ($Item->price != $prod_price) {
-                $Item->price = $prod_price;
-                $Item->Save();
-            }
-        }
-        return parent::View($view, $step);
     }
 
 
