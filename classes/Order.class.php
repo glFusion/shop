@@ -1011,7 +1011,8 @@ class Order
         // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
 
-        $this->total = $this->getTotal();     // also calls calcTax()
+        //$this->total = $this->getTotal();     // also calls calcTax()
+        $this->total = $this->getOrderTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {

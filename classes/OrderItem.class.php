@@ -514,10 +514,11 @@ class OrderItem
      */
     public function setQuantity($newqty)
     {
-        if ($newqty > 0) {
+        if ($newqty >- 0) {
             $this->quantity = (float)$newqty;
             $this->handling = $this->Product->getHandling($newqty);
             $this->price = $this->getItemPrice();
+            $this->setTax($this->price * $this->quantity * $this->tax_rate);
         }
         return $this;
     }
