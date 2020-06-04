@@ -368,6 +368,7 @@ class Order
         $OI = new OrderItem($args);
         $OI->setQuantity($args['quantity'])
             ->applyDiscountPct($this->getDiscountPct())
+            ->setTaxRate($this->tax_rate)
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
