@@ -195,6 +195,17 @@ class DiscountCode
 
 
     /**
+     * Get the record ID of the code.
+     *
+     * @return  integer     Record ID
+     */
+    public function getCodeID()
+    {
+        return (int)$this->code_id;
+    }
+
+
+    /**
      * Set the code value.
      *
      * @param   string  $code       Discount code string
@@ -336,11 +347,12 @@ class DiscountCode
             end = '" . DB_escapeString($this->end->toMySQL(true)) . "',
             min_order = '" . (float)$this->min_order . "'";
         //echo $sql;die;
-        DB_query($sql);
-        $err = DB_error();
+        DB_query($sql, 1);
+        $err = DB_error('An invalid or duplicate code was entered');
         if ($err == '') {
             return true;
         } else {
+            COM_setMsg($err);
             return false;
         }
     }

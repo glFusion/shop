@@ -557,10 +557,10 @@ case 'save_sup':
     break;
 
 case 'savecode':
-    $C = new \Shop\DiscountCode($_POST['code_id']);
+    $C = new Shop\DiscountCode($_POST['code_id']);
     if (!$C->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&icode_d=' . $C->code_id);
+        //COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $C->getCodeID());
     } else {
         COM_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
