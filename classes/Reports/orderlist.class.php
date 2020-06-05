@@ -174,11 +174,11 @@ class orderlist extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $sql = "SELECT ord.*, (
-                SELECT sum(itm.price * itm.quantity)
-                FROM {$_TABLES['shop.orderitems']} itm
-                WHERE itm.order_id = ord.order_id
-            ) as sales_amt,
+//                SELECT sum(itm.price * itm.quantity)
+//                FROM {$_TABLES['shop.orderitems']} itm
+//                WHERE itm.order_id = ord.order_id
+//            ) as sales_amt,
+        $sql = "SELECT ord.*, ord.net_nontax + ord.net_taxable AS sales_amt,
             ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
                 WHERE pmt.pmt_order_id = ord.order_id
             ) as paid
