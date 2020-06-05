@@ -107,11 +107,11 @@ class test extends \Shop\Gateway
      */
     public function ProductButton($P)
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP, $_CONF;
 
         // Make sure we want to create a buy_now-type button
         if ($P->isPhysical()) return '';
-        $btn_type = $P->btn_type;
+        $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
 
         $this->AddCustom('transtype', $btn_type);
@@ -120,9 +120,9 @@ class test extends \Shop\Gateway
         if (empty($gateway_vars)) {
             $vars = array();
             $vars['cmd'] = $btn_type;
-            $vars['business'] = $_CONF['site_email'];
-            $vars['item_number'] = htmlspecialchars($P->id);
-            $vars['item_name'] = htmlspecialchars($P->short_description);
+            $vars['business'] = $_CONF['site_mail'];
+            $vars['item_number'] = htmlspecialchars($P->getID());
+            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
             $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
@@ -142,18 +142,18 @@ class test extends \Shop\Gateway
 
             $vars['notify_url'] = $this->ipn_url;
 
-            if ($P->weight > 0) {
-                $vars['weight'] = $P->weight;
+            if ($P->getWeight() > 0) {
+                $vars['weight'] = $P->getWeight();
             } else {
                 $vars['no_shipping'] = '1';
             }
 
-            switch ($P->shipping_type) {
+            switch ($P->getShippingType()) {
             case 0:
                 $vars['no_shipping'] = '1';
                 break;
             case 2:
-                $vars['shipping'] = $P->shipping_amt;
+                $vars['shipping'] = $P->getShipping($vars['quantity']);
                 $vars['no_shipping'] = '1';
                 break;
             case 1:
@@ -198,7 +198,7 @@ class test extends \Shop\Gateway
 
         // Set the text for the button, falling back to our Buy Now
         // phrase if not available
-        $btn_text = $P->btn_text;    // maybe provided by a plugin
+        $btn_text = $P->getBtnText();    // maybe provided by a plugin
         if ($btn_text == '') {
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
