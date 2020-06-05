@@ -872,31 +872,6 @@ class Product
      */
     protected function loadOptions()
     {
-        global $_TABLES;
-
-    /*    $sql = "SELECT DISTINCT pov.pov_id, pov.pov_value, pog.pog_id, pog.pog_name, pv.sku,
-                pov.pov_price
-            FROM {$_TABLES['shop.prod_opt_vals']} pov
-            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
-                ON pog.pog_id =.pov.pog_id
-            LEFT JOIN {$_TABLES['shop.variantXopt']} vxo
-                ON vxo.pov_id = pov.pov_id
-            LEFT JOIN {$_TABLES['shop.product_variants']} pv
-                ON pv.pv_id = vxo.pv_id
-            WHERE pv.item_id = {$this->id}
-            ORDER BY pog.pog_orderby, pov.orderby ASC";
-        $res = DB_query($sql);
-        $ctlbk = 0;
-        $Grps = array();
-        while ($A = DB_fetchArray($res, false)) {
-            if ($A['pog_id'] != $ctlbk) {
-                $Grps[$A['pog_id']] = new ProductOptionGroup($A['pog_id']);
-            }
-            //$Grps[$A['pog_id']]->addOption(new \StdClass
-            echo "{$A['pog_name']} - {$A['pov_value']}\n";
-        }
-        var_dump($Grps);
-        return;*/
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {

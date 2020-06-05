@@ -84,6 +84,7 @@ class Coupon extends \Shop\Product
             'mask'      => $_SHOP_CONF['gc_mask'],
         );
 
+        // Now overlay the requested options
         foreach ($opts as $key=>$val) {
             $options[$key] = $val;
         }
