@@ -346,6 +346,40 @@ class Order
 
 
     /**
+     * Get orders that are not fully paid, optionally limiting to a buyer.
+     *
+     * @param   integer $uid    Optional use ID to limit search
+     * @return  array       Array of Order objects
+     */
+    public static function getUnpaid($uid = 0)
+    {
+        global $_TABLES;
+
+        $retval = array();
+        if ($uid > 0) {
+            $uid_where = " WHERE uid = " . (int)$uid;
+        } else {
+            $uid_where = '';
+        }
+        $sql = "SELECT ord.*,
+            ord.order_total - ifnull(sum(pmt.pmt_amount),0) as amtDue,
+            ifnull(sum(pmt.pmt_amount),0) as amt_paid
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.payments']} pmt
+            ON pmt.pmt_order_id = ord.order_id
+            $uid_where
+            GROUP BY ord.order_id
+            HAVING amtDue > 0";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['order_id']] = new self();
+            $retval[$A['order_id']]->setVars($A);
+        }
+        return $retval;
+    }
+
+
+    /**
      * Add a single item to this order.
      * Extracts item information from the provided $data variable, and
      * reads the item information from the database as well.  The entire
@@ -730,7 +764,7 @@ class Order
         foreach ($this->items as $item) {
             $item->Save();
         }
-        $order_total = $this->getOrderTotal();
+        $order_total = $this->calcOrderTotal();
 
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -1013,7 +1047,7 @@ class Order
         $shipper_select = $this->selectShipper();
 
         //$this->total = $this->getTotal();     // also calls calcTax()
-        $this->total = $this->getOrderTotal();     // also calls calcTax()
+        $this->total = $this->calcOrderTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
@@ -3353,10 +3387,22 @@ class Order
      * @uses    self::calcTax()
      * @return  float   Total order amount
      */
-    protected function getOrderTotal()
+    protected function calcOrderTotal()
     {
         $this->calcItemTotals()->calcTax();
         return (float)$this->net_items + $this->shipping + $this->tax + $this->handling;
+    }
+
+
+    /**
+     * Get the order total value from the database field.
+     * Does not perform any calculations.
+     *
+     * @return  float   Order total
+     */
+    public function getOrderTotal()
+    {
+        return (float)$this->order_total;
     }
 
 
@@ -3404,6 +3450,17 @@ class Order
     public function getAmountPaid()
     {
         return (float)$this->_amt_paid;
+    }
+
+
+    /**
+     * Get the balance due on the order.
+     *
+     * @return  float       Unpaid balance
+     */
+    public function getBalanceDue()
+    {
+        return (float)($this->order_total - $this->_amt_paid);
     }
 
 

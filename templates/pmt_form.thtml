@@ -1,0 +1,90 @@
+{# begin {templatelocation} #}
+<form class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
+    <input type="hidden" name="pmt_id" value="{pmt_id}" />
+{!if 0}
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['customer']}:
+            <span id="customer" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="uid">
+                <option value="">--{$LANG_SHOP['select']}--</option>
+                {user_select}
+            </select>
+        </div>
+    </div>
+{!endif}
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['gateway']}:
+            <span id="module_code" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="gw_id">
+<!-- BEGIN GatewayOpts -->
+                <option value="{gw_id}" {selected}>{gw_dscp}</option>
+<!-- END GatewayOpts -->
+            </select>
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['txn_id']}:
+            <span id="name" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input required type="text" name="ref_id" value="{ref_id}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['order']}:
+            <span id="name" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input required type="text" name="order_id" value="{order_id}" size="40" maxlength="40" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['amount']}:
+            <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input required type="text" name="amount" value="{amount}" />
+            &nbsp;&nbsp;{$LANG_SHOP['bal_due']}: {bal_due}
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['comment']}:
+            <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input required type="text" name="comment" value="{comment}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['is_money']}:
+            <span id="enabled" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input type="checkbox" name="is_money" value="1" {money_chk} />
+            {$LANG_SHOP_HELP['is_money_chk']}
+        </div>
+    </div>
+
+    <div class="uk-form-row" align="center">
+        <button class="uk-button uk-button-success type="submit" name="savepayment" value="{$LANG_ADMIN['save']}">{$LANG_ADMIN['save']}</button>
+        <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
+        <button class="uk-button uk-button-primary" type="reset" name="payments" value="{$LANG_ADMIN['cancel']}"
+            onclick="javascript: document.location.href='{site_admin_url}/plugins/shop/index.php?ord_pmts={order_id}'">{$LANG_ADMIN['cancel']}</button>
+{!if can_delete}
+        <button style="float:right" class="uk-button uk-button-danger" type="submit" name="delpayment" value="{$LANG_SHOP['delete']}"
+            onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['delete']}</button>
+{!endif}
+    </div>
+
+</form>
+{# end {templatelocation} #}
