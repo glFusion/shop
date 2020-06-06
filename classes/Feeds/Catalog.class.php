@@ -40,8 +40,13 @@ class Catalog
     {
         global $_SHOP_CONF;
 
-        if ($_SHOP_CONF['feed_' . $this->type]) {
+        if (
+            isset($_SHOP_CONF['feed_' . $this->type]) &&
+            $_SHOP_CONF['feed_' . $this->type]
+        ) {
             return $this->_Render($this->type);
+        } else {
+            COM_404();
         }
     }
 
@@ -80,11 +85,11 @@ class Catalog
                 $sale_price = '';
                 $sale_eff_dt = '';
             }
-            $title = self::_fixText($P->short_description);
-            if ($P->description == '') {
+            $title = self::_fixText($P->getShortDscp());
+            if ($P->getDscp() == '') {
                 $dscp = $title;
             } else {
-                $dscp = self::_fixText($P->description);
+                $dscp = self::_fixText($P->getDscp());
             }
             if ($P->isInStock()) {
                 $availability = 'in stock';
@@ -98,7 +103,7 @@ class Catalog
             $img_link = $P->getImage($img, 480, 480)['url'];
             $Cat = array_pop($P->getCategories());  // get the first category (random)
             $T->set_var(array(
-                'product_id'    => $P->id,
+                'product_id'    => $P->getID(),
                 'short_dscp'    => $title,
                 'long_dscp'     => $dscp,
                 'cat_name'      => self::_fixText($Cat->getName()),
