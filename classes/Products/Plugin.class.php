@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Products;
+use Shop\Currency;
+
 
 /**
  * Class for a plugin-supplied product.
@@ -41,6 +43,10 @@ class Plugin extends \Shop\Product
      * @var boolean */
     private $canApplyDC = true;
 
+    /** Image URL. One image can be include for the catalog display.
+     * @var string */
+    private $img_url = '';
+
 
     /**
      * Constructor.
@@ -57,8 +63,7 @@ class Plugin extends \Shop\Product
         $this->pi_info = array();
         $item = explode('|', $id);  // separate full item ID from option string
         $item_id = $item[0];
-        $this->properties = array();
-        $this->currency = \Shop\Currency::getInstance();
+        $this->currency = Currency::getInstance();
         $this->item_id = $item_id;  // Full item id
         $this->id = $item_id;       // TODO: convert Product class to use item_id
         $item_parts = explode(':', $item_id);   // separate the plugin name and item ID
@@ -95,6 +100,7 @@ class Plugin extends \Shop\Product
             $this->btn_text = SHOP_getVar($A, 'btn_text');
             $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
             $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
+            $this->img_url = SHOP_getVar($A, 'img_url');
             $this->isNew = false;
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
@@ -389,6 +395,25 @@ class Plugin extends \Shop\Product
     public function canApplyDiscountCode()
     {
         return $this->canApplyDC;
+    }
+
+
+    /**
+     * Get the image to include in the catalog.
+     * Overrides the parent function.
+     *
+     * @param   string  $filename   Specific filename (not used)
+     * @param   integer $width      Desired width (not used)
+     * @param   integer $height     Desired height (not used)
+     * @return  array   Array of image information
+     */
+    public function getImage($filename = '', $width = 0, $height = 0)
+    {
+        return array(
+            'url' => $this->img_url,
+            'width' => $width,
+            'height' => $height,
+        );
     }
 
 }   // class Plugin
