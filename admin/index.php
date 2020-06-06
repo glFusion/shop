@@ -505,7 +505,7 @@ case 'sendcards':
     if ($no_exp == 1) {
         $exp = \Shop\Products\Coupon::MAX_EXP;
     }
-    $status = PLG_invokeService('shop', 'sendcards',
+    $status = LGLIB_invokeService('shop', 'sendcards',
         array(
             'amount'    => $amt,
             'members'   => $uids,
