@@ -183,7 +183,7 @@ class Plugin extends \Shop\Product
         $args = array(
             'item'  => array(
                 'item_id' => $Item->getProductID(),
-                'quantity' => $Item->getQuantity,
+                'quantity' => $Item->getQuantity(),
                 'name' => $Item->getDscp(),
                 'price' => $Item->getPrice(),
                 'paid' => $Item->getPrice(),
