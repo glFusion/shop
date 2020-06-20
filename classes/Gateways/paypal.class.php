@@ -71,6 +71,7 @@ class paypal extends \Shop\Gateway
                 'pp_cert'           => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
+                'ena_donations'     => 'checkbox',
             ),
             'test' => array(
                 'receiver_email'    => 'string',
@@ -82,6 +83,7 @@ class paypal extends \Shop\Gateway
                 'pp_cert' => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
+                'ena_donations'     => 'checkbox',
             ),
             'global' => array(
                 'test_mode'         => 'checkbox',
@@ -100,9 +102,11 @@ class paypal extends \Shop\Gateway
             ),
             'prod' => array(
                 'endpoint' => 'https://www.paypal.com',
+                'ena_donations'     => '0',
             ),
             'test' => array(
                 'endpoint' => 'https://www.sandbox.paypal.com',
+                'ena_donations'     => '0',
             ),
         );
 
@@ -743,7 +747,12 @@ class paypal extends \Shop\Gateway
     {
         switch ($btn_type) {
         case 'donation':
-            $cmd = '_donations';
+            // Use the donation command only if enabled for the gateway
+            if ($this->getConfig('ena_donations')) {
+                $cmd = '_donations';
+            } else {
+                $cmd = '_xclick';
+            }
             $tpl = 'donation';
             break;
         case 'buy_now':
