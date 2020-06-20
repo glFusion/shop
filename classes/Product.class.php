@@ -641,7 +641,7 @@ class Product
         $this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->short_description = $row['short_description'];
         $this->price = $row['price'];
-        $this->file = $row['file'];
+        $this->filename = $row['file'];
         $this->expiration = $row['expiration'];
         $this->keywords = $row['keywords'];
         $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
@@ -861,7 +861,7 @@ class Product
      */
     public function getFilename()
     {
-        return $this->file;
+        return $this->filename;
     }
 
 
@@ -932,18 +932,18 @@ class Product
                 if ($F->areErrors() > 0) {
                     $this->Errors[] = $F->printErrors(true);
                 } elseif ($filename != '') {
-                    $this->file = $filename;
+                    $this->filename = $filename;
                 }
-                SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
+                SHOP_log('Uploaded file: ' . $this->filename, SHOP_LOG_DEBUG);
             }
-            if ($this->file == '') {
+            if ($this->filename == '') {
                 // Not having a file is an error for downloadable products.
                 $this->Errors[] = $LANG_SHOP['err_missing_file'];
             }
         } else {
             // Make sure file is empy for non-downloads.
             // May have previously contained a file if the type was changed.
-            $this->file = '';
+            $this->filename = '';
         }
 
         // Check for errors during validation and file upload,
@@ -1004,7 +1004,7 @@ class Product
                 price='" . number_format($this->price, 2, '.', '') . "',
                 prod_type='" . (int)$this->prod_type. "',
                 weight='" . number_format($this->weight, 2, '.', '') . "',
-                file='" . DB_escapeString($this->file) . "',
+                file='" . DB_escapeString($this->filename) . "',
                 expiration='" . (int)$this->expiration. "',
                 enabled='" . (int)$this->enabled. "',
                 featured='" . (int)$this->featured. "',
@@ -1295,7 +1295,7 @@ class Product
             'short_description' => htmlspecialchars($this->short_description, ENT_QUOTES, COM_getEncodingt()),
             'description'   => htmlspecialchars($this->description, ENT_QUOTES, COM_getEncodingt()),
             'price'         => Currency::getInstance()->FormatValue($this->price),
-            'file'          => htmlspecialchars($this->file, ENT_QUOTES, COM_getEncodingt()),
+            'file'          => htmlspecialchars($this->filename, ENT_QUOTES, COM_getEncodingt()),
             'expiration'    => $this->expiration,
             'action_url'    => SHOP_ADMIN_URL . '/index.php',
             'file_selection' => $this->FileSelector(),
@@ -1924,7 +1924,7 @@ class Product
                 if ($file == '.' || $file == '..') {    // skip directories
                     continue;
                 }
-                $sel = $file == $this->file ? 'selected="selected" ' : '';
+                $sel = $file == $this->filename ? 'selected="selected" ' : '';
                 $retval .= "<option value=\"$file\" $sel>$file</option>\n";
             }
             closedir($dh);

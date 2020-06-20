@@ -1550,7 +1550,7 @@ class Order
 
             // Add the file to the filename array, if any. Download
             // links are only included if the order status is 'paid'
-            $file = $P->file;
+            $file = $P->getFilename();
             if (!empty($file) && $this->status == 'paid') {
                 $files[] = $file;
                 $dl_url = SHOP_URL . '/download.php?';
