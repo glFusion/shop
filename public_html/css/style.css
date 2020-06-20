@@ -249,6 +249,7 @@ div.shopProductListOuter {
     /*padding: 5px;*/
     text-decoration: none;
     overflow: hidden;
+    z-index: 1;
 }
 
 .shopProductListItem.v1 {
