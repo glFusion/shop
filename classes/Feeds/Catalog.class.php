@@ -101,7 +101,8 @@ class Catalog
                 $img = 'notavailable.jpg';
             }
             $img_link = $P->getImage($img, 480, 480)['url'];
-            $Cat = array_pop($P->getCategories());  // get the first category (random)
+            $Cats = $P->getCategories();
+            $Cat = array_shift($Cats);  // get the first category (random)
             $T->set_var(array(
                 'product_id'    => $P->getID(),
                 'short_dscp'    => $title,
