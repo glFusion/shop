@@ -248,7 +248,7 @@ class OrderItem
         $this->setQtyDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
         $this->token = SHOP_getVar($A, 'token');
         $this->net_price = SHOP_getVar($A, 'net_price', 'float');
-        $this->setOptionsText(SHOP_getVar($A, 'options_text'));
+        $this->setOptionsText(SHOP_getVar($A, 'options_text', 'array'));
         if (array_key_exists('extras', $A)) {
             $this->setExtras($A['extras']);
         }
