@@ -10,6 +10,8 @@ Release TBD
   * Enable sales tax charges on shipping and handling.
   * Add invoicing via Paypal invoice API.
   * Link to customer in order report now filters report.
+  * Enable/disable donation buttons in Paypal gateway config.
+  * Allow user-entered prices for some plugin items, e.g. Donations.
 
 ## v1.2.1
 Release 2020-03-02

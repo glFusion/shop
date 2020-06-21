@@ -2290,6 +2290,19 @@ class Product
 
 
     /**
+     * See if this product allows a custom price to be entered by the user.
+     * Standard products do not allow user-entered pricing. This is typically
+     * used for Donations.
+     *
+     * @return  boolean     True if allowed, False if not
+     */
+    public function allowCustomPrice()
+    {
+        return false;
+    }
+
+
+    /**
      * Get the formatted price for display.
      * Used mainly to allow child classes to override the displayed price.
      *

@@ -493,100 +493,102 @@ class paypal extends \Shop\Gateway
 
         $btn_info = self::gwButtonType($btn_type);
         $this->AddCustom('transtype', $btn_type);
-        $gateway_vars = '';
+        $this->setReceiver($P->getPrice());
+        $vars = array(
+            'cmd' => $btn_info['cmd'],
+            'business' => $this->receiver_email,
+            'item_number' => htmlspecialchars($P->getID()),
+            'item_name' => htmlspecialchars($P->getShortDscp()),
+            'currency_code' => $this->currency_code,
+            'custom' => $this->PrepareCustom(),
+            'return' => $this->returnUrl('', ''),
+            'cancel_return' => $P->getCancelUrl(),
+            'amount' => $P->getPrice(),
+            'notify_url' => $this->ipn_url,
+        );
 
-        if (empty($gateway_vars)) {
-            $vars = array();
-            $vars['cmd'] = $btn_info['cmd'];
-            $this->setReceiver($P->getPrice());
-            $vars['business'] = $this->receiver_email;
-            $vars['item_number'] = htmlspecialchars($P->getID());
-            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
-            $vars['currency_code'] = $this->currency_code;
-            $vars['custom'] = $this->PrepareCustom();
-            $vars['return'] = $this->returnUrl('', '');
-            $vars['cancel_return'] = $P->getCancelUrl();
-            $vars['amount'] = $P->getPrice();
+        // Get the allowed buy-now quantity. If not defined, set
+        // undefined_quantity.
+        $qty = $P->getFixedQuantity();
+        if ($qty < 1) {
+            $vars['undefined_quantity'] = '1';
+        } else {
+            $vars['quantity'] = $qty;
+        }
 
-            // Get the allowed buy-now quantity. If not defined, set
-            // undefined_quantity.
-            $qty = $P->getFixedQuantity();
-            if ($qty < 1) {
-                $vars['undefined_quantity'] = '1';
-            } else {
-                $vars['quantity'] = $qty;
-            }
+        if ($P->getWeight() > 0) {
+            $vars['weight'] = $P->getWeight();
+        } else {
+            $vars['no_shipping'] = '1';
+        }
 
-            $vars['notify_url'] = $this->ipn_url;
-
-            if ($P->getWeight() > 0) {
-                $vars['weight'] = $P->getWeight();
-            } else {
-                $vars['no_shipping'] = '1';
-            }
-
-            switch ($P->getShippingType()) {
-            case 0:
-                $vars['no_shipping'] = '1';
-                break;
-            case 2:
-                $shipping = Shipper::getBestRate($P->getShippingUnits())->best_rate;
-                $shipping += $P->getShipping();
-                $vars['shipping'] = $shipping;
-                $vars['no_shipping'] = '1';
-                break;
-            case 1:
-                $vars['no_shipping'] = '2';
-                break;
-            }
+        switch ($P->getShippingType()) {
+        case 0:
+            $vars['no_shipping'] = '1';
+            break;
+        case 2:
+            $shipping = Shipper::getBestRate($P->getShippingUnits())->best_rate;
+            $shipping += $P->getShipping();
+            $vars['shipping'] = $shipping;
+            $vars['no_shipping'] = '1';
+            break;
+        case 1:
+            $vars['no_shipping'] = '2';
+            break;
+        }
 
             /*if ($P->taxable) {
                 $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
             }*/
 
             // Buy-now product button, set default billing/shipping addresses
-            $U = self::Customer();
-            $shipto = $U->getDefaultAddress('shipto');
-            if (!empty($shipto)) {
-                $fullname = $shipto->getName();
-                if (strpos($fullname, ' ')) {
-                    list($fname, $lname) = explode(' ', $fullname);
-                    $vars['first_name'] = $fname;
-                    if ($lname) $vars['last_name'] = $lname;
-                } else {
-                    $vars['first_name'] = $fullname;
-                }
-                $vars['address1'] = $shipto->getAddress1();
-                if (!empty($shipto->getAddress2())) {
-                    $vars['address2'] = $shipto->getAddress2();
-                }
-                $vars['city'] = $shipto->getCity();
-                $vars['state'] = $shipto->getState();
-                $vars['zip'] = $shipto->getPostal();
-                $vars['country'] = $shipto->getCountry();
+        $U = self::Customer();
+        $shipto = $U->getDefaultAddress('shipto');
+        if (!empty($shipto)) {
+            $fullname = $shipto->getName();
+            if (strpos($fullname, ' ')) {
+                list($fname, $lname) = explode(' ', $fullname);
+                $vars['first_name'] = $fname;
+                if ($lname) $vars['last_name'] = $lname;
+            } else {
+                $vars['first_name'] = $fullname;
             }
+            $vars['address1'] = $shipto->getAddress1();
+            if (!empty($shipto->getAddress2())) {
+                $vars['address2'] = $shipto->getAddress2();
+            }
+            $vars['city'] = $shipto->getCity();
+            $vars['state'] = $shipto->getState();
+            $vars['zip'] = $shipto->getPostal();
+            $vars['country'] = $shipto->getCountry();
+        }
 
-            $gateway_vars = '';
-            $enc_btn = '';
-            if ($this->getConfig('encrypt')) {
-                $enc_btn = $this->_encButton($vars);
-                if (!empty($enc_btn)) {
-                    $gateway_vars .=
-                    '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
-                    '<input type="hidden" name="encrypted" value=\'' .
-                        $enc_btn . '\' />' . "\n";
-                }
+        $gateway_vars = '';
+        $enc_btn = '';
+        if ($this->getConfig('encrypt')) {
+            $enc_btn = $this->_encButton($vars);
+            if (!empty($enc_btn)) {
+                $gateway_vars .=
+                '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
+                '<input type="hidden" name="encrypted" value=\'' .
+                    $enc_btn . '\' />' . "\n";
             }
-            if (empty($enc_btn)) {
-                // Create unencrypted buttons if not configured to encrypt,
-                // or if encryption fails.
-                foreach ($vars as $name=>$value) {
+        }
+        if (empty($enc_btn)) {
+            // Create unencrypted buttons if not configured to encrypt,
+            // or if encryption fails.
+            foreach ($vars as $name=>$value) {
+                if ($name == 'amount' && $P->allowCustomPrice()) {
+                    $gateway_vars .= '<br />' . $P->getPricePrompt() .
+                        ': <input class="shopCustomPriceField" type="text" name="' . $name .
+                        '" value = "' . $value . '" /><br />' . "\n";
+                } else {
                     $gateway_vars .= '<input type="hidden" name="' . $name .
                         '" value="' . $value . '" />' . "\n";
                 }
+            }
             //} else {
             //    $this->_SaveButton($P, $btn_key, $gateway_vars);
-            }
         }
 
         // Set the text for the button, falling back to our Buy Now
@@ -1011,10 +1013,11 @@ class paypal extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
+        $Order->updateStatus('invoiced');
 
         $A = array(
             'detail' => array(
-                'invoice_number' => $order_num,
+                'invoice_number' => $Order->getInvoiceNumber(),
                 'reference' => $order_num,
                 'currency_code' => $Currency->getCode(),
                 'payment_term' => array(

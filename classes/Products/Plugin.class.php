@@ -47,6 +47,11 @@ class Plugin extends \Shop\Product
      * @var string */
     private $img_url = '';
 
+    /** Flag to indicate that the buyer can enter their own price value.
+     * Mainly used for donations.
+     * @var array */
+    private $custom_price = false;
+
 
     /**
      * Constructor.
@@ -115,6 +120,9 @@ class Plugin extends \Shop\Product
             if (array_key_exists('canApplyDC', $A) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
+            if (array_key_exists('custom_price', $A) && $A['custom_price']) {
+                $this->custom_price = true;
+            }
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -127,7 +135,7 @@ class Plugin extends \Shop\Product
             $this->_have_detail_svc = false;
             $this->isUnique = true;
             $this->enabled = false;
-        }
+         }
     }
 
 
@@ -271,6 +279,29 @@ class Plugin extends \Shop\Product
             }
         }
         return $this->price;
+    }
+
+    /**
+     * See if this product allows a custom price to be entered by the user.
+     * Certain plugins, such as donations, may allow custom user-entered prices.
+     *
+     * @return  boolean     True if allowed, False if not
+     */
+    public function allowCustomPrice()
+    {
+        return $this->custom_price ? true : false;
+    }
+
+
+    /**
+     * Get the prompt to show for the custom pricing field, if allowed.
+     *
+     * @return  string      Field prompt
+     */
+    public function getPricePrompt()
+    {
+        global $LANG_DON;
+        return $LANG_DON['amount'];
     }
 
 
