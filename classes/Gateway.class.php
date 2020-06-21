@@ -1123,14 +1123,22 @@ class Gateway
             case 'checkbox':
                 $field = '<input type="checkbox" name="' . $fld_name .
                     '" value="1" ';
-                if ($this->config[$env][$name] == 1) {
+                if (
+                    isset($this->config[$env][$name]) &&
+                    $this->config[$env][$name] == 1
+                ) {
                     $field .= 'checked="checked" ';
                 }
                 $field .= '/>';
                 break;
             default:
+                if (isset($this->config[$env][$name])) {
+                    $val = $this->config[$env][$name];
+                } else {
+                    $val = '';
+                }
                 $field = '<input type="text" name="' . $fld_name . '" value="' .
-                    $this->config[$env][$name] . '" size="60" />';
+                    $val . '" size="60" />';
                 break;
             }
             $fields[$name] = array(
