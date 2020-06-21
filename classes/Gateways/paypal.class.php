@@ -71,7 +71,6 @@ class paypal extends \Shop\Gateway
                 'pp_cert'           => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
-                'ena_donations'     => 'checkbox',
             ),
             'test' => array(
                 'receiver_email'    => 'string',
@@ -83,7 +82,6 @@ class paypal extends \Shop\Gateway
                 'pp_cert' => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
-                'ena_donations'     => 'checkbox',
             ),
             'global' => array(
                 'test_mode'         => 'checkbox',
@@ -91,6 +89,7 @@ class paypal extends \Shop\Gateway
                 'encrypt'           => 'checkbox',
                 'prv_key'           => 'string',
                 'pub_key'           => 'string',
+                'ena_donations'     => 'checkbox',
             ),
         );
 
@@ -99,14 +98,13 @@ class paypal extends \Shop\Gateway
             'global' => array(
                 'micro_threshold'   => '10',
                 'test_mode'         => '1',
+                'ena_donations'     => 0,
             ),
             'prod' => array(
                 'endpoint' => 'https://www.paypal.com',
-                'ena_donations'     => '0',
             ),
             'test' => array(
                 'endpoint' => 'https://www.sandbox.paypal.com',
-                'ena_donations'     => '0',
             ),
         );
 
