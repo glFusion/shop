@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -706,6 +706,47 @@ class Order
 
 
     /**
+     * Get the invoice number based on the configured starting number.
+     * Returns an empty string if a sequence number has not been assigned,
+     * otherwise returns either starting_number + sequence or concatenates
+     * the sequence to the starting number if the starting number is not an
+     * actual number.
+     *
+     * Always returns a string for consistency.
+     *
+     * @since   v1.3.1
+     * @return  string      Invoice number
+     */
+    public function getInvoiceNumber()
+    {
+        global $_SHOP_CONF;
+
+        if ($this->order_seq == 0) {
+            $inv_num = '';
+        } elseif (
+            isset($_SHOP_CONF['inv_start_num']) &&
+            !empty($_SHOP_CONF['inv_start_num'])
+        ) {
+            if (is_numeric($_SHOP_CONF['inv_start_num'])) {
+                // just add the prefix number, e.g. "10001"
+                $inv_num = $_SHOP_CONF['inv_start_num'] + $this->order_seq;
+            } elseif (strpos($_SHOP_CONF['inv_start_num'], '%') !== false) {
+                // formatted string, e.g. "INV-0001-2020"
+                $inv_num = sprintf($_SHOP_CONF['inv_start_num'], $this->order_seq);
+            } else {
+                // prefix string, e.g. "INV-1"
+                $inv_num = (string)$_SHOP_CONF['inv_start_num'] . (string)$this->order_seq;
+            }
+        } elseif (function_exists('CUSTOM_shop_invoiceNumber')) {
+            $inv_num = CUSTOM_shop_invoiceNumber($this->order_seq, $this);
+        } else {
+            $inv_num = $this->order_seq;
+        }
+        return (string)$inv_num;
+    }
+
+
+    /**
      * API function to delete an entire order record.
      * Only orders that have a status of "cart" or "pending" can be deleted.
      * Finalized (paid, shipped, etc.) orders cannot  be removed.
@@ -721,21 +762,20 @@ class Order
         if ($order_id == '') {
             $order_id = Cart::getSession('order_id');
         }
-        if (!$order_id) return true;
-
-        $order_id = DB_escapeString($order_id);
+        if (!$order_id) {
+            // Still an empty order ID, nothing to do
+            return true;
+        }
 
         // Just get an instance of this order since there are a couple of values to check.
         $Ord = self::getInstance($order_id);
-        if ($Ord->isNew) return true;
-
-        // Only orders with no sequence number can be deleted.
-        // Only orders with certain status values can be deleted.
-        if ($Ord->order_seq !== NULL || $Ord->isFinal()) {
+        if (!$Ord->canDelete()) {
+            // Order can't be deleted
             return false;
         }
 
         // Checks passed, delete the order and items
+        $order_id = DB_escapeString($order_id);
         $sql = "START TRANSACTION;
             DELETE FROM {$_TABLES['shop.oi_opts']} WHERE oi_id IN (
                 SELECT id FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id'
@@ -1084,6 +1124,7 @@ class Order
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
+            'invoice_number'  => $this->getInvoiceNumber(),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
@@ -3611,6 +3652,26 @@ class Order
         $this->tainted = true;
         return $this;
     }
+
+
+    /**
+     * Check if this order can be deleted.
+     * Orders that have been assigned a sequence number can't be deleted.
+     *
+     * @return  boolean     True if deletion is OK, False if not
+     */
+    public function canDelete()
+    {
+        if (
+            $this->isNew ||
+            $this->order_seq ||
+            !$this->isFinal()
+        ) {
+            return false;
+        }
+        return true;
+    }
+
 }
 
 ?>

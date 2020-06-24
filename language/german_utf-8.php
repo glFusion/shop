@@ -218,6 +218,7 @@ $LANG_SHOP = array (
 'order_summary' => 'Bestellübersicht',
 'order_date'    => 'Bestelldatum',
 'order_number'  => 'Bestellnummer',
+'invoice_number'  => 'Invoice Number',
 'new_address'   => 'Neue Adresse',
 'shipping'      => 'Versand',
 'handling'      => 'Bearbeitung',
