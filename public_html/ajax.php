@@ -145,7 +145,7 @@ case 'validateOpts':
     } else {
         // Product has no options, just check the product object
         $output = Shop\Product::getByID($_GET['item_number'])->Validate(array(
-            'quantity' => $_GET['quantity'],
+            'quantity' => isset($_GET['quantity']) ? (int)$_GET['quantity'] : 1,
         ) );
     }
     break;

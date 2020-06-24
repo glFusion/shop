@@ -975,7 +975,7 @@ class Category
             array(
                 'text'  => $LANG_ADMIN['delete'] .
                     '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP_HELP['hlp_cat_delete'] . '"></i>',
+                    $LANG_SHOP['del_cat_instr'] . '"></i>',
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
             ),
