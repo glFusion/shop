@@ -92,6 +92,11 @@ function ProcessForm(form)
                 }
             } catch(err) {
             }
+        },
+        error: function(a,b,c) {
+            console.log(a);
+            console.log(b);
+            console.log(c);
         }
     });
     return;
