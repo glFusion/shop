@@ -20,7 +20,6 @@
                 alt="Product Image"
                 src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
         </div>
-        <!--<ul id="productThumbWrapper" class="shopProductThumbWrapper v2"></ul>-->
 {!else}
         <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 {!endif}
