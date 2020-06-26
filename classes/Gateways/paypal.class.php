@@ -853,7 +853,7 @@ class paypal extends \Shop\Gateway
         // If the order amount exceeds the micro account threshold,
         // or no micro receiver email is specified, return prod.
         if (
-            $amount >= $this->getConfig['micro_threshold'] ||
+            $amount >= $this->getConfig('micro_threshold') ||
             empty($this->getConfig('micro_receiver_email'))
         ) {
             $this->receiver_email = $this->getConfig('receiver_email');
