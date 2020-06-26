@@ -3224,7 +3224,7 @@ class Product
     {
         $retval = '';
         $Images = $this->getVariantImages();
-        if (!is_array($Images)) {
+        if (!is_array($Images) || empty($Images)) {
             $retval = '';
         } else {
             $img = reset($Images);
