@@ -522,7 +522,7 @@ $LANG_SHOP = array (
 'migrate_pp_error' => 'There was an error migrating from Paypal. Check the system log.',
 'q_purge_trans'  => '**WARNING** Are you sure you want to purge ALL transactions and gift cards?',
 'purge_trans'    => 'Purge All Transactions',
-'dscp_purge_trans' => 'Purge <b>ALL</b> Orders, Payments and Gift Cards from the database. This is intended <b>ONLY</b> to remove test orders and payments after your testing period, before your store goes live. <span class="uk-text-danger"><b>ALL GIFT CARDS AND TRANSACTIONS WILL BE DELETED!</b></span>. Back up your database before running this function! <i>Public access to the Shop must be disabled.</i>',
+'dscp_purge_trans' => 'Purge <b>ALL</b> Orders, Payments and Gift Cards from the database. This is intended <b>ONLY</b> to remove test orders and payments after your testing period, before your store goes live. <span class="uk-text-danger"><b>ALL GIFT CARDS AND TRANSACTIONS WILL BE DELETED!</b></span>. Back up your database before running this function! <i>Public access to the Shop must be disabled first.</i>',
 'trans_purged' => 'All transactions have been removed.',
 'customer'  => 'Customer',
 'sales_amt' => 'Sales Amt',
@@ -752,6 +752,8 @@ $LANG_SHOP_HELP = array(
 'pending' => 'Processing will begin once payment is received.',
 'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 'select_files' => 'Select one or multiple files to upload.',
+'tax_import_fmt' => 'File Format and first line: <pre>State,ZipCode,TaxRegionName,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,
+EstimatedSpecialRate,RiskLevel</pre>',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
