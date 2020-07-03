@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -223,7 +223,7 @@ function plugin_load_configuration_shop()
  * - Migrates configurations from the Paypal plugin, if installed and up to date.
  * - No longer automatically migrates Paypal data since the currency may not be configured.
  */
-function plugin_postinstall_shop()
+function plugin_postinstall_shop($upgrade=false)
 {
     global $_CONF, $_SHOP_CONF, $_SHOP_DEFAULTS, $_SHOP_SAMPLEDATA, $_TABLES, $_PLUGIN_INFO;
 
@@ -250,10 +250,12 @@ function plugin_postinstall_shop()
     }
 
     // Copy static "not available" product image
-    copy(
-        __DIR__ . '/data/images/products/notavailable.jpg',
-        $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
-    );
+    if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
+        copy(
+            __DIR__ . '/data/images/products/notavailable.jpg',
+            $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
+        );
+    }
 
     // Create an empty log file
     if (!file_exists($_SHOP_CONF['logfile'])) {
@@ -265,56 +267,57 @@ function plugin_postinstall_shop()
             fclose($fp);
         }
     }
-
     if (!is_writable($_SHOP_CONF['logfile'])) {
         COM_errorLog("Can't write to {$_SHOP_CONF['logfile']}", 1);
     }
 
-    // If the Paypal plugin is installed, migrate configuration data from it.
-    // This does not require the Paypal plugin to be installed.
-    if (
-        array_key_exists('paypal', $_PLUGIN_INFO) &&
-        COM_checkVersion($_PLUGIN_INFO['paypal']['pi_version'], '0.6.0')
-    ) {
-        // Migrate plugin configuration
-        global $_PP_CONF;
-        if (is_array($_PP_CONF)) {
-            $c = config::get_instance();
-            $shop_conf = $c->get_config('shop');
-            foreach ($_PP_CONF as $key=>$val) {
-                if (
-                    $key == 'enable_svc_funcs' ||
-                    !array_key_exists($key, $shop_conf)
-                ) {
-                    // skip config items that should not be migrated.
-                    continue;
+    if (!$upgrade) {        // only do these for initial installations.
+        // If the Paypal plugin is installed, migrate configuration data from it.
+        // This does not require the Paypal plugin to be installed.
+        if (
+            array_key_exists('paypal', $_PLUGIN_INFO) &&
+            COM_checkVersion($_PLUGIN_INFO['paypal']['pi_version'], '0.6.0')
+        ) {
+            // Migrate plugin configuration
+            global $_PP_CONF;
+            if (is_array($_PP_CONF)) {
+                $c = config::get_instance();
+                $shop_conf = $c->get_config('shop');
+                foreach ($_PP_CONF as $key=>$val) {
+                    if (
+                        $key == 'enable_svc_funcs' ||
+                        !array_key_exists($key, $shop_conf)
+                    ) {
+                        // skip config items that should not be migrated.
+                        continue;
+                    }
+                    $c->set($key, $val, 'shop');
                 }
-                $c->set($key, $val, 'shop');
             }
         }
-    }
 
-    // Load the sample data. This can be replaced by Paypal data later.
-    if (is_array($_SHOP_SAMPLEDATA)) {
-        COM_errorLog("Loading sample data");
-        foreach ($_SHOP_SAMPLEDATA as $sql) {
-            DB_query($sql, 1);
-            if (DB_error()) {
-                COM_errorLog("Sample Data SQL Error: $sql", 1);
+        // Load the sample data. This can be replaced by Paypal data later.
+        if (is_array($_SHOP_SAMPLEDATA)) {
+            COM_errorLog("Loading sample data");
+            foreach ($_SHOP_SAMPLEDATA as $sql) {
+                DB_query($sql, 1);
+                if (DB_error()) {
+                    COM_errorLog("Sample Data SQL Error: $sql", 1);
+                }
             }
         }
-    }
 
-    // Set the shop Admin ID
-    $gid = (int)DB_getItem(
-        $_TABLES['groups'],
-        'grp_id',
-        "grp_name='{$_SHOP_CONF['pi_name']} Admin'"
-    );
-    if ($gid < 1) {
-        $gid = 1;        // default to Root if shop group not found
+        // Set the shop Admin ID
+        $gid = (int)DB_getItem(
+            $_TABLES['groups'],
+            'grp_id',
+            "grp_name='{$_SHOP_CONF['pi_name']} Admin'"
+        );
+        if ($gid < 1) {
+            $gid = 1;        // default to Root if shop group not found
+        }
+        DB_query("INSERT INTO {$_TABLES['vars']} SET name='shop_gid', value=$gid");
     }
-    DB_query("INSERT INTO {$_TABLES['vars']} SET name='shop_gid', value=$gid");
 }
 
 ?>

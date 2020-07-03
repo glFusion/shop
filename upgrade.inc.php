@@ -228,7 +228,7 @@ function SHOP_do_upgrade($dvlp = false)
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
         }
-        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
+        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands', true);
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -342,17 +342,9 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
-    // Copy the "not available" image if not already in place.
-    if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
-        COM_errorLog("Copying missing not-available image");
-        $status = copy(
-            __DIR__ . '/data/images/products/notavailable.jpg',
-            $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
-        );
-        if (!$status) {
-            COM_errorLog("Error copying the not-available image");
-        }
-    }
+    // Make sure paths and images are created.
+    require_once __DIR__ . '/autoinstall.php';
+    plugin_postinstall_shop(true);
 
     // Check and set the version if not already up to date.
     // For updates with no SQL changes

@@ -420,6 +420,7 @@ $_SQL = array(
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
+    "RENAME TABLE {$_TABLES['shop.purchases']} TO {$_TABLES['shop.orderitems']}",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
