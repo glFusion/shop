@@ -3,8 +3,8 @@
     <name>Shop</name>
     <description>Provides a storefront for selling physical and virtual products.</description>
     <version>1.3.0</version>
-    <glfusionversion>1.7.0</glfusionversion>
-    <phpversion>7.0.0</phpversion>
+    <glfusionversion>1.7.08/glfusionversion>
+    <phpversion>7.3.0</phpversion>
     <url>http://www.glfusion.org</url>
     <maintainer>Lee Garner</maintainer>
     <requires>lglib,1.0.9</requires>

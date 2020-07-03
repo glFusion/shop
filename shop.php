@@ -24,7 +24,7 @@ global $_SHOP_CONF;
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
 $_SHOP_CONF['pi_version']         = '1.3.0';
-$_SHOP_CONF['gl_version']         = '1.7.0';
+$_SHOP_CONF['gl_version']         = '1.7.8';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
@@ -73,6 +73,7 @@ $_TABLES['shop.zone_rules'] = $_SHOP_table_prefix . 'zone_rules';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
+$_TABLES['shop.purchases']    = $_SHOP_table_prefix . 'purchases';
 
 // Other relatively static values;
 $_SHOP_CONF['logfile'] = "{$_CONF['path']}/logs/{$_SHOP_CONF['pi_name']}_downloads.log";
