@@ -1013,7 +1013,8 @@ class Order
             }
             if ($item->getProduct()->isOnSale()) {
                 $has_sale_items = true;
-                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' . $item->getProduct()->getSale()->name;
+                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' .
+                    $item->getProduct()->getSale()->getName();
             } else {
                 $sale_tooltip = '';
             }

@@ -1421,16 +1421,16 @@ class Product
                 SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
-                if ($D->discount_type == 'amount') {
-                    $amount = Currency::getInstance()->Format($D->amount);
+                if ($D->getValueType() == 'amount') {
+                    $amount = Currency::getInstance()->Format($D->getValue());
                 } else {
-                    $amount = $D->amount;
+                    $amount = $D->getValue();
                 }
                 $DT->set_var(array(
-                    'sale_name' => htmlspecialchars($D->name),
-                    'sale_start' => $D->start,
-                    'sale_end'  => $D->end,
-                    'sale_type' => $D->discount_type,
+                    'sale_name' => htmlspecialchars($D->getName()),
+                    'sale_start' => $D->getStart()->toMySQL(true),
+                    'sale_end'  => $D->getEnd()->toMySQL(true),
+                    'sale_type' => $D->getValueType(),
                     'sale_amt'  => $amount,
                 ) );
                 $DT->parse('SL', 'SaleList', true);
@@ -1772,7 +1772,7 @@ class Product
             'price'             => $Cur->FormatValue($this->getPrice()),
             'orig_price'        => $Cur->FormatValue($this->_orig_price),
             'on_sale'           => $this->isOnSale(),
-            'sale_name'         => $this->isOnSale() ? $this->getSale()->name : '',
+            'sale_name'         => $this->isOnSale() ? $this->getSale()->getName() : '',
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
