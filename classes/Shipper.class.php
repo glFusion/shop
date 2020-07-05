@@ -956,7 +956,7 @@ class Shipper
         if ($newval != $oldvalue) {
             Cache::clear(self::$base_tag);
         }
-        return $newvalue;
+        return $newval;
     }
 
 

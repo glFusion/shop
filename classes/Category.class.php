@@ -505,8 +505,8 @@ class Category
      */
     protected static function do_toggle($oldvalue, $varname, $id)
     {
-        $newval = self::_toggle($oldvalue, $varname, $id);
-        if ($newval != $oldval) {
+        $newval = self::Toggle($oldvalue, $varname, $id);
+        if ($newval != $oldvalue) {
             Cache::clear('categories');
             Cache::clear('sitemap');
         }
