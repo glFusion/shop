@@ -3592,7 +3592,6 @@ class Order
             }
             $dec = $decimals[$curcode];
             foreach ($Ord->getItems() as $Item) {
-                echo "Processing item {$Item->getID()}\n";
                 $gross_item = round($Item->getPrice(), $dec);
                 $net_item = round($Item->getNetPrice(), $dec);
                 $gross_items += $gross_item * $Item->getQuantity();
