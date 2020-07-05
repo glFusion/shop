@@ -1554,11 +1554,9 @@ class Shipper
             case 'checkbox':
                 $chk = $this->getConfig($name) ? 'checked="checked"' : '';
                 $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
-                $required = false;
                 break;
             default:
                 $fld = '<input type="text" size="80" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
-                $required = true;
                 break;
             }
             $T->set_var(array(
@@ -1566,7 +1564,6 @@ class Shipper
                 'field_name'    => $name,
                 'field_value'   => $this->getConfig($name),
                 'input_field'   => $fld,
-                'required'      => $required,
             ) );
             $T->parse('IRow', 'ItemRow', true);
         }
