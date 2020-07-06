@@ -186,7 +186,7 @@
 
             <div class="uk-pull-1-2">
                 <div class="gwRadiosOuter">
-                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning"></i>&nbsp;&nbsp;
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>&nbsp;&nbsp;
                     {$LANG_SHOP['hlp_gw_select']}<br />
 {!if gateway_radios}
                     {gateway_radios}
@@ -207,7 +207,7 @@
                     <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
                     <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
                         name="payer_email" size="40" value="{payer_email}"/>
-                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
                 </div>
             </div>
         </div>
