@@ -161,21 +161,22 @@ class ProductVariant
      * @param   boolean $fromDB True if reading from DB, false if from form
      * @return  boolean     True on success, False if $A is not an array
      */
-    public function setVars($A)
+    public function setVars($A, $fromDB=true)
     {
         if (is_array($A)) {
+            $pfx = $fromDB ? '' : 'pv_';
             $this
                 ->setId(SHOP_getVar($A, 'pv_id', 'integer'))
                 ->setItemId(SHOP_getVar($A, 'item_id'))
-                ->setPrice(SHOP_getVar($A, 'price', 'float'))
-                ->setWeight(SHOP_getVar($A, 'weight', 'float'))
-                ->setShippingUnits(SHOP_getVar($A, 'shipping_units', 'float'))
+                ->setPrice(SHOP_getVar($A, $pfx.'price', 'float'))
+                ->setWeight(SHOP_getVar($A, $pfx.'weight', 'float'))
+                ->setShippingUnits(SHOP_getVar($A, $pfx.'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, 'sku'))
-                ->setSupplierRef(SHOP_getVar($A, 'supplier_ref'))
-                ->setOnhand(SHOP_getVar($A, 'onhand', 'float'))
-                ->setReorder(SHOP_getVar($A, 'reorder', 'float'))
-                ->setImageIDs(SHOP_getVar($A, 'img_ids', 'mixed'))
-                ->setEnabled(SHOP_getVar($A, 'enabled', 'integer', 1));
+                ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
+                ->setOnhand(SHOP_getVar($A, $pfx.'onhand', 'float'))
+                ->setReorder(SHOP_getVar($A, $pfx.'reorder', 'float'))
+                ->setImageIDs(SHOP_getVar($A, $pfx.'img_ids', 'mixed'))
+                ->setEnabled(SHOP_getVar($A, $pfx.'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
                 $this->setDscp($A['dscp']);
             }
@@ -915,7 +916,7 @@ class ProductVariant
         global $_TABLES;
 
         if (is_array($A)) {
-            $this->setVars($A);
+            $this->setVars($A, false);
         }
 
         if ($this->pv_id == 0) {
