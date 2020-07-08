@@ -153,25 +153,25 @@ class OrderItem
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
                     $this->setOptions($oi_id['attributes']);
                 }
+
+                if (
+                    is_array($oi_id['extras']) &&
+                    isset($oi_id['extras']['custom']) &&
+                    !empty($oi_id['extras']['custom']) &&
+                    is_array($oi_id['extras']['custom'])
+                ) {
+                    $cust = $oi_id['extras']['custom'];
+                    $P = Product::getByID($this->product_id);
+                    foreach ($P->getCustom() as $id=>$name) {
+                        if (isset($cust[$id]) && !empty($cust[$id])) {
+                            $this->addOptionText($name, $cust[$id]);
+                            break;
+                        }
+                    }
+                }
             } else {
                 // Existing orderitem record, get the existing options
                 $this->options = $this->getOptions();
-            }
-            $extras = @json_decode($oi_id['extras'], true);
-            if ($extras === NULL) {
-                $extras = array();
-            }
-            if (
-                isset($extras['custom']) && 
-                !empty($extras['custom'])
-            ) {
-                $cust = $extras['custom'];
-                $P = Product::getByID($this->product_id);
-                foreach ($P->getCustom() as $id=>$name) {
-                    if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $this->addOptionText($name, $cust[$id]);
-                    }
-                }
             }
         }
     }
