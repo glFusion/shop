@@ -578,7 +578,7 @@ class State extends RegionBase
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_state'],
-            SHOP_ADMIN_URL . '/index.php?editstate=x',
+            SHOP_ADMIN_URL . '/regions.php?editstate=0',
             array(
                 'class' => 'uk-button uk-button-success',
                 'style' => 'float:left',
@@ -594,7 +594,7 @@ class State extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . (int)$country_id,
+            'form_url' => SHOP_ADMIN_URL . '/regions.php?states=x&country_id=' . (int)$country_id,
         );
 
         /*$options = array(
@@ -607,7 +607,7 @@ class State extends RegionBase
         $filter = $LANG_SHOP['country'] . ': <select name="country_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
-                '/index.php?states&amp;country_id=\'+' .
+                '/regions.php?states&amp;country_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
@@ -647,7 +647,7 @@ class State extends RegionBase
         case 'edit':
             $retval = COM_createLink(
                 Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editstate=' . $A['state_id']
+                SHOP_ADMIN_URL . '/regions.php?editstate=' . $A['state_id']
             );
             break;
 

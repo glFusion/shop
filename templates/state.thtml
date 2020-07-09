@@ -6,7 +6,7 @@
     {$LANG_SHOP['new_state']}
 {!endif}
 </h2>
-<form action="{site_admin_url}/plugins/shop/index.php" method="post"
+<form action="{site_admin_url}/plugins/shop/regions.php" method="post"
     class="uk-form uk-form-horizontal">
     <input type="hidden" name="state_id" value="{state_id}" />
 
@@ -74,7 +74,7 @@
             <button class="uk-button uk-button-success" type="submit" name="savestate">{$LANG_ADMIN['submit']}</button>
             <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
             <button class="uk-button" type="reset" name="states"i
-                onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?states';" />{$LANG_ADMIN['cancel']}</button>
+                onclick="document.location.href='{site_admin_url}/plugins/shop/regions.php?states';" />{$LANG_ADMIN['cancel']}</button>
         </div>
     </div>
 </form>

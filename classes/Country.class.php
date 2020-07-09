@@ -650,7 +650,7 @@ class Country extends RegionBase
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_country'],
-            SHOP_ADMIN_URL . '/index.php?editcountry=0',
+            SHOP_ADMIN_URL . '/regions.php?editcountry=0',
             array(
                 'class' => 'uk-button uk-button-success',
                 'style' => 'float:left',
@@ -666,13 +666,13 @@ class Country extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?countries=x&region_id=' . $region_id,
+            'form_url' => SHOP_ADMIN_URL . '/regions.php?countries=x&region_id=' . $region_id,
         );
 
         $filter = $LANG_SHOP['region'] . ': <select name="region_id"
             onchange="javascript: document.location.href=\'' .
                 SHOP_ADMIN_URL .
-                '/index.php?countries&amp;region_id=\'+' .
+                '/regions.php?countries&amp;region_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
             '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
             COM_optionList(
@@ -712,7 +712,7 @@ class Country extends RegionBase
         case 'edit':
             $retval = COM_createLink(
                 Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editcountry=' . $A['country_id']
+                SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id']
             );
             break;
 
@@ -733,14 +733,14 @@ class Country extends RegionBase
         case 'country_name':
             $retval .= COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?states=x&country_id=' . $A['country_id']
+                SHOP_ADMIN_URL . '/regions.php?states&country_id=' . $A['country_id']
             );
             break;
 
         case 'region_name':
             $retval .= COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?countries=x&region_id=' . $A['region_id']
+                SHOP_ADMIN_URL . '/regions.php?countries&region_id=' . $A['region_id']
             );
             break;
 

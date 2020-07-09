@@ -693,6 +693,7 @@ case 'savecountry':
     break;
 
 case 'savestate':
+    echo "$action deprecated";die;
     // Save a state record
     $S = Shop\State::getInstance((int)$_POST['state_id']);
     if ($S->Save($_POST)) {
@@ -705,6 +706,7 @@ case 'savestate':
     break;
 
 case 'ena_region':
+    echo "$action deprecated";die;
     $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
     if (!empty($regions)) {
         Shop\Region::BulkToggle(0, 'region_enabled', $regions);
@@ -713,6 +715,7 @@ case 'ena_region':
     break;
 
 case 'disa_region':
+    echo "$action deprecated";die;
     $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
     if (!empty($regions)) {
         Shop\Region::BulkToggle(1, 'region_enabled', $regions);
@@ -722,6 +725,7 @@ case 'disa_region':
 
 
 case 'ena_country':
+    echo "$action deprecated";die;
     $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
     if (!empty($countries)) {
         Shop\Country::BulkToggle(0, 'country_enabled', $countries);
@@ -730,6 +734,7 @@ case 'ena_country':
     break;
 
 case 'disa_country':
+    echo "$action deprecated";die;
     $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
     if (!empty($countries)) {
         Shop\Country::BulkToggle(1, 'country_enabled', $countries);
@@ -738,6 +743,7 @@ case 'disa_country':
     break;
 
 case 'ena_state':
+    echo "$action deprecated";die;
     $states = SHOP_getVar($_POST, 'state_id', 'array', array());
     if (!empty($states)) {
         Shop\State::BulkToggle(0, 'state_enabled', $states);
@@ -746,6 +752,7 @@ case 'ena_state':
     break;
 
 case 'disa_state':
+    echo "$action deprecated";die;
     $states = SHOP_getVar($_POST, 'state_id', 'array', array());
     if (!empty($states)) {
         Shop\State::BulkToggle(1, 'state_enabled', $states);
@@ -1178,36 +1185,42 @@ case 'prod_bulk_frm':
     break;
 
 case 'editregion':
+    echo "$view deprecated";die;
     $region_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('regions');
     $content .= Shop\Region::getInstance($region_id)->Edit();
     break;
 
 case 'editcountry':
+    echo "$view deprecated";die;
     $country_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('countries');
     $content .= Shop\Country::getInstance($country_id)->Edit();
     break;
 
 case 'editstate':
+    echo "$view deprecated";die;
     $state_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('states');
     $content .= Shop\State::getInstance($state_id)->Edit();
     break;
 
 case 'countries':
+    echo "$view deprecated";die;
     $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
+    echo "$view deprecated";die;
     $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\State::adminList($country_id);
     break;
 
 case 'regions':
+    echo "$view deprecated";die;
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Region::adminList();
     break;

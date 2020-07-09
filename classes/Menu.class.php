@@ -133,7 +133,7 @@ class Menu
                 'active' => $view == 'reports' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?regions',
+                'url'  => SHOP_ADMIN_URL . '/regions.php',
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
             ),
@@ -182,17 +182,17 @@ class Menu
 
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?regions=x',
+                'url'  => SHOP_ADMIN_URL . '/regions.php?regions',
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?countries=x',
+                'url'  => SHOP_ADMIN_URL . '/regions.php?countries',
                 'text' => $LANG_SHOP['countries'],
                 'active' => $view == 'countries' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?states=x',
+                'url'  => SHOP_ADMIN_URL . '/regions.php?states',
                 'text' => $LANG_SHOP['states'],
                 'active' => $view == 'states' ? true : false,
             ),

@@ -356,7 +356,7 @@ class Region extends RegionBase
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_region'],
-            SHOP_ADMIN_URL . '/index.php?editregion=x',
+            SHOP_ADMIN_URL . '/regions.php?editregion=x',
             array(
                 'class' => 'uk-button uk-button-success',
                 'style' => 'float:left',
@@ -372,7 +372,7 @@ class Region extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?regions=x',
+            'form_url' => SHOP_ADMIN_URL . '/regions.php?regions',
         );
 
         $display .= ADMIN_list(
@@ -407,7 +407,7 @@ class Region extends RegionBase
         case 'edit':
             $retval = COM_createLink(
                 Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editregion=' . $A['region_id']
+                SHOP_ADMIN_URL . '/regions.php?editregion=' . $A['region_id']
             );
             break;
 
@@ -429,7 +429,7 @@ class Region extends RegionBase
             // Drill down to the countries in this region
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . "/index.php?countries&region_id={$A['region_id']}"
+                SHOP_ADMIN_URL . "/regions.php?countries&region_id={$A['region_id']}"
             );
             break;
 
