@@ -503,7 +503,7 @@ class Zone
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/rules.php?rule_del=x&amp;rule_id=' . $A['rule_id'],
+                SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],

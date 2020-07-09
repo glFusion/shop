@@ -24,7 +24,6 @@ if (
     COM_404();
     exit;
 }
-
 require_once('../../auth.inc.php');
 USES_lib_admin();
 
@@ -56,7 +55,7 @@ foreach($expected as $provided) {
 switch ($action) {
 case 'rule_add':
     $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
-    if ($rule_id > 0) {
+    if ($actionval > 0) {
         switch ($actionval) {
         case 'region':
         case 'country':
@@ -71,12 +70,8 @@ case 'rule_add':
     break;
 
 case 'rule_del':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer');
-    if (!$rule_id) {    // maybe came from $_GET
-        $rule_id = SHOP_getVar($_GET, 'rule_id', 'integer');
-    }
-    if ($rule_id) {
-        Shop\Rules\Zone::deleteRule($rule_id);
+    if ($actionval) {
+        Shop\Rules\Zone::deleteRule($actionval);
     }
     COM_refresh(SHOP_ADMIN_URL . '/rules.php');
     break;
