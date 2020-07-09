@@ -558,7 +558,7 @@ class Zone
             'rule_dscp' => $this->rule_dscp,
             'type_sel' . $this->allow => 'checked="checked"',
             'ena_chk'   => $this->enabled ? 'checked="checked"' : '',
-            'doc_url'   => SHOP_getDocURL('zone_rules', $_CONF['language']),
+            'doc_url'   => SHOP_getDocURL('zone_rules'),
             'have_regions' => count($this->regions),
             'have_countries' => count($this->countries),
             'have_states' => count($this->states),
@@ -606,8 +606,7 @@ class Zone
             $T->parse('SB', 'stateBlk', true);
         }
         $T->parse('tooltipster_js', 'tips');
-        $retval .= $T->parse('output', 'form');
-        return $retval;
+        return $T->parse('output', 'form');
     }
 
 }

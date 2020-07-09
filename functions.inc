@@ -738,8 +738,14 @@ function plugin_getconfigelementhelp_shop($option, $doclang='english')
  * @param  string  $doclang    Documentation language
  * @return string              URL to document directory or file
  */
-function SHOP_getDocURL($file='', $doclang='english')
+function SHOP_getDocURL($file='', $doclang='')
 {
+    global $_CONF;
+
+    if ($doclang == '') {
+        $doclang = $_CONF['language'];
+    }
+
     $doc_path = __DIR__ . "/docs/$doclang/";
     $doc_url = '';
 
