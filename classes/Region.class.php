@@ -292,7 +292,7 @@ class Region extends RegionBase
             $sql3 = '';
         }
         $sql2 = "region_name = '" . DB_escapeString($this->getName()) . "',
-            'region_code = {$this->getCode()},
+            region_code = {$this->getCode()},
             region_enabled = {$this->isEnabled()}";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
