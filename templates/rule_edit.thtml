@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<form action-"{site_admin_url}/plugins/shop/index.php" class="uk-form uk-form-horizontal" method="post">
+<form action-"{site_admin_url}/plugins/shop/rules.php" class="uk-form uk-form-horizontal" method="post">
     <input type="hidden" name="rule_id" value="{rule_id}" />
 {!if rule_id}
     <h1>{$LANG_SHOP['edit_rule']}: {rule_name}</h1>

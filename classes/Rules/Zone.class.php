@@ -434,13 +434,15 @@ class Zone
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
             $LANG_SHOP['new_rule'],
-            SHOP_ADMIN_URL . '/index.php?rule_edit=0',
+            SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
             array(
                 'style' => 'float:left;',
                 'class' => 'uk-button uk-button-success',
             )
         );
-        $text_arr = array();
+        $text_arr = array(
+            'form_url' => SHOP_ADMIN_URL . '/rules.php',
+        );
         $query_arr = array(
             'table' => 'shop.zone_rules',
             'sql' => $sql,
@@ -490,7 +492,7 @@ class Zone
         case 'edit':
             $retval .= COM_createLink(
                 Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?rule_edit={$A['rule_id']}"
+                SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}"
             );
             break;
 
@@ -501,7 +503,7 @@ class Zone
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?rule_del=x&amp;rule_id=' . $A['rule_id'],
+                SHOP_ADMIN_URL. '/rules.php?rule_del=x&amp;rule_id=' . $A['rule_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],

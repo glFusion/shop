@@ -262,6 +262,7 @@ case 'rule_add':
     break;
 
 case 'rule_del':
+    echo "$action deprecated";die;
     $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer');
     if (!$rule_id) {    // maybe came from $_GET
         $rule_id = SHOP_getVar($_GET, 'rule_id', 'integer');
@@ -273,6 +274,7 @@ case 'rule_del':
     break;
 
 case 'rule_save':
+    echo "$action deprecated";die;
     $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
     $Rule = Shop\Rules\Zone::getInstance($rule_id);
     if ($Rule->getID() > 0) {

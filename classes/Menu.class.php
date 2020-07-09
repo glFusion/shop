@@ -197,7 +197,7 @@ class Menu
                 'active' => $view == 'states' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?rules',
+                'url'  => SHOP_ADMIN_URL . '/rules.php',
                 'text' => $LANG_SHOP['rules'],
                 'active' => $view == 'rules' ? true : false,
             ),
