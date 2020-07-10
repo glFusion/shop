@@ -167,29 +167,6 @@ class terms extends \Shop\Gateway
 
 
     /**
-     * Prepare to save the configuraiton.
-     * This copies the new config values into our local variables, then
-     * calls the parent function to save to the database.
-     *
-     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
-     */
-    public function SaveConfig($A = NULL)
-    {
-        if (is_array($A)) {
-            foreach ($this->config as $name=>$value) {
-                switch ($name) {
-                default:
-                    $this->config[$name] = $A[$name];
-                    break;
-                }
-            }
-        }
-        return parent::SaveConfig($A);
-    }
-
-
-
-    /**
      * Check if this gateway allows an order to be processed without an IPN msg.
      * The Check gateway does allow this as it just presents a remittance form.
      *
