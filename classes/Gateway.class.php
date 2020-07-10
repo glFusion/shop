@@ -520,17 +520,14 @@ class Gateway
             } else {
                 $services = '';
             }
-            $sql = "INSERT INTO {$_TABLES['shop.gateways']} (
-                    id, orderby, enabled, description, config, services
-                ) VALUES (
-                    '" . DB_escapeString($this->gw_name) . "',
-                    '990',
-                    {$this->getEnabled()},
-                    '" . DB_escapeString($this->gw_desc) . "',
-                    '" . DB_escapeString($config) . "',
-                    '" . DB_escapeString($services) . "',
-                    1
-                )";
+            $sql = "INSERT INTO {$_TABLES['shop.gateways']} SET
+                    id = '" . DB_escapeString($this->gw_name) . "',
+                    orderby = 990,
+                    enabled = {$this->getEnabled()},
+                    description = '" . DB_escapeString($this->gw_desc) . "',
+                    config = '" . DB_escapeString($config) . "',
+                    services = '" . DB_escapeString($services) . "',
+                    grp_access = 1";
             DB_query($sql);
             Cache::clear('gateways');
             return DB_error() ? false : true;
@@ -1049,7 +1046,11 @@ class Gateway
     {
         global $_CONF, $LANG_SHOP, $_SHOP_CONF, $_TABLES;
 
-        $T = SHOP_getTemplate('gateway_edit', 'tpl');
+        $T = new \Template(__DIR__ . '/../templates');
+        $T->set_file(array(
+            'tpl' => 'gateway_edit.thtml',
+            'tips' => 'tooltipster.thtml',
+        ) );
         $svc_boxes = $this->getServiceCheckboxes();
         $doc_url = SHOP_getDocUrl(
             'gwhelp_' . $this->gw_name,
@@ -1098,6 +1099,7 @@ class Gateway
                 $T->parse('Row' . $env, $env . 'Row', true);
             }
         }
+        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'tpl');
         $form = $T->finish($T->get_var('output'));
         return $form;
@@ -1585,7 +1587,7 @@ class Gateway
 
         $text_arr = array(
             'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
+            'form_url' => SHOP_ADMIN_URL . '/gateways.php?gwadmin',
         );
 
         $display .= ADMIN_listArray(
@@ -1620,7 +1622,7 @@ class Gateway
             if ($A['enabled'] !== 'na') {
                 $retval .= COM_createLink(
                     Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
-                    SHOP_ADMIN_URL . "/index.php?gwedit=x&amp;gw_id={$A['id']}"
+                    SHOP_ADMIN_URL . "/gateways.php?gwedit&amp;gw_id={$A['id']}"
                 );
             }
             break;
@@ -1629,7 +1631,7 @@ class Gateway
             if ($fieldvalue == 'na') {
                 return COM_createLink(
                     Icon::getHTML('add'),
-                    SHOP_ADMIN_URL. '/index.php?gwinstall=x&gwname=' . urlencode($A['id']),
+                    SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
                     array(
                         'data-uk-tooltip' => '',
                         'title' => $LANG_SHOP['ck_to_install'],
@@ -1658,7 +1660,7 @@ class Gateway
             } elseif ($fieldvalue > 10) {
                 $retval = COM_createLink(
                     Icon::getHTML('arrow-up', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/index.php?gwmove=up&id=' . $A['id']
+                    SHOP_ADMIN_URL . '/gateways.php?gwmove=up&id=' . $A['id']
                 );
             } else {
                 $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
@@ -1666,7 +1668,7 @@ class Gateway
             if ($fieldvalue < $extra['gw_count'] * 10) {
                 $retval .= COM_createLink(
                     Icon::getHTML('arrow-down', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/index.php?gwmove=down&id=' . $A['id']
+                    SHOP_ADMIN_URL . '/gateways.php?gwmove=down&id=' . $A['id']
                 );
             } else {
                 $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
@@ -1677,7 +1679,7 @@ class Gateway
             if ($A['enabled'] != 'na') {
                 $retval = COM_createLink(
                     Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/index.php?gwdelete=x&amp;id=' . $A['id'],
+                    SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
                     array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],

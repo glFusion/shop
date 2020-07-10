@@ -45,9 +45,9 @@ $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
-    'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
+    //'gwmove', 'gwsave', 'gwinstall', 'gwdelete',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
-    'attrcopy', 'pov_move',
+    'attrcopy', 'pov_move', 'wfmove',
     'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
@@ -55,16 +55,17 @@ $expected = array(
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
-    'saveregion', 'savecountry', 'savestate',
-    'ena_region', 'disa_region', 'del_region',
-    'ena_country', 'disa_country', 'del_country',
-    'ena_state', 'disa_state', 'del_state',
+    //'saveregion', 'savecountry', 'savestate',
+    //'ena_region', 'disa_region', 'del_region',
+    //'ena_country', 'disa_country', 'del_country',
+    //'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
-    'rule_del', 'rule_add', 'rule_save',
+    //'rule_del', 'rule_add', 'rule_save',
     'savepayment', 'delpayment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'pov_edit', 'other', 'gwadmin', 'gwedit',
+    'pov_edit', 'other',
+    //'gwadmin', 'gwedit',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -74,10 +75,10 @@ $expected = array(
     'shipments', 'ord_ship', 'ord_pmts', 'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
-    'editregion', 'editcountry', 'editstate',
+    //'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
-    'rules', 'rule_edit',
+    //'rules', 'rule_edit',
     'products',
 );
 foreach($expected as $provided) {
@@ -366,6 +367,7 @@ case 'saveshipper':
     break;
 
 case 'gwinstall':
+    echo "$action deprecated";die;
     $gwname = $_GET['gwname'];
     $gw = \Shop\Gateway::getInstance($gwname);
     if ($gw !== NULL) {
@@ -379,6 +381,7 @@ case 'gwinstall':
     break;
 
 case 'gwdelete':
+    echo "$action deprecated";die;
     $gw = \Shop\Gateway::getInstance($_GET['id']);
     if ($gw !== NULL) {
         $status = $gw->Remove();
@@ -402,6 +405,7 @@ case 'carrier_save':
     break;
 
 case 'gwsave':
+    echo "$action deprecated";die;
     // Save a payment gateway configuration
     $gw = \Shop\Gateway::getInstance($_POST['gw_id']);
     if ($gw !== NULL) {
@@ -436,6 +440,7 @@ case 'pov_move':
     break;
 
 case 'gwmove':
+    echo "$action deprecated";die;
     \Shop\Gateway::moveRow($_GET['id'], $actionval);
     $view = 'gwadmin';
     break;
@@ -1007,10 +1012,12 @@ case 'sendcards_form':
     break;
 
 case 'gwadmin':
+    echo "$view deprecated";die;
     $content .= Shop\Gateway::adminList();
     break;
 
 case 'gwedit':
+    echo "$view deprecated";die;
     $gw = \Shop\Gateway::getInstance($_GET['gw_id']);
     if ($gw !== NULL) {
         $content .= $gw->Configure();

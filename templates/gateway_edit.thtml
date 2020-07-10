@@ -12,7 +12,7 @@
 {!if gw_instr}
 <div class="uk-alert"><span class="uk-text-danger" style="font-weight:bold;">{gw_instr}</span></div>
 {!endif}
-<form action="{pi_admin_url}/index.php" method="post" class="uk-form uk-form-horizontal">
+<form action="{pi_admin_url}/gateways.php" method="post" class="uk-form uk-form-horizontal">
     <input type="hidden" name="gw_id" value="{gw_id}" />
     <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#gateway-form',swiping:false}">
         <li id="tab-global" {tabactive_global}><a href="#">{$LANG_SHOP['global']}</a></li>
@@ -111,7 +111,7 @@
     </div>
   </div>
 </form>
-
+{tooltipster_js}
 <script type="text/javascript">
 var ConfigDocUrl = '{doc_url}';
 $(document).ready(function() {

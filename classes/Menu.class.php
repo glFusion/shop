@@ -113,7 +113,7 @@ class Menu
                 'active' => $view == 'sales' ? true : false,
             ),*/
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?gwadmin=x',
+                'url'  => SHOP_ADMIN_URL . '/gateways.php',
                 'text' => $LANG_SHOP['gateways'],
                 'active' => $view == 'gwadmin' ? true : false,
             ),
