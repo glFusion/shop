@@ -49,44 +49,44 @@ class Shipper
 
     /** glFusion group ID which can use this shipper.
      * @var integer */
-    private $grp_access;
+    private $grp_access = 1;
 
     /** Name of the shipper, e.g. "United Parcel Service".
      * @var string */
-    private $name;
+    private $name = '';
 
     /** Short code, e.g. "ups".
      * @var string */
-    private $module_code;
+    private $module_code = '';
 
     /** Minimum shipping units that can be sent by this shipper.
      * @var float */
-    private $min_units;
+    private $min_units = .0001;
 
     /** Maximum shipping units that can be sent by this shipper.
      * @var float */
-    private $max_units;
+    private $max_units = -1;
 
     /** Flag to indicate whether this shipper is active.
      * @var boolean */
-    private $enabled;
+    private $enabled = true;
 
     /** Flag to indicate whether fixed shipping cost is included or ignored.
      * @var boolean */
-    private $use_fixed;
+    private $use_fixed = false;
 
     /** Std class to accumulate order shipping prices for the shipper.
      * This is manipulated as a public variable within this class.
      * @var object */
-    public $ordershipping;
+    public $ordershipping = NULL;
 
     /** Earliest date/time that this shipper can be used.
      * @var object */
-    private $valid_from;
+    private $valid_from = NULL;
 
     /** Latest date/time that this shipper can be used.
      * @var object */
-    private $valid_to;
+    private $valid_to = NULL;
 
     /** Configuration items, if used.
      * @var array */
@@ -98,11 +98,11 @@ class Shipper
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Individual rate element.
      * @var array */
-    private $rates;
+    private $rates = array();
 
     /** Flag to indicate whether the shipper class implements a quote API.
      * @var boolean */
