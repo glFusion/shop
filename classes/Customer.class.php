@@ -406,6 +406,9 @@ class Customer
         } else {
             // Cart has an address, retrieve it to use as the default
             $Def = new Address($A);
+            if (isset($A['id']) && $A['id'] > 0) {
+                $Def->setID($A['id']);
+            }
             $have_address = true;
         }
         $addr_id = $Def->getID();
