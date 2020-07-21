@@ -367,6 +367,8 @@ $_SQL = array(
   `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `rates` text,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
+  `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -730,6 +732,10 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
     "UPDATE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

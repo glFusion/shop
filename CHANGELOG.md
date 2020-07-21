@@ -12,6 +12,8 @@ Release TBD
   * Link to customer in order report now filters report.
   * Enable/disable donation buttons in Paypal gateway config.
   * Allow user-entered prices for some plugin items, e.g. Donations.
+  * Shipping methods may not require a shipping address, e.g. will-call.
+  * Shipping methods, e.g. will-call, may set tax based on origin vs. destination.
 
 ## v1.2.1
 Release 2020-03-02

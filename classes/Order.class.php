@@ -80,6 +80,7 @@ class Order
     /** Sales tax rate for the order.
      * @var float */
     protected $tax_rate = 0;
+
     /** Total tax charged on the order.
      * @var float */
     protected $tax = 0;
@@ -312,7 +313,6 @@ class Order
             ) as amt_paid
             FROM {$_TABLES['shop.orders']} ord
             WHERE ord.order_id='{$this->order_id}'";
-        //COM_errorLog($sql);
         //echo $sql;die;
         $res = DB_query($sql);
         if (!$res) {
@@ -528,11 +528,11 @@ class Order
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
                 $this->Shipto = new Address($A);*/
             }
-            $this->setTaxRate(
+            /*$this->setTaxRate(
                 Tax::getProvider()
                 ->withOrder($this)
                 ->getRate()
-            );
+            );*/
             $have_address = true;
         } elseif (is_object($A)) {
             /*$this->shipto_id        = $A->getID();
@@ -545,11 +545,14 @@ class Order
             $this->shipto_country   = $A->getCountry();
             $this->shipto_zip       = $A->getPostal();*/
             $this->Shipto = $A;
-            $this->setTaxRate(
+            /*$this->setTaxRate(
                 Tax::getProvider()
                 ->withOrder($this)
                 ->getRate()
-            );
+            );*/
+            $have_address = true;
+        } elseif (is_int($A)) {
+            $this->Shipto = new Address($A);
             $have_address = true;
         }
 
@@ -571,6 +574,7 @@ class Order
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $this->clearInstance();
         }
+        $this->setTaxRate(NULL);
         return $this;
     }
 
@@ -951,6 +955,7 @@ class Order
                 $T->set_var($fldname, $$type[$name]);
             }
         }
+        $Shipper = Shipper::getInstance($this->shipper_id);
 
         // Set flags in the template to indicate which address blocks are
         // to be shown.
@@ -1030,6 +1035,7 @@ class Order
             } else {
                 $this->net_nontax += $item_net;
             }
+            
             $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
@@ -1088,6 +1094,14 @@ class Order
         $shipper_select = $this->selectShipper();
 
         //$this->total = $this->getTotal();     // also calls calcTax()
+        /*if ($this->shipto_id == 0) {
+            $this->setTaxRate(
+                Tax::getProvider()
+                    ->withAddress($ShopAddr)
+                    ->withOrder($this)
+                    ->getRate()
+            );
+        }*/
         $this->total = $this->calcOrderTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
@@ -1167,7 +1181,7 @@ class Order
             'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'total'     => $Currency->Format($this->total),
             'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
+            'subtotal'  => $Currency->Format($this->gross_items),
             'tax_icon'  => $LANG_SHOP['tax'][0],
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
@@ -1182,10 +1196,11 @@ class Order
                 'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
             ) );
         }
+
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
+                'ship_method'   => $Shipper->getName(),
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -2330,6 +2345,7 @@ class Order
             $this->shipping = 0;
             $this->shipper_id = 0;
         }
+        $this->setTaxRate(NULL);
         return $this;
     }
 
@@ -3114,16 +3130,27 @@ class Order
      * Set the sales tax rate for this order.
      * No action if the new rate is the same as the existing rate.
      *
-     * @param   float   $new_rate   New tax rate
+     * @param   float   $new_rate   New tax rate, NULL to recalculate
      * @return  object  $this
      */
     public function setTaxRate($new_rate)
     {
         global $_TABLES;
 
-        $new_rate = (float)$new_rate;
-        //if ($this->tax_rate != $new_rate) {
-        $this->tax_rate = (float)$new_rate;
+        if ($new_rate === NULL) {
+            if (Shipper::getInstance($this->getShipperID())->getTaxLocation()) {
+                $tax_addr = new Company;
+            } else {
+                $tax_addr = $this->Shipto;
+            }
+            $this->tax_rate = Tax::getProvider()
+                ->withAddress($tax_addr)
+                ->withOrder($this)
+                ->getRate();
+        } else {
+            $this->tax_rate = (float)$new_rate;
+        }
+
         foreach ($this->getItems() as $Item) {
             if ($Item->isTaxable()) {
                 $Item->setTaxRate($this->tax_rate);
@@ -3545,8 +3572,11 @@ class Order
     public function requiresShipto()
     {
         if (
-            $this->hasTaxable() ||
-            $this->hasPhysical()
+            Shipper::getInstance($this->shipper_id)->requiresShipto() &&
+            (
+                $this->hasTaxable() ||
+                $this->hasPhysical()
+            )
         ) {
             return true;
         }
