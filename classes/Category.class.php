@@ -505,8 +505,8 @@ class Category
      */
     protected static function do_toggle($oldvalue, $varname, $id)
     {
-        $newval = self::_toggle($oldvalue, $varname, $id);
-        if ($newval != $oldval) {
+        $newval = self::Toggle($oldvalue, $varname, $id);
+        if ($newval != $oldvalue) {
             Cache::clear('categories');
             Cache::clear('sitemap');
         }
@@ -975,7 +975,7 @@ class Category
             array(
                 'text'  => $LANG_ADMIN['delete'] .
                     '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP_HELP['hlp_cat_delete'] . '"></i>',
+                    $LANG_SHOP['del_cat_instr'] . '"></i>',
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
             ),

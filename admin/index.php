@@ -45,9 +45,8 @@ $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
-    'gwmove', 'gwsave', 'wfmove', 'gwinstall', 'gwdelete',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
-    'attrcopy', 'pov_move',
+    'attrcopy', 'pov_move', 'wfmove',
     'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
@@ -55,16 +54,11 @@ $expected = array(
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
     'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
-    'saveregion', 'savecountry', 'savestate',
-    'ena_region', 'disa_region', 'del_region',
-    'ena_country', 'disa_country', 'del_country',
-    'ena_state', 'disa_state', 'del_state',
     'ft_save', 'ft_del', 'ft_move',
-    'rule_del', 'rule_add', 'rule_save',
     'savepayment', 'delpayment',
     // Views to display
     'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
-    'pov_edit', 'other', 'gwadmin', 'gwedit',
+    'pov_edit', 'other',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
@@ -74,10 +68,8 @@ $expected = array(
     'shipments', 'ord_ship', 'ord_pmts', 'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
-    'editregion', 'editcountry', 'editstate',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
-    'rules', 'rule_edit',
     'products',
 );
 foreach($expected as $provided) {
@@ -261,29 +253,6 @@ case 'rule_add':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?' . http_build_query($_GET));
     break;
 
-case 'rule_del':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer');
-    if (!$rule_id) {    // maybe came from $_GET
-        $rule_id = SHOP_getVar($_GET, 'rule_id', 'integer');
-    }
-    if ($rule_id) {
-        Shop\Rules\Zone::deleteRule($rule_id);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
-    break;
-
-case 'rule_save':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
-    $Rule = Shop\Rules\Zone::getInstance($rule_id);
-    if ($Rule->getID() > 0) {
-        $Rule->del('region', $_POST['region_del'])
-            ->del('country', $_POST['country_del'])
-            ->del('state', $_POST['state_del']);
-    }
-    $Rule->Save($_POST);
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?rules');
-    break;
-
 case 'ft_del':
     Shop\Feature::Delete($_REQUEST['ft_id']);
     $view = 'features';
@@ -363,27 +332,6 @@ case 'saveshipper':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?shipping=x');
     break;
 
-case 'gwinstall':
-    $gwname = $_GET['gwname'];
-    $gw = \Shop\Gateway::getInstance($gwname);
-    if ($gw !== NULL) {
-        if ($gw->Install()) {
-            $msg[] = "Gateway \"$gwname\" installed successfully";
-        } else {
-            $msg[] = "Failed to install the \"$gwname\" gateway";
-        }
-    }
-    $view = 'gwadmin';
-    break;
-
-case 'gwdelete':
-    $gw = \Shop\Gateway::getInstance($_GET['id']);
-    if ($gw !== NULL) {
-        $status = $gw->Remove();
-    }
-    $view = 'gwadmin';
-    break;
-
 case 'carrier_save':
     // Save a shipping carrier configuration
     $Shipper = Shop\Shipper::getByCode($_POST['carrier_code']);
@@ -397,15 +345,6 @@ case 'carrier_save':
         COM_setMsg($LANG_SHOP['err_msg'], 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?carriers');
-    break;
-
-case 'gwsave':
-    // Save a payment gateway configuration
-    $gw = \Shop\Gateway::getInstance($_POST['gw_id']);
-    if ($gw !== NULL) {
-        $status = $gw->SaveConfig($_POST);
-    }
-    $view = 'gwadmin';
     break;
 
 case 'ft_move':
@@ -431,11 +370,6 @@ case 'pov_move':
         $Opt->moveRow($actionval);
     }
     $view = 'options';
-    break;
-
-case 'gwmove':
-    \Shop\Gateway::moveRow($_GET['id'], $actionval);
-    $view = 'gwadmin';
     break;
 
 case 'wfmove':
@@ -505,7 +439,7 @@ case 'sendcards':
     if ($no_exp == 1) {
         $exp = \Shop\Products\Coupon::MAX_EXP;
     }
-    $status = PLG_invokeService('shop', 'sendcards',
+    $status = LGLIB_invokeService('shop', 'sendcards',
         array(
             'amount'    => $amt,
             'members'   => $uids,
@@ -557,10 +491,10 @@ case 'save_sup':
     break;
 
 case 'savecode':
-    $C = new \Shop\DiscountCode($_POST['code_id']);
+    $C = new Shop\DiscountCode($_POST['code_id']);
     if (!$C->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&icode_d=' . $C->code_id);
+        //COM_setMsg($LANG_SHOP['msg_nochange']);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $C->getCodeID());
     } else {
         COM_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
@@ -663,92 +597,6 @@ case 'pv_bulk_save':
         COM_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
-    break;
-
-case 'saveregion':
-    // Save a region record
-    $R = Shop\Region::getInstance($_POST['region_id']);
-    if ($R->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
-    } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editregion=' . $R->getID());
-    }
-    break;
-
-case 'savecountry':
-    // Save a country record
-    $C = Shop\Country::getInstance($_POST['country_id']);
-    if ($C->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
-    } else {
-        COM_setMsg($C->getErrors());
-        $content = $C->Edit($_POST);
-        $view = 'none';
-    }
-    break;
-
-case 'savestate':
-    // Save a state record
-    $S = Shop\State::getInstance((int)$_POST['state_id']);
-    if ($S->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
-    } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?editstate=' . $S->getID());
-    }
-    break;
-
-case 'ena_region':
-    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
-    if (!empty($regions)) {
-        Shop\Region::BulkToggle(0, 'region_enabled', $regions);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
-    break;
-
-case 'disa_region':
-    $regions = SHOP_getVar($_POST, 'region_id', 'array', array());
-    if (!empty($regions)) {
-        Shop\Region::BulkToggle(1, 'region_enabled', $regions);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?regions');
-    break;
-
-
-case 'ena_country':
-    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
-    if (!empty($countries)) {
-        Shop\Country::BulkToggle(0, 'country_enabled', $countries);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
-    break;
-
-case 'disa_country':
-    $countries = SHOP_getVar($_POST, 'country_id', 'array', array());
-    if (!empty($countries)) {
-        Shop\Country::BulkToggle(1, 'country_enabled', $countries);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?countries');
-    break;
-
-case 'ena_state':
-    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
-    if (!empty($states)) {
-        Shop\State::BulkToggle(0, 'state_enabled', $states);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
-    break;
-
-case 'disa_state':
-    $states = SHOP_getVar($_POST, 'state_id', 'array', array());
-    if (!empty($states)) {
-        Shop\State::BulkToggle(1, 'state_enabled', $states);
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?states');
     break;
 
 case 'savepayment':
@@ -998,10 +846,12 @@ case 'sendcards_form':
     break;
 
 case 'gwadmin':
+    echo "$view deprecated";die;
     $content .= Shop\Gateway::adminList();
     break;
 
 case 'gwedit':
+    echo "$view deprecated";die;
     $gw = \Shop\Gateway::getInstance($_GET['gw_id']);
     if ($gw !== NULL) {
         $content .= $gw->Configure();
@@ -1176,36 +1026,42 @@ case 'prod_bulk_frm':
     break;
 
 case 'editregion':
+    echo "$view deprecated";die;
     $region_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('regions');
     $content .= Shop\Region::getInstance($region_id)->Edit();
     break;
 
 case 'editcountry':
+    echo "$view deprecated";die;
     $country_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('countries');
     $content .= Shop\Country::getInstance($country_id)->Edit();
     break;
 
 case 'editstate':
+    echo "$view deprecated";die;
     $state_id = (int)$actionval;
     $content .= Shop\Menu::adminRegions('states');
     $content .= Shop\State::getInstance($state_id)->Edit();
     break;
 
 case 'countries':
+    echo "$view deprecated";die;
     $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
+    echo "$view deprecated";die;
     $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\State::adminList($country_id);
     break;
 
 case 'regions':
+    echo "$view deprecated";die;
     $content .= Shop\Menu::adminRegions($view);
     $content .= Shop\Region::adminList();
     break;

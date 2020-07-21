@@ -182,15 +182,20 @@ case 'saveshipto':
     }
     $U = Shop\Customer::getInstance();
     if ($U->getUid() > 1) {      // only save addresses for logged-in users
-        $addr_id = $U->saveAddress($addr, $addr_type);
-        if ($addr_id[0] < 0) {
-            if (!empty($addr_id[1]))
-                $content .= SHOP_errorMessage($addr_id[1], 'alert',
-                        $LANG_SHOP['missing_fields']);
+        $data = $U->saveAddress($addr, $addr_type);
+        if ($data[0] < 0) {
+            if (!empty($data[1])) {
+                $content .= SHOP_errorMessage(
+                    $data[1],
+                    'alert',
+                    $LANG_SHOP['missing_fields']
+                );
+            }
             $view = $addr_type;
             break;
         } else {
-            $_POST['useaddress'] = $addr_id[0];
+            $_POST['useaddress'] = $data[0];
+            $addr['addr_id'] = $data[0];
         }
     }
     $Cart = Shop\Cart::getInstance();
@@ -236,7 +241,7 @@ default:
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
     if ($view != 'editcart' && $Cart->canFastCheckout()) {
-        $content .= $Cart->getView(1);
+        $content .= $Cart->getView(9);
         break;
     }
 

@@ -23,6 +23,9 @@ class Shipper
 {
     use DBO;
 
+    const TAX_DESTINATION = 1;
+    const TAX_ORIGIN = 0;
+
     /** Table key for DBO functions
      * @var string */
     private static $TABLE = 'shop.shipping';
@@ -49,44 +52,44 @@ class Shipper
 
     /** glFusion group ID which can use this shipper.
      * @var integer */
-    private $grp_access;
+    private $grp_access = 2;
 
     /** Name of the shipper, e.g. "United Parcel Service".
      * @var string */
-    private $name;
+    private $name = '';
 
     /** Short code, e.g. "ups".
      * @var string */
-    private $module_code;
+    private $module_code = '';
 
     /** Minimum shipping units that can be sent by this shipper.
      * @var float */
-    private $min_units;
+    private $min_units = .0001;
 
     /** Maximum shipping units that can be sent by this shipper.
      * @var float */
-    private $max_units;
+    private $max_units = -1;
 
     /** Flag to indicate whether this shipper is active.
      * @var boolean */
-    private $enabled;
+    private $enabled = true;
 
     /** Flag to indicate whether fixed shipping cost is included or ignored.
      * @var boolean */
-    private $use_fixed;
+    private $use_fixed = 1;
 
     /** Std class to accumulate order shipping prices for the shipper.
      * This is manipulated as a public variable within this class.
      * @var object */
-    public $ordershipping;
+    public $ordershipping = NULL;
 
     /** Earliest date/time that this shipper can be used.
      * @var object */
-    private $valid_from;
+    private $valid_from = NULL;
 
     /** Latest date/time that this shipper can be used.
      * @var object */
-    private $valid_to;
+    private $valid_to = NULL;
 
     /** Configuration items, if used.
      * @var array */
@@ -98,11 +101,11 @@ class Shipper
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Individual rate element.
      * @var array */
-    private $rates;
+    private $rates = array();
 
     /** Flag to indicate whether the shipper class implements a quote API.
      * @var boolean */
@@ -115,6 +118,16 @@ class Shipper
     /** Base name of shipper class file. Default = `generic`.
      * @var string */
     protected $key = 'generic';
+
+    /** Flag to indicate that a shipping address is required.
+     * For "will-call" or certain other methods an address may not be needed.
+     * @var boolean */
+    protected $req_shipto = true;
+
+    /** Flag to indicate where sales tax is calculated.
+     * 1 = origin (shop address), 0 = destination (customer address)
+     * @var integer */
+    protected $tax_loc = 0;
 
 
     /**
@@ -136,14 +149,8 @@ class Shipper
             if ($this->Read($A)) $this->isNew = false;
         } else {
             // New entry, set defaults
-            $this->id = 0;
-            $this->module_code = '';
-            $this->enabled = 1;
-            $this->name = '';
-            $this->use_fixed = 1;
             $this->setValidFrom(NULL);
             $this->setValidTo(NULL);
-            $this->grp_access = 2;    // Default = All users
             $this->min_units = self::MIN_UNITS;
             $this->max_units = 1000000;
             $this->rates = array(
@@ -172,9 +179,9 @@ class Shipper
         global $_TABLES;
 
         $id = (int)$id;
-        $cache_key = self::$base_tag . ' _ ' . $id;
-        $A = Cache::get($cache_key);
-        if ($A === NULL) {
+        //$cache_key = self::$base_tag . ' _ ' . $id;
+        //$A = Cache::get($cache_key);
+        //if ($A === NULL) {
             $sql = "SELECT *
                     FROM {$_TABLES['shop.shipping']}
                     WHERE id = $id";
@@ -182,9 +189,9 @@ class Shipper
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                Cache::set($cache_key, $A, self::$base_tag);
+          //      Cache::set($cache_key, $A, self::$base_tag);
             }
-        }
+        //}
         if (!empty($A)) {
             $this->setVars($A);
             return true;
@@ -210,6 +217,8 @@ class Shipper
             ->setMinUnits(SHOP_getVar($A, 'min_units', 'integer'))
             ->setMaxUnits(SHOP_getVar($A, 'max_units', 'integer'))
             ->setEnabled(SHOP_getVar($A, 'enabled', 'integer'))
+            ->setReqShipto(SHOP_getVar($A, 'req_shipto', 'integer'))
+            ->setTaxLocation(SHOP_getVar($A, 'tax_loc', 'integer'))
             ->setUseFixed(SHOP_getVar($A, 'use_fixed', 'integer', 0))
             ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
         if (!$fromDB) {
@@ -360,6 +369,44 @@ class Shipper
         $this->enabled = $enabled ? 1 : 0;
         return $this;
     }
+
+
+    /**
+     * Set the `require shipto address` flag value.
+     *
+     * @param   boolean $enabled    True or false
+     * @return  object  $this
+     */
+    private function setReqShipto($flag)
+    {
+        $this->req_shipto = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Get the value of the "requires shipto" flag.
+     *
+     * @return  integer     1 if required, 0 if not
+     */
+    public function requiresShipto()
+    {
+        return $this->req_shipto ? 1 : 0;
+    }
+
+
+    private function setTaxLocation($flag)
+    {
+        $this->tax_loc = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    public function getTaxLocation()
+    {
+        return (int)$this->tax_loc;
+    }
+
 
     /**
      * Set the flag to include product fixed shipping charge.
@@ -800,11 +847,15 @@ class Shipper
             if ($item['packed'] !== true) {
                 // This shipper cannot handle this item
                 SHOP_log(__NAMESPACE__ . '\\' . __CLASS__ . "::Error packing " . print_r($item,true), SHOP_LOG_ERROR);
+                // Flag the total rate as NULL to indicate that this shipper
+                // cannot be used.
+                $total_rate = NULL;
                 break;
             } else {
                 $units_left -= $item['single_units'];
             }
         }
+
         $this->ordershipping->total_rate = $total_rate;
         $this->ordershipping->packages = $packages;
         return;
@@ -839,6 +890,8 @@ class Shipper
         $sql2 = " SET name = '" . DB_escapeString($this->name) . "',
             module_code= '" . DB_escapeString($this->module_code) . "',
             enabled = '{$this->enabled}',
+            req_shipto = '{$this->requiresShipto()}',
+            tax_loc = '{$this->getTaxLocation()}',
             min_units = '{$this->min_units}',
             max_units = '{$this->max_units}',
             valid_from = '{$this->valid_from->toUnix()}',
@@ -906,10 +959,12 @@ class Shipper
             'min_units'     => $this->min_units == self::MIN_UNITS ? 0 : $this->min_units,
             'max_units'     => $this->max_units,
             'ena_sel'       => $this->enabled ? 'checked="checked"' : '',
+            'req_shipto_sel' => $this->req_shipto ? 'checked="checked"' : '',
             'fixed_sel'     => $this->use_fixed ? 'checked="checked"' : '',
             'valid_from'    => $this->valid_from->format('Y-m-d', true),
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
+            'tax_loc_' . $this->getTaxLocation() => 'selected="selected"',
         ) );
 
 
@@ -952,7 +1007,7 @@ class Shipper
         if ($newval != $oldvalue) {
             Cache::clear(self::$base_tag);
         }
-        return $newvalue;
+        return $newval;
     }
 
 
@@ -1550,11 +1605,9 @@ class Shipper
             case 'checkbox':
                 $chk = $this->getConfig($name) ? 'checked="checked"' : '';
                 $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
-                $required = false;
                 break;
             default:
                 $fld = '<input type="text" size="80" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
-                $required = true;
                 break;
             }
             $T->set_var(array(
@@ -1562,7 +1615,6 @@ class Shipper
                 'field_name'    => $name,
                 'field_value'   => $this->getConfig($name),
                 'input_field'   => $fld,
-                'required'      => $required,
             ) );
             $T->parse('IRow', 'ItemRow', true);
         }

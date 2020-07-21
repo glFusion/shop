@@ -759,7 +759,7 @@ class IPN
             SHOP_log("Shop item " . $item['item_number'], SHOP_LOG_DEBUG);
 
             // If it's a downloadable item, then get the full path to the file.
-            if ($P->file != '') {
+            if ($P->getFilename() != '') {
                 $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->getFilename();
                 $token_base = $this->getTxnId() . time() . rand(0,99);
                 $token = md5($token_base);
@@ -892,8 +892,8 @@ class IPN
         $this->Order->setUID($this->uid);
         $this->Order->setBuyerEmail($this->payer_email);
         $this->Order->setStatus('pending');
-        if ($uid > 1) {
-            $U = Customer::getInstance($uid);
+        if ($this->uid > 1) {
+            $U = Customer::getInstance($this->uid);
         }
 
         // Get the billing and shipping addresses from the cart record,
@@ -905,7 +905,7 @@ class IPN
             $BillTo = $this->Cart->getAddress('billto');
             $this->Order->instructions = $this->Cart->getInstructions();
         }
-        if (empty($BillTo) && $uid > 1) {
+        if (empty($BillTo) && $this->uid > 1) {
             $BillTo = $U->getDefaultAddress('billto');
         }
         if (is_array($BillTo)) {
@@ -915,7 +915,7 @@ class IPN
         $ShipTo = $this->shipto;
         if (empty($ShipTo)) {
             if ($this->Cart) $ShipTo = $this->Cart->getAddress('shipto');
-            if (empty($ShipTo) && $uid > 1) {
+            if (empty($ShipTo) && $this->uid > 1) {
                 $ShipTo = $U->getDefaultAddress('shipto');
             }
         }

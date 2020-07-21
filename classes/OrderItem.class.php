@@ -153,25 +153,25 @@ class OrderItem
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
                     $this->setOptions($oi_id['attributes']);
                 }
+
+                if (
+                    is_array($oi_id['extras']) &&
+                    isset($oi_id['extras']['custom']) &&
+                    !empty($oi_id['extras']['custom']) &&
+                    is_array($oi_id['extras']['custom'])
+                ) {
+                    $cust = $oi_id['extras']['custom'];
+                    $P = Product::getByID($this->product_id);
+                    foreach ($P->getCustom() as $id=>$name) {
+                        if (isset($cust[$id]) && !empty($cust[$id])) {
+                            $this->addOptionText($name, $cust[$id]);
+                            break;
+                        }
+                    }
+                }
             } else {
                 // Existing orderitem record, get the existing options
                 $this->options = $this->getOptions();
-            }
-            $extras = @json_decode($oi_id['extras'], true);
-            if ($extras === NULL) {
-                $extras = array();
-            }
-            if (
-                isset($extras['custom']) && 
-                !empty($extras['custom'])
-            ) {
-                $cust = $extras['custom'];
-                $P = Product::getByID($this->product_id);
-                foreach ($P->getCustom() as $id=>$name) {
-                    if (isset($cust[$id]) && !empty($cust[$id])) {
-                        $this->addOptionText($name, $cust[$id]);
-                    }
-                }
             }
         }
     }
@@ -248,7 +248,7 @@ class OrderItem
         $this->setQtyDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
         $this->token = SHOP_getVar($A, 'token');
         $this->net_price = SHOP_getVar($A, 'net_price', 'float');
-        $this->setOptionsText(SHOP_getVar($A, 'options_text'));
+        $this->setOptionsText(SHOP_getVar($A, 'options_text', 'array'));
         if (array_key_exists('extras', $A)) {
             $this->setExtras($A['extras']);
         }
@@ -514,10 +514,11 @@ class OrderItem
      */
     public function setQuantity($newqty)
     {
-        if ($newqty > 0) {
+        if ($newqty >- 0) {
             $this->quantity = (float)$newqty;
             $this->handling = $this->Product->getHandling($newqty);
             $this->price = $this->getItemPrice();
+            $this->setTax($this->price * $this->quantity * $this->tax_rate);
         }
         return $this;
     }

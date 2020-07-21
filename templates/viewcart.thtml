@@ -49,11 +49,7 @@
                     <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 <!-- BEGIN ItemRow -->
-{!if embargoed}
-                <div class="cart-item embargo">
-{!else}
-                <div class="cart-item">
-{!endif}
+                <div class="cart-item {!if embargoed}embargo{!endif}">
                     <div class="uk-grid uk-margin">
                         <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
                             <div class="cart-item-image">
@@ -132,6 +128,7 @@
 {!endif}
                     </div>
                     <div id="shipping_cell">{shipping}</div>
+                </div>
 {!if tax_shipping}
                 <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
@@ -157,70 +154,71 @@
                 </div>
             </div>
         </div>
-    </div>
-    <div class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2 orderInstructions">
-        <div class="uk-push-1-2">
-            <div>
-                {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
-                    oninput="updateDCButton();return false;" />
-                <button id="dc_validate" name="update"
-                    class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
-            </div>
-            <div class="orderInstructions">
-                {$LANG_SHOP['order_instr']}:<br />
-                <textarea name="order_instr" rows="4" style="width:100%">{order_instr}</textarea>
-            </div>
-            <div class="orderInstructions">
-                <button style="float:none;" type="submit"
-                    class="uk-button uk-button-primary" name="update" id="updatebtn">
-                <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}
-                </button>
-{!if gateway_radios}
-                <input type="hidden" name="next_step" value="{next_step}" />
-                <button style="float:none;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="checkout">
-                    <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}
-                </button>
-{!endif}
-                <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
-                    onclick="document.location.href='{pi_url}/cart.php?empty=x';">
-                    <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}
-                </button>
-            </div>
-        </div>
-
-        <div class="uk-pull-1-2">
-            <div class="gwRadiosOuter">
-                <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning"></i>&nbsp;&nbsp;
-                {$LANG_SHOP['hlp_gw_select']}<br />
-{!if gateway_radios}
-                {gateway_radios}
-{!if allow_gc}
-                <div class="enterGC shopGatewayRadios">{$LANG_SHOP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
-                    <button type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem"
-                        onclick="shopApplyGC('shopCartForm');return false;">{$LANG_SHOP['apply']}</button>
-                    <input type="hidden" name="refresh" value="viewcart" />
+        <div class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2 orderInstructions">
+            <div class="uk-push-1-2">
+{!if discount_code_fld}
+                <div>
+                    {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
+                        oninput="updateDCButton();return false;" />
+                    <button id="dc_validate" name="update"
+                        class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
                 </div>
 {!endif}
-{!else}
-                <div class="uk-alert uk-alert-danger">{$LANG_SHOP['todo_nogateways']}</div>
+                <div class="orderInstructions">
+                    {$LANG_SHOP['order_instr']}:<br />
+                    <textarea name="order_instr" rows="4" style="width:100%">{order_instr}</textarea>
+                </div>
+                <div class="orderInstructions">
+                    <button style="float:none;" type="submit"
+                        class="uk-button uk-button-primary" name="update" id="updatebtn">
+                    <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}
+                    </button>
+{!if gateway_radios}
+                    <input type="hidden" name="next_step" value="{next_step}" />
+                    <button style="float:none;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="checkout">
+                        <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['checkout']}
+                    </button>
 {!endif}
+                    <button style="float:right;" type="reset" class="uk-button uk-button-danger" name="emptycart"
+                        onclick="document.location.href='{pi_url}/cart.php?empty=x';">
+                        <i class="uk-icon uk-icon-remove"></i>&nbsp;{$LANG_SHOP['empty_cart']}
+                    </button>
+                </div>
             </div>
-            <div class="gwRadiosOuter">
-                <a name="anchor_payer_email"></a>
-                <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
-                <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
-                <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
-                    name="payer_email" size="40" value="{payer_email}"/>
-                <i class="uk-icon uk-icon-exclamation-triangle uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+
+            <div class="uk-pull-1-2">
+                <div class="gwRadiosOuter">
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>&nbsp;&nbsp;
+                    {$LANG_SHOP['hlp_gw_select']}<br />
+{!if gateway_radios}
+                    {gateway_radios}
+{!if allow_gc}
+                    <div class="enterGC shopGatewayRadios">{$LANG_SHOP['enter_gc']}:&nbsp;<input type="text" name="gc_code" id="enterGC" />
+                        <button type="submit" class="uk-button uk-button-mini uk-button-primary" name="redeem"
+                            onclick="shopApplyGC('shopCartForm');return false;">{$LANG_SHOP['apply']}</button>
+                        <input type="hidden" name="refresh" value="viewcart" />
+                    </div>
+{!endif}
+{!else}
+                    <div class="uk-alert uk-alert-danger">{$LANG_SHOP['todo_nogateways']}</div>
+{!endif}
+                </div>
+                <div class="gwRadiosOuter">
+                    <a name="anchor_payer_email"></a>
+                    <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
+                    <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
+                    <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
+                        name="payer_email" size="40" value="{payer_email}"/>
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
+                </div>
             </div>
         </div>
-    </div>
-    <input type="hidden" name="custom" value='{custom}' />
-  </form>
+        <input type="hidden" name="custom" value='{custom}' />
+    </form>
 {!if tc_link}
-  <div class="shopTOCLink">
-    <a href="{tc_link}" target="_blank">{$LANG_SHOP['terms_and_cond']}</a>
-  </div>
+    <div class="shopTOCLink">
+        <a href="{tc_link}" target="_blank">{$LANG_SHOP['terms_and_cond']}</a>
+      </div>
 {!endif}
 </div>
 <div height="200px"></div>

@@ -6,7 +6,7 @@
     {$LANG_SHOP['new_country']}
 {!endif}
 </h2>
-<form action="{site_admin_url}/plugins/shop/index.php" method="post"
+<form action="{site_admin_url}/plugins/shop/regions.php" method="post"
     class="uk-form uk-form-horizontal">
     <input type="hidden" name="country_id" value="{country_id}" />
 
@@ -95,7 +95,7 @@
             <button class="uk-button uk-button-success" type="submit" name="savecountry">{$LANG_ADMIN['submit']}</button>
             <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
             <button class="uk-button" type="reset" name="countries"i
-                onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?countries';" />{$LANG_ADMIN['cancel']}</button>
+                onclick="document.location.href='{site_admin_url}/plugins/shop/regions.php?countries';" />{$LANG_ADMIN['cancel']}</button>
         </div>
     </div>
 </form>

@@ -8,9 +8,6 @@
     </label>
     <div class="uk-form-controls">
       {input_field}
-{!if required}
-      <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
 <!-- END ItemRow -->

@@ -249,6 +249,7 @@ div.shopProductListOuter {
     /*padding: 5px;*/
     text-decoration: none;
     overflow: hidden;
+    z-index: 1;
 }
 
 .shopProductListItem.v1 {
@@ -1022,7 +1023,6 @@ div.cart-item {
         /*width: 100%;*/
         /*width: 30%*;*/
     }
-
     .cart cart-item-quantity {
         -webkit-box-sizing: border-box;
         -moz-box-sizing: border-box;
@@ -1033,7 +1033,6 @@ div.cart-item {
         /*width: 100%;
         width: 60%*/
     }
-
     .cart .cart-item-total .mobile-label {
         display: inline;
         float: left;
@@ -1055,3 +1054,7 @@ div.cart-item {
     }
 }
 
+.shopCustomPriceField {
+    text-align: right;
+    width: 3em;
+}

@@ -256,40 +256,14 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$$item) {
-            if ($item->getProductID() == $item_number) {
+        foreach ($this->items as $id=>$OI) {
+            if ($OI->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
-                $item->updateItem($updates);
+                $OI->updateItem($updates);
                 break;
             }
         }
         $this->Save();
-    }
-
-
-    /**
-     * View the cart.
-     * This is the first step in checkout and checks that the prices are
-     * accurate. If any are not, possibly due to expired sales or discounts,
-     * then the OrderItem record is updated with the current price before
-     * displaying.
-     *
-     * @param   string  $view   View being presented (not used)
-     * @param   integer $step   Step in the checkout process (not used)
-     * @return  string      HTML for cart view
-     */
-    public function XXView($view = 'order', $step = 0)
-    {
-        foreach ($this->items as $key=>$Item) {
-            $prod_price = $Item->getItemPrice();
-            if (!$Item->getProduct()->canOrder()) {
-                $this->Remove($Item->id);
-            } elseif ($Item->price != $prod_price) {
-                $Item->price = $prod_price;
-                $Item->Save();
-            }
-        }
-        return parent::View($view, $step);
     }
 
 
@@ -1075,16 +1049,13 @@ class Cart extends Order
 
         $Gateways = Gateway::getAll();
         if (
-            // todo: no gift cards, no active discount codes
-            !$_SHOP_CONF['ena_fast_checkout'] ||  // not configured
+            !$_SHOP_CONF['ena_fast_checkout'] ||    // not allowed
             COM_isAnonUser() ||         // can't be anonymous, need email addr
-            count($Gateways) > 1 ||     // must have only one gateway
-            $this->hasPhysical() ||     // need shipping addr
-            $this->hasTaxable() ||      // need shipping addr
-            DiscountCode::countCurrent() > 0 || // have active codes
+            count($Gateways) != 1 ||    // must have only one gateway
+            DiscountCode::countCurrent() > 0 ||     // have active codes
             (
                 $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
-                count(Products\Coupon::getUserCoupons() > 0)
+                count(Products\Coupon::getUserCoupons()) > 0
             )
         ) {
             return false;
@@ -1096,12 +1067,14 @@ class Cart extends Order
         // Get the customer information to set addresses and email addr
         $Customer = Customer::getInstance($this->uid);
         $Addresses = $Customer->getAddresses();
-        if (empty($Addresses)) {
+        if (!empty($Addresses)) {
+            $Address = array_shift($Addresses);
+            $this->setBillto($Address);
+            $this->setShipto($Address);
+        } elseif ($this->requiresShipto() || $this->requiresBillto()) {
+            // If addresses are requred but none found, can't fast-checkout
             return false;
         }
-        $Address = array_shift($Addresses);
-        $this->setBillto($Address);
-        $this->setShipto($Address);
 
         // Go ahead and save the gateway as preferred for future use
         $Customer->setPrefGW($gateway->getName())
@@ -1111,8 +1084,8 @@ class Cart extends Order
         $this->setGateway($gateway->getName())
             ->setGC(0)
             ->setEmail($Customer->getEmail())
-            ->setShipper(0);
-        $this->instructions = '';
+            ->setShipper(0)
+            ->setInstructions('');
 
         SHOP_setUrl(SHOP_URL . '/index.php');
         return true;

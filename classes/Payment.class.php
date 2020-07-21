@@ -372,9 +372,10 @@ class Payment
     /**
      * Save the payment object to the database.
      *
+     * @param   boolean $notify_buyer   True to notify the buyer
      * @return  object  $this
      */
-    public function Save()
+    public function Save($notify_buyer=true)
     {
         global $_TABLES, $LANG_SHOP;
 
@@ -400,6 +401,12 @@ class Payment
                         $this->getGateway()
                     )
                 );
+            $Order->Notify(
+                '',
+                $LANG_SHOP['notify_pmt_received'],
+                true,
+                false
+            );
         }
         return $this;
     }
@@ -519,14 +526,26 @@ class Payment
      */
     public function pmtForm()
     {
+        global $_TABLES;
+
+        //$Orders = Order::getUnpaid();
+        $Order = Order::getInstance($this->order_id);
+        $bal_due = $Order->getBalanceDue();
         $T = new \Template(__DIR__ . '/../templates');
         $T->set_file('form', 'pmt_form.thtml');
         $T->set_var(array(
+            'user_select' => COM_optionList(
+                $_TABLES['users'],
+                'uid,fullname',
+                0,
+                1
+            ),
             'pmt_id' => $this->pmt_id,
             'order_id' => $this->order_id,
             'amount' => $this->amount,
             'ref_id' => $this->ref_id,
             'money_chk' => $this->is_money ? 'checked="checked"' : '',
+            'bal_due' => Currency::getInstance($Order->getCurrency()->getCode())->formatMoney($bal_due),
         ) );
         $Gateways = Gateway::getAll();
         $T->set_block('form', 'GatewayOpts', 'gwo');

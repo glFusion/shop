@@ -350,6 +350,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'inv_start_num',
+        'default_value' => '10000',
+        'type' => 'text',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,
+        'sort' => 280,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array(
         'name' => 'fs_paths',               // Paths fieldset

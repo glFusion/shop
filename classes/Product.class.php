@@ -641,7 +641,7 @@ class Product
         $this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->short_description = $row['short_description'];
         $this->price = $row['price'];
-        $this->file = $row['file'];
+        $this->filename = $row['file'];
         $this->expiration = $row['expiration'];
         $this->keywords = $row['keywords'];
         $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
@@ -861,7 +861,7 @@ class Product
      */
     public function getFilename()
     {
-        return $this->file;
+        return $this->filename;
     }
 
 
@@ -872,31 +872,6 @@ class Product
      */
     protected function loadOptions()
     {
-        global $_TABLES;
-
-    /*    $sql = "SELECT DISTINCT pov.pov_id, pov.pov_value, pog.pog_id, pog.pog_name, pv.sku,
-                pov.pov_price
-            FROM {$_TABLES['shop.prod_opt_vals']} pov
-            LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog
-                ON pog.pog_id =.pov.pog_id
-            LEFT JOIN {$_TABLES['shop.variantXopt']} vxo
-                ON vxo.pov_id = pov.pov_id
-            LEFT JOIN {$_TABLES['shop.product_variants']} pv
-                ON pv.pv_id = vxo.pv_id
-            WHERE pv.item_id = {$this->id}
-            ORDER BY pog.pog_orderby, pov.orderby ASC";
-        $res = DB_query($sql);
-        $ctlbk = 0;
-        $Grps = array();
-        while ($A = DB_fetchArray($res, false)) {
-            if ($A['pog_id'] != $ctlbk) {
-                $Grps[$A['pog_id']] = new ProductOptionGroup($A['pog_id']);
-            }
-            //$Grps[$A['pog_id']]->addOption(new \StdClass
-            echo "{$A['pog_name']} - {$A['pov_value']}\n";
-        }
-        var_dump($Grps);
-        return;*/
         if (empty($this->OptionGroups)) {   // Load only once
             $this->OptionGroups = ProductOptionGroup::getByProduct($this->id);
             foreach ($this->OptionGroups as $og_id=>$OG) {
@@ -957,18 +932,18 @@ class Product
                 if ($F->areErrors() > 0) {
                     $this->Errors[] = $F->printErrors(true);
                 } elseif ($filename != '') {
-                    $this->file = $filename;
+                    $this->filename = $filename;
                 }
-                SHOP_log('Uploaded file: ' . $this->file, SHOP_LOG_DEBUG);
+                SHOP_log('Uploaded file: ' . $this->filename, SHOP_LOG_DEBUG);
             }
-            if ($this->file == '') {
+            if ($this->filename == '') {
                 // Not having a file is an error for downloadable products.
                 $this->Errors[] = $LANG_SHOP['err_missing_file'];
             }
         } else {
             // Make sure file is empy for non-downloads.
             // May have previously contained a file if the type was changed.
-            $this->file = '';
+            $this->filename = '';
         }
 
         // Check for errors during validation and file upload,
@@ -1029,7 +1004,7 @@ class Product
                 price='" . number_format($this->price, 2, '.', '') . "',
                 prod_type='" . (int)$this->prod_type. "',
                 weight='" . number_format($this->weight, 2, '.', '') . "',
-                file='" . DB_escapeString($this->file) . "',
+                file='" . DB_escapeString($this->filename) . "',
                 expiration='" . (int)$this->expiration. "',
                 enabled='" . (int)$this->enabled. "',
                 featured='" . (int)$this->featured. "',
@@ -1320,7 +1295,7 @@ class Product
             'short_description' => htmlspecialchars($this->short_description, ENT_QUOTES, COM_getEncodingt()),
             'description'   => htmlspecialchars($this->description, ENT_QUOTES, COM_getEncodingt()),
             'price'         => Currency::getInstance()->FormatValue($this->price),
-            'file'          => htmlspecialchars($this->file, ENT_QUOTES, COM_getEncodingt()),
+            'file'          => htmlspecialchars($this->filename, ENT_QUOTES, COM_getEncodingt()),
             'expiration'    => $this->expiration,
             'action_url'    => SHOP_ADMIN_URL . '/index.php',
             'file_selection' => $this->FileSelector(),
@@ -1446,16 +1421,16 @@ class Product
                 SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
             foreach ($Disc as $D) {
-                if ($D->discount_type == 'amount') {
-                    $amount = Currency::getInstance()->Format($D->amount);
+                if ($D->getValueType() == 'amount') {
+                    $amount = Currency::getInstance()->Format($D->getValue());
                 } else {
-                    $amount = $D->amount;
+                    $amount = $D->getValue();
                 }
                 $DT->set_var(array(
-                    'sale_name' => htmlspecialchars($D->name),
-                    'sale_start' => $D->start,
-                    'sale_end'  => $D->end,
-                    'sale_type' => $D->discount_type,
+                    'sale_name' => htmlspecialchars($D->getName()),
+                    'sale_start' => $D->getStart()->toMySQL(true),
+                    'sale_end'  => $D->getEnd()->toMySQL(true),
+                    'sale_type' => $D->getValueType(),
                     'sale_amt'  => $amount,
                 ) );
                 $DT->parse('SL', 'SaleList', true);
@@ -1798,7 +1773,7 @@ class Product
             'price'             => $Cur->FormatValue($this->getPrice()),
             'orig_price'        => $Cur->FormatValue($this->_orig_price),
             'on_sale'           => $this->isOnSale(),
-            'sale_name'         => $this->isOnSale() ? $this->getSale()->name : '',
+            'sale_name'         => $this->isOnSale() ? $this->getSale()->getName() : '',
             'img_cell_width'    => ($_SHOP_CONF['max_thumb_size'] + 20),
             'price_prefix'      => $Cur->Pre(),
             'price_postfix'     => $Cur->Post(),
@@ -1950,7 +1925,7 @@ class Product
                 if ($file == '.' || $file == '..') {    // skip directories
                     continue;
                 }
-                $sel = $file == $this->file ? 'selected="selected" ' : '';
+                $sel = $file == $this->filename ? 'selected="selected" ' : '';
                 $retval .= "<option value=\"$file\" $sel>$file</option>\n";
             }
             closedir($dh);
@@ -2312,6 +2287,19 @@ class Product
         $price *= $discount_factor;
         $price = round($price, Currency::getInstance()->Decimals());
         return $price;
+    }
+
+
+    /**
+     * See if this product allows a custom price to be entered by the user.
+     * Standard products do not allow user-entered pricing. This is typically
+     * used for Donations.
+     *
+     * @return  boolean     True if allowed, False if not
+     */
+    public function allowCustomPrice()
+    {
+        return false;
     }
 
 
@@ -3237,7 +3225,7 @@ class Product
     {
         $retval = '';
         $Images = $this->getVariantImages();
-        if (!is_array($Images)) {
+        if (!is_array($Images) || empty($Images)) {
             $retval = '';
         } else {
             $img = reset($Images);

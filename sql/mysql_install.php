@@ -102,7 +102,6 @@ $_SQL = array(
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
   `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `dc_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
@@ -368,6 +367,8 @@ $_SQL = array(
   `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `rates` text,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
+  `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -421,6 +422,7 @@ $_SQL = array(
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
+    "RENAME TABLE {$_TABLES['shop.purchases']} TO {$_TABLES['shop.orderitems']}",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_from` int(11) unsigned NOT NULL DEFAULT '0' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `valid_to` int(11) unsigned NOT NULL DEFAULT '2145902399' AFTER `valid_from`",
     "ALTER TABLE {$_TABLES['shop.shipping']} ADD `use_fixed` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `valid_to`",
@@ -729,6 +731,11 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
     "UPDATE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

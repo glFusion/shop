@@ -683,9 +683,9 @@ class ProductOptionValue
 
         $prod_id = (int)$prod_id;
         $og_id = (int)$og_id;
-        $cache_key = 'options_' . $prod_id . '_' . $og_id;
-        $opts = Cache::get($cache_key);
-        if ($opts === NULL) {
+        //$cache_key = 'options_' . $prod_id . '_' . $og_id;
+        //$opts = Cache::get($cache_key);
+        //if ($opts === NULL) {
             $opts = array();
             $sql = "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
@@ -703,8 +703,8 @@ class ProductOptionValue
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);
             }
-            Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
-        }
+            //Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
+        //}
         return $opts;
     }
 

@@ -256,7 +256,7 @@ class Sales
         foreach ($sales as $obj) {
             if (
                 $obj->getStartDate()->toUnix() < $now &&
-                $obj->getEndDate->toUnix() > $now
+                $obj->getEndDate()->toUnix() > $now
             ) {
                 // Found an active product sales, return it.
                 $SaleObj = $obj;
@@ -793,7 +793,7 @@ class Sales
      */
     public function getValueType()
     {
-        return $this->type;
+        return $this->discount_type;
     }
 
 

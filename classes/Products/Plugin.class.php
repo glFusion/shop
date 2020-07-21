@@ -3,15 +3,17 @@
  * Class to interface with plugins for product information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Products;
+use Shop\Currency;
+
 
 /**
  * Class for a plugin-supplied product.
@@ -41,6 +43,15 @@ class Plugin extends \Shop\Product
      * @var boolean */
     private $canApplyDC = true;
 
+    /** Image URL. One image can be include for the catalog display.
+     * @var string */
+    private $img_url = '';
+
+    /** Flag to indicate that the buyer can enter their own price value.
+     * Mainly used for donations.
+     * @var array */
+    private $custom_price = false;
+
 
     /**
      * Constructor.
@@ -57,8 +68,7 @@ class Plugin extends \Shop\Product
         $this->pi_info = array();
         $item = explode('|', $id);  // separate full item ID from option string
         $item_id = $item[0];
-        $this->properties = array();
-        $this->currency = \Shop\Currency::getInstance();
+        $this->currency = Currency::getInstance();
         $this->item_id = $item_id;  // Full item id
         $this->id = $item_id;       // TODO: convert Product class to use item_id
         $item_parts = explode(':', $item_id);   // separate the plugin name and item ID
@@ -95,6 +105,7 @@ class Plugin extends \Shop\Product
             $this->btn_text = SHOP_getVar($A, 'btn_text');
             $this->_have_detail_svc = SHOP_getVar($A, 'have_detail_svc', 'boolean', false);
             $this->_fixed_q = SHOP_getVar($A, 'fixed_q', 'integer', 0);
+            $this->img_url = SHOP_getVar($A, 'img_url');
             $this->isNew = false;
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
@@ -109,6 +120,9 @@ class Plugin extends \Shop\Product
             if (array_key_exists('canApplyDC', $A) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
+            if (array_key_exists('custom_price', $A) && $A['custom_price']) {
+                $this->custom_price = true;
+            }
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -121,7 +135,7 @@ class Plugin extends \Shop\Product
             $this->_have_detail_svc = false;
             $this->isUnique = true;
             $this->enabled = false;
-        }
+         }
     }
 
 
@@ -176,11 +190,11 @@ class Plugin extends \Shop\Product
 
         $args = array(
             'item'  => array(
-                'item_id' => $Item->product_id,
-                'quantity' => $Item->quantity,
-                'name' => $Item->item_name,
-                'price' => $Item->price,
-                'paid' => $Item->price,
+                'item_id' => $Item->getProductID(),
+                'quantity' => $Item->getQuantity(),
+                'name' => $Item->getDscp(),
+                'price' => $Item->getPrice(),
+                'paid' => $Item->getPrice(),
             ),
             'ipn_data'  => $ipn_data,
             'order' => $Order,      // Pass the order object, may be used in the future
@@ -265,6 +279,29 @@ class Plugin extends \Shop\Product
             }
         }
         return $this->price;
+    }
+
+    /**
+     * See if this product allows a custom price to be entered by the user.
+     * Certain plugins, such as donations, may allow custom user-entered prices.
+     *
+     * @return  boolean     True if allowed, False if not
+     */
+    public function allowCustomPrice()
+    {
+        return $this->custom_price ? true : false;
+    }
+
+
+    /**
+     * Get the prompt to show for the custom pricing field, if allowed.
+     *
+     * @return  string      Field prompt
+     */
+    public function getPricePrompt()
+    {
+        global $LANG_DON;
+        return $LANG_DON['amount'];
     }
 
 
@@ -389,6 +426,25 @@ class Plugin extends \Shop\Product
     public function canApplyDiscountCode()
     {
         return $this->canApplyDC;
+    }
+
+
+    /**
+     * Get the image to include in the catalog.
+     * Overrides the parent function.
+     *
+     * @param   string  $filename   Specific filename (not used)
+     * @param   integer $width      Desired width (not used)
+     * @param   integer $height     Desired height (not used)
+     * @return  array   Array of image information
+     */
+    public function getImage($filename = '', $width = 0, $height = 0)
+    {
+        return array(
+            'url' => $this->img_url,
+            'width' => $width,
+            'height' => $height,
+        );
     }
 
 }   // class Plugin

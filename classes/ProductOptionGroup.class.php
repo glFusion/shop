@@ -100,9 +100,9 @@ class ProductOptionGroup
     {
         global $_TABLES;
 
-        $cache_key = 'shop_opt_grp_all';
-        $retval = Cache::get($cache_key);
-        if ($retval === NULL) {
+        //$cache_key = 'shop_opt_grp_all';
+        //$retval = Cache::get($cache_key);
+        //if ($retval === NULL) {
             $retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.prod_opt_grps']}
                 ORDER BY pog_orderby ASC";
@@ -110,8 +110,8 @@ class ProductOptionGroup
             while ($A = DB_fetchArray($res, false)) {
                 $retval[$A['pog_id']] = new self($A);
             }
-            Cache::set($cache_key, $retval, self::$TAGS);
-        }
+            //Cache::set($cache_key, $retval, self::$TAGS);
+        //}
         return $retval;
     }
 
@@ -557,9 +557,9 @@ class ProductOptionGroup
         global $_TABLES;
 
         $prod_id = (int)$prod_id;
-        $cache_key = 'og_prod_' . $prod_id;
-        $grps = Cache::get($cache_key);
-        if ($grps === NULL) {
+        //$cache_key = 'og_prod_' . $prod_id;
+        //$grps = Cache::get($cache_key);
+        //if ($grps === NULL) {
             $grps = array();
             $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
@@ -575,10 +575,10 @@ class ProductOptionGroup
                     ProductOptionValue::getByProduct($prod_id, $A['pog_id'])
                 );
             }
-            Cache::set($cache_key, $grps, self::$TAGS);
-        } else {
-            $x = new ProductOptionValue;    // just to get the class loaded.
-        }
+            //Cache::set($cache_key, $grps, self::$TAGS);
+        //} else {
+        //    $x = new ProductOptionValue;    // just to get the class loaded.
+        //}
         return $grps;
     }
 

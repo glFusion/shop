@@ -204,7 +204,7 @@ class stripe extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         $js = array(
-            'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '");',
+            'finalizeCart("' . $cart->getOrderID() . '","' . $cart->getUID() . '", ' . $this->do_redirect . ');',
             'var stripe = Stripe("' . $this->pub_key . '");',
             "stripe.redirectToCheckout({sessionId: \"{$this->session->id}\"});",
             "return false;",

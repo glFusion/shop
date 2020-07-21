@@ -48,6 +48,7 @@ class check extends \Shop\Gateway
 
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
+        $this->do_redirect = false; // handled internally
     }
 
 
@@ -284,8 +285,8 @@ class check extends \Shop\Gateway
         $T->set_file('remit', 'remit_form.thtml');
         $T->set_var(array(
             'order_url' => $Order->buildUrl('pdforder'),
-            'order_id'  => $Order->order_id,
-            'token'     => $Order->token,
+            'order_id'  => $Order->getOrderID(),
+            'token'     => $Order->getToken(),
         ) );
         $T->parse('output', 'remit');
         $content = $T->finish($T->get_var('output'));
@@ -316,7 +317,7 @@ class check extends \Shop\Gateway
         //$order_id = $this->CreateOrder($vals, $cart);
         //$db_order_id = DB_escapeString($order_id);
         $Order = $this->CreateOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->order_id);
+        $db_order_id = DB_escapeString($Order->getOrderID());
 
         $prod_types = 0;
 
@@ -336,9 +337,12 @@ class check extends \Shop\Gateway
                 // Initialize item info array to be used later
                 $A = array();
 
-                $status = LGLIB_invokeService($pi_info[0], 'productinfo',
-                        array($item_number, $item_opts),
-                        $product_info, $svc_msg);
+                $status = LGLIB_invokeService(
+                    $pi_info[0], 'productinfo',
+                    array($item_number, $item_opts),
+                    $product_info,
+                    $svc_msg
+                );
                 if ($status != PLG_RET_OK) {
                     $product_info = array();
                 }
@@ -354,8 +358,12 @@ class check extends \Shop\Gateway
                 );
                 // TODO: should plugin handlePurchase be called here, or when
                 // the order is paid.
-                $status = LGLIB_invokeService($pi_info[0], 'handlePurchase',
-                            $vars, $A, $svc_msg);
+                $status = LGLIB_invokeService(
+                    $pi_info[0], 'handlePurchase',
+                    $vars,
+                    $A,
+                    $svc_msg
+                );
                 if ($status != PLG_RET_OK) {
                     $A = array();
                 }
@@ -368,9 +376,9 @@ class check extends \Shop\Gateway
                 $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
-                    'expiration' => $P->expiration,
-                    'prod_type' => $P->prod_type,
-                    'file' => $P->file,
+                    'expiration' => $P->getExpiration(),
+                    'prod_type' => $P->getProductType(),
+                    'file' => $P->getFilename(),
                     'price' => $item['price'],
                 );
 
@@ -384,7 +392,7 @@ class check extends \Shop\Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= $P->prod_type;
+                $prod_types |= $P->getProductType();
             }
 
             // An invalid item number, or nothing returned for a plugin

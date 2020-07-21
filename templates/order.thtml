@@ -62,6 +62,9 @@
     {!if checkout}
     {!else}
     <div id="shopOrderNumber">
+{!if invoice_number}
+      {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+{!endif}
       {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
       {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
     </div>

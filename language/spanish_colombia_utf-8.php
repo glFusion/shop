@@ -218,6 +218,7 @@ $LANG_SHOP = array (
 'order_summary' => 'Order Summary',
 'order_date'    => 'Fecha de orden',
 'order_number'  => 'Número de orden',
+'invoice_number'  => 'Invoice Number',
 'new_address'   => 'New Address',
 'shipping'      => 'Envío',
 'handling'      => 'Manejo',
@@ -705,6 +706,8 @@ $LANG_SHOP = array (
 'paid_full' => 'Paid in Full',
 'pmt_pending' => 'Payment is pending',
 'bal_due' => 'Balance Due',
+'notify_pmt_received' => 'Your payment has been received.',
+'dup_pxf' => 'Duplicate or invalid feature selected.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -731,7 +734,7 @@ $LANG_SHOP_HELP = array(
 'err_sku_nonuniq' => 'There are duplicate SKU values in your product database. Ensure that each product has a unique SKU before using the SKU as the product ID',
 'reset_date' => 'Reset the date/time fields to the earliest or latest possible values.',
 'carrier_modules' => 'Carrier Modules are class files which contain code to interact with specific shipping carriers. Some allow configuration to use an API to access tracking and rate information, others require no configuration.',
-'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method youc an define rats for different package types and sizes.',
+'shipping_methods' => 'Shipping Methods are a combination of Carriers and Classes of Service, such as &quot;USPS Priority Flat Rate&quot;. Within each shipment method you can define rats for different package types and sizes.',
 'percent_entry' => 'Percentages should be entered as normal amounts, e.g. &quot;15&quot; for 15%. Entering values less than one may not give the results that you expect.',
 'hlp_var_bulk_edit' => 'Editing multiple product variants at once. Any updates to the below fields will be applied to each selected variant.',
 'hlp_var_after_item' => 'Variants must be added after the item is created.',

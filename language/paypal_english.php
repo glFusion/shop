@@ -28,5 +28,6 @@ $LANG_SHOP_gateway = array(
 'prod_url'      => 'PayPal Url - Production',
 'sandbox_url'   => 'PayPal Url - Sandbox',
 'test_mode'     => 'Testing (Sandbox) Mode?',
+'ena_donations' => 'Enable Donations?',
 );
 ?>

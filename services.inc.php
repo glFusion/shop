@@ -167,7 +167,7 @@ function service_getUrl_shop($args, &$output, &$svc_msg)
         break;
     case 'order':
         if ($id != '') {
-            $url = COM_buldUrl(SHOP_URL . '/order.php?view=' . $id);
+            $url = COM_buildUrl(SHOP_URL . '/order.php?view=' . $id);
         }
         break;
     case 'checkout':

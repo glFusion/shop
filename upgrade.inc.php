@@ -76,8 +76,13 @@ function SHOP_do_upgrade($dvlp = false)
             $SHOP_UPGRADE[$current_ver][] = "UPDATE {$_TABLES['shop.prod_opt_vals']} AS pov INNER JOIN (SELECT pog_id,pog_name FROM {$_TABLES['shop.prod_opt_grps']}) AS pog ON pov.attr_name=pog.pog_name SET pov.pog_id = pog.pog_id";
         }
         // This has to be done after updating the attribute group above
-        $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name";
+        if (_SHOPtableHasColumn('shop.prod_opt_vals', 'attr_name')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP attr_name";
+        }
         // Now that the pog_id field has been populated we can add the unique index.
+        if (_SHOPtableHasIndex('shop.prod_opt_vals', 'item_id')) {
+            $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`";
+        }
         $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
 
         if (_SHOPcolumnType('shop.sales', 'start') != 'datetime') {
@@ -228,7 +233,7 @@ function SHOP_do_upgrade($dvlp = false)
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
         }
-        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands');
+        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands', true);
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -342,17 +347,9 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
-    // Copy the "not available" image if not already in place.
-    if (!is_file($_SHOP_CONF['image_dir'] . '/notavailable.jpg')) {
-        COM_errorLog("Copying missing not-available image");
-        $status = copy(
-            __DIR__ . '/data/images/products/notavailable.jpg',
-            $_SHOP_CONF['image_dir'] . '/notavailable.jpg'
-        );
-        if (!$status) {
-            COM_errorLog("Error copying the not-available image");
-        }
-    }
+    // Make sure paths and images are created.
+    require_once __DIR__ . '/autoinstall.php';
+    plugin_postinstall_shop(true);
 
     // Check and set the version if not already up to date.
     // For updates with no SQL changes

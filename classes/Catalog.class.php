@@ -483,6 +483,8 @@ class Catalog
             ( $this->cat_id == 0 || $this->cat_id == $RootCat->getID()) &&
             empty($search)
         ) {
+            // Clear out-of-stock flag which doesn't appply to plugins
+            $T->clear_var('oos');
             $this->getPluginProducts($T);
         }
 
@@ -555,12 +557,16 @@ class Catalog
                 if ($status != PLG_RET_OK || empty($plugin_data)) {
                     continue;
                 }
-
                 foreach ($plugin_data as $A) {
                     // Reset button values
                     $buttons = '';
                     if (!isset($A['buttons'])) {
                         $A['buttons'] = array();
+                    }
+                    if (isset($A['add_cart']) && !$A['add_cart']) {
+                        $can_add_cart = false;
+                    } else {
+                        $can_add_cart = true;
                     }
 
                     $P = \Shop\Product::getByID($A['id']);
@@ -576,7 +582,7 @@ class Catalog
                         'small_pic' => $P->getImage()['url'],
                         'on_sale'   => '',
                         'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
-                        'can_add_cart'  => true,
+                        'can_add_cart'  => $can_add_cart,
                         'rating_bar' => $P->ratingBar(true),
                     ) );
                     if ($price > 0) {
@@ -649,12 +655,12 @@ class Catalog
 
         $T->set_block('wrapper', 'ProductItems', 'PI');
         foreach ($Cats as $Cat) {
-            if (!$Cat->hasAccess() || !Category::hasProducts($Cat->cat_id)) {
+            if (!$Cat->hasAccess() || !Category::hasProducts($Cat->getID())) {
                 // Skip categories that have no products
                 continue;
             }
             $T->set_var(array(
-                'item_id'       => $Cat->cat_id,
+                'item_id'       => $Cat->getID(),
                 'short_description' => htmlspecialchars($Cat->getName()),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'item_url'      => SHOP_URL . '/index.php?category='. $Cat->getID(),

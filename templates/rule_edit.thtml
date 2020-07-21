@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<form action-"{site_admin_url}/plugins/shop/index.php" class="uk-form uk-form-horizontal" method="post">
+<form action="{site_admin_url}/plugins/shop/rules.php" class="uk-form uk-form-horizontal" method="post">
     <input type="hidden" name="rule_id" value="{rule_id}" />
 {!if rule_id}
     <h1>{$LANG_SHOP['edit_rule']}: {rule_name}</h1>
@@ -23,7 +23,7 @@
       </label>
       <div class="uk-form-controls">
         <textarea name="rule_dscp" 
-          name="dscp" cols="35" rows="10"
+          cols="35" rows="10"
           style="width:70%">{rule_dscp}</textarea>
       </div>
     </div>
@@ -103,7 +103,7 @@
     <div class="uk-form-row">
       <div class="uk-form-controls">
 {!if rule_id}
-        <button class="uk-button uk-button-danger" style="float:right;" type="submit" name="rule_del"
+        <button class="uk-button uk-button-danger" style="float:right;" type="submit" name="rule_del" value="{rule_id}"
             onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['del_rule']}</button>
 {!endif}
         <button class="uk-button uk-button-success" type="submit" name="rule_save">{$LANG_SHOP['save_rule']}</button>

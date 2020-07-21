@@ -45,6 +45,7 @@ function ProcessForm(form)
     if (typeof(form) == 'undefined') {
         return;
     }
+    var msg = "";   // availability message text
     var dataS = {
         "action": "validateOpts",
     };
@@ -72,14 +73,18 @@ function ProcessForm(form)
                 } else {
                     $("button#btn_add_cart_{id}").prop("disabled", true);
                     $("button#btn_add_cart_{id}").attr("class", "uk-button uk-button-small uk-button-disabled");
+                    msg += "{$LANG_SHOP['opts_not_avail']}<br />";
                 }
                 // Show or hide the out of stock message. Purchase buttons
                 // may still be enabled.
                 if (result.is_oos) {
-                    var msg = "{$LANG_SHOP['out_of_stock']}";
+                    msg += "{$LANG_SHOP['out_of_stock']}<br />";
                     if (result.leadtime != "") {
-                        msg += "<br />(" + result.leadtime + ")";
+                        msg += "(" + result.leadtime + ")";
                     }
+                }
+                // Display the message block if there is a message
+                if (msg != "") {
                     $("div#oos_msg").css('visibility', '');
                     $("div#oos_msg").html(msg);
                 } else {
@@ -87,6 +92,11 @@ function ProcessForm(form)
                 }
             } catch(err) {
             }
+        },
+        error: function(a,b,c) {
+            console.log(a);
+            console.log(b);
+            console.log(c);
         }
     });
     return;

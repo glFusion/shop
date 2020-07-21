@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -80,6 +80,7 @@ class Order
     /** Sales tax rate for the order.
      * @var float */
     protected $tax_rate = 0;
+
     /** Total tax charged on the order.
      * @var float */
     protected $tax = 0;
@@ -312,7 +313,6 @@ class Order
             ) as amt_paid
             FROM {$_TABLES['shop.orders']} ord
             WHERE ord.order_id='{$this->order_id}'";
-        //COM_errorLog($sql);
         //echo $sql;die;
         $res = DB_query($sql);
         if (!$res) {
@@ -346,6 +346,40 @@ class Order
 
 
     /**
+     * Get orders that are not fully paid, optionally limiting to a buyer.
+     *
+     * @param   integer $uid    Optional use ID to limit search
+     * @return  array       Array of Order objects
+     */
+    public static function getUnpaid($uid = 0)
+    {
+        global $_TABLES;
+
+        $retval = array();
+        if ($uid > 0) {
+            $uid_where = " WHERE uid = " . (int)$uid;
+        } else {
+            $uid_where = '';
+        }
+        $sql = "SELECT ord.*,
+            ord.order_total - ifnull(sum(pmt.pmt_amount),0) as amtDue,
+            ifnull(sum(pmt.pmt_amount),0) as amt_paid
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.payments']} pmt
+            ON pmt.pmt_order_id = ord.order_id
+            $uid_where
+            GROUP BY ord.order_id
+            HAVING amtDue > 0";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['order_id']] = new self();
+            $retval[$A['order_id']]->setVars($A);
+        }
+        return $retval;
+    }
+
+
+    /**
      * Add a single item to this order.
      * Extracts item information from the provided $data variable, and
      * reads the item information from the database as well.  The entire
@@ -368,6 +402,7 @@ class Order
         $OI = new OrderItem($args);
         $OI->setQuantity($args['quantity'])
             ->applyDiscountPct($this->getDiscountPct())
+            ->setTaxRate($this->tax_rate)
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
@@ -494,11 +529,11 @@ class Order
                 $this->shipto_zip       = SHOP_getVar($A, 'zip');
                 $this->Shipto = new Address($A);*/
             }
-            $this->setTaxRate(
+            /*$this->setTaxRate(
                 Tax::getProvider()
                 ->withOrder($this)
                 ->getRate()
-            );
+            );*/
             $have_address = true;
         } elseif (is_object($A)) {
             /*$this->shipto_id        = $A->getID();
@@ -511,11 +546,14 @@ class Order
             $this->shipto_country   = $A->getCountry();
             $this->shipto_zip       = $A->getPostal();*/
             $this->Shipto = $A;
-            $this->setTaxRate(
+            /*$this->setTaxRate(
                 Tax::getProvider()
                 ->withOrder($this)
                 ->getRate()
-            );
+            );*/
+            $have_address = true;
+        } elseif (is_int($A)) {
+            $this->Shipto = new Address($A);
             $have_address = true;
         }
 
@@ -537,6 +575,7 @@ class Order
             SHOP_log($sql, SHOP_LOG_DEBUG);
             $this->clearInstance();
         }
+        $this->setTaxRate(NULL);
         return $this;
     }
 
@@ -672,6 +711,47 @@ class Order
 
 
     /**
+     * Get the invoice number based on the configured starting number.
+     * Returns an empty string if a sequence number has not been assigned,
+     * otherwise returns either starting_number + sequence or concatenates
+     * the sequence to the starting number if the starting number is not an
+     * actual number.
+     *
+     * Always returns a string for consistency.
+     *
+     * @since   v1.3.1
+     * @return  string      Invoice number
+     */
+    public function getInvoiceNumber()
+    {
+        global $_SHOP_CONF;
+
+        if ($this->order_seq == 0) {
+            $inv_num = '';
+        } elseif (
+            isset($_SHOP_CONF['inv_start_num']) &&
+            !empty($_SHOP_CONF['inv_start_num'])
+        ) {
+            if (is_numeric($_SHOP_CONF['inv_start_num'])) {
+                // just add the prefix number, e.g. "10001"
+                $inv_num = $_SHOP_CONF['inv_start_num'] + $this->order_seq;
+            } elseif (strpos($_SHOP_CONF['inv_start_num'], '%') !== false) {
+                // formatted string, e.g. "INV-0001-2020"
+                $inv_num = sprintf($_SHOP_CONF['inv_start_num'], $this->order_seq);
+            } else {
+                // prefix string, e.g. "INV-1"
+                $inv_num = (string)$_SHOP_CONF['inv_start_num'] . (string)$this->order_seq;
+            }
+        } elseif (function_exists('CUSTOM_shop_invoiceNumber')) {
+            $inv_num = CUSTOM_shop_invoiceNumber($this->order_seq, $this);
+        } else {
+            $inv_num = $this->order_seq;
+        }
+        return (string)$inv_num;
+    }
+
+
+    /**
      * API function to delete an entire order record.
      * Only orders that have a status of "cart" or "pending" can be deleted.
      * Finalized (paid, shipped, etc.) orders cannot  be removed.
@@ -687,21 +767,20 @@ class Order
         if ($order_id == '') {
             $order_id = Cart::getSession('order_id');
         }
-        if (!$order_id) return true;
-
-        $order_id = DB_escapeString($order_id);
+        if (!$order_id) {
+            // Still an empty order ID, nothing to do
+            return true;
+        }
 
         // Just get an instance of this order since there are a couple of values to check.
         $Ord = self::getInstance($order_id);
-        if ($Ord->isNew) return true;
-
-        // Only orders with no sequence number can be deleted.
-        // Only orders with certain status values can be deleted.
-        if ($Ord->order_seq !== NULL || $Ord->isFinal()) {
+        if (!$Ord->canDelete()) {
+            // Order can't be deleted
             return false;
         }
 
         // Checks passed, delete the order and items
+        $order_id = DB_escapeString($order_id);
         $sql = "START TRANSACTION;
             DELETE FROM {$_TABLES['shop.oi_opts']} WHERE oi_id IN (
                 SELECT id FROM {$_TABLES['shop.orderitems']} WHERE order_id = '$order_id'
@@ -730,7 +809,7 @@ class Order
         foreach ($this->items as $item) {
             $item->Save();
         }
-        $order_total = $this->getOrderTotal();
+        $order_total = $this->calcOrderTotal();
 
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
@@ -880,6 +959,7 @@ class Order
                 $T->set_var($fldname, $$type[$name]);
             }
         }
+        $Shipper = Shipper::getInstance($this->shipper_id);
 
         // Set flags in the template to indicate which address blocks are
         // to be shown.
@@ -945,7 +1025,8 @@ class Order
             }
             if ($item->getProduct()->isOnSale()) {
                 $has_sale_items = true;
-                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' . $item->getProduct()->getSale()->name;
+                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' .
+                    $item->getProduct()->getSale()->getName();
             } else {
                 $sale_tooltip = '';
             }
@@ -961,6 +1042,7 @@ class Order
             } else {
                 $this->net_nontax += $item_net;
             }
+            
             $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
@@ -1018,7 +1100,16 @@ class Order
         // Call selectShipper() here to get the shipping amount into the local var.
         $shipper_select = $this->selectShipper();
 
-        $this->total = $this->getTotal();     // also calls calcTax()
+        //$this->total = $this->getTotal();     // also calls calcTax()
+        /*if ($this->shipto_id == 0) {
+            $this->setTaxRate(
+                Tax::getProvider()
+                    ->withAddress($ShopAddr)
+                    ->withOrder($this)
+                    ->getRate()
+            );
+        }*/
+        $this->total = $this->calcOrderTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
@@ -1055,6 +1146,7 @@ class Order
             'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
             'order_number'  => $this->order_id,
+            'invoice_number'  => $this->getInvoiceNumber(),
             'order_instr'   => htmlspecialchars($this->instructions),
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
@@ -1096,7 +1188,7 @@ class Order
             'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
             'total'     => $Currency->Format($this->total),
             'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'  => $this->gross_items == $this->total ? '' : $Currency->Format($this->gross_items),
+            'subtotal'  => $Currency->Format($this->gross_items),
             'tax_icon'  => $LANG_SHOP['tax'][0],
             'tax_shipping' => $this->getTaxShipping(),
             'tax_handling' => $this->getTaxHandling(),
@@ -1111,10 +1203,11 @@ class Order
                 'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
             ) );
         }
+
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => Shipper::getInstance($this->shipper_id)->getName(),
+                'ship_method'   => $Shipper->getName(),
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -1242,14 +1335,11 @@ class Order
             ) &&
             $this->isPaid()
         ) {
-            COM_errorLog("order is paid");
             // Get the status to set. For non-physical items, the order is
             // fullfilled so close it.
             if ($this->hasPhysical()) {
-                COM_errorLog("has physical");
                 $this->updateStatus(self::STATUS_PROCESSING);
             } else {
-                COM_errorLog("no physical items");
                 $this->updateStatus(self::STATUS_CLOSED);
             }
         }
@@ -1524,7 +1614,7 @@ class Order
 
             // Add the file to the filename array, if any. Download
             // links are only included if the order status is 'paid'
-            $file = $P->file;
+            $file = $P->getFilename();
             if (!empty($file) && $this->status == 'paid') {
                 $files[] = $file;
                 $dl_url = SHOP_URL . '/download.php?';
@@ -2262,6 +2352,7 @@ class Order
             $this->shipping = 0;
             $this->shipper_id = 0;
         }
+        $this->setTaxRate(NULL);
         return $this;
     }
 
@@ -3046,16 +3137,27 @@ class Order
      * Set the sales tax rate for this order.
      * No action if the new rate is the same as the existing rate.
      *
-     * @param   float   $new_rate   New tax rate
+     * @param   float   $new_rate   New tax rate, NULL to recalculate
      * @return  object  $this
      */
     public function setTaxRate($new_rate)
     {
         global $_TABLES;
 
-        $new_rate = (float)$new_rate;
-        //if ($this->tax_rate != $new_rate) {
-        $this->tax_rate = (float)$new_rate;
+        if ($new_rate === NULL) {
+            if (Shipper::getInstance($this->getShipperID())->getTaxLocation()) {
+                $tax_addr = new Company;
+            } else {
+                $tax_addr = $this->Shipto;
+            }
+            $this->tax_rate = Tax::getProvider()
+                ->withAddress($tax_addr)
+                ->withOrder($this)
+                ->getRate();
+        } else {
+            $this->tax_rate = (float)$new_rate;
+        }
+
         foreach ($this->getItems() as $Item) {
             if ($Item->isTaxable()) {
                 $Item->setTaxRate($this->tax_rate);
@@ -3361,10 +3463,22 @@ class Order
      * @uses    self::calcTax()
      * @return  float   Total order amount
      */
-    protected function getOrderTotal()
+    protected function calcOrderTotal()
     {
         $this->calcItemTotals()->calcTax();
         return (float)$this->net_items + $this->shipping + $this->tax + $this->handling;
+    }
+
+
+    /**
+     * Get the order total value from the database field.
+     * Does not perform any calculations.
+     *
+     * @return  float   Order total
+     */
+    public function getOrderTotal()
+    {
+        return (float)$this->order_total;
     }
 
 
@@ -3416,6 +3530,17 @@ class Order
 
 
     /**
+     * Get the balance due on the order.
+     *
+     * @return  float       Unpaid balance
+     */
+    public function getBalanceDue()
+    {
+        return (float)($this->order_total - $this->_amt_paid);
+    }
+
+
+    /**
      * Utility function to get any amount field.
      *
      * @see     updateTotals()
@@ -3454,8 +3579,11 @@ class Order
     public function requiresShipto()
     {
         if (
-            $this->hasTaxable() ||
-            $this->hasPhysical()
+            Shipper::getInstance($this->shipper_id)->requiresShipto() &&
+            (
+                $this->hasTaxable() ||
+                $this->hasPhysical()
+            )
         ) {
             return true;
         }
@@ -3501,7 +3629,6 @@ class Order
             }
             $dec = $decimals[$curcode];
             foreach ($Ord->getItems() as $Item) {
-                echo "Processing item {$Item->getID()}\n";
                 $gross_item = round($Item->getPrice(), $dec);
                 $net_item = round($Item->getNetPrice(), $dec);
                 $gross_items += $gross_item * $Item->getQuantity();
@@ -3562,6 +3689,26 @@ class Order
         $this->tainted = true;
         return $this;
     }
+
+
+    /**
+     * Check if this order can be deleted.
+     * Orders that have been assigned a sequence number can't be deleted.
+     *
+     * @return  boolean     True if deletion is OK, False if not
+     */
+    public function canDelete()
+    {
+        if (
+            $this->isNew ||
+            $this->order_seq ||
+            !$this->isFinal()
+        ) {
+            return false;
+        }
+        return true;
+    }
+
 }
 
 ?>

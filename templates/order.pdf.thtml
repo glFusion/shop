@@ -36,6 +36,9 @@
 </table>
 
 <p style="padding-bottom:15px;">
+{!if invoice_number}
+  {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+{!endif}
   {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
   {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}
 </p>
@@ -93,12 +96,12 @@
   </tr>
 {!if dc_row_vis}
         <tr>
-            <td colspan="4" class="alignright">{$LANG_SHOP['disc_code']}</td>
-            <td colspan="1" class="alignright">{dc_amt}</td>
+            <td colspan="3" style="text-align:right;">{$LANG_SHOP['disc_code']}</td>
+            <td colspan="2" style="text-align:right;">{dc_amt}</td>
         </tr>
         <tr>
-            <td colspan="4" class="alignright">Net Items</td>
-            <td colspan="1" class="alignright">{net_items}</td>
+            <td colspan="3" style="text-align:right;">{$LANG_SHOP['net_items']}</td>
+            <td colspan="2" style="text-align:right;">{net_items}</td>
         </tr>
 {!endif}
 {!if cart_tax}

@@ -60,6 +60,7 @@ class terms extends \Shop\Gateway
         $this->services = array(
             'checkout'  => 1,
         );
+        $this->do_redirect = false; // handled internally
         parent::__construct();
     }
 
@@ -163,29 +164,6 @@ class terms extends \Shop\Gateway
         }
         return $fields;
     }
-
-
-    /**
-     * Prepare to save the configuraiton.
-     * This copies the new config values into our local variables, then
-     * calls the parent function to save to the database.
-     *
-     * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
-     */
-    public function SaveConfig($A = NULL)
-    {
-        if (is_array($A)) {
-            foreach ($this->config as $name=>$value) {
-                switch ($name) {
-                default:
-                    $this->config[$name] = $A[$name];
-                    break;
-                }
-            }
-        }
-        return parent::SaveConfig($A);
-    }
-
 
 
     /**

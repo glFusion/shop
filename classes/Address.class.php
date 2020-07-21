@@ -22,55 +22,55 @@ class Address
 {
     /** Person name.
      * @var string */
-    private $name;
+    private $name = '';
 
     /** Company name.
      * @var string */
-    private $company;
+    private $company = '';
 
     /** Address Line 1.
      * @var string */
-    private $address1;
+    private $address1 = '';
 
     /** Address Line 2.
      * @var string */
-    private $address2;
+    private $address2 = '';
 
     /** City name.
      * @var string */
-    private $city;
+    private $city = '';
 
     /** State/Province.
      * @var string */
-    private $state;
+    private $state = '';
 
     /** Postal code.
      * @var string */
-    private $zip;
+    private $zip = '';
 
     /** Country code.
      * @var string */
-    private $country;
+    private $country = '';
 
     /** Phone number.
      * @var string */
-    private $phone;
+    private $phone = '';
 
     /** User ID.
      * @var integer */
-    private $uid;
+    private $uid = 0;
 
     /** Flag indicates this is a default Billing address.
      * @var integer */
-    private $billto_def;
+    private $billto_def = 0;
 
     /** Flag indicates this is a default Shipping address.
      * @var integer */
-    private $shipto_def;
+    private $shipto_def = 0;
 
     /** Address record ID.
      * @var integer */
-    private $addr_id;
+    private $addr_id = 0;
 
     /** DB table name, to facilitate inherited classes.
      * @var string */

@@ -77,7 +77,9 @@ function addPXF()
     }
     ft_id = parseInt(document.getElementById("ft_name_sel").value);
     if (ft_id == 0 || ($.inArray(ft_id, ft_ids) > -1)) {
-        $.UIkit.notify("{$LANG_SHOP['missing_fields']}", {timeout: 2000,pos:'top-center'});
+        // Missing or more likely a duplicate feature.
+        // A feature may be selected only once.
+        $.UIkit.notify("{$LANG_SHOP['dup_pxf']}", {timeout: 2000,pos:'top-center'});
         return;
     }
 
