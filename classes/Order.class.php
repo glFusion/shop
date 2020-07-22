@@ -400,6 +400,9 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = $this->_createToken();  // create a unique token
         $OI = new OrderItem($args);
+        if (isset($args['price'])) {
+            $OI->setPrice($args['price']);
+        }
         $OI->setQuantity($args['quantity'])
             ->applyDiscountPct($this->getDiscountPct())
             ->setTaxRate($this->tax_rate)

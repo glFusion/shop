@@ -229,6 +229,12 @@ class Cart extends Order
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );
+            if (
+                Product::isPluginItem($item_id) &&
+                isset($args['price'])
+            ) {
+                $tmp['price'] = (float)$args['price'];
+            }
             parent::addItem($tmp);
             $new_quantity = $quantity;
         }

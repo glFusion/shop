@@ -447,6 +447,21 @@ class Plugin extends \Shop\Product
         );
     }
 
+
+    /**
+     * Get the discounted price for the product, including options.
+     * Plugins don't have discounts.
+     *
+     * @param   integer $qty            Quantity purchased
+     * @param   float   $opts_price     Not used
+     * @return  float       Net price considering sales and quantity discounts
+     */
+    public function getDiscountedPrice($qty=1, $opts_price=0)
+    {
+        return (float)$this->price;
+    }
+
+
 }   // class Plugin
 
 ?>
