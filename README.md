@@ -17,7 +17,7 @@ If you use the Bad Behavior plugin, be sure that you whitelist your Shop IPN
 URL (`shop/ipn/*provider*.php`). Bad Behavior may otherwise block IPN messages
 from your gateway provider.
 
-This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
+This version of the Shop plugin requires at least version 1.0.10 of the lgLib plugin for supporting functions.
 
 ## Considerations if you have the Paypal Plugin installed
 The Shop plugin includes wrapper functions to match the Paypal functions used
