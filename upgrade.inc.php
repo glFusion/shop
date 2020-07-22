@@ -253,13 +253,13 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.2.0')) {
         $current_ver = '1.2.0';
-        if (!_SHOPtableHasColumn('shop.address', 'brand_id')) {
+        if (!_SHOPtableHasColumn('shop.products', 'brand_id')) {
             array_splice(
                 $SHOP_UPGRADE[$current_ver],
                 "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0"
             );
         }
-        if (!_SHOPtableHasColumn('shop.address', 'supplier_id')) {
+        if (!_SHOPtableHasColumn('shop.products', 'supplier_id')) {
             array_splice(
                 $SHOP_UPGRADE[$current_ver],
                 "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0 AFTER brand_id"
