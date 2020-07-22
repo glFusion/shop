@@ -245,7 +245,7 @@ class Product
 
     /** Product image objects.
      * @var array */
-    protected $Images = NULL;
+    protected $Images = array();
 
     /** Selected attributes.
      * Using a property to pass between functions.
@@ -1384,7 +1384,7 @@ class Product
             $T->parse('ProdType', 'ProdTypeRadio', true);
         }
 
-        if (!self::isUsed($this->id)) {
+        if (!$this->isNew() && !self::isUsed($this->id)) {
             $T->set_var('candelete', 'true');
         }
 
