@@ -632,8 +632,7 @@ class ProductVariant
             $T->parse('Grps', 'OptionGroups', true);
             $T->clear_var('Vals');
         }
-        $retval .= $T->parse('output', 'form');
-        return $retval;
+        return $T->parse('output', 'form');
     }
 
 
