@@ -1716,7 +1716,9 @@ class Product
             if (!empty($ids)) {
                 $showImages = array();
                 foreach ($ids as $id) {
-                    $showImages[$id] = $this->Images[$id];
+                    if (isset($this->Images[$id])) {
+                        $showImages[$id] = $this->Images[$id];
+                    }
                 }
             }
         }
@@ -3188,8 +3190,11 @@ class Product
     {
         global $_TABLES;
 
+        static $loaded = NULL;
+
         // If already loaded, just return the images.
-        if ($this->Images === NULL) {
+        if ($loaded === NULL) {
+            $loaded = true;
             $cache_key = self::_makeCacheKey($this->id, 'img');
             $this->Images = Cache::get($cache_key);
             if ($this->Images === NULL) {
@@ -3210,7 +3215,6 @@ class Product
                 Cache::set($cache_key, $this->Images, 'products');
             }
         }
-
         return $this->Images;
     }
 
