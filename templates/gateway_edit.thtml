@@ -107,7 +107,7 @@
     <div class="uk-form-controls">
       <button type="submit" name="gwsave" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>
       <button type="reset" name="reset" class="uk-button uk-button-primary">{$LANG_SHOP['clearform']}</button>
-      <button type="submit" name="gwadmin" class="uk-button">{$LANG_ADMIN['cancel']}</button>
+      <a class="uk-button" href="{pi_admin_url}/gateways.php">{$LANG_ADMIN['cancel']}</a>
     </div>
   </div>
 </form>

@@ -154,10 +154,10 @@
 
   <div class="uk-form-row" align="center">
     <button onclick="return SHOP_validateSalesForm();" class="uk-button uk-button-success type="submit" name="savesale" value="{$LANG_SHOP['save']}">{$LANG_ADMIN['save']}</button>
-    <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
+    <button class="uk-button uk-button-primary" type="reset" />{$LANG_SHOP['clearform']}</button>
     <button class="uk-button uk-button-danger" type="submit" name="delsale" value="{$LANG_ADMIN['delete']}"
         onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['delete']}</button>
-    <button class="uk-button uk-button-primary" type="submit" name="sales" value="{$LANG_ADMIN['cancel']}">{$LANG_ADMIN['cancel']}</button>
+    <a class="uk-button" href="{site_admin_url}/plugins/shop/index.php?sales">{$LANG_ADMIN['cancel']}</a>
   </div>
 
 </form>

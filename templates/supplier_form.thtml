@@ -158,8 +158,8 @@
         <div class="uk-form-controls" style="text-align:center;">
             <button class="uk-button uk-button-success" type="submit" name="save_sup">{$LANG_ADMIN['submit']}</button>
             <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
-            <button class="uk-button" type="reset" name="suppliers"i
-                onclick="document.location.href='{site_admin_url}/plugins/shop/index.php?suppliers';" />{$LANG_ADMIN['cancel']}</button>
+            <a class="uk-button" type="reset" name="suppliers"
+                href="{site_admin_url}/plugins/shop/index.php?suppliers">{$LANG_ADMIN['cancel']}</a>
         </div>
     </div>
 </form>

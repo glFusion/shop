@@ -107,7 +107,8 @@
             onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['del_rule']}</button>
 {!endif}
         <button class="uk-button uk-button-success" type="submit" name="rule_save">{$LANG_SHOP['save_rule']}</button>
-        <button class="uk-button" type="submit" name="rules">{$LANG_ADMIN['cancel']}</button>
+        <button class="uk-button uk-button-primary" type="reset">{$LANG_SHOP['reset']}</button>
+        <a href="{site_admin_url}/plugins/shop/rules.php" class="uk-button" type="submit" name="rules">{$LANG_ADMIN['cancel']}</a>
       </div>
     </div>
 </form>
