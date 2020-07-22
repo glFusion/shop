@@ -256,7 +256,7 @@ function SHOP_do_upgrade($dvlp = false)
         if (!_SHOPtableHasColumn('shop.products', 'brand_id')) {
             array_splice(
                 $SHOP_UPGRADE[$current_ver],
-                "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0"
+                "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0 after max_ord_qty"
             );
         }
         if (!_SHOPtableHasColumn('shop.products', 'supplier_id')) {
@@ -287,6 +287,18 @@ function SHOP_do_upgrade($dvlp = false)
         if (!_SHOPtableHasIndex('shop.prod_opt_vals', 'item_id')) {
             $SHOP_UPGRADE[$current_ver][] = "ALTER TABLE {$_TABLES['shop.prod_opt_vals']}
                 ADD UNIQUE `item_id` (`item_id`,`pog_id`,`pov_value`)";
+        }
+        if (!_SHOPtableHasColumn('shop.products', 'brand_id')) {
+            array_splice(
+                $SHOP_UPGRADE[$current_ver],
+                "ALTER TABLE {$_TABLES['shop.products']} ADD `brand_id` int(11) NOT NULL DEFAULT 0"
+            );
+        }
+        if (!_SHOPtableHasColumn('shop.products', 'supplier_id')) {
+            array_splice(
+                $SHOP_UPGRADE[$current_ver],
+                "ALTER TABLE {$_TABLES['shop.products']} ADD `supplier_id` int(11) NOT NULL DEFAULT 0 AFTER brand_id"
+            );
         }
 
         // Update the state tables for taxing S&H only if not
@@ -408,11 +420,11 @@ function SHOP_do_upgrade_sql($version, $ignore_error = false)
             if (DB_error()) {
                 // check for error here for glFusion < 2.0.0
                 SHOP_log('SQL Error during update', SHOP_LOG_INFO);
-                if (!$ignore_error) return false;
+                //if (!$ignore_error) return false;
             }
         } catch (Exception $e) {
             SHOP_log('SQL Error ' . $e->getMessage(), SHOP_LOG_INFO);
-            if (!$ignore_error) return false;
+            //if (!$ignore_error) return false;
         }
     }
     SHOP_log("--- Shop plugin SQL update to version $version done", SHOP_LOG_INFO);

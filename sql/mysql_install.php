@@ -701,8 +701,8 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
-    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
-    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
+    "ALTER TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
+    "ALTER TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
 $SHOP_UPGRADE['1.3.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.payments']}` (
@@ -724,7 +724,9 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
-    "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
+    "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
+        (`orderby`, `name`, `notify_buyer`, `notify_admin`)
+        VALUES (5, 'invoiced', 0, 0)",
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
