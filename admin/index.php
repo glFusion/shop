@@ -1007,7 +1007,7 @@ case 'ft_edit':
 
 case 'edit_sup':
     // Edit a supplier or brand record
-    $Sup = new Shop\Supplier($_GET['id']);
+    $Sup = new Shop\Supplier($actionval);
     $content .= $Sup->Edit();
     break;
 
