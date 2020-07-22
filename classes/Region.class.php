@@ -34,19 +34,19 @@ class Region extends RegionBase
 
     /** Region DB record ID.
      * @var integer */
-    private $region_id;
+    private $region_id = 0;
 
     /** UN Region Code.
      * @var integer */
-    private $region_code;
+    private $region_code = 0;
 
     /** Region Name.
      * @var string */
-    private $region_name;
+    private $region_name = '';
 
     /** Sales are allowed to this region?
      * @var integer */
-    private $region_enabled;
+    private $region_enabled = 1;
 
 
     /**
@@ -88,7 +88,8 @@ class Region extends RegionBase
                 // when there is no region assigned (e.g. Antarctica)
                 $A = array(
                     'region_id'     => 0,
-                    'region_name'  => '',
+                    'region_code'   => 0,
+                    'region_name'   => '',
                     'region_enabled' => 1,
                 );
             }
