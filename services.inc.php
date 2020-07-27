@@ -407,8 +407,8 @@ function plugin_formatAmount_shop($amount)
     return Shop\Currency::getInstance()->Format((float)$amount);
 }
 
-
 if (
+    isset($_SHOP_CONF['enable_svc_funcs']) &&
     $_SHOP_CONF['enable_svc_funcs'] &&
     !function_exists('service_genButton_paypal')
 ) {
