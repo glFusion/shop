@@ -3190,30 +3190,24 @@ class Product
     {
         global $_TABLES;
 
-        static $loaded = NULL;
-
-        // If already loaded, just return the images.
-        if ($loaded === NULL) {
-            $loaded = true;
-            $cache_key = self::_makeCacheKey($this->id, 'img');
-            $this->Images = Cache::get($cache_key);
-            if ($this->Images === NULL) {
-                $this->Images = array();
-                $sql = "SELECT img_id, filename, orderby
-                    FROM {$_TABLES['shop.images']}
-                    WHERE product_id='". $this->id . "'
-                    ORDER BY orderby ASC";
-                $res = DB_query($sql);
-                while ($prow = DB_fetchArray($res, false)) {
-                    if (self::imageExists($prow['filename'])) {
-                        $this->Images[$prow['img_id']] = $prow;
-                    } else {
-                        // Might as well remove DB records for images that don't exist.
-                        $this->deleteImage($prow['img_id']);
-                    }
+        $cache_key = self::_makeCacheKey($this->id, 'img');
+        $this->Images = Cache::get($cache_key);
+        if ($this->Images === NULL) {
+            $this->Images = array();
+            $sql = "SELECT img_id, filename, orderby
+                FROM {$_TABLES['shop.images']}
+                WHERE product_id='". $this->id . "'
+                ORDER BY orderby ASC";
+            $res = DB_query($sql);
+            while ($prow = DB_fetchArray($res, false)) {
+                if (self::imageExists($prow['filename'])) {
+                    $this->Images[$prow['img_id']] = $prow;
+                } else {
+                    // Might as well remove DB records for images that don't exist.
+                    $this->deleteImage($prow['img_id']);
                 }
-                Cache::set($cache_key, $this->Images, 'products');
             }
+            Cache::set($cache_key, $this->Images, 'products');
         }
         return $this->Images;
     }
