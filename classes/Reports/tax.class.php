@@ -176,7 +176,23 @@ class tax extends \Shop\Report
             'direction' => 'DESC',
         );
 
-        $sql = "SELECT ord.* FROM {$_TABLES['shop.orders']} ord ";
+        //$sql = "SELECT ord.* FROM {$_TABLES['shop.orders']} ord ";
+        $sql = "SELECT ord.order_id, MAX(ord.uid) AS uid,
+            MAX(ord.net_taxable + ord.net_nontax) as total_sales,
+            MAX(ord.net_taxable), MAX(ord.net_nontax),
+            SUM(ord.tax) as total_tax,
+            SUM(ord.shipping) as total_shipping,
+            MAX(ord.order_date) AS order_date,
+            MAX(ord.shipto_name) AS shipto_name,
+            MAX(ord.shipto_company) AS shipto_company,
+            MAX(ord.shipto_state) AS shipto_state,
+            MAX(ord.shipto_country) AS shipto_country,
+            MAX(ord.shipto_zip) AS shipto_zip,
+            MAX(ord.tax) AS tax, MAX(ord.shipping) AS shipping,
+            MAX(ord.handling) AS handling, MAX(ord.order_total) AS order_total
+            FROM {$_TABLES['shop.orders']} ord
+            LEFT JOIN {$_TABLES['shop.orderitems']} itm
+                ON itm.order_id = ord.order_id";
         $orderstatus = $this->orderstatus;
         if (empty($orderstatus)) {
             $orderstatus = $this->allowed_statuses;
@@ -215,7 +231,7 @@ class tax extends \Shop\Report
                 'phone', 'buyer_email', 'ord.order_id',
             ),
             'default_filter' => "WHERE $where",
-            //'group_by' => 'ord.order_id',
+            'group_by' => 'ord.order_id',
         );
         //echo $sql . ' WHERE ' . $where;die;
         $text_arr = array(
@@ -234,21 +250,31 @@ class tax extends \Shop\Report
         $total_nontax = 0;
         $total_handling = 0;
 
-        $sql = "SELECT ord.net_taxable + ord.net_nontax as total_sales,
-            ord.net_taxable, ord.net_nontax,
-            SUM(ord.tax) as total_tax,
-            SUM(ord.shipping) as total_shipping,
-            ord.order_id, ord.order_date, ord.shipto_name, ord.shipto_company,
-            ord.shipto_state, ord.shipto_country, ord.shipto_zip,
-            ord.tax, ord.shipping, ord.handling, ord.order_total
+        /*$sql = "SELECT ord.order_id,
+            ord.net_taxable + ord.net_nontax as total_sales,
+            ord.net_taxable,
+            ord.tax,
+            ord.shipping,
+            ord.order_date,
+            ord.shipto_name,
+            ord.shipto_company,
+            ord.shipto_state,
+            ord.shipto_country,
+            ord.shipto_zip,
+            ord.tax, ord.shipping,
+            ord.handling, MAX(ord.order_total) AS order_total
             FROM {$_TABLES['shop.orders']} ord
             LEFT JOIN {$_TABLES['shop.orderitems']} itm
-                ON itm.order_id = ord.order_id";
+                ON itm.order_id = ord.order_id
+                GROUP BY ord.order_id";*/
 //            SUM(IF(itm.taxable > 0, itm.quantity * itm.net_price, 0)) as net_taxable,
 //            SUM(IF(itm.taxable = 0, itm.quantity * itm.net_price, 0)) as net_nontax,
         //$sql .= ' ' . $query_arr['default_filter'];
         //echo $sql;die;
 
+            $sql .= " {$query_arr['default_filter']}
+                GROUP BY ord.order_id
+                ORDER BY {$defsort_arr['field']} {$defsort_arr['direction']}";
         switch ($this->type) {
         case 'html':
             $this->setExtra('class', __CLASS__);
@@ -262,7 +288,6 @@ class tax extends \Shop\Report
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
             $filter = '<select name="period">' . $this->getPeriodSelection($this->period, false) . '</select>';
-            //$filter = '';
             $T->set_var(
                 'output',
                 \ADMIN_list(
@@ -275,9 +300,9 @@ class tax extends \Shop\Report
             break;
         case 'csv':
             // Assemble the SQL manually from the Admin list components
-            $sql .= " {$query_arr['default_filter']}
+            /*$sql .= " {$query_arr['default_filter']}
                 GROUP BY ord.order_id
-                ORDER BY {$defsort_arr['field']} {$defsort_arr['direction']}";
+                ORDER BY {$defsort_arr['field']} {$defsort_arr['direction']}";*/
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {
