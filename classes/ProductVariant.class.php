@@ -206,7 +206,7 @@ class ProductVariant
             INNER JOIN {$_TABLES['shop.product_variants']} pv
                 ON vxo.pv_id = pv.pv_id
             WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
-            GROUP BY pv.pv_id
+            GROUP BY vxo.pv_id
             HAVING COUNT(pv.item_id) = $count
             LIMIT 1";
         //echo $sql;
