@@ -42,14 +42,6 @@ $INSTALL_plugin['shop'] = array(
         'display' => $_SHOP_CONF['pi_display_name'],
     ),
     array(
-        'type' => 'group',
-        'group' => 'shop Admin',
-        'desc' => 'Users in this group can administer the Shop plugin',
-        'variable' => 'admin_group_id',
-        'admin' => true,
-        'addroot' => true,
-    ),
-    array(
         'type' => 'feature',
         'feature' => 'shop.admin',
         'desc' => 'Ability to administer the Shop plugin',
@@ -58,20 +50,19 @@ $INSTALL_plugin['shop'] = array(
     array(
         'type' => 'feature',
         'feature' => 'shop.user',
-        'desc' => 'Ability to use the Shop plugin',
+        'desc' => 'Ability to buy via the Shop plugin',
         'variable' => 'user_feature_id',
     ),
-
     array(
         'type' => 'feature',
         'feature' => 'shop.view',
-        'desc' => 'Ability to view Shop entries',
+        'desc' => 'Ability to view Shop products',
         'variable' => 'view_feature_id',
     ),
     array('type' => 'mapping',
-        'group' => 'admin_group_id',
+        'findgroup' => 'Root',
         'feature' => 'admin_feature_id',
-        'log' => 'Adding feature to the admin group',
+        'log' => 'Adding Admin feature to the Root group',
     ),
     array(
         'type' => 'mapping',
@@ -91,7 +82,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Catalog Search',
         'phpblockfn' => 'phpblock_shop_search',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -100,7 +90,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Random Product',
         'phpblockfn' => 'phpblock_shop_random',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -109,7 +98,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Product Categories',
         'phpblockfn' => 'phpblock_shop_categories',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -118,7 +106,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Featured Products',
         'phpblockfn' => 'phpblock_shop_featured',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -127,7 +114,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Popular',
         'phpblockfn' => 'phpblock_shop_popular',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -136,7 +122,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Newest Items',
         'phpblockfn' => 'phpblock_shop_recent',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'is_enabled' => 0,
     ),
     array(
@@ -145,7 +130,6 @@ $INSTALL_plugin['shop'] = array(
         'title' => 'Shopping Cart',
         'phpblockfn' => 'phpblock_shop_cart',
         'block_type' => 'phpblock',
-        'group_id' => 'admin_group_id',
         'blockorder' => 5,
         'onleft' => 1,
         'is_enabled' => 1,
@@ -201,19 +185,13 @@ function plugin_install_shop()
 
 
 /**
-*   Loads the configuration records for the Online Config Manager
-*
-*   @return boolean true = proceed with install, false = an error occured
-*/
+ * Loads the configuration records for the Online Config Manager.
+ *
+ * @return  boolean     true = proceed with install, false = an error occured
+ */
 function plugin_load_configuration_shop()
 {
-    global $_CONF, $_SHOP_CONF, $_TABLES;
-
-    // Get the group ID that was saved previously.
-    $group_id = (int)DB_getItem($_TABLES['groups'], 'grp_id',
-            "grp_name='{$_SHOP_CONF['pi_name']} Admin'");
-
-    return plugin_initconfig_shop($group_id);
+    return plugin_initconfig_shop();
 }
 
 
@@ -306,17 +284,6 @@ function plugin_postinstall_shop($upgrade=false)
                 }
             }
         }
-
-        // Set the shop Admin ID
-        $gid = (int)DB_getItem(
-            $_TABLES['groups'],
-            'grp_id',
-            "grp_name='{$_SHOP_CONF['pi_name']} Admin'"
-        );
-        if ($gid < 1) {
-            $gid = 1;        // default to Root if shop group not found
-        }
-        DB_query("INSERT INTO {$_TABLES['vars']} SET name='shop_gid', value=$gid");
     }
 }
 

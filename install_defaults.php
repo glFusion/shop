@@ -1213,10 +1213,9 @@ $shopConfigData = array(
  * No longer imports a pre-0.4.0 config.php. Only configuration items shown
  * above are imported.
  *
- * @param   integer $group_id   Admin Group ID (not used)
  * @return  boolean             True
  */
-function plugin_initconfig_shop($group_id = 0)
+function plugin_initconfig_shop()
 {
     global $shopConfigData;
 

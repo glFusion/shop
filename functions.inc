@@ -851,7 +851,7 @@ function plugin_autouninstall_shop()
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
-            'shop Admin',
+            'shop Admin',   // deprecated in v1.3.0
         ),
         // Give the full name of the feature, as in the db
         'features' => array(
@@ -871,7 +871,7 @@ function plugin_autouninstall_shop()
         ),
         // List all vars by name
         'vars'=> array(
-            'shop_gid',
+            'shop_gid',     // deprecated in v1.3.0
         ),
     );
     Shop\Cache::clear();  // clear everything from cache
