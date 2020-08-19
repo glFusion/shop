@@ -193,6 +193,11 @@ class Order
      * @var string */
     protected $buyer_email = '';
 
+    /** Shipper record ID.
+     * Default is negative to indicate "undefined".
+     * @var integer */
+    protected $shipper_id = -1;
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -225,7 +230,6 @@ class Order
             $this->shipping = 0;
             $this->handling = 0;
             $this->by_gc = 0;
-            $this->shipper_id = NULL;
             $this->Billto = new Address;
             $this->Shipto = new Address;
         }
@@ -804,7 +808,11 @@ class Order
     {
         global $_TABLES, $_SHOP_CONF;
 
-        if (!SHOP_isMinVersion()) return '';
+        // Do not save an order if the plugin version is not current.
+        // May fail due to schema changes.
+        if (!SHOP_isMinVersion()) {
+            return '';
+        }
 
         // Save all the order items
         /*$this->net_nontax = $this->net_taxable = $this->gross_items = 0;*/
@@ -850,10 +858,10 @@ class Order
             "info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
             "tax_rate = '{$this->tax_rate}'",
             "currency = '{$this->currency}'",
-            "shipper_id = '{$this->shipper_id}'",
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
             "discount_pct = '{$this->discount_pct}'",
             "order_total = {$order_total}",
+            "shipper_id = '{$this->shipper_id}'",
         );
 
         $billto = $this->Billto->toArray();
@@ -1850,7 +1858,7 @@ class Order
             $shipper_id = $this->shipper_id;
             $shippers = Shipper::getShippersForOrder($this);
             $have_shipper = false;
-            if ($shipper_id !== NULL) {
+            if ($shipper_id > -1) {
                 // Array is 0-indexed so search for the shipper ID, if any.
                 foreach ($shippers as $id=>$shipper) {
                     if ($shipper->getID() == $shipper_id) {
@@ -2052,6 +2060,9 @@ class Order
     {
         if ($type != 'billto') {
             $type = 'shipto';
+        }
+        if (!isset($A[$type . '_id'])) {
+            $A[$type . '_id'] = 0;
         }
         $fields = array(
             $type . '_id' => $A[$type . '_id'],
@@ -2375,7 +2386,7 @@ class Order
         // Get the best or previously-selected shipper for the default choice
         $best = NULL;
         $shipper_id = $this->shipper_id;
-        if ($shipper_id !== NULL) {
+        if ($shipper_id > -1) {
             // Array is 0-indexed so search for the shipper ID, if any.
             foreach ($shippers as $id=>$shipper) {
                 if ($shipper->getID() == $shipper_id) {
