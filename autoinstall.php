@@ -24,7 +24,7 @@ if (!is_file(__DIR__  . '/language/' . $language . '.php')) {
     $language = 'english';
 }
 require_once __DIR__ . '/language/' . $language . '.php';
-global $LANG_SHOP;
+global $LANG_SHOP, $_SQL;
 
 /** Plugin installation options */
 $INSTALL_plugin['shop'] = array(
