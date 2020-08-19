@@ -233,7 +233,9 @@ function SHOP_do_upgrade($dvlp = false)
             // Upgrades to use the new product variants.
             Shop\MigratePP::createVariants();
         }
-        mkdir($_SHOP_CONF['tmpdir'] . '/images/brands', true);
+        if (!is_dir($_SHOP_CONF['tmpdir'] . '/images/brands')) {
+            mkdir($_SHOP_CONF['tmpdir'] . '/images/brands', true);
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
@@ -393,7 +395,10 @@ function SHOP_do_upgrade_sql($version, $ignore_error = false)
     global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
 
     // If no sql statements passed in, return success
-    if (!is_array($SHOP_UPGRADE[$version])) {
+    if (
+        !isset($SHOP_UPGRADE[$version]) ||
+        !is_array($SHOP_UPGRADE[$version])
+    ) {
         return true;
     }
 
@@ -476,6 +481,30 @@ function SHOP_update_config()
     _update_config('shop', $shopConfigData);
 }
 
+/**
+ * Remove a file, or recursively remove a directory.
+ *
+ * @param   string  $dir    Directory name
+ */
+function SHOP_rmdir($dir)
+{
+    if (is_dir($dir)) {
+        $objects = scandir($dir);
+        foreach ($objects as $object) {
+            if ($object != "." && $object != "..") {
+                if (is_dir($dir . '/' . $object)) {
+                    SHOP_rmdir($dir . '/' . $object);
+                } else {
+                    @unlink($dir . '/' . $object);
+                }
+            }
+        }
+        @rmdir($dir);
+    } elseif (is_file($dir)) {
+        @unlink($dir);
+    }
+}
+
 
 /**
  * Remove deprecated files
@@ -496,6 +525,8 @@ function SHOP_remove_old_files()
             'classes/AttributeGroup.class.php',
             'classes/UserInfo.class.php',
             'templates/attribute_form.thtml',
+            // 1.3.0
+            'vendor/square/connect',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
@@ -511,10 +542,8 @@ function SHOP_remove_old_files()
 
     foreach ($paths as $path=>$files) {
         foreach ($files as $file) {
-            if (is_file("$path/$file")) {
-                SHOP_log("removing $path/$file");
-                @unlink("$path/$file");
-            }
+            SHOP_log("removing $path/$file");
+            SHOP_rmdir("$path/$file");
         }
     }
 }
