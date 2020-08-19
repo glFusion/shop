@@ -1,55 +1,165 @@
 [
     {
-        "name": "square/connect",
-        "version": "2.20191120.0",
-        "version_normalized": "2.20191120.0.0",
+        "name": "apimatic/jsonmapper",
+        "version": "v2.0.1",
+        "version_normalized": "2.0.1.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/square/connect-php-sdk.git",
-            "reference": "12053024c2a6ce3514594dfbf2ad0d630c304d78"
+            "url": "https://github.com/apimatic/jsonmapper.git",
+            "reference": "e71a641235383e20d89173f6509a61b7e3554909"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/square/connect-php-sdk/zipball/12053024c2a6ce3514594dfbf2ad0d630c304d78",
-            "reference": "12053024c2a6ce3514594dfbf2ad0d630c304d78",
+            "url": "https://api.github.com/repos/apimatic/jsonmapper/zipball/e71a641235383e20d89173f6509a61b7e3554909",
+            "reference": "e71a641235383e20d89173f6509a61b7e3554909",
             "shasum": ""
         },
-        "require": {
-            "ext-curl": "*",
-            "ext-json": "*",
-            "ext-mbstring": "*",
-            "php": ">=5.3.3"
-        },
         "require-dev": {
-            "phpunit/phpunit": "~4.0",
-            "satooshi/php-coveralls": "~0.6.1",
-            "squizlabs/php_codesniffer": "~2.0"
+            "phpunit/phpunit": "^5 || ^6 || ^7",
+            "squizlabs/php_codesniffer": "^3"
         },
-        "time": "2019-11-21T00:19:47+00:00",
+        "time": "2020-07-18T12:12:40+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
-                "SquareConnect\\": "lib/"
+                "apimatic\\jsonmapper\\": "src/"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
         "license": [
-            "Apache-2.0"
+            "OSL-3.0"
         ],
         "authors": [
             {
-                "name": "Square, Inc.",
+                "name": "Christian Weiske",
+                "email": "christian.weiske@netresearch.de",
+                "homepage": "http://www.netresearch.de/",
+                "role": "Developer"
+            },
+            {
+                "name": "Mehdi Jaffery",
+                "email": "mehdi.jaffery@apimatic.io",
+                "homepage": "http://apimatic.io/",
+                "role": "Developer"
+            }
+        ],
+        "description": "Map nested JSON structures onto PHP classes"
+    },
+    {
+        "name": "apimatic/unirest-php",
+        "version": "2.0.0",
+        "version_normalized": "2.0.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/apimatic/unirest-php.git",
+            "reference": "b4e399a8970c3a5c611f734282f306381f9d1eee"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/apimatic/unirest-php/zipball/b4e399a8970c3a5c611f734282f306381f9d1eee",
+            "reference": "b4e399a8970c3a5c611f734282f306381f9d1eee",
+            "shasum": ""
+        },
+        "require": {
+            "ext-curl": "*",
+            "php": ">=5.6.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^5 || ^6 || ^7"
+        },
+        "suggest": {
+            "ext-json": "Allows using JSON Bodies for sending and parsing requests"
+        },
+        "time": "2020-04-07T17:16:29+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-0": {
+                "Unirest\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Mashape",
+                "email": "opensource@mashape.com",
+                "homepage": "https://www.mashape.com",
+                "role": "Developer"
+            },
+            {
+                "name": "APIMATIC",
+                "email": "opensource@apimatic.io",
+                "homepage": "https://www.apimatic.io",
+                "role": "Developer"
+            }
+        ],
+        "description": "Unirest PHP",
+        "homepage": "https://github.com/apimatic/unirest-php",
+        "keywords": [
+            "client",
+            "curl",
+            "http",
+            "https",
+            "rest"
+        ]
+    },
+    {
+        "name": "square/square",
+        "version": "6.1.0.20200722",
+        "version_normalized": "6.1.0.20200722",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/square/square-php-sdk.git",
+            "reference": "ecd7b995b1ceb8dc87abae6cbc1ad2d607614cfe"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/square/square-php-sdk/zipball/ecd7b995b1ceb8dc87abae6cbc1ad2d607614cfe",
+            "reference": "ecd7b995b1ceb8dc87abae6cbc1ad2d607614cfe",
+            "shasum": ""
+        },
+        "require": {
+            "apimatic/jsonmapper": "^2.0.1",
+            "apimatic/unirest-php": "^2.0",
+            "ext-curl": "*",
+            "ext-json": "*",
+            "ext-mbstring": "*",
+            "php": ">=7.1"
+        },
+        "require-dev": {
+            "phan/phan": "^2.5",
+            "phpunit/phpunit": "^7.5 || ^8.5",
+            "squizlabs/php_codesniffer": "^3.5"
+        },
+        "time": "2020-07-22T16:49:15+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Square\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Square Developer Platform",
+                "email": "developers@squareup.com",
                 "homepage": "https://squareup.com/developers"
             }
         ],
-        "description": "PHP client library for the Square Connect v2 API",
-        "homepage": "https://github.com/square/connect-php-sdk",
+        "description": "Use Square APIs to manage and run business including payment, customer, product, inventory, and employee management.",
+        "homepage": "https://squareup.com/developers",
         "keywords": [
             "api",
-            "php",
             "sdk",
-            "swagger"
+            "square"
         ]
     },
     {
