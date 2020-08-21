@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.1
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -851,10 +851,12 @@ class Report
             break;
 
         case 'customer':
-            if (!empty($A['billto_company'])) {
+            if (isset($A['billto_company']) && !empty($A['billto_company'])) {
                 $fieldvalue = $A['billto_company'];
-            } else {
+            } elseif (isset($A['billto_name']) && !empty($A['billto_name'])) {
                 $fieldvalue = $A['billto_name'];
+            } else {
+                $fieldvalue = SHOP_getVar($A, 'shipto_name');
             }
             $retval = str_replace('"', '&quot;', $fieldvalue);
             if (isset($extra['uid_link'])) {
