@@ -153,6 +153,19 @@ class Category
 
 
     /**
+     * Set the display name.
+     *
+     * @param   string  $disp_name  Displya name
+     * @return  object  $this
+     */
+    public function setDisplayName($disp_name)
+    {
+        $this->disp_name = $disp_name;
+        return $this;
+    }
+
+
+    /**
      * Read a specific record and populate the local values.
      * Caches the object for later use.
      *
@@ -725,13 +738,13 @@ class Category
         $p = $prefix == '&nbsp;' ? 'nbsp_' : $prefix . '_';
         $cache_key = self::_makeCacheKey('cat_tree_' . $p . (string)$root_id);
         $All = Cache::get($cache_key);
-        if (!$All) {        // not found in cache, build the tree
+        if ($All === NULL) {    // not found in cache, build the tree
             if ($root_id > 0) {
                 $Root = self::getInstance($root_id);
                 $between = " AND parent.lft BETWEEN {$Root->lft} AND {$Root->rgt}";
             }
             $prefix = DB_escapeString($prefix);
-            $sql = "SELECT node.cat_id, node.cat_name,
+            $sql = "SELECT node.cat_id,
                     CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
                 FROM {$_TABLES['shop.categories']} AS node,
                     {$_TABLES['shop.categories']} AS parent
@@ -742,6 +755,7 @@ class Category
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $All[$A['cat_id']] = new self($A['cat_id']);
+                $All[$A['cat_id']]->setDisplayName($A['disp_name']);
             }
             Cache::set($cache_key, $All, 'categories');
         }
