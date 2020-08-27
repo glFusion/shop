@@ -3,7 +3,7 @@
  * Webhook handler for Paypal.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 20192020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0

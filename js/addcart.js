@@ -1,6 +1,10 @@
 /**
-*   Add an item to the shopping cart.
-*/
+ * Shop plugin javascript.
+ */
+
+/*
+ * Add an item to the shopping cart.
+ */
 var shopAddToCart = function(frm_id, nonce)
 {
     if (typeof(nonce) == "undefined") {
@@ -55,8 +59,8 @@ var shopAddToCart = function(frm_id, nonce)
 
 
 /**
-*   Set the visibility of the cart block so it only appears if there are items
-*/
+ * Set the visibility of the cart block so it only appears if there are items
+ */
 function blk_setvis_shop_cart(newvis)
 {
     blk = document.getElementById("shop_cart");
@@ -70,8 +74,8 @@ function blk_setvis_shop_cart(newvis)
 }
 
 /**
-*   Finalize the cart.
-*/
+ * Finalize the cart.
+ */
 function finalizeCart(cart_id, uid, redirects=false)
 {
     // First check that there is a payer email filled out.
@@ -121,8 +125,8 @@ function finalizeCart(cart_id, uid, redirects=false)
 }
 
 /**
-*   Add an item to the shopping cart.
-*/
+ * Apply a gift card to the cart. Get the amount from the form.
+ */
 var shopApplyGC = function(frm_id)
 {
     data = $("#"+frm_id).serialize();
