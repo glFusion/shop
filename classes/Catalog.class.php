@@ -533,87 +533,91 @@ class Catalog
         // Get products from plugins.
         // For now, this hack shows plugins only on the first page, since
         // they're not included in the page calculation.
-        if (
-            $_SHOP_CONF['show_plugins']
-        ) {
-            // Get the currency class for formatting prices
-            $Cur = Currency::getInstance();
-            $Cart = Cart::getInstance();
+        if (!$_SHOP_CONF['show_plugins']) {
+            return;
+        }
 
-            if (!empty($pi_name)) {
-                $plugins = array($pi_name);
-            } else {
-                $plugins = $_PLUGINS;
+        // Get the currency class for formatting prices
+        $Cur = Currency::getInstance();
+        $Cart = Cart::getInstance();
+
+        if (!empty($pi_name)) {
+            $plugins = array($pi_name);
+        } else {
+            $plugins = $_PLUGINS;
+        }
+        foreach ($plugins as $pi_name) {
+            $status = LGLIB_invokeService(
+                $pi_name,
+                'getproducts',
+                array(),
+                $plugin_data,
+                $svc_msg
+            );
+            if ($status != PLG_RET_OK || empty($plugin_data)) {
+                continue;
             }
-            foreach ($plugins as $pi_name) {
-                $status = LGLIB_invokeService(
-                    $pi_name,
-                    'getproducts',
-                    array(),
-                    $plugin_data,
-                    $svc_msg
-                );
-                if ($status != PLG_RET_OK || empty($plugin_data)) {
+
+            foreach ($plugin_data as $A) {
+                // Reset button values
+                $buttons = '';
+                if (!isset($A['buttons'])) {
+                    $A['buttons'] = array();
+                }
+                if (isset($A['add_cart']) && !$A['add_cart']) {
+                    $can_add_cart = false;
+                } else {
+                    $can_add_cart = true;
+                }
+
+                $P = \Shop\Product::getByID($A['id']);
+                if ($P->isNew()) {
+                    // An error in getting the plugin product
                     continue;
                 }
-                foreach ($plugin_data as $A) {
-                    // Reset button values
-                    $buttons = '';
-                    if (!isset($A['buttons'])) {
-                        $A['buttons'] = array();
-                    }
-                    if (isset($A['add_cart']) && !$A['add_cart']) {
-                        $can_add_cart = false;
-                    } else {
-                        $can_add_cart = true;
-                    }
+                $price = $P->getPrice();
+                $T->set_var(array(
+                    'id'        => $P->getID(),     // required
+                    'item_id'   => $P->getItemID(), // required
+                    'name'      => $P->getDscp(),
+                    'short_description' => $P->getDscp(),
+                    'encrypted' => '',
+                    'item_url'  => $P->getLink(0, $this->query_str),
+                    'track_onhand' => '',   // not available for plugins
+                    'small_pic' => $P->getImage()['url'],
+                    'on_sale'   => '',
+                    'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
+                    'can_add_cart'  => $can_add_cart,
+                    'rating_bar' => $P->ratingBar(true),
+                ) );
+                if ($price > 0) {
+                    $T->set_var('price', $Cur->Format($price));
+                } else {
+                    $T->clear_var('price');
+                }
 
-                    $P = \Shop\Product::getByID($A['id']);
-                    $price = $P->getPrice();
-                    $T->set_var(array(
-                        'id'        => $P->getID(),     // required
-                        'item_id'   => $P->getItemID(), // required
-                        'name'      => $P->getDscp(),
-                        'short_description' => $P->getDscp(),
-                        'encrypted' => '',
-                        'item_url'  => $P->getLink(0, $this->query_str),
-                        'track_onhand' => '',   // not available for plugins
-                        'small_pic' => $P->getImage()['url'],
-                        'on_sale'   => '',
-                        'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
-                        'can_add_cart'  => $can_add_cart,
-                        'rating_bar' => $P->ratingBar(true),
-                    ) );
-                    if ($price > 0) {
-                        $T->set_var('price', $Cur->Format($price));
-                    } else {
-                        $T->clear_var('price');
+                if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
+                    $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
+                /*} elseif (
+                    (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
+                    $A['price'] == 0
+                ) {
+                    // Free items or items purchased and not expired, allow download.
+                    $buttons .= $T->set_var('', 'download') . '&nbsp;';*/
+                } elseif (is_array($A['buttons'])) {
+                    // Buttons for everyone else
+                    $T->set_block('wrapper', 'BtnBlock', 'Btn');
+                    foreach ($A['buttons'] as $type=>$html) {
+                        $T->set_var('button', $html);
+                        $T->parse('Btn', 'BtnBlock', true);
                     }
+                }
+                $T->clear_var('Btn');
+                //$prodrows++;
+                $T->parse('PI', 'ProductItems', true);
+            }   // foreach plugin_data
 
-                    if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
-                        $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
-                    /*} elseif (
-                        (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
-                        $A['price'] == 0
-                    ) {
-                        // Free items or items purchased and not expired, allow download.
-                        $buttons .= $T->set_var('', 'download') . '&nbsp;';*/
-                    } elseif (is_array($A['buttons'])) {
-                        // Buttons for everyone else
-                        $T->set_block('wrapper', 'BtnBlock', 'Btn');
-                        foreach ($A['buttons'] as $type=>$html) {
-                            $T->set_var('button', $html);
-                            $T->parse('Btn', 'BtnBlock', true);
-                        }
-                    }
-                    $T->clear_var('Btn');
-                    //$prodrows++;
-                    $T->parse('PI', 'ProductItems', true);
-                }   // foreach plugin_data
-
-            }   // foreach $plugins
-
-        }   // if showing plugins
+        }   // foreach $plugins
     }
 
 
