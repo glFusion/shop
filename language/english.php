@@ -864,6 +864,7 @@ $LANG_confignames['shop'] = array(
     'ipgeo_api_key' => 'IPGeo API Key',
     'ipstack_api_key' => 'IPStack API Key',
     'ipgeo_provider' => 'Geolocation Provider',
+    'inv_start_num' => 'Invoice starting number/format',
 );
 
 /** Language strings for the subgroup names in the config section */
