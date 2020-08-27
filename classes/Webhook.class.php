@@ -22,13 +22,17 @@ use Shop\Logger\IPN as logIPN;
  */
 class Webhook
 {
+    /** Event type for regular payment notifications.
+     * @const string */
+    const EV_PAYMENT = 'payment_created';
+
     /** Standard event type for invoice payment.
      * @const string */
-    const EV_PAYMENT = 'invoice_paid';
+    const EV_INV_PAYMENT = 'invoice_paid';
 
     /** Standard event type for invoice creation.
      * @const string */
-    const EV_CREATED = 'invoice_created';
+    const EV_INV_CREATED = 'invoice_created';
 
     /** Standard event type for unidentified events.
      * @const string */
@@ -61,6 +65,10 @@ class Webhook
     /** Status of webhook verification via callback.
      * @var boolean */
     protected $whVerified = 0;
+
+    /** Headers sent with the webhook.
+     * @var array */
+    protected $whHeaders = array();
 
 
     /**
@@ -312,14 +320,16 @@ class Webhook
      */
     public function setHeaders($arr = NULL)
     {
-        $headers = array();
-        $arr = $arr === NULL ? $_SERVER : $arr;
+        $this->whHeaders = array();
+        if ($arr === NULL) {
+            $arr = $_SERVER;
+        }
         foreach($arr as $key => $value) {
             if (substr($key, 0, 5) <> 'HTTP_') {
                 continue;
             }
             $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
-            $this->headers[$header] = $value;
+            $this->whHeaders[$header] = $value;
         }
         return $this;
     }
@@ -334,9 +344,9 @@ class Webhook
     public function getHeader($header=NULL)
     {
         if ($header === NULL) {
-            return $this->headers;
-        } elseif (isset($this->headers[$header])) {
-            return $this->headers[$header];
+            return $this->whHeaders;
+        } elseif (isset($this->whHeaders[$header])) {
+            return $this->whHeaders[$header];
         } else {
             return '';
         }

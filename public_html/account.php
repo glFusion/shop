@@ -15,6 +15,9 @@
 /** Require core glFusion code */
 require_once '../lib-common.php';
 
+use Shop\Models\OrderState;
+
+
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
     !isset($_SHOP_CONF) ||
@@ -200,13 +203,12 @@ default:
     $R->setAdmin(false);
     $R->setParams($_POST);
     $R->setAllowedStatuses(array(
-        'invoiced',
-        'paid',
-        'processing',
-        'shipped',
-        'closed',
-        'refunded',
-        'pending',
+        OrderState::INVOICED,
+        OrderState::PENDING,
+        OrderState::PROCESSING,
+        OrderState::SHIPPED,
+        OrderState::CLOSED,
+        OrderState::REFUNDED,
     ));
     $content .= $R->Render();
     $menu_opt = $LANG_SHOP['purchase_history'];

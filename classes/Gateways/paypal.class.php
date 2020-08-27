@@ -17,7 +17,7 @@ use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
-
+use Shop\Models\OrderState;
 
 /**
  * Class for Paypal payment gateway
@@ -996,7 +996,7 @@ class paypal extends \Shop\Gateway
      * @param   string  $order_num  Order Number
      * @return  boolean     True on success, False on error
      */
-    public function createInvoice($order_num)
+    public function createInvoice($order_num, $terms_gw)
     {
         global $_CONF, $LANG_SHOP;
 
@@ -1011,7 +1011,7 @@ class paypal extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
-        $Order->updateStatus('invoiced');
+        $Order->updateStatus(OrderState::INVOICED);
 
         $A = array(
             'detail' => array(
@@ -1019,7 +1019,7 @@ class paypal extends \Shop\Gateway
                 'reference' => $order_num,
                 'currency_code' => $Currency->getCode(),
                 'payment_term' => array(
-                    'term_type' => $this->getInvoiceTerms(),
+                    'term_type' => $this->getInvoiceTerms($terms_gw->getConfig('net_days')),
                 ),
             ),
             'invoicer' => array(
@@ -1151,7 +1151,7 @@ class paypal extends \Shop\Gateway
 
         // If the invoice was created successfully, send to the buyer
         if ($http_code == 201) {
-            $Order->updateStatus('invoiced');
+            $Order->updateStatus(OrderState::INVOICED);
             $json = json_decode($inv, true);
             if (isset($json['href'])) {
                 $ch = curl_init();

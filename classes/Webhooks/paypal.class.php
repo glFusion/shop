@@ -14,7 +14,7 @@
 namespace Shop\Webhooks;
 use Shop\Payment;
 use Shop\Order;
-
+use Shop\Models\OrderState;
 
 /**
  * Paypal webhook class.
@@ -62,7 +62,7 @@ class paypal extends \Shop\Webhook
             }
         }
         switch ($this->getEvent()) {
-        case self::EV_PAYMENT:
+        case self::EV_INV_PAYMENT:
             if ($invoice) {
                 $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
                 if ($payments) {
@@ -82,11 +82,11 @@ class paypal extends \Shop\Webhook
             }
             break;
 
-        case self::EV_CREATED:
+        case self::EV_INV_CREATED:
             SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
             $Order = Order::getInstance($this->getOrderID());
             if (!$Order->isNew()) {
-                $Order->updateStatus('invoiced');
+                $Order->updateStatus(OrderState::INVOICED);
             }
             break;
         }
@@ -103,10 +103,10 @@ class paypal extends \Shop\Webhook
     {
         switch ($this->whEvent) {
         case 'INVOICING.INVOICE.PAID':
-            return self::EV_PAYMENT;
+            return self::EV_INV_PAYMENT;
             break;
         case 'INVOICING.INVOICE.CREATED':
-            return self::EV_CREATED;
+            return self::EV_INV_CREATED;
             break;
         default:
             return self::EV_UNDEFINED;

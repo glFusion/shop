@@ -13,8 +13,9 @@
  * @filesource
  */
 namespace Shop\ipn;
+use Shop\Cart;
+use Shop\Models\OrderState;
 
-use \Shop\Cart;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -82,13 +83,13 @@ class paypal extends \Shop\IPN
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->setStatus(self::STATUS_PENDING);
+            $this->setStatus(OrderState::PENDING);
             break;
         case 'Completed':
-            $this->setStatus(self::STATUS_PAID);
+            $this->setStatus(OrderState::PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(self::STATUS_REFUNDED);
+            $this->setSTatus(OrderState::REFUNDED);
             break;
         }
 

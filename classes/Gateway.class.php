@@ -13,6 +13,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\OrderState;
 
 
 /**
@@ -625,9 +626,9 @@ class Gateway
     public function getPaidStatus($Order)
     {
         if ($Order->hasPhysical()) {
-            $retval = Order::STATUS_PROCESSING;
+            $retval = OrderState::PROCESSING;
         } else {
-            $retval = Order::STATUS_CLOSED;
+            $retval = OrderState::CLOSED;
         }
         return $retval;
     }

@@ -24,6 +24,8 @@
 namespace Shop;
 use Shop\Logger\IPN as logIPN;
 use Shop\Products\Coupon;
+use Shop\Models\OrderState;
+
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -40,11 +42,6 @@ if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
  */
 class IPN
 {
-    const STATUS_PAID = 'paid';
-    const STATUS_PENDING = 'pending';
-    const STATUS_REFUNDED = 'refunded';
-    const STATUS_CLOSED = 'closed';
-
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
     const FAILURE_COMPLETED = 2;
@@ -570,10 +567,10 @@ class IPN
     public function setStatus($status)
     {
         switch ($status) {
-        case self::STATUS_PENDING:
-        case self::STATUS_PAID:
-        case self::STATUS_REFUNDED:
-        case self::STATUS_CLOSED:
+        case OrderState::PENDING:
+        case OrderState::PAID:
+        case OrderState::REFUNDED:
+        case OrderState::CLOSED:
             $this->status = $status;
             break;
         default:
@@ -833,7 +830,7 @@ class IPN
             // it closed since there's no further action needed.
             // Notification should have been done above, set notify to false to
             // avoid duplicates.
-            $this->setStatus(self::STATUS_CLOSED);
+            $this->setStatus(OrderState::CLOSED);
         }
         return true;
     }  // function handlePurchase

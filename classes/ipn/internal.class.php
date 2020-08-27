@@ -14,10 +14,10 @@
  * @filesource
  */
 namespace Shop\ipn;
-
-use \Shop\Cart;
-use \Shop\Currency;
-use \Shop\Coupon;
+use Shop\Cart;
+use Shop\Currency;
+use Shop\Coupon;
+use Shop\Models\OrderState;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -79,7 +79,7 @@ class internal extends \Shop\IPN
         $this->gw_desc = $this->GW->getDscp();
 
         $this->setUid($this->custom['uid'])
-            ->setStatus(self::STATUS_PAID);
+            ->setStatus(OrderState::PAID);
     }
 
 
@@ -126,7 +126,7 @@ class internal extends \Shop\IPN
             $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
             break;
         }
-        $this->setStatus(self::STATUS_PAID);
+        $this->setStatus(OrderState::PAID);
         return true;
     }
 

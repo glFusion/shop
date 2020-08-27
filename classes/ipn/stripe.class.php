@@ -12,8 +12,8 @@
  * @filesource
  */
 namespace Shop\ipn;
-
-use \Shop\Cart;
+use Shop\Cart;
+use Shop\Models\OrderState;
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -74,7 +74,7 @@ class stripe extends \Shop\IPN
             ->setEmail($this->Order->getBuyerEmail())
             ->setPayerName($_USER['fullname'])
             ->setGwName($this->GW->getName())
-            ->setStatus(self::STATUS_PENDING);
+            ->setStatus(OrderState::PENDING);
 
         $this->shipto = array(
             'name'      => SHOP_getVar($shipto, 'name'),
@@ -130,7 +130,7 @@ class stripe extends \Shop\IPN
 
         // Verification succeeded, get payment info.
         $this
-            ->setStatus(self::STATUS_PAID)
+            ->setStatus(OrderState::PAID)
             ->setCurrency($trans->currency)
             ->setPmtGross($this->getCurrency()->fromInt($trans->amount_received));
 

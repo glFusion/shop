@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Models\OrderState;
 
 
 /**
@@ -28,8 +29,12 @@ class orderlist extends \Shop\Report
      * Excludes cart.
      * @var array */
     private $default_statuses = array(
-        'invoiced', 'pending', 'paid', 'processing', 'shipped',
-        'closed', 'complete', 'refunded',
+        OrderState::INVOICED,
+        OrderState::PENDING,
+        OrderState::PROCESSING,
+        OrderState::SHIPPED,
+        OrderState::CLOSED,
+        OrderState::REFUNDED,
     );
 
     /**

@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\OrderState;
+
 
 /**
  * Order class.
@@ -19,10 +21,6 @@ namespace Shop;
  */
 class Order
 {
-    const STATUS_PROCESSING = 'processing';
-    const STATUS_SHIPPED = 'shipped';
-    const STATUS_CLOSED = 'closed';
-
     /** Array of order objects used by getInstance().
      * @var array */
     private static $orders = array();
@@ -1333,18 +1331,19 @@ class Order
 
         if (
             (
-                $this->getStatus() == 'cart' ||
-                $this->getStatus() == 'pending' ||
-                $this->getStatus() == 'invoiced'
+                $this->getStatus() == OrderState::CART ||
+                $this->getStatus() == OrderState::PENDING ||
+                $this->getStatus() == OrderState::INVOICED
             ) &&
             $this->isPaid()
         ) {
             // Get the status to set. For non-physical items, the order is
             // fullfilled so close it.
             if ($this->hasPhysical()) {
-                $this->updateStatus(self::STATUS_PROCESSING);
+                $this->updateStatus(OrderState::PROCESSING);
             } else {
-                $this->updateStatus(self::STATUS_CLOSED);
+                // Update to shipped first, mainly to notify the buyer
+                $this->updateStatus(OrderState::CLOSED);
             }
         }
         return $this;

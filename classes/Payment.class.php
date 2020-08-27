@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\OrderState;
 
 
 /**
@@ -402,7 +403,7 @@ class Payment
                     )
                 );
             $Order->Notify(
-                '',
+                OrderState::PAID,
                 $LANG_SHOP['notify_pmt_received'],
                 true,
                 false

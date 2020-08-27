@@ -11,8 +11,9 @@
  *              GNU Public License v2 or later
  * @filesource
  */
-
 namespace Shop;
+use Shop\Models\OrderState;
+
 
 /**
  * Class for order shipments.
@@ -304,9 +305,9 @@ class Shipment
                 }
             }
             if ($this->Order->isShippedComplete()) {
-                $this->Order->updateStatus(Order::STATUS_SHIPPED);
+                $this->Order->updateStatus(OrderState::SHIPPED);
             } else {
-                $this->Order->updateStatus(Order::STATUS_PROCESSING);
+                $this->Order->updateStatus(OrderState::PROCESSING);
             }
             return true;
         } else {

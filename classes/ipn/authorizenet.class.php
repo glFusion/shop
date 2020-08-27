@@ -12,8 +12,8 @@
  * @filesource
  */
 namespace Shop\ipn;
-
-use \Shop\Cart;
+use Shop\Cart;
+use Shop\Models\OrderState;
 
 /**
  * Authorize.Net IPN Processor.
@@ -43,10 +43,10 @@ class authorizenet extends \Shop\IPN
 
         switch(SHOP_getVar($A, 'eventType')) {
         case 'net.authorize.payment.authcapture.created':
-            $this->setStatus(self::STATUS_PAID);
+            $this->setStatus(OrderState::PAID);
             break;
         default:
-            $this->setStatus(self::STATUS_PENDING);
+            $this->setStatus(OrderState::PENDING);
             break;
         }
         $this->ipn_data['status'] = $this->getStatus();
@@ -66,7 +66,7 @@ class authorizenet extends \Shop\IPN
     {
         if (
             !$this->Verify() ||
-            self::STATUS_PAID != $this->getStatus() ||
+            OrderState::PAID != $this->getStatus() ||
             !$this->isUniqueTxnId()
         ) {
             SHOP_log(

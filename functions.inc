@@ -48,10 +48,6 @@ define('SHOP_COMMENTS_ENABLED',   0);
 define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
 
-// Order status codes
-//define('SHOP_STATUS_OPEN', 0);
-//define('SHOP_STATUS_PAID', 1);
-
 // Log levels to emulate glFusion 2.0+ logging
 define('SHOP_LOG_DEBUG',    100);
 define('SHOP_LOG_INFO',     200);
