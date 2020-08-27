@@ -704,7 +704,7 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
     "ALTER TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
-$SHOP_UPGRADE['1.3.0'] = array(
+$SHOP_UPGRADE['1.2.2'] = array(
     "CREATE TABLE `{$_TABLES['shop.payments']}` (
       `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pmt_order_id` varchar(40) DEFAULT NULL,
