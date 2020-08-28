@@ -46,4 +46,9 @@ class OrderState
     /** Order is complete and paid. No further action needed.
      */
     public const CLOSED = 'closed';
+
+    /** Payment received.
+     * Not really an order status, but may be used for logging.
+     */
+    public const PAID = 'paid';
 }
