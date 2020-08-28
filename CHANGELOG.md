@@ -8,12 +8,14 @@ Release TBD
   * Add interface for customers to edit addresses outside of orders.
   * Add fast-checkout where the order allows it.
   * Enable sales tax charges on shipping and handling.
-  * Add invoicing via Paypal invoice API.
+  * Add invoicing via Paypal and Square invoice APIs.
   * Link to customer in order report now filters report.
   * Enable/disable donation buttons in Paypal gateway config.
   * Allow user-entered prices for some plugin items, e.g. Donations.
   * Shipping methods may not require a shipping address, e.g. will-call.
   * Shipping methods, e.g. will-call, may set tax based on origin vs. destination.
+  * Use the shop.admin privilege for access control instead of a separate admin group.
+  * SQL fixes to work with MySQL's strict mode.
 
 ## v1.2.1
 Release 2020-03-02

@@ -192,7 +192,7 @@ class terms extends \Shop\Gateway
         if (empty($gw_name)) {
             return false;           // unconfigured
         }
-        return Gateway::getInstance($gw_name)->createInvoice($order_id);
+        return Gateway::getInstance($gw_name)->createInvoice($order_id, $this);
     }
 
 

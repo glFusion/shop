@@ -13,6 +13,17 @@
  */
 namespace Shop\Gateways;
 use Shop\Currency;
+use Shop\Order;
+use Shop\Cart;
+use Shop\Models\OrderState;
+use Square\SquareClient;
+use Square\Environment;
+use Square\Models\Money;
+use Square\Models\OrderLineItem;
+use Square\Models\CreateOrderRequest;
+use Square\Models\Order as sqOrder;
+use LGLib\NameParser;
+
 
 /**
  * Class for Square payment gateway.
@@ -35,6 +46,14 @@ class square extends \Shop\Gateway
     /** Square API URL. Set to production or sandbox in constructor.
      * @var string */
     private $api_url;
+
+    /** Internal API client to facilitate reuse.
+     * @var object */
+    private $_api_client = NULL;
+
+    /** API errors.
+     * @var object */
+    private $_errors = NULL;
 
 
     /**
@@ -65,40 +84,44 @@ class square extends \Shop\Gateway
                 'loc_id'   => 'password',
                 'appid'    => 'password',
                 'token'    => 'password',
+                'webhook_sig_key' => 'password',
             ),
             'test' => array(
                 'loc_id'     => 'password',
                 'appid'      => 'password',
                 'token'      => 'password',
+                'webhook_sig_key' => 'password',
             ),
             'global' => array(
                 'test_mode' => 'checkbox',
+                'cust_ref_prefix' => 'string',
+            ),
+        );
+        // Set defaults
+        $this->config = array(
+            'global' => array(
+                'cust_ref_prefix' => 'glshop_',
+                'test_mode'         => '1',
             ),
         );
 
         // Set the only service supported
-        $this->services = array('checkout' => 1);
+        $this->services = array('checkout' => 1, 'terms' => 0);
 
         // Call the parent constructor to initialize the common variables.
         parent::__construct();
 
         // Set the gateway URL depending on whether we're in test mode or not
-        $this->loc_id = $this->getConfig('loc_id');
-        $this->appid = $this->getConfig('appid');
-        $this->token = $this->getConfig('token');
         if ($this->isSandbox()) {
             // Test settings
-            /*$this->loc_id = $this->getConfig('sb_loc_id');
-            $this->appid = $this->getConfig('sb_appid');
-            $this->token = $this->getConfig('sb_token');*/
             $this->api_url = 'https://connect.squareupsandbox.com';
         } else {
             // Production settings
-/*            $this->loc_id = $this->getConfig('prod_loc_id');
-            $this->appid = $this->getConfig('prod_appid');
-$this->token = $this->getConfig('prod_token');*/
             $this->api_url = 'https://connect.squareup.com';
         }
+        $this->loc_id = $this->getConfig('loc_id');
+        $this->appid = $this->getConfig('appid');
+        $this->token = $this->getConfig('token');
         $this->gw_url = NULL;   // Normal gateway action url not used
 
         // If the configured currency is not one of the supported ones,
@@ -119,6 +142,105 @@ $this->token = $this->getConfig('prod_token');*/
     public function getMainUrl()
     {
         return '';
+    }
+
+
+    /**
+     * Check if the gateway supports invoicing. Default is false.
+     *
+     * @return  boolean True if invoicing is supported, False if not.
+     */
+    public function supportsInvoicing()
+    {
+        return true;
+    }
+
+
+    /**
+     * Create a Square order object for the order/cart.
+     *
+     * @param   object  $Ord    Cart or order object
+     * @return  object      Square OrderRequest object
+     */
+    private function _createOrderRequest($Ord)
+    {
+        global $LANG_SHOP;
+
+        $accessToken = $this->token;
+        $locationId = $this->loc_id;
+        $Cur = Currency::getInstance();
+        $shipping = 0;
+        $tax = 0;
+        $lineItems = array();
+        $orderTaxes = array();
+        $by_gc = $Ord->getInfo('apply_gc');
+        if ($by_gc > 0) {
+            $total_amount = $Ord->getTotal() - $by_gc;
+            $PriceMoney = new \Square\Models\Money;
+            $PriceMoney->setCurrency($this->currency_code);
+            $PriceMoney->setAmount($Cur->toInt($total_amount));
+            $itm = new \Square\Models\OrderLineItem('1');
+            $itm->setName($LANG_SHOP['all_items']);
+            $itm->setBasePriceMoney($PriceMoney);
+            //Puts our line item object in an array called lineItems.
+            array_push($lineItems, $itm);
+        } else {
+            $shipping = $Ord->getShipping();
+            $tax = $Ord->getTax();
+            $idx = -1;
+            foreach ($Ord->getItems() as $Item) {
+                $idx++;
+                $opts = implode(', ', $Item->getOptionsText());
+                $dscp = $Item->getDscp();
+                if (!empty($opts)) {
+                    $dscp .= ' : ' . $opts;
+                }
+                $PriceMoney = new Money;
+                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
+                $PriceMoney->setCurrency($this->currency_code);
+                $LineItem = new \Square\Models\OrderLineItem((string)$Item->getQuantity());
+                $LineItem->setName($dscp);
+                $LineItem->setUid($idx);
+                $LineItem->setBasePriceMoney($PriceMoney);
+                $lineItems[] = $LineItem;
+                $shipping += $Item->getShipping();
+            }
+
+            if ($Ord->getTax() > 0) {
+                $TaxMoney = new Money;
+                $TaxMoney->setCurrency($this->currency_code);
+                $TaxMoney->setAmount($Cur->toInt($Ord->getTax()));
+                $OrderTax = new \Square\Models\OrderLineItem('1');
+                $OrderTax->setName($LANG_SHOP['sales_tax']);
+                $OrderTax->setUid('__tax');
+                $OrderTax->setBasePriceMoney($TaxMoney);
+                $lineItems[] = $OrderTax;
+            }
+        }
+
+        $sqOrder = new sqOrder($locationId);
+
+        // Add a line item for the total shipping charge
+        if ($shipping > 0) {
+            $ShipMoney = new Money;
+            $ShipMoney->setCurrency($this->currency_code);
+            $ShipMoney->setAmount($Cur->toInt($shipping));
+            $itm = new \Square\Models\OrderLineItem('1');
+            $itm->setName($LANG_SHOP['shipping']);
+            $itm->setUid('__shipping');
+            $itm->setBasePriceMoney($ShipMoney);
+            array_push($lineItems, $itm);
+        }
+
+        $sqOrder->setReferenceId($Ord->getOrderID());
+        $sqOrder->setMetadata(array(
+            'order_ref' => $Ord->getOrderId(),
+        ) );
+        $sqOrder->setLineItems($lineItems);
+        $req = new CreateOrderRequest;
+        $req->setIdempotencyKey(uniqid());
+        $req->setOrder($sqOrder);
+        return $req;
     }
 
 
@@ -147,160 +269,24 @@ $this->token = $this->getConfig('prod_token');*/
         $locationId = $this->loc_id;
 
         // Create and configure a new API client object
-        $ApiConfig = new \SquareConnect\Configuration();
-        $ApiConfig->setAccessToken($accessToken);
-        $ApiConfig->setHost($this->api_url);
-        $ApiClient = new \SquareConnect\ApiClient($ApiConfig);
-        $checkoutClient = new \SquareConnect\Api\CheckoutApi($ApiClient);
+        $ApiClient = $this->_getApiClient();
+        $checkoutApi = $ApiClient->getCheckoutApi();
 
-        $lineItems = array();
-        $by_gc = $cart->getInfo('apply_gc');
-        if ($by_gc > 0) {
-            $total_amount = $cart->getTotal() - $by_gc;
-            $PriceMoney = new \SquareConnect\Model\Money;
-            $PriceMoney->setCurrency($this->currency_code);
-            $PriceMoney->setAmount($Cur->toInt($total_amount));
-            $itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-            $itm
-                ->setName($LANG_SHOP['all_items'])
-                ->setQuantity('1')
-                ->setBasePriceMoney($PriceMoney);
-            //Puts our line item object in an array called lineItems.
-            array_push($lineItems, $itm);
+        $order_req = $this->_createOrderRequest($cart);
+        $checkout = new \Square\Models\CreateCheckoutRequest(
+            uniqid(),
+            $order
+        );
+        $checkout->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
+        $checkout->setPrePopulateBuyerEmail($cart->getInfo('payer_email'));
+
+        $apiResponse = $checkoutApi->createCheckout($locationId, $checkout);
+        if ($apiResponse->isSuccess()) {
+            $createCheckoutResponse = $apiResponse->getResult();
+            $url = $createCheckoutResponse->getCheckout()->getCheckoutPageUrl();
         } else {
-            $shipping = $cart->getShipping();
-            $tax = $cart->getTax();
-            $idx = -1;
-            foreach ($cart->getItems() as $Item) {
-                $idx++;
-                $opts = implode(', ', $Item->getOptionsText());
-                $dscp = $Item->getDscp();
-                if (!empty($opts)) {
-                    $dscp .= ' : ' . $opts;
-                }
-
-                $lineItems[] = array(
-                    'name' => $dscp,
-                    'quantity' => (string)$Item->getQuantity(),
-                    'base_price_money' => array(
-                        'amount' => $Cur->toInt($Item->getPrice()),
-                        'currency' => $this->currency_code,
-                    ),
-                );
-
-                /*$PriceMoney = new \SquareConnect\Model\Money;
-                $PriceMoney->setCurrency($this->currency_code);
-                $Item->Price = $P->getPrice($Item->getOptions());
-                $PriceMoney->setAmount($Cur->toInt($Item->getPrice()));
-                //$itm = new \SquareConnect\Model\CreateOrderRequestLineItem;
-                $itm = new \SquareConnect\Model\OrderLineItem;
-
-                $itm->setUid($idx);
-                $itm->setName($dscp);
-                $itm->setQuantity((string)$Item->getQuantity());
-                $itm->setBasePriceMoney($PriceMoney);
-                */
-
-                // Add tax, if applicable
-                /*if ($Item->taxable) {
-                    $TaxMoney = new \SquareConnect\Model\Money;
-                    $TaxMoney->setCurrency($this->currency_code);
-                    $taxObj = new \SquareConnect\Model\OrderLineItemTax(
-                        array(
-                            'percentage' => (string)($_SHOP_CONF['tax_rate'] * 100),
-                            'name' => 'Sales Tax',
-                        )
-                    );
-                    $tax = $Item->price * $Item->quantity * $_SHOP_CONF['tax_rate'];
-                    $tax = $Cur->toInt($tax);
-                    $TaxMoney->setAmount($tax);
-                    $taxObj->setAppliedMoney($TaxMoney);
-                    $itm->setTaxes(array($taxObj));
-                    $itm->setTotalTaxMoney($tax);
-                }*/
-                $shipping += $Item->getShipping();
-
-                //Puts our line item object in an array called lineItems.
-                //array_push($lineItems, $itm);
-            }
-        }
-
-        // Add a line item for the total tax charge
-        if ($cart->getTax() > 0) {
-            $TaxMoney = new \SquareConnect\Model\Money;
-            $TaxMoney->setCurrency($this->currency_code)
-                ->setAmount($Cur->toInt($cart->getTax()));
-            $itm = new \SquareConnect\Model\OrderLineItem;
-            $itm->setName($LANG_SHOP['tax'])
-                ->setUid('__tax')
-                ->setQuantity('1')
-                ->setBasePriceMoney($TaxMoney);
-            array_push($lineItems, $itm);
-        }
-
-        // Add a line item for the total shipping charge
-        if ($shipping > 0) {
-            $ShipMoney = new \SquareConnect\Model\Money;
-            $ShipMoney->setCurrency($this->currency_code)
-                ->setAmount($Cur->toInt($shipping));
-            $itm = new \SquareConnect\Model\OrderLineItem;
-            $itm->setName($LANG_SHOP['shipping'])
-                ->setUid('__shipping')
-                ->setQuantity('1')
-                ->setBasePriceMoney($ShipMoney);
-            array_push($lineItems, $itm);
-        }
-
-        // Create an Order object using line items from above
-        $order = new \SquareConnect\Model\CreateOrderRequest(array(
-            'idempotency_key' => uniqid(),
-            'order' => array(
-                'order' => array(
-                    'location_id' => $locationId,
-                    'reference_id' => $cart->cartID(),
-                    'line_items' => $lineItems,
-                ),
-            ),
-        ) );
-        //$order = new \SquareConnect\Model\CreateOrderRequest();
-        /*$order
-            ->setIdempotencyKey(uniqid())
-            ->setReferenceId($cart->cartID())
-            //sets the lineItems array in the order object
-            ->setLineItems($lineItems);*/
-
-        $checkout = new \SquareConnect\Model\CreateCheckoutRequest(array(
-            'idempotency_key' => uniqid(),
-            'order' => array(
-                'order' => array(
-                    'location_id' => $locationId,
-                    'reference_id' => $cart->cartID(),
-                    'line_items' => $lineItems,
-                ),
-            ),
-            'redirect_url' => $this->returnUrl($cart->getOrderID(), $cart->getToken()),
-            'pre_populate_buyer_email' => $cart->getInfo('payer_email'),
-        ) );
-
-        /*$checkout
-            ->setPrePopulateBuyerEmail($cart->getInfo('payer_email'))
-            ->setIdempotencyKey(uniqid())        //uniqid() generates a random string.
-            ->setOrder($order)          //this is the order we created in the previous step
-            ->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
-         */
-        $url = '';
-        $gatewayVars = array();
-        try {
-            $result = $checkoutClient->createCheckout(
-                $locationId,
-                $checkout
-            );
-            //Save the checkout ID for verifying transactions
-            $checkoutId = $result->getCheckout()->getId();
-            //Get the checkout URL that opens the checkout page.
-            $url = $result->getCheckout()->getCheckoutPageUrl();
-        } catch (Exception $e) {
-            COM_setMsg('Exception when calling CheckoutApi->createCheckout: ', $e->getMessage(), PHP_EOL);
+            $this->_errors = $apiResponse->getErrors();
+            return false;
         }
         $url_parts = parse_url($url);
         parse_str($url_parts['query'], $q_parts);
@@ -456,17 +442,30 @@ $this->token = $this->getConfig('prod_token');*/
                 'Authorization: Bearer ' . $this->getConfig($env . '_token'),
                 'Content-Type: application/json',
             ) );
-        /*curl_setopt($ch, CURLOPT_ENCODING,       'gzip');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_FAILONERROR,    1);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_TIMEOUT,        10);*/
             $result = curl_exec($ch);
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             var_dump($code);die;
             var_dump($result);die;
         }
+    }
+
+
+    /**
+     * Get the Square API client object.
+     *
+     * @return  object      SquareClient object
+     */
+    private function _getApiClient()
+    {
+        if ($this->_api_client === NULL) {
+            $this->_api_client = new SquareClient(array(
+                'accessToken' => $this->token,
+                'environment' => $this->isSandbox() ?
+                    Environment::SANDBOX :
+                    Environment::PRODUCTION,
+            ) );
+        }
+        return $this->_api_client;
     }
 
 
@@ -483,22 +482,17 @@ $this->token = $this->getConfig('prod_token');*/
             return false;
         }
 
-        $apiConfig = new \SquareConnect\Configuration();
-        $apiConfig->setAccessToken($this->token);
-        $apiConfig->setHost($this->api_url);
-        $apiClient = new \SquareConnect\ApiClient($apiConfig);
-
-        // Create and configure a new API client object
-        $api = new \SquareConnect\Api\OrdersApi($apiClient);
-        $body = new \SquareConnect\Model\BatchRetrieveOrdersRequest();
+        $apiClient = $this->_getApiClient()->getOrdersApi();
         $order_ids = array($trans_id);
-        //$order_ids = json_encode($order_ids);
-        $body->setOrderIds($order_ids);
-        $resp = $api->batchRetrieveOrders($this->loc_id, $body);
-
-        //$resp = $api->retrieveTransaction($this->loc_id, $trans_id);
-        $resp = json_decode($resp,true);
-        return $resp;
+        $body = new \Square\Models\BatchRetrieveOrdersRequest($order_ids);
+        $resp = $apiClient->batchRetrieveOrders($this->loc_id, $body);
+        if ($resp->isSuccess()) {
+            $retval = $resp->getResult();
+        } else {
+            $this->_errors = $resp->getErrors();
+            $retval = false;
+        }
+        return $retval;
     }
 
 
@@ -529,6 +523,223 @@ $this->token = $this->getConfig('prod_token');*/
         return $this->ipn_url . '?thanks=' . $this->gw_name .
             '&o=' . $cart_id .
             '&t=' . $token;
+    }
+
+
+    /**
+     * Retrieve an existing customer record from Square by reference ID.
+     * Calls createCustomer() to create a new customer record if not found.
+     *
+     * @param   object  $Order      Order object
+     * @return  object|false    Customer object, or false on error.
+     */
+    private function getCustomer($Order)
+    {
+        $cust_id = $this->getConfig('cust_ref_prefix') . $Order->getUid();
+        $body = new \Square\Models\SearchCustomersRequest;
+        $body->setLimit(1);
+        $body->setQuery(new \Square\Models\CustomerQuery);
+        $body->getQuery()->setFilter(new \Square\Models\CustomerFilter);
+        $body->getQuery()->getFilter()->setCreationSource(new \Square\Models\CustomerCreationSourceFilter);
+        $body->getQuery()->getFilter()->getCreationSource()->setValues([\Square\Models\CustomerCreationSource::THIRD_PARTY]);
+        $body->getQuery()->getFilter()->getCreationSource()->setRule(\Square\Models\CustomerInclusionExclusion::INCLUDE_);
+        $body->getQuery()->getFilter()->setReferenceId(new \Square\Models\CustomerTextFilter);
+        $body->getQuery()->getFilter()->getReferenceId()->setExact($cust_id);
+        $body->getQuery()->setSort(new \Square\Models\CustomerSort);
+        $body->getQuery()->getSort()->setField(\Square\Models\CustomerSortField::CREATED_AT);
+        $body->getQuery()->getSort()->setOrder(\Square\Models\SortOrder::ASC);
+
+        $customersApi = $this->_getApiClient()->getCustomersApi();
+        $apiResponse = $customersApi->searchCustomers($body);
+        if ($apiResponse->isSuccess()) {
+            $searchCustomersResponse = $apiResponse->getResult();
+            if (empty($searchCustomersResponse->getCustomers())) {
+                return $this->createCustomer($Order);
+            } else {
+                return $searchCustomersResponse->getCustomers()[0];
+            }
+        } else {
+            $this->_errors = $apiResponse->getErrors();
+            return false;
+        }
+    }
+
+
+    /**
+     * Create a new customer record with Square.
+     * Called if getCustomer() returns an empty set.
+     *
+     * @param   object  $Order      Order object, to get customer info
+     * @return  object|false    Customer object, or false if an error occurs
+     */
+    private function createCustomer($Order)
+    {
+        global $_TABLES;
+
+        $Customer = $Order->getBillto();
+
+        if (empty($Order->getBuyerEmail())) {
+            $email = DB_getItem($_TABLES['users'], 'email', "uid = {$Order->getUid()}");
+            $Order->setBuyerEmail($email);
+        }
+        $customersApi = $this->_getApiClient()->getCustomersApi();
+        $body = new \Square\Models\CreateCustomerRequest;
+        $body->setGivenName(NameParser::F($Customer->getName()));
+        $body->setFamilyName(NameParser::L($Customer->getName()));
+        $body->setEmailAddress($Order->getBuyerEmail());
+        $body->setAddress(new \Square\Models\Address);
+        $body->getAddress()->setAddressLine1($Customer->getAddress1());
+        $body->getAddress()->setAddressLine2($Customer->getAddress2());
+        $body->getAddress()->setLocality($Customer->getCity());
+        $body->getAddress()->setAdministrativeDistrictLevel1($Customer->getState());
+        $body->getAddress()->setPostalCode($Customer->getPostal());
+        $body->getAddress()->setCountry($Customer->getCountry());
+        $body->setPhoneNumber($Customer->getPhone());
+        $body->setReferenceId($this->getConfig('cust_ref_prefix') . $Order->getUid());
+
+        $apiResponse = $customersApi->createCustomer($body);
+        if ($apiResponse->isSuccess()) {
+            $createCustomerResponse = $apiResponse->getResult();
+            return $createCustomerResponse->getCustomer();
+        } else {
+            $this->_errors = $apiResponse->getErrors();
+            return false;
+        }
+    }
+
+    /**
+     * Create and send an invoice for an order.
+     *
+     * @param   string  $order_num  Order Number
+     * @return  boolean     True on success, False on error
+     */
+    public function createInvoice($order_num, $terms_gw)
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+
+        $Order = Order::getInstance($order_num);
+        $Currency = $Order->getCurrency();
+        $Billto = $Order->getBillto();
+        $Shipto = $Order->getShipto();
+        $locationId = $this->loc_id;
+
+        $apiClient = $this->_getApiClient();
+        $ordersApi = $apiClient->getOrdersApi();
+        $order_req = $this->_createOrderRequest($Order);
+
+        $apiResponse = $ordersApi->createOrder($locationId, $order_req);
+        if ($apiResponse->isSuccess()) {
+            $createOrderResponse = $apiResponse->getResult();
+        } else {
+            $this->_errors = $apiResponse->getErrors();
+            return false;
+        }
+        $net_days = (int)$terms_gw->getConfig('net_days');
+        if ($net_days < 0) {
+            $net_days = 0;
+        }
+        $due_dt = clone $_CONF['_now'];
+        $due_dt->add(new DateInterval("P{$net_days}D"));
+
+        $order_id = $createOrderResponse->getOrder()->getId();
+        $customer = $this->getCustomer($Order);
+        $inv = new \Square\Models\Invoice;
+        $inv->setLocationId($this->loc_id);
+        $inv->setOrderId($order_id);
+        $inv->setPrimaryRecipient(new \Square\Models\InvoiceRecipient);
+        $inv->getPrimaryRecipient()->setCustomerId($customer->getId());
+        //$inv->getPrimaryRecipient()->setEmailAddress($Order->getBuyerEmail());
+        $inv_paymentRequests = [];
+
+        /*$dt = clone $_CONF['_now'];
+        $due = $dtobj->add(new \DateInterval($interval));*/
+
+        $inv_paymentRequests[0] = new \Square\Models\InvoicePaymentRequest;
+        $inv_paymentRequests[0]->setRequestMethod(\Square\Models\InvoiceRequestMethod::EMAIL);
+        $inv_paymentRequests[0]->setRequestType(\Square\Models\InvoiceRequestType::BALANCE);
+        $inv_paymentRequests[0]->setDueDate($due_dt->format('Y-m-d',true));
+        $inv_paymentRequests[0]->setTippingEnabled(false);
+        $inv_paymentRequests_0_reminders = [];
+
+        $inv_paymentRequests_0_reminders[0] = new \Square\Models\InvoicePaymentReminder;
+        $inv_paymentRequests_0_reminders[0]->setRelativeScheduledDays(-1);
+        $inv_paymentRequests_0_reminders[0]->setMessage('Your invoice is due tomorrow');
+        $inv_paymentRequests[0]->setReminders($inv_paymentRequests_0_reminders);
+
+        $inv->setPaymentRequests($inv_paymentRequests);
+
+        $inv->setInvoiceNumber($Order->getOrderId());
+        $inv->setTitle($_SHOP_CONF['company']);
+        $inv->setDescription('We appreciate your business!');
+        //$inv->setScheduledAt('2030-01-13T10:00:00Z');
+        $body = new \Square\Models\CreateInvoiceRequest($inv);
+        $body->setIdempotencyKey(uniqid());
+
+        $invoicesApi = $this->_getApiClient()->getInvoicesApi();
+        $apiResponse = $invoicesApi->createInvoice($body);
+        if ($apiResponse->isSuccess()) {
+            $createInvoiceResponse = $apiResponse->getResult();
+            $Invoice = $createInvoiceResponse->getInvoice();
+        } else {
+            $this->_errors = $apiResponse->getErrors();
+            return false;
+        }
+
+        // If we got this far, the Invoice was created.
+        // Now publish it to send it to the buyer.
+        $body = new \Square\Models\PublishInvoiceRequest(
+            $Invoice->getVersion()
+        );
+        $body->setIdempotencyKey(uniqid());
+        $apiResponse = $invoicesApi->publishInvoice($Invoice->getId(), $body);
+        if ($apiResponse->isSuccess()) {
+            $Order->updateStatus(OrderState::INVOICED);
+            //$publishInvoiceResponse = $apiResponse->getResult();
+        } else {
+            $this->_errors = $apiResponse->getErrors();
+            return false;
+        }
+        return true;
+    }
+
+
+    /*public function getPayment($pmt_id)
+    {
+        $apiClient = $this->_getApiClient();
+        $pmtApi = $apiClient->getPaymentsApi();
+        var_dump($pmtApi->getPayment($pmt_id));die;
+    }
+
+    public function getInvoice($inv_id)
+    {
+        $apiClient = $this->_getApiClient();
+        $api = $apiClient->getInvoicesApi();
+        var_dump($api->getInvoice($inv_id));die;
+    }
+
+    public function getOrders($ord_ids)
+    {
+        $apiClient = $this->_getApiClient();
+        $api = $apiClient->getOrdersApi();
+        if (!is_array($ord_ids)) {
+            $ord_ids = array($ord_ids);
+        }
+        $req = new \Square\Models\BatchRetrieveOrdersRequest($ord_ids);
+        return $api->batchRetrieveOrders($this->loc_id, $req);
+    }
+
+    public function listPayments()
+    {
+        $apiClient = $this->_getApiClient();
+        $api = $apiClient->getPaymentsApi();
+        $res = $api->listPayments();
+        var_dump($res);die;
+    }*/
+
+
+    public function getErrors()
+    {
+        return $this->_errors;
     }
 
 }   // class square

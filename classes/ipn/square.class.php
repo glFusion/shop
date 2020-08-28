@@ -12,7 +12,8 @@
  * @filesource
  */
 namespace Shop\ipn;
-use \Shop\Cart;
+use Shop\Cart;
+use Shop\Models\OrderState;
 
 
 /**
@@ -120,28 +121,28 @@ class square extends \Shop\IPN
         if ($trans) {
             // Get values from the returned array
             // Must have orders=>0=>(tenders,reference_id)
-            $trans = SHOP_getVar($trans, 'orders', 'array');
+            $order = $trans->getOrders()[0];
+            /*$trans = SHOP_getVar($trans->getOrders()[0], 'orders', 'array');
             if (empty($trans) || !isset($trans[0])) {
                 return false;
             }
-            $order = $trans[0];
-            $tenders = SHOP_getVar($order, 'tenders', 'array');
+            $order = $trans[0];*/
+            $tenders = $order->getTenders();
             if (empty($tenders)) return false;
-
-            $order_id = SHOP_getVar($order, 'reference_id');
+            $order_id = $order->getReferenceId();
             if (empty($order_id)) return false;
 
-            $this->setStatus(self::STATUS_PAID);
+            $this->setStatus(OrderState::PAID);
             $total_paid = 0;
             $pmt_gross = 0;
             foreach ($tenders as $tender) {
-                if ($tender['card_details']['status'] == 'CAPTURED') {
-                    $C = \Shop\Currency::getInstance($tender['amount_money']['currency']);
+                if ($tender->getCardDetails()->getStatus() == 'CAPTURED') {
+                    $C = \Shop\Currency::getInstance($tender->getAmountMoney()->getCurrency());
                     // Set $pmt_gross each time to capture the last amount paid.
-                    $pmt_gross = $C->fromInt($tender['amount_money']['amount']);
+                    $pmt_gross = $C->fromInt($tender->getAmountMoney()->getAmount());
                     $total_paid += $pmt_gross;
                 } else {
-                    $this->setStatus(self::STATUS_PENDING);
+                    $this->setStatus(OrderState::PENDING);
                 }
             }
             $this->setPmtGross($pmt_gross);
