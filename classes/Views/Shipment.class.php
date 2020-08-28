@@ -157,7 +157,7 @@ class Shipment extends Order
             'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
-            'ship_method'   => Shipper::getInstance($this->Order->shipper_id)->getName(),
+            'ship_method'   => Shipper::getInstance($this->Order->getShipperID())->getName(),
             'tracking_form' => $T->parse('order', 'tracking'),
         ) );
 
