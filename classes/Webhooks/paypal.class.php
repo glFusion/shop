@@ -69,15 +69,19 @@ class paypal extends \Shop\Webhook
                     // Get just the latest payment.
                     // If there are multiple payments for the order, all are included.
                     $payment = array_pop($payments['transactions']);
+                    $ref_id = $payment['payment_id'];
                     $this->logIPN();
-                    $Pmt = new Payment;
-                    $Pmt->setRefID($this->getID())
-                        ->setAmount($payment['amount']['value'])
-                        ->setGateway($this->getSource())
-                        ->setMethod($payment['method'])
-                        ->setComment($payment['note'])
-                        ->setOrderID($this->getOrderID());
-                    return $Pmt->Save();
+                    // Get the payment by reference ID to make sure it's unique
+                    $Pmt = Payment::getByReference($ref_id);
+                    if ($Pmt->getPmtID() == 0) {
+                        $Pmt->setRefID($ref_id)
+                            ->setAmount($payment['amount']['value'])
+                            ->setGateway($this->getSource())
+                            ->setMethod($payment['method'])
+                            ->setComment($payment['note'])
+                            ->setOrderID($this->getOrderID());
+                        return $Pmt->Save();
+                    }
                 }
             }
             break;

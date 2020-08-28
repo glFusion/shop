@@ -112,6 +112,28 @@ class Payment
 
 
     /**
+     * Get a payment record from the database by reference ID.
+     *
+     * @param   string  $ref_id Paymetn reference ID
+     * @return  object      Payment object
+     */
+    public static function getByReference($ref_id)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
+            WHERE pmt_ref_id = '" . DB_escapeString($ref_id) . "'";
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, true);
+        } else {
+            $A = NULL;
+        }
+        return new self($A);
+    }
+
+
+    /**
      * Set the payment record ID.
      *
      * @param   integer $id     Payment ID

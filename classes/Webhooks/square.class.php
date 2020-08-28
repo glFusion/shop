@@ -92,13 +92,15 @@ class square extends \Shop\Webhook
                                 $cur_code = SHOP_getVar($total_money, 'currency', 'string', NULL);
                                 $amt_paid = Currency::getInstance($cur_code)->fromInt($amt);
                                 $this->logIPN();
-                                $Pmt = new Payment;
-                                $Pmt->setRefID($this->getID())
-                                    ->setAmount($amt_paid)
-                                    ->setGateway($this->getSource())
-                                    ->setMethod("Online")
-                                    ->setOrderID($this->getOrderID());
-                                $retval = $Pmt->Save();
+                                $Pmt = Payment::getInstance($this->getID());
+                                if ($Pmt->getPmtID() == 0) {
+                                    $Pmt->setRefID($this->getID())
+                                        ->setAmount($amt_paid)
+                                        ->setGateway($this->getSource())
+                                        ->setMethod("Online")
+                                        ->setOrderID($this->getOrderID());
+                                    $retval = $Pmt->Save();
+                                }
                             }
                         }
                     }
