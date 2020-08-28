@@ -639,7 +639,7 @@ class square extends \Shop\Gateway
             $net_days = 0;
         }
         $due_dt = clone $_CONF['_now'];
-        $due_dt->add(new DateInterval("P{$net_days}D"));
+        $due_dt->add(new \DateInterval("P{$net_days}D"));
 
         $order_id = $createOrderResponse->getOrder()->getId();
         $customer = $this->getCustomer($Order);
