@@ -38,7 +38,8 @@ $_SHOP_SAMPLEDATA = array(
             (2, 20, 1, 'processing', 1, 0),
             (3, 30, 1, 'shipped', 1, 0),
             (4, 40, 1, 'closed', 0, 0),
-            (5, 50, 1, 'refunded', 0, 0)",
+            (5, 50, 1, 'refunded', 0, 0)
+            (5, 60, 1, 'invoiced', 0, 0)",
     'shop.currency' => "INSERT IGNORE INTO `{$_TABLES['shop.currency']}` (
             code, symbol,  name, numeric_code, symbol_placement, symbol_spacer, code_placement,
             decimals, rounding_step, thousands_sep, decimal_sep, major_unit, minor_unit,
