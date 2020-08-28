@@ -15,6 +15,7 @@ namespace Shop\Gateways;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Cart;
+use Shop\Company;
 use Shop\Models\OrderState;
 use Square\SquareClient;
 use Square\Environment;
@@ -62,8 +63,6 @@ class square extends \Shop\Gateway
      */
     public function __construct()
     {
-        global $_SHOP_CONF, $_USER;
-
         // Import the Square API
         require_once SHOP_PI_PATH . '/vendor/autoload.php';
 
@@ -255,8 +254,6 @@ class square extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
-
         if (!$this->Supports('checkout')) {
             return '';
         }
@@ -395,8 +392,10 @@ class square extends \Shop\Gateway
     public function getLogo()
     {
         global $_CONF, $_SHOP_CONF;
-        return COM_createImage($_CONF['site_url'] . '/' .
-            $_SHOP_CONF['pi_name'] . '/images/gateways/square-logo-100-27.png');
+        return COM_createImage(
+            $_CONF['site_url'] . '/' .
+            $_SHOP_CONF['pi_name'] . '/images/gateways/square-logo-100-27.png'
+        );
     }
 
 
@@ -574,8 +573,6 @@ class square extends \Shop\Gateway
      */
     private function createCustomer($Order)
     {
-        global $_TABLES;
-
         $Customer = $Order->getBillto();
 
         if (empty($Order->getBuyerEmail())) {
@@ -611,11 +608,12 @@ class square extends \Shop\Gateway
      * Create and send an invoice for an order.
      *
      * @param   string  $order_num  Order Number
+     * @param   object  $terms_gw   Invoice terms gateway, for config values
      * @return  boolean     True on success, False on error
      */
     public function createInvoice($order_num, $terms_gw)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_CONF;
 
         $Order = Order::getInstance($order_num);
         $Currency = $Order->getCurrency();
@@ -632,8 +630,10 @@ class square extends \Shop\Gateway
             $createOrderResponse = $apiResponse->getResult();
         } else {
             $this->_errors = $apiResponse->getErrors();
+        COM_errorLog(__LINE__ . ': ' . print_r($this->_errors,true));
             return false;
         }
+
         $net_days = (int)$terms_gw->getConfig('net_days');
         if ($net_days < 0) {
             $net_days = 0;
@@ -669,7 +669,7 @@ class square extends \Shop\Gateway
         $inv->setPaymentRequests($inv_paymentRequests);
 
         $inv->setInvoiceNumber($Order->getOrderId());
-        $inv->setTitle($_SHOP_CONF['company']);
+        $inv->setTitle(Company::getInstance()->getCompany());
         $inv->setDescription('We appreciate your business!');
         //$inv->setScheduledAt('2030-01-13T10:00:00Z');
         $body = new \Square\Models\CreateInvoiceRequest($inv);
@@ -682,6 +682,7 @@ class square extends \Shop\Gateway
             $Invoice = $createInvoiceResponse->getInvoice();
         } else {
             $this->_errors = $apiResponse->getErrors();
+        COM_errorLog(__LINE__ . ': ' . print_r($this->_errors,true));
             return false;
         }
 
