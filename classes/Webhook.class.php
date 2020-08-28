@@ -166,6 +166,7 @@ class Webhook
             $ts = time();
         }
         $this->whTS = $ts;
+        return $this;
     }
 
 
