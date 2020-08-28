@@ -23,7 +23,7 @@ global $_SHOP_CONF;
 
 $_SHOP_CONF['pi_name']            = 'shop';
 $_SHOP_CONF['pi_display_name']    = 'Shop';
-$_SHOP_CONF['pi_version']         = '1.2.2';
+$_SHOP_CONF['pi_version']         = '1.2.3';
 $_SHOP_CONF['gl_version']         = '1.7.8';
 $_SHOP_CONF['pi_url']             = 'http://www.glfusion.org';
 
