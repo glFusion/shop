@@ -103,6 +103,10 @@ case 'setShipper':
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
     $Cart = Shop\Cart::getInstance(0, $cart_id);
+    $status_msg = '';
+    if ($Cart->isNew()) {
+        $status_msg = 'Cart not found';
+    }
     $status = Shop\Gateway::getInstance($Cart->getPmtMethod())
         ->processOrder($cart_id);
     if (!$status) {
@@ -111,6 +115,7 @@ case 'finalizecart':
     }
     $output = array(
         'status' => $status,
+        'statusMessage' => $status_msg,
     );
     break;
 
