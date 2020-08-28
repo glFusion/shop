@@ -35,8 +35,14 @@ class Company extends Address
         global $_SHOP_CONF, $_CONF;
 
         // The store name may be set in the configuration but still be empty.
-        // Use the site name if the store name is empty.
-        $store_name = empty($_SHOP_CONF['company']) ? $_CONF['site_name'] : $_SHOP_CONF['company'];
+        // Use the site name if the store name is empty, site url as a fallback.
+        if (!empty($_SHOP_CONF['company'])) {
+            $store_name = $_SHOP_CONF['company'];
+        } elseif (!empty($_CONF['site_name'])) {
+            $store_name = $_CONF['site_name'];
+        } else {
+            $store_name = preg_replace('/^https?\:\/\//i', '', $_CONF['site_url']);
+        }
         // Same for the company email
         $email = empty($_SHOP_CONF['shop_email']) ? $_CONF['site_mail'] : $_SHOP_CONF['shop_email'];
 
