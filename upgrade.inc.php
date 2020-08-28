@@ -527,7 +527,6 @@ function SHOP_remove_old_files()
             'templates/attribute_form.thtml',
             // 1.3.0
             'vendor/square/connect',
-            // 1.3.1
             'Autoload.class.php',
         ),
         // public_html/shop
