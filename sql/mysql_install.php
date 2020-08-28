@@ -725,15 +725,16 @@ $SHOP_UPGRADE['1.2.2'] = array(
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
     "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE orderby orderby int(3) NOT NULL DEFAULT 999",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
-        (`orderby`, `name`, `notify_buyer`, `notify_admin`)
-        VALUES (5, 'invoiced', 0, 0)",
-    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
+        (`name`, `notify_buyer`, `notify_admin`)
+        VALUES ('invoiced', 0, 0)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY `idx_expires` (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
-    "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
+    "DELETE FROM {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
-    "UPDATE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
+    "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
