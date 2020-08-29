@@ -416,7 +416,9 @@ class ProductOptionGroup
                 'class' => 'uk-button uk-button-success',
             )
         );
-        $text_arr = array();
+        $text_arr = array(
+            'form_url' => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
+        );
         $query_arr = array(
             'table' => 'shop.prod_opt_grps',
             'sql' => $sql,

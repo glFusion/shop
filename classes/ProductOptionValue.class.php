@@ -199,7 +199,7 @@ class ProductOptionValue
             if ($this->isNew) {
                 $this->pov_id = DB_insertID();
             }
-            self::reOrder($this-pog_id);
+            self::reOrder($this->pog_id);
             //Cache::delete('options_' . $this->item_id);
             Cache::clear('products');
             Cache::clear('options');
@@ -293,9 +293,12 @@ class ProductOptionValue
             $T->set_var('pov_id', $id);
         } else {
             $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->pog_id = ProductOptionGroup::getFirst()->getID();
             $T->set_var('pov_id', '');
+            if ($this->pog_id == 0) {
+                $this->pog_id = ProductOptionGroup::getFirst()->getID();
+            }
         }
+
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -308,7 +311,7 @@ class ProductOptionValue
                         $_TABLES['shop.prod_opt_grps'],
                         'pog_id,pog_name',
                         $this->pog_id,
-                        0
+                        1
                     ),
             'orderby_opts'  => self::getOrderbyOpts($this->pog_id, $this->orderby),
             'sku'           => $this->sku,
@@ -491,9 +494,14 @@ class ProductOptionValue
             'default_filter' => $def_filter,
         );
 
-        $text_arr = array();
+        $text_arr = array(
+            'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
+        );
         $filter = '';
-        $options = array();
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'pov_id',
+        );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_attrlist',
             array(__CLASS__,  'getAdminField'),
@@ -768,10 +776,12 @@ class ProductOptionValue
      * Set the OptionGroup ID for this value.
      *
      * @param   integer $grp_id     ProductOptionGroup ID
+     * @return  object  $this
      */
     public function setGroupID($grp_id)
     {
         $this->pog_id = $grp_id;
+        return $this;
     }
 
 
@@ -779,10 +789,12 @@ class ProductOptionValue
      * Set the product ID for this value.
      *
      * @param   integer $item_id    Product ID
+     * @return  object  $this
      */
     public function setItemID($item_id)
     {
         $this->item_id = $item_id;
+        return $this;
     }
 
 }

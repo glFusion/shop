@@ -184,7 +184,7 @@ case 'ft_save':
     break;
 
 case 'pog_save':
-    $POG = new \Shop\ProductOptionGroup($_POST['og_id']);
+    $POG = new \Shop\ProductOptionGroup($_POST['pog_id']);
     if (!$POG->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
@@ -212,7 +212,7 @@ case 'pov_save':
         // Updating an existing option, return to the list
         COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&item_id=' . $_POST['item_id'] . '&pog_id=' . $Opt->getGroupID());
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&pog_id=' . $Opt->getGroupID());
     }
     break;
 
@@ -259,7 +259,7 @@ case 'ft_del':
     break;
 
 case 'pog_del':
-    Shop\ProductOptionGroup::Delete($_REQUEST['og_id']);
+    Shop\ProductOptionGroup::Delete($_REQUEST['pog_id']);
     $view = 'opt_grp';
     break;
 
@@ -783,11 +783,14 @@ case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
+    if ($Opt->getID() == 0) {
+        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
+    }
     $content .= $Opt->Edit();
     break;
 
 case 'pog_edit':
-    $og_id = SHOP_getVar($_GET, 'og_id');
+    $og_id = SHOP_getVar($_GET, 'pog_id');
     $OG = new \Shop\ProductOptionGroup($og_id);
     $content .= Shop\Menu::adminCatalog($view);
     $content .= $OG->Edit();
