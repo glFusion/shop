@@ -136,7 +136,7 @@
 {!endif}
 {!if dc_row_vis}
                 <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code})</div>
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code} {dc_pct})</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{dc_amt}</div>
                 </div>
                 <div class="uk-grid" style="margin-top:5px;">

@@ -1188,6 +1188,7 @@ class Order
             'discount_code' => $this->getDiscountCode(),
             'dc_row_vis'    => $this->getDiscountCode(),
             'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
+            'dc_pct'        => $this->getDiscountPct() . '%',
             'net_items'     => $Currency->Format($this->net_items),
             'good_items'    => $good_items,
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
@@ -3392,6 +3393,8 @@ class Order
      */
     public function validateDiscountCode($code='')
     {
+        global $LANG_SHOP;
+
         // Get the existing values to see if either has changed.
         $have_code = $this->getDiscountCode();
         $have_pct = $this->getDiscountPct();
