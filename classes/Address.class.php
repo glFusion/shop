@@ -824,6 +824,7 @@ class Address
 
     /**
      *  Return the properties array.
+     *  Keys can be prefixed with billto_ or shipto_ to match Orders schema.
      *
      *  @return array   Address properties
      */

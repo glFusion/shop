@@ -438,9 +438,11 @@ class Order
             $this->Billto = $A;
             $have_address = true;
         } elseif (is_array($A)) {
-            $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
-            if ($addr_id == 0) {
-                $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
+            foreach (array('useaddress', 'addr_id', 'id') as $key) {
+                if (isset($A[$key])) {
+                    $addr_id = (int)$A[$key];
+                    break;
+                }
             }
             if ($addr_id > 0) {
                 // If set, the user has selected an existing address. Read
@@ -510,9 +512,11 @@ class Order
             $this->shipto_zip       = '';*/
             $have_address = true;
         } elseif (is_array($A)) {
-            $addr_id = SHOP_getVar($A, 'useaddress', 'integer', 0);
-            if ($addr_id == 0) {
-                $addr_id = SHOP_getVar($A, 'addr_id', 'integer', 0);
+            foreach (array('useaddress', 'addr_id', 'id') as $key) {
+                if (isset($A[$key])) {
+                    $addr_id = (int)$A[$key];
+                    break;
+                }
             }
             if ($addr_id > 0) {
                 // If set, read and use an existing address
@@ -1044,7 +1048,7 @@ class Order
             } else {
                 $this->net_nontax += $item_net;
             }
-            
+
             $this->net_items += $item_net;
             $T->set_var(array(
                 'cart_item_id'  => $item->getID(),
