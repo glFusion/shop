@@ -634,7 +634,7 @@ class Product
         $this->name = $row['name'];
         $this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->short_description = $row['short_description'];
-        $this->price = $row['price'];
+        $this->price = (float)$row['price'];
         $this->filename = $row['file'];
         $this->expiration = $row['expiration'];
         $this->keywords = $row['keywords'];
@@ -990,6 +990,7 @@ class Product
                 dt_add = UTC_TIMESTAMP(), ";
             $sql3 = '';
         }
+
         //$options = DB_escapeString(@serialize($this->options));
         $sql2 = "name='" . DB_escapeString($this->name) . "',
                 short_description='" . DB_escapeString($this->short_description) . "',
