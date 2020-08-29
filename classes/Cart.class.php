@@ -831,8 +831,8 @@ class Cart extends Order
             // This allows subsequent steps to go directly to the checkout
             // page if all other workflows are complete.
             if ($this->uid > 1) {
-                // Determine the minimum value for a workflow to be "reauired"
-                $wf_required = $this->hasPhysical() ? 1 : 3;
+                // Determine the minimum value for a workflow to be "required"
+                $wf_required = $this->requiresShipto() ? 1 : 3;
                 $U = Customer::getInstance($this->uid);
                 if (
                     $this->billto_id == 0 &&
