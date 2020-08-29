@@ -202,8 +202,8 @@ case 'dropupload':
         // Only one filename here, this to get the image id also
         foreach ($filenames as $img_id=>$filename) {
             $retval['filenames'][] = array(
-                'img_url'   => Shop\Product::getImage($filename)['url'],
-                'thumb_url' => Shop\Product::getThumb($filename)['url'],
+                'img_url'   => Shop\Images\Product::getUrl($filename)['url'],
+                'thumb_url' => Shop\Images\Product::getThumbUrl($filename)['url'],
                 'img_id' => $img_id,
             );
         }
@@ -372,6 +372,19 @@ case 'void':
             'status' => $status,
             'statusMessage' => $LANG_SHOP['err_msg'],
             'text' => $LANG_SHOP['valid'],
+        );
+    }
+    break;
+
+case 'getUnpaidOrders':
+    // Get all unpaid orders for a specific user ID
+    $uid = (int)$_POST['uid'];
+    $Orders = Shop\Order::getUnpaid($uid);
+    $retval = array();
+    foreach ($Orders as $Order) {
+        $retval[$Order->getID()] = array(
+            'total' => $Order->getTotal(),
+            'amt_paid' => $Order->getAmountPaid(),
         );
     }
     break;
