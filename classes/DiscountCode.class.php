@@ -35,35 +35,35 @@ class DiscountCode
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    public $isNew;
+    public $isNew = true;
 
     /** DB Record ID.
-     * @var string */
-    private $code_id;
+     * @var integer */
+    private $code_id = 0;
 
     /** Actual code string.
      * @var string */
-    private $code;
+    private $code = '';
 
     /** Percentage discount when the code is used.
      * @var float */
-    private $percent;
+    private $percent = 0;
 
     /** Starting date/time. Date object.
      * @var object */
-    private $start;
+    private $start = NULL;
 
     /** Expiration date/time. Date object.
      * @var object */
-    private $end;
+    private $end = NULL;
 
     /** Minimum net order value to allow the code to be used.
      * @var float */
-    private $min_order;
+    private $min_order = 0;
 
     /** Message text regarding application of a code.
      * @var string */
-    private $msg_text;
+    private $msg_text = '';
 
 
     /**
@@ -338,6 +338,7 @@ class DiscountCode
             code_id = '" . (int)$this->code_id . "',
             code = '" . DB_escapeString($this->code) . "',
             percent = '" . (float)$this->percent . "',
+            min_order  = '" . (float)$this->min_order . "',
             start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
             end = '" . DB_escapeString($this->end->toMySQL(true)) . "'
             ON DUPLICATE KEY UPDATE
