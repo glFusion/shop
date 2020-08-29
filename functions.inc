@@ -36,13 +36,6 @@ define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
 define('SHOP_ADMIN_URL',
     "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
 
-// Define product types
-define('SHOP_PROD_PHYSICAL',  1);
-define('SHOP_PROD_DOWNLOAD',  2);
-define('SHOP_PROD_VIRTUAL',   4);
-define('SHOP_PROD_COUPON',    8);
-define('SHOP_PROD_PLUGIN',    16);
-
 // Define comment status
 define('SHOP_COMMENTS_ENABLED',   0);
 define('SHOP_COMMENTS_CLOSED' ,   1);

@@ -68,7 +68,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
         $_SHOP_CONF['ena_cart'] == 1
     ) {
         if (!isset($args['item_type'])) {
-            $args['item_type'] = SHOP_PROD_VIRTUAL;
+            $args['item_type'] = Shop\Models\ProductType::VIRTUAL;
         }
         $btn_cls = 'orange';
         $btn_disabled = '';

@@ -14,6 +14,7 @@
  */
 namespace Shop;
 use Shop\Models\OrderState;
+use Shop\Models\ProductType;
 
 
 /**
@@ -702,7 +703,7 @@ class Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= SHOP_PROD_VIRTUAL;
+                $prod_types |= ProductType::VIRTUAL;
 
             } else {
                 SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);

@@ -12,9 +12,11 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\ProductType;
+
 
 /**
- * Class for product.
+ * Class for products.
  * @package shop
  */
 class Product
@@ -429,7 +431,7 @@ class Product
      */
     private static function _getInstance($A)
     {
-        if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
+        if (isset($A['prod_type']) && $A['prod_type'] == ProductType::COUPON) {
             $P = new \Shop\Products\Coupon($A);
         } else {
             $P = new self($A);
@@ -1373,7 +1375,7 @@ class Product
 
         $T->set_block('product', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
-            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+            if ($value == ProductType::COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
                 continue;
             }
             $T->set_var(array(
@@ -1973,7 +1975,7 @@ class Product
         // and is available for immediate download, this will be turned off.
         $add_cart = $_SHOP_CONF['ena_cart'] == 1 ? true : false;
 
-        if ($this->prod_type == SHOP_PROD_DOWNLOAD && $this->price == 0) {
+        if ($this->prod_type == ProductType::DOWNLOAD && $this->price == 0) {
             // Free, or unexpired downloads for non-anymous
             $T = SHOP_getTemplate('btn_download', 'download', 'buttons');
             $T->set_var('action_url', SHOP_URL . '/download.php');
@@ -3149,9 +3151,9 @@ class Product
     public function isDownload($only = false)
     {
         if ($only) {
-            $retval = ($this->prod_type == SHOP_PROD_DOWNLOAD);
+            $retval = ($this->prod_type == ProductType::DOWNLOAD);
         } else {
-            $retval = ($this->prod_type & SHOP_PROD_DOWNLOAD) == SHOP_PROD_DOWNLOAD;
+            $retval = ($this->prod_type & ProductType::DOWNLOAD) == ProductType::DOWNLOAD;
         }
         return $retval;
     }
@@ -3175,7 +3177,7 @@ class Product
      */
     public function isPhysical()
     {
-        return ($this->prod_type & SHOP_PROD_PHYSICAL) == SHOP_PROD_PHYSICAL;
+        return ($this->prod_type & ProductType::PHYSICAL);
     }
 
 
@@ -3461,7 +3463,7 @@ class Product
         ) );
         $T->set_block('form', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
-            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+            if ($value == ProductType::COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
                 continue;
             }
             $T->set_var(array(

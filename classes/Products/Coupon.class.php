@@ -14,6 +14,7 @@
  */
 namespace Shop\Products;
 use Shop\Payment;   // to record application of coupon amounts
+use Shop\Models\ProductType;
 
 
 /**
@@ -46,7 +47,7 @@ class Coupon extends \Shop\Product
         global $LANG_SHOP;
 
         parent::__construct($prod_id);
-        $this->prod_type == SHOP_PROD_COUPON;
+        $this->prod_type == ProductType::COUPON;
         $this->taxable = 0; // coupons are not taxable
 
         // Add special fields for Coupon products
@@ -645,7 +646,7 @@ class Coupon extends \Shop\Product
         $items = $cart->getItems();
         foreach ($items as $item) {
             $P = $item->getProduct();
-            if ($P->isNew() || $P->getProductType() == SHOP_PROD_COUPON) {
+            if ($P->isNew() || $P->getProductType() == ProductType::COUPON) {
                 $gc_can_apply -= $P->getPrice($item->getOptions, $item->getQuantity()) * $item->getQuantity();
             }
         }

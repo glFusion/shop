@@ -13,6 +13,7 @@
  */
 namespace Shop\Products;
 use Shop\Currency;
+use Shop\Models\ProductType;
 
 
 /**
@@ -82,7 +83,7 @@ class Plugin extends \Shop\Product
             $mods['uid'] = $_USER['uid'];
         }
         $this->pi_info['mods'] = $mods;
-        $this->prod_type = SHOP_PROD_PLUGIN;
+        $this->prod_type = ProductType::PLUGIN;
 
         // Try to call the plugin's function to get product info.
         $status = LGLIB_invokeService(

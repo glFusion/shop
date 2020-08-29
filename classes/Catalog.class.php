@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\ProductType;
 
 
 /**
@@ -599,7 +600,7 @@ class Catalog
                 if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
                     $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
                 /*} elseif (
-                    (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
+                    (!isset($A['prod_type']) || $A['prod_type'] > ProductType::PHYSICAL) &&
                     $A['price'] == 0
                 ) {
                     // Free items or items purchased and not expired, allow download.

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways;
+use Shop\Models\ProductType;
 
 
 /**
@@ -369,7 +370,7 @@ class check extends \Shop\Gateway
                 }
 
                 // Mark what type of product this is
-                $prod_types |= SHOP_PROD_VIRTUAL;
+                $prod_types |= ProductType::VIRTUAL;
 
             } else {
                 SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
