@@ -120,7 +120,6 @@ class Cart extends Order
         if (empty($AnonCart->getItems())) {
             return;
         }
-
         // Merge the items into the user cart
         foreach ($AnonCart->getItems() as $Item) {
             $opts = array();
@@ -177,7 +176,11 @@ class Cart extends Order
         $item_name  = SHOP_getVar($args, 'item_name');
         $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
-        $PV         = ProductVariant::getByAttributes($P->getID(), $options);
+        if (isset($args['variant'])) {
+            $PV = ProductVariant::getInstance($args['variant']);
+        } else {
+            $PV = ProductVariant::getByAttributes($P->getID(), $options);
+        }
         if (!is_array($this->items)) {
             $this->items = array();
         }
