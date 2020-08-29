@@ -139,11 +139,11 @@
     </div>
 
     <div class="uk-form-row">
-      <label class="uk-form-label" for="price">{$LANG_SHOP['price']}:
+      <label class="uk-form-label" for="f_price">{$LANG_SHOP['price']}:
         <span id="price" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-      <input type="text" id="price" name="price" value="{price}" size="12"
+      <input type="text" id="f_price" name="price" value="{price}" size="12"
         maxlength="20" />&nbsp;{currency}
       </div>
     </div>
