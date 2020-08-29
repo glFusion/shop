@@ -13,7 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\ProductType;
-
+use Shop\Models\Dates;
 
 /**
  * Class for products.
@@ -26,14 +26,6 @@ class Product
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
     protected static $TABLE = 'shop.products';
-
-    /** Minimum possible date available.
-     * @const string */
-    const MIN_DATE = '1900-01-01';
-
-    /** Maximum possible date available.
-     * @const string */
-    const MAX_DATE = '9999-12-31';
 
     /** Out-of-stock items can be sold and backordered.
      * @const integer */
@@ -599,7 +591,7 @@ class Product
     {
         // available to end of time by default
         if ($value < '1970-01-02') {
-            $value = self::MIN_DATE;
+            $value = Dates::MIN_DATE;
         }
         $this->avail_beg = trim($value);
         return $this;
@@ -616,7 +608,7 @@ class Product
     {
         // available to end of time by default
         if ($value < '1970-01-02') {
-            $value = self::MAX_DATE;
+            $value = Dates::MAX_DATE;
         }
         $this->avail_end = trim($value);
         return $this;
@@ -661,7 +653,7 @@ class Product
         $this->setAvailBegin($row['avail_beg']);
         $this->setAvailEnd($row['avail_end']);
         if ($this->avail_end < $this->avail_beg) {
-            $this->avail_end = self::MAX_DATE;
+            $this->avail_end = Dates::MAX_DATE;
         }
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
@@ -2849,7 +2841,7 @@ class Product
      */
     private static function _InputDtFormat($str)
     {
-        if ($str < '1970-01-02' || $str == self::MAX_DATE) {
+        if ($str < '1970-01-02' || $str == Dates::MAX_DATE) {
             return '';
         } else {
             return $str;

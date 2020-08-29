@@ -3,15 +3,17 @@
  * Class to manage product sale prices based on item or category.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Dates;
+
 
 /**
  * Class for product and category sales.
@@ -19,18 +21,6 @@ namespace Shop;
  */
 class Sales
 {
-    /** Minimum possible date.*/
-    const MIN_DATE = '1970-01-01';
-
-    /** Minimum possible time. */
-    const MIN_TIME = '00:00:00';
-
-    /** Maximum possible date. */
-    const MAX_DATE = '9999-12-31';
-
-    /** Maximum possible time. */
-    const MAX_TIME = '23:59:59';
-
     /** Base tag to use in creating cache IDs.
      * @var string */
     private static $base_tag = 'sales';
@@ -130,21 +120,21 @@ class Sales
             // If coming from the form, convert individual fields to a datetime.
             // Use the minimum start date if none provided.
             if (empty($A['start'])) {
-                $A['start'] = self::MIN_DATE;
+                $A['start'] = Dates::MIN_DATE;
             }
             // Use the minimum start time if none provided.
             if (isset($A['start_allday']) || empty($A['start_time'])) {
-                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
+                $A['start'] = trim($A['start']) . ' ' . Dates::MIN_TIME;
             } else {
                 $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
             }
             // Use the maximum date if none is provided.
             if (empty($A['end'])) {
-                $A['end'] = self::MAX_DATE;
+                $A['end'] = Dates::MAX_DATE;
             }
             // Use tme maximum time if none is provided.
             if (isset($A['end_allday']) || empty($A['end_time'])) {
-                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+                $A['end'] = trim($A['end']) . ' ' . Dates::MAX_TIME;
             } else {
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
@@ -493,18 +483,18 @@ class Sales
             'end_date'      => $end_dt,
             'start_time'    => $st_tm,
             'end_time'      => $end_tm,
-            'min_date'      => self::MIN_DATE,
-            'min_time'      => self::MIN_TIME,
-            'max_date'      => self::MAX_DATE,
-            'max_time'      => self::MAX_TIME,
+            'min_date'      => Dates::MIN_DATE,
+            'min_time'      => Dates::MIN_TIME,
+            'max_date'      => Dates::MAX_DATE,
+            'max_time'      => Dates::MAX_TIME,
         ) );
-        if ($this->EndDate->format('H:i:s',true) == self::MAX_TIME) {
+        if ($this->EndDate->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
                 'end_allday_chk' => 'checked="checked"',
                 'end_time_disabled' => 'disabled="disabled"',
             ) );
         }
-        if ($this->StartDate->format('H:i:s',true) == self::MIN_TIME) {
+        if ($this->StartDate->format('H:i:s',true) == Dates::MIN_TIME) {
             $T->set_var(array(
                 'st_allday_chk' => 'checked="checked"',
                 'st_time_disabled' => 'disabled="disabled"',
@@ -742,7 +732,7 @@ class Sales
      */
     private static function maxDateTime()
     {
-        return self::MAX_DATE . ' ' . self::MAX_TIME;
+        return Dates::MAX_DATE . ' ' . Dates::MAX_TIME;
     }
 
 
@@ -753,7 +743,7 @@ class Sales
      */
     private static function minDateTime()
     {
-        return self::MIN_DATE . ' ' . self::MIN_TIME;
+        return Dates::MIN_DATE . ' ' . Dates::MIN_TIME;
     }
 
 

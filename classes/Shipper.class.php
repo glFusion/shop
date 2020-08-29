@@ -6,13 +6,14 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Dates;
 
 
 /**
@@ -256,8 +257,8 @@ class Shipper
             }
             $this->rates = $rates;
         }
-        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', '1900-01-01'));
-        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', '9999-12-31'));
+        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE));
+        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', Dates::MAX_DATE));
     }
 
 

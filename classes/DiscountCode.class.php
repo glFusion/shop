@@ -3,15 +3,17 @@
  * Class to manage multi-use discount codes.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Dates;
+
 
 /**
  * Class for multi-use discount codes.
@@ -21,18 +23,6 @@ namespace Shop;
  */
 class DiscountCode
 {
-    /** Minimum possible date.*/
-    const MIN_DATE = '1970-01-01';
-
-    /** Minimum possible time. */
-    const MIN_TIME = '00:00:00';
-
-    /** Maximum possible date. */
-    const MAX_DATE = '9999-12-31';
-
-    /** Maximum possible time. */
-    const MAX_TIME = '23:59:59';
-
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
     public $isNew = true;
@@ -152,21 +142,21 @@ class DiscountCode
             // If coming from the form, convert individual fields to a datetime.
             // Use the minimum start date if none provided.
             if (empty($A['start'])) {
-                $A['start'] = self::MIN_DATE;
+                $A['start'] = Dates::MIN_DATE;
             }
             // Use the minimum start time if none provided.
             if (isset($A['start_allday']) || empty($A['start_time'])) {
-                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
+                $A['start'] = trim($A['start']) . ' ' . Dates::MIN_TIME;
             } else {
                 $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
             }
             // Use the maximum date if none is provided.
             if (empty($A['end'])) {
-                $A['end'] = self::MAX_DATE;
+                $A['end'] = Dates::MAX_DATE;
             }
             // Use tme maximum time if none is provided.
             if (isset($A['end_allday']) || empty($A['end_time'])) {
-                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+                $A['end'] = trim($A['end']) . ' ' . Dates::MAX_TIME;
             } else {
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
@@ -489,13 +479,13 @@ class DiscountCode
             'start_time'    => $start_time,
             'end_date'      => $end_date,
             'end_time'      => $end_time,
-            'min_date'      => self::MIN_DATE,
+            'min_date'      => Dates::MIN_DATE,
             'min_time'      => '00:00',
-            'max_date'      => self::MAX_DATE,
+            'max_date'      => Dates::MAX_DATE,
             'max_time'      => '23:59',
             'min_order'     => $this->min_order,
         ) );
-        if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
+        if ($this->end->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
                 'exp_allday_chk' => 'checked="checked"',
                 'end_time_disabled' => 'disabled="disabled"',
@@ -668,7 +658,7 @@ class DiscountCode
      */
     private static function maxDateTime()
     {
-        return self::MAX_DATE . ' ' . self::MAX_TIME;
+        return Dates::MAX_DATE . ' ' . Dates::MAX_TIME;
     }
 
 
@@ -679,7 +669,7 @@ class DiscountCode
      */
     private static function minDateTime()
     {
-        return self::MIN_DATE . ' ' . self::MIN_TIME;
+        return Dates::MIN_DATE . ' ' . Dates::MIN_TIME;
     }
 
 
