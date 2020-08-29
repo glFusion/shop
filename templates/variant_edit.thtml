@@ -3,7 +3,7 @@
 {!if is_form}
 <form class="uk-form uk-form-horizontal" action="{action_url}/index.php" method="post">
     <input type="hidden" name="pv_id" value="{pv_id}" />
-    <input type="hidden" name="item_id" value="{item_id}" />
+    <input type="hidden" name="pv_item_id" value="{item_id}" />
 
     <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['product']}:</label>
@@ -18,7 +18,7 @@
             <span id="sku" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="sku" value="{sku}" size="48" placeholder="{$LANG_SHOP['empty_to_gen']}" />
+            <input type="text" name="pv_sku" value="{sku}" size="48" placeholder="{$LANG_SHOP['empty_to_gen']}" />
         </div>
     </div>
 
@@ -27,7 +27,7 @@
             <span id="hlp_sup_ref" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="supplier_ref" value="{supplier_ref}" size="48" />
+            <input type="text" name="pv_supplier_ref" value="{supplier_ref}" size="48" />
         </div>
     </div>
 
@@ -45,7 +45,7 @@
             <span id="price" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="price" value="{price}" placeholder="{$LANG_SHOP['use_opt_price']}" size="20" maxlength="32" />
+            <input type="text" name="pv_price" value="{price}" placeholder="{$LANG_SHOP['use_opt_price']}" size="20" maxlength="32" />
         </div>
     </div>
 
@@ -54,7 +54,7 @@
             <span id="weight" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="weight" value="{weight}" size="12" maxlength="12" />
+            <input type="text" name="pv_weight" value="{weight}" size="12" maxlength="12" />
         </div>
     </div>
 
@@ -63,7 +63,7 @@
             <span id="shipping" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="shipping_units" value="{shipping_units}" size="12" maxlength="32" />
+            <input type="text" name="pv_shipping_units" value="{shipping_units}" size="12" maxlength="32" />
         </div>
     </div>
 
@@ -72,7 +72,7 @@
             <span id="onhand" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="onhand" value="{onhand}" size="12" maxlength="12" placeholder="{$LANG_SHOP['use_prod_val']}" />
+            <input type="text" name="pv_onhand" value="{onhand}" size="12" maxlength="12" placeholder="{$LANG_SHOP['use_prod_val']}" />
         </div>
     </div>
 
@@ -81,7 +81,7 @@
             <span id="reorder" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="text" name="reorder" value="{reorder}" size="12" maxlength="32" placeholder="{$LANG_SHOP['use_prod_val']}" />
+            <input type="text" name="pv_reorder" value="{reorder}" size="12" maxlength="32" placeholder="{$LANG_SHOP['use_prod_val']}" />
         </div>
     </div>
 
@@ -90,7 +90,7 @@
             <span id="enabled" class="tooltip_cfg tooltipstered"></span>
         </label>
         <div class="uk-form-controls">
-            <input type="checkbox" name="enabled" value="1" {ena_chk} />
+            <input type="checkbox" name="pv_enabled" value="1" {ena_chk} />
         </div>
     </div>
 

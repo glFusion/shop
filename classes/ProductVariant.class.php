@@ -5,13 +5,14 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+
 
 /**
  * Class for product variants.
@@ -33,49 +34,50 @@ class ProductVariant
 
     /** Variant record ID.
      * @var integer */
-    private $pv_id;
+    private $pv_id = 0;
 
     /** Product record ID.
      * @var integer */
-    private $item_id;
+    private $item_id = 0;
 
     /** Variant description.
-     * @var string */
-    private $dscp;
+     * @var array */
+    private $dscp = array();
 
     /** Price impact amount.
      * @var float */
-    private $price;
+    private $price = 0;
 
     /** Weight impact.
      * @var float */
-    private $weight;
+    private $weight = 0;
 
     /** Shipping Units impact.
      * @var float */
-    private $shipping_units;
+    private $shipping_units = 0;
 
     /** Variant SKU.
      * @var string */
-    private $sku;
+    private $sku = '';
 
     /** Supplier reference number (sku, part number, etc.).
      * @var string */
-    private $supplier_ref;
+    private $supplier_ref = '';
 
     /** Quantity on hand.
      * @var float */
-    private $onhand;
+    private $onhand = 0;
 
     /** Reorder quantity. Overrides the product reorder setting.
      * @var integer */
-    private $reorder;
+    private $reorder = 0;
 
     /** Flag to incidate that orders can be accepted for this variant.
      * @var integer */
     private $enabled = 1;
 
     /** OptionValue items associated with this variant.
+     * Use NULL to indicate that options have not yet been read.
      * @var array */
     private $Options = NULL;
 
@@ -291,6 +293,9 @@ class ProductVariant
     private function _optsInUse()
     {
         $retval = array();
+        if ($this->Options === NULL) {
+            $this->loadOptions();
+        }
         foreach ($this->Options as $Opt) {
             $retval [] = $Opt->getID();
         }
@@ -561,6 +566,7 @@ class ProductVariant
      */
     public function getDscpString()
     {
+        $retval = array();
         foreach ($this->dscp as $dscp) {
             $retval[] = "{$dscp['name']}:{$dscp['value']}";
         }
@@ -810,7 +816,7 @@ class ProductVariant
             }
         }
 
-        $item_id = (int)$A['item_id'];
+        $item_id = (int)$A['pv_item_id'];
         if ($item_id < 1 || empty($A['groups'])) {
             return false;
         }
@@ -824,8 +830,8 @@ class ProductVariant
         $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
         $matrix = self::_cartesian($A['groups']);
         foreach ($matrix as $groups) {
-            if ($A['price'] !== '') {
-                $price = (float)$A['price'];
+            if ($A['pv_price'] !== '') {
+                $price = (float)$A['pv_price'];
             } else  {
                 $price = 0;
             }
@@ -838,10 +844,10 @@ class ProductVariant
                 }
                 $opt_ids[] = $pov_id;   // save for the variant->opt table
                 $Opt = new ProductOptionValue($pov_id);
-                if (!isset($A['price']) || $A['price'] === '') {   // Zero is valid
+                if (!isset($A['pv_price']) || $A['pv_price'] === '') {   // Zero is valid
                     $price += $Opt->getPrice();
                 }
-                if (empty($A['sku'])) {
+                if (empty($A['pv_sku'])) {
                     if ($Opt->getSku() != '') {
                         $sku_parts[] = $Opt->getSku();
                     }
@@ -851,27 +857,27 @@ class ProductVariant
                     'value' => $Opt->getValue(),
                 );
             }
-            if (empty($A['sku'])) {
+            if (empty($A['pv_sku'])) {
                 if (!empty($sku_parts) && !empty($P->getName())) {
                     $sku = $P->getName() . '-' . implode('-', $sku_parts);
                 }
             } else {
-                $sku = $A['sku'];
+                $sku = $A['pv_sku'];
             }
-            if ($A['onhand'] === '') {
+            if ($A['pv_onhand'] === '') {
                 $onhand = $P->getOnhand();
             } else {
-                $onhand = (float)$A['onhand'];
+                $onhand = (float)$A['pv_onhand'];
             }
-            if ($A['reorder'] === '') {
+            if ($A['pv_reorder'] === '') {
                 $reorder = $P->getReorder();
             } else {
-                $reorder = (float)$A['reorder'];
+                $reorder = (float)$A['pv_reorder'];
             }
-            if ($A['supplier_ref'] === '') {
+            if ($A['pv_supplier_ref'] === '') {
                 $sup_ref = $P->getSupplierRef();
             } else {
-                $sup_ref = $A['supplier_ref'];
+                $sup_ref = $A['pv_supplier_ref'];
             }
 
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} SET
@@ -1079,6 +1085,9 @@ class ProductVariant
      */
     public function setImageIDs($ids)
     {
+        if ($ids === NULL) {
+            return $this;
+        }
         if (is_string($ids)) {
             $ids = explode(',', $ids);
         }
