@@ -43,7 +43,11 @@ class Supplier extends Address
 
     /** Normal lead time for this supplier.
      * @var string */
-    private $lead_time;
+    private $lead_time = '';
+
+    /** Array of error messages.
+     * @var array */
+    private $_errors = array();
 
 
     /**
@@ -286,6 +290,17 @@ class Supplier extends Address
 
 
     /**
+     * Get the error messages created during an operation.
+     *
+     * @return  array   Array of error messages
+     */
+    public function getErrors()
+    {
+        return $this->_errors;
+    }
+
+
+    /**
      * Save the supplier information.
      *
      * @param   array   $A  Optional data array from $_POST
@@ -334,6 +349,10 @@ class Supplier extends Address
         if (!empty($_FILES)) {
             $Img = new Images\Supplier($this->getID(), 'logofile');
             $Img->uploadFiles();
+            if (!empty($Img->getErrors())) {
+                $this->_errors = array_merge($this->_errors, $Img->getErrors());
+                return false;
+            }
         }
         return $status;
     }
@@ -547,7 +566,7 @@ class Supplier extends Address
         case 'edit':
             $retval = COM_createLink(
                 Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $A['sup_id']
+                SHOP_ADMIN_URL . '/index.php?edit_sup=' . $A['sup_id']
             );
             break;
 

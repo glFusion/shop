@@ -28,7 +28,7 @@ class UploadDownload
 {
     /** File storage directory.
      * @var string */
-    private $_filePath;
+    private $_filePath = '';
 
     /** Array of error messages accumulated during processing.
      * @var array */
@@ -1169,8 +1169,8 @@ class UploadDownload
             if (!$this->_fileSizeOk()) {
                 $err_msg = 'File, ' . $this->_currentFile['name'] . ', is larger than the ' .
                     COM_numberFormat($this->_maxFileSize,0) . ' byte limit';
-                $this->_addError($msg);
-                $this->_currentFile['localerror'][] = $msg;
+                $this->_addError($err_msg);
+                $this->_currentFile['localerror'][] = $err_msg;
             }
 
             // If all systems check, do the upload

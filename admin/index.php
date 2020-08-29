@@ -485,8 +485,17 @@ case 'save_sup':
         COM_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?suppliers');
     } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $Sup->getID());
+        $msg = '';
+        foreach ($Sup->getErrors() as $err) {
+            $msg .= '<li>' . $err . '</li>' . LB;
+        }
+        if (!empty($msg)) {
+            $msg = '<ul>' . $msg . '</ul>';
+        } else {
+            $msg = $LANG_SHOP['msg_nochange'];
+        }
+        COM_setMsg($msg, 'error', true);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup=' . $Sup->getID());
     }
     break;
 
