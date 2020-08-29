@@ -165,7 +165,7 @@ class Workflow
     {
         global $_TABLES;
 
-        if (is_integer($id)) {
+        if (is_numeric($id)) {
             $key_fld = 'wf_id';
         } else {
             $key_fld = 'wf_name';
@@ -193,8 +193,9 @@ class Workflow
         global $_TABLES;
 
         $id = (int)$id;
-        if ($id < 1)
+        if ($id < 1) {
             return -1;
+        }
         $field = DB_escapeString($field);
 
         // Determing the new value (opposite the old)
