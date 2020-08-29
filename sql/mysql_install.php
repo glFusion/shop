@@ -267,7 +267,7 @@ $_SQL = array(
   `can_disable` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `orderby` (`orderby`),
-  KEY `idx_name` (`wf_name`)
+  KEY `key_name` (`wf_name`)
 ) ENGINE=MyISAM",
 
 'shop.orderstatus' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
@@ -326,7 +326,7 @@ $_SQL = array(
   UNIQUE KEY `code` (`code`),
   KEY `owner` (`redeemer`,`balance`,`expires`),
   KEY `purchased` (`purchased`),
-  KEY `expires` (`expires`)
+  KEY `key_expires` (`expires`)
 ) ENGINE=MyIsam",
 
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
@@ -729,12 +729,12 @@ $SHOP_UPGRADE['1.2.2'] = array(
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
         (`name`, `notify_buyer`, `notify_admin`)
         VALUES ('invoiced', 0, 0)",
-    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY `idx_expires` (expires)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY `key_expires` (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
-    "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
+    "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `key_name` (`wf_name`)",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
