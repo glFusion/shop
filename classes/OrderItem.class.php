@@ -157,15 +157,14 @@ class OrderItem
                 if (
                     is_array($oi_id['extras']) &&
                     isset($oi_id['extras']['custom']) &&
-                    !empty($oi_id['extras']['custom']) &&
-                    is_array($oi_id['extras']['custom'])
+                    is_array($oi_id['extras']['custom']) &&
+                    !empty($oi_id['extras']['custom'])
                 ) {
                     $cust = $oi_id['extras']['custom'];
                     $P = Product::getByID($this->product_id);
                     foreach ($P->getCustom() as $id=>$name) {
                         if (isset($cust[$id]) && !empty($cust[$id])) {
                             $this->addOptionText($name, $cust[$id]);
-                            break;
                         }
                     }
                 }
