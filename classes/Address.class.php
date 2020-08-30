@@ -681,9 +681,9 @@ class Address
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
             $retval .=  $sep . Country::getInstance($this->country)->getName();
         }
-        if ($this->phone != '') {
+        /*if ($this->phone != '') {
             $retval .= $sep . $this->phone;
-        }
+        }*/
         return $retval;
     }
 

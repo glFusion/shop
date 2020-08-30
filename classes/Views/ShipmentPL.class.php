@@ -107,7 +107,7 @@ class ShipmentPL
             'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
-            'shop_phone'    => $_SHOP_CONF['shop_phone'],
+            'shop_phone'    => $Shop->getPhone(),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'status'        => $this->Order->getStatus(),
