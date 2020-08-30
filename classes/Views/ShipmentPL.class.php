@@ -108,6 +108,7 @@ class ShipmentPL
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
             'shop_phone'    => $Shop->getPhone(),
+            'shop_email'    => $Shop->getEmail(),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'status'        => $this->Order->getStatus(),

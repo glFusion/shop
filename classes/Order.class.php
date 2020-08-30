@@ -1157,6 +1157,7 @@ class Order
             'shop_name'     => $ShopAddr->toHTML('company'),
             'shop_addr'     => $ShopAddr->toHTML('address'),
             'shop_phone'    => $ShopAddr->getPhone(),
+            'shop_email'    => $ShopAddr->getEmail(),
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
             'net_total'     => $Currency->Format($this->total - $by_gc),
             'status'        => $this->status,
