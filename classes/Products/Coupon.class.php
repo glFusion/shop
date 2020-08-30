@@ -15,6 +15,7 @@
 namespace Shop\Products;
 use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
+use Shop\Models\Dates;
 
 
 /**
@@ -398,12 +399,12 @@ class Coupon extends \Shop\Product
         $T = SHOP_getTemplate('coupon_email_message', 'message');
         if ($exp != self::MAX_EXP) {
             $dt = new \Date($exp, $_CONF['timezone']);
-            $exp = $dt->format($_CONF['shortdate']);
+            $exp = $dt->format(Dates::FMT_FULLDATE);
+            $T->set_var('expires', $exp);
         }
         $T->set_var(array(
             'gc_code'   => $gc_code,
             'sender_name' => $sender,
-            'expires'   => $exp,
             'submit_url' => self::redemptionUrl($gc_code),
             'message'   => strip_tags($msg),
         ) );

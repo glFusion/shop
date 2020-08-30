@@ -39,4 +39,12 @@ class Dates
     /** Maximum time value (one second before midnight).
      */
     public const MAX_TIME = '23:59:59';
+
+    /** DateTime format including timezone.
+     */
+    public const FMT_DATETIME = 'Y-m-d H:i:s T';
+
+    /** Full date format: Month Day, Year.
+     */
+    public const FMT_FULLDATE = 'F j, Y';
 }
