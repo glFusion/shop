@@ -276,19 +276,22 @@ class orderlist extends \Shop\Report
             $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
-            $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
+            $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defsort_arr['direction'];
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
-                } else {
+                } elseif (!empty($A['billto_name'])) {
                     $customer = $A['billto_name'];
+                } else {
+                    $customer = COM_getDisplayName($A['uid']);
                 }
                 $order_date->setTimestamp($A['order_date']);
                 $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
                     'order_id'      => $A['order_id'],
+                    'invoice'       => $A['order_seq'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
                     'sales_amt'     => self::formatMoney($A['sales_amt']),

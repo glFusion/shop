@@ -1,5 +1,5 @@
-"{$LANG_SHOP['order_number']}","{$LANG_SHOP['datetime']}","{$LANG_SHOP['customer']}","{$LANG_SHOP['sales_amt']}","{$LANG_SHOP['tax']}","{$LANG_SHOP['shipping']}","{$LANG_SHOP['total']}","{$LANG_SHOP['paid']}"{nl}
+"{$LANG_SHOP['order_number']}","{$LANG_SHOP['datetime']}","{$LANG_SHOP['customer']}","{$LANG_SHOP['sales_amt']}","{$LANG_SHOP['tax']}","{$LANG_SHOP['shipping']}","{$LANG_SHOP['total']}","{$LANG_SHOP['paid']}","{$LANG_SHOP['order_seq']}"{nl}
 <!-- BEGIN ItemRow -->
-"{order_id}","{order_date}","{customer}","{sales_amt}","{tax}","{shipping}","{total}","{paid}"{nl}
+"{order_id}","{order_date}","{customer}","{sales_amt}","{tax}","{shipping}","{total}","{paid}","{invoice}"{nl}
 <!-- END ItemRow -->
 "{$LANG_SHOP['total']}","","","{total_sales}","{total_tax}","{total_shipping}","{total_total}","{total_paid}"{nl}
