@@ -855,8 +855,10 @@ class Report
                 $fieldvalue = $A['billto_company'];
             } elseif (isset($A['billto_name']) && !empty($A['billto_name'])) {
                 $fieldvalue = $A['billto_name'];
-            } else {
+            } elseif (isset($A['shipto_name']) && !empty($A['shipto_name'])) {
                 $fieldvalue = SHOP_getVar($A, 'shipto_name');
+            } else {
+                $fieldvalue = COM_getDisplayName($A['uid']);
             }
             $retval = str_replace('"', '&quot;', $fieldvalue);
             if (isset($extra['uid_link'])) {
