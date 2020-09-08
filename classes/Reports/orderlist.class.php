@@ -46,6 +46,8 @@ class orderlist extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
+        USES_lib_admin();
+
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
@@ -261,7 +263,7 @@ class orderlist extends \Shop\Report
             $filter = '<select name="period">' . $this->getPeriodSelection($this->period, false) . '</select>';
             $T->set_var(
                 'output',
-                \ADMIN_list(
+                ADMIN_list(
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
