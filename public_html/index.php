@@ -373,6 +373,12 @@ case 'checkoutcart':
     $content .= \Shop\Cart::getInstance()->View(5);
     break;
 
+case 'orderhist':
+    $Report = Shop\Report::getInstance('orderlist');
+    $Report->setUid();
+    $content = $Report->Render();
+    break;
+
 case 'products':
 default:
     SHOP_setUrl();
