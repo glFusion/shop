@@ -106,6 +106,8 @@ class Cart extends Order
 
     /**
      * Merge the saved cart for Anonymous into the current user's cart.
+     * Calls addItem() for each item rather than changing the cart ID for each
+     * item in order to combine duplicate line items.
      * Saves the updated cart to the database.
      *
      * @param   string  $cart_id    ID of cart being merged into this one
