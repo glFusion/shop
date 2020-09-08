@@ -1,24 +1,29 @@
 {# begin {templatelocation} #}
 <div id="pe_shop" class="jsenabled_hide">
-<nav class="uk-navbar uk-margin-top">
-  <div class="uk-navbar-content">
-  {$LANG_SHOP['my_account']}
-  </div>
-</nav>
+<fieldset data-uk-margin>
+    <legend>{$LANG_SHOP['my_account']}</legend>
 {!if gc_bal}
-<h3>{$LANG_SHOP['gc_bal']}:&nbsp;&nbsp;{gc_bal}</h3>
-<div class="uk-form-row">
-  <label class="uk-form-label">{$LANG_SHOP['apply_gc']}:</label>
-  <div class="uk-form-controls">
-    <input type="text" name="shop_apply_gc" />
-  </div>
-</div>
+    <div class="uk-form-row">
+        <label class="uk-form-label" style="margin-top:0px;">{$LANG_SHOP['gc_bal']}:</label>
+        <div class="uk-form-controls">
+            {gc_bal}
+        </div>
+    </div>
+    <div class="uk-form-row">
+        <label class="uk-form-label">{$LANG_SHOP['apply_gc']}:</label>
+        <div class="uk-form-controls">
+            <input type="text" name="shop_apply_gc" placeholder="{$LANG_SHOP['enter_gc']}" />
+        </div>
+    </div>
 {!endif}
 {!if orders}
-{$LANG_SHOP['my_orders']}: <a href="{site_url}/shop/index.php?orderhist">{orders}</a>
-<div>
-    {order_hist}
-</div>
+    <div class="uk-form-row">
+        <label class="uk-form-label" style="margin-top:0px;">{$LANG_SHOP['my_orders']}:</label>
+        <div class="uk-form-controls">
+            <a href="{site_url}/shop/index.php?orderhist">{orders}</a>
+        </div>
+    </div>
 {!endif}
+</fieldset>
 </div>
 {# end {templatelocation} #}
