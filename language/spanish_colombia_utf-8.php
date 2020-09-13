@@ -708,6 +708,11 @@ $LANG_SHOP = array (
 'bal_due' => 'Balance Due',
 'notify_pmt_received' => 'Your payment has been received.',
 'dup_pxf' => 'Duplicate or invalid feature selected.',
+'tax_loc' => 'Sales Tax Location',
+'origin' => 'Origin',
+'at_dscp_shop' => 'Include a product in the content',
+'at_dscp_shop_cat' => 'Add a link to a catalog category',
+'at_dscp_shop_headlines' => 'Include a headline-style display of products',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -748,6 +753,7 @@ $LANG_SHOP_HELP = array(
 'pending' => 'Processing will begin once payment is received.',
 'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 'select_files' => 'Select one or multiple files to upload.',
+'tax_import_fmt' => 'File Format and first line: <pre>State,ZipCode,TaxRegionName,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,EstimatedSpecialRate,RiskLevel</pre>',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
