@@ -492,10 +492,11 @@ function plugin_user_move_shop($origUID, $destUID)
  */
 function plugin_autotags_shop ($op, $content = '', $autotag = '')
 {
-    global $_CONF, $_TABLES, $_SHOP_CONF;
+    global $_CONF, $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
     $pi_name = $_SHOP_CONF['pi_name'];
-    if ($op == 'tagname' ) {
+    switch ($op) {
+    case 'tagname':
         $tags = array(
             $pi_name,
             $pi_name . '_cat',
@@ -509,7 +510,23 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $tags[] = 'paypal_headlines';
         }
         return $tags;
-    } else if ($op == 'parse') {
+        break;
+    case 'tagusage':
+        return array('namespace' => $pi_name, 'usage' => 'description');
+        break;
+    case 'desc':
+        switch ($content) {
+        case $pi_name:
+        case $pi_name . '_cat':
+        case $pi_name . '_headlines':
+            return $LANG_SHOP['at_dscp_' . $content];
+            break;
+        default:
+            return '';
+            break;
+        }
+        break;
+    case 'parse':
         // Do nothing if the user can't view the catalog
         if (!SHOP_access_check()) return $content;
 
@@ -573,6 +590,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $content = str_replace($autotag['tagstr'], $repl, $content);
         }
         return $content;
+        break;
     }
 }
 
