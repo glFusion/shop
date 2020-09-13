@@ -528,6 +528,10 @@ function SHOP_remove_old_files()
             // 1.3.0
             'vendor/square/connect',
             'Autoload.class.php',
+            // 1.3.2
+            'language/english.php',
+            'language/german.php',
+            'language/german_formal.php',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(

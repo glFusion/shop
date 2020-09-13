@@ -66,7 +66,7 @@ SESS_setVar($_SHOP_CONF['pi_name'], array(
 $langpath = __DIR__ . '/language';
 $langfile = "{$_CONF['language']}.php";
 if (!is_file("$langpath/$langfile")) {
-    $langfile = 'english.php';
+    $langfile = 'english_utf-8.php';
 }
 /** Include the proper language file */
 require_once "$langpath/$langfile";
