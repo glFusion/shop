@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\ProductType;
+use Shop\Models\Views;
 
 
 /**
@@ -454,7 +455,7 @@ class Catalog
                 !$P->hasSpecialFields()
             ) {
                 // Buttons only show in the list if there are no options to select
-                $buttons = $P->PurchaseLinks('list');
+                $buttons = $P->PurchaseLinks(Views::LIST);
                 foreach ($buttons as $name=>$html) {
                     $T->set_var('button', $html);
                     $T->parse('Btn', 'BtnBlock', true);

@@ -14,6 +14,7 @@
 namespace Shop;
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
+use Shop\Models\Views;
 
 /**
  * Class for products.
@@ -231,7 +232,7 @@ class Product
 
     /** Type of button to create depends on the current view- list or detail.
      * @var string */
-    protected $_view = 'detail';
+    protected $_view = Views::DETAIL;
 
     /** Sale object associated with this product.
      * @var object */
@@ -1839,7 +1840,7 @@ class Product
             $T->parse('SF', 'SpecialFields', true);
         }
 
-        $buttons = $this->PurchaseLinks();
+        $buttons = $this->PurchaseLinks(Views::DETAIL);
         $T->set_block('product', 'BtnBlock', 'Btn');
         foreach ($buttons as $name=>$html) {
             if ($name == 'add_cart') {
@@ -1956,7 +1957,7 @@ class Product
      * @param   string  $type   View type where the button will be shown
      * @return  array   Array of buttons as name=>html.
      */
-    public function PurchaseLinks($type='detail')
+    public function PurchaseLinks($type=Views::DETAIL)
     {
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
@@ -2018,6 +2019,7 @@ class Product
                 }
             }
 
+            $add_form_url = in_array($type, array(Views::BLOCK, Views::LIST));
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
@@ -2027,7 +2029,7 @@ class Product
                 'action_url'    => SHOP_URL . '/index.php',
                 //'form_url'  => $this->hasOptions() ? '' : 'true',
                 //'form_url'  => false,
-                'form_url'  => $this->_view == 'list' ? true : false,
+                'form_url'  => $add_form_url,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
                 'quantity'  => $this->getFixedQuantity(),
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
