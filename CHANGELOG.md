@@ -1,5 +1,9 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.2.2
+Release 2020-09-25
+  * Fix SQL error in standard glFusion search
+
 ## v1.2.0
 Release 2020-02-29
 
