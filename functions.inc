@@ -116,6 +116,7 @@ spl_autoload_register(function ($class)
         require $file;
     }
 });
+use Shop\Models\Views;
 
 
 /**
@@ -673,7 +674,7 @@ function plugin_dopluginsearch_shop(
     // Use the SKU or item ID in the resulting url?
     $url_id = $_SHOP_CONF['use_sku'] ? 'p.name' : 'p.id';
     $sql = "SELECT
-                p.id, p.name as title, p.description as description,
+                p.id, p.short_description as title, p.description as description,
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
@@ -1415,7 +1416,7 @@ function SHOP_phpblock_product($sql)
             ) );
 
             if (!$P->hasOptions()) {
-                $buttons = $P->PurchaseLinks();
+                $buttons = $P->PurchaseLinks(Views::BLOCK);
                 $btn_txt = '';
                 foreach ($buttons as $name=>$html) {
                     $btn_txt .= $html . '<br />';
@@ -2073,7 +2074,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
             $fields[] = 'c.grp_access';
             break;
         case 'url':
-            $fields[] = 'p.name';
+            $fields[] = 'p.short_description';
             break;
         }
     }
@@ -2118,7 +2119,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 $props[$p] = $A['short_description'] . ' ' . $A['description'];
                 break;
             case 'title':
-                $props[$p] = $A['name'];
+                $props[$p] = $A['short_description'];
                 break;
             case 'searchidx':
                 $props[$p] = $A['name'] . ' ' .
