@@ -114,13 +114,13 @@
 
     <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['images']}:
-            <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'img_ids');">
+            <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'pv_img_ids');">
         </label>
         <div class="uk-form-controls">
             <ul class="shopProductThumbWrapper">
 <!-- BEGIN ImageBlock -->
             <li class="shopProductThumb">
-                <input id="img_cb_{img_id}" type="checkbox" name="img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
+                <input id="img_cb_{img_id}" type="checkbox" name="pv_img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
                 <label for="img_cb_{img_id}"><img src="{img_url}" id="img_{img_id}" /></label>
             </li>
 <!-- END ImageBlock -->

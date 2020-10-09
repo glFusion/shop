@@ -169,11 +169,11 @@ class ProductVariant
             $pfx = $fromDB ? '' : 'pv_';
             $this
                 ->setId(SHOP_getVar($A, 'pv_id', 'integer'))
-                ->setItemId(SHOP_getVar($A, 'item_id'))
+                ->setItemId(SHOP_getVar($A, $pfx.'item_id'))
                 ->setPrice(SHOP_getVar($A, $pfx.'price', 'float'))
                 ->setWeight(SHOP_getVar($A, $pfx.'weight', 'float'))
                 ->setShippingUnits(SHOP_getVar($A, $pfx.'shipping_units', 'float'))
-                ->setSku(SHOP_getVar($A, 'sku'))
+                ->setSku(SHOP_getVar($A, $pfx.'sku'))
                 ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
                 ->setOnhand(SHOP_getVar($A, $pfx.'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, $pfx.'reorder', 'float'))
@@ -923,7 +923,6 @@ class ProductVariant
         if (is_array($A)) {
             $this->setVars($A, false);
         }
-
         if ($this->pv_id == 0) {
            if (isset($A['groups'])) {
                return self::saveNew($A);

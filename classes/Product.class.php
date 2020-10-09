@@ -1817,7 +1817,7 @@ class Product
             $T->parse('FL', 'FeatList', true);
         }
         if ($zonerule_dscp != '') {
-                $T->set_var(array(
+            $T->set_var(array(
                 'ft_name' => $LANG_SHOP['restrictions'],
                 'fv_text' => $zonerule_dscp
             ) );
