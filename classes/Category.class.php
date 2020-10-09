@@ -497,10 +497,11 @@ class Category
 
         $retval .= $T->parse('output', 'category');
 
-        @setcookie($_CONF['cookie_name'].'fckeditor',
-                SEC_createTokenGeneral('advancededitor'),
-                time() + 1200, $_CONF['cookie_path'],
-                $_CONF['cookiedomain'], $_CONF['cookiesecure']);
+        SEC_setCookie(
+            $_CONF['cookie_name'].'fckeditor',
+            SEC_createTokenGeneral('advancededitor'),
+            time() + 1200
+        );
 
         $retval .= COM_endBlock();
         return $retval;

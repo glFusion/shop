@@ -926,7 +926,7 @@ class Cart extends Order
         global $_SHOP_CONF;
 
         $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
-        SEC_setCookie(self::$session_var, $value, $exp, '/');
+        SEC_setCookie(self::$session_var, $value, $exp);
         self::setSession('cart_id', $value);
     }
 
@@ -939,7 +939,7 @@ class Cart extends Order
     {
         unset($_COOKIE[self::$session_var]);
         self::clearSession();
-        SEC_setCookie(self::$session_var, '', time()-3600, '/');
+        SEC_setCookie(self::$session_var, '', time()-3600);
     }
 
 
