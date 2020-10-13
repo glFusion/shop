@@ -1,0 +1,21 @@
+Hyvä sivuston ylläpitäjä;
+<p>
+Olet saanut uuden tilauksen verkkosivustosi kautta. Tarkista ostotiedot osoitteesta
+{site_admin_url}/plugins/shop/index.php?order={order_id}
+ mahdollisesti tarvittaviin toimiin.
+</p>
+<p>
+Seuraavat tiedot ostosta:
+</p>
+<p>
+Ostaja: {maksajan_nimi} (tunnus {ostajan_nimi}, {käyttäjän_nimi})<br />
+{payer_email}
+</p>
+<p>
+{purchase_details}
+</p>
+{!if order_instr}
+<p>Erityisohjeet: {order_instr}</p>
+{!endif}
+<p>Tilauksen tila: {status}</p>
+<p>Maksu suoritettiin {gateway_name} -palvelun kautta {payment_date}</p>

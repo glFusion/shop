@@ -23,7 +23,7 @@ another email message confirming your payment.
 <p>{email_extras}</p>
 {!endif}
 {!if gw_msg}
-<p><b>{$LANG_SHOP['message']}:</b><br />{gw_msg}</p>
+<p><b>Message:</b><br />{gw_msg}</p>
 {!endif}
 {!if gc_bal_num}
 <p>
