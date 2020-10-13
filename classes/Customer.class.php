@@ -117,7 +117,7 @@ class Customer
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
-            $this->language = $A['language'];
+            $this->language = str_replace('_' . COM_getCharset(), '', $A['language']);
             $this->isNew = false;
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
@@ -296,7 +296,6 @@ class Customer
             cart = '$cart'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        Cache::clear('shop.user_' . $this->uid);
         return DB_error() ? false : true;
     }
 
@@ -315,7 +314,6 @@ class Customer
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
-        Cache::clear('shop.user_' . $uid);
     }
 
 
@@ -584,12 +582,7 @@ class Customer
         $uid = (int)$uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
-            $key = 'shop.user_' . $uid;  // Both the key and cache tag
-            self::$users[$uid] = Cache::get($key);
-            if (!self::$users[$uid]) {
-                self::$users[$uid] = new self($uid);
-                Cache::set($key, self::$users[$uid], $key);
-            }
+            self::$users[$uid] = new self($uid);
         }
         return self::$users[$uid];
     }
@@ -607,12 +600,7 @@ class Customer
      */
     public function getLanguage($fullname = false)
     {
-        if (!$fullname) {
-            $lang = explode('_', $this->language);
-            return $lang[0];
-        } else {
-            return $this->language;
-        }
+        return $this->language;
     }
 
 
