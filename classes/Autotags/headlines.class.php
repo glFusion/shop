@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Autotags;
+use Shop\Template;
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
@@ -154,7 +155,7 @@ class headlines
         }
 
         if ($numRows > 0) {
-            $T = new \Template(__DIR__ . '/../../templates/autotags');
+            $T = new Template('autotags');
             $T->set_file('page', $template);
             $T->set_var('columns' ,$cols);
             $T->set_block('page', 'headlines', 'hl');

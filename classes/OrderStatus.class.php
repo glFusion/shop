@@ -121,7 +121,8 @@ class OrderStatus extends Workflow
     {
         global $LANG_SHOP;
 
-        $T = SHOP_getTemplate('orderstatus', 'ordstat');
+        $T = new Template;
+        $T->set_file('ordstat', 'orderstatus.thtml');
         $T->set_var(array(
             'order_id'  => $order_id,
             'oldvalue'  => $selected,

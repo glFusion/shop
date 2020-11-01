@@ -12,10 +12,11 @@
  * @filesource
  */
 namespace Shop\Gateways;
-
 use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
+use Shop\Template;
+
 
 /**
  *  Coupon gateway class, just to provide checkout buttons for coupons
@@ -141,7 +142,7 @@ class free extends \Shop\Gateway
         if ($btn_text == '') {
             $btn_text = SHOP_getVar($LANG_SHOP['buttons'], $this->gw_name, 'string', $LANG_SHOP['buy_now']);
         }
-        $T = new \Template(SHOP_PI_PATH . '/templates/buttons');
+        $T = new Template('buttons');
         $T->set_file('btn', 'btn_free.thtml');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),

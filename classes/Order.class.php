@@ -958,7 +958,7 @@ class Order
         }
         $step = (int)$step;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('order', $tplname . '.thtml');
         $billto = $this->Billto->toArray();
         $shipto = $this->Shipto->toArray();
@@ -1520,11 +1520,11 @@ class Order
             $LANG_SHOP = self::loadLanguage($_CONF['language']);
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
-            $T = new \Template(array(
-                SHOP_PI_PATH . '/templates/notify/' . $Cust->getLanguage(),
-                SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
-                SHOP_PI_PATH . '/templates/notify/english',
-                SHOP_PI_PATH . '/templates/notify', // catch templates using language strings
+            $T = new Template(array(
+                'notify/' . $Cust->getLanguage(),
+                'notify/' . COM_getLanguageName(),
+                'notify/english',
+                'notify', // catch templates using language strings
             ) );
             $T->set_file(array(
                 'msg'       => 'msg_buyer.thtml',
@@ -1562,10 +1562,10 @@ class Order
             // Fall back to English if no others available.
             // This uses the site default language.
             $Cust = Customer::getInstance($this->uid);
-            $T = new \Template(array(
-                SHOP_PI_PATH . '/templates/notify/' . COM_getLanguageName(),
-                SHOP_PI_PATH . '/templates/notify/english',
-                SHOP_PI_PATH . '/templates/notify', // catch templates using language strings
+            $T = new Template(array(
+                'notify/' . COM_getLanguageName(),
+                'notify/english',
+                'notify', // catch templates using language strings
             ) );
             $T->set_file(array(
                 'msg'       => 'msg_admin.thtml',
@@ -2414,7 +2414,8 @@ class Order
         $this->shipper_id = $best->getID();
         $this->shipping = $best->getOrderShipping()->total_rate;
 
-        $T = SHOP_getTemplate('shipping_method', 'form');
+        $T = new Template;
+        $T->set_file('form', 'shipping_method.thtml');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
         // Save the base charge (total items and handling, exclude tax if present)
@@ -3016,7 +3017,7 @@ class Order
         if (empty($Shipments)) {
             return '';
         }
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('html', 'shipping_block.thtml');
         $T->set_block('html', 'Packages', 'packages');
         foreach ($Shipments as $Shipment) {

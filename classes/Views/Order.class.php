@@ -16,6 +16,8 @@ use Shop\Currency;
 use Shop\Workflow;
 use Shop\Shipment;
 use Shop\Shipper;
+use Shop\Template;
+
 
 /**
  * Order view class.
@@ -126,7 +128,7 @@ class Order
         }
         $step = (int)$step;
  */
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('order', $this->tplname . '.thtml');
         foreach (array('billto', 'shipto') as $type) {
             foreach ($this->Order->_addr_fields as $name) {

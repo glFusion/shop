@@ -554,7 +554,7 @@ class Payment
         //$Orders = Order::getUnpaid();
         $Order = Order::getInstance($this->order_id);
         $bal_due = $Order->getBalanceDue();
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'pmt_form.thtml');
         $T->set_var(array(
             'user_select' => COM_optionList(

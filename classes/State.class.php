@@ -430,7 +430,7 @@ class State extends RegionBase
      */
     public function Edit()
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file(array(
             'form' => 'state.thtml',
             'tips' => 'tooltipster.thtml',

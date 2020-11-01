@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -960,7 +960,7 @@ function phpblock_shop_cart()
 {
     if (!SHOP_access_check()) return '';
 
-    $T = new Template(__DIR__ . '/templates');
+    $T = new Shop\Template;
     $T->set_file('shopping_cart', 'blk_cart.thtml');
     $contents = phpblock_shop_cart_contents();
     $vis = empty($contents) ? 'none' : 'block';
@@ -1005,7 +1005,7 @@ function phpblock_shop_cart_contents()
         return '';
     }
 
-    $T = new Template(__DIR__ . '/templates');
+    $T = new Shop\Template;
     $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
     $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
     $total = 0;
@@ -1051,7 +1051,7 @@ function phpblock_shop_search()
 
     if (!SHOP_access_check()) return '';
 
-    $T = new Template(__DIR__ . '/templates/');
+    $T = new Shop\Template;
     $T->set_file('search', 'blk_search.thtml');
 
     $cache_key = 'cat_options_cat_id_cat_name';
@@ -1167,7 +1167,7 @@ function phpblock_shop_categories()
         }
         Shop\Cache::set($cache_key, $Cats, array('categories','products'));
     }
-    $T = new Template(__DIR__ . '/templates');
+    $T = new Shop\Template;
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
 
     if (!empty($Cats)) {
@@ -1384,7 +1384,7 @@ function SHOP_phpblock_product($sql)
     }
     if ($res && DB_numRows($res) > 0) {
 
-        $T = new Template(__DIR__ . '/templates');
+        $T = new Shop\Template;
         $T->set_file(array(
             'blk_random' => 'blk_random.thtml',
             'btn_details' => 'buttons/btn_details.thtml',
@@ -1866,7 +1866,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
 
     if ( ($panel == 'useredit') || ($panel == '' && $fieldset == '') ) {
     //if (($panel == '' || $panel == 'useredit') && $fieldset == '') {
-        $LT = new \Template(__DIR__ . '/templates/');
+        $LT = new Shop\Template;
         $LT->set_file(array(
             'block' => 'profileblock.thtml',
         ));
@@ -2290,45 +2290,6 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
         return (string)$val;
         break;
     }
-}
-
-
-/**
- * Helper function to get a template object.
- * If a name is supplied as a string with no ID, an empty template
- * object will be returned with the default path set.
- *
- * @param   string  $name   Base name of template file, e.g. "editor"
- * @param   string  $id     ID of template, e.g. "editform"
- * @param   string  $path   Optional path if not "templates/"
- * @return  s tring      Full filename, e.g. "editor.uikit.thtml"
- */
-function SHOP_getTemplate($name, $id='', $path='')
-{
-    global $_SHOP_CONF;
-
-    $templates = array();
-
-    // Put parameters into an array if not already.
-    if (!is_array($name) && !empty($id)) {
-        $templates = array($id => $name);
-    } elseif (is_array($name)) {
-        $templates = $name;
-    }
-
-    // Add additional path info if needed
-    if (!empty($path) && $path[0] == '/') $path = substr($path, 1);
-    if (substr($path, 0, 9) != 'templates') {
-        $path = 'templates/' . $path;
-    }
-
-    // May use "switch" later, for now there are only two options
-    foreach ($templates as $t_id =>$t_name) {
-        $templates[$t_id] = "$t_name.thtml";
-    }
-    $T = new Template(__DIR__ . '/' . $path);
-    $T->set_file($templates);
-    return $T;
 }
 
 

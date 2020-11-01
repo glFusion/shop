@@ -14,6 +14,7 @@
 namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Shipment;
+use Shop\Template;
 
 
 /**
@@ -59,7 +60,7 @@ class ShipmentPL
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file(array(
             'order'     => $type == 'pdf' ? 'packinglist.pdf.thtml' : 'packinglist.thtml',
             'tracking'  => 'shipment_tracking_2.thtml',

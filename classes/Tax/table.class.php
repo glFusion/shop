@@ -3,15 +3,16 @@
  * Use the static databsae table to retrieve sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.3
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Tax;
+use Shop\Template;
 
 
 /**
@@ -308,7 +309,7 @@ class table extends \Shop\Tax
                 'special_rate' => 0,
             );
         }
-        $T = new \Template(SHOP_PI_PATH . '/templates/');
+        $T = new Template;
         $T->set_file('form', 'edit_tax.thtml');
         $T->set_var(array(
             'code' => $A['code'],

@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Template;
+
 
 /**
  * Class to provide admin and user-facing menus.
@@ -143,7 +145,7 @@ class Menu
             ),
         );
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
             'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
@@ -388,7 +390,7 @@ class Menu
      */
     private static function _makeSubMenu($menu_arr)
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('menu', 'submenu.thtml');
         $T->set_block('menu', 'menuItems', 'items');
         $hlp = '';
@@ -447,7 +449,7 @@ class Menu
     {
         global $_USER;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
             'title' => $page_title,

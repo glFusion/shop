@@ -109,13 +109,18 @@ class Catalog
 
         // Create product template
         if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
-            'download'  => 'buttons/btn_download',
-            'login_req' => 'buttons/btn_login_req',
-            'btn_details' => 'buttons/btn_details',
+        $T = new Template(array(
+            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            'buttons',
+            '',
+        ) );
+        $T->set_file(array(
+            'wrapper'   => 'wrapper.thtml',
+            'start'   => 'product_list_start.thtml',
+            'end'     => 'product_list_end.thtml',
+            'download'  => 'btn_download.thtml',
+            'login_req' => 'btn_login_req.thtml',
+            'btn_details' => 'btn_details.thtml',
         ) );
 
         // If a string is submitted as the category ID, treat it as a plugin and
@@ -204,7 +209,7 @@ class Catalog
         }*/
         if (count($A) > 1) {
             // Only include the categories if there is more than the root cat.
-            $CT = new \Template(__DIR__ . '/../templates');
+            $CT = new Template;
             $CT->set_file('catlinks', 'category_links.thtml');
             if ($cat_img_url != '') {
                 $CT->set_var('catimg_url', $cat_img_url);
@@ -362,16 +367,6 @@ class Catalog
         }
 
         // Create product template
-        /*if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
-            'download'  => 'buttons/btn_download',
-            'login_req' => 'buttons/btn_login_req',
-            'btn_details' => 'buttons/btn_details',
-        ) );*/
-
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
@@ -650,11 +645,14 @@ class Catalog
             }
         }
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
+        $T = new Template(array(
+            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            '',
+        ) );
+        $T->set_file(array(
+            'wrapper'   => 'wrapper.thtml',
+            'start'   => 'product_list_start.thtml',
+            'end'     => 'product_list_end.thtml',
         ) );
         $T->set_var('pi_url', SHOP_URL);
 

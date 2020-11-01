@@ -173,7 +173,7 @@ class Report
     {
         global $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+        $T = new Template('reports');
         $T->set_file('list', 'list.thtml');
         $T->set_block('list', 'reportList', 'rlist');
         foreach ($LANG_SHOP['reports_avail'] as $key=>$data) {
@@ -323,7 +323,7 @@ class Report
     {
         global $LANG_SHOP, $_TABLES, $_CONF;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+        $T = new Template('reports');
         $T->set_file(array(
             'main'  => 'config.thtml',
         ) );
@@ -408,7 +408,7 @@ class Report
         if ($base === NULL) $base = $this->getType();
         switch ($base) {
         case 'html':
-            $T = new \Template(SHOP_PI_PATH . '/templates/reports');
+            $T = new Template('reports');
             $T->set_file(array(
                 'report'    => $base . '.thtml',
             ) );
@@ -416,7 +416,7 @@ class Report
         case 'csv':
         case 'config':
         default:
-            $T = new \Template(SHOP_PI_PATH . '/templates/reports/' . $this->key);
+            $T = new Template('reports/' . $this->key);
             $T->set_file(array(
                 'report'    => $base . '.thtml',
             ) );

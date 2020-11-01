@@ -449,7 +449,8 @@ class Cart extends Order
     {
         global $_SHOP_CONF, $_USER;
 
-        $T = SHOP_getTemplate('btn_checkout', 'checkout', 'buttons');
+        $T = new Template('buttons');
+        $T->set_file('checkout', 'btn_checkout');
         $by_gc = (float)$this->getInfo('apply_gc');
         $net_total = $this->total - $by_gc;
         if ($gw->Supports('checkout')) {
@@ -482,7 +483,8 @@ class Cart extends Order
                 }
             }
         } else {
-            $L = SHOP_getTemplate('btn_login_req', 'login');
+            $L = new Template;
+            $L->set_file('login', 'btn_req_login.thtml');
             $L->parse('login_btn', 'login');
             $gateway_vars = $L->finish($L->get_var('login_btn'));
         }
@@ -504,7 +506,8 @@ class Cart extends Order
         global $_SHOP_CONF;
 
         $retval = '';
-        $T = SHOP_getTemplate('gw_checkout_select', 'radios');
+        $T = new Template;
+        $T->set_file('radios', 'gw_checkout_select.thtml');
         $T->set_block('radios', 'Radios', 'row');
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             $gateways = Gateway::getAll();

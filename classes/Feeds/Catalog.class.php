@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Feeds;
+use Shop\Template;
+
 
 /**
  * Class for product feeds.
@@ -61,7 +63,7 @@ class Catalog
     {
         global $_CONF;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates/feeds/catalog/');
+        $T = new Template('feeds/catalog/');
         $T->set_file('feed', $feed . '.thtml');
         if (!empty($T->last_error)) {
             SHOP_log("Missing catalog feed template for $feed");

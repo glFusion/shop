@@ -463,7 +463,8 @@ class Sales
             $st_dt = $this->StartDate->format('Y-m-d', true);
             $st_tm = $this->StartDate->format('H:i', true);
         }
-        $T = SHOP_getTemplate('sales_form', 'form');
+        $T = new Template;
+        $T->set_file('form', 'sales_form.thtml');
         $retval = '';
         $T->set_var(array(
             'sale_id'       => $this->sale_id,

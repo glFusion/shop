@@ -20,6 +20,7 @@ namespace Shop\Gateways;
 use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
+use Shop\Template;
 
 /**
  *  Coupon gateway class, just to provide checkout buttons for coupons
@@ -204,7 +205,8 @@ class test extends \Shop\Gateway
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
         $btn_text .= ' (Test)';
-        $T = SHOP_getTemplate('btn_' . $btn_type, 'btn', 'buttons/generic');
+        $T = new Template('buttons/generic');
+        $T->set_file('btn', 'btn_' . $btn_type . '.thtml');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,

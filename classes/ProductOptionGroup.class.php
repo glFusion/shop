@@ -310,7 +310,8 @@ class ProductOptionGroup
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = SHOP_getTemplate('option_grp_form', 'form');
+        $T = new Template;
+        $T->set_file('form', 'option_grp_form.thtml');
         $id = $this->pog_id;
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items

@@ -194,11 +194,12 @@ case 'pog_save':
 case 'pv_save':
     $from = SESS_getVar('shop.pv_view');
     $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
     Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
     if ($from == 'pv_bulkedit') {
+        $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
     } else {
+        $item_id = SHOP_getVar($_POST, 'pv_item_id', 'integer');
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $item_id);
     }
     break;
@@ -818,7 +819,8 @@ case 'editcode':
     break;
 
 case 'other':
-    $T = SHOP_getTemplate('other_functions', 'funcs');
+    $T = new Shop\Template;
+    $T->set_file('funcs', 'other_functions.thtml');
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
         'can_migrate_pp' => Shop\MigratePP::canMigrate(),
@@ -829,7 +831,8 @@ case 'other':
     break;
 
 case 'sendcards_form':
-    $T = SHOP_getTemplate('send_cards', 'cards');
+    $T = new Shop\Template;
+    $T->set_file('cards', 'send_cards.thtml');
     $sql = "SELECT uid,fullname FROM {$_TABLES['users']}
                 WHERE status > 0 AND uid > 1";
     $res = DB_query($sql, 1);
@@ -974,7 +977,8 @@ case 'shipment_pl':
     break;
 
 case 'taxrates':
-    $T = SHOP_getTemplate('upload_tax', 'tpl');
+    $T = new Shop\Template;
+    $T->set_file('tpl', 'upload_tax.thtml');
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
         'can_migrate_pp' => Shop\MigratePP::canMigrate(),

@@ -202,7 +202,8 @@ case 'thanks':
         if ($gw !== NULL) {
             $tVars = $gw->thanksVars();
             if (!empty($tVars)) {
-                $T = SHOP_getTemplate('thanks_for_order', 'msg');
+                $T = new Shop\Template;
+                $T->set_file('msg', 'thanks_for_order.thtml');
                 $T->set_var('site_name', $_CONF['site_name']);
                 foreach ($tVars as $name=>$val) {
                     $T->set_var($name, $val);
@@ -233,7 +234,8 @@ case 'thanks':
 case 'action':      // catch all the "?action=" urls
     switch ($actionval) {
     case 'thanks':
-        $T = SHOP_getTemplate('thanks_for_order', 'msg');
+        $T = new Shop\Template;
+        $T->set_file('msg', 'thanks_for_order.thtml');
         $T->set_var(array(
             'site_name'     => $_CONF['site_name'],
             'payment_date'  => $_POST['payment_date'],

@@ -81,7 +81,8 @@ function service_genButton_shop($args, &$output, &$svc_msg)
                 $btn_disabled = 'disabled="disabled"';
             }
         }
-        $T = SHOP_getTemplate('btn_add_cart', 'cart', 'buttons');
+        $T = new Shop\Template('buttons');
+        $T->set_file('cart', 'btn_add_cart.thtml');
         $T->set_var(array(
             'item_name'     => $args['item_name'],
             'item_number'   => $args['item_number'],

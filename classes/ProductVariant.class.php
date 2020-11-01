@@ -604,7 +604,7 @@ class ProductVariant
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'variant_edit.thtml');
 
         // Default to the item's reorder quantity
@@ -654,7 +654,7 @@ class ProductVariant
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file(array(
             'form' => 'variant_edit.thtml',
             'tips' => 'tooltipster.thtml',
@@ -730,7 +730,7 @@ class ProductVariant
      */
     public static function bulkEdit($pv_ids)
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'var_bulk_form.thtml');
         $T->set_var(array(
             'pv_ids'    => implode(',', $pv_ids),
@@ -1292,7 +1292,7 @@ class ProductVariant
         );
         // Create the "copy "options" form at the bottom
         if ($prod_id == 0) {
-            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T = new Template;
             $T->set_file('copy_opt_form', 'copy_options_form.thtml');
             $T->set_var(array(
                 //'src_product'       => COM_optionList($_TABLES['shop.products'], 'id, name'),

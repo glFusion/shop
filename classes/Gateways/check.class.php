@@ -13,6 +13,7 @@
  */
 namespace Shop\Gateways;
 use Shop\Models\ProductType;
+use Shop\Template;
 
 
 /**
@@ -113,7 +114,8 @@ class check extends \Shop\Gateway
         $this->_addItem($attribs['item_number'], $attribs['amount']);
         $gateway_vars = $this->_getButton($btn_type);
 
-        $T = SHOP_getTemplate('btn_buy_now', 'btn', 'buttons/' . $this->gw_name);
+        $T = new Template('buttons/' . $this->gw_name);
+        $T->set_file('btn', 'btn_buy_now.thtml');
         $T->set_var('amazon_url', $this->getActionUrl());
         $T->set_var('gateway_vars', $gateway_vars);
         $retval = $T->parse('', 'btn');
@@ -282,7 +284,7 @@ class check extends \Shop\Gateway
             return '';
         }
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('remit', 'remit_form.thtml');
         $T->set_var(array(
             'order_url' => $Order->buildUrl('pdforder'),

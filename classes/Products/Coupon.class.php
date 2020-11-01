@@ -16,6 +16,7 @@ namespace Shop\Products;
 use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
+use Shop\Template;
 
 
 /**
@@ -396,7 +397,8 @@ class Coupon extends \Shop\Product
         }
 
         SHOP_log("Sending Coupon to " . $recip, SHOP_LOG_DEBUG);
-        $T = SHOP_getTemplate('coupon_email_message', 'message');
+        $T = new Template;
+        $T->set_file('message', 'coupon_email_message.thtml');
         if ($exp != self::MAX_EXP) {
             $dt = new \Date($exp, $_CONF['timezone']);
             $exp = $dt->format(Dates::FMT_FULLDATE);

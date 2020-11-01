@@ -949,7 +949,8 @@ class Shipper
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $_TABLES;
 
-        $T = SHOP_getTemplate('shipping_form', 'form');
+        $T = new Template;
+        $T->set_file('form', 'shipping_form.thtml');
         $retval = '';
         $T->set_var(array(
             'id'            => $this->id,
@@ -1587,7 +1588,7 @@ class Shipper
 
  //       $retval = '<div class="uk-alert">' .
 //            $LANG_SHOP_HELP['hlp_carrier_modules']
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'carrier_config.thtml');
 
         // Load the language for this gateway and get all the config fields

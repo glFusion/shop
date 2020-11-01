@@ -484,7 +484,7 @@ class Country extends RegionBase
         if (is_array($A)) {
             $this->setVars($A);
         }
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file(array(
             'form' => 'country.thtml',
             'tips' => 'tooltipster.thtml',

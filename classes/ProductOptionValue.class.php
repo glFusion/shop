@@ -281,7 +281,7 @@ class ProductOptionValue
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('optform', 'option_val_form.thtml');
         $id = $this->pov_id;
 

@@ -465,7 +465,8 @@ class DiscountCode
             $start_date = $this->start->format('Y-m-d', true);
             $start_time = $this->start->format('H:i', true);
         }
-        $T = SHOP_getTemplate('discount_code', 'form');
+        $T = new Template;
+        $T->set_file('form', 'discount_code.thtml');
         $retval = '';
         $T->set_var(array(
             'code_id'       => $this->code_id,

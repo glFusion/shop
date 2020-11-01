@@ -1246,7 +1246,8 @@ class Product
         // Delete old image records that aren't associated with a product
         Images\Product::cleanUnassigned();
 
-        $T = SHOP_getTemplate('product_form', 'product');
+        $T = new Template;
+        $T->set_file('product', 'product_form.thtml');
         // Set up the wysiwyg editor, if available
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {
@@ -1412,7 +1413,8 @@ class Product
 
         $Disc = Sales::getByProduct($this->id);
         if (!empty($Disc)) {
-            $DT = SHOP_getTemplate('sales_table', 'stable');
+            $DT = new Template;
+            $DT->set_file('stable', 'sales_table.thtml');
             $DT->set_var('edit_sale_url',
                 SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
@@ -1570,16 +1572,16 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = new \Template(array(
-            __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
-            __DIR__ . '/../templates/detail',
+        $T = new Template(array(
+            'detail/' . $_SHOP_CONF['product_tpl_ver'],
+            'detail',
         ) );
         $T->set_file(array(
             'product'   => 'product_detail_attrib.thtml',
             'prod_info' => 'details_blk.thtml',
         ) );
         // Set up the template containing common javascript
-        $JT = new \Template(__DIR__ . '/../templates/detail');
+        $JT = new Template('detail');
         $JT->set_file('js', 'detail_js.thtml');
 
         $name = $this->name;
@@ -1971,7 +1973,8 @@ class Product
 
         if ($this->prod_type == ProductType::DOWNLOAD && $this->price == 0) {
             // Free, or unexpired downloads for non-anymous
-            $T = SHOP_getTemplate('btn_download', 'download', 'buttons');
+            $T = new Template('buttons');
+            $T->set_file('download', 'btn_download.thtml');
             $T->set_var('action_url', SHOP_URL . '/download.php');
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
@@ -1981,7 +1984,8 @@ class Product
             !$_SHOP_CONF['anon_buy']
         ) {
             // Requires login before purchasing
-            $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
+            $T = new Template('buttons');
+            $T->set_file('login_req', 'btn_login_req.thtml');
             $buttons['login'] = $T->parse('', 'login_req');
             $add_cart = false;
         } else {
@@ -2005,7 +2009,7 @@ class Product
             $this->canOrder()
             //($this->price > 0 || !$this->canBuyNow())
         ) {
-            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T = new Template;
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
@@ -2398,7 +2402,8 @@ class Product
         }
 
         if (!empty($opts)) {
-            $T = SHOP_getTemplate('view_options', 'options');
+            $T = new Template;
+            $T->set_file('options', 'view_options.thtml');
             $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($opts as $opt) {
                 $T->set_var(array(
@@ -3446,7 +3451,7 @@ class Product
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
         $ids = implode(',', $ids);
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'prod_bulk_form.thtml');
         $T->set_var(array(
             'prod_ids'  => $ids,

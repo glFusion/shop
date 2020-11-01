@@ -18,6 +18,7 @@ use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
 use Shop\Models\OrderState;
+use Shop\Template;
 
 /**
  * Class for Paypal payment gateway
@@ -596,7 +597,8 @@ class paypal extends \Shop\Gateway
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
-        $T = SHOP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
+        $T = new Template('buttons/' . $this->gw_name);
+        $T->set_file('btn', 'btn_' . $btn_info['tpl'] . '.thtml');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,
@@ -622,7 +624,8 @@ class paypal extends \Shop\Gateway
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        $T = SHOP_getTemplate('btn_' . $type, 'btn', 'buttons/' . $this->gw_name);
+        $T = new Template('buttons/' . $this->gw_name);
+        $T->set_file('btn', 'btn_' . $type . '.thtml');
         $btn_text = isset($LANG_SHOP['buttons'][$type]) ?
                 $LANG_SHOP['buttons'][$type] : $LANG_SHOP['buy_now'];
         $amount = isset($attribs['amount']) ? (float)$attribs['amount'] : 0;

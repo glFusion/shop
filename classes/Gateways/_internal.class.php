@@ -168,7 +168,8 @@ class _internal extends \Shop\Gateway
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
         }
-        $T = SHOP_getTemplate('btn_' . $btn_info['tpl'], 'btn', 'buttons/' . $this->gw_name);
+        $T = new Template('buttons/' . $this->gw_name);
+        $T->set_file('btn', 'btn_' . $btn_info['tpl'] . '.thtml');
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,

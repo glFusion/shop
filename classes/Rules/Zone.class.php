@@ -16,6 +16,7 @@ use Shop\Region;
 use Shop\Country;
 use Shop\State;
 use Shop\Icon;      // for the admin list
+use Shop\Template;
 
 
 /**
@@ -549,7 +550,7 @@ class Zone
     {
         global $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file(array(
             'form'  => 'rule_edit.thtml',
             'tips'  => 'tooltipster.thtml',

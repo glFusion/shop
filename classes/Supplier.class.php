@@ -397,7 +397,7 @@ class Supplier extends Address
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('form', 'supplier_form.thtml');
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {

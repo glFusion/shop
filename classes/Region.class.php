@@ -250,7 +250,7 @@ class Region extends RegionBase
      */
     public function Edit()
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file(array(
             'form' => 'region.thtml',
             'tips' => 'tooltipster.thtml',

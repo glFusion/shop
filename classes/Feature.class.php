@@ -287,7 +287,8 @@ class Feature
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = SHOP_getTemplate('feature_form', 'form');
+        $T = new Template;
+        $T->set_file('form', 'feature_form.thtml');
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
@@ -598,7 +599,7 @@ class Feature
     {
         global $_TABLES;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('prod_feat', 'prod_feat_form.thtml');
         $T->set_var('prod_id', $prod_id);
         $Features = self::getByProduct($prod_id);

@@ -103,7 +103,7 @@ class Tracking
         global $_CONF, $LANG_SHOP;
 
         $dt_format = 'd M Y';
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('tracking', 'tracking.thtml');
         $T->set_block('tracking', 'trackingMeta', 'mRow');
         $T->set_var(array(

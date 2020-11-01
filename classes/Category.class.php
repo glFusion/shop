@@ -409,7 +409,8 @@ class Category
         // Clean up old upload images that never got assigned to a category
         Images\Category::cleanUnassigned();
 
-        $T = SHOP_getTemplate('category_form', 'category');
+        $T = new Template;
+        $T->set_file('category', 'category_form.thtml');
         $id = $this->cat_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
@@ -459,7 +460,8 @@ class Category
         }
 
         // Display any sales pricing for this category
-        $DT = SHOP_getTemplate('sales_table', 'stable');
+        $DT = new Template;
+        $DT->set_file('stable', 'sales_table.thtml');
         $DT->set_var('edit_sale_url', SHOP_ADMIN_URL . '/index.php?sales');
         $DT->set_block('stable', 'SaleList', 'SL');
         foreach (Sales::getCategory($this->cat_id) as $D) {
@@ -662,7 +664,7 @@ class Category
     {
         global $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('cat_bc_tpl', 'cat_bc.thtml');
         $T->set_var('pi_url', SHOP_URL . '/index.php');
         $breadcrumbs = array(

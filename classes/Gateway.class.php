@@ -561,7 +561,8 @@ class Gateway
     {
         global $LANG_SHOP;
 
-        $T = SHOP_getTemplate('gw_servicechk', 'tpl');
+        $T = new Template;
+        $T->set_file('tpl', 'gw_servicechk.thtml');
         $T->set_block('tpl', 'ServiceCheckbox', 'cBox');
         foreach ($this->services as $name => $value) {
             $T->set_var(array(
@@ -882,7 +883,8 @@ class Gateway
         if (!$this->Supports('checkout')) return '';
 
         $gateway_vars = $this->gatewayVars($cart);
-        $T = SHOP_getTemplate('btn_checkout', 'btn', 'templates/buttons');
+        $T = new Template('buttons');
+        $T->set_file('btn', 'btn_checkout.thtml');
         $T->set_var(array(
             'action'    => $this->getActionUrl(),
             'method'    => $this->getMethod(),
@@ -1048,7 +1050,7 @@ class Gateway
     {
         global $_CONF, $LANG_SHOP, $_SHOP_CONF, $_TABLES;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file(array(
             'tpl' => 'gateway_edit.thtml',
             'tips' => 'tooltipster.thtml',

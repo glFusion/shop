@@ -16,7 +16,7 @@
 require_once '../lib-common.php';
 
 use Shop\Models\OrderState;
-
+use Shop\Template;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
@@ -177,7 +177,7 @@ case 'addresses':
     $content .= Shop\Menu::User($mode);
     $A = Shop\Customer::getInstance()->getAddresses();
     if (!empty($A)) {
-        $T = new Template(SHOP_PI_PATH . '/templates/');
+        $T = new Template;
         $T->set_file('list', 'acc_addresses.thtml');
         $T->set_block('list', 'Addresses', 'aRow');
         foreach ($A as $Addr) {

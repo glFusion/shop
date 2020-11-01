@@ -738,7 +738,7 @@ class Address
      */
     public function Edit()
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'editaddress.thtml');
         $T->set_var(array(
             'addr_id' => $this->addr_id,

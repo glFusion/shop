@@ -51,7 +51,8 @@ case 'redeem':
 default:
     // Submit a gift code for redemption
     $C = \Shop\Currency::getInstance();
-    $T = SHOP_getTemplate('apply_gc', 'tpl');
+    $T = new Shop\Template;
+    $T->set_file('tpl', 'apply_gc.thtml');
     if (empty($_SHOP_CONF['gc_mask'])) {
         $maxlen = (int)$_SHOP_CONF['gc_length'];
     } else {

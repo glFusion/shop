@@ -167,7 +167,7 @@ case 'validateAddress':
     $A2 = $A1->Validate();
     if (!$A1->Matches($A2)) {
         $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
-        $T = new Template(SHOP_PI_PATH . '/templates');
+        $T = new Shop\Template;
         $T->set_file('popup', 'address_select.thtml');
         $T->set_var(array(
             'address1_html' => $A1->toHTML(),

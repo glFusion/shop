@@ -392,7 +392,7 @@ class Customer
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('address', 'address.thtml');
 
         // Set the address to select by default. Start by using the one
