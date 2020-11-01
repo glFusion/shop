@@ -449,8 +449,6 @@ class Cart extends Order
     {
         global $_SHOP_CONF, $_USER;
 
-        $T = new Template('buttons');
-        $T->set_file('checkout', 'btn_checkout');
         $by_gc = (float)$this->getInfo('apply_gc');
         $net_total = $this->total - $by_gc;
         if ($gw->Supports('checkout')) {
