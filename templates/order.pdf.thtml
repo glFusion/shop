@@ -130,6 +130,16 @@
     <td colspan="3" style="text-align:right;"><b>{$LANG_SHOP['total']}</b></td>
     <td colspan="2" style="text-align:right;"><b>{total}</b></td>
   </tr>
+{!if apply_gc}
+  <tr>
+    <td colspan="3" style="text-align:right;">{$LANG_SHOP['apply_gc']}</td>
+    <td colspan="2" style="text-align:right;">- {apply_gc}</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="text-align:right;"><b>{$LANG_SHOP['pmt_total']}</b></td>
+    <td colspan="2" style="text-align:right;"><b>{net_total}</b></td>
+  </tr>
+{!endif}
 {!endif}
 </table>
 
