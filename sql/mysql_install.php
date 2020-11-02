@@ -419,6 +419,24 @@ $_SQL = array(
   UNIQUE KEY `country_state` (`country_id`,`iso_code`),
   KEY `state_enabled` (`state_enabled`)
 ) ENGINE=MyISAM",
+'shop.tax_rates' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
+  `code` varchar(25) NOT NULL,
+  `country` varchar(3) DEFAULT NULL,
+  `state` varchar(10) DEFAULT NULL,
+  `zip_from` varchar(10) DEFAULT NULL,
+  `zip_to` varchar(10) DEFAULT NULL,
+  `region` varchar(128) DEFAULT NULL,
+  `combined_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `state_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `county_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `city_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `special_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  PRIMARY KEY (`code`),
+  KEY `country_zipcode` (`country`,`zip_from`),
+  KEY `location` (`country`,`state`,`zip_from`),
+  KEY `zip_from` (`zip_from`),
+  KEY `zip_to` (`zip_to`)
+) ENGINE=MyISAM",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -741,6 +759,10 @@ $SHOP_UPGRADE['1.2.2'] = array(
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
 );
+$SHOP_UPGRADE['1.2.2'] = array(
+    "ALTER TABLE {$_TABLES['shop.tax_rates']}
+        CHANGE region region varchar(128)",
+);
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -761,6 +783,6 @@ $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
-$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][0];
+$_SQL['shop.payments'] = $SHOP_UPGRADE['1.2.2'][0];
 
 ?>

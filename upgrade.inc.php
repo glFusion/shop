@@ -361,6 +361,12 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
+    if (!COM_checkVersion($current_ver, '1.2.3')) {
+        $current_ver = '1.2.3';
+        if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if (!SHOP_do_set_version($current_ver)) return false;
+    }
+
     // Make sure paths and images are created.
     require_once __DIR__ . '/autoinstall.php';
     plugin_postinstall_shop(true);

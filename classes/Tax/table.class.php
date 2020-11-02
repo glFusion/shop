@@ -377,7 +377,7 @@ class table extends \Shop\Tax
             code = '" . DB_escapeString($A['code']) . "',
             country = '" . DB_escapeString($A['country']) . "',
             state = '" . DB_escapeString($A['state']) . "',
-            region = '" . DB_escapeString($A['region']) . "',
+            region = '" . DB_escapeString(substr($A['region'],0,128)) . "',
             zip_from = '" . DB_escapeString($A['zip_from']) . "',
             zip_to = '" . DB_escapeString($A['zip_to']) . "',
             combined_rate = {$A['combined_rate']},
