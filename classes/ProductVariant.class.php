@@ -730,16 +730,31 @@ class ProductVariant
      */
     public static function bulkEdit($pv_ids)
     {
+        if (empty($pv_ids)) {
+            return '';
+        }
         $T = new Template;
         $T->set_file('form', 'var_bulk_form.thtml');
         $T->set_var(array(
             'pv_ids'    => implode(',', $pv_ids),
         ) );
         $T->set_block('form', 'skuList', 'sk');
+        $Var = self::getInstance($pv_ids[0]);
+        $Product = Product::getByID($Var->getItemId());
         foreach ($pv_ids as $pv_id) {
             $T->set_var('sku', self::getInstance($pv_id)->getSku());
             $T->parse('sk', 'skuList', true);
         }
+        $T->set_block('form', 'ImageBlock', 'IB');
+        foreach ($Product->getImages() as $img) {
+            $T->set_var(array(
+                'img_id'    => $img['img_id'],
+                'img_url'   => Images\Product::getUrl($img['filename'])['url'],
+                'img_chk'   => in_array($img['img_id'], $Var->getImageIDs()) ? 'checked="checked"' : '',
+            ) );
+            $T->parse('IB', 'ImageBlock', true);
+        }
+
         $T->parse('output', 'form');
         return $T->finish($T->get_var('output'));
     }
@@ -775,14 +790,17 @@ class ProductVariant
         if (isset($A['enabled']) && $A['enabled'] > -1) {
             $sql_vals[] = "enabled = " . ($A['enabled'] == 1 ? 1 : 0);
         }
+        if (isset($A['pv_img_ids'])) {
+            $sql_vals[] = "img_ids = '" . implode(',', $A['pv_img_ids']) . "'";
+        }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
             $ids = DB_escapeString($A['pv_ids']);
-            DB_query(
-                "UPDATE {$_TABLES['shop.product_variants']} SET
+            $sql = "UPDATE {$_TABLES['shop.product_variants']} SET
                 $sql_vals
-                WHERE pv_id IN ($ids)"
-            );
+                WHERE pv_id IN ($ids)";
+            //echo $sql;die;
+            DB_query($sql);
             if (DB_error()) {
                 return false;
             }
