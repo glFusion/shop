@@ -790,8 +790,14 @@ class ProductVariant
         if (isset($A['enabled']) && $A['enabled'] > -1) {
             $sql_vals[] = "enabled = " . ($A['enabled'] == 1 ? 1 : 0);
         }
-        if (isset($A['pv_img_ids'])) {
-            $sql_vals[] = "img_ids = '" . implode(',', $A['pv_img_ids']) . "'";
+        if (!isset($A['img_noupdate'])) {
+            // no-update checkbox is unchecked for images
+            if (isset($A['pv_img_ids'])) {
+                $sql_vals[] = "img_ids = '" . implode(',', $A['pv_img_ids']) . "'";
+            } else {
+                // No images selected, implies all images
+                $sql_vals[] = "img_ids = ''";
+            }
         }
         if (!empty($sql_vals)) {
             $sql_vals = implode(', ', $sql_vals);
@@ -1595,9 +1601,9 @@ class ProductVariant
             }
             $sql = "INSERT INTO {$_TABLES['shop.product_variants']} (
                     item_id, sku, price, weight, shipping_units, onhand,
-                    reorder, enabled, supplier_ref
+                    reorder, enabled, supplier_ref, img_ids
                 )
-                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref
+                SELECT $dst, '$sku', price, weight, shipping_units, onhand, reorder, enabled, supplier_ref, img_ids
                 FROM {$_TABLES['shop.product_variants']}
                 WHERE pv_id = {$PV->getID()}";
             DB_query($sql);

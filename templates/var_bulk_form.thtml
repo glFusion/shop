@@ -70,16 +70,17 @@
 
     <div style="clear:both;" class="clearboth uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['images']}:
-            <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'pv_img_ids');">
         </label>
         <div class="uk-form-controls">
+            <input id="img_noupdate" type="checkbox" value="1" checked="checked" name="img_noupdate" />&nbsp;{$LANG_SHOP['leave_as_is']}
             <ul class="shopProductThumbWrapper">
 <!-- BEGIN ImageBlock -->
                 <li class="shopProductThumb">
-                    <input id="img_cb_{img_id}" type="checkbox" name="pv_img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
+                    <input id="img_cb_{img_id}" type="checkbox" name="pv_img_ids[]" value="{img_id}" {img_chk} stylex="display:none;" onclick="$('#img_noupdate').attr('checked', false);"/>
                     <label for="img_cb_{img_id}"><img src="{img_url}" id="img_{img_id}" /></label>
                 </li>
 <!-- END ImageBlock -->
+                <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'pv_img_ids');$('#img_noupdate').attr('checked', false);">
             </ul>
         </div>
     </div>
