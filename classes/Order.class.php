@@ -1229,7 +1229,7 @@ class Order
         if (!$this->no_shipping) {
             $T->set_var(array(
                 'shipper_id'    => $this->shipper_id,
-                'ship_method'   => $Shipper->getName(),
+                'ship_method'   => $this->shipping_dscp,
                 'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
@@ -3799,7 +3799,7 @@ class Order
         if (
             $this->isNew ||
             $this->order_seq ||
-            !$this->isFinal()
+            $this->isFinal()
         ) {
             return false;
         }
