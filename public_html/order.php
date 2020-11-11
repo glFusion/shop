@@ -63,15 +63,22 @@ case 'view':
     break;
 
 case 'pdfpl':
+    $View = new Shop\Views\Order();
+    $View->withOrderId($id)->withToken($token)->asPackingList()->withOutput('pdf')->Render();
+    break;
 case 'pdforder':
-    $order = Shop\Order::getInstance($id);
+    $View = new Shop\Views\Order();
+    $View->withOrderId($id)->withToken($token)->withOutput('pdf')->Render();
+    break;
+    /*$order = Shop\Order::getInstance($id);
     if ($order->canView($token)) {
         \Shop\Order::printPDF($id, $mode);
-    }
+    }*/
     break;
 
 case 'packinglist':
 case 'print':
+    echo __LINE__ . ' deprecatd';die;
     // Display a printed order or packing list and exit.
     // This is expected to be shown in a _blank browser window/tab.
     $order = \Shop\Order::getInstance($id);

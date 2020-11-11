@@ -521,7 +521,7 @@ class Shipment
         $text_arr = array(
             'has_extras' => false,
             'has_limit' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+            'form_url' => SHOP_ADMIN_URL . '/shipments.php',
         );
 
         $display .= ADMIN_list(
@@ -555,7 +555,7 @@ class Shipment
         case 'edit':
             $retval .= COM_createLink(
                 Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?editshipment={$A['shipment_id']}"
+                SHOP_ADMIN_URL . "/shipments.php?edit={$A['shipment_id']}"
             );
             break;
 
@@ -572,14 +572,14 @@ class Shipment
         case 'order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?order=' . urlencode($fieldvalue)
+                SHOP_ADMIN_URL . '/order.php?order=' . urlencode($fieldvalue)
             );
             break;
 
         case 'action':
             $retval = COM_createLink(
                 Icon::getHTML('list'),
-                SHOP_ADMIN_URL . '/index.php?shipment_pl=' . $A['shipment_id'],
+                SHOP_ADMIN_URL . '/shipments.php?packinglist=' . $A['shipment_id'],
                 array(
                     'target'    => '_blank',
                     'class'     => 'tooltip',
@@ -591,7 +591,7 @@ class Shipment
         case 'delete':
             $retval = COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?del_shipment=' . $A['shipment_id'],
+                SHOP_ADMIN_URL. '/shipments.php?delete=' . $A['shipment_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],

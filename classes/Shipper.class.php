@@ -14,6 +14,7 @@
  */
 namespace Shop;
 use Shop\Models\Dates;
+use Shop\Models\ShippingQuote;
 
 
 /**
@@ -49,7 +50,7 @@ class Shipper
 
     /** Shipper record ID.
      * @var integer */
-    private $id = 0;
+    protected $id = 0;
 
     /** glFusion group ID which can use this shipper.
      * @var integer */
@@ -57,11 +58,11 @@ class Shipper
 
     /** Name of the shipper, e.g. "United Parcel Service".
      * @var string */
-    private $name = '';
+    protected $name = '';
 
     /** Short code, e.g. "ups".
      * @var string */
-    private $module_code = '';
+    protected $module_code = '';
 
     /** Minimum shipping units that can be sent by this shipper.
      * @var float */
@@ -125,10 +126,22 @@ class Shipper
      * @var boolean */
     protected $req_shipto = true;
 
+    /** Order value threshold for free shipping.
+     * @var float */
+    protected $free_threshold = -1; // -1 disables free shipping
+
+    /** Shipping method used for free shipping.
+     * @var string */
+    protected $free_method = '';
+
     /** Flag to indicate where sales tax is calculated.
      * 1 = origin (shop address), 0 = destination (customer address)
      * @var integer */
     protected $tax_loc = 0;
+
+    /** Supported services.
+     * @var array */
+    protected $supported_services = array();
 
 
     /**
@@ -514,7 +527,7 @@ class Shipper
 
 
     /**
-     * Get a shipper object by shippe code rather than database ID.
+     * Get a shipper object by carrier code rather than database ID.
      *
      * @param   string  $shipper_code   Carrier class Code, e.g. 'ups'
      * @return  object|null     Shipper object, NULL if not found
@@ -536,13 +549,14 @@ class Shipper
      * @param   boolean $valid  True to get only enabled shippers
      * @return  array   Array of all DB records
      */
-    public static function getAll($valid=true)
+    public static function getAll($valid=true, $units = -1)
     {
         global $_TABLES, $_GROUPS;
 
-        $cache_key = 'shippers_all_' . (int)$valid;
+        $cache_key = 'shippers_all_' . (int)$valid . (float)$units;
         $now = time();
         $shippers = Cache::get($cache_key);
+        $shippers = NULL;
         if ($shippers === NULL) {
             $shippers = array();
             $sql = "SELECT * FROM {$_TABLES['shop.shipping']}";
@@ -550,6 +564,10 @@ class Shipper
                 $sql .= " WHERE enabled = 1
                     AND valid_from < '$now'
                     AND valid_to > '$now'";
+            }
+            if ($units > -1) {
+                $units = (float)$units;
+                $sql .= " AND min_units <= $units AND max_units >= $units";
             }
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
@@ -719,7 +737,7 @@ class Shipper
             }
         }
 
-        // Check if at least one qualified shipper was obtainec.
+        // Check if at least one qualified shipper was obtained.
         // If not, then get the best shipping rate from all shippers, ignoring
         // the max_units restriction. This is so there will be some shipping
         // charge shown.
@@ -1460,7 +1478,10 @@ class Shipper
             if (!isset($this->_config[$name])) {
                 return false;       // config var doesn't exist
             }
-            if ($type != 'checkbox' && $this->_config[$name] == '') {
+            if (
+                $type != 'checkbox' && $type != 'array' &&
+                $this->_config[$name] == ''
+            ) {
                 return false;       // empty string value
             }
         }
@@ -1476,7 +1497,7 @@ class Shipper
      * @param   array   $b      Second array to check
      * @return  float       Difference between a and b
      */
-    protected function sortQuotes($a, $b)
+    public static function sortQuotes($a, $b)
     {
         return $a['cost'] - $b['cost'];
     }
@@ -1550,7 +1571,7 @@ class Shipper
                     $value = COM_encrypt($form[$name]);
                 }
                 break;
-             default:
+            default:
                 if (!isset($form[$name])) {
                     return false;       // required field missing
                 } else {
@@ -1558,9 +1579,12 @@ class Shipper
                 }
                 break;
             }
-
             $cfg_data[$name] = $value;
         }
+        if (isset($form['services'])) {
+            $cfg_data['services'] = $form['services'];
+        }
+
         $data = DB_escapeString(serialize($cfg_data));
         $sql = "INSERT INTO {$_TABLES['shop.carrier_config']} SET
             code = '$code',
@@ -1608,23 +1632,156 @@ class Shipper
                 $chk = $this->getConfig($name) ? 'checked="checked"' : '';
                 $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
                 break;
-            default:
+            case 'text':
+            case 'password':
                 $fld = '<input type="text" size="80" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
                 break;
+            default:
+                continue 2;
             }
             $T->set_var(array(
-                'param_name'    => isset($this->lang[$name]) ? $this->lang[$name] : $name,
+                'param_name'    => $name,
                 'field_name'    => $name,
                 'field_value'   => $this->getConfig($name),
                 'input_field'   => $fld,
             ) );
             $T->parse('IRow', 'ItemRow', true);
         }
+        $services = $this->getAllServices();
+        if (!empty($services)) {
+            $T->set_var('has_services', true);
+            $T->set_block('tpl', 'Services', 'Svcs');
+            foreach ($services as $key=>$dscp) {
+                $T->set_var(array(
+                    'svc_chk' => $this->supportsService($key) ? 'checked="checked"' : '',
+                    'svc_key' => $key,
+                    'svc_dscp' => $dscp,
+                ) );
+                $T->parse('Svcs', 'Services', true);
+            }
+        }
+
+        $T->set_block('tpl', 'SpecialConfig', 'SC');
+        foreach ($this->getConfigForm() as $prompt=>$form) {
+            $T->set_var(array(
+                'prompt' => $prompt,
+                'form' => $form,
+            ) );
+            $T->parse('SC', 'SpecialConfig', true);
+        }
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
         return $retval;
     }
 
-}   // class Shipper
 
-?>
+    public function getAllServices()
+    {
+        return array();
+    }
+
+    public function getConfigForm()
+    {
+        return array();
+    }
+
+    public function getPackageCodes()
+    {
+        return array();
+    }
+
+    public function getServiceCodes()
+    {
+        return array(
+            '_fixed' => 'Fixed Rate',
+        );
+    }
+
+    public function getFreeMethod()
+    {
+        if ($this->free_threshold > -1) {
+            return $this->free_method;
+        } else {
+            return NULL;
+        }
+    }
+
+    public function getFreeThreshold()
+    {
+        return (float)$this->free_threshold;
+    }
+
+
+    public function getPackageQuote($Addr, $Packages)
+    {
+        if (empty($Packages)) {
+            $error = true;
+        }
+        $cost = 0;
+        foreach ($Packages as $Package) {
+            $container = $Package->getContainer($this->key);
+            if (isset($container['rate'])) {
+                $cost += (float)$container['rate'];
+            }
+            $error = false;
+        }
+        $retval = (new ShippingQuote)
+            ->setID($this->id)
+            ->setCarrierCode($this->key)
+            ->setCarrierTitle($this->name)
+            ->setServiceCode('0')
+            ->setServiceID($this->key . '.fixed')
+            ->setServiceTitle($this->name)
+            ->setCost($cost)
+            ->setPackageCount(count($Packages));
+        return $retval;
+    }
+
+
+    public function getUnitQuote($Addr, $units)
+    {
+        $quote = (new ShippingQuote)
+            ->setID($this->id)
+            ->setCarrierCode($this->key)
+            ->setCarrierTitle($this->name)
+            ->setServiceTitle($this->name)
+            ->setServiceCode('units')
+            ->setServiceID($this->key . '.' . $this->id);
+ 
+        $found = false;
+        if ($units <= $this->max_units && $units >= $this->min_units) {
+            foreach ($this->rates as $rate) {
+                if ($rate->units > $units) {
+                    $found = true;
+                    $quote['cost'] = $rate->rate;
+                    break;
+                }
+            }
+        }
+        if ($found) {
+            return $quote;
+        } else {
+            return NULL;
+        }
+    }
+
+
+    /**
+     * Generic quote function to get a quote for a generic shipper.
+     * This just uses the shipper's static rate table.
+     *
+     * @param   object  $Addr   Shipping Address object
+     * @param   array   $Packages   Array of Package objects
+     * @return  array       Single-element array with a ShippingQuote object
+     */
+    public function getQuote($Addr, $Order)
+    {
+        if ($this->key != 'generic') {
+            $Packages = Package::packOrder($Order, $this);
+            return array($this->getPackageQuote($Addr, $Packages));
+        } else {
+            return array($this->getUnitQuote($Addr, $Order->totalShippingUnits()));
+        }
+    }
+
+}   // class Shipper

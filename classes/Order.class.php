@@ -196,6 +196,16 @@ class Order
      * @var integer */
     protected $shipper_id = -1;
 
+    /** Shipping method code.
+     * Code unique to the shipper/carrier, e.g. "usps.05".
+     * @var string */
+    protected $shipping_method = '';
+
+    /** Shipping description.
+     * Full text description, e.g. "USPS Priority Mail".
+     * @var string */
+    protected $shipping_dscp = '';
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -666,6 +676,8 @@ class Order
             $this->_amt_paid = (float)$A['amt_paid'];
             $this->total = (float)$A['order_total'];
         }
+        $this->shipping_method = $A['shipping_method'];
+        $this->shipping_dscp = $A['shipping_dscp'];
         return $this;
     }
 
@@ -864,6 +876,8 @@ class Order
             "discount_pct = '{$this->discount_pct}'",
             "order_total = {$order_total}",
             "shipper_id = '{$this->shipper_id}'",
+            "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
+            "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
         );
 
         $billto = $this->Billto->toArray();
@@ -878,7 +892,7 @@ class Order
         }
         $sql = $sql1 . implode(', ', $fields) . $sql2;
         //echo $sql;die;
-        //SHOP_log(("Save: " . $sql, SHOP_LOG_DEBUG);
+        //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $this->clearInstance();
         $this->isNew = false;
@@ -2349,6 +2363,14 @@ class Order
      */
     public function setShipper($shipper_id)
     {
+        if (is_array($shipper_id)) {
+            $this->shipper_id = $shipper_id['shipper_id'];
+            $this->shipping = $shipper_id['cost'];
+            $this->shipping_method = $shipper_id['svc_code'];
+            $this->shipping_dscp = $shipper_id['title'];
+            $this->setTaxRate(NULL);
+            return $this;
+        }
         if ($this->hasPhysical()) {
             $shippers = Shipper::getShippersForOrder($this);
             // Have to iterate through all the shippers since the array is
@@ -2384,61 +2406,115 @@ class Order
             return '';
         }
 
-        // Get all the shippers and rates for the selection
+        // Save the base charge (total items and handling, exclude tax if present)
+        $base_chg = $this->gross_items + $this->handling + $this->tax;
+
+        $shipping_units = $this->totalShippingUnits();
+        $Shippers = Shipper::getAll(true, $shipping_units);
+        $quotes = array();
+        $methods = array();
+        foreach ($Shippers as $code=>$Shipper) {
+            /*if ($Shipper->getCode() != '') {
+                //$Packages = Package::packOrder($this, $Shipper->getCode());
+                //$quote = $Shipper->getQuote($this->Shipto, $Packages);
+                $quote = $Shipper->getQuote($this->Shipto, $this);
+//        var_dump($quote);die;
+            } else {
+                $quote = $Shipper->getUnitQuote($this->Shipto, $shipping_units);
+            }*/
+            $quote = $Shipper->getQuote($this->Shipto, $this);
+            if ($this->getTaxShipping()) {
+                $tax_rate = $this->getTaxRate();
+            } else {
+                $tax_rate = 0;
+            }
+            //$shipper_id = $quote['id'];
+            //$title = $quote['title'];
+            //foreach ($quote['quote'] as $q) {
+            foreach ($quote as $q) {
+                $shipper_id = $q['id'];
+                $title = $q['svc_title'];
+                $ship_tax = $tax_rate * $q['cost'];
+                $order_total = $base_chg + $q['cost'] + $ship_tax;
+                $order_tax = $this->tax + $ship_tax;
+                $methods[] = array(
+                    'shipper_id' => $shipper_id,
+                    'svc_code' => $q['svc_code'],
+                    'title' => $title . ' ' . $q['title'],
+                    'cost' => Currency::getInstance()->FormatValue($q['cost']),
+                    'order_tax' => Currency::getInstance()->FormatValue($order_tax),
+                    'order_total' => Currency::getInstance()->FormatValue($order_total),
+                );
+            }
+        }
+        //var_dump($methods);die;
+        /*// Get all the shippers and rates for the selection
         $shippers = Shipper::getShippersForOrder($this);
         if (empty($shippers)) return '';
-
+*/
         // Get the best or previously-selected shipper for the default choice
-        $best = NULL;
+        $best_shipper = NULL;
         $shipper_id = $this->shipper_id;
         if ($shipper_id > -1) {
             // Array is 0-indexed so search for the shipper ID, if any.
-            foreach ($shippers as $id=>$shipper) {
+            /*foreach ($shippers as $id=>$shipper) {
                 if ($shipper->getID() == $shipper_id) {
                     // Already have a shipper selected
                     $best = $shippers[$id];
                     break;
                 }
+        }*/
+            foreach ($quotes as $id=>$quote) {
+                if ($quote['id'] == $shipper_id) {
+                    $best = $quote['id'];
+                    break;
+                }
             }
         }
-        if ($best === NULL) {
+
+        if ($best_shipper === NULL) {
             // None already selected, grab the first one. It has the best rate.
-            $best = reset($shippers);
+            usort($methods, array(__NAMESPACE__ . '\\Shipper', 'sortQuotes'));
+            $best_method = reset($methods);
+            $best_shipper = Shipper::getInstance($best_method['shipper_id']);
         }
-        if (!$best) {
+
+        if (!$best_shipper) {
             // Error getting shippers, shouldn't happen unless shippers have been deleted.
             $this->shipper_id = 0;
             $this->shipping = 0;
             return '';
         }
-        $this->shipper_id = $best->getID();
-        $this->shipping = $best->getOrderShipping()->total_rate;
+        $this->shipper_id = $best_shipper->getID();
+        $this->shipping = $best_method['cost'];
 
         $T = new Template;
         $T->set_file('form', 'shipping_method.thtml');
         $T->set_block('form', 'shipMethodSelect', 'row');
 
-        // Save the base charge (total items and handling, exclude tax if present)
-        $base_chg = $this->gross_items + $this->handling + $this->tax;
         $ship_rates = array();
-        foreach ($shippers as $shipper) {
-            $sel = $shipper->getID() == $best->getID() ? 'selected="selected"' : '';
-            $s_amt = $shipper->getOrderShipping()->total_rate;
+        foreach ($methods as $method_id=>$method) {
+        //foreach ($Shippers as $shipper) {
+            //$sel = $shipper->getID() == $best_shipper->getID() ? 'selected="selected"' : '';
+            $sel = $method['svc_code'] == $this->shipping_method ? 'selected="selected"' : '';
+            $s_amt = $method['cost'];
             $rate = array(
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
-            $ship_rates[$shipper->getID()] = $rate;
+            $ship_rates[$method_id] = $rate;
             $T->set_var(array(
                 'method_sel'    => $sel,
-                'method_name'   => $shipper->getName(),
+                'method_name'   => $method['title'],
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
-                'method_id'     => $shipper->getID(),
+                'method_id'     => $method_id,
                 'order_id'      => $this->order_id,
-                'multi'         => count($shippers) > 1 ? true : false,
+                'multi'         => count($Shippers) > 1 ? true : false,
             ) );
             $T->parse('row', 'shipMethodSelect', true);
         }
+        //var_dump($ship_rates);die;
+        SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
         $T->set_var('shipper_json', json_encode($ship_rates));
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -2769,7 +2845,7 @@ class Order
      * @param   boolean $isAdmin    True if run by an administrator
      * @return  boolean     True on success, False on error
      */
-    public static function printPDF($ids, $type='pdfpl', $isAdmin = false)
+    public static function XprintPDF($ids, $type='pdfpl', $isAdmin = false)
     {
         USES_lglib_class_html2pdf();
         try {
@@ -2939,6 +3015,12 @@ class Order
     public function getPmtMethod()
     {
         return $this->pmt_method;
+    }
+
+
+    public function getPmtDscp()
+    {
+        return $this->pmt_dscp;
     }
 
 

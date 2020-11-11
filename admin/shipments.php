@@ -1,11 +1,12 @@
 <?php
 /**
- * Run reports.
+ * Manage shipments.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2018 Lee Garner
+ * @copyright   Copyright (c) 2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.2.3
+ * @since       v1.2.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -38,12 +39,12 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
 $action = '';
+$actionval = 'x';
 $expected = array(
     // Actions to perform
-    'updstatus',
+    'delete',
     // Views to display
-    'pdfpl', 'pdforder', 'shipment_pl',
-    'configure', 'run', 'report', 'list',
+    'packinglist', 'edit', 'shipments', 'list',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -59,6 +60,13 @@ foreach($expected as $provided) {
 $view = 'list';
 
 switch ($action) {
+case 'delete':
+    $S = new Shop\Shipment($actionval);
+    $S->Delete();
+    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/shipments.php');
+    COM_refresh($url);
+    break;
+
 case 'updstatus':
     $newstatus = SHOP_getVar($_POST, 'newstatus');
     if ($newstatus == '') {
@@ -87,66 +95,44 @@ default:
 }
 
 switch ($view) {
-case 'configure':
-    $R = \Shop\Report::getInstance($actionval);
-    if ($R !== NULL) {
-        $R->setAdmin(true);
-        if ($R->hasForm()) {
-            $content .= $R->Configure();
-        } else {
-            $content .= $R->Render();
-        }
-    }
-    break;
-
-case 'run':
-    $R = \Shop\Report::getInstance($actionval);
-    if ($R !== NULL) {
-        $R->setAdmin(true);
-        // Params usually from GET but could be POSTed time period
-        $R->setParams($_REQUEST);
-        $content .= $R->Render();
-    }
-    break;
-
-case 'shipment_pl':
-    echo __LINE__ . ' deprecated';
+case 'packinglist':
     if ($actionval == 'x') {
         $shipments = SHOP_getVar($_POST, 'shipments', 'array');
     } else {
         $shipments = $actionval;
     }
-    Shop\Views\ShipmentPL::printPDF($shipments, $view);
+    $PL = new Shop\Views\Shipment();
+    $PL->asPackingList()->withOutput('pdf')->withShipmentId($shipments)->Render();
     break;
 
-case 'pdfpl':
-    if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
-    } else {
-        $orders = $actionval;
+case 'edit':
+    $shipment_id = (int)$actionval;
+    if ($shipment_id > 0) {
+        if (isset($_REQUEST['ret_url'])) {
+            SHOP_setUrl($_REQUEST['ret_url']);
+        }
+        $S = new Shop\Shipment($shipment_id);
+        $V = new Shop\Views\Shipment($S->getOrderID());
+        $content = $V->withShipmentId($shipment_id)->Edit();
+        //$content = $V->Render($action);
     }
-    $View = new Shop\Views\Order();
-    $View
-        ->withOrderId($orders)
-        ->asPackingList()
-        ->withOutput('pdf')
-        ->Render();
-    break;
-case 'pdforder':
-    if ($actionval == 'x') {
-        $orders = SHOP_getVar($_POST, 'orders', 'array');
-    } else {
-        $orders = $actionval;
-    }
-    $View = new Shop\Views\Order();
-    $View->withOrderId($orders)->withOutput('pdf')->Render();
-    break;
-    \Shop\Order::printPDF($orders, $view);
     break;
 
 case 'list':
+case 'shipments':
 default:
-    $content .= \Shop\Report::getList();
+    // View admin list of shipments
+    SHOP_setUrl();
+    if ($actionval != 'x') {
+        $Order = Shop\Order::getInstance($actionval);
+        $content .= Shop\Menu::viewOrder($view, $Order);
+    } else {
+        $content .= Shop\Menu::adminOrders($view);
+    }
+    $content .= Shop\Shipment::adminList($actionval);
+    if ($view == 'shipments') {
+        $view = 'orders';       // to set the active top-level menu
+    }
     break;
 }
 $display = COM_siteHeader();

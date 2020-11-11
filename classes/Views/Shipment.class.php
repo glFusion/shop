@@ -35,9 +35,9 @@ class Shipment extends Order
     public function __construct($order_id = '')
     {
         $this->isFinalView = true;
-        $this->tplname = 'shipment';
 
         parent::__construct($order_id);
+        $this->tplname = 'packinglist';
     }
 
 
@@ -46,19 +46,56 @@ class Shipment extends Order
      *
      * @param   integer $shipment_id     Shipment record ID
      */
-    public function setShipmentID($shipment_id)
+    public function withShipmentID($shipment_id)
     {
-        $this->shipment_id = (int)$shipment_id;
+        if (!is_array($shipment_id)) {
+            $this->shipment_ids = array($shipment_id);
+        } else {
+            $this->shipment_ids = $shipment_id;
+        }
+        return $this;
+    }
+
+
+    public function Edit()
+    {
+        $this->tplname = 'shipment';
+        return $this->Render();
+    }
+
+    public function Render()
+    {
+        if ($this->output_type == 'pdf') {
+            $this->tplname .= '.pdf';
+            $this->initPDF();
+        }
+        foreach ($this->shipment_ids as $shipment_id) {
+            $this->Shipment = new \Shop\Shipment($shipment_id);
+            $this->Order = \Shop\Order::getInstance($this->Shipment->getOrderId());
+            if (!$this->Order->canView($this->token)) {
+                continue;
+            }
+            if ($this->output_type == 'html') {
+                // HTML is only available for single orders, so return here.
+                $output = $this->createHTML($shipment_id);
+                return $output;
+            } elseif ($this->output_type == 'pdf') {
+                $output = $this->createHTML($shipment_id);
+                $this->writePDF($output);
+            }
+        }
+        if ($this->output_type == 'pdf') {
+            $this->finishPDF();
+        }
     }
 
 
     /**
      * Create the display.
      *
-     * @param   string  $title  Language key for form title
      * @return  string      HTML for display
      */
-    public function Render($title='shiporder')
+    public function createHTML($shipment_id)
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
@@ -69,8 +106,8 @@ class Shipment extends Order
         }
 
         $oi_shipped = array();
-        if ($this->shipment_id > 0) {
-            $Shp = new \Shop\Shipment($this->shipment_id);
+        if ($shipment_id > 0) {
+            $Shp = new \Shop\Shipment($shipment_id);
             foreach ($Shp->getItems() as $key=>$data) {
                 $oi_shipped[$data->getOrderitemID()] = $key;
             }
@@ -82,13 +119,14 @@ class Shipment extends Order
             'tracking'  => 'shipment_tracking_1.thtml',
         ) );
         $T->set_var(array(
-            'page_title'    => $LANG_SHOP[$title],
-            'shipment_id'    => $this->shipment_id,
+            'page_title'    => $LANG_SHOP['shiporder'],
+            'shipment_id'    => $shipment_id,
             'shipper_select' => Shipper::optionList(0, true),
         ) );
         $T->set_block('order', 'ItemRow', 'iRow');
-        foreach ($this->Order->getItems() as $Item) {
-            $P = $Item->getProduct();
+        foreach ($this->Shipment->getItems() as $Item) {
+            $OI = $Item->getOrderItem();
+            $P = $OI->getProduct();
             // If this is not a physical product, don't show the qty field,
             // show the product type text instead.
             if (!$P->isPhysical()) {
@@ -97,12 +135,12 @@ class Shipment extends Order
                     'toship_text' => $LANG_SHOP['prod_types'][$P->getProductType()],
                 ) );
             } else {
-                $shipped = \Shop\ShipmentItem::getItemsShipped($Item->getID());
-                if ($this->shipment_id > 0) {
+                $shipped = \Shop\ShipmentItem::getItemsShipped($OI->getID());
+                if ($shipment_id > 0) {
                     // existing, adjust prev shipped down and use this ship qty
-                    if (isset($oi_shipped[$Item->getID()])) {
+                    if (isset($oi_shipped[$OI->getID()])) {
                         // some of the item was shipped on this shipment
-                        $toship = $Shp->getItems()[$oi_shipped[$Item->getID()]]->getQuantity();
+                        $toship = $Shp->getItems()[$oi_shipped[$OI->getID()]]->getQuantity();
                     } else {
                         // Item was not shipped on this order.
                         $toship = 0;
@@ -121,12 +159,13 @@ class Shipment extends Order
             }
 
             $T->set_var(array(
-                'oi_id'         => $Item->getID(),
-                'item_id'       => htmlspecialchars($Item->getProductID()),
-                'item_dscp'     => htmlspecialchars($Item->getDscp()),
-                'ordered'       => $Item->getQuantity(),
-                'item_options'  => $Item->getOptionDisplay(),
-                'sku'           => $P->getSKU($Item),
+                'oi_id'         => $OI->getID(),
+                'item_id'       => htmlspecialchars($OI->getProductID()),
+                'item_dscp'     => htmlspecialchars($OI->getDscp()),
+                'item_quantity' => $OI->getQuantity(),
+                'shipped'       => $Item->getQuantity(),
+                'item_options'  => $OI->getOptionDisplay(),
+                'sku'           => $P->getSKU($OI),
                 'pi_url'        => SHOP_URL,
             ) );
             if ($P->isPhysical()) {
@@ -136,7 +175,7 @@ class Shipment extends Order
             $T->clear_var('iOpts');
         }
 
-        if ($this->shipment_id > 0) {
+        if ($shipment_id > 0) {
             $T->set_block('order', 'trackingPackages', 'TP');
             foreach ($Shp->Packages as $Pkg) {
                 $T->set_var(array(
@@ -151,7 +190,7 @@ class Shipment extends Order
         }
 
         $T->set_var(array(
-            'shipment_id'   => $this->shipment_id,
+            'shipment_id'   => $shipment_id,
             'pi_url'        => SHOP_URL,
             'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
             'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),

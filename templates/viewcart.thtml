@@ -113,7 +113,7 @@
 {!if cart_tax}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
+                    <div id="ord_tax_span" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
                 </div>
 {!endif}
 {!!if {ship_select} != "" !!}
@@ -270,8 +270,12 @@ function SHOP_updateShipping(e)
         data: data,
         success: function(result) {
             try {
-                UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
-                location.reload(true);
+console.log(result);
+                //UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
+                //location.reload(true);
+                $("#shipping_cell").html(result['method']['cost']);
+                $("#ord_tax_span").html(result['method']['order_tax']);
+                $("#ord_total_span").html(result['method']['order_total']);
             } catch(err) {
             }
         }

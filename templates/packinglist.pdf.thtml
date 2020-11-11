@@ -37,8 +37,9 @@
 <table style="width:90%;padding-bottom:20px;">
   <tr>
     <th style="width:10%;"></th>
-    <th style="width:75%;text-align:left;">{$LANG_SHOP['description']}</th>
-    <th style="width:10%;text-align:right;">{$LANG_SHOP['quantity']}</th>
+    <th style="width:65%;text-align:left;">{$LANG_SHOP['description']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['ordered']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['shipped']}</th>
   </tr>
   <tr><td>&nbsp;</td></tr>
 <!-- BEGIN ItemRow -->
@@ -57,6 +58,7 @@
 <!-- END ItemOptions -->
     </td>
     <td style="vertical-align:top;text-align:right">{item_quantity}</td>
+    <td style="vertical-align:top;text-align:right">{shipped}</td>
   </tr>
   <tr><td></td></tr>
 <!-- END ItemRow -->

@@ -283,19 +283,6 @@ class Catalog
                     p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
                     ) $cat_sql";
 
-/*        $sql = " FROM {$_TABLES['shop.products']} p
-                LEFT JOIN {$_TABLES['shop.categories']} c
-                    ON p.cat_id = c.cat_id
-                WHERE p.enabled=1
-                AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
-                AND (
-                    (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
-                    OR c.enabled IS NULL
-                    )
-                AND (
-                    p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
-                    ) $cat_sql";
- */
         $search = '';
         // Add search query, if any
         if (

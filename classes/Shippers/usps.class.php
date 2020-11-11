@@ -14,6 +14,8 @@
 namespace Shop\Shippers;
 use \SimpleXMLElement;
 use \Exception;
+use Shop\Models\ShippingQuote;
+use Shop\Package;
 
 
 /**
@@ -24,72 +26,74 @@ use \Exception;
 class usps extends \Shop\Shipper
 {
     // TODO: Move to config, parameters for quotes
-    private $weight = 2.5;
-    private $pkg_id = 7;
     private $usps_size = 'NORMAL';
     private $usps_container = 'VARIABLE';
-    private $usps_width = 7.325;
+    /*private $usps_width = 7.325;
     private $usps_length = 11.675;
-    private $usps_height = 3.625;
+    private $usps_height = 3.625;*/
     private $usps_machinable = true;
 
     /** Endpoint for rate and tracking info.
-     * private $usps_endpoint = 'http://production.shippingapis.com/ShippingAPI.dll';
      * @var string */
     protected $usps_endpoint = 'https://secure.shippingapis.com/ShippingAPI.dll';
 
     /** List of possible USPS Services.
      * @var array */
-    private $usps_services = array(
-        '0_FCLE'    => 'First-Class Mail Large Envelope',
-        '0_FCL'     => 'First-Class Mail Letter',
-        '0_FCP'     => 'First-Class Package Service - Retail',
-        '0_FCPC'    => 'First-Class Mail Postcards',
-        '1'         => 'Priority Mail',
-        '2'         => 'Priority Mail Express Hold For Pickup',
-        '3'         => 'Priority Mail Express',
-        '4'         => 'Retail Ground',
-        '6'         => 'Media Mail',
-        '7'         => 'Library Mail',
-        '13'        => 'Priority Mail Express Flat Rate Envelope',
-        '15'        => 'First-Class Mail Large Postcards',
-        '16'        => 'Priority Mail Flat Rate Envelope',
-        '17'        => 'Priority Mail Medium Flat Rate Box',
-        '22'        => 'Priority Mail Large Flat Rate Box',
-        '23'        => 'Priority Mail Express Sunday/Holiday Delivery',
-        '25'        => 'Priority Mail Express Sunday/Holiday Delivery Flat Rate Envelope',
-        '27'        => 'Priority Mail Express Flat Rate Envelope Hold For Pickup',
-        '28'        => 'Priority Mail Small Flat Rate Box',
-        '29'        => 'Priority Mail Padded Flat Rate Envelope',
-        '30'        => 'Priority Mail Express Legal Flat Rate Envelope',
-        '31'        => 'Priority Mail Express Legal Flat Rate Envelope Hold For Pickup',
-        '32'        => 'Priority Mail Express Sunday/Holiday Delivery Legal Flat Rate Envelope',
-        '33'        => 'Priority Mail Hold For Pickup',
-        '34'        => 'Priority Mail Large Flat Rate Box Hold For Pickup',
-        '35'        => 'Priority Mail Medium Flat Rate Box Hold For Pickup',
-        '36'        => 'Priority Mail Small Flat Rate Box Hold For Pickup',
-        '37'        => 'Priority Mail Flat Rate Envelope Hold For Pickup',
-        '38'        => 'Priority Mail Gift Card Flat Rate Envelope',
-        '39'        => 'Priority Mail Gift Card Flat Rate Envelope Hold For Pickup',
-        '40'        => 'Priority Mail Window Flat Rate Envelope',
-        '41'        => 'Priority Mail Window Flat Rate Envelope Hold For Pickup',
-        '42'        => 'Priority Mail Small Flat Rate Envelope',
-        '43'        => 'Priority Mail Small Flat Rate Envelope Hold For Pickup',
-        '44'        => 'Priority Mail Legal Flat Rate Envelope',
-        '45'        => 'Priority Mail Legal Flat Rate Envelope Hold For Pickup',
-        '46'        => 'Priority Mail Padded Flat Rate Envelope Hold For Pickup',
-        '47'        => 'Priority Mail Regional Rate Box A',
-        '48'        => 'Priority Mail Regional Rate Box A Hold For Pickup',
-        '49'        => 'Priority Mail Regional Rate Box B',
-        '50'        => 'Priority Mail Regional Rate Box B Hold For Pickup',
-        '53'        => 'First-Class Package Service Hold For Pickup',
-        '57'        => 'Priority Mail Express Sunday/Holiday Delivery Flat Rate Boxes',
-        '58'        => 'Priority Mail Regional Rate Box C',
-        '59'        => 'Priority Mail Regional Rate Box C Hold For Pickup',
-        '61'        => 'First-Class Package Service',
-        '62'        => 'Priority Mail Express Padded Flat Rate Envelope',
-        '63'        => 'Priority Mail Express Padded Flat Rate Envelope Hold For Pickup',
-        '64'        => 'Priority Mail Express Sunday/Holiday Delivery Padded Flat Rate Envelope',
+    private $domestic = array(
+        'DOM_0_FCLE'=> 'First-Class Mail Large Envelope',
+        'DOM_0_FCL' => 'First-Class Mail Letter',
+        'DOM_0_FCP' => 'First-Class Package Service - Retail',
+        'DOM_0_FCPC'=> 'First-Class Mail Postcards',
+        'DOM_0'     => 'First Class',
+        'DOM_1'     => 'Priority Mail',
+        'DOM_2'     => 'Priority Mail Express 1-Day',
+        'DOM_3'     => 'Priority Mail Express 1-Day Hold For Pickup',
+        'DOM_4'     => 'Retail Ground',
+        'DOM_6'     => 'Media Mail',
+        'DOM_7'     => 'Library Mail',
+        'DOM_13'    => 'Priority Mail Express Flat Rate Envelope',
+        'DOM_15'    => 'First-Class Mail Large Postcards',
+        'DOM_16'    => 'Priority Mail Flat Rate Envelope',
+        'DOM_17'    => 'Priority Mail 2-Day Medium Flat Rate Box',
+        'DOM_22'    => 'Priority Mail Large Flat Rate Box',
+        'DOM_23'    => 'Priority Mail Express Sunday/Holiday Delivery',
+        'DOM_25'    => 'Priority Mail Express Sunday/Holiday Delivery Flat Rate Envelope',
+        'DOM_27'    => 'Priority Mail Express Flat Rate Envelope Hold For Pickup',
+        'DOM_28'    => 'Sm Flat Rate Box',
+        'DOM_29'    => 'Priority Mail Padded Flat Rate Envelope',
+        'DOM_30'    => 'Priority Mail Express Legal Flat Rate Envelope',
+        'DOM_31'    => 'Priority Mail Express Legal Flat Rate Envelope Hold For Pickup',
+        'DOM_32'    => 'Priority Mail Express Sunday/Holiday Delivery Legal Flat Rate Envelope',
+        'DOM_33'    => 'Priority Mail Hold For Pickup',
+        'DOM_34'    => 'Priority Mail Large Flat Rate Box Hold For Pickup',
+        'DOM_35'    => 'Priority Mail Medium Flat Rate Box Hold For Pickup',
+        'DOM_36'    => 'Priority Mail Small Flat Rate Box Hold For Pickup',
+        'DOM_37'    => 'Priority Mail Flat Rate Envelope Hold For Pickup',
+        'DOM_38'    => 'Priority Mail Gift Card Flat Rate Envelope',
+        'DOM_39'    => 'Priority Mail Gift Card Flat Rate Envelope Hold For Pickup',
+        'DOM_40'    => 'Priority Mail Window Flat Rate Envelope',
+        'DOM_41'    => 'Priority Mail Window Flat Rate Envelope Hold For Pickup',
+        'DOM_42'    => 'Priority Mail Small Flat Rate Envelope',
+        'DOM_43'    => 'Priority Mail Small Flat Rate Envelope Hold For Pickup',
+        'DOM_44'    => 'Priority Mail Legal Flat Rate Envelope',
+        'DOM_45'    => 'Priority Mail Legal Flat Rate Envelope Hold For Pickup',
+        'DOM_46'    => 'Priority Mail Padded Flat Rate Envelope Hold For Pickup',
+        'DOM_47'    => 'Priority Mail Regional Rate Box A',
+        'DOM_48'    => 'Priority Mail Regional Rate Box A Hold For Pickup',
+        'DOM_49'    => 'Priority Mail Regional Rate Box B',
+        'DOM_50'    => 'Priority Mail Regional Rate Box B Hold For Pickup',
+        'DOM_53'    => 'First-Class Package Service Hold For Pickup',
+        'DOM_57'    => 'Priority Mail Express Sunday/Holiday Delivery Flat Rate Boxes',
+        'DOM_58'    => 'Priority Mail Regional Rate Box C',
+        'DOM_59'    => 'Priority Mail Regional Rate Box C Hold For Pickup',
+        'DOM_61'    => 'First-Class Package Service',
+        'DOM_62'    => 'Priority Mail Express Padded Flat Rate Envelope',
+        'DOM_63'    => 'Priority Mail Express Padded Flat Rate Envelope Hold For Pickup',
+        'DOM_64'    => 'Priority Mail Express Sunday/Holiday Delivery Padded Flat Rate Envelope',
+        'DOM_77'    => 'Parcel Select Ground',
+    );
+
+    private $international = array(
         'INT_1'     => 'Priority Mail Express International',
         'INT_2'     => 'Priority Mail International',
         'INT_4'     => 'Global Express Guaranteed (GXG)',
@@ -117,19 +121,90 @@ class usps extends \Shop\Shipper
         'INT_27'    => 'Priority Mail Express International Padded Flat Rate Envelope',
     );
 
-    /** Services enabled for domestic delivery.
-     * Could move to a config selection.
-     * @var array */
-    private $domestic_enabled = array(
-        '1', 3, 4,
-        //6,
+    private $svc_codes = array(
+        'FC_LTR' => 'First Class / Letter',
+        'FC_FLT' => 'First Class / Flat',
+        'FC_PKG' => 'First Class / Package Service Retail',
+        'FCC_PKG' => 'First Class Commercial / Package Service',
+        'FCC_HFP' => 'First Class HFP Commercial / Package Service',
+        'PCL_GND' => 'Parcel Select Ground',
+        'RET_GND' => 'Retail Ground',
+        'PRI' => 'Priority',
+        'PRI_EXP' => 'Priority Mail Express',
+        'PRI_COM' => 'Priority Commercial',
+        'PRI_CPP' => 'Priority Cpp',
+        'PRI_HFP_COM' => 'Priority HFP Commercial',
+        'PRI_HFP_CPP' => 'Priority HFP CPP',
+        'PRI_EXP_COM' => 'Priority Mail Express Commercial',
+        'PRI_EXP_CPP' => 'Priority Mail Express CPP',
+        'PRI_EXP_SH' => 'Priority Mail Express Sh',
+        'PRI_EXP_SH_COM' => 'Priority Mail Express Sh Commercial',
+        'PRI_EXP_HFP' => 'Priority Mail Express HFP',
+        'PRI_EXP_HFP_COM' => 'Priority Mail Express HFP Commercial',
+        'PRI_EXP_HFP_CPP' => 'Priority Mail Express HFP CPP',
+        'PRI_CUB' => 'Priority Mail Cubic',
     );
 
-    /** Services enabled for international delivery.
-     * Could move to a config selection.
-     * @var array */
-    private $intl_enabled = array(
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21,
+    private $pkg_codes = array(
+        'VARIABLE' => 'VARIABLE',
+        'FLAT RATE ENVELOPE' => 'FLAT RATE ENVELOPE',
+        'PADDED FLAT RATE ENVELOPE' => 'PADDED FLAT RATE ENVELOPE',
+        'LEGAL FLAT RATE ENVELOPE' => 'LEGAL FLAT RATE ENVELOPE',
+        'SM FLAT RATE ENVELOPE' => 'SM FLAT RATE ENVELOPE',
+        'GIFT CARD FLAT RATE ENVELOPE' => 'GIFT CARD FLAT RATE ENVELOPE',
+        'SM FLAT RATE BOX' => 'SM FLAT RATE BOX',
+        'MD FLAT RATE BOX' => 'MD FLAT RATE BOX',
+        'LG FLAT RATE BOX' => 'LG FLAT RATE BOX',
+        'REGIONALRATEBOXA' => 'REGIONALRATEBOXA',
+        'REGIONALRATEBOXB' => 'REGIONALRATEBOXB',
+    );
+
+
+    private $xpkg_codes = array(
+        'VARIABLE' => array(
+            'dscp' => 'VARIABLE',
+            'svc' => 'ALL',
+        ),
+        'FLAT RATE ENVELOPE' => array(
+            'dscp' => 'FLAT RATE ENVELOPE',
+            'svc' => 'PRIORITY',
+        ),
+        'PADDED FLAT RATE ENVELOPE' => array(
+            'dscp' => 'PADDED FLAT RATE ENVELOPE',
+            'svc' => 'PRIORITY',
+        ),
+        'LEGAL FLAT RATE ENVELOPE' => array(
+            'dscp' => 'LEGAL FLAT RATE ENVELOPE',
+            'svc' => 'PRIORITY',
+        ),
+        'SM FLAT RATE ENVELOPE' => array(
+            'dscp' => 'SM FLAT RATE ENVELOPE',
+            'svc' => 'PRIORITY',
+        ),
+        'GIFT CARD FLAT RATE ENVELOPE' => array(
+            'dscp' => 'GIFT CARD FLAT RATE ENVELOPE',
+            'svc' => 'PRIORITY',
+        ),
+        'SM FLAT RATE BOX' => array(
+            'dscp' => 'SM FLAT RATE BOX',
+            'svc' => 'PRIORITY',
+        ),
+        'MD FLAT RATE BOX' => array(
+            'dscp' => 'MD FLAT RATE BOX',
+            'svc' => 'PRIORITY',
+        ),
+        'LG FLAT RATE BOX' => array(
+            'dscp' => 'LG FLAT RATE BOX',
+            'svc' => 'PRIORITY',
+        ),
+        'REGIONALRATEBOXA' => array(
+            'dscp' => 'REGIONALRATEBOXA',
+            'svc' => 'PRIORITY COMMERCIAL',
+        ),
+        'REGIONALRATEBOXB' => array(
+            'dscp' => 'REGIONALRATEBOXB',
+            'svc' => 'PRIORITY COMMERCIAL',
+        ),
     );
 
 
@@ -142,12 +217,19 @@ class usps extends \Shop\Shipper
     {
         $this->key = 'usps';
         $this->implementsTrackingAPI = true;
+        $this->implementsQuoteAPI = true;
         $this->cfgFields = array(
             'user_id' => 'password',
             'password' => 'password',
-            //'origin_zip' => 'string',     // future use for quotes
+            'origin_zip' => 'text',     // future use for quotes
+            'services' => 'array',
+            //'intl_services' => 'array',
         );
         parent::__construct($A);
+        $services = $this->getConfig('services');
+        if (is_array($services)) {
+            $this->supported_services = $services;
+        }
     }
 
 
@@ -165,73 +247,102 @@ class usps extends \Shop\Shipper
     /**
      * Get an array or rate quotes for a package.
      *
-     * @param   object  $address    Destination Address object
+     * @param   object  $Addr   Destination Address object
      * @return  array       Array of quote data
      */
-    public function getQuote($address)
+    public function getQuote($Addr, $Order)
     {
+        global $_SHOP_CONF, $_CONF;
+
+        $Packages = Package::packOrder($Order, $this);
         if (!$this->hasQuoteAPI()) {
-            return array (
-                'id'         => $this->key,
-                'title'      => 'USPS Rates',
-                'quote'      => array(),
-                'error'      => true
-            );
+            return parent::getQuote($Addr, $Packages);
         }
 
-        $method_data = array();
+        //$method_data = array();
         $quote_data = array();
 
-        $weight = $this->weight;
-        $weight = ($weight < 0.1 ? 0.1 : $weight);
-        $pounds = floor($weight);
-        $ounces = round(16 * ($weight - floor($weight)));
-        $postcode = str_replace(' ', '', $address->getPostal());
+        $postcode = str_replace(' ', '', $Addr->getPostal());
         $status = true;
 
-        if ($address->getCountry() == 'US') {
+        if ($Addr->getCountry() == 'US') {
             $xml = new SimpleXMLElement(
                 '<RateV4Request USERID="' . $this->getConfig('user_id') . '"></RateV4Request>'
             );
             $xml->addChild('Revision', '2');
-            $pkg = $xml->addChild('Package');
-            $pkg->addAttribute('ID', 1);
-            $pkg->addChild('Service', 'ALL');
-            $pkg->addChild('FirstClassMailType', 'PACKAGE');
-            $pkg->addChild('ZipOrigination', substr($this->getConfig('origin_zip'), 0, 5));
-            $pkg->addChild('ZipDestination', substr($postcode, 0, 5));
-            $pkg->addChild('Pounds', $pounds);
-            $pkg->addChild('Ounces', $ounces);
-            $pkg->addChild('Container', $this->usps_container);
-            $pkg->addChild('Size', $this->usps_size);
-            if ($this->usps_size == 'LARGE') {
-                $pkg->addChild('Width', $this-usps_width);
-                $pkg->addChild('Length', $this->usps_length);
-                $pkg->addChild('Height', $this-usps_height);
+            $pkgcount = 0;
+            foreach ($Packages as $Package) {
+                $container = $Package->getContainer('usps');
+                $weight = $Package->getWeight();
+                $weight = ($weight < 0.1 ? 0.1 : $weight);
+                if ($_SHOP_CONF['pkg_weight_uom'] == 'KGS') {
+                    $weight /= 2.2;
+                }
+                $pounds = floor($weight);
+                $ounces = round(16 * ($weight - floor($weight)));
+                $pkg = $xml->addChild('Package');
+                $pkg->addAttribute('ID', (string)++$pkgcount);
+                if (
+                    isset($container['service']) &&
+                    isset($this->getServiceCodes()[$container['service']])
+                ) {
+                    $svc_code = strtoupper($this->getServiceCodes()[$container['service']]);
+                    $svc = explode(' / ', $svc_code);
+                    $pkg->addChild('Service', $svc[0]);
+                    if (isset($svc[1])) {
+                        if (substr($svc[0],0,11) == 'FIRST CLASS') {
+                            $pkg->addChild('FirstClassMailType', $svc[1]);
+                        }
+                    }
+                } else { 
+                    $pkg->addChild('Service', 'ALL');
+                }
+
+                $pkg->addChild('ZipOrigination', substr($this->getConfig('origin_zip'), 0, 5));
+                $pkg->addChild('ZipDestination', substr($postcode, 0, 5));
+                $pkg->addChild('Pounds', (string)$pounds);
+                $pkg->addChild('Ounces', (string)$ounces);
+                if (isset($container['container'])) {
+                    $pkg->addChild('Container', $container['container']);
+                } else {
+                    $pkg->addChild('Container', 'VARIABLE');
+                }
+                if ($pkgcount < 1) {
+                $pkg->addChild('Width', (string)$Package->getWidth());
+                $pkg->addChild('Length', (string)$Package->getLength());
+                $pkg->addChild('Height', (string)$Package->getHeight());
+                }
                 //$pkg->addChild('Girth', $this->usps_girth);
-                $pkg->addChild('Size', $this->usps_size);
+                $pkg->addChild('Machinable', $this->usps_machinable ? 'True' : 'False');
             }
-            $pkg->addChild('Machinable', $this->usps_machinable ? 'True' : 'False');
+            //echo $xml->asXML();die;
             $request = 'API=RateV4&XML=' . urlencode($xml->asXML());
         } else {
-            $countryname = \Shop\Country::getInstance($address->getCountry())->getName();
+            $countryname = \Shop\Country::getInstance($Addr->getCountry())->getName();
             if ($countryname) {
                 $xml = new SimpleXMLElement(
                     '<IntlRateV2Request USERID="' . $this->getConfig('user_id') . '"></IntlRateV2Request>'
                 );
+                $xml->addChild('Revision', '2');
                 $pkg = $xml->addChild('Package');
-                $pkg->addAttribute('ID', '0');
+                $pkg->addAttribute('ID', '1ST');
                 $pkg->addChild('Pounds', $pounds);
                 $pkg->addChild('Ounces', $ounces);
                 $pkg->addChild('MailType', 'Package');
                 $pkg->addChild('ValueOfContents', 20);
                 $pkg->addChild('Country', $countryname);
+                $pkg->addChild('Container', $this->usps_container);
+                $pkg->addChild('OriginZip', substr($this->getConfig('origin_zip'), 0, 5));
+                $pkg->addChild('AcceptanceDateTime', $_CONF['_now']->toISO8601(true));
+                $pkg->addChild('DestinationPostalCode', substr($postcode, 0, 5));
+                //echo $xml->asXML();
                 $request = 'API=IntlRateV2&XML=' . urlencode($xml->asXML());
             } else {
                 $status = FALSE;
             }
         }
-
+//        echo $request;die;
+//var_dump($this->getConfig());die;
         if ($status) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $this->usps_endpoint . '?' . $request);
@@ -242,60 +353,119 @@ class usps extends \Shop\Shipper
             curl_close($ch);
 
             if ($result) {
-                $xml = new SimpleXMLElement($result);
+                /*$xml = new SimpleXMLElement($result);
                 $dom = new \DOMDocument('1.0', 'UTF-8');
-                $dom->loadXml($result);
+                $dom->loadXml($result);*/
 
+                $json = json_encode(simplexml_load_string($result));
+                $json = json_decode($json, true);
+//var_dump($json);die;
                 //$rate_v4_response = $dom->getElementsByTagName('RateV4Response')->item(0);
                 //$intl_rate_response = $dom->getElementsByTagName('IntlRateResponse')->item(0);
-                $error = $xml->Error;
+                if (isset($json['Error'])) {
+                    $error = $json['Error'];
+                } else {
+                    $error = '';
+                }
 
-                if ($address->getCountry() == 'US') {
-                    $allowed = array(0, 1, 2, 3, 4, 5, 6, 7, 12, 13, 16, 17, 18, 19, 22, 23, 25, 27, 28);
-                    $package = $xml->Package;
+                if ($Addr->getCountry() == 'US') {
+                    $packages = $json['Package'];
+                    if (!is_array($packages) || !isset($packages[1])) {
+                        $packages = array($packages);
+                    }
+                    $num_packages = count($packages);
                     //$package = $rate_v4_response->getElementsByTagName('Package')->item(0);
-                    $postages = $package->Postage;
-
-                    foreach ($postages as $postage) {
-                        $classid = (string)$postage['CLASSID'];
-                        if (
-                            in_array($classid, $allowed) &&
-                            in_array($classid, $this->domestic_enabled)
-                        ) {
-                            $cost = (float)$postage->Rate;
-                            $title = html_entity_decode($postage->MailService);
-                            $quote_data[$classid] = array(
-                                'id'        => 'usps.' . $classid,
-                                'svc_code'  => $classid,
-                                'title'     => $title,
-                                'cost'      => $cost,
-                            );
+                    $pkgcount = 0;
+                    $quote_data = array();
+                    foreach ($packages as $pkgid=>$package) {
+                        if (!isset($package['Postage'])) {
+                            continue;
+                        }
+                        $postages = $package['Postage'];
+                        if (isset($postages['Rate'])) { // single rate returned
+                            $postages = array($postages);
+                        }
+                        foreach ($postages as $postage) {
+                            $classid = $postage['@attributes']['CLASSID'];
+                            $svc_id = 'DOM_' . $classid;
+                            if (
+                                $this->supportsService($svc_id) &&
+                                array_key_exists($svc_id, $this->_svcAllowedDomestic())
+                            ) {
+                                $cost = (float)$postage['Rate'];
+                                $title = html_entity_decode($postage['MailService']);
+                                $key = $this->key . '.' . $classid;
+                                if (!isset($quote_data[$key])) {
+                                    $quote_data[$key] = (new ShippingQuote)
+                                        ->setID($this->id)
+                                        ->setCarrierCode($this->key)
+                                        ->setCarrierTitle($this->getCarrierName())
+                                        ->setServiceCode($key)
+                                        ->setServiceID($classid)
+                                        ->setServiceTitle(strtoupper($this->key) . ' ' . $title)
+                                        ->setCost($cost)
+                                        ->setPackageCount(1);
+                                    /*$quote_data[$classid] = array(
+                                        'id'        => $this->id,
+                                        'key'       => $this->module_code,
+                                        'svc_id'    => $this->module_code . '.' . $svc_id,
+                                        'svc_code'  => $classid,
+                                        'title'     => $title,
+                                        'cost'      => $cost,
+                                        'packages'  => 1,
+                                    );*/
+                                } else {
+                                    $quote_data[$key]['cost'] += $cost;
+                                    $quote_data[$key]['pkg_count'] =
+                                        $quote_data[$key]['pkg_count'] + 1;
+                                }
+                            }
                         }
                     }
                 } else {
-                    $allowed = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21);
-                    $package = $xml->Package;
-                    $services = $package->Service;
+                    $package = $json['Package'];
+                    $services = $package['Service'];
 
                     foreach ($services as $service) {
-                        $svc_err = $service->ServiceErrors;
+                        //var_dump($service);die;
+                        $svc_err = $service['ServiceErrors'];
                         if ($svc_err) {
                             continue;
                         }
-                        $id = (string)$service['ID'];
+                        $svc_id = (string)$service['@attributes']['ID'];
+                        $id = 'INT_' . $svc_id;
+                        //var_dump($service);die;
                         $key = $this->key . '.' . $id;
                         if (
-                            in_array($id, $allowed) &&
-                            in_array($id, $this->intl_enabled)
+                            $this->supportsService($id) &&
+                            array_key_exists($id, $this->_svcAllowedIntl())
                         ) {
-                            $title = html_entity_decode($service->SvcDescription);
-                            $cost = (float)$service->Postage;
-                            $quote_data[$key] = array(
-                                'id'        => $key,
-                                'svc_code'  => $id,
-                                'title'     => $title,
-                                'cost'      => $cost,
-                            );
+                            $title = html_entity_decode($service['SvcDescription']);
+                            $cost = (float)$service['Postage'];
+                            $key = $this->key . '.' . $svc_id;
+                            if (!isset($quote_data[$key])) {
+                                $quote_data[$key] = (new ShippingQuote)
+                                    ->setID($this->id)
+                                    ->setCarrierCode($this->key)
+                                    ->setCarrierTitle($this->getCarrierName())
+                                    ->setServiceCode($key)
+                                    ->setServiceID($svc_id)
+                                    ->setServiceTitle(strtoupper($this->key) . ' ' . $title)
+                                    ->setCost($cost)
+                                    ->setPackageCount(1);
+                                /*$quote_data[$key] = array(
+                                    'id'        => $this->id,
+                                    'key'       => $this->module_code,
+                                    'svc_id'    => $this->module_code . '.' . $svc_id,
+                                    'svc_code'  => $id,
+                                    'title'     => $title,
+                                    'cost'      => $cost,
+                                    'packages'  => 1,
+                                );*/
+                            } else {
+                                $quote_data[$key]['cost'] += $cost;
+                                $quote_data[$key]['pkg_count']++;
+                            }
                         }
                     }
                 }
@@ -303,15 +473,21 @@ class usps extends \Shop\Shipper
         }
 
         if ($quote_data) {
-            uasort($quote_data, array($this, 'sortQuotes'));
-            $method_data = array(
-                'id'        => $this->key,
+            foreach ($quote_data as $id=>$quote) {
+                if ($quote['pkg_count'] < $num_packages) {
+                    unset($quote_data[$id]);
+                }
+            }
+
+            $x = uasort($quote_data, array(__CLASS__, 'sortQuotes'));
+            /*$method_data = array(
+                'id'        => $this->id,
                 'title'     => $this->getCarrierName(),
                 'quote'     => $quote_data,
                 'error'     => FALSE
-            );
+            );*/
         }
-        return $method_data;
+        return $quote_data;
     }
 
 
@@ -471,6 +647,62 @@ class usps extends \Shop\Shipper
     public function getEndpoint()
     {
         return $this->usps_endpoint;
+    }
+
+
+    public function XXgetConfigForm()
+    {
+        global $LANG_SHOP;
+
+        foreach (array('domestic', 'international') as $region) {
+            $prompt = $LANG_SHOP['supported_services'];
+            $form = '<ul class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2">' . LB;
+            foreach ($this->$region as $key=>$dscp) {
+                $chk = in_array($key, $this->supported_services[$region]) ? 'checked="checked"' : '';
+                $form .= '<li><input type="checkbox" name="spcfg[]['.$region.'[]" value="' . $key .
+                    ' " ' . $chk . '>&nbsp;' . $dscp . '</li>' . LB;
+            }
+        }
+        $form .= '</ul>';
+        return array($prompt=>$form);
+    }
+
+
+    public function supportsService($key)
+    {
+        return in_array($key, $this->supported_services);
+    }
+
+
+    private function _svcAllowedIntl()
+    {
+        return $this->international;
+    }
+
+
+    private function _svcAllowedDomestic()
+    {
+        return $this->domestic;
+    }
+
+
+    public function getPackageCodes()
+    {
+        return $this->pkg_codes;
+    }
+
+    public function getAllServices()
+    {
+        return array_merge($this->domestic, $this->international);
+    }
+
+    public function getServiceCodes()
+    {
+        if ($this->hasQuoteAPI()) {
+            return $this->svc_codes;
+        } else {
+            return parent::getServiceCodes();
+        }
     }
 
 }

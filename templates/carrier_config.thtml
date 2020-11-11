@@ -11,9 +11,9 @@
     </div>
   </div>
 <!-- END ItemRow -->
-{!if implementsQuote}
+{!if implementsQuotes}
   <div class="uk-form-row">
-    <label class="uk-form-label" for="ena_quotes">Enable Quote API?:
+    <label class="uk-form-label" for="ena_quotes">{$LANG_SHOP['ena_quoteapi']}
     </label>
     <div class="uk-form-controls">
       <input id="ena_quotes" type="checkbox" name="ena_quotes" value="1" {ena_quotes_chk} />
@@ -22,13 +22,41 @@
 {!endif}
 {!if implementsTracking}
   <div class="uk-form-row">
-    <label class="uk-form-label" for="ena_tracking">Enable Tracking API?
+    <label class="uk-form-label" for="ena_tracking">{$LANG_SHOP['ena_trackingapi']}
     </label>
     <div class="uk-form-controls">
       <input id="ena_tracking" type="checkbox" name="ena_tracking" value="1" {ena_tracking_chk} />
     </div>
   </div>
 {!endif}
+
+{!if has_services}
+  <div class="uk-form-row">
+    <label class="uk-form-label">{$LANG_SHOP['supported_services']}
+        <br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'services');">
+    </label>
+    <div class="uk-form-controls">
+        <ul class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2">
+<!-- BEGIN Services -->
+            <li>
+                <input type="checkbox" name="services[]" value="{svc_key}"
+                    {svc_chk} />&nbsp;{svc_dscp}
+            </li>
+<!-- END Services -->
+        </ul>
+    </div>
+  </div>
+{!endif}
+
+<!-- BEGIN SpecialConfig -->
+  <div class="uk-form-row">
+    <label class="uk-form-label">{prompt}</label>
+    <div class="uk-form-controls">
+      {form}
+    </div>
+  </div>
+<!-- END SpecialConfig -->
+
   <div class="uk-form-row">
     <div class="uk-form-controls">
       <button type="submit" name="carrier_save" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>

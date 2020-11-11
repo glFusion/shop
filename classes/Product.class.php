@@ -4217,7 +4217,7 @@ class Product
      */
     public function getTrackOnhand()
     {
-        return $this->track_onhand;
+        return $this->track_onhand ? 1 : 0;
     }
 
 
@@ -4241,7 +4241,7 @@ class Product
      */
     public function getOnhand()
     {
-        if ($this->hasVariant()) {
+        if ($this->hasVariant() && $this->Variant->getTrackOnhand()) {
             return $this->Variant->getOnhand();
         } else {
             return $this->onhand;

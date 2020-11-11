@@ -718,6 +718,11 @@ $LANG_SHOP = array (
 'at_dscp_shop' => 'Include a product in the content',
 'at_dscp_shop_cat' => 'Add a link to a catalog category',
 'at_dscp_shop_headlines' => 'Include a headline-style display of products',
+'ena_quoteapi' => 'Enable Quote API',
+'ena_trackingapi' => 'Enable Tracking API',
+'supported_services' => 'Supported Services',
+'packages' => 'Packages',
+'new_package' => 'New Package',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -759,6 +764,7 @@ $LANG_SHOP_HELP = array(
 'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 'select_files' => 'Select one or multiple files to upload.',
 'tax_import_fmt' => 'File Format and first line: <pre>State,ZipCode,TaxRegionName,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,EstimatedSpecialRate,RiskLevel</pre>',
+'packages' => 'Create and edit shipping packages.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

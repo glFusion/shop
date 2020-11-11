@@ -15,5 +15,6 @@
 {!endif}
 <script>
 var shipper_json = '{shipper_json}';
+var shipper_obj = JSON.parse(shipper_json);
 </script>
 {# end {templatelocation} #}

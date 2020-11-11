@@ -64,6 +64,10 @@ class ProductVariant
      * @var string */
     private $supplier_ref = '';
 
+    /** Flag to indicate whether quantity onhand is tracked by variant.
+     * @var boolean */
+    private $track_onhand = 0;
+
     /** Quantity on hand.
      * @var float */
     private $onhand = 0;
@@ -175,6 +179,7 @@ class ProductVariant
                 ->setShippingUnits(SHOP_getVar($A, $pfx.'shipping_units', 'float'))
                 ->setSku(SHOP_getVar($A, $pfx.'sku'))
                 ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
+                ->setTrackOnhand(SHOP_getVar($A, $pfx.'track_onhand', 'integer'))
                 ->setOnhand(SHOP_getVar($A, $pfx.'onhand', 'float'))
                 ->setReorder(SHOP_getVar($A, $pfx.'reorder', 'float'))
                 ->setImageIDs(SHOP_getVar($A, $pfx.'img_ids', 'mixed'))
@@ -382,6 +387,30 @@ class ProductVariant
     {
         $this->units= (float)$units;
         return $this;
+    }
+
+
+    /**
+     * Set the flag to track qty onhand by variant or not.
+     *
+     * @param   boolean $flag   True to track qty onhand, False to not
+     * @return  object  $this
+     */
+    public function setTrackOnhand($flag)
+    {
+        $this->track_onhand = $flag ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Check if quantity onhand is tracked by variant.
+     *
+     * @return  boolean     1 to track by variant, 0 to track by product.
+     */
+    public function getTrackOnhand()
+    {
+        return $this->track_onhand ? 1 : 0;
     }
 
 
@@ -663,6 +692,7 @@ class ProductVariant
         if ($this->pv_id == 0) {
             $this->setReorder(Product::getInstance($this->getItemId())->getReorder());
             $this->setOnhand(Product::getInstance($this->getItemId())->getOnhand());
+            $this->setTrackOnhand(Product::getInstance($this->getItemId())->getTrackOnhand());
         }
         $Product = Product::getByID($this->item_id);
         $T->set_var(array(
@@ -671,6 +701,8 @@ class ProductVariant
             'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
+            'trk_onhand_chk' => $this->track_onhand ? 'checked="checked"' : '',
+            'onhand_vis'    => $this->track_onhand ? '' : 'none',
             'item_id'       => $this->getItemId(),
             'item_name'     => $Product->getName(),
             'pv_id'         => $this->getId(),
@@ -964,6 +996,7 @@ class ProductVariant
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
+            track_onhand = '{$this->getTrackOnhand()}',
             onhand = " . (float)$this->onhand . ",
             img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
             dscp = '" . DB_escapeString(json_encode($this->dscp)) . "',

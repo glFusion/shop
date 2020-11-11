@@ -43,6 +43,18 @@ class fedex extends \Shop\Shipper
         111111111111    = Delivered (working)
      */
 
+    private $tracking_info = array(
+        'wsdl'  => __DIR__ . '/etc/TrackService_v18.wsdl',
+        'major_ver' => '18',
+        'minor_ver' => '0',
+    );
+
+    private $quote_info = array(
+        'wsdl'  => __DIR__ . '/etc/TrackService_v18.wsdl',
+        'major_ver' => '28',
+        'minor_ver' => '0',
+    );
+
     /** Full path to WSDL file, required for API requests.
      * @var string */
     private $wsdl = __DIR__ . '/etc/TrackService_v18.wsdl';
@@ -251,6 +263,11 @@ class fedex extends \Shop\Shipper
         }
         $Tracking->setCache($this->key, $track_num);
         return $Tracking;
+    }
+
+
+    public function getQuote($Addr, $Packages)
+    {
     }
 
 
