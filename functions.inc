@@ -1616,7 +1616,7 @@ function plugin_runScheduledTask_shop()
     }
 
     // Expire the database-based cache for glFusion < 2.0.0
-    Shop\Cache::expire();
+    Shop\CacheDB::expire();
 }
 
 
