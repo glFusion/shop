@@ -62,7 +62,7 @@ class internal extends \Shop\IPN
 
         // Get the IPN type, default to "cart" for backward compatibility
         $this->ipn_type = SHOP_getVar($this->ipn_data, 'ipn_type', 'string', 'cart');
-        if (isset($this->ipn_data['pmt_gros'])) {
+        if (isset($this->ipn_data['pmt_gross'])) {
             $pmt_gross = $this->ipn_data['pmt_gross'];
         } elseif (isset($custom['by_gc'])) {
             $pmt_gross = $custom['by_gc'];
@@ -178,6 +178,8 @@ class internal extends \Shop\IPN
      */
     public function Process()
     {
+        global $_USER;
+
         // If no data has been received, then there's nothing to do.
         if (empty($this->ipn_data)) {
             return false;
@@ -190,6 +192,9 @@ class internal extends \Shop\IPN
         $custom = SHOP_getVar($this->ipn_data, 'custom');
         $this->custom = @unserialize($custom);
 
+        if (!isset($this->ipn_data['cmd'])) {
+            $this->ipn_data['cmd'] = 'pay_now';
+        }
         switch ($this->ipn_data['cmd']) {
         case 'buy_now':
             $item_number = SHOP_getVar($this->ipn_data, 'item_number');
@@ -225,7 +230,9 @@ class internal extends \Shop\IPN
             $billto = $this->Order->getAddress('billto');
             $shipto = $this->Order->getAddress('shipto');
             if (empty($shipto) && !empty($billto)) $shipto = $billto;
-            if (COM_isAnonUser()) $_USER['email'] = '';
+            if (COM_isAnonUser()) {
+                $_USER['email'] = '';
+            }
             $this->setEmail(SHOP_getVar($this->ipn_data, 'payer_email', 'string', $_USER['email']));
             $this->setPayerName(trim(SHOP_getVar($this->ipn_data, 'name') .' '. SHOP_getVar($this->ipn_data, 'last_name')));
             if ($this->getPayerName() == '') {
