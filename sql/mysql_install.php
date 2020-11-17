@@ -371,6 +371,7 @@ $_SQL = array(
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `free_threshold` decimal(9,4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -439,6 +440,15 @@ $_SQL = array(
   KEY `location` (`country`,`state`,`zip_from`),
   KEY `zip_from` (`zip_from`),
   KEY `zip_to` (`zip_to`)
+) ENGINE=MyISAM",
+
+'shop.cache' => "CREATE TABLE `{$_TABLES['shop.cache']}` (
+  `cache_key` varchar(127) NOT NULL,
+  `expires` int(11) unsigned NOT NULL DEFAULT '0',
+  `data` mediumtext,
+  `tags` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`cache_key`),
+  KEY (`expires`)
 ) ENGINE=MyISAM",
 );
 
@@ -782,6 +792,10 @@ $SHOP_UPGRADE['1.2.3'] = array(
         ADD shipping_dscp varchar(20) DEFAULT NULL AFTER shipping_method",
     "ALTER TABLE {$_TABLES['product_variants']}
         ADD `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER shipping_units",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD free_threshold decimal(9,4) NOT NULL DEFAULT 0 AFTER tax_loc",
+    "ALTER TABLE {$_TABLES['shop.cache']}
+        ADD tags varchar(255) NOT NULL DEFAULT '' AFTER `data`",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
@@ -792,7 +806,6 @@ $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
-$_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
