@@ -1613,10 +1613,10 @@ function plugin_runScheduledTask_shop()
     // Force-clear the cache if items were removed.
     if ($clear_cache) {
         Shop\Cache::clear();
+    } else {
+        // Expire the database-based cache for glFusion < 2.0.0
+        Shop\Cache::expire();
     }
-
-    // Expire the database-based cache for glFusion < 2.0.0
-    Shop\CacheDB::expire();
 }
 
 
@@ -2285,6 +2285,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
     case 'object':
     case 'mixed':
         return $val;
+        break;
     case 'string':
     default:
         return (string)$val;
