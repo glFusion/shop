@@ -113,7 +113,7 @@ class Cache
             foreach ($tags as $tag) {
                 $wheres[] = "tags LIKE '%" . DB_escapeString($tag) . "%'";
             }
-            $where = implode(' OR ', $wheres);
+            $where = implode(' AND ', $wheres);
             $sql = "DELETE FROM {$_TABLES['shop.cache']} WHERE ($where);";
             DB_query($sql);
             return;
