@@ -442,18 +442,21 @@ class Coupon extends \Shop\Product
     {
         global $LANG_SHOP;
 
-        $code = SHOP_getVar($item->getExtras(), ['special'], 'gc_code', 'string');
-        $s = '';
-        if (!empty($code)) {
-            $url = self::redemptionUrl($code);
-            $s = sprintf(
-                $LANG_SHOP['apply_gc_email'],
-                $url,
-                $url,
-                $url
-            );
+        $retval = '';
+        $extra = $item->getExtras();
+        if (isset($extra['special']) && isset($extra['special']['gc_code'])) {
+            $code = $extra['special']['gc_code'];
+            if (!empty($code)) {
+                $url = self::redemptionUrl($code);
+                $retval = sprintf(
+                    $LANG_SHOP['apply_gc_email'],
+                    $url,
+                    $url,
+                    $url
+                );
+            }
         }
-        return $s;
+        return $retval;
     }
 
 
