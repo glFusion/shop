@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Icon;
 
 
 /**
@@ -271,7 +272,18 @@ class payment extends \Shop\Report
             $D = new \Date($fieldvalue, $_CONF['timezone']);
             $retval = $D->toMySQL(true);
             break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                Icon::getHTML('delete'),
+                SHOP_ADMIN_URL . '/index.php?delpayment=' . $A['pmt_id'] . '&ord_pmts=' . $_GET['ord_pmts'],
+                array(
+                    'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
+                )
+            );
+            break;
         }
+
         return $retval;
     }
 

@@ -587,6 +587,19 @@ class Payment
 
 
     /**
+     * Delete a single payment.
+     *
+     * @param   integer $pmt_id     Payment record ID
+     */
+    public static function delete($pmt_id)
+    {
+        global $_TABLES;
+
+        DB_delete($_TABLES['shop.payments'], 'pmt_id', (int)$pmt_id);
+    }
+
+
+    /**
      * Purge all payments from the database.
      * No safety check or confirmation is done; that should be done before
      * calling this function.
