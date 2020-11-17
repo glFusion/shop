@@ -124,7 +124,7 @@ abstract class Tax
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        return CacheDB::get($key);
+        return Cache::get($key);
     }
 
 
@@ -143,7 +143,7 @@ abstract class Tax
         if ($exp <= 0) {
             $exp = 86400 * 7;
         }
-        CacheDB::set($key, $data, $exp);
+        Cache::set($key, $data, $exp);
     }
 
 
