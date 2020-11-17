@@ -488,7 +488,7 @@ class OrderItem
             $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             //Cache::deleteOrder($this->order_id);
