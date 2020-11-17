@@ -44,8 +44,10 @@ class ShippingQuote implements \ArrayAccess
         if (is_string($val) && !empty($val)) {
             $x = json_decode($val, true);
             if ($x) {
-                $this->etVars($x);
+                $this->setVars($x);
             }
+        } elseif (is_array($val)) {
+            $this->setVars($val);
         }
     }
 
