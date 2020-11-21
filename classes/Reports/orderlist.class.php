@@ -167,6 +167,7 @@ class orderlist extends \Shop\Report
                 $q_str['run'] = 'orderlist';
             }
             unset($q_str['uid']);
+            unset($q_str['query_limit']);
             $q_str = http_build_query($q_str);
             $form_url = SHOP_ADMIN_URL . '/report.php?' . $q_str;
             $this->setExtra('uid_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid=');
