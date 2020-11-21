@@ -32,13 +32,9 @@ class Report
      * @var string */
     protected $icon_cls = '';
 
-    /** Property fields accessed via `__set()` and `__get()`.
-    * @var array */
-    protected $properties;
-
     /** Report shortname.
      * @var string */
-    protected $key;
+    protected $key = '';
 
     /** Flag to indicate whether this report has a parameter form.
      * Most reports do have a form.
@@ -51,11 +47,11 @@ class Report
 
     /** Starting date.
      * @var object */
-    protected $startDate;
+    protected $startDate = NULL;
 
     /** Ending date.
      * @var object */
-    protected $endDate;
+    protected $endDate = NULL;
 
     /** Output type (html or csv)
      * @var string */
@@ -110,7 +106,11 @@ class Report
 
     /** User ID, used if filter_uid is true.
      * @var integer */
-    protected $uid;
+    protected $uid = 0;
+
+    /** Limit per-page results.
+     * @var integer */
+    protected $limit = 50;
 
 
     /**
@@ -151,6 +151,7 @@ class Report
         $this->startDate = $dates['start'];
         $this->endDate = $dates['end'];
         $this->paid_status = SHOP_getVar($get, 'paid', 'integer', 4);
+        $this->limit = SHOP_getVar($get, 'query_limit', 'integer', 50);
         return $this;
     }
 
@@ -625,7 +626,6 @@ class Report
             break;
         }
         return $val;
-        //return $val !== NULL ? $val : $default;
     }
 
 
@@ -633,6 +633,7 @@ class Report
      * Remove or replace quote characters.
      * For HTML, replace with the HTML entity.
      * For CSV, remove completely.
+     * For PDF, no change.
      *
      * @param   string  $str    Original string
      * @return  string          Sanitized string
@@ -923,6 +924,7 @@ class Report
     {
         $this->$key = $value;
         self::_setSessVar($key, $value);
+        return $this;
     }
 
 
