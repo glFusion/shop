@@ -56,24 +56,22 @@ case 'view':
     // View a completed order record
     $order = \Shop\Order::getInstance($id);
     if ($order->canView($token)) {
-        $content .= $order->View();
+        $View = new Shop\Views\Invoice();
+        $content .= $View->withOrder($order)->withToken($token)->Render();
+        //$content .= $order->View();
     } else {
         COM_404();
     }
     break;
 
-case 'pdfpl':
-    $View = new Shop\Views\Order();
-    $View->withOrderId($id)->withToken($token)->asPackingList()->withOutput('pdf')->Render();
-    break;
 case 'pdforder':
-    $View = new Shop\Views\Order();
-    $View->withOrderId($id)->withToken($token)->withOutput('pdf')->Render();
-    break;
-    /*$order = Shop\Order::getInstance($id);
+    $order = Shop\Order::getInstance($id);
     if ($order->canView($token)) {
-        \Shop\Order::printPDF($id, $mode);
-    }*/
+        $View = new Shop\Views\Invoice();
+        $content = $View->withOrderId($id)->withToken($token)->withOutput('pdf')->Render();
+    } else {
+        COM_404();
+    }
     break;
 
 case 'packinglist':
