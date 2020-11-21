@@ -551,6 +551,7 @@ function SHOP_remove_old_files()
             'language/english.php',
             'language/german.php',
             'language/german_formal.php',
+            'classes/CacheDB.class.php',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
