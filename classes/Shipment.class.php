@@ -572,7 +572,7 @@ class Shipment
         case 'order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/order.php?order=' . urlencode($fieldvalue)
+                SHOP_ADMIN_URL . '/orders.php?order=' . urlencode($fieldvalue)
             );
             break;
 
