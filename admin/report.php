@@ -125,9 +125,9 @@ case 'pdfpl':
     } else {
         $orders = $actionval;
     }
-    $View = new Shop\Views\Order();
+    $View = new Shop\Views\Invoice;
     $View
-        ->withOrderId($orders)
+        ->withOrderIds($orders)
         ->asPackingList()
         ->withOutput('pdf')
         ->Render();
@@ -138,7 +138,7 @@ case 'pdforder':
     } else {
         $orders = $actionval;
     }
-    $View = new Shop\Views\Order();
+    $View = new Shop\Views\Invoice;
     $View->withOrderId($orders)->withOutput('pdf')->Render();
     break;
     \Shop\Order::printPDF($orders, $view);

@@ -1,6 +1,6 @@
 <?php
 /**
- * Manage shipments.
+ * Manage payments.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner
@@ -38,13 +38,13 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = 'shipments';
+$action = 'payments';
 $actionval = 'x';
 $expected = array(
     // Actions to perform
-    'delete',
+    'delete', 'savepayment', 'delpayment',
     // Views to display
-    'packinglist', 'edit', 'shipments', 'list',
+    'edit', 'payments', 'list', 'ord_pmts', 'newpayment', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -60,33 +60,24 @@ foreach($expected as $provided) {
 $view = $action;
 
 switch ($action) {
-case 'delete':
-    $S = new Shop\Shipment($actionval);
-    $S->Delete();
-    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/shipments.php');
-    COM_refresh($url);
+case 'savepayment':
+    $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
+    $Pmt->setAmount($_POST['amount'])
+        ->setMethod($_POST['gw_id'])
+        ->setGateway($_POST['gw_id'])
+        ->setRefID($_POST['ref_id'])
+        ->setOrderID($_POST['order_id'])
+        ->setUID($_USER['uid'])
+        ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
+        ->setComment($_POST['comment']);
+    $Pmt->Save();
+    COM_refresh(SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $_POST['order_id']);
     break;
 
-case 'updstatus':
-    $newstatus = SHOP_getVar($_POST, 'newstatus');
-    if ($newstatus == '') {
-        break;
-    }
-    $orders = SHOP_getVar($_POST, 'orders', 'array');
-    $oldstatus = SHOP_getVar($_POST, 'oldstatus', 'array');
-    foreach ($orders as $id=>$order_id) {
-        if (!isset($oldstatus[$order_id]) || $oldstatus[$order_id] != $newstatus) {
-            $Order = Shop\Order::getInstance($order_id);
-            if (!$Order->isNew) {
-                $Order->updateStatus($newstatus);
-                SHOP_log("Updated order $order_id from {$oldstatus[$order_id]} to $newstatus", SHOP_LOG_INFO);
-            }
-        }
-    }
-    $actionval = SHOP_getVar($_REQUEST, 'run');
-    if ($actionval != '') {
-        $view = 'run';
-    }
+case 'delete':
+case 'delpayment':
+    Shop\Payment::delete($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $_GET['ord_pmts']);
     break;
 
 default:
@@ -95,48 +86,42 @@ default:
 }
 
 switch ($view) {
-case 'packinglist':
-    if ($actionval == 'x') {
-        $shipments = SHOP_getVar($_POST, 'shipments', 'array');
-    } else {
-        $shipments = $actionval;
-    }
-    $PL = new Shop\Views\PackingList();
-    $PL->withOutput('pdf')->withShipmentId($shipments)->Render();
+case 'newpayment':
+    $Pmt = new Shop\Payment;
+    $Pmt->setOrderID($actionval);
+    $content .= $Pmt->pmtForm();
     break;
 
-case 'edit':
-    $shipment_id = (int)$actionval;
-    if ($shipment_id > 0) {
-        if (isset($_REQUEST['ret_url'])) {
-            SHOP_setUrl($_REQUEST['ret_url']);
+case 'ipndetail':
+    $val = NULL;
+    foreach (array('id', 'txn_id') as $key) {
+        if (isset($_GET[$key])) {
+            $val = $_GET[$key];
+            break;
         }
-        $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\ShipmentForm($S->getOrderID());
-        $content = $V->withShipmentId($shipment_id)->Render();
-        //$content = $V->Render($action);
+    }
+    if ($val !== NULL) {
+        $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
+        break;
     }
     break;
 
 case 'list':
-case 'shipments':
+case 'payments':
+case 'ord_pmts':
 default:
-    // View admin list of shipments
-    SHOP_setUrl();
+    // View payments on an order
     if ($actionval != 'x') {
         $Order = Shop\Order::getInstance($actionval);
         $content .= Shop\Menu::viewOrder($view, $Order);
     } else {
         $content .= Shop\Menu::adminOrders($view);
     }
-    $content .= Shop\Shipment::adminList($actionval);
-    if ($view == 'shipments') {
-        $view = 'orders';       // to set the active top-level menu
-    }
+    $content .= Shop\Payment::adminList($actionval);
     break;
 }
 $display = COM_siteHeader();
-$display .= \Shop\Menu::Admin('reports');
+$display .= \Shop\Menu::Admin('orders');
 if (!empty($msg)) {
     $messages = implode('<br />', $msg);
     $display .= COM_showMessageText($messages);

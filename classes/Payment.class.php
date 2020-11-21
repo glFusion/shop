@@ -565,7 +565,7 @@ class Payment
             ),
             'pmt_id' => $this->pmt_id,
             'order_id' => $this->order_id,
-            'amount' => $this->amount,
+            'amount' => $this->amount > 0 ? $this->amount : '',
             'ref_id' => $this->ref_id,
             'money_chk' => $this->is_money ? 'checked="checked"' : '',
             'bal_due' => Currency::getInstance($Order->getCurrency()->getCode())->formatMoney($bal_due),
@@ -633,7 +633,7 @@ class Payment
         if ($order_id != 'x') {
             $new_btn = COM_createLink(
                 $LANG_SHOP['add_payment'],
-                SHOP_ADMIN_URL . '/index.php?newpayment=' . $order_id,
+                SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
                 array(
                     'class' => 'uk-button uk-button-success',
                 )

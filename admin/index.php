@@ -83,7 +83,6 @@ foreach($expected as $provided) {
         break;
     }
 }
-
 $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
@@ -613,6 +612,7 @@ case 'pv_bulk_save':
     break;
 
 case 'savepayment':
+    echo "payments deprecated in index.php";die;
     $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
     $Pmt->setAmount($_POST['amount'])
         ->setMethod($_POST['gw_id'])
@@ -624,6 +624,12 @@ case 'savepayment':
         ->setComment($_POST['comment']);
     $Pmt->Save();
     COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_POST['order_id']);
+    break;
+
+case 'delpayment':
+    echo "payments deprecated in index.php";die;
+    Shop\Payment::delete($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_GET['ord_pmts']);
     break;
 
 default:
@@ -654,9 +660,9 @@ case 'coupons':
 
 case 'order':
     $order = \Shop\Order::getInstance($actionval);
-    $order->setAdmin(true);
+    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
     $content .= Shop\Menu::viewOrder($view, $order);
-    $content .= $order->View('adminview');
+    $content .= $V->Render();
     break;
 
 case 'ipndetail':
@@ -913,14 +919,15 @@ case 'editshipment':
             SHOP_setUrl($_REQUEST['ret_url']);
         }
         $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\Shipment($S->getOrderID());
-        $V->setShipmentID($shipment_id);
-        $content = $V->Render($action);
+        $V = new Shop\Views\ShipmentForm($S->getOrderID());
+        $V->withShipmentID($shipment_id);
+        $content = $V->Render();
     }
     break;
 
 case 'payments':
 case 'ord_pmts':
+    echo "payments deprecated in index.php";die;
     // View payments on an order
     if ($actionval != 'x') {
         $Order = Shop\Order::getInstance($actionval);
@@ -951,11 +958,10 @@ case 'shiporder':
     if (isset($_GET['ret_url'])) {
         SHOP_setUrl($_GET['ret_url']);
     }
-    $V = new Shop\Views\Shipment($_GET['order_id']);
-    $content .= $V->Render($action);
-    /*
-    $Ord = Shop\Order::getInstance($_GET['order_id']);
-    if (!$Ord->isNew) {
+    $V = new Shop\Views\ShipmentForm($_GET['order_id']);
+    $content .= $V->Render();
+    /*$Ord = Shop\Order::getInstance($_GET['order_id']);
+    if (!$Ord->isNew()) {
         $content .= $Ord->View('shipment');
     }*/
     break;
@@ -1091,6 +1097,7 @@ case 'regions':
     break;
 
 case 'newpayment':
+    echo "deprecated";die;
     $Pmt = new Shop\Payment;
     $Pmt->setOrderID($actionval);
     $content .= $Pmt->pmtForm();

@@ -1,6 +1,6 @@
 <?php
 /**
- * Manage shipments.
+ * Manage orders.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner
@@ -38,7 +38,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = 'shipments';
+$action = 'orders';
 $actionval = 'x';
 $expected = array(
     // Actions to perform
@@ -105,38 +105,21 @@ case 'packinglist':
     $PL->withOutput('pdf')->withShipmentId($shipments)->Render();
     break;
 
-case 'edit':
-    $shipment_id = (int)$actionval;
-    if ($shipment_id > 0) {
-        if (isset($_REQUEST['ret_url'])) {
-            SHOP_setUrl($_REQUEST['ret_url']);
-        }
-        $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\ShipmentForm($S->getOrderID());
-        $content = $V->withShipmentId($shipment_id)->Render();
-        //$content = $V->Render($action);
-    }
-    break;
-
 case 'list':
-case 'shipments':
+case 'orders':
 default:
-    // View admin list of shipments
-    SHOP_setUrl();
-    if ($actionval != 'x') {
-        $Order = Shop\Order::getInstance($actionval);
-        $content .= Shop\Menu::viewOrder($view, $Order);
-    } else {
-        $content .= Shop\Menu::adminOrders($view);
-    }
-    $content .= Shop\Shipment::adminList($actionval);
-    if ($view == 'shipments') {
-        $view = 'orders';       // to set the active top-level menu
+    $content .= Shop\Menu::adminOrders($view);
+    $R = \Shop\Report::getInstance('orderlist');
+    if ($R !== NULL) {
+        $R->setAdmin(true);
+        // Params usually from GET but could be POSTed time period
+        $R->setParams($_REQUEST);
+        $content .= $R->Render();
     }
     break;
 }
 $display = COM_siteHeader();
-$display .= \Shop\Menu::Admin('reports');
+$display .= \Shop\Menu::Admin('orders');
 if (!empty($msg)) {
     $messages = implode('<br />', $msg);
     $display .= COM_showMessageText($messages);
