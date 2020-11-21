@@ -99,7 +99,6 @@ case 'setShipper':
         $method = NULL;
     } else {
         $method = $ship_methods[$method_id];
-        COM_errorLog(print_r($method,true));
         $status = Shop\Cart::getInstance($cart_id)
             ->setShipper($method)
             ->Save();
@@ -113,7 +112,7 @@ case 'setShipper':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $Cart = Shop\Cart::getInstance(0, $cart_id);
+    $Cart = Shop\Cart::getInstance($cart_id, 0);
     $status_msg = '';
     if ($Cart->isNew()) {
         $status_msg = 'Cart not found';
