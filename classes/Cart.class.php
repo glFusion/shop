@@ -16,6 +16,8 @@
  *
  */
 namespace Shop;
+use Shop\Models\OrderState;
+
 
 /**
  * Shopping cart class.
@@ -47,7 +49,7 @@ class Cart extends Order
 
         parent::__construct($cart_id);
         if ($this->isNew) {
-            $this->status = 'cart';
+            $this->status = OrderState::CART;
             $this->Save();    // Save to reserve the ID
         }
         //if (COM_isAnonUser()) {
@@ -63,18 +65,30 @@ class Cart extends Order
      * @param   string  $cart_id    Specific cart ID to read
      * @return  object  Cart object
      */
-    public static function getInstance($uid = 0, $cart_id = '')
+    public static function getInstance($cart_id = '', $uid = 0)
     {
         global $_TABLES, $_USER;
 
-        if ($uid == 0) $uid = $_USER['uid'];
+        if ($uid == 0) {
+            $uid = $_USER['uid'];
+        }
         $uid = (int)$uid;
+        if ($uid < 2) {
+            if ($cart_id == '') {
+                $cart_id = self::getSession('cart_id');
+            }
+        } else {
+            $cart_id = self::getCart($uid);
+        }
         $cart = new self($cart_id);
 
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($cart->getUid() != $uid || $cart->status != 'cart') {
+        if ($cart->getUid() != $uid || $cart->status != OrderState::CART) {
+            var_dump(debug_backtrace(0));die;
+            echo $uid;die;
+            echo "here";die;
             self::_expireCookie();
             $cart = new self();
         }
@@ -93,7 +107,7 @@ class Cart extends Order
 
         $retval = array();
         $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
-            WHERE status = 'cart'";
+            WHERE status = '" . OrderState::CART . "'";
         $res = DB_query($sql);
         if ($res) {
             while ($A = DB_fetchArray($res, false)) {
@@ -118,7 +132,7 @@ class Cart extends Order
 
         if ($_USER['uid'] < 2) return;
 
-        $AnonCart = self::getInstance(1, $cart_id);
+        $AnonCart = self::getInstance($cart_id, 1);
         if (empty($AnonCart->getItems())) {
             return;
         }
@@ -349,9 +363,9 @@ class Cart extends Order
         if (isset($A['by_gc'])) {
             $this->setGC($A['by_gc']);
         }
-        if (isset($_POST['shipper_id'])) {
+        /*if (isset($_POST['shipper_id'])) {
             $this->setShipper($_POST['shipper_id']);
-        }
+        }*/
         if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
         }
@@ -424,7 +438,7 @@ class Cart extends Order
         global $_TABLES, $_USER;
 
         // Only clear if this is actually a cart, not a finalized order.
-        if ($this->status == 'cart') {
+        if ($this->status == OrderState::CART) {
             foreach ($this->items as $Item) {
                 OrderItem::Delete($Item->getID());
             }
@@ -450,7 +464,7 @@ class Cart extends Order
         global $_SHOP_CONF, $_USER;
 
         $by_gc = (float)$this->getInfo('apply_gc');
-        $net_total = $this->total - $by_gc;
+        $net_total = $this->order_total - $by_gc;
         if ($gw->Supports('checkout')) {
             // Else, if amount > 0, regular checkout button
             $this->custom_info['by_gc'] = $by_gc;   // pass GC amount used via gateway
@@ -475,7 +489,7 @@ class Cart extends Order
         $gateway_vars = '';
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
             foreach (Gateway::getAll() as $gw) {
-                if ($gw->hasAccess($this->total) && $gw->Supports('checkout')) {
+                if ($gw->hasAccess($this->order_total) && $gw->Supports('checkout')) {
                     $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
                 }
@@ -504,6 +518,7 @@ class Cart extends Order
         global $_SHOP_CONF;
 
         $retval = '';
+        $total = $this->getTotal();
         $T = new Template;
         $T->set_file('radios', 'gw_checkout_select.thtml');
         $T->set_block('radios', 'Radios', 'row');
@@ -517,14 +532,17 @@ class Cart extends Order
                 return NULL;  // no available gateways
             }
 
-            if ($this->total == 0) {
+            if ($total == 0) {
                 // Automatically select the "free" gateway if appropriate.
                 // Other gateways shouldn't be shown anyway.
                 $gw_sel = 'free';
-            } elseif (isset($this->m_info['gateway']) && array_key_exists($this->m_info['gateway'], $gateways)) {
+            } elseif (
+                isset($this->m_info['gateway']) &&
+                array_key_exists($this->m_info['gateway'], $gateways)
+            ) {
                 // Select the previously selected gateway
                 $gw_sel = $this->m_info['gateway'];
-            } elseif ($gc_bal >= $this->total) {
+            } elseif ($gc_bal >= $total) {
                 // Select the coupon gateway as full payment
                 $gw_sel = '_coupon';
             } else {
@@ -535,7 +553,7 @@ class Cart extends Order
                 }
             }
             foreach ($gateways as $gw_id=>$gw) {
-                if (is_null($gw) || !$gw->hasAccess($this->total)) {
+                if (is_null($gw) || !$gw->hasAccess($total)) {
                     continue;
                 }
                 if ($gw->Supports('checkout')) {
@@ -622,17 +640,21 @@ class Cart extends Order
             // Check if the order exists but is not a cart.
             $status = DB_getItem($_TABLES['shop.orders'], 'status',
                 "order_id = '" . DB_escapeString($cart_id) . "'");
-            if ($status != NULL && $status != 'cart') {
+            if ($status != NULL && $status != OrderState::CART) {
                 $cart_id = NULL;
             }
         } else {
-            $cart_id = DB_getItem($_TABLES['shop.orders'], 'order_id',
-                "uid = $uid AND status = 'cart' ORDER BY last_mod DESC limit 1");
+            $cart_id = DB_getItem(
+                $_TABLES['shop.orders'],
+                'order_id',
+                "uid = $uid AND status = '" . OrderState::CART .
+                "' ORDER BY last_mod DESC limit 1"
+            );
             if (!empty($cart_id)) {
                 // For logged-in usrs, delete superfluous carts
                 DB_query("DELETE FROM {$_TABLES['shop.orders']}
                     WHERE uid = $uid
-                    AND status = 'cart'
+                    AND status = '" . OrderState::CART . "'
                     AND order_id <> '" . DB_escapeString($cart_id) . "'");
             }
         }
@@ -703,7 +725,7 @@ class Cart extends Order
         if ($uid < 2) return;       // Don't delete anonymous carts
         $msg = "All carts for user {$uid} deleted";
         $sql = "DELETE FROM {$_TABLES['shop.orders']}
-            WHERE uid = $uid AND status = 'cart'";
+            WHERE uid = $uid AND status = '" . OrderState::CART . "'";
         if ($save != '') {
             $sql .= " AND order_id <> '" . DB_escapeString($save) . "'";
             $msg .= " except $save";
@@ -784,7 +806,7 @@ class Cart extends Order
             return $this;
         }
 
-        $newstatus = $status ? 'pending' : 'cart';
+        $newstatus = $status ? OrderState::PENDING : OrderState::CART;
         $oldstatus = $this->status;
         $this->setOrderDate()->Save();
         self::setSession('order_id', $this->getOrderID());
@@ -828,7 +850,6 @@ class Cart extends Order
         } else {
             $wf_name = 'viewcart';
         }
-
         switch($wf_name) {
         case 'viewcart':
             // Initial cart view. Check here and populate the billing and
@@ -861,13 +882,19 @@ class Cart extends Order
             }
             // Fall through to the checkout view
         case 'checkout':
+            $V = new Views\Cart;
+            $V->withView($wf_name)->withOrderId($this->order_id);
+            return $V->Render();
             return $this->View($wf_name, $step);
         case 'billto':
         case 'shipto':
             $U = new \Shop\Customer();
-            $A = isset($_POST['address1']) ? $_POST : \Shop\Cart::getInstance()->getAddress($wf_name);
+            $A = isset($_POST['address1']) ? $_POST : $this->getAddress($wf_name);
             return $U->AddressForm($wf_name, $A, $step);
         case 'finalize':
+            $V = new Views\Cart;
+            $V->withView('checkout')->withOrderId($this->order_id);
+            return $V->Render();
             return $this->View('checkout');
         default:
             return $this->View();
@@ -890,7 +917,7 @@ class Cart extends Order
         $canview = false;
 
         // Check that this is an existing record
-        if ($this->isNew() || $this->status != 'cart') {
+        if ($this->isNew() || $this->status != OrderState::CART) {
             $canview  = false;
         } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner
@@ -910,7 +937,7 @@ class Cart extends Order
     public static function Purge()
     {
         global $_TABLES;
-        DB_delete($_TABLES['shop.orders'], 'status', 'cart');
+        DB_delete($_TABLES['shop.orders'], 'status', OrderState::CART);
         SHOP_log("All carts for all users deleted", SHOP_LOG_DEBUG);
     }
 
