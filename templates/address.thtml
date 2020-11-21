@@ -239,6 +239,7 @@ function removeAddress(addr_id)
   <input type="hidden" id="phone" name="phone" value="" />
 {!endif}
 
+{!if allow_default}
     <div class="uk-form-row">
         <label class="uk-form-label">{$LANG_SHOP['def_billto']}</label>
         <div class="uk-form-controls">
@@ -252,7 +253,10 @@ function removeAddress(addr_id)
             <input type="checkbox" id="shipto_def" name="shipto_def" value="1" {shipto_chk} />
         </div>
     </div>
-
+{!else}
+    <input type="hidden" id="billto_def" name="billto_def" value="0" />
+    <input type="hidden" id="shipto_def" name="shipto_def" value="0" />
+{!endif}
 
 {!if allow_defaultX}
   <div class="uk-form-row">
