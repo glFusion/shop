@@ -560,7 +560,7 @@ $LANG_SHOP = array (
 'edit_supplier' => 'Edit Supplier',
 'new_supplier' => 'New Supplier',
 'ship' => 'Ship',
-'shiporder' => 'Ship Order',
+'shiporder' => 'Order Shipment',
 'editshipment' => 'Edit Order Shipment',
 'ordered' => 'Ordered',
 'shipped' => 'Shipped',
@@ -723,6 +723,7 @@ $LANG_SHOP = array (
 'supported_services' => 'Supported Services',
 'packages' => 'Packages',
 'new_package' => 'New Package',
+'free_threshold' => 'Free Shipping Threshold',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
