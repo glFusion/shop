@@ -13,6 +13,8 @@
  */
 namespace Shop;
 use Shop\Models\OrderState;
+use Shop\Models\ShippingQuote;
+use Shop\Models\CustomInfo;
 
 
 /**
@@ -45,7 +47,7 @@ class Order
 
     /** Miscellaneious information values used by the Cart class.
      * @var array */
-    protected $m_info = array();
+    protected $m_info = NULL;
 
     /** Flag to indicate that "no shipping" should be set.
      * @deprecated ?
@@ -69,7 +71,7 @@ class Order
 
     /** Order final total, incl. shipping, handling, etc.
      * @var float */
-    protected $total = 0;
+    protected $order_total = 0;
 
     /** Number of taxable line items on the order.
      * @var integer */
@@ -114,6 +116,10 @@ class Order
      * needs to be accessed directly.
      * @var object */
     protected $order_date = NULL;
+
+    /** Last modified timestamp.
+     * @var string */
+    protected $last_mod = '';
 
     /** Billing address object.
      * @var object */
@@ -248,9 +254,10 @@ class Order
      * Get an object instance for an order.
      *
      * @param   string|array    $key    Order ID or record
+     * @param   integer         $uid    User ID (used by Cart class)
      * @return  object          Order object
      */
-    public static function getInstance($key)
+    public static function getInstance($key, $uid = 0)
     {
         if (is_array($key)) {
             $id = SHOP_getVar($key, 'order_id');
@@ -528,7 +535,7 @@ class Order
                     break;
                 }
             }
-            if ($addr_id > 0) {
+            if (SHOP_getVar($A, 'addr_id', 'integer', 0) > 0) {
                 // If set, read and use an existing address
                 Cart::setSession('shipping', $addr_id);
                 $this->Shipto = Address::getInstance($addr_id);
@@ -623,6 +630,7 @@ class Order
         } else {
             $this->order_date = SHOP_now();
         }
+
         $this->order_id = SHOP_getVar($A, 'order_id');
         $this->shipping = SHOP_getVar($A, 'shipping', 'float');
         $this->handling = SHOP_getVar($A, 'handling', 'float');
@@ -643,8 +651,8 @@ class Order
         $this->setTaxShipping($A['tax_shipping'])
             ->setTaxHandling($A['tax_handling']);
 
-        $this->m_info = @unserialize(SHOP_getVar($A, 'info'));
-        if ($this->m_info === false) $this->m_info = array();
+        $this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
+        //if ($this->m_info === false) $this->m_info = array();
         /*foreach (array('billto', 'shipto') as $type) {
             foreach ($this->_addr_fields as $name) {
                 $fld = $type . '_' . $name;
@@ -674,10 +682,10 @@ class Order
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         if (isset($A['amt_paid'])) {    // only present in DB record
             $this->_amt_paid = (float)$A['amt_paid'];
-            $this->total = (float)$A['order_total'];
         }
         $this->shipping_method = $A['shipping_method'];
         $this->shipping_dscp = $A['shipping_dscp'];
+        $this->last_mod = $A['last_mod'];
         return $this;
     }
 
@@ -714,6 +722,12 @@ class Order
     public function getTaxHandling()
     {
         return $this->tax_handling ? 1 : 0;
+    }
+
+
+    public function getTotal()
+    {
+        return (float)$this->order_total;
     }
 
 
@@ -869,7 +883,8 @@ class Order
             "net_taxable = '{$this->net_taxable}'",
             "instructions = '" . DB_escapeString($this->instructions) . "'",
             "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
-            "info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
+            //"info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
+            "info = '" . (string)$this->m_info . "'",
             "tax_rate = '{$this->tax_rate}'",
             "currency = '{$this->currency}'",
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
@@ -913,6 +928,7 @@ class Order
     public function View($view = 'order', $step = 0)
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
+        echo __FUNCTION__ . ' deprecated'; die;
 
         // Safety valve in case an invalid order is requested.
         // This is for administrators, the canView() function will trap this
@@ -933,6 +949,7 @@ class Order
             $tplname = 'order';
             break;
         case 'checkout':
+            $this->isFinalView = true;
             $this->checkRules();
             $this->setTaxRate(
                 Tax::getProvider()
@@ -946,6 +963,8 @@ class Order
         case 'viewcart':
             $this->checkRules();
             $this->tax_rate = 0;
+            // Call selectShipper() here to get the shipping amount into the local var.
+            $shipper_select = $this->selectShipper();
             $tplname = 'viewcart';
             break;
         case 'packinglist':
@@ -1090,6 +1109,9 @@ class Order
                     SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
                 ),
                 'embargoed'     => $item->getInvalid(),
+                'newship' => true,
+                'can_ship' => 'true',
+                'toship' => $item->getQuantity(),
             ) );
             if ($P->isPhysical()) {
                 $this->no_shipping = 0;
@@ -1118,7 +1140,7 @@ class Order
         //$this->Shipto = new Address($this->getAddress('shipto'));
 
         // Call selectShipper() here to get the shipping amount into the local var.
-        $shipper_select = $this->selectShipper();
+        //$shipper_select = $this->selectShipper();
 
         //$this->total = $this->getTotal();     // also calls calcTax()
         /*if ($this->shipto_id == 0) {
@@ -1129,7 +1151,8 @@ class Order
                     ->getRate()
             );
         }*/
-        $this->total = $this->calcOrderTotal();     // also calls calcTax()
+
+        $this->order_total = $this->calcOrderTotal();     // also calls calcTax()
         $by_gc = (float)$this->getInfo('apply_gc');
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
@@ -1173,7 +1196,7 @@ class Order
             'shop_phone'    => $ShopAddr->getPhone(),
             'shop_email'    => $ShopAddr->getEmail(),
             'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
-            'net_total'     => $Currency->Format($this->total - $by_gc),
+            'net_total'     => $Currency->Format($this->order_total - $by_gc),
             'status'        => $this->status,
             'token'         => $this->token,
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
@@ -1181,7 +1204,7 @@ class Order
             'not_anon'      => !COM_isAnonUser(),
             'total_prefix'  => $Currency->Pre(),
             'total_postfix' => $Currency->Post(),
-            'total_num'     => $Currency->FormatValue($this->total),
+            'total_num'     => $Currency->FormatValue($this->order_total),
             'cur_decimals'  => $Currency->Decimals(),
             'item_subtotal' => $Currency->FormatValue($this->gross_items),
             'return_url'    => SHOP_getUrl(),
@@ -1208,7 +1231,7 @@ class Order
             'good_items'    => $good_items,
             'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
             'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
-            'total'     => $Currency->Format($this->total),
+            'total'     => $Currency->Format($this->order_total),
             'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
             'subtotal'  => $Currency->Format($this->gross_items),
             'tax_icon'  => $LANG_SHOP['tax'][0],
@@ -1218,11 +1241,26 @@ class Order
             'is_paid' => $this->isPaid(),
             'pmt_status' => $this->getPaymentStatus(),
         ) );
+
+        if ($tplname == 'shipping') {
+            $T->set_block('order', 'trackingPackages', 'TP');
+            foreach ($Shp->Packages as $Pkg) {
+                $T->set_var(array(
+                    'shipper_code'  => $Pkg->getShipper()->getCode(),
+                    'shipper_name'  => $Pkg->getShipperInfo(),
+                    'tracking_num'  => $Pkg->getTrackingNumber(),
+                    'pkg_id'        => $Pkg->getID(),
+                    'tracking_url'  => \Shop\Shipper::getInstance($Pkg->getShipperID())->getTrackingUrl($Pkg->getTrackingNumber()),
+                ) );
+                $T->parse('TP', 'trackingPackages', true);
+            }
+        }
+
         if ($this->_amt_paid > 0) {
             $paid = $this->_amt_paid * -1;
             $T->set_var(array(
                 'amt_paid_num' => $Currency->formatValue($this->_amt_paid),
-                'due_amount' => $Currency->formatValue($this->total - $this->_amt_paid),
+                'due_amount' => $Currency->formatValue($this->order_total - $this->_amt_paid),
             ) );
         }
 
@@ -1234,7 +1272,6 @@ class Order
                 'shipping'      => $Currency->FormatValue($this->shipping),
             ) );
         }
-
         if ($this->isAdmin) {
             $T->set_var(array(
                 'is_admin'      => true,
@@ -1854,6 +1891,7 @@ class Order
             $this->tax_items += $Item->getTaxable();
             $tax += $Item->getTax();
         }
+
         if ($this->tax_shipping) {
             $tax += $C->RoundVal($this->tax_rate * $this->shipping);
         }
@@ -1861,44 +1899,6 @@ class Order
             $tax += $C->RoundVal($this->tax_rate * $this->handling);
         }
         $this->tax = $C->FormatValue($tax);
-        return $this;
-    }
-
-
-    /**
-     * Calculate the total shipping fee for this order.
-     * Sets $this->shipping, no return value.
-     */
-    public function calcShipping()
-    {
-        // Only calculate shipping if there are physical items,
-        // otherwise shipping = 0
-        if ($this->hasPhysical()) {
-            $shipper_id = $this->shipper_id;
-            $shippers = Shipper::getShippersForOrder($this);
-            $have_shipper = false;
-            if ($shipper_id > -1) {
-                // Array is 0-indexed so search for the shipper ID, if any.
-                foreach ($shippers as $id=>$shipper) {
-                    if ($shipper->getID() == $shipper_id) {
-                        // Use the already-selected shipper, if any.
-                        // The ship_method var should already be set.
-                        $this->shipping = $shippers[$id]->getOrderShipping()->total_rate;
-                        $have_shipper = true;
-                        break;
-                    }
-                }
-            }
-            if (!$have_shipper) {
-                // If the specified shipper isn't found for some reason,
-                // get the first shipper available, which will be the best rate.
-                $shipper = reset($shippers);
-                $this->ship_method = $shipper->getName();
-                $this->shipping = $shipper->getOrderShipping()->total_rate;
-            }
-        } else {
-            $this->shipping = 0;
-        }
         return $this;
     }
 
@@ -1918,8 +1918,7 @@ class Order
             $P = $item->getProduct();
             $this->handling += $P->getHandling($item->getQuantity());
         }
-        $this->calcTax()   // Tax calculation is slightly more complex
-            ->calcShipping();
+        $this->calcTax();   // Tax calculation is slightly more complex
         return $this;
     }
 
@@ -1980,7 +1979,7 @@ class Order
      *
      * @return  float   Total order amount
      */
-    public function getTotal()
+    public function calcTotal()
     {
         $total = 0;
         foreach ($this->items as $id => $item) {
@@ -1993,7 +1992,8 @@ class Order
             $this->calcTotalCharges();
         }
         $total += $this->shipping + $this->tax + $this->handling;
-        return Currency::getInstance()->RoundVal($total);
+        $this->order_total = Currency::getInstance()->RoundVal($total);
+        return $this->order_total;
     }
 
 
@@ -2315,7 +2315,7 @@ class Order
      */
     public function isPaid()
     {
-        return $this->_amt_paid >= $this->getTotal();
+        return $this->_amt_paid >= $this->order_total;
     }
 
 
@@ -2363,14 +2363,28 @@ class Order
      */
     public function setShipper($shipper_id)
     {
-        if (is_array($shipper_id)) {
-            $this->shipper_id = $shipper_id['shipper_id'];
-            $this->shipping = $shipper_id['cost'];
+        global $_TABLES;
+        if ($shipper_id === NULL) {
+            $this->shipper_id = 0;
+            $this->shipping = 0;
+            $this->shipping_method = '';
+            $this->shipping_dscp = '';
+            $this->setTaxRate(NULL);
+        } elseif (is_array($shipper_id)) {
+            $this->shipper_id = (int)$shipper_id['shipper_id'];
+            $this->shipping = (float)$shipper_id['cost'];
             $this->shipping_method = $shipper_id['svc_code'];
             $this->shipping_dscp = $shipper_id['title'];
             $this->setTaxRate(NULL);
-            return $this;
         }
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            shipper_id = {$this->shipper_id},
+            shipping = {$this->shipping},
+            shipping_method = '" . DB_escapeString($this->shipping_method) . "',
+            shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'";
+        DB_query($sql);
+        return $this;
+
         if ($this->hasPhysical()) {
             $shippers = Shipper::getShippersForOrder($this);
             // Have to iterate through all the shippers since the array is
@@ -2406,23 +2420,23 @@ class Order
             return '';
         }
 
+        // Get all the shippers and rates for the selection
         // Save the base charge (total items and handling, exclude tax if present)
         $base_chg = $this->gross_items + $this->handling + $this->tax;
 
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
-        $quotes = array();
         $methods = array();
+        $SQ = new ShippingQuote;
         foreach ($Shippers as $code=>$Shipper) {
-            /*if ($Shipper->getCode() != '') {
-                //$Packages = Package::packOrder($this, $Shipper->getCode());
-                //$quote = $Shipper->getQuote($this->Shipto, $Packages);
-                $quote = $Shipper->getQuote($this->Shipto, $this);
-//        var_dump($quote);die;
-            } else {
-                $quote = $Shipper->getUnitQuote($this->Shipto, $shipping_units);
-            }*/
-            $quote = $Shipper->getQuote($this->Shipto, $this);
+            $cache_key = $Shipper->getID() . '.' . $shipping_units . '.' .
+                $this->Shipto->toText() . $this->last_mod . $this->order_total;
+            $cache_key = md5($cache_key);
+            $quote = Cache::get($cache_key.'x');
+            if ($quote === NULL) {
+                $quote = $Shipper->getQuote($this);
+                Cache::set($cache_key, $quote, 30);
+            }
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
             } else {
@@ -2438,24 +2452,21 @@ class Order
                 $order_total = $base_chg + $q['cost'] + $ship_tax;
                 $order_tax = $this->tax + $ship_tax;
                 $methods[] = array(
-                    'shipper_id' => $shipper_id,
+                    'shipper_id' => $q['shipper_id'],
                     'svc_code' => $q['svc_code'],
-                    'title' => $title . ' ' . $q['title'],
+                    'title' => $q['svc_title'],
                     'cost' => Currency::getInstance()->FormatValue($q['cost']),
                     'order_tax' => Currency::getInstance()->FormatValue($order_tax),
                     'order_total' => Currency::getInstance()->FormatValue($order_total),
                 );
             }
         }
-        //var_dump($methods);die;
-        /*// Get all the shippers and rates for the selection
-        $shippers = Shipper::getShippersForOrder($this);
-        if (empty($shippers)) return '';
-*/
-        // Get the best or previously-selected shipper for the default choice
+        // Get all the shippers and rates for the selection
+        usort($methods, array(__NAMESPACE__ . '\\Shipper', 'sortQuotes'));
         $best_shipper = NULL;
+        $best_method = NULL;
         $shipper_id = $this->shipper_id;
-        if ($shipper_id > -1) {
+        if ($shipper_id > 0) {
             // Array is 0-indexed so search for the shipper ID, if any.
             /*foreach ($shippers as $id=>$shipper) {
                 if ($shipper->getID() == $shipper_id) {
@@ -2464,12 +2475,18 @@ class Order
                     break;
                 }
         }*/
-            foreach ($quotes as $id=>$quote) {
-                if ($quote['id'] == $shipper_id) {
-                    $best = $quote['id'];
+            foreach ($methods as $id=>$method) {
+                if (
+                    $method['shipper_id'] == $shipper_id &&
+                    $method['svc_code'] == $this->shipping_method
+                ) {
+                    $best_method = $method;
                     break;
                 }
             }
+        } elseif (!empty($methods)) {
+            // No shipper previously specified, set the first method to start.
+            $best_method = $methods[0];
         }
 
         if ($best_shipper === NULL) {
@@ -2480,13 +2497,44 @@ class Order
         }
 
         if (!$best_shipper) {
+=======
+        if (!$best) {
+=======
+
+        if ($best_method === NULL) {
+            $this->setShipper(NULL);
+            // None already selected, grab the first one. It has the best rate.
+            //$best_method = reset($methods);
+            //$best_shipper = NULL;
+            //$this->shipper_id = 0;
+            //$this->shipping = 0;
+        } else {
+            $this->setShipper($best_method);
+            //$best_shipper = Shipper::getInstance($best_method['shipper_id']);
+            //$this->shipper_id = $best_method['shipper_id'];
+            //$this->shipping = $best_method['cost'];
+        }
+        /*if (!$best_shipper) {
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
             // Error getting shippers, shouldn't happen unless shippers have been deleted.
             $this->shipper_id = 0;
             $this->shipping = 0;
             return '';
+<<<<<<< Updated upstream
         }
+<<<<<<< Updated upstream
         $this->shipper_id = $best_shipper->getID();
         $this->shipping = $best_method['cost'];
+=======
+        $this->shipper_id = $best->getID();
+        $this->shipping = $best->getOrderShipping()->total_rate;
+=======
+        }*/
+        /*$this->shipper_id = $best_shipper->getID();
+        $this->shipping = 'cost';*/
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
         $T = new Template;
         $T->set_file('form', 'shipping_method.thtml');
@@ -2499,6 +2547,7 @@ class Order
             $sel = $method['svc_code'] == $this->shipping_method ? 'selected="selected"' : '';
             $s_amt = $method['cost'];
             $rate = array(
+                'shipper_id' => $method['shipper_id'],
                 'amount'    => (string)Currency::getInstance()->FormatValue($s_amt),
                 'total'     => (string)Currency::getInstance()->FormatValue($base_chg + $s_amt),
             );
@@ -2509,12 +2558,31 @@ class Order
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
                 'method_id'     => $method_id,
                 'order_id'      => $this->order_id,
+<<<<<<< Updated upstream
                 'multi'         => count($Shippers) > 1 ? true : false,
+=======
+<<<<<<< Updated upstream
+                'multi'         => count($shippers) > 1 ? true : false,
+=======
+                'multi'         => count($methods) > 1 ? true : false,
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
             ) );
             $T->parse('row', 'shipMethodSelect', true);
+            if (count($methods) == 1) {
+                $this->shipper_id = $method_id;
+                $this->shipping = $s_amt;
+            }
         }
+<<<<<<< Updated upstream
         //var_dump($ship_rates);die;
         SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
+=======
+<<<<<<< Updated upstream
+=======
+        SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
         $T->set_var('shipper_json', json_encode($ship_rates));
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -2671,7 +2739,7 @@ class Order
         $languages[] = $_CONF['language'];
 
         // Final failsafe, include "english.php" which is known to exist
-        $languages[] = 'english';
+        $languages[] = 'english_utf-8';
 
         // Search the array for desired language files, in order.
         $langpath = SHOP_PI_PATH . '/language';
@@ -3348,6 +3416,12 @@ class Order
     }
 
 
+    public function getShipperDscp()
+    {
+        return $this->shipping_dscp;
+    }
+
+
     public function setHandling($amt)
     {
         $this->handling = (float)$amt;
@@ -3579,6 +3653,18 @@ class Order
     }
 
 
+    public function getItemTotal()
+    {
+        return (float)($this->net_nontax + $this->net_taxable);
+    }
+
+
+    public function hasInvalid()
+    {
+        return $this->hasInvalid;
+    }
+
+
     /**
      * Check the zone rules for each item, and mark those that aren't allowed.
      * Also sets `$this->hasInvalid` if any invalid items are found so the
@@ -3633,7 +3719,8 @@ class Order
      */
     public function getBalanceDue()
     {
-        return (float)($this->order_total - $this->_amt_paid);
+        $by_gc = (float)$this->getInfo('apply_gc');
+        return (float)($this->order_total - $this->_amt_paid - $by_gc);
     }
 
 
