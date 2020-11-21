@@ -52,7 +52,7 @@ class ups extends \Shop\Shipper
 
     /** UPS service codes and descriptions.
      * @var array */
-    private $svc_codes = array(
+    protected $svc_codes = array(
         '01'    => 'Next Day Air',
         '02'    => '2nd Day Air',
         '03'    => 'Ground',
@@ -69,7 +69,7 @@ class ups extends \Shop\Shipper
         '71'    => 'Worldwide Express Freight Midday',
     );
 
-    private $pkg_codes = array(
+    protected $pkg_codes = array(
         '00'    => 'UNKNOWN',
         '01'    => 'UPS Letter',
         '02'    => 'Package',
@@ -313,14 +313,35 @@ class ups extends \Shop\Shipper
     /**
      * Get an array of rate quote information via API.
      *
-     * @param   object  $Addr   Destination address object
-     * @return  array       Array of quote data (service and cost)
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote($Addr, $Order)
+    protected function _getQuote($Order)
     {
         global $_SHOP_CONF;
 
+        $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
+
+        if (
+            $this->free_threshold > 0 &&
+            $Order->getItemTotal() > $this->free_threshold
+        ) {
+            $retval = array(
+                (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode('free')
+                    ->setServiceID('free')
+                    ->setServiceTitle(strtoupper($this->key) . ' Free Shipping')
+                    ->setCost(0)
+                    ->setPackageCount(count($Packages)),
+            );
+            return $retval;
+        }
+
         if (!$this->hasValidConfig()) {
             return array();
                 /*'id'        => $this->id,
@@ -434,6 +455,7 @@ class ups extends \Shop\Shipper
                     $cost = (float)$quote->TotalCharges->MonetaryValue;
                     $quote_data[] = (new ShippingQuote)
                         ->setID($this->id)
+                        ->setShipperID($this->id)
                         ->setCarrierCode($this->key)
                         ->setCarrierTitle($this->getCarrierName())
                         ->setServiceCode($key)
@@ -491,13 +513,7 @@ class ups extends \Shop\Shipper
         return in_array($key, $this->supported_services);
     }
 
-
-    public function getPackageCodes()
-    {
-        return $this->pkg_codes;
-    }
-
-    public function getServiceCodes()
+    public function XgetServiceCodes()
     {
         return array('01' => 'Available');
     }

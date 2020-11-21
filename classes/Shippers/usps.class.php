@@ -121,7 +121,7 @@ class usps extends \Shop\Shipper
         'INT_27'    => 'Priority Mail Express International Padded Flat Rate Envelope',
     );
 
-    private $svc_codes = array(
+    protected $svc_codes = array(
         'FC_LTR' => 'First Class / Letter',
         'FC_FLT' => 'First Class / Flat',
         'FC_PKG' => 'First Class / Package Service Retail',
@@ -145,7 +145,7 @@ class usps extends \Shop\Shipper
         'PRI_CUB' => 'Priority Mail Cubic',
     );
 
-    private $pkg_codes = array(
+    protected $pkg_codes = array(
         'VARIABLE' => 'VARIABLE',
         'FLAT RATE ENVELOPE' => 'FLAT RATE ENVELOPE',
         'PADDED FLAT RATE ENVELOPE' => 'PADDED FLAT RATE ENVELOPE',
@@ -247,14 +247,16 @@ class usps extends \Shop\Shipper
     /**
      * Get an array or rate quotes for a package.
      *
-     * @param   object  $Addr   Destination Address object
-     * @return  array       Array of quote data
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote($Addr, $Order)
+    protected function _getQuote($Order)
     {
         global $_SHOP_CONF, $_CONF;
 
+        $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
+
         if (!$this->hasQuoteAPI()) {
             return parent::getQuote($Addr, $Packages);
         }
@@ -369,7 +371,11 @@ class usps extends \Shop\Shipper
                 }
 
                 if ($Addr->getCountry() == 'US') {
-                    $packages = $json['Package'];
+                    if (isset($json['Package'])) {
+                        $packages = $json['Package'];
+                    } else {
+                        $packages = array();
+                    }
                     if (!is_array($packages) || !isset($packages[1])) {
                         $packages = array($packages);
                     }
@@ -398,6 +404,7 @@ class usps extends \Shop\Shipper
                                 if (!isset($quote_data[$key])) {
                                     $quote_data[$key] = (new ShippingQuote)
                                         ->setID($this->id)
+                                        ->setShipperID($this->id)
                                         ->setCarrierCode($this->key)
                                         ->setCarrierTitle($this->getCarrierName())
                                         ->setServiceCode($key)
@@ -685,18 +692,12 @@ class usps extends \Shop\Shipper
         return $this->domestic;
     }
 
-
-    public function getPackageCodes()
-    {
-        return $this->pkg_codes;
-    }
-
     public function getAllServices()
     {
         return array_merge($this->domestic, $this->international);
     }
 
-    public function getServiceCodes()
+    public function XXgetServiceCodes()
     {
         if ($this->hasQuoteAPI()) {
             return $this->svc_codes;
@@ -706,5 +707,3 @@ class usps extends \Shop\Shipper
     }
 
 }
-
-?>

@@ -256,6 +256,28 @@ class Package
 
 
     /**
+     * Return the package record ID.
+     *
+     * @return  integer     Package DB record ID
+     */
+    public function getID()
+    {
+        return (int)$this->pkg_id;
+    }
+
+
+    /**
+     * Get the package description.
+     *
+     * @return  string      Package description
+     */
+    public function getDscp()
+    {
+        return $this->dscp;
+    }
+
+
+    /**
      * Add a declared value amount to the package.
      *
      * @param   float   $value  Declared value
@@ -637,7 +659,6 @@ class Package
         //var_dump($Shipper);
         $pkgClasses = self::getByShipper($Shipper);
         $retval = array();
-
         $total_units = 0;
         $total_weight = 0;
         $fixed_shipping = 0;
@@ -649,7 +670,7 @@ class Package
             $item_units = $single_units * $qty;
             $fixed_shipping += $P->getShipping($qty);
             $total_units += $item_units;
-            $total_weight += $P->getWeight();
+            $total_weight += $qty * $P->getWeight();
             for ($i = 0; $i < $qty; $i++) {
                 $items[] = array(
                     'orderitem_id' => $id,
