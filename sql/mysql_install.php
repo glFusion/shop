@@ -796,6 +796,8 @@ $SHOP_UPGRADE['1.2.3'] = array(
         ADD free_threshold decimal(9,4) NOT NULL DEFAULT 0 AFTER tax_loc",
     "ALTER TABLE {$_TABLES['shop.cache']}
         ADD tags varchar(255) NOT NULL DEFAULT '' AFTER `data`",
+    // Sync order totals
+    "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
