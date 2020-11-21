@@ -1,7 +1,6 @@
 <?php
 /**
  * Class to handle shipping costs based on quantity, total weight and class.
- * First iteration only allows for a number of "units" per product.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
@@ -128,7 +127,7 @@ class Shipper
 
     /** Order value threshold for free shipping.
      * @var float */
-    protected $free_threshold = -1; // -1 disables free shipping
+    protected $free_threshold = 0; // 0 disables free shipping
 
     /** Shipping method used for free shipping.
      * @var string */
@@ -142,6 +141,24 @@ class Shipper
     /** Supported services.
      * @var array */
     protected $supported_services = array();
+
+    /** Package type codes, dependent on shipper.
+     * @var array */
+    protected $pkg_codes = array();
+
+    /** Delivery service codes, dependent on shipper.
+     * @var array */
+    protected $svc_codes = array(
+        '_fixed' => 'Fixed Rate',
+    );
+
+    /** Selected package type code.
+     * @var string */
+    protected $pkg_code = '';
+
+    /** Selected delivery service code.
+     * @var string */
+    protected $svc_code = '';
 
 
     /**
@@ -236,6 +253,7 @@ class Shipper
             ->setUseFixed(SHOP_getVar($A, 'use_fixed', 'integer', 0))
             ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
         if (!$fromDB) {
+            $this->free_threshold = isset($A['ena_free']) ? (float)$A['free_threshold'] : 0;
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
                 if (empty($A['rateDscp'][$id])) {
@@ -269,6 +287,7 @@ class Shipper
                 if ($rates === NULL) $rates = array();
             }
             $this->rates = $rates;
+            $this->free_threshold = (float)$A['free_threshold'];
         }
         $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE));
         $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', Dates::MAX_DATE));
@@ -503,6 +522,19 @@ class Shipper
     public function getCode()
     {
         return $this->module_code;
+    }
+
+
+    /**
+     * Set the free shipping threshold, zero to disable.
+     *
+     * @param   float   $value  Value to enable free shipping.
+     * @return  object  $this
+     */
+    public function setFreeThreshold($value)
+    {
+        $this->free_threshold = (float)$value;
+        return $this;
     }
 
 
@@ -916,6 +948,7 @@ class Shipper
             valid_from = '{$this->valid_from->toUnix()}',
             valid_to = '{$this->valid_to->toUnix()}',
             use_fixed = '{$this->use_fixed}',
+            free_threshold = '{$this->free_threshold}',
             grp_access = '{$this->grp_access}',
             rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
@@ -985,8 +1018,10 @@ class Shipper
             'valid_to'      => $this->valid_to->format('Y-m-d', true),
             'grp_sel'       => COM_optionList($_TABLES['groups'], 'grp_id,grp_name', $this->grp_access),
             'tax_loc_' . $this->getTaxLocation() => 'selected="selected"',
+            'ena_free_chk' => $this->free_threshold > 0 ? 'checked="checked"' : '',
+            'free_threshold' => $this->free_threshold,
+            'span_free_vis' => $this->free_threshold > 0 ? '' : 'none',
         ) );
-
 
         // Construct the dropdown selection of defined carrier modules
         $T->set_block('form', 'shipperCodes', 'sCodes');
@@ -1007,6 +1042,28 @@ class Shipper
                 'rate_price'    => Currency::getInstance()->FormatValue($R->rate),
             ) );
             $T->parse('rt', 'rateTable', true);
+        }
+
+        if ($this->module_code != '') {
+            $Carrier = self::getByCode($this->module_code);
+            $T->set_block('form', 'PkgCodes', 'PC');
+            foreach ($Carrier->getPackageCodes() as $code=>$dscp) {
+                $T->set_var(array(
+                    'pkg_code' => $code,
+                    'pkg_dscp' => $dscp,
+                ) );
+                $T->parse('PC', 'PkgCodes', true);
+            }
+            $T->set_block('form', 'SvcCodes', 'SC');
+            foreach ($Carrier->getServiceCodes() as $code=>$dscp) {
+                $T->set_var(array(
+                    'svc_code' => $code,
+                    'svc_dscp' => $dscp,
+                ) );
+                $T->parse('SC', 'SvcCodes', true);
+            }
+            //$T->clear_var('SC');
+            //$T->clear_var('PC');
         }
         $retval .= $T->parse('output', 'form');
         $retval .= COM_endBlock();
@@ -1677,7 +1734,7 @@ class Shipper
 
     public function getAllServices()
     {
-        return array();
+        return $this->svc_codes;
     }
 
     public function getConfigForm()
@@ -1685,34 +1742,59 @@ class Shipper
         return array();
     }
 
+
+    /**
+     * Get the package type codes for this shipper.
+     *
+     * @return  array   Array of key->description pairs
+     */
     public function getPackageCodes()
     {
-        return array();
+        return $this->pkg_codes;
     }
 
+
+    /**
+     * Get the package service codes for this shipper.
+     *
+     * @return  array   Array of key->description pairs
+     */
     public function getServiceCodes()
     {
-        return array(
-            '_fixed' => 'Fixed Rate',
-        );
+        return $this->svc_codes;
     }
 
+
+    /**
+     */
     public function getFreeMethod()
     {
-        if ($this->free_threshold > -1) {
+        if ($this->free_threshold > 0) {
             return $this->free_method;
         } else {
             return NULL;
         }
     }
 
+
+    /**
+     * Get the minimum order value for free shipping.
+     *
+     * @return  float       Order value for this shipper to be free
+     */
     public function getFreeThreshold()
     {
         return (float)$this->free_threshold;
     }
 
 
-    public function getPackageQuote($Addr, $Packages)
+    /**
+     * Get the shipping quote according to the fixed package rates.
+     *
+     * @param   array   $Packages   Array of Package objects
+     * @return  object      Single ShippingQuote object
+     */
+    public function getPackageQuote($Packages)
     {
         if (empty($Packages)) {
             $error = true;
@@ -1727,6 +1809,7 @@ class Shipper
         }
         $retval = (new ShippingQuote)
             ->setID($this->id)
+            ->setShipperID($this->id)
             ->setCarrierCode($this->key)
             ->setCarrierTitle($this->name)
             ->setServiceCode('0')
@@ -1738,7 +1821,13 @@ class Shipper
     }
 
 
-    public function getUnitQuote($Addr, $units)
+    /**
+     * Get a shipping quote only based on the number of units.
+     *
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
+     */
+    public function getUnitQuote($units)
     {
         $quote = (new ShippingQuote)
             ->setID($this->id)
@@ -1767,21 +1856,53 @@ class Shipper
 
 
     /**
+     * Default function to return a shipping quote where not implemted.
+     *
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
+     */
+    public function getQuote($Order)
+    {
+        if (
+            $this->free_threshold > 0 &&
+            $Order->getItemTotal() > $this->free_threshold
+        ) {
+            $retval = array(
+                (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode('free')
+                    ->setServiceID('free')
+                    ->setServiceTitle($this->getName() . ' Free Shipping')
+                    ->setCost(0)
+                    ->setPackageCount(1),
+            );
+            return $retval;
+        }
+
+        return $this->_getQuote($Order);
+    }
+
+
+    /**
      * Generic quote function to get a quote for a generic shipper.
      * This just uses the shipper's static rate table.
      *
-     * @param   object  $Addr   Shipping Address object
-     * @param   array   $Packages   Array of Package objects
+     * @param   object  $Order      Order being shipped
      * @return  array       Single-element array with a ShippingQuote object
      */
-    public function getQuote($Addr, $Order)
+    protected function _getQuote($Order)
     {
+        // If a shipper module is used, use the configured packages.
+        // Otherwise, get a quote based on units.
         if ($this->key != 'generic') {
             $Packages = Package::packOrder($Order, $this);
-            return array($this->getPackageQuote($Addr, $Packages));
+            $retval = array($this->getPackageQuote($Order->getShipto(), $Packages));
         } else {
-            return array($this->getUnitQuote($Addr, $Order->totalShippingUnits()));
+            $retval = array($this->getUnitQuote($Order));
         }
+        return $retval;
     }
 
 }   // class Shipper
