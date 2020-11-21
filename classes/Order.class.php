@@ -2489,52 +2489,19 @@ class Order
             $best_method = $methods[0];
         }
 
-        if ($best_shipper === NULL) {
+        if ($best_method === NULL) {
             // None already selected, grab the first one. It has the best rate.
             usort($methods, array(__NAMESPACE__ . '\\Shipper', 'sortQuotes'));
             $best_method = reset($methods);
             $best_shipper = Shipper::getInstance($best_method['shipper_id']);
         }
 
-        if (!$best_shipper) {
-=======
-        if (!$best) {
-=======
-
         if ($best_method === NULL) {
             $this->setShipper(NULL);
             // None already selected, grab the first one. It has the best rate.
-            //$best_method = reset($methods);
-            //$best_shipper = NULL;
-            //$this->shipper_id = 0;
-            //$this->shipping = 0;
         } else {
             $this->setShipper($best_method);
-            //$best_shipper = Shipper::getInstance($best_method['shipper_id']);
-            //$this->shipper_id = $best_method['shipper_id'];
-            //$this->shipping = $best_method['cost'];
         }
-        /*if (!$best_shipper) {
->>>>>>> Stashed changes
->>>>>>> Stashed changes
-            // Error getting shippers, shouldn't happen unless shippers have been deleted.
-            $this->shipper_id = 0;
-            $this->shipping = 0;
-            return '';
-<<<<<<< Updated upstream
-        }
-<<<<<<< Updated upstream
-        $this->shipper_id = $best_shipper->getID();
-        $this->shipping = $best_method['cost'];
-=======
-        $this->shipper_id = $best->getID();
-        $this->shipping = $best->getOrderShipping()->total_rate;
-=======
-        }*/
-        /*$this->shipper_id = $best_shipper->getID();
-        $this->shipping = 'cost';*/
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 
         $T = new Template;
         $T->set_file('form', 'shipping_method.thtml');
@@ -2558,15 +2525,7 @@ class Order
                 'method_rate'   => Currency::getInstance()->Format($s_amt),
                 'method_id'     => $method_id,
                 'order_id'      => $this->order_id,
-<<<<<<< Updated upstream
-                'multi'         => count($Shippers) > 1 ? true : false,
-=======
-<<<<<<< Updated upstream
-                'multi'         => count($shippers) > 1 ? true : false,
-=======
                 'multi'         => count($methods) > 1 ? true : false,
->>>>>>> Stashed changes
->>>>>>> Stashed changes
             ) );
             $T->parse('row', 'shipMethodSelect', true);
             if (count($methods) == 1) {
@@ -2574,15 +2533,7 @@ class Order
                 $this->shipping = $s_amt;
             }
         }
-<<<<<<< Updated upstream
-        //var_dump($ship_rates);die;
         SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
-=======
-<<<<<<< Updated upstream
-=======
-        SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
->>>>>>> Stashed changes
->>>>>>> Stashed changes
         $T->set_var('shipper_json', json_encode($ship_rates));
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
