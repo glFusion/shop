@@ -20,19 +20,24 @@ use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
 use Shop\IPN;
+use Shop\OrderStatus;
 
 
 /**
  * Order view class.
  * @package shop
  */
-class Order
+class OrderBaseView
 {
     use \Shop\Traits\PDF;
 
     /** Order record ID.
      * @var string */
     protected $order_ids = array();
+
+    /** Single Order Record ID.
+     * @var string */
+    protected $order_id = '';
 
     /** Order Object.
      * @var object */
@@ -69,14 +74,25 @@ class Order
 
     /** Packing List vs. full order display.
      * @var string */
-    private $type = 'order';
+    protected $type = 'order';
+
+    protected $TPL = NULL;
+
+    protected $Currency = NULL;
+
+    protected $is_invoice = true;
 
 
     /**
      * Set internal variables and read the existing order if an id is provided.
      */
-    public function __construct()
+    public function __construct($order_id = NULL)
     {
+        $this->Currency = Currency::getInstance();
+        if ($order_id !== NULL) {
+            $this->getOrder($order_id);
+        }
+
     }
 
 
@@ -90,9 +106,20 @@ class Order
     {
         if (!is_array($order_id)) {
             $this->order_ids = array($order_id);
+            $this->order_id = $order_id;
+            $this->Order = \Shop\Order::getInstance($order_id);
+            $this->Currency = $this->Order->getCurrency();
         } else {
             $this->order_ids = $order_id;
         }
+        return $this;
+    }
+
+
+    public function withOrder($Order)
+    {
+        $this->Order = $Order;
+        $this->order_id = $Order->getOrderID();
         return $this;
     }
 
@@ -114,6 +141,9 @@ class Order
     public function withOutput($out_type)
     {
         $this->output_type = $out_type;
+        if ($out_type == 'pdf') {
+            $this->isFinalView = true;
+        }
         return $this;
     }
 
@@ -138,6 +168,17 @@ class Order
     }
 
 
+    protected function isHTML()
+    {
+        return $this->output_type == 'html';
+    }
+
+    protected function isPDF()
+    {
+        return $this->output_type == 'pdf';
+    }
+
+
     /**
      * Load the order information from the database.
      *
@@ -154,6 +195,32 @@ class Order
     }
 
 
+    public function RenderMulti($order_ids)
+    {
+        if ($this->output_type == 'pdf') {
+            $this->tplname .= '.pdf';
+            $this->initPDF();
+        }
+        foreach ($order_ids as $order_id) {
+            $View = new self;
+            //$this->Order = \Shop\Order::getInstance($order_id);
+            //$this->Items = $this->Order->getItems();
+            /*if (!$this->Order->canView($this->token)) {
+                continue;
+        }*/
+            $output = $this->withOrderId($order_id)->createHTML();
+            if ($this->output_type == 'html') {
+                // HTML is only available for single orders, so return here.
+                return $output;
+            } elseif ($this->output_type == 'pdf') {
+                $this->writePDF($output);
+            }
+        }
+        if ($this->output_type == 'pdf') {
+            $this->finishPDF();
+        }
+    }
+
     public function Render()
     {
         if ($this->output_type == 'pdf') {
@@ -166,12 +233,11 @@ class Order
             if (!$this->Order->canView($this->token)) {
                 continue;
             }
+            $output = $this->withOrderId($order_id)->createHTML();
             if ($this->output_type == 'html') {
                 // HTML is only available for single orders, so return here.
-                $output = $this->createHTML($order_id);
                 return $output;
             } elseif ($this->output_type == 'pdf') {
-                $output = $this->createHTML($order_id);
                 $this->writePDF($output);
             }
         }
@@ -192,6 +258,143 @@ class Order
     }
 
 
+    protected function _renderCommon()
+    {
+        global $_SHOP_CONF;
+
+        $this->TPL->set_var(array(
+            'pi_url'        => SHOP_URL,
+            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
+            'pi_admin_url'  => SHOP_ADMIN_URL,
+            'not_anon'      => !COM_isAnonUser(),
+            'linkPackingList' => \Shop\Order::linkPackingList($this->order_id),
+            'linkPrint'     => \Shop\Order::linkPrint($this->order_id, $this->Order->getToken()),
+            'print_url'     => $this->Order->buildUrl('print'),
+            'return_url'    => SHOP_getUrl(),
+            'order_date'    => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], true),
+            'order_date_tip' => $this->Order->getOrderDate()->format($_SHOP_CONF['datetime_fmt'], false),
+            'order_number'  => $this->Order->getOrderID(),
+        ) );
+    }
+
+
+    protected function _renderAddresses()
+    {
+        $this->TPL->set_var(array(
+            'billto_addr'   =>$this->Order->getBillto()->toHTML(),
+            'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
+        ) );
+    }
+
+    protected function _renderItems()
+    {
+        global $_SHOP_CONF, $LANG_SHOP;
+
+        $no_shipping = 1;   // no shipping unless physical item ordered
+        $subtotal = 0;
+        $item_qty = array();        // array to track quantity by base item ID
+        $have_images = false;
+        $total = 0;
+        $tax_items = 0;
+        $discount_items = 0;
+        $shipping = 0;
+        $handling = 0;
+        $icon_tooltips = array();
+
+        $this->TPL->set_block('order', 'ItemRow', 'iRow');
+        foreach ($this->Order->getItems() as $Item) {
+            $P = $Item->getProduct();
+
+            $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
+            if (!empty($img['url'])) {
+                $img_url = COM_createImage(
+                    $img['url'],
+                    '',
+                    array(
+                        'width' => $img['width'],
+                        'height' => $img['height'],
+                    )
+                );
+                $this->TPL->set_var('img_url', $img_url);
+                $have_images = true;
+            } else {
+                $this->TPL->clear_var('img_url');
+            }
+
+            if ($Item->getDiscount() > 0) {
+                $discount_items ++;
+                $price_tooltip = sprintf(
+                    $LANG_SHOP['reflects_disc'],
+                    ($Item->getDiscount() * 100)
+                );
+            } else {
+                $price_tooltip = '';
+            }
+            $item_total = $Item->getPrice() * $Item->getQuantity();
+            $subtotal += $item_total;
+            if ($P->isTaxable()) {
+                $tax_items++;       // count the taxable items for display
+            }
+
+            $this->TPL->set_var(array(
+                'cart_item_id'  => $Item->getID(),
+                'fixed_q'       => $P->getFixedQuantity(),
+                'item_id'       => htmlspecialchars($Item->getProductID()),
+                'item_dscp'     => htmlspecialchars($Item->getDscp()),
+                'item_price'    => $this->Currency->FormatValue($Item->getPrice()),
+                'item_quantity' => $Item->getQuantity(),
+                'item_total'    => $this->Currency->FormatValue($item_total),
+                'is_admin'      => $this->isAdmin,
+                'is_file'       => $Item->canDownload(),
+                'taxable'       => $this->Order->getTaxRate() > 0 ? $P->isTaxable() : 0,
+                'tax_icon'      => $LANG_SHOP['tax'][0],
+                'discount_icon' => 'D',
+                'discount_tooltip' => $price_tooltip,
+                'token'         => $Item->getToken(),
+                'item_options'  => $Item->getOptionDisplay(),
+                'sku'           => $P->getSKU($Item),
+                'item_link'     => $P->getLink($Item->getID()),
+                'pi_url'        => SHOP_URL,
+                'is_invoice'    => $this->is_invoice,
+                'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                'pmt_status' => $this->Order->getPaymentStatus(),
+            ) );
+            if ($P->isPhysical()) {
+                $no_shipping = 0;
+            }
+            $this->TPL->parse('iRow', 'ItemRow', true);
+            $this->TPL->clear_var('iOpts');
+        }
+
+        if ($discount_items > 0) {
+            $icon_tooltips[] = $LANG_SHOP['discount'][0] . ' = Includes discount';
+        }
+        if ($tax_items > 0) {
+            $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
+        }
+        $total = $this->Order->getTotal();     // also calls calcTax()
+        $icon_tooltips = implode('<br />', $icon_tooltips);
+        $by_gc = (float)$this->Order->getInfo('apply_gc');
+
+        $this->TPL->set_var(array(
+            'total_prefix'  => $this->Currency->Pre(),
+            'total_postfix' => $this->Currency->Post(),
+            'total_num'     => $this->Currency->FormatValue($total),
+            'cur_decimals'  => $this->Currency->Decimals(),
+            'item_subtotal' => $this->Currency->FormatValue($subtotal),
+            'is_invoice'    => $this->is_invoice,
+            'icon_dscp'     => $icon_tooltips,
+            'have_images'   => $this->is_invoice ? $have_images : false,
+            'shipping'      => $this->Currency->FormatValue($this->Order->getShipping()),
+            'ship_method'   => $this->Order->getShipperDscp(),
+            'handling'      => $handling > 0 ? $this->Currency->FormatValue($this->Order->getHandling()) : 0,
+            'subtotal'      => $subtotal == $total ? '' : $this->Currency->Format($subtotal),
+            'total'         => $this->Currency->Format($total),
+            'cart_tax'      => $this->Currency->Format($this->Order->getTax()),
+        ) );
+    }
+
+
     /**
      * View or print the current order.
      * Access is controlled by the caller invoking canView() since a token
@@ -201,11 +404,10 @@ class Order
      * @param  integer $step       Current step, for updating next_step in the form
      * @return string      HTML for order view
      */
-    public function createHTML($order_id)
+    public function createHTML()
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
-        $this->isFinalView = false;
         $is_invoice = $this->type == 'order';
         $icon_tooltips = array();
 
@@ -306,15 +508,27 @@ class Order
         $icon_tooltips = implode('<br />', $icon_tooltips);
         $by_gc = (float)$this->Order->getInfo('apply_gc');
 
-        // Call selectShipper() here to get the shipping amount into the local var.
-        $shipper_select = $this->Order->selectShipper();
+        // isFinalView will be forced for PDF views, otherwise
+        // use the order status to check.
+        if ($this->isFinalView || $this->Order->isFinal()) {
+            $T->set_var(array(
+                'ship_method' => $this->Order->getShipperDscp(),
+            ) );
+            $shipping = $this->Order->getShipping();
+        } else {
+            // Call selectShipper() here to get the shipping amount
+            // into the local variable.
+            $shipper_select = $this->Order->selectShipper();
+            $T->set_var(array(
+                'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
+            ) );
+        }
         $T->set_var(array(
             'billto_addr'   =>$this->Order->getBillto()->toHTML(),
             'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,
-            'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
             'shipper_id'    => $this->Order->getShipperID(),
             'total'         => $Currency->Format($total),
             'not_final'     => !$this->isFinalView,
@@ -339,7 +553,7 @@ class Order
             'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
             //'next_step'     => $step + 1,
             'not_anon'      => !COM_isAnonUser(),
-            'ship_method'   => Shipper::getInstance($this->Order->getShipperId())->getName(),
+            //'ship_method'   => Shipper::getInstance($this->Order->getShipperId())->getName(),
             'total_prefix'  => $Currency->Pre(),
             'total_postfix' => $Currency->Post(),
             'total_num'     => $Currency->FormatValue($total),
@@ -357,7 +571,7 @@ class Order
         if ($this->isAdmin) {
             $T->set_var(array(
                 'is_admin'      => true,
-                'purch_name'    => COM_getDisplayName($this->uid),
+                'purch_name'    => COM_getDisplayName($this->Order->getUid()),
                 'purch_uid'     => $this->Order->getUid(),
                 'stat_update'   => OrderStatus::Selection($order_id, 1, $this->Order->getStatus()),
             ) );
@@ -492,6 +706,24 @@ class Order
     }
 
 
-}
+    public function _renderLog()
+    {
+        global $_SHOP_CONF, $_USER;
 
-?>
+        // Instantiate a date objet to handle formatting of log timestamps
+        $dt = new \Date('now', $_USER['tzid']);
+        $log = $this->Order->getLog();
+        $this->TPL->set_block('order', 'LogMessages', 'Log');
+        foreach ($log as $L) {
+            $dt->setTimestamp($L['ts']);
+            $this->TPL->set_var(array(
+                'log_username'  => $L['username'],
+                'log_msg'       => $L['message'],
+                'log_ts'        => $dt->format($_SHOP_CONF['datetime_fmt'], true),
+                'log_ts_tip'    => $dt->format($_SHOP_CONF['datetime_fmt'], false),
+            ) );
+            $this->TPL->parse('Log', 'LogMessages', true);
+        }
+    }
+
+}

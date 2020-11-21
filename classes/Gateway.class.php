@@ -15,6 +15,7 @@
 namespace Shop;
 use Shop\Models\OrderState;
 use Shop\Models\ProductType;
+use Shop\Models\CustomInfo;;
 
 
 /**
@@ -85,7 +86,7 @@ class Gateway
      * can be used to add items to the array.
      * @var array
      */
-    protected $custom = array();
+    protected $custom = NULL;
 
     /**
      * The URL to the payment gateway. This must be set by the derived class.
@@ -151,6 +152,7 @@ class Gateway
     {
         global $_SHOP_CONF, $_TABLES, $_USER;
 
+        $this->custom = new CustomInfo;
         $this->properties = array();
         if (empty($_SHOP_CONF['ipn_url'])) {
             // Use the default IPN url
@@ -996,7 +998,8 @@ class Gateway
      */
     protected function PrepareCustom()
     {
-        return str_replace('"', '\'', serialize($this->custom));
+        return (string)$this->custom;
+        //return str_replace('"', '\'', serialize($this->custom));
     }
 
 

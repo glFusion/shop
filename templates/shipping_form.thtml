@@ -1,14 +1,13 @@
 {# begin {templatelocation} #}
 <form class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
   <input type="hidden" name="id" value="{id}" />
-  <fieldset>
 
   <div class="uk-form-row">
     <label class="uk-form-label">{$LANG_SHOP['carrier']}:
       <span id="module_code" class="tooltip_cfg tooltipstered"></span>
     </label>
     <div class="uk-form-controls">
-      <select name="module_code">
+      <select id="carrierCode" name="module_code">
         <option value="">--{$LANG_SHOP['other']}--</option>
 <!-- BEGIN shipperCodes -->
         <option value="{module_code}" {selected}>{module_name} ({module_code})</option>
@@ -83,6 +82,18 @@
     </div>
   </div>
 
+  <div class="uk-form-row" id="prod_sel">
+    <label class="uk-form-label">{$LANG_SHOP['free_threshold']}
+      <span id="ena_free" class="tooltip_cfg tooltipstered"></span>
+    </label>
+    <div class="uk-form-controls">
+        <input type="checkbox" id="ena_free" name="ena_free" value="1" {ena_free_chk} onclick="toggleFreeThreshold(this);" />
+        <span id="span_free_threshold" style="display:{span_free_vis}">&nbsp;&nbsp;{$LANG_SHOP['value']}:
+        <input type="text" name="free_threshold" size="5" value="{free_threshold}" />
+        </span>
+    </div>
+  </div>
+
     <div class="uk-form-row" id="selvalues">
       <label class="uk-form-label">{$LANG_SHOP['rate_table']}
         <span id="rate_table" class="tooltip_cfg tooltipstered"></span>
@@ -113,6 +124,34 @@
 <!-- END rateTable -->
         </tbody>
         </table>
+      </div>
+    </div>
+
+    <div class="uk-form-row">
+      <label class="uk-form-label">Package Code
+        <span id="hlp_pkg_code" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+            <select id="pkg_code_select" name="pkg_code">
+                <option value="" {sel_none}>-- None -- </option>
+<!-- BEGIN PkgCodes -->
+                <option value="{pkg_code}" {sel}>{pkg_dscp}</option>
+<!-- END PkgCodes -->
+            </select>
+      </div>
+    </div>
+
+    <div class="uk-form-row">
+      <label class="uk-form-label">Service Code
+        <span id="hlp_svc_code" class="tooltip_cfg tooltipstered"></span>
+      </label>
+      <div class="uk-form-controls">
+            <select id="svc_code_select" name="svc_code">
+                    <option value="_na" {sel_none}>-- None --</option>
+<!-- BEGIN SvcCodes -->
+                    <option value="{svc_code}" {sel}>{svc_dscp}</option>
+<!-- END SvcCodes -->
+                </select>
       </div>
     </div>
 
@@ -162,7 +201,7 @@
     </div>
 
   <div class="uk-form-row" align="center">
-    <button class="uk-button uk-button-success type="submit" name="saveshipper" value="{$LANG_ADMIN['save']}">{$LANG_ADMIN['save']}</button>
+    <button class="uk-button uk-button-success" type="submit" name="saveshipper" value="{$LANG_ADMIN['save']}">{$LANG_ADMIN['save']}</button>
     <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
     <button class="uk-button uk-button-primary" type="reset" name="shipping" value="{$LANG_ADMIN['cancel']}"
         onclick="javascript: document.location.href='{site_admin_url}/plugins/shop/index.php?shipping=x'">{$LANG_ADMIN['cancel']}</button>
@@ -173,7 +212,7 @@
   </div>
 
 </form>
-<script type="text/javascript">
+<script>
 var ConfigDocUrl = '{doc_url}';
 $(document).ready(function() {
     $('.tooltip_cfg').tooltipster({
@@ -224,6 +263,15 @@ function SHOP_resetShipperDates(type)
 {
     document.getElementById(type).value = '';
     document.getElementById(type).value = '';
+}
+function toggleFreeThreshold(cb)
+{
+    $('#span_free_threshold').toggle(cb.checked);
+/*    $('#ena_free').on('change', function() {
+alert("HERE");
+        $('#span_free_threshold').toggle(!this.checked);
+    });*/
+//});
 }
 </script>
 {# end {templatelocation} #}

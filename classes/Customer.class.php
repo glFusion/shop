@@ -538,6 +538,7 @@ class Customer
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
+            'allow_default' => $this->uid > 1,
         ) );
         $T->parse('output','address');
         return $T->finish($T->get_var('output'));

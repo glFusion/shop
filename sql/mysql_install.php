@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.3
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -171,10 +171,10 @@ $_SQL = array(
 
 'shop.orders' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orders']}` (
   `order_id` varchar(40) NOT NULL,
-  `uid` int(11) NOT NULL DEFAULT '0',
-  `order_date` int(11) unsigned NOT NULL DEFAULT '0',
-  `last_mod` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `billto_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `uid` int(11) unsigned NOT NULL DEFAULT 0,
+  `order_date` int(11) unsigned NOT NULL DEFAULT 0,
+  `last_mod` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `billto_id` int(11) unsigned NOT NULL DEFAULT 0,
   `billto_name` varchar(255) DEFAULT NULL,
   `billto_company` varchar(255) DEFAULT NULL,
   `billto_address1` varchar(255) DEFAULT NULL,
@@ -183,7 +183,7 @@ $_SQL = array(
   `billto_state` varchar(255) DEFAULT NULL,
   `billto_country` varchar(255) DEFAULT NULL,
   `billto_zip` varchar(40) DEFAULT NULL,
-  `shipto_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `shipto_id` int(11) unsigned NOT NULL DEFAULT 0,
   `shipto_name` varchar(255) DEFAULT NULL,
   `shipto_company` varchar(255) DEFAULT NULL,
   `shipto_address1` varchar(255) DEFAULT NULL,
@@ -194,10 +194,10 @@ $_SQL = array(
   `shipto_zip` varchar(40) DEFAULT NULL,
   `phone` varchar(30) DEFAULT NULL,
   `buyer_email` varchar(255) DEFAULT NULL,
-  `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `order_total` decimal(12,4) unsigned DEFAULT '0.0000',
+  `gross_items` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `net_nontax` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `net_taxable` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `order_total` decimal(12,4) unsigned DEFAULT 0.0000,
   `tax` decimal(9,4) unsigned DEFAULT NULL,
   `shipping` decimal(9,4) unsigned DEFAULT NULL,
   `handling` decimal(9,4) unsigned DEFAULT NULL,
@@ -206,17 +206,19 @@ $_SQL = array(
   `pmt_method` varchar(20) DEFAULT NULL,
   `pmt_dscp` varchar(255) DEFAULT '',
   `pmt_txn_id` varchar(255) DEFAULT NULL,
-  `instructions` text,
+  `instructions` text DEFAULT NULL,
   `token` varchar(20) DEFAULT NULL,
-  `tax_rate` decimal(7,5) NOT NULL DEFAULT '0.00000',
-  `info` text,
+  `tax_rate` decimal(7,5) NOT NULL DEFAULT 0.00000,
+  `info` text DEFAULT NULL,
   `currency` varchar(5) NOT NULL DEFAULT 'USD',
   `order_seq` int(11) unsigned DEFAULT NULL,
   `shipper_id` int(3) DEFAULT -1,
   `discount_code` varchar(20) DEFAULT NULL,
-  `discount_pct` decimal(4,2) DEFAULT '0.00',
-  `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `discount_pct` decimal(4,2) DEFAULT 0.00,
+  `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `shipping_method` varchar(20) DEFAULT NULL,
+  `shipping_dscp` varchar(120) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
   KEY `order_date` (`order_date`)
@@ -369,6 +371,7 @@ $_SQL = array(
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `free_threshold` decimal(9,4) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -399,6 +402,7 @@ $_SQL = array(
   `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
   `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
   `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
+  `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `onhand` int(10) NOT NULL DEFAULT '0',
   `reorder` int(10) NOT NULL DEFAULT '0',
   `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
@@ -436,6 +440,15 @@ $_SQL = array(
   KEY `location` (`country`,`state`,`zip_from`),
   KEY `zip_from` (`zip_from`),
   KEY `zip_to` (`zip_to`)
+) ENGINE=MyISAM",
+
+'shop.cache' => "CREATE TABLE `{$_TABLES['shop.cache']}` (
+  `cache_key` varchar(127) NOT NULL,
+  `expires` int(11) unsigned NOT NULL DEFAULT '0',
+  `data` mediumtext,
+  `tags` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`cache_key`),
+  KEY (`expires`)
 ) ENGINE=MyISAM",
 );
 
@@ -759,9 +772,32 @@ $SHOP_UPGRADE['1.2.2'] = array(
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
 );
-$SHOP_UPGRADE['1.2.2'] = array(
+$SHOP_UPGRADE['1.2.3'] = array(
+    "CREATE TABLE {$_TABLES['shop.packages']} {
+      `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `units` float DEFAULT NULL,
+      `max_weight` float DEFAULT NULL,
+      `width` float DEFAULT NULL,
+      `height` float DEFAULT NULL,
+      `length` float DEFAULT NULL,
+      `dscp` varchar(255) DEFAULT NULL,
+      `containers` text DEFAULT NULL,
+      PRIMARY KEY (`pkg_id`)
+    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.tax_rates']}
         CHANGE region region varchar(128)",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_dscp varchar(20) DEFAULT NULL AFTER shipping_method",
+    "ALTER TABLE {$_TABLES['product_variants']}
+        ADD `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER shipping_units",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD free_threshold decimal(9,4) NOT NULL DEFAULT 0 AFTER tax_loc",
+    "ALTER TABLE {$_TABLES['shop.cache']}
+        ADD tags varchar(255) NOT NULL DEFAULT '' AFTER `data`",
+    // Sync order totals
+    "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
@@ -772,7 +808,6 @@ $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
-$_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
 $_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
@@ -784,5 +819,6 @@ $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 $_SQL['shop.payments'] = $SHOP_UPGRADE['1.2.2'][0];
+$_SQL['shop.packages'] = $SHOP_UPGRADE['1.2.3'][0];
 
 ?>

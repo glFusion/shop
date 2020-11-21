@@ -113,7 +113,7 @@
 {!if cart_tax}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
+                    <div id="ord_tax_span" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
                 </div>
 {!endif}
 {!!if {ship_select} != "" !!}
@@ -189,6 +189,14 @@
 
             <div class="uk-pull-1-2">
                 <div class="gwRadiosOuter">
+                    <a name="anchor_payer_email"></a>
+                    <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
+                    <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
+                    <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
+                        name="payer_email" size="40" value="{payer_email}"/>
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
+                </div>
+                <div class="gwRadiosOuter">
                     <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>&nbsp;&nbsp;
                     {$LANG_SHOP['hlp_gw_select']}<br />
 {!if gateway_radios}
@@ -203,14 +211,6 @@
 {!else}
                     <div class="uk-alert uk-alert-danger">{$LANG_SHOP['todo_nogateways']}</div>
 {!endif}
-                </div>
-                <div class="gwRadiosOuter">
-                    <a name="anchor_payer_email"></a>
-                    <span class="shopGatewayRadios">{$LANG_SHOP['enter_email']}:</span>
-                    <i class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['enter_email']}"></i>
-                    <br /><input id="payer_email" class="shopGatewayRadios {payer_email_err}" type="text"
-                        name="payer_email" size="40" value="{payer_email}"/>
-                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
                 </div>
             </div>
         </div>
@@ -270,8 +270,12 @@ function SHOP_updateShipping(e)
         data: data,
         success: function(result) {
             try {
-                UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
-                location.reload(true);
+console.log(result);
+                //UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
+                //location.reload(true);
+                $("#shipping_cell").html(result['method']['cost']);
+                $("#ord_tax_span").html(result['method']['order_tax']);
+                $("#ord_total_span").html(result['method']['order_total']);
             } catch(err) {
             }
         }

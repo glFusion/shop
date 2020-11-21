@@ -363,7 +363,20 @@ function SHOP_do_upgrade($dvlp = false)
 
     if (!COM_checkVersion($current_ver, '1.2.3')) {
         $current_ver = '1.2.3';
+        $upd_shipping = !_SHOPtableHasColumn('shop.orders', 'shipping_method');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
+        if ($upd_shipping) {
+            // Now update the shipping_method and shipping_dscp fields
+            // using defaults from the shipping table.
+            $sql = "UPDATE {$_TABLES['shop.orders']} orders
+                LEFT JOIN {$_TABLES['shop.shipping']} shipping
+                ON shipping.id = orders.shipper_id
+                SET
+                    orders.shipping_method = shipping.module_code,
+                    orders.shipping_dscp = shipping.name
+                WHERE orders.shipper_id > 0";
+            DB_query($sql);
+        }
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 

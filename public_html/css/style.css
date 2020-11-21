@@ -929,6 +929,11 @@ dl#featurelist dd {
 }
 
 
+div.cart {
+    width: 80%;
+    margin: auto;
+}
+
 .cart .cart-item-total .mobile-label {
     display: none;
 }

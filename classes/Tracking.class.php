@@ -174,20 +174,7 @@ class Tracking
         global $_TABLES;
 
         $key = self::_makeCacheKey($shipper, $tracknum);
-        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
-            $key = DB_escapeString($key);
-            $exp = time();
-            $data = DB_getItem(
-                $_TABLES['shop.cache'],
-                'data',
-                "cache_key = '$key' AND expires >= $exp"
-            );
-            if ($data !== NULL) {
-                $data = @unserialize(base64_decode($data));
-            }
-        } else {
-            $data = Cache::get($key);
-        }
+        $data = Cache::get($key);
         return $data;
     }
 
@@ -203,21 +190,7 @@ class Tracking
         global $_TABLES;
 
         $key = self::_makeCacheKey($shipper, $tracknum);
-        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
-            $key = DB_escapeString($key);
-            $data = DB_escapeString(base64_encode(serialize($this)));
-            $exp = time() + 600;
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
-                cache_key = '$key',
-                expires = $exp,
-                data = '$data'
-                ON DUPLICATE KEY UPDATE
-                    expires = $exp,
-                    data = '$data'";
-            DB_query($sql);
-        } else {
-            Cache::set($key, $this, 'shop.tracking', 600);
-        }
+        Cache::set($key, $this, 'shop.tracking', 10);
     }
 
 }

@@ -31,8 +31,8 @@
             <div class="cart-items">
                 <div class="uk-grid uk-margin uk-hidden-small">
                     <div class="uk-width-medium-1-2">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-4">{$LANG_SHOP['ordered']}</div>
-                    <div class="uk-width-medium-1-4">{$LANG_SHOP['shipped']}</div>
+                    <div class="uk-width-medium-1-5 cart-item-quantity">{$LANG_SHOP['ordered']}</div>
+                    <div class="uk-width-medium-1-5 cart-item-quantity">{$LANG_SHOP['shipped']}</div>
                 </div>
             </div>
 
@@ -48,11 +48,11 @@
                                 {item_options}
                             </div>
                         </div>
-                        <div class="uk-width-medium-1-4 uk-width-1-2 cart-item-quantity">
-                            {ordered}
+                        <div class="uk-width-medium-1-5 uk-width-1-2 cart-item-quantity">
+                            {item_quantity}
                         </div>
 
-                        <div class="uk-width-medium-1-4 uk-width-1-2 cart-item-total">
+                        <div class="uk-width-medium-1-5 uk-width-1-2 cart-item-quantity">
 {!if can_ship}
 {!if newship}
                             <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Icon;
 
 
 /**
@@ -135,7 +136,7 @@ class payment extends \Shop\Report
                 'align' => 'center',
             ),
         );
-        $extra = array();
+        $this->setExtra('order_id', $this->order_id);
         $defsort_arr = array(
             'field' => 'pmt_ts',
             'direction' => 'DESC',
@@ -247,16 +248,15 @@ class payment extends \Shop\Report
         case 'pmt_order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $fieldvalue
+                SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $fieldvalue
             );
             break;
 
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?ipndetail=x&amp;txn_id=' . $fieldvalue,
+                SHOP_ADMIN_URL . '/payments.php?ipndetail=x&amp;txn_id=' . $fieldvalue,
                 array(
-                    'target' => '_blank',
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
                 )
@@ -271,7 +271,18 @@ class payment extends \Shop\Report
             $D = new \Date($fieldvalue, $_CONF['timezone']);
             $retval = $D->toMySQL(true);
             break;
+
+        case 'delete':
+            $retval = COM_createLink(
+                Icon::getHTML('delete'),
+                SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&ord_pmts=' . $extra['order_id'],
+                array(
+                    'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
+                )
+            );
+            break;
         }
+
         return $retval;
     }
 

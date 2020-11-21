@@ -15,7 +15,9 @@ namespace Shop\Shippers;
 // For getTracking() and getQuote()
 use \SimpleXmlElement;
 use \Exception;
-use \Shop\Company;
+use Shop\Company;
+use Shop\Models\ShippingQuote;
+use Shop\Package;
 
 
 /**
@@ -50,21 +52,36 @@ class ups extends \Shop\Shipper
 
     /** UPS service codes and descriptions.
      * @var array */
-    private $svc_codes = array(
+    protected $svc_codes = array(
         '01'    => 'Next Day Air',
         '02'    => '2nd Day Air',
         '03'    => 'Ground',
         '12'    => '3 Day Select',
-        '13'    => 'UPS Next Day Air Saver',
-        '14'    => 'UPS Next Day Air Early',
+        '13'    => 'Next Day Air Saver',
+        '14'    => 'Next Day Air Early',
         '59'    => '2nd Day Air A.M.',
         '07'    => 'Worldwide Express',
         '08'    => 'Worldwide Expedited',
         '11'    => 'Worldwide Standard',
         '54'    => 'Worldwide Express Plus',
         '65'    => 'Worldwide Saver',
-        '96'    => 'UPS Worldwide Express Freight',
-        '71'    => 'UPS Worldwide Express Freight Midday',
+        '96'    => 'Worldwide Express Freight',
+        '71'    => 'Worldwide Express Freight Midday',
+    );
+
+    protected $pkg_codes = array(
+        '00'    => 'UNKNOWN',
+        '01'    => 'UPS Letter',
+        '02'    => 'Package',
+        '03'    => 'Tube',
+        '04'    => 'Pak',
+        '21'    => 'Express Box',
+        '24'    => '25KG Box',
+        '25'    => '10KG Box',
+        '30'    => 'Pallet',
+        '2a'    => 'Small Express Box',
+        '2b'    => 'Medium Express Box',
+        '2c'    => 'Large Express Box',
     );
 
 
@@ -77,13 +94,20 @@ class ups extends \Shop\Shipper
     {
         $this->key = 'ups';
         $this->implementsTrackingAPI = true;
+        $this->implementsQuoteAPI = true;
         $this->cfgFields = array(
             'userid' => 'password',
             'passwd' => 'password',
             'access_key' => 'password',
             'test_mode' => 'checkbox',
+//            'services' => 'array',
         );
         parent::__construct($A);
+
+        $services = $this->getConfig('services');
+        if (is_array($services)) {
+            $this->supported_services = $services;
+        }
 
         if ($this->getConfig('test_mode')) {
             $this->rate_url = $this->rate_url_test;
@@ -289,20 +313,44 @@ class ups extends \Shop\Shipper
     /**
      * Get an array of rate quote information via API.
      *
-     * @param   object  $Addr   Destination address object
-     * @return  array       Array of quote data (service and cost)
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote($Addr)
+    protected function _getQuote($Order)
     {
+        global $_SHOP_CONF;
+
+        $Addr = $Order->getShipto();
+        $Packages = Package::packOrder($Order, $this);
+
+        if (
+            $this->free_threshold > 0 &&
+            $Order->getItemTotal() > $this->free_threshold
+        ) {
+            $retval = array(
+                (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode('free')
+                    ->setServiceID('free')
+                    ->setServiceTitle(strtoupper($this->key) . ' Free Shipping')
+                    ->setCost(0)
+                    ->setPackageCount(count($Packages)),
+            );
+            return $retval;
+        }
+
         if (!$this->hasValidConfig()) {
-            return array(
-                'id'        => $this->key,
+            return array();
+                /*'id'        => $this->id,
                 'title'     => $this->getCarrierName(),
                 'quote'     => array(),
                 'error'     => true,
-            );
+            );*/
         }
-
+        $Company = new Company;
         try {
             // create AccessRequest XML
             $accessRequestXML = new SimpleXMLElement ( "<AccessRequest></AccessRequest>" );
@@ -319,13 +367,17 @@ class ups extends \Shop\Shipper
 
             $shipment = $rateRequestXML->addChild ( 'Shipment' );
             $shipper = $shipment->addChild ( 'Shipper' );
-            $shipper->addChild ( "Name", "Name" );
-            $shipper->addChild ( "ShipperNumber", "" );
-            $shipperddress = $shipper->addChild ( 'Address' );
-            $shipperddress->addChild ( "AddressLine1", "Address Line" );
-            $shipperddress->addChild ( "City", "Lancaster" );
-            $shipperddress->addChild ( "PostalCode", "93536" );
-            $shipperddress->addChild ( "CountryCode", "US" );
+            $shipper->addChild('Name', $Company->getCompany());
+            $shipper->addChild('ShipperNumber', "" );
+            $shipperddress = $shipper->addChild('Address');
+            $shipperddress->addChild('AddressLine1', $Company->getAddress1() );
+            if ($Company->getAddress2() != '') {
+                $shipFromAddress->addChild("AddressLine2", $Company->getAddress2());
+            }
+            $shipperddress->addChild('City', $Company->getCity());
+            $shipperddress->addChild('PostalCode', $Company->getPostal());
+            $shipperddress->addChild('StateProvinceCode', $Company->getState());
+            $shipperddress->addChild('CountryCode', $Company->getCountry());
 
             $shipTo = $shipment->addChild('ShipTo');
             $shipTo->addChild("CompanyName", $Addr->getCompany());
@@ -348,23 +400,24 @@ class ups extends \Shop\Shipper
             $shipFromAddress->addChild("PostalCode", $Company->getPostal());
             $shipFromAddress->addChild("CountryCode", $Company->getCountry());
 
-        //    $service = $shipment->addChild ( 'Service' );
-        //    $service->addChild ( "Code", "01,02" );
-        //        $service->addChild ( "Description", "Next Day Air" );
-        //    $service = $shipment->addChild ( 'Service' );
-        //    $service->addChild ( "Code", "02" );
-        //    $service->addChild ( "Description", "2nd Day Air" );
+            $service = $shipment->addChild ( 'Service' );
+            $service->addChild ( "Code", "01,02" );
+            //$service->addChild ( "Description", "Next Day Air" );
+            //$service = $shipment->addChild ( 'Service' );
+            //$service->addChild ( "Code", "03" );
+            //$service->addChild ( "Description", "Ground" );
 
-            $package = $shipment->addChild ( 'Package' );
-            $packageType = $package->addChild ( 'PackagingType' );
-            $packageType->addChild ( "Code", "02" );
-            $packageType->addChild ( "Description", "UPS Package" );
+            foreach ($Packages as $Package) {
+                $package = $shipment->addChild('Package');
+                $packageType = $package->addChild('PackagingType');
+                $packageType->addChild("Code", "02");
+                $packageType->addChild("Description", "UPS Package");
 
-            $packageWeight = $package->addChild ( 'PackageWeight' );
-            $unitOfMeasurement = $packageWeight->addChild ( 'UnitOfMeasurement' );
-            $unitOfMeasurement->addChild ( "Code", "LBS" );
-            $packageWeight->addChild ( "Weight", "15.2" );
-
+                $packageWeight = $package->addChild('PackageWeight');
+                $unitOfMeasurement = $packageWeight->addChild ('UnitOfMeasurement');
+                $unitOfMeasurement->addChild("Code", strtoupper($_SHOP_CONF['pkg_weight_uom']));
+                $packageWeight->addChild("Weight", $Package->getWeight());
+            }
             $requestXML = $accessRequestXML->asXML () . $rateRequestXML->asXML ();
 
             // create Post request
@@ -385,7 +438,6 @@ class ups extends \Shop\Shipper
             // get response
             $response = stream_get_contents ( $browser );
             fclose ( $browser );
-
             if ($response == false) {
                 throw new Exception ( "Bad data." );
             } else {
@@ -395,30 +447,75 @@ class ups extends \Shop\Shipper
                 $quote_data = array();
                 foreach ($quotes as $quote) {
                     $classid = (string)$quote->Service->Code;
+                    if (!$this->supportsService($classid)) {
+                        continue;
+                    }
                     $key = $this->key . '.' . $classid;
                     $dscp = $this->svc_codes[$classid];
                     $cost = (float)$quote->TotalCharges->MonetaryValue;
-                    $quote_data[$key] = array(
-                        'id'        => $key,
+                    $quote_data[] = (new ShippingQuote)
+                        ->setID($this->id)
+                        ->setShipperID($this->id)
+                        ->setCarrierCode($this->key)
+                        ->setCarrierTitle($this->getCarrierName())
+                        ->setServiceCode($key)
+                        ->setServiceID($classid)
+                        ->setServiceTitle(strtoupper($this->key) . ' ' . $dscp)
+                        ->setCost($cost)
+                        ->setPackageCount(count($Packages));
+                        /*'id'        => $this->id,
+                        'key'       => $this->module_code,
+                        'svc_id'    => $this->module_code . '.' . $classid,
                         'svc_code'  => $classid,
                         'title'     => $dscp,
                         'cost'      => $cost,
-                    );
+                        'packages'  => 1,
+                    );*/
                 }
                 uasort($quote_data, array($this, 'sortQuotes'));
-                $method_data = array(
-                    'id'        => $this->key,
+                /*$method_data = array(
+                    'id'        => $this->id,
                     'title'     => $this->getCarrierName(),
                     'quote'     => $quote_data,
                     'error'     => FALSE
-                );
+                );*/
             }
         } catch ( Exception $ex ) {
             echo $ex;
         }
-        return $method_data;
+        //return $method_data;
+        return $quote_data;
+    }
+
+
+    public function XXgetConfigForm()
+    {
+        global $LANG_SHOP;
+
+        $prompt = $LANG_SHOP['supported_services'];
+        $form = '<ul class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2">' . LB;
+        foreach ($this->svc_codes as $key=>$dscp) {
+            $chk = in_array($key, $this->supported_services) ? 'checked="checked"' : '';
+            $form .= '<li><input type="checkbox" name="spcfg[services][]" value="' . $key .
+                '" ' . $chk . '">&nbsp;' . $dscp . '</li>' . LB;
+        }
+        $form .= '</ul>';
+        return array($prompt=>$form);
+    }
+
+    public function getAllServices()
+    {
+        return $this->svc_codes;
+    }
+
+    public function supportsService($key)
+    {
+        return in_array($key, $this->supported_services);
+    }
+
+    public function XgetServiceCodes()
+    {
+        return array('01' => 'Available');
     }
 
 }
-
-?>

@@ -12,7 +12,6 @@
  * @filesource
  */
 namespace Shop;
-use Shop\CacheDB;
 
 
 /**
@@ -135,7 +134,7 @@ class GeoLocate
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        return CacheDB::get($key);
+        return Cache::get($key);
     }
 
 
@@ -150,10 +149,10 @@ class GeoLocate
     {
         global $_TABLES;
         if ($exp <= 0) {
-            $exp = 86400 * 14;
+            $exp = 1440 * 14;   // 14 days
         }
         $key = $this->_makeCacheKey($key);
-        CacheDB::set($key, $data, $exp);
+        Cache::set($key, $data, $exp);
     }
 
 

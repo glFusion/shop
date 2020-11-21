@@ -12,6 +12,11 @@
  * @filesource
  */
 namespace Shop\Shippers;
+use Shop\Company;
+use Shop\Package;
+use Shop\Currency;
+use Shop\Tracking;
+use Shop\Models\ShippingQuote;
 
 
 /**
@@ -41,15 +46,24 @@ class fedex extends \Shop\Shipper
         843119172384577 = Hold at Location
         070358180009382 = Shipment Canceled
         111111111111    = Delivered (working)
-     */
+    */
 
-    /** Full path to WSDL file, required for API requests.
-     * @var string */
-    private $wsdl = __DIR__ . '/etc/TrackService_v18.wsdl';
-
-    /** WSDL major version number.
-     * @var string */
-    private $major_ver = '18';
+    private $client_key = '';
+    private $passwd = '';
+    private $meter_num = '';
+    private $acct_num = '';
+    private $req_info = array(
+        'trck' => array(
+            'wsdl'  => __DIR__ . '/etc/fedex/TrackService_v18.wsdl',
+            'major_ver' => '18',
+            'minor_ver' => '0',
+        ),
+        'crs' => array(
+            'wsdl'  => __DIR__ . '/etc/fedex/RateService_v28.wsdl',
+            'major_ver' => '28',
+            'minor_ver' => '0',
+        ),
+    );
 
     /** SOAP request.
      * @var object */
@@ -67,6 +81,20 @@ class fedex extends \Shop\Shipper
      * @var string */
     private $track_url_prod = 'https://ws.fedex.com:443/web-services';
 
+    protected $svc_codes = array(
+        'STANDARD_OVERNIGHT' => 'STANDARD_OVERNIGHT',
+        'PRIORITY_OVERNIGHT' => 'PRIORITY_OVERNIGHT',
+        'FEDEX_GROUND' => 'FEDEX_GROUND',
+        'GROUND_HOME_DELIVERY' => 'GROUND_HOME_DELIVERY',
+    );
+
+    protected $pkg_codes = array(
+        'FEDEX_BOX' => 'FEDEX_BOX',
+        'FEDEX_PAK' => 'FEDEX_PAK',
+        'FEDEX_TUBE' => 'FEDEX_TUBE',
+        'YOUR_PACKAGING' => 'YOUR_PACKAGING',
+    );
+
 
     /**
      * Set up local variables and call the parent constructor.
@@ -77,18 +105,27 @@ class fedex extends \Shop\Shipper
     {
         $this->key = 'fedex';
         $this->implementsTrackingAPI = true;
+        $this->implementsQuoteAPI = true;
         $this->cfgFields = array(
-            'key' => 'password',
-            'passwd' => 'password',
-            'acct_num' => 'string',
-            'meter_num' => 'string',
+            'test_key' => 'password',
+            'test_passwd' => 'password',
+            'test_acct_num' => 'text',
+            'test_meter_num' => 'text',
             'test_mode' => 'checkbox',
         );
         parent::__construct($A);
         if ($this->getConfig('test_mode')) {
             $this->track_url = $this->track_url_test;
+            $this->client_key = $this->getConfig('test_key');
+            $this->acct_num = $this->getConfig('test_acct_num');
+            $this->meter_num = $this->getConfig('test_meter_num');
+            $this->passwd = $this->getConfig('test_passwd');
         } else {
             $this->track_url = $this->track_url_prod;
+            $this->client_key = $this->getConfig('prod_key');
+            $this->acct_num = $this->getConfig('prod_acct_num');
+            $this->meter_num = $this->getConfig('prod_meter_num');
+            $this->passwd = $this->getConfig('prod_passwd');
         }
     }
 
@@ -135,25 +172,24 @@ class fedex extends \Shop\Shipper
         // Build Authentication
         $this->request['WebAuthenticationDetail'] = array(
             'UserCredential'=> array(
-                'Key'       => $this->getConfig('key'),
-                'Password'  => $this->getConfig('passwd'),
+                'Key'       => $this->client_key,
+                'Password'  => $this->passwd,
             )
         );
         //Build Client Detail
         $this->request['ClientDetail'] = array(
-            'AccountNumber' => $this->getConfig('acct_num'),
-            'MeterNumber'   => $this->getConfig('meter_num'),
+            'AccountNumber' => $this->acct_num,
+            'MeterNumber'   => $this->meter_num,
+            'SoftwareId'    => 'glFusion Shop Plugin',
         );
 
         // Build API Version info
         $this->request['Version'] = array(
             'ServiceId'     => $svc_id,
-            'Major'         => $this->major_ver,
+            'Major'         => $this->req_info[$svc_id]['major_ver'],
             'Intermediate'  => '0',
-            'Minor'         => '0',
+            'Minor'         => $this->req_info[$svc_id]['minor_ver'],
         );
-        // Enable detailed scans
-        $this->request['ProcessingOptions'] = 'INCLUDE_DETAILED_SCANS';
         if (is_array($addReq)) {
             $this->request = array_merge($this->request, $addReq);
         }
@@ -171,12 +207,12 @@ class fedex extends \Shop\Shipper
     {
         //$track_num = '111111111111';     // testing override
         // Attempt to get from cache
-        $Tracking = \Shop\Tracking::getCache($this->key, $track_num);
+        $Tracking = Tracking::getCache($this->key, $track_num);
         if ($Tracking !== NULL) {
             return $Tracking;
         }
 
-        $Tracking = new \Shop\Tracking;
+        $Tracking = new Tracking;
         $Tracking->addMeta('Tracking Number', $track_num);
         $Tracking->addMeta('Carrier', self::getCarrierName());
 
@@ -186,7 +222,7 @@ class fedex extends \Shop\Shipper
         }
 
         // Will throw a SoapFault exception if wsdlPath is unreachable
-        $_soapClient = new \SoapClient($this->wsdl, array('trace' => true));
+        $_soapClient = new \SoapClient($this->req_info['trck']['wsdl'], array('trace' => true));
 
         // Set the endpoint
         $_soapClient->__setLocation($this->track_url);
@@ -205,9 +241,11 @@ class fedex extends \Shop\Shipper
                 'Value' => $track_num,  // Tracking ID to track
             )
         );
+        // Enable detailed scans
+        $request['ProcessingOptions'] = 'INCLUDE_DETAILED_SCANS';
+
         $req = $this->_buildSoapRequest('trck', $request);
         $response = $_soapClient->track($req);
-        //var_dump($response);die;
         if ($response === false) {
             $Tracking->addError('Unknown Error Response');
             return $Tracking;
@@ -255,6 +293,115 @@ class fedex extends \Shop\Shipper
 
 
     /**
+     * Get rate quotes via API.
+     *
+     * @param   object  $Order  Order to be shipped
+     * @return  array       Array of ShippingQuote objects
+     */
+    public function getQuote($Order)
+    {
+        $Addr = $Order->getShipto();
+        $Packages = Package::packOrder($Order, $this);
+
+        // Will throw a SoapFault exception if wsdlPath is unreachable
+        $_soapClient = new \SoapClient($this->req_info['crs']['wsdl'], array('trace' => true));
+
+        // Set the endpoint
+        $_soapClient->__setLocation($this->track_url);
+
+        // Initialize request to an empty array
+        $request = array();
+
+        // Build Customer Transaction Id
+        $request['TransactionDetail'] = array(
+            'CustomerTransactionId' => 'Rate Quote Request via PHP',
+        );
+
+        $request['ReturnTransitAndCommit'] = true;
+        $request['RequestedShipment']['ShipTimestamp'] = date('c');
+
+        // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
+        // TODO: Global Carrier Config item
+        $request['RequestedShipment']['DropoffType'] = 'REGULAR_PICKUP';
+
+        // valid values STANDARD_OVERNIGHT, PRIORITY_OVERNIGHT, FEDEX_GROUND, ...
+        $request['RequestedShipment']['ServiceType'] = 'GROUND_HOME_DELIVERY';
+
+        // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
+        $request['RequestedShipment']['PackagingType'] = 'YOUR_PACKAGING';
+        
+        $request['RequestedShipment']['TotalInsuredValue']=array(
+            'Ammount'=> $Order->getItemTotal(),
+            'Currency'=> Currency::getInstance()->getCode(),
+        );
+
+        $Company = new Company;
+        $request['RequestedShipment']['Shipper'] = array(
+            'Address' => array(
+                'StreetLines' => array(
+                    $Company->getAddress1(),
+                ),
+                'City' => $Company->getCity(),
+                'StateOrProvinceCode' => $Company->getState(),
+                'PostalCode' => $Company->getPostal(),
+                'CountryCode' => $Company->getCountry(),
+            ),
+        );
+        $request['RequestedShipment']['Recipient'] = array(
+            'Address' => array(
+                'StreetLines' => array(
+                    $Addr->getAddress1(),
+                    $Addr->getAddress2(),
+                ),
+                'City' => $Addr->getCity(),
+                'StateOrProvinceCode' => $Addr->getState(),
+                'PostalCode' => $Addr->getPostal(),
+                'CountryCode' => $Addr->getCountry(),
+            ),
+        );
+        $request['RequestedShipment']['PackageCount'] = count($Packages);
+        $request['RequestedShipment']['ShippingChargesPayment'] = array(
+            'PaymentType' => 'SENDER',  // valid values RECIPIENT, SENDER and THIRD_PARTY
+            'Payor' => array(
+                'ResponsibleParty' => array(
+                    'AccountNumber' => $this->acct_num,
+                        'CountryCode' => $Company->getCountry(),
+                ),
+            ),
+        );
+
+        $seq_no = 0;
+        foreach ($Packages as $Package) {
+            $request['RequestedShipment']['RequestedPackageLineItems'] = array(
+                'SequenceNumber'=> ++$seq_no,
+                'GroupPackageCount'=> 1,
+                'Weight' => array(
+                        'Value' => $Package->getWeight(),
+                        'Units' => 'LB'
+                ),
+                'Dimensions' => array(
+                        'Length' => $Package->getLength(),
+                        'Width' => $Package->getWidth(),
+                        'Height' => $Package->getHeight(),
+                        'Units' => 'IN'
+                ),
+            );
+        }
+
+        $req = $this->_buildSoapRequest('crs', $request);
+        //var_dump($req);die;
+        $response = $_soapClient->getRates($req);
+        $retval = array();
+        if ($response->HighestSeverity != 'FAILURE' && $response->HighestSeverity != 'ERROR') {
+            $rateReply = $response->RateReplyDetails;
+        } else {
+            SHOP_log(__CLASS__ . '\\' . __FUNCTION__ . ' Error: ' . print_r($response,true));
+        }
+        return $retval;
+    }
+
+
+    /**
      * Make a single location string from the separate response fields.
      * Empty fields are skipped.
      *
@@ -277,5 +424,3 @@ class fedex extends \Shop\Shipper
     }
 
 }
-
-?>

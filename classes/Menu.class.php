@@ -90,7 +90,7 @@ class Menu
                 'active' => $view == 'products' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?orders',
+                'url' => SHOP_ADMIN_URL . '/orders.php',
                 'text' => $LANG_SHOP['orders'],
                 'active' => $view == 'orders' || $view == 'shipments' ? true : false,
             ),
@@ -306,6 +306,12 @@ class Menu
                 'active' => $view == 'carriers' ? true : false,
                 'help'  => $LANG_SHOP_HELP['carrier_modules'],
             ),
+            array(
+                'url'   => SHOP_ADMIN_URL . '/packages.php',
+                'text'  => $LANG_SHOP['packages'],
+                'active' => $view == 'packages' ? true : false,
+                'help'  => $LANG_SHOP_HELP['packages'],
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }
@@ -324,19 +330,19 @@ class Menu
 
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?orders',
+                'url'  => SHOP_ADMIN_URL . '/orders.php',
                 'text' => $LANG_SHOP['orders'],
                 'active' => $view == 'orders' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+                'url' => SHOP_ADMIN_URL . '/shipments.php',
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=x',
+                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=x',
                 'text' => $LANG_SHOP['payments'],
-                'active' => $view == 'ord_pmts' ? true : false,
+                'active' => $view == 'payments' ? true : false,
             ),
         );
         return self::_makeSubMenu($menu_arr);
@@ -367,7 +373,7 @@ class Menu
                 'active' => $view == 'ord_ship' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->getOrderID(),
+                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'ord_pmts' ? true : false,
             ),

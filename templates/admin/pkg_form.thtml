@@ -1,0 +1,100 @@
+{# begin {templatelocation} #}
+<form action="{site_admin_url}/plugins/shop/packages.php" method="post" class="uk-form uk-form-horizontal">
+    <input type="hidden" name="pkg_id" value="{pkg_id}" />
+    <a href="{site_admin_url}/plugins/shop/packages.php?pkgedit">
+        <button class="uk-button uk-button-success">New Package</button>
+    </a> 
+    <div class="uk-form-row">
+        <label class="uk-form-label">Package Description</label>
+        <div class="uk-form-controls">
+            <input type="text" name="dscp" value="{dscp}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Package Width</label>
+        <div class="uk-form-controls">
+            <input type="text" name="width" value="{width}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Package Height</label>
+        <div class="uk-form-controls">
+            <input type="text" name="height" value="{height}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Package Length</label>
+        <div class="uk-form-controls">
+            <input type="text" name="length" value="{length}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Max. Weight</label>
+        <div class="uk-form-controls">
+            <input type="text" name="max_weight" value="{max_weight}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Unit Capacity</label>
+        <div class="uk-form-controls">
+            <input type="text" name="units" value="{units}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <label class="uk-form-label">Carrier Options</label>
+        <div class="uk-form-controls">
+            <table class="uk-table">
+                <tr>
+                    <th>Carrier</th>
+                    <th>Container ID</th>
+                    <th>Service</th>
+                    <th>Fixed Rate</th>
+                </tr>
+<!-- BEGIN CarrierInfo -->
+                <tr>
+                    <!--<td>{carrier_id}</td>-->
+                    <td>{carrier_name}</td>
+                    <td>
+{!if has_pkgcode_select}
+                        <select name="containers[{carrier_id}][container]">
+                            <option value="" {sel_none}>-- Not Available -- </option>
+<!-- BEGIN PkgCodes -->
+                            <option value="{pkg_code}" {sel}>{pkg_dscp}</option>
+<!-- END PkgCodes -->
+                        </select>
+{!else}
+                        <input type="text" name="containers[{carrier_id}][container]" value="{container}" />
+{!endif}
+                    </td>
+                    <td>
+                        <select name="containers[{carrier_id}][service]">
+                            <option value="_na" {sel_none}>-- Not Available --</option>
+<!-- BEGIN SvcCodes -->
+                            <option value="{svc_code}" {sel}>{svc_dscp}</option>
+<!-- END SvcCodes -->
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" size="10" name="containers[{carrier_id}][rate]" value="{rate}" />
+                    </td>
+                </tr>
+<!-- END CarrierInfo -->
+            </table>
+        </div>
+    </div>
+
+    <div class="uk-form-row">
+        <div class="uk-form-controls">
+            <button type="submit" name="pkgsave" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>
+            <button type="reset" name="reset" class="uk-button uk-button-primary">{$LANG_SHOP['clearform']}</button>
+            <button type="submit" name="packages" class="uk-button">{$LANG_ADMIN['cancel']}</button>
+        </div>
+    </div>
+</form>
+{# end {templatelocation} #}
