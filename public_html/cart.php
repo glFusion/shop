@@ -104,7 +104,7 @@ case 'checkout':
     if ($gateway !== '') {
         \Shop\Gateway::setSelected($gateway);
         $Cart->setGateway($gateway);
-        Shop\Customer::getInstance($Cart->uid)
+        Shop\Customer::getInstance('', $Cart->uid)
             ->setPrefGW($gateway)
             ->saveUser();
     }
@@ -125,9 +125,9 @@ case 'checkout':
     if (isset($_POST['payer_email']) && !empty($_POST['payer_email'])) {
         $Cart->setEmail($_POST['payer_email']);
     }
-    if (isset($_POST['shipper_id'])) {
+    /*if (isset($_POST['shipper_id'])) {
         $Cart->setShipper($_POST['shipper_id']);
-    }
+    }*/
 
     // Final check that all items are valid. No return or error message
     // unless this is the only issue. This is the final step after viewing
@@ -145,7 +145,6 @@ case 'checkout':
             COM_refresh(SHOP_URL . '/cart.php');
         }
     }
-
     if (isset($_POST['quantity'])) {
         // Update the cart quantities if coming from the cart view.
         // This also calls Save() on the cart
@@ -226,7 +225,7 @@ case 'none':
 case 'cancel':
     list($cart_id, $token) = explode('/', $actionval);
     if (!empty($cart_id)) {
-        $Cart = Shop\Cart::getInstance(0, $cart_id);
+        $Cart = Shop\Cart::getInstance($cart_id);
         if ($token == $Cart->getToken()) {
             $Cart->setFinal('cart')
                 ->setToken();
@@ -251,7 +250,6 @@ default:
         // Items have been removed, refresh to update and view the info msg.
         COM_refresh(SHOP_URL . '/cart.php');
     }
-
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= $Cart->getView(0);
     } else {

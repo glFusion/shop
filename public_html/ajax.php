@@ -92,17 +92,27 @@ case 'addcartitem':
 
 case 'setShipper':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $status = Shop\Cart::getInstance($cart_id)
-        ->setShipper($_POST['shipper_id'])
-        ->Save();
+    $method_id = (int)$_POST['shipper_id'];
+    $ship_methods = SESS_getVar('shop.shiprate.' . $cart_id);
+    if (!isset($ship_methods[$method_id])) {
+        $status = false;
+        $method = NULL;
+    } else {
+        $method = $ship_methods[$method_id];
+        $status = Shop\Cart::getInstance($cart_id)
+            ->setShipper($method)
+            ->Save();
+        $status = true;
+    }
     $output = array(
         'status' => $status,
+        'method' => $method,
     );
     break;
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $Cart = Shop\Cart::getInstance(0, $cart_id);
+    $Cart = Shop\Cart::getInstance($cart_id, 0);
     $status_msg = '';
     if ($Cart->isNew()) {
         $status_msg = 'Cart not found';
