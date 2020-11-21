@@ -16,5 +16,8 @@
 <script>
 var shipper_json = '{shipper_json}';
 var shipper_obj = JSON.parse(shipper_json);
+if (shipper_obj.length == 1) {
+    $("#shipping_cell").html(shipper_obj[0].amount);
+}
 </script>
 {# end {templatelocation} #}
