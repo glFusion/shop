@@ -18,6 +18,7 @@ use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
 use Shop\Template;
 
 /**
@@ -194,12 +195,18 @@ class paypal extends \Shop\Gateway
         }
 
         $cartID = $cart->CartID();
-        $custom_arr = array(
+        $custom_arr = new CustomInfo(array(
             'uid' => $_USER['uid'],
             'transtype' => 'cart_upload',
             'cart_id' => $cartID,
-        );
-        $custom_arr = array_merge($custom_arr, $cart->custom_info);
+        ) );
+        /*$custom_arr = array(
+            'uid' => $_USER['uid'],
+            'transtype' => 'cart_upload',
+            'cart_id' => $cartID,
+        );*/
+        $custom_arr->merge($cart->custom_info);
+        //$custom_arr = array_merge($custom_arr, $cart->custom_info);
 
         $fields = array(
             'cmd'       => '_cart',
@@ -210,7 +217,7 @@ class paypal extends \Shop\Gateway
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
             'currency_code'  => $this->currency_code,
-            'custom'    => str_replace('"', '\'', serialize($custom_arr)),
+            'custom'    => (string)$custom_arr, //str_replace('"', '\'', serialize($custom_arr)),
             'invoice'   => $cartID,
         );
         $address = $cart->getShipto();
@@ -839,7 +846,7 @@ class paypal extends \Shop\Gateway
      *
      * @return  string      Formatted custom string
      */
-    protected function PrepareCustom()
+    protected function XPrepareCustom()
     {
         return str_replace('"', '\'', serialize($this->custom));
     }

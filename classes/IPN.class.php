@@ -25,6 +25,7 @@ namespace Shop;
 use Shop\Logger\IPN as logIPN;
 use Shop\Products\Coupon;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
 
 
 // this file can't be used on its own
@@ -127,7 +128,7 @@ class IPN
      * Custom data that comes from the IPN provider, typically pass-through.
      * @var array
      */
-    protected $custom = array();
+    protected $custom = NULL;
 
     /**
      * Shipping address information.
@@ -175,7 +176,7 @@ class IPN
         if (is_array($A)) {
             $this->ipn_data = $A;
         }
-
+        $this->custom = new CustomInfo;
         // Create a gateway object to get some of the config values
         $this->GW = Gateway::getInstance($this->gw_id);
         // If the transaction date wasn't set by the handler,
@@ -600,7 +601,11 @@ class IPN
     protected function addItem($args)
     {
         // Minimum required arguments: item, quantity, unit price
-        if (!isset($args['item_id']) || !isset($args['quantity']) || !isset($args['price'])) {
+        if (
+            !isset($args['item_id']) ||
+            !isset($args['quantity']) ||
+            !isset($args['price'])
+        ) {
             return;
         }
 
@@ -618,7 +623,7 @@ class IPN
         }
         // If the product allows the price to be overridden, just take the
         // IPN-supplied price. This is the case for donations.
-        $overrides = $this->custom;
+        $overrides = $this->custom->toArray();
         $overrides['price'] = $args['price'];
         $price = $P->getPrice($opts, $args['quantity'], $overrides);
 
@@ -808,7 +813,7 @@ class IPN
             // Handle the purchase for each order item
             $ipn_data = $this->ipn_data;
             $ipn_data['status'] = $this->status;
-            $ipn_data['custom'] = $this->custom;
+            $ipn_data['custom'] = (string)$this->custom;
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
@@ -885,6 +890,7 @@ class IPN
         $this->Order->setUID($this->uid);
         $this->Order->setBuyerEmail($this->payer_email);
         $this->Order->setStatus('pending');
+        $this->uid = 2;
         if ($this->uid > 1) {
             $U = Customer::getInstance($this->uid);
         }
@@ -900,24 +906,26 @@ class IPN
         }
         if (empty($BillTo) && $this->uid > 1) {
             $BillTo = $U->getDefaultAddress('billto');
-        }
-        if (is_array($BillTo)) {
             $this->Order->setBillto($BillTo);
         }
 
         $ShipTo = $this->shipto;
         if (empty($ShipTo)) {
-            if ($this->Cart) $ShipTo = $this->Cart->getAddress('shipto');
+            if ($this->Cart) {
+                $ShipTo = $this->Cart->getAddress('shipto');
+            }
             if (empty($ShipTo) && $this->uid > 1) {
                 $ShipTo = $U->getDefaultAddress('shipto');
+                $this->Order->setShipto($ShipTo);
             }
         }
-        if (is_array($ShipTo)) {
-            $this->Order->setShipto($ShipTo);
-        }
         if (isset($this->shipto['phone'])) {
+            // override the phone number if one came in the IPN.
             $this->Order->setPhone($this->shipto['phone']);
         }
+
+        // We're creating an order based on a single IPON message,
+        // so just trust the numbers received.
         $this->Order->setPmtMethod($this->gw_id)
             ->setPmtTxnID($this->txn_id)
             ->setShipping($this->pmt_shipping)

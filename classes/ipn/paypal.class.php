@@ -70,15 +70,19 @@ class paypal extends \Shop\IPN
             );
         }
 
-        // Set the custom data into an array.  If it can't be unserialized,
+        // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
         if (isset($A['custom'])) {
-            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->custom) {
-                $this->custom = array('uid' => $A['custom']);
+            $this->custom->decode($A['custom']);
+            if (!isset($this->custom['uid'])) {
+                $this->custom['uid'] = (int)$A['custom'];
             }
         }
-        $this->setUid(SHOP_getVar($this->custom, 'uid', 'integer', 1));
+        // If the user ID is still not set, use anonymous
+        if (!isset($this->custom['uid'])) {
+            $this->custom['uid'] = 1;
+        }
+        $this->setUid($this->custom['uid']);
 
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
@@ -278,12 +282,14 @@ class paypal extends \Shop\IPN
             foreach ($Cart as $item) {
                 $item_id = $item->getProductID();
                 $options = $item->getOptions();
+                $opt_ids = array();
                 if (!empty($options)) {
-                    if (is_array($options)) {
-                        $options = implode(',', $options);
+                    foreach ($options as $option) {
+                        $opt_ids[] = $option->getID();
                     }
-                    $item_id .= '|' . $options;
                 }
+                $opt_ids = implode(',', $opt_ids);
+                $item_id .= '|' . $opt_ids;
                 $args = array(
                     'item_id'   => $item_id,
                     'quantity'  => $item->getQuantity(),
