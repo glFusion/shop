@@ -83,7 +83,6 @@ foreach($expected as $provided) {
         break;
     }
 }
-
 $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
@@ -130,7 +129,7 @@ case 'delshipping':
     break;
 
 case 'deletecatimage':
-    $id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+    $id = SHOP_getVar($_GET, 'cat_id', 'integer');
     if ($id > 0) {
         $C = new \Shop\Category($id);
         $C->deleteImage();
@@ -224,7 +223,9 @@ case 'pv_del_bulk':
     }
     Shop\Cache::clear('products');
     Shop\Cache::clear('options');
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
+    COM_refresh(
+        SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . SHOP_getVar($_GET, 'item_id', 'integer')
+    );
     break;
 
 case 'pv_del':
@@ -539,6 +540,7 @@ case 'updateshipment':
     break;
 
 case 'del_shipment':
+    echo "del_shipment deprecated";die;
     $S = new Shop\Shipment($actionval);
     $S->Delete();
     $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?shipments');
@@ -610,6 +612,7 @@ case 'pv_bulk_save':
     break;
 
 case 'savepayment':
+    echo "payments deprecated in index.php";die;
     $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
     $Pmt->setAmount($_POST['amount'])
         ->setMethod($_POST['gw_id'])
@@ -621,6 +624,12 @@ case 'savepayment':
         ->setComment($_POST['comment']);
     $Pmt->Save();
     COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_POST['order_id']);
+    break;
+
+case 'delpayment':
+    echo "payments deprecated in index.php";die;
+    Shop\Payment::delete($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_GET['ord_pmts']);
     break;
 
 default:
@@ -651,9 +660,9 @@ case 'coupons':
 
 case 'order':
     $order = \Shop\Order::getInstance($actionval);
-    $order->setAdmin(true);
+    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
     $content .= Shop\Menu::viewOrder($view, $order);
-    $content .= $order->View('adminview');
+    $content .= $V->Render();
     break;
 
 case 'ipndetail':
@@ -767,7 +776,7 @@ case 'shipping':
 
 case 'carriers':
     $content .= Shop\Menu::adminShipping($view);
-    $content .= Shop\Shipper::carrierLIst();
+    $content .= Shop\Shipper::carrierList();
     break;
 
 case 'variants':
@@ -875,6 +884,7 @@ case 'gwedit':
 
 case 'carrier_config':
     $Shipper = \Shop\Shipper::getByCode($actionval);
+    $content .= Shop\Menu::adminShipping('carriers');
     if ($Shipper !== NULL) {
         $content .= $Shipper->Configure();
     }
@@ -898,6 +908,7 @@ case 'configreport':
 
 case 'editshipper':
     $S = new \Shop\Shipper($actionval);
+    $content .= Shop\Menu::adminShipping('shipping');
     $content .= $S->Edit();
     break;
 
@@ -908,14 +919,15 @@ case 'editshipment':
             SHOP_setUrl($_REQUEST['ret_url']);
         }
         $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\Shipment($S->getOrderID());
-        $V->setShipmentID($shipment_id);
-        $content = $V->Render($action);
+        $V = new Shop\Views\ShipmentForm($S->getOrderID());
+        $V->withShipmentID($shipment_id);
+        $content = $V->Render();
     }
     break;
 
 case 'payments':
 case 'ord_pmts':
+    echo "payments deprecated in index.php";die;
     // View payments on an order
     if ($actionval != 'x') {
         $Order = Shop\Order::getInstance($actionval);
@@ -946,16 +958,16 @@ case 'shiporder':
     if (isset($_GET['ret_url'])) {
         SHOP_setUrl($_GET['ret_url']);
     }
-    $V = new Shop\Views\Shipment($_GET['order_id']);
-    $content .= $V->Render($action);
-    /*
-    $Ord = Shop\Order::getInstance($_GET['order_id']);
-    if (!$Ord->isNew) {
+    $V = new Shop\Views\ShipmentForm($_GET['order_id']);
+    $content .= $V->Render();
+    /*$Ord = Shop\Order::getInstance($_GET['order_id']);
+    if (!$Ord->isNew()) {
         $content .= $Ord->View('shipment');
     }*/
     break;
 
 case 'order_pl':
+    echo $view . " DEPRECATED";die;
     // Get the packing list for an entire order.
     // This is expected to be shown in a _blank browser window/tab.
     $PL = new Shop\Views\OrderPL($actionval);
@@ -968,12 +980,14 @@ case 'order_pl':
     break;
 
 case 'shipment_pl':
+    echo "shipment_pl deprecated";die;
     if ($actionval == 'x') {
         $shipments = SHOP_getVar($_POST, 'shipments', 'array');
     } else {
         $shipments = $actionval;
     }
-    Shop\Views\ShipmentPL::printPDF($shipments, $view);
+    $PL = new Shop\Views\Shipment();
+    $PL->asPackingList()->withOutput('pdf')->withShipmentId($shipments)->Render();
     break;
 
 case 'taxrates':
@@ -990,7 +1004,7 @@ case 'taxrates':
     break;
 
 case 'edittaxrate':
-    $content .= Shop\Tax\table::Edit($_GET['code']);
+    $content .= Shop\Tax\table::Edit(SHOP_getVar($_GET, 'code'));
     break;
 
 case 'suppliers':
@@ -1083,6 +1097,7 @@ case 'regions':
     break;
 
 case 'newpayment':
+    echo "deprecated";die;
     $Pmt = new Shop\Payment;
     $Pmt->setOrderID($actionval);
     $content .= $Pmt->pmtForm();
@@ -1095,9 +1110,8 @@ case 'none':
 default:
     SHOP_setUrl();
     $view = 'products';     // to set the active menu
-    $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
     $content .= Shop\Menu::adminCatalog($view);
-    $content .= Shop\Product::adminList($cat_id);
+    $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
     break;
 }
 
