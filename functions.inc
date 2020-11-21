@@ -1493,7 +1493,7 @@ function plugin_user_login_shop($uid)
 
     $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
     if (!empty($anon_cart)) {
-        $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+        $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
         $user_cart->Merge($anon_cart);
         $user_cart->Validate(true);
     }
@@ -1509,7 +1509,7 @@ function NOOP_plugin_user_logout_shop($uid)
 {
 /*    global $_SHOP_CONF;
 
-    $C = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
+    $C = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
     Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
 */
 }
