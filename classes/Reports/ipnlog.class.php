@@ -3,9 +3,9 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -22,6 +22,10 @@ class ipnlog extends \Shop\Report
     /** Icon to use in report selection.
      * @var string */
     protected $icon = 'money';
+
+    /** Selected gateway to limit output.
+     * @var string */
+    protected $gateway = '';
 
 
     /**
@@ -67,7 +71,7 @@ class ipnlog extends \Shop\Report
      */
     public function Render()
     {
-        global $_TABLES, $_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
         $this->setParam('gateway', SHOP_getVar($_GET, 'gateway'));
 
@@ -130,7 +134,7 @@ class ipnlog extends \Shop\Report
         $text_arr = array(
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&perod=' . $period . '&gateway=' . $gateway,
+                '&perod=' . $this->period . '&gateway=' . $this->gateway,
         );
 
         switch ($this->type) {
