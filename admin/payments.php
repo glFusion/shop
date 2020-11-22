@@ -93,15 +93,9 @@ case 'newpayment':
     break;
 
 case 'ipndetail':
-    $val = NULL;
-    foreach (array('id', 'txn_id') as $key) {
-        if (isset($_GET[$key])) {
-            $val = $_GET[$key];
-            break;
-        }
-    }
-    if ($val !== NULL) {
-        $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
+    $val = SHOP_getVar($_GET, 'pmt_id', 'integer');
+    if ($val > 0) {
+        $content .= \Shop\Report::getInstance('payment')->RenderDetail($val);
         break;
     }
     break;

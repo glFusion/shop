@@ -13,6 +13,7 @@
  */
 namespace Shop\Reports;
 use Shop\Icon;
+use Shop\Currency;
 
 
 /**
@@ -228,6 +229,74 @@ class payment extends \Shop\Report
 
 
     /**
+     * Display the detail for a single item.
+     *
+     * @param   mixed   $val    Value to display
+     * @param   string  $key    Name of variable used in Admin list
+     * @return  string      HTML for item detail report
+     */
+    public function RenderDetail($pmt_id)
+    {
+        global $_TABLES, $_CONF, $LANG_SHOP;
+
+        $pmt_id = (int)$pmt_id;
+        $sql = "SELECT * FROM {$_TABLES['shop.payments']} pmts
+            LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
+            ON ipn.txn_id = pmts.pmt_ref_id
+            WHERE pmts.pmt_id = '$pmt_id'";
+        $res = DB_query($sql);
+        $A = DB_fetchArray($res, false);
+        if (empty($A)) {
+            return "Nothing Found";
+        }
+
+        // Allow all serialized data to be available to the template
+        $ipn = @unserialize($A['ipn_data']);
+        $gw = \Shop\Gateway::getInstance($A['gateway']);
+        if ($gw !== NULL) {
+            if ($ipn) {
+                $vals = $gw->ipnlogVars($ipn);
+            } else {
+                $vals = array();
+                $A['id'] = $LANG_SHOP['manual_entry'];
+                $A['ip_addr'] = 'n/a';
+            }
+            // Create ipnlog template
+            $T = $this->getTemplate('single');
+
+            // Display the specified ipnlog row
+            $Dt = new \Date($A['ts'], $_CONF['timezone']);
+            $T->set_var(array(
+                'pmt_id'    => $A['pmt_id'],
+                'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
+                'id'        => $A['id'],
+                'ip_addr'   => $A['ip_addr'],
+                'time'      => SHOP_dateTooltip($Dt),
+                'txn_id'    => $A['pmt_ref_id'],
+                'gateway'   => $A['pmt_gateway'],
+                'comment'   => $A['pmt_comment'],
+            ) );
+
+            if (!empty($vals)) {
+                $T->set_block('report', 'DataBlock', 'Data');
+                foreach ($vals as $key=>$value) {
+                    $T->set_var(array(
+                        'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
+                        'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
+                    ) );
+                    $T->parse('Data', 'DataBlock', true);
+                }
+            }
+            if ($ipn) {
+                $T->set_var('ipn_data', print_r($ipn, true));
+            }
+            $retval = $T->parse('output', 'report');
+        }
+        return $retval;
+    }
+
+
+    /**
      * Get the display value for a field specific to this report.
      * This function takes over the "default" handler in Report::getReportField().
      * @access  protected as it is only called from Report::getReportField().
@@ -255,7 +324,7 @@ class payment extends \Shop\Report
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/payments.php?ipndetail=x&amp;txn_id=' . $fieldvalue,
+                SHOP_ADMIN_URL . '/payments.php?ipndetail=x&amp;pmt_id=' . $A['pmt_id'],
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],

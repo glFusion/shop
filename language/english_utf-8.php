@@ -724,6 +724,8 @@ $LANG_SHOP = array (
 'packages' => 'Packages',
 'new_package' => 'New Package',
 'free_threshold' => 'Free Shipping Threshold',
+'manual_entry' => 'Manual Entry',
+'pmt_detail' => 'Payment Detail',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
