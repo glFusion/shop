@@ -1308,7 +1308,6 @@ class ProductVariant
         default:
             $options = array();
             $text_arr = array(
-                'has_limit' => true,
             );
             break;
         }
