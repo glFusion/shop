@@ -329,7 +329,7 @@ $_SQL = array(
   KEY `owner` (`redeemer`,`balance`,`expires`),
   KEY `purchased` (`purchased`),
   KEY `key_expires` (`expires`)
-) ENGINE=MyIsam",
+) ENGINE=MyISAM",
 
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -342,7 +342,7 @@ $_SQL = array(
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `code` (`code`)
-) ENGINE=MyIsam",
+) ENGINE=MyISAM",
 
 'shop.sales' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.sales']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -355,7 +355,7 @@ $_SQL = array(
   `amount` decimal(6,4) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `item_type` (`item_type`,`item_id`)
-) ENGINE=MyIsam",
+) ENGINE=MyISAM",
 
 'shop.shipping' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
