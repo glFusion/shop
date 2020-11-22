@@ -2430,8 +2430,12 @@ class Product
         if (!is_array($options)) {
             $options = explode(',', $options);
         }
-        foreach ($options as $key) {
-            if (strpos($key, '|') !== false) {  // complete option strings
+        foreach ($options as $option) {
+            $key = NULL;
+            if ($option instanceof OrderItemOption) {
+                $key = $option->getOptionID();
+            } elseif (is_string($key) && strpos($key, '|') !== false) {
+                // complete option strings
                 list($key, $junk) = explode('|', $key);
             }
             if (isset($this->options[$key])) {
