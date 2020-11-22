@@ -272,7 +272,7 @@ class square extends \Shop\Gateway
         $order_req = $this->_createOrderRequest($cart);
         $checkout = new \Square\Models\CreateCheckoutRequest(
             uniqid(),
-            $order
+            $order_req
         );
         $checkout->setRedirectUrl($this->returnUrl($cart->getOrderID(), $cart->getToken()));
         $checkout->setPrePopulateBuyerEmail($cart->getInfo('payer_email'));
