@@ -86,9 +86,6 @@ class Cart extends Order
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
         if ($cart->getUid() != $uid || $cart->status != OrderState::CART) {
-            var_dump(debug_backtrace(0));die;
-            echo $uid;die;
-            echo "here";die;
             self::_expireCookie();
             $cart = new self();
         }
