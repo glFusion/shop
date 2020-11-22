@@ -87,9 +87,9 @@
                                     title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
                                 </a>
 {!elseif item_link}
-                                <a href="{item_link}">{img_url}</a>
+                                <a href="{item_link}">{img_url}</a>&nbsp;
 {!else}
-                                {img_url}
+                                {img_url}&nbsp;
 {!endif}
                             </div>
                             <div class="cart-item-title">
