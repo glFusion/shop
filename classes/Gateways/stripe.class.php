@@ -253,6 +253,18 @@ class stripe extends \Shop\Gateway
 
 
     /**
+     * Get the secret API key.
+     * Required by the IPN handler.
+     *
+     * @return  string      Secret API key
+     */
+    public function getSecretKey()
+    {
+        return $this->sec_key;
+    }
+
+
+    /**
      * Retrieve a payment intent to get payment details.
      *
      * @param   string  $pmt_id     Payment Intent ID

@@ -22,6 +22,7 @@ SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
 $event = null;
 
 try {
+    \Stripe\Stripe::setApiKey($GW->getSecretKey());
     $event = \Stripe\Webhook::constructEvent(
         $payload, $sig_header, $GW->getWebhookSecret()
     );
