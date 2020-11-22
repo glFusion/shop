@@ -343,7 +343,6 @@ class Cart extends Order
                     $this->tainted = true;
                 }
             }
-            $this->applyQtyDiscounts($item_id);
         }
         $this->calcItemTotals();
 
