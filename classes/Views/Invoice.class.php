@@ -1,11 +1,11 @@
 <?php
 /**
- * Class to present an view of an order
+ * Class to present an view of an invoice (finalized order).
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -21,10 +21,11 @@ use Shop\Gateway;
 use Shop\Company;
 use Shop\IPN;
 use Shop\OrderStatus;
+use Shop\ShipmentPackage;
 
 
 /**
- * Order view class.
+ * Invoice view class.
  * @package shop
  */
 class Invoice extends OrderBaseView
@@ -219,13 +220,17 @@ class Invoice extends OrderBaseView
                 ) );
                 $this->TPL->parse('Sel', 'StatusSelect', true);
             }
-            $this->TPL->set_var('is_admin', true);
+            $this->TPL->set_var(array(
+                'is_admin'  => true,
+                'itemsToShip'   => $this->Order->itemsToShip(),
+            ) );
             $this->_renderLog();
         }
         $this->TPL->set_var(array(
             'payer_email'   => $this->Order->getBuyerEmail(),
             'invoice_number'  => $this->Order->getInvoiceNumber(),
             'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
+            'shipment_block' => $this->getShipmentBlock(),
         ) );
         if ($this->Order->getPmtMethod() != '') {
             $gw = Gateway::getInstance($this->Order->getPmtMethod());
