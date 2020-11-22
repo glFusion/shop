@@ -155,7 +155,7 @@ class stripe extends \Shop\IPN
         $this->ipn_data['pmt_tax'] = $this->getPmtTax();
         $this->ipn_data['pmt_gross'] = $this->getPmtGross();
         $this->ipn_data['status'] = $this->getStatus();  // to get into handlePurchase()
-        COM_errorLog("Stripo transaction verified OK");
+        SHOP_log("Stripe transaction verified OK", SHOP_LOG_DEBUG);
         return true;
     }
 
