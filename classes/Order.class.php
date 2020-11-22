@@ -1981,6 +1981,8 @@ class Order
      */
     public function calcTotal()
     {
+        global $_TABLES;
+
         $total = 0;
         foreach ($this->items as $id => $item) {
             $total += ($item->getPrice() * $item->getQuantity());
@@ -1993,6 +1995,12 @@ class Order
         }
         $total += $this->shipping + $this->tax + $this->handling;
         $this->order_total = Currency::getInstance()->RoundVal($total);
+        $sql = "UPDATE {$_TABLES['shop.orders']} SET
+            tax = $this->tax,
+            shipping = $this->shipping,
+            handling = $this->handling,
+            order_total = $this->order_total";
+        DB_query($sql);
         return $this->order_total;
     }
 
@@ -2442,9 +2450,6 @@ class Order
             } else {
                 $tax_rate = 0;
             }
-            //$shipper_id = $quote['id'];
-            //$title = $quote['title'];
-            //foreach ($quote['quote'] as $q) {
             foreach ($quote as $q) {
                 $shipper_id = $q['id'];
                 $title = $q['svc_title'];
