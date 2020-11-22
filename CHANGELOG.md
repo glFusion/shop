@@ -4,6 +4,7 @@
 Release TBD
   * Discounts may not be applied to all products, e.g. gift cards.
   * Remove `paid` as an order status, check total paid instead.
+  * Update Stripe API to 7.65.0 - 2020-11-19.
   * Update Square API to 3.20200325.0.
   * Add interface for customers to edit addresses outside of orders.
   * Add fast-checkout where the order allows it.
