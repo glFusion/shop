@@ -57,6 +57,7 @@ class internal extends \Shop\IPN
             $this->custom = new CustomInfo($A['custom']);
             if ($this->custom->isEmpty()) {
                 $this->custom = new CustomInfo(array('uid' => $A['custom']));
+            }
         } else {
             $this->custom = new CustomInfo;
         }
