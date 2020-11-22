@@ -342,7 +342,11 @@ class Workflow
             break;
 
         case 'wf_name':
-            $retval = $LANG_SHOP[$fieldvalue];
+            if (isset($LANG_SHOP[$fieldvalue])) {
+                $retval = $LANG_SHOP[$fieldvalue];
+            } else {
+                $retval = $fieldvalue;
+            }
             break;
 
        default:
