@@ -1999,7 +1999,8 @@ class Order
             tax = $this->tax,
             shipping = $this->shipping,
             handling = $this->handling,
-            order_total = $this->order_total";
+            order_total = $this->order_total
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         return $this->order_total;
     }
@@ -2389,7 +2390,8 @@ class Order
             shipper_id = {$this->shipper_id},
             shipping = {$this->shipping},
             shipping_method = '" . DB_escapeString($this->shipping_method) . "',
-            shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'";
+            shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         return $this;
 
@@ -3485,7 +3487,7 @@ class Order
         $sql = "UPDATE {$_TABLES['shop.orders']} SET
             discount_code = '" . DB_escapeString($this->discount_code) . "',
             discount_pct = '" . (float)$this->discount_pct . "'
-            WHERE order_id = '" . (int)$this->order_id . "'";
+            WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
         if (!DB_error()) {
             foreach ($this->items as $id=>$Item) {
