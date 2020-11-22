@@ -131,6 +131,7 @@ class Cart extends OrderBaseView
             $this->TPL->set_var('have_' . $wf->wf_name, 'true');
         }
 
+        $this->Order->calcTotal();
         if ($this->tplname == 'viewcart') {
             $this->TPL->set_var(array(
                 'not_final' => true,
