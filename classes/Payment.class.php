@@ -648,6 +648,16 @@ class Payment
         return $new_btn . $R->Render();
     }
 
-}
 
-?>
+    /**
+     * Get the URL to a single payment detail record.
+     *
+     * @param   integer $pmt_id     Payment record ID
+     * @return  string      URL to detail display
+     */
+    public function getDetailUrl()
+    {
+        return SHOP_ADMIN_URL . '/payments.php?ipndetail=x&pmt_id=' . $this->pmt_id;
+     }
+
+}

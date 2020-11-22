@@ -252,7 +252,7 @@ class Invoice extends OrderBaseView
         foreach ($Payments as $Payment) {
             $this->TPL->set_var(array(
                 'gw_name' => Gateway::getInstance($Payment->getGateway())->getDscp(),
-                'ipn_det_url' => IPN::getDetailUrl($Payment->getRefID(), 'txn_id'),
+                'ipn_det_url' => $Payment->getDetailUrl(),
                 'pmt_txn_id' => $Payment->getRefID(),
                 'pmt_amount' => $this->Currency->formatValue($Payment->getAmount()),
             ) );
