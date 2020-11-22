@@ -3,9 +3,9 @@
  * This file contains the IPN processor for Authorize.Net.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2013-2019 Lee Garner
+ * @copyright   Copyright (c) 2013-2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php 
  *              GNU Public License v2 or later
@@ -14,6 +14,7 @@
 namespace Shop\ipn;
 use Shop\Cart;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
 
 /**
  * Authorize.Net IPN Processor.
@@ -169,9 +170,9 @@ class authorizenet extends \Shop\IPN
 
         // Get the custom data from the order since authorize.net doesn't
         // support pass-through user variables
-        $this->custom = $this->Order->getInfo();
+        $this->custom = new CustomInfo($this->Order->getInfo());
         $this->custom['uid'] = $this->Order->uid;
-        $this->ipn_data['custom'] = $this->custom;
+        $this->ipn_data['custom'] = $this->custom->encode();
 
         // Hack to get the gift card amount into the right variable name
         /*$by_gc = SHOP_getVar($this->custom, 'apply_gc', 'float');

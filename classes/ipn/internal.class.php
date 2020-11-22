@@ -5,9 +5,9 @@
  * an actual payment processor.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner
+ * @copyright   Copyright (c) 2018-2020 Lee Garner
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,8 @@ use Shop\Cart;
 use Shop\Currency;
 use Shop\Coupon;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
+
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -52,12 +54,11 @@ class internal extends \Shop\IPN
         // Set the custom data into an array. If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
         if (isset($A['custom'])) {
-            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->custom) {
-                $this->custom = array('uid' => $A['custom']);
-            }
+            $this->custom = new CustomInfo($A['custom']);
+            if ($this->custom->isEmpty()) {
+                $this->custom = new CustomInfo(array('uid' => $A['custom']));
         } else {
-            $this->custom = array();
+            $this->custom = new CustomInfo;
         }
 
         // Get the IPN type, default to "cart" for backward compatibility
@@ -167,7 +168,6 @@ class internal extends \Shop\IPN
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses    IPN::addItem()
      * @uses    IPN::handleFailure()
      * @uses    IPN::handlePurchase()
      * @uses    IPN::isUniqueTxnId()
@@ -190,33 +190,13 @@ class internal extends \Shop\IPN
             return false;
         }
         $custom = SHOP_getVar($this->ipn_data, 'custom');
-        $this->custom = @unserialize($custom);
+        $this->custom = new CustomInfo($custom);
 
         if (!isset($this->ipn_data['cmd'])) {
             $this->ipn_data['cmd'] = 'pay_now';
         }
         switch ($this->ipn_data['cmd']) {
         case 'buy_now':
-            $item_number = SHOP_getVar($this->ipn_data, 'item_number');
-            $quantity = SHOP_getVar($this->ipn_data, 'quantity', 'float');
-            if (empty($item_number)) {
-                $this->handleFailure(NULL, 'Missing Item Number in Buy-now process');
-                return false;
-            }
-            if (empty($quantity)) {
-                $quantity = 1;
-            }
-            $unit_price = $this->getPmtGross() / $quantity;
-            $args = array(
-                'item_id'   => $item_number,
-                'quantity'  => $quantity,
-                'price'     => $unit_price,
-                'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
-                'shipping'  => $this->getPmtShipping(),
-                'handling'  => $this->getPmtHandling(),
-            );
-            $this->addItem($args);
-
             SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->code}", SHOP_LOG_DEBUG);
             break;
 
@@ -243,8 +223,6 @@ class internal extends \Shop\IPN
                 ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id'))
                 ->setPmtTax($this->Order->getInfo('tax'))
                 ->setStatus(SHOP_getVar($this->ipn_data, 'payment_status'));
-            //$this->gw_name = 'Internal IPN';
-            //$this->gw_desc = 'Internal IPN';
 
             $this->shipto = array(
                 'name'      => SHOP_getVar($shipto, 'name'),
@@ -283,20 +261,6 @@ class internal extends \Shop\IPN
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
         foreach ($Cart as $idx=>$item) {
-            $item_id = $item->getProductID();
-            if ($item->getOptionIdString() != '') {
-                $item_id .= '|' . $item->getOptionIdString();
-            }
-            $args = array(
-                'item_id'   => $item_id,
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
-            );
-            $this->addItem($args);
             $total_shipping += $item->getShipping();
             $total_handling += $item->getHandling();
         }

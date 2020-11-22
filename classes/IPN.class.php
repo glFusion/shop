@@ -155,11 +155,11 @@ class IPN
 
     /** Order object.
      * @var object */
-    protected $Order;
+    protected $Order = NULL;
 
     /** Cart object.
     * @var object */
-    protected $Cart;
+    //protected $Cart = NULL;
 
 
     /**
@@ -596,10 +596,14 @@ class IPN
     /**
      * Add an item from the IPN message to our $items array.
      *
+     * @deprecate v1.3.0
      * @param   array   $args   Array of arguments
      */
     protected function addItem($args)
     {
+        COM_errorLog(__CLASS__ . '::' . __FUNCTION__ . ' - Deprecated');
+        return;
+
         // Minimum required arguments: item, quantity, unit price
         if (
             !isset($args['item_id']) ||
@@ -744,6 +748,7 @@ class IPN
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
+        /*
         // For each item purchased, create an order item
         foreach ($this->items as $id=>$item) {
             $P = Product::getByID($item['item_number']);
@@ -776,6 +781,7 @@ class IPN
                 $this->items[$id]['name'] = $P->getShortDscp();
             }
         }   // foreach item
+         */
 
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status == 0) {
@@ -871,20 +877,15 @@ class IPN
                 $this->Order->setLogUser($this->GW->getDscp());
             }
             return 2;
-        }
-
-        // Need to create a new, empty order object
-        $this->Order = new Order();
-
-        if ($this->order_id != '') {
-            $this->Cart = new Cart($this->order_id);
-            if (!$this->Cart->hasItems()) {
-                if (!$_SHOP_CONF['sys_test_ipn']) {
-                    return 1; // shouldn't normally be empty except during testing
-                }
-            }
         } else {
-            $this->Cart = NULL;
+            // Need to create a new, empty order object
+            $this->Order = Order::getInstance($this->order_id);
+            //$this->Cart = new Cart($this->order_id);
+            if (!$this->Order->hasItems() && !$_SHOP_CONF['sys_test_ipn']) {
+                return 1; // shouldn't normally be empty except during testing
+            }
+        //} else {
+        //    $this->Cart = NULL;
         }
 
         $this->Order->setUID($this->uid);
@@ -900,25 +901,27 @@ class IPN
         // removed by a previous IPN, e.g. this is the 'completed' message
         // and we already processed a 'pending' message
         $BillTo = '';
-        if ($this->Cart) {
+        /*if ($this->Cart) {
             $BillTo = $this->Cart->getAddress('billto');
             $this->Order->instructions = $this->Cart->getInstructions();
         }
         if (empty($BillTo) && $this->uid > 1) {
             $BillTo = $U->getDefaultAddress('billto');
             $this->Order->setBillto($BillTo);
-        }
+        }*/
 
         $ShipTo = $this->shipto;
-        if (empty($ShipTo)) {
-            if ($this->Cart) {
-                $ShipTo = $this->Cart->getAddress('shipto');
+        if (!empty($ShipTo)) {
+            $this->Order->setShipto($ShipTo);
+        }
+        /*    if ($this->Order) {
+                $ShipTo = $this->Order->getAddress('shipto');
             }
             if (empty($ShipTo) && $this->uid > 1) {
                 $ShipTo = $U->getDefaultAddress('shipto');
                 $this->Order->setShipto($ShipTo);
             }
-        }
+    }*/
         if (isset($this->shipto['phone'])) {
             // override the phone number if one came in the IPN.
             $this->Order->setPhone($this->shipto['phone']);

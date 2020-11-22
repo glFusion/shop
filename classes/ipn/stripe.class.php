@@ -3,9 +3,9 @@
  * This file contains the Stripe IPN class.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner
+ * @copyright   Copyright (c) 2019-2020 Lee Garner
  * @package     shop
- * @version     v0.7.1
+ * @version     v1.3.0
  * @since       v0.7.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -14,6 +14,8 @@
 namespace Shop\ipn;
 use Shop\Cart;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
+
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -48,6 +50,10 @@ class stripe extends \Shop\IPN
 
         $this->gw_id = 'stripe';
         parent::__construct();  // construct without IPN data.
+
+        if (empty($A)) {
+            return;
+        }
 
         $this->_event = $A;        
         $session = $this->_event->data->object;
@@ -87,24 +93,11 @@ class stripe extends \Shop\IPN
             'zip'       => SHOP_getVar($shipto, 'zip'),
         );
 
-        $this->custom = array(
+        $this->custom = new CustomInfo(array(
             'transtype' => $this->GW->getName(),
             'uid'       => $this->Order->getUid(),
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
-        );
-
-        foreach ($this->Order->getItems() as $idx=>$item) {
-            $args = array(
-                'item_id'   => $item->getProductID(),
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getNetPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
-            );
-            $this->addItem($args);
-        }
+        ) );
     }
 
 
@@ -204,22 +197,6 @@ class stripe extends \Shop\IPN
         if (empty($this->_payment)) {
             SHOP_log("Empty payment received");
             return false;
-        }
-
-        // Add the item to the array for the order creation.
-        // IPN item numbers are indexes into the cart, so get the
-        // actual product ID from the cart
-        foreach ($this->Order->getItems() as $idx=>$item) {
-            $args = array(
-                'item_id'   => $item->getID(),
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
-            );
-            $this->addItem($args);
         }
         return $this->handlePurchase();
     }

@@ -14,6 +14,7 @@
 namespace Shop\ipn;
 use Shop\Cart;
 use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
 
 
 /**
@@ -67,31 +68,15 @@ class square extends \Shop\IPN
 
         // Set the custom data into an array.  If it can't be unserialized,
         // then treat it as a single value which contains only the user ID.
-        /*if (isset($A['custom'])) {
-            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->custom) {
-                $this->custom = array('uid' => $A['custom']);
-            }
-        }*/
-        $this->custom = array(
+        $this->custom = new CustomInfo(array(
             'transtype' => $this->GW->getName(),
             'uid'       => $this->Order->uid,
             'by_gc'     => $this->Order->getInfo()['apply_gc'],
-        );
+        ) );
 
         $total_shipping = 0;
         $total_handling = 0;
         foreach ($this->Order->getItems() as $idx=>$item) {
-            $args = array(
-                'item_id'   => $item->getProductID(),
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getNetPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
-            );
-            $this->addItem($args);
             $total_shipping += $item->getShipping();
             $total_handling += $item->getHandling();
         }
@@ -122,11 +107,6 @@ class square extends \Shop\IPN
             // Get values from the returned array
             // Must have orders=>0=>(tenders,reference_id)
             $order = $trans->getOrders()[0];
-            /*$trans = SHOP_getVar($trans->getOrders()[0], 'orders', 'array');
-            if (empty($trans) || !isset($trans[0])) {
-                return false;
-            }
-            $order = $trans[0];*/
             $tenders = $order->getTenders();
             if (empty($tenders)) return false;
             $order_id = $order->getReferenceId();
@@ -187,7 +167,6 @@ class square extends \Shop\IPN
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses   IPN::addItem()
      * @uses   IPN::handleFailure()
      * @uses   IPN::handlePurchase()
      * @uses   IPN::isUniqueTxnId()
@@ -205,26 +184,6 @@ class square extends \Shop\IPN
         // Backward compatibility, get custom data into IPN for plugin
         // products.
         $this->ipn_data['custom'] = $this->custom;
-
-        // Add the item to the array for the order creation.
-        // IPN item numbers are indexes into the cart, so get the
-        // actual product ID from the cart
-        $total_shipping = 0;
-        $total_handling = 0;
-        foreach ($this->Order->getItems() as $idx=>$item) {
-            $args = array(
-                'item_id'   => $item->getProductID(),
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
-            );
-            $this->addItem($args);
-            $total_shipping += $item->getShipping();
-            $total_handling += $item->getHandling();
-        }
 
         if (!$this->Verify()) {
             $logId = $this->Log(false);

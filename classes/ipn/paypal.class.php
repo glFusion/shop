@@ -4,9 +4,9 @@
  * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner
+ * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -207,7 +207,6 @@ class paypal extends \Shop\IPN
      * - Check for valid receiver email address
      * - Process IPN
      *
-     * @uses    IPN::addItem()
      * @uses    IPN::handleFailure()
      * @uses    IPN::handlePurchase()
      * @uses    IPN::isUniqueTxnId()
@@ -236,27 +235,6 @@ class paypal extends \Shop\IPN
         switch ($this->ipn_data['txn_type']) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
-            $item_number = SHOP_getVar($this->ipn_data, 'item_number');
-            $quantity = SHOP_getVar($this->ipn_data, 'quantity', 'float');
-
-            if (empty($item_number)) {
-                $this->handleFailure(NULL, 'Missing Item Number in Buy-now process');
-                return false;
-            }
-            if (empty($quantity)) {
-                $quantity = 1;
-            }
-            $unit_price = $this->getPmtNet() / $quantity;
-            $args = array(
-                'item_id'   => $item_number,
-                'quantity'  => $quantity,
-                'price'     => $unit_price,
-                'item_name' => SHOP_getVar($this->ipn_data, 'item_name', 'string', 'Undefined'),
-                'shipping'  => $this->getPmtShipping(),
-                'handling'  => $this->getPmtHandling(),
-            );
-            $this->addItem($args);
-
             SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
@@ -277,30 +255,6 @@ class paypal extends \Shop\IPN
             if (empty($Cart)) {
                 SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
                 return false;
-            }
-
-            foreach ($Cart as $item) {
-                $item_id = $item->getProductID();
-                $options = $item->getOptions();
-                $opt_ids = array();
-                if (!empty($options)) {
-                    foreach ($options as $option) {
-                        $opt_ids[] = $option->getID();
-                    }
-                }
-                $opt_ids = implode(',', $opt_ids);
-                $item_id .= '|' . $opt_ids;
-                $args = array(
-                    'item_id'   => $item_id,
-                    'quantity'  => $item->getQuantity(),
-                    'price'     => $item->getPrice(),
-                    'item_name' => $item->getDscp(),
-                    'shipping'  => $item->getShipping(),
-                    'handling'  => $item->getHandling(),
-                    'tax'       => $item->getTax(),
-                    'extras'    => $item->getExtras(),
-                );
-                $this->addItem($args);
             }
 
             $payment_gross = $this->getPmtGross();
