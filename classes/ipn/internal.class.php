@@ -265,6 +265,7 @@ class internal extends \Shop\IPN
             $total_shipping += $item->getShipping();
             $total_handling += $item->getHandling();
         }
+        $this->Order->updateStatus(OrderState::PROCESSING);
         $this->setPmtShipping($total_shipping)
             ->setPmtHandling($total_handling);
         return $this->handlePurchase();
