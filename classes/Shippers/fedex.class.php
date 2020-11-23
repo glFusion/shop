@@ -3,9 +3,9 @@
  * US Postal Service shipper class to get shipping rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -17,6 +17,7 @@ use Shop\Package;
 use Shop\Currency;
 use Shop\Tracking;
 use Shop\Models\ShippingQuote;
+use Shop\Order;
 
 
 /**
@@ -266,13 +267,6 @@ class fedex extends \Shop\Shipper
             $Events = $TrackDetails->Events;
             foreach ($Events as $Event) {
                 $loc = $this->_makeTrackLocation($Event->Address);
-                //var_dump($Event);die;
-                /*if (isset($Event->Address->City)) {
-                    $loc = $Event->Address->City . ' ';
-                } else {
-                    $loc = '';
-                }
-                $loc .= $Event->Address->CountryCode;*/
                 $Tracking->addStep(
                     array(
                         'location' => $loc,
@@ -284,7 +278,11 @@ class fedex extends \Shop\Shipper
                 );
             }
         } else {
-            SHOP_log(print_r($response,true));
+            SHOP_log(
+                __CLASS__ . '::' __FUNCTION__ .
+                '- Error getting tracking info: ' .
+                print_r($response,true)
+            );
             $Tracking->addError('Non-successful response received.');
         }
         $Tracking->setCache($this->key, $track_num);
@@ -298,7 +296,7 @@ class fedex extends \Shop\Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote($Order)
+    public function getQuote(Order $Order)
     {
         $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
@@ -345,6 +343,7 @@ class fedex extends \Shop\Shipper
                 'StateOrProvinceCode' => $Company->getState(),
                 'PostalCode' => $Company->getPostal(),
                 'CountryCode' => $Company->getCountry(),
+                'Residential' => true,
             ),
         );
         $request['RequestedShipment']['Recipient'] = array(
@@ -357,6 +356,7 @@ class fedex extends \Shop\Shipper
                 'StateOrProvinceCode' => $Addr->getState(),
                 'PostalCode' => $Addr->getPostal(),
                 'CountryCode' => $Addr->getCountry(),
+                'Residential' => true,
             ),
         );
         $request['RequestedShipment']['PackageCount'] = count($Packages);
@@ -387,15 +387,44 @@ class fedex extends \Shop\Shipper
                 ),
             );
         }
-
         $req = $this->_buildSoapRequest('crs', $request);
-        //var_dump($req);die;
         $response = $_soapClient->getRates($req);
         $retval = array();
-        if ($response->HighestSeverity != 'FAILURE' && $response->HighestSeverity != 'ERROR') {
-            $rateReply = $response->RateReplyDetails;
+        if (
+            $response->HighestSeverity != 'FAILURE' &&
+            $response->HighestSeverity != 'ERROR'
+        ) {
+            $RateReply = $response->RateReplyDetails;
+            $svc_dscp = $RateReply->ServiceDescription->Description;
+            $svc_id = 'HD';     // home delivery default
+            foreach ($RateReply->ServiceDescription->Names as $Name) {
+                if ($Name->Type == 'abbrv' && $Name->Encoding == 'ascii') {
+                    $svc_id = $Name->Value;
+                }
+            }
+            $svc_code = $this->key . '.' . $svc_id;
+            $cost = (float)$RateReply
+                ->RatedShipmentDetails
+                ->ShipmentRateDetail
+                ->TotalNetCharge
+                ->Amount;
+            $retval[] = (new ShippingQuote)
+                ->setID($this->id)
+                ->setShipperID($this->id)
+                ->setCarrierCode($this->key)
+                ->setCarrierTitle($this->getCarrierName())
+                ->setServiceCode($svc_code)
+                ->setServiceID($svc_id)
+                ->setServiceTitle($svc_dscp)
+                ->setCost($cost)
+                ->setPackageCount(count($Packages));
+            return $retval;
         } else {
-            SHOP_log(__CLASS__ . '\\' . __FUNCTION__ . ' Error: ' . print_r($response,true));
+            SHOP_log(
+                __CLASS__ . '::' . __FUNCTION__ .
+                " Error getting Fedex quote for order {$Order->getOrderID()} " .
+                print_r($response,true)
+            );
         }
         return $retval;
     }
