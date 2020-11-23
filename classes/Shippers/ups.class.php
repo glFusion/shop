@@ -3,9 +3,9 @@
  * UPS shipper class.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -262,11 +262,12 @@ class ups extends \Shop\Shipper
                     );
                     $Tracking->addStep($data);
                 }
-                /*echo $Tracking->getDisplay();
-                echo $resp->Response->ResponseStatusDescription . "\n";*/
             }
         } catch ( Exception $ex ) {
-            echo $ex;
+            SHOP_log(
+                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                ' Error getting tracking info: ' . print_r($ex,true)
+            );
         }
         $Tracking->setCache($this->key, $tracking);
         return $Tracking;
@@ -305,7 +306,6 @@ class ups extends \Shop\Shipper
         if (!is_numeric($str) || strlen($str) != 6) {
             return '00:00:00';
         }
-        //echo $str;die;
         return substr($str, 0, 2) . ':' . substr($str, 2, 2) . ':' . substr($str, 4, 2);
     }
 
@@ -463,27 +463,16 @@ class ups extends \Shop\Shipper
                         ->setServiceTitle(strtoupper($this->key) . ' ' . $dscp)
                         ->setCost($cost)
                         ->setPackageCount(count($Packages));
-                        /*'id'        => $this->id,
-                        'key'       => $this->module_code,
-                        'svc_id'    => $this->module_code . '.' . $classid,
-                        'svc_code'  => $classid,
-                        'title'     => $dscp,
-                        'cost'      => $cost,
-                        'packages'  => 1,
-                    );*/
                 }
                 uasort($quote_data, array($this, 'sortQuotes'));
-                /*$method_data = array(
-                    'id'        => $this->id,
-                    'title'     => $this->getCarrierName(),
-                    'quote'     => $quote_data,
-                    'error'     => FALSE
-                );*/
             }
         } catch ( Exception $ex ) {
-            echo $ex;
+            SHOP_log(
+                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                ' Error getting quote for order ' . $Order->getOrderID() .
+                print_r($ex,true)
+            );
         }
-        //return $method_data;
         return $quote_data;
     }
 
