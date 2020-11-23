@@ -279,7 +279,7 @@ class fedex extends \Shop\Shipper
             }
         } else {
             SHOP_log(
-                __CLASS__ . '::' __FUNCTION__ .
+                __CLASS__ . '::' . __FUNCTION__ .
                 '- Error getting tracking info: ' .
                 print_r($response,true)
             );
