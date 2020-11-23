@@ -549,7 +549,10 @@ class Shipper
      */
     public static function getInstance($shipper_id)
     {
-        $shippers = self::getAll(false);
+        static $shippers = NULL;
+        if ($shippers === NULL) {
+            $shippers = self::getAll(false);
+        }
         if (array_key_exists($shipper_id, $shippers)) {
             return $shippers[$shipper_id];
         } else {
@@ -566,12 +569,16 @@ class Shipper
      */
     public static function getByCode($shipper_code)
     {
-        $cls = '\\Shop\\Shippers\\' . $shipper_code;
-        if (class_exists($cls)) {
-            return new $cls;
-        } else {
-            return NULL;
+        static $shippers = array();
+        if (!array_key_exists($shippers[$shipper_code])) {
+            $cls = '\\Shop\\Shippers\\' . $shipper_code;
+            if (class_exists($cls)) {
+                $shippers[$shipper_code] = new $cls;
+            } else {
+                $shippers[$shipper_code] = NULL;
+            }
         }
+        return $shippers[$shipper_code];
     }
 
 
@@ -1861,7 +1868,7 @@ class Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote($Order)
+    public function getQuote(\Shop\Order $Order)
     {
         if (
             $this->free_threshold > 0 &&
@@ -1903,6 +1910,18 @@ class Shipper
             $retval = array($this->getUnitQuote($Order));
         }
         return $retval;
+    }
+
+
+    /**
+     * Check if a specific service is supported by this shipper.
+     *
+     * @param   string  $key    Service key
+     * @return  boolean     True if supported, False if not.
+     */
+    public function supportsService($key)
+    {
+        return in_array($key, $this->supported_services);
     }
 
 }   // class Shipper

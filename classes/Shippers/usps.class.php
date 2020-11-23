@@ -605,12 +605,6 @@ class usps extends \Shop\Shipper
     }
 
 
-    public function supportsService($key)
-    {
-        return in_array($key, $this->supported_services);
-    }
-
-
     private function _svcAllowedIntl()
     {
         return $this->international;

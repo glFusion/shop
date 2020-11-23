@@ -497,11 +497,6 @@ class ups extends \Shop\Shipper
         return $this->svc_codes;
     }
 
-    public function supportsService($key)
-    {
-        return in_array($key, $this->supported_services);
-    }
-
     public function XgetServiceCodes()
     {
         return array('01' => 'Available');
