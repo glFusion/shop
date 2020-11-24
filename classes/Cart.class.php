@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -28,6 +28,11 @@ class Cart extends Order
     /** Holder for custom information.
      * @var array */
     public $custom_info = array();
+
+    /** Session variable name for storing cart info.
+     * @var string */
+    private static $session_var = 'glShopCart';
+
 
     /**
      * Read the cart contents from the "cart" table, if available.
