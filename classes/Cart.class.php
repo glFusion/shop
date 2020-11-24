@@ -74,6 +74,8 @@ class Cart extends Order
     {
         global $_TABLES, $_USER;
 
+        static $carts = array();
+
         if ($uid == 0) {
             $uid = $_USER['uid'];
         }
@@ -85,16 +87,22 @@ class Cart extends Order
         } else {
             $cart_id = self::getCart($uid);
         }
-        $cart = new self($cart_id);
+        if (isset($carts[$cart_id])) {
+            $Cart = $carts[$cart_id];
+        } else {
+            $Cart = new self($cart_id);
+            $carts[$Cart->getOrderID()] = $Cart;
+        }
 
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($cart->getUid() != $uid || $cart->status != OrderState::CART) {
+        if ($Cart->getUid() != $uid || $Cart->status != OrderState::CART) {
             self::_expireCookie();
-            $cart = new self();
+            $Cart = new self();
+            $carts[$Cart->getOrderID()] = $Cart;
         }
-        return $cart;
+        return $Cart;
     }
 
 
