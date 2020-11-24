@@ -1171,16 +1171,10 @@ class Gateway
     public static function getInstance($gw_name, $A=array())
     {
         global $_TABLES, $_SHOP_CONF;
-        static $gateways = array();
 
-        if (!$gw_name) return new self;
+        $gateways = self::getAll();
         if (!array_key_exists($gw_name, $gateways)) {
-            $gw = __NAMESPACE__ . '\\Gateways\\' . $gw_name;
-            if (class_exists($gw)) {
-                $gateways[$gw_name] = new $gw($A);
-            } else {
-                $gateways[$gw_name] = new self;
-            }
+            $gateways[$gw_name] = new self;
         }
         return $gateways[$gw_name];
     }
@@ -1216,7 +1210,12 @@ class Gateway
         // to the static array. Check that a valid object is
         // returned from getInstance()
         foreach ($tmp as $A) {
-            $gw = self::getInstance($A['id'], $A);
+            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'];
+            if (class_exists($cls)) {
+                $gw = new $cls($A);
+            } else {
+                $gw = new self;
+            }
             if (is_object($gw)) {
                 $gateways[$key][$A['id']] = $gw;
             } else {

@@ -46,8 +46,10 @@ class stripe extends \Shop\Gateway
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
@@ -77,7 +79,7 @@ class stripe extends \Shop\Gateway
         // Set the only service supported
         $this->services = array('checkout' => 1);
 
-        parent::__construct();
+        parent::__construct($A);
 
         $this->pub_key = $this->getConfig('pub_key');
         $this->sec_key = $this->getConfig('sec_key');

@@ -31,8 +31,10 @@ class terms extends \Shop\Gateway
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
         global $LANG_SHOP;
 
@@ -61,7 +63,7 @@ class terms extends \Shop\Gateway
             'checkout'  => 1,
         );
         $this->do_redirect = false; // handled internally
-        parent::__construct();
+        parent::__construct($A);
     }
 
 

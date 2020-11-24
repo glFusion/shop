@@ -26,8 +26,10 @@ class free extends \Shop\Gateway
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
         global $LANG_SHOP;
 
@@ -46,7 +48,7 @@ class free extends \Shop\Gateway
             //'terms'     => 0,
         );
         $this->enabled = 1;         // set default for installation
-        parent::__construct();
+        parent::__construct($A);
     }
 
 

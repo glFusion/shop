@@ -21,8 +21,10 @@ class _internal extends \Shop\Gateway
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
         // These are used by the parent constructor, set them first.
         $this->gw_name  = '_internal';
@@ -38,7 +40,7 @@ class _internal extends \Shop\Gateway
             'checkout'  => 1,
             'external'  => 1,
         );
-        parent::__construct();
+        parent::__construct($A);
     }
 
 

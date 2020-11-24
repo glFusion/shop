@@ -21,33 +21,35 @@ class authorizenet extends \Shop\Gateway
 {
     /** Authorize.net transaction key.
      * @var string */
-    private $trans_key;
+    private $trans_key = '';
 
     /** Authorize.net api login.
      * @var string */
-    private $api_login;
+    private $api_login = '';
 
     /** Signature key configured on Authorize.Net
      * @var string */
-    private $hash_key;
+    private $hash_key = '';
 
     /** URL for requesting an authorization token.
      * @var string */
-    private $token_url;
+    private $token_url = '';
 
     /**
      * Shopping cart object.
      * We need to access this both from `CheckoutButon()`  and `_getButton()`.
      * @var object
      */
-    private $cart;
+    private $cart = NULL;
 
 
     /**
      * Constructor.
      * Sets gateway-specific variables and calls the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    function __construct()
+    public function __construct($A=array())
     {
         global $_SHOP_CONF;
 
@@ -81,7 +83,7 @@ class authorizenet extends \Shop\Gateway
 
         // The parent constructor reads our config items from the database to
         // override defaults
-        parent::__construct();
+        parent::__construct($A);
 
         $this->LoadLanguage();
 

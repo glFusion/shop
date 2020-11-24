@@ -60,8 +60,10 @@ class square extends \Shop\Gateway
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
         // Import the Square API
         require_once SHOP_PI_PATH . '/vendor/autoload.php';
@@ -108,7 +110,7 @@ class square extends \Shop\Gateway
         $this->services = array('checkout' => 1, 'terms' => 0);
 
         // Call the parent constructor to initialize the common variables.
-        parent::__construct();
+        parent::__construct($A);
 
         // Set the gateway URL depending on whether we're in test mode or not
         if ($this->isSandbox()) {

@@ -25,10 +25,12 @@ class check extends \Shop\Gateway
     /**
      * Constructor.
      * Sets gateway-specific variables and calls the parent constructor.
+     *
+     * @param   array   $A      Array of fields from the DB
      */
-    public function __construct()
+    public function __construct($A=array())
     {
-        global $_SHOP_CONF, $LANG, $LANG_SHOP;
+        global $_SHOP_CONF, $LANG_SHOP;
 
         // These are used by the parent constructor, set them first
         $this->gw_name = 'check';
@@ -36,7 +38,7 @@ class check extends \Shop\Gateway
         // Load this gateway's language strings.  Needed to create buttons.
         $LANG = $this->LoadLanguage();
 
-        $this->gw_desc = $LANG['descr_text'];
+        $this->gw_desc = $LANG_SHOP['pay_by_check'];
 
         // Set the services array to override the default.  Only checkout
         // is supported by this gateway.
@@ -46,7 +48,7 @@ class check extends \Shop\Gateway
 
         // The parent constructor reads our config items from the database to
         // override defaults
-        parent::__construct();
+        parent::__construct($A);
 
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
