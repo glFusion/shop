@@ -22,7 +22,7 @@ class ProductOptionValue
 {
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -30,27 +30,27 @@ class ProductOptionValue
 
     /** Record ID.
      * @var integer */
-    private $pov_id;
+    private $pov_id = 0;
 
     /** Option Group record ID.
      * @var integer */
-    private $pog_id;
+    private $pog_id = 0;
 
     /** Option value.
      * @var string */
-    private $pov_value;
+    private $pov_value = '';
 
     /** Option price impact.
      * @var float */
-    private $pov_price;
+    private $pov_price = 0;
 
     /** Orderby option for selection.
      * @var integer */
-    private $orderby;
+    private $orderby = 9999;
 
     /** SKU component for this option.
      * @var string */
-    private $sku;
+    private $sku = '';
 
 
     /**
@@ -63,8 +63,6 @@ class ProductOptionValue
      */
     public function __construct($id=0)
     {
-        $this->isNew = true;
-
         if (is_array($id)) {
             // Received a full Option record already read from the DB
             $this->setVars($id);
@@ -200,7 +198,6 @@ class ProductOptionValue
                 $this->pov_id = DB_insertID();
             }
             self::reOrder($this->pog_id);
-            //Cache::delete('options_' . $this->item_id);
             Cache::clear('products');
             Cache::clear('options');
             return true;
@@ -227,6 +224,7 @@ class ProductOptionValue
             return false;
         }
 
+        // Delete from the option->value reference table
         ProductVariant::deleteOptionValue($opt_id);
         DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
         Cache::clear('products');
@@ -367,7 +365,8 @@ class ProductOptionValue
             $order += $stepNumber;
         }
         if ($changed) {
-            Cache::clear();
+            Cache::clear('products');
+            Cache::clear('options');
         }
     }
 
@@ -691,9 +690,9 @@ class ProductOptionValue
 
         $prod_id = (int)$prod_id;
         $og_id = (int)$og_id;
-        //$cache_key = 'options_' . $prod_id . '_' . $og_id;
-        //$opts = Cache::get($cache_key);
-        //if ($opts === NULL) {
+        $cache_key = 'options_' . $prod_id . '_' . $og_id;
+        $opts = Cache::get($cache_key);
+        if ($opts === NULL) {
             $opts = array();
             $sql = "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
@@ -711,8 +710,8 @@ class ProductOptionValue
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);
             }
-            //Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
-        //}
+            Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
+        }
         return $opts;
     }
 

@@ -560,10 +560,15 @@ class ProductOptionGroup
         global $_TABLES;
 
         $prod_id = (int)$prod_id;
+        static $retval = array();
+        if (isset($retval[$prod_id])) {
+            return $retval[$prod_id];
+        }
+        $retval[$prod_id] = array();
         //$cache_key = 'og_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
-            $grps = array();
+            //$grps = array();
             $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
@@ -573,8 +578,8 @@ class ProductOptionGroup
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $grps[$A['pog_id']] = new self($A['pog_id']);
-                $grps[$A['pog_id']]->setOptionValues(
+                $retval[$prod_id][$A['pog_id']] = new self($A['pog_id']);
+                $retval[$prod_id][$A['pog_id']]->setOptionValues(
                     ProductOptionValue::getByProduct($prod_id, $A['pog_id'])
                 );
             }
@@ -582,7 +587,7 @@ class ProductOptionGroup
         //} else {
         //    $x = new ProductOptionValue;    // just to get the class loaded.
         //}
-        return $grps;
+        return $retval[$prod_id];
     }
 
 
