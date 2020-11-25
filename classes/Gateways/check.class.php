@@ -3,9 +3,9 @@
  * Class to manage payment by check.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2013-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2013-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -34,12 +34,6 @@ class check extends \Shop\Gateway
 
         // These are used by the parent constructor, set them first
         $this->gw_name = 'check';
-
-        // Load this gateway's language strings.  Needed to create buttons.
-        $LANG = $this->LoadLanguage();
-
-        $this->gw_desc = $LANG_SHOP['pay_by_check'];
-
         // Set the services array to override the default.  Only checkout
         // is supported by this gateway.
         $this->services = array(
@@ -50,6 +44,7 @@ class check extends \Shop\Gateway
         // override defaults
         parent::__construct($A);
 
+        $this->gw_desc = $this->lang['descr_text'];
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
         $this->do_redirect = false; // handled internally

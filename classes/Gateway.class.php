@@ -235,6 +235,7 @@ class Gateway
         if ($this->postback_url === NULL) {
             $this->postback_url = $this->gw_url;
         }
+        $this->loadLanguage();
     }
 
 
@@ -598,24 +599,24 @@ class Gateway
      * The language variable should be $LANG_SHOP_<gwname> and should be
      * declared "global" in the language file.
      *
-     * @return  array   Array of language strings
+     * @return  object  $this
      */
-    protected function LoadLanguage()
+    protected function loadLanguage()
     {
         global $_CONF;
 
+        $this->lang = array();
         $langfile = $this->gw_name . '_' . $_CONF['language'] . '.php';
         if (!is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
             $langfile = $this->gw_name . '_english.php';
         }
-        global $LANG_SHOP_gateway;
         if (is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
-            include_once SHOP_PI_PATH . '/language/' . $langfile;
-            $this->lang = $LANG_SHOP_gateway;
-        } else {
-            $this->lang = array();
+            include SHOP_PI_PATH . '/language/' . $langfile;
+            if (isset($LANG_SHOP_gateway) && is_array($LANG_SHOP_gateway)) {
+                $this->lang = $LANG_SHOP_gateway;
+            }
         }
-        return $this->lang;
+        return $this;
     }
 
 
@@ -1064,7 +1065,7 @@ class Gateway
             $_CONF['language']
         );
         // Load the language for this gateway and get all the config fields
-        $this->LoadLanguage();
+        $this->loadLanguage();
         $T->set_var(array(
             'gw_description' => $this->gw_desc,
             'gw_id'         => $this->gw_name,
@@ -1172,7 +1173,11 @@ class Gateway
     {
         global $_TABLES, $_SHOP_CONF;
 
-        $gateways = self::getAll();
+        static $gateways = NULL;
+        if ($gateways === NULL) {
+            // Load the gateeways once
+            $gateways = self::getAll();
+        }
         if (!array_key_exists($gw_name, $gateways)) {
             $gateways[$gw_name] = new self;
         }
@@ -1206,6 +1211,7 @@ class Gateway
             }
             Cache::set($cache_key, $tmp, 'gateways');
         }
+
         // For each available gateway, load its class file and add it
         // to the static array. Check that a valid object is
         // returned from getInstance()
@@ -1214,7 +1220,7 @@ class Gateway
             if (class_exists($cls)) {
                 $gw = new $cls($A);
             } else {
-                $gw = new self;
+                $gw = NULL;
             }
             if (is_object($gw)) {
                 $gateways[$key][$A['id']] = $gw;
