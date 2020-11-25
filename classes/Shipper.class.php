@@ -570,7 +570,7 @@ class Shipper
     public static function getByCode($shipper_code)
     {
         static $shippers = array();
-        if (!array_key_exists($shippers[$shipper_code])) {
+        if (!array_key_exists($shipper_code, $shippers)) {
             $cls = '\\Shop\\Shippers\\' . $shipper_code;
             if (class_exists($cls)) {
                 $shippers[$shipper_code] = new $cls;
