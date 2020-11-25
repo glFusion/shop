@@ -89,6 +89,10 @@ class ProductVariant
      * @var array */
     private $images = array();
 
+    /** Cache tag used for ProductOptions.
+     * @var string */
+    private const TAG = 'variants';
+
 
     /**
      * Constructor.
@@ -209,7 +213,7 @@ class ProductVariant
         }
         $count = count($attribs);
         $attr_sql = implode(',', $attribs);
-        $sql = "SELECT vxo.pv_id FROM {$_TABLES['shop.variantXopt']} vxo
+        $sql = "SELECT pv.* FROM {$_TABLES['shop.variantXopt']} vxo
             INNER JOIN {$_TABLES['shop.product_variants']} pv
                 ON vxo.pv_id = pv.pv_id
             WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
@@ -220,7 +224,7 @@ class ProductVariant
         $res = DB_query($sql);
         if ($res) {
             $A = DB_fetchArray($res, false);
-            return self::getInstance($A['pv_id']);
+            return self::getInstance($A);
         } else {
             return new Self;
         }
@@ -247,7 +251,7 @@ class ProductVariant
      * @deprecated
      * @param   integer $item_id    Product record ID
      */
-    public static function getSelections($item_id)
+    public static function XXgetSelections($item_id)
     {
         $sql = "SELECT pov.* FROM {$_TABLES['shop.product_var_opts']} pov
             INNER JOIN {$_TABLES['shop.variantXopt']} vxo
@@ -272,18 +276,23 @@ class ProductVariant
         global $_TABLES;
 
         if ($this->Options === NULL) {
-            $this->Options = array();
-            $sql = "SELECT pov.*, pog.pog_name FROM {$_TABLES['shop.prod_opt_vals']} pov
+            $cache_key = 'pog_options_' . $this->getID();
+            $this->Options = Cache::get($cache_key);
+            if ($this->Options === NULL) {
+                $this->Options = array();
+                $sql = "SELECT pov.*, pog.pog_name FROM {$_TABLES['shop.prod_opt_vals']} pov
                 INNER JOIN {$_TABLES['shop.variantXopt']} vx
                     ON vx.pov_id = pov.pov_id
                 INNER JOIN {$_TABLES['shop.prod_opt_grps']} pog
                     ON pog.pog_id = pov.pog_id
                 WHERE vx.pv_id = {$this->getID()}
                 ORDER BY pog.pog_orderby ASC";
-            //echo $sql;die;
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $this->Options[$A['pog_name']] = new ProductOptionValue($A);
+                //echo $sql;die;
+                $res = DB_query($sql);
+                while ($A = DB_fetchArray($res, false)) {
+                    $this->Options[$A['pog_name']] = new ProductOptionValue($A);
+                }
+                Cache::set($cache_key, $this->Options, array(self::TAG, $this->getID()));
             }
         }
         return $this;
@@ -844,7 +853,7 @@ class ProductVariant
             }
         }
         Cache::clear('products');
-        Cache::clear('options');
+        Cache::clear(self::TAG);
         return true;
     }
 
@@ -962,7 +971,7 @@ class ProductVariant
                 (pv_id, pov_id) VALUES $sql_vals";
             DB_query($sql);
         }
-        //Cache::clear(ProductOptionGroup::$TAGS);
+        Cache::clear(self::TAG);
     }
 
 
@@ -1045,7 +1054,7 @@ class ProductVariant
                 DB_query($sql);
             }
         }
-
+        Cache::clear(self::TAG);
         return $retval;
     }
 
@@ -1062,6 +1071,7 @@ class ProductVariant
         $id = (int)$id;
         DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
         DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
+        Cache::clear(self::TAG);
     }
 
 
@@ -1181,6 +1191,70 @@ class ProductVariant
 
 
     /**
+     * Reorder all attribute items with the same product ID and attribute name.
+     */
+    private function reOrder()
+    {
+        global $_TABLES;
+
+        $sql = "SELECT pv_id, orderby
+                FROM {$_TABLES['shop.product_variants']}
+                WHERE item_id= '{$this->item_id}'
+                ORDER BY orderby ASC;";
+        $result = DB_query($sql);
+
+        $order = 10;        // First orderby value
+        $stepNumber = 10;   // Increment amount
+        $changed = false;   // Assume no changes
+        while ($A = DB_fetchArray($result, false)) {
+            if ($A['orderby'] != $order) {  // only update incorrect ones
+                $changed = true;
+                $sql = "UPDATE {$_TABLES['shop.product_variants']}
+                    SET orderby = '$order'
+                    WHERE pv_id = '{$A['pv_id']}'";
+                DB_query($sql);
+            }
+            $order += $stepNumber;
+        }
+        if ($changed) {
+            Cache::clear(self::TAG);
+        }
+    }
+
+
+    /**
+     * Move a variant up or down the selection list, within its product.
+     *
+     * @param   string  $where  Direction to move (up or down)
+     */
+    public function moveRow($where)
+    {
+        global $_TABLES;
+
+        switch ($where) {
+        case 'up':
+            $oper = '-';
+            break;
+        case 'down':
+            $oper = '+';
+            break;
+        default:
+            $oper = '';
+            break;
+        }
+
+        if (!empty($oper)) {
+            $sql = "UPDATE {$_TABLES['shop.product_variants']}
+                    SET orderby = orderby $oper 11
+                    WHERE pv_id = '{$this->pv_id}'";
+            //echo $sql;die;
+            DB_query($sql);
+            $this->reOrder();
+        }
+    }
+
+
+    /**
      * Product Variant List View.
      *
      * @param   integer $prod_id    Optional product ID to limit listing
@@ -1209,12 +1283,18 @@ class ProductVariant
                 'sort'  => false,
                 'align' => 'center',
             ),
-             array(
+            array(
+                'text'  => $LANG_SHOP['order'],
+                'field' => 'orderby',
+                'sort'  => true,
+                'align' => 'center',
+            ),
+            array(
                 'text'  => 'SKU',
                 'field' => 'sku',
                 'sort'  => true,
             ),
-             array(
+            array(
                 'text'  => $LANG_SHOP['supplier_ref'],
                 'field' => 'supplier_ref',
                 'sort'  => true,
@@ -1264,11 +1344,15 @@ class ProductVariant
                 'def_pv_id',
                 "id = $prod_id"
             );
-
+            $extra['max_orderby'] = (int)DB_getItem(
+                $_TABLES['shop.product_variants'],
+                'MAX(orderby)',
+                "item_id = $prod_id"
+            );
         }
 
         $defsort_arr = array(
-            'field' => 'sku',
+            'field' => 'orderby',
             'direction' => 'ASC',
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
@@ -1284,6 +1368,9 @@ class ProductVariant
                 )
             );
         case 'variants':
+            $defsort_arr['field'] = 'sku';
+            unset($header_arr[3]);
+            $header_arr = array_values($header_arr);
             $options = array(
                 'chkselect' => true,
                 'chkdelete' => true,
@@ -1406,6 +1493,25 @@ class ProductVariant
                     id=\"togenabled{$A['pv_id']}\"
                     onclick='SHOP_toggle(this,\"{$A['pv_id']}\",\"enabled\",".
                     "\"variant\");' />" . LB;
+            break;
+
+        case 'orderby':
+            if ($fieldvalue > 10) {
+                $retval = COM_createLink(
+                    Icon::getHTML('arrow-up'),
+                    SHOP_ADMIN_URL . '/index.php?pv_move=up&id=' . $A['pv_id']
+                );
+            } else {
+                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+            }
+            if ($fieldvalue < $extra['max_orderby']) {
+                $retval .= COM_createLink(
+                    Icon::getHTML('arrow-down'),
+                    SHOP_ADMIN_URL . '/index.php?pv_move=down&id=' . $A['pv_id']
+                );
+            } else {
+                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+            }
             break;
 
         case 'dscp':
@@ -1567,7 +1673,7 @@ class ProductVariant
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
             Cache::clear('products');
-            Cache::clear('options');
+            Cache::clear(self::TAGS);
         }
         return $newval;
     }

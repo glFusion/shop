@@ -46,7 +46,7 @@ $expected = array(
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
-    'attrcopy', 'pov_move', 'wfmove',
+    'attrcopy', 'pov_move', 'wfmove', 'pv_move',
     'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
@@ -363,6 +363,16 @@ case 'pog_move':
         Shop\ProductOptionGroup::moveRow($og_id, $actionval);
     }
     $view = 'opt_grp';
+    break;
+
+case 'pv_move':
+    $pv_id = SHOP_getVar($_GET, 'id', 'integer');
+    $prod_id = SHOP_getVar($_GET, 'prod_id', 'integer');
+    if ($pv_id > 0) {
+        $PV = new \Shop\ProductVariant($pv_id);
+        $PV->moveRow($actionval);
+    }
+    COM_refresh(SHOP_ADMIN_URL . "/index.php?editproduct=x&id={$PV->getItemID()}");
     break;
 
 case 'pov_move':
