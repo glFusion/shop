@@ -85,8 +85,6 @@ class authorizenet extends \Shop\Gateway
         // override defaults
         parent::__construct($A);
 
-        $this->LoadLanguage();
-
         // parent constructor loads the config array, here we select which
         // keys to use based on test_mode
         $this->api_login    = trim($this->getConfig('api_login'));
