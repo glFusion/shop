@@ -145,31 +145,39 @@ class OrderItemOption
     /**
      * Get the options associated with an order item.
      *
-     * @param   object  $Item   OrderItem object
+     * @param   object  $OI OrderItem object
      * @return  array       Array of OrderItemOption objects
      */
-    public static function getOptionsForItem($Item)
+    public static function getOptionsForItem(OrderItem $OI)
     {
         global $_TABLES;
 
-        if ($Item->getID() < 1) {
+        static $retval = array();
+        $item_id = $OI->getID();
+        if ($item_id < 1) {
             // Catch bad or empty Item objects
-            return $retval;
+            return array();
         }
+
+        if (isset($retval[$item_id])) {
+            return $retval[$item_id];
+        }
+
+        $retval[$item_id] = array();
         //$cache_key = "oio_item_{$Item->id}";
         //$retval = Cache::get($cache_key);
         //if ($retval === NULL) {
-            $retval = array();
+            //$retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oi_id = {$Item->getID()}
+                WHERE oi_id = {$item_id}
                 ORDER BY oio_id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[] = new self($A);
+                $retval[$item_id][] = new self($A);
             }
         //    Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
         //}
-        return $retval;
+        return $retval[$item_id];
     }
 
 
