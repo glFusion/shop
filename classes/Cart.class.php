@@ -57,9 +57,7 @@ class Cart extends Order
             $this->status = OrderState::CART;
             $this->Save();    // Save to reserve the ID
         }
-        //if (COM_isAnonUser()) {
-            self::_setCookie($this->order_id);
-        //}
+        self::_setCookie($this->order_id);
     }
 
 
@@ -639,10 +637,13 @@ class Cart extends Order
     {
         global $_USER, $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
+        // Flag indicating the cart was read, so deleting old
+        // carts happens only once.
+        static $read_cart = array();
+
         // Guard against invalid SQL if the DB hasn't been updated
         if (!SHOP_isMinVersion()) return NULL;
 
-        $cart_id = NULL;
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
         if (COM_isAnonUser()) {
             $cart_id = self::getAnonCartID();
@@ -659,13 +660,14 @@ class Cart extends Order
                 "uid = $uid AND status = '" . OrderState::CART .
                 "' ORDER BY last_mod DESC limit 1"
             );
-            if (!empty($cart_id)) {
+            if (!empty($cart_id) && !isset($read_cart[$uid])) {
                 // For logged-in usrs, delete superfluous carts
                 DB_query("DELETE FROM {$_TABLES['shop.orders']}
                     WHERE uid = $uid
                     AND status = '" . OrderState::CART . "'
                     AND order_id <> '" . DB_escapeString($cart_id) . "'");
             }
+            $read_cart[$uid] = true;
         }
         return $cart_id;
     }
