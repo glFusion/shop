@@ -4,7 +4,7 @@
     <description>Provides a storefront for selling physical and virtual products.</description>
     <version>1.2.3</version>
     <glfusionversion>1.7.8</glfusionversion>
-    <phpversion>7.3.0</phpversion>
+    <phpversion>7.1.0</phpversion>
     <url>http://www.glfusion.org</url>
     <maintainer>Lee Garner</maintainer>
     <requires>lglib,1.0.10</requires>
