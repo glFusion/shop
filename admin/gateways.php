@@ -57,7 +57,8 @@ foreach($expected as $provided) {
 switch ($action) {
 case 'gwinstall':
     $gwname = $_GET['gwname'];
-    $gw = \Shop\Gateway::getInstance($gwname);
+    $class = 'Shop\\Gateways\\' . $gwname;
+    $gw = new $class;
     if ($gw !== NULL) {
         if ($gw->Install()) {
             $msg[] = "Gateway \"$gwname\" installed successfully";
