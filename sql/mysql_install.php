@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.3
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -397,20 +397,22 @@ $_SQL = array(
 
 'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.product_variants']} (
   `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(11) unsigned NOT NULL,
-  `sku` varchar(64) DEFAULT NULL,
-  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `onhand` int(10) NOT NULL DEFAULT '0',
-  `reorder` int(10) NOT NULL DEFAULT '0',
-  `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `item_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `sku` varchar(64) DEFAULT NULL DEFAULT 0,
+  `price` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `weight` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `shipping_units` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `onhand` int(10) NOT NULL DEFAULT 0,
+  `reorder` int(10) NOT NULL DEFAULT 0,
+  `enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
-  `img_ids` text NOT NULL,
+  `img_ids` text NOT NULL DEFAULT '',
   `dscp` text NOT NULL,
+  `orderby` int(4) NOT NULL DEFAULT 9999,
   PRIMARY KEY (`pv_id`),
-  KEY `prod_id` (`item_id`)
+  KEY `prod_id` (`item_id`),
+  KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
 
 'shop.states' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
@@ -735,7 +737,18 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
     "ALTER TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
-$SHOP_UPGRADE['1.2.2'] = array(
+$SHOP_UPGRADE['1.3.0'] = array(
+    "CREATE TABLE {$_TABLES['shop.packages']} (
+      `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `units` float DEFAULT NULL,
+      `max_weight` float DEFAULT NULL,
+      `width` float DEFAULT NULL,
+      `height` float DEFAULT NULL,
+      `length` float DEFAULT NULL,
+      `dscp` varchar(255) DEFAULT NULL,
+      `containers` text DEFAULT NULL,
+      PRIMARY KEY (`pkg_id`)
+    ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.payments']}` (
       `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pmt_order_id` varchar(40) DEFAULT NULL,
@@ -750,6 +763,7 @@ $SHOP_UPGRADE['1.2.2'] = array(
       PRIMARY KEY (`pmt_id`),
       KEY `order_id` (`pmt_order_id`)
     ) ENGINE=MyISAM",
+    $_SHOP_SAMPLEDATA['shop.packages'],
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipper_id` `shipper_id` int(3) DEFAULT -1",
@@ -771,19 +785,6 @@ $SHOP_UPGRADE['1.2.2'] = array(
         ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
-);
-$SHOP_UPGRADE['1.2.3'] = array(
-    "CREATE TABLE {$_TABLES['shop.packages']} {
-      `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `units` float DEFAULT NULL,
-      `max_weight` float DEFAULT NULL,
-      `width` float DEFAULT NULL,
-      `height` float DEFAULT NULL,
-      `length` float DEFAULT NULL,
-      `dscp` varchar(255) DEFAULT NULL,
-      `containers` text DEFAULT NULL,
-      PRIMARY KEY (`pkg_id`)
-    ) ENGINE=MyISAM",
     "ALTER TABLE {$_TABLES['shop.tax_rates']}
         CHANGE region region varchar(128)",
     "ALTER TABLE {$_TABLES['shop.orders']}
@@ -796,6 +797,14 @@ $SHOP_UPGRADE['1.2.3'] = array(
         ADD free_threshold decimal(9,4) NOT NULL DEFAULT 0 AFTER tax_loc",
     "ALTER TABLE {$_TABLES['shop.cache']}
         ADD tags varchar(255) NOT NULL DEFAULT '' AFTER `data`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        ADD orderby int(4) NOT NULL DEFAULT 9999 AFTER dscp",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        ADD KEY `orderby` (`orderby`)",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
+        CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
+
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
 );
@@ -818,7 +827,7 @@ $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
-$_SQL['shop.payments'] = $SHOP_UPGRADE['1.2.2'][0];
-$_SQL['shop.packages'] = $SHOP_UPGRADE['1.2.3'][0];
+$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
+$_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
 
 ?>
