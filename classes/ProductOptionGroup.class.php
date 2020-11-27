@@ -20,7 +20,7 @@ namespace Shop;
  */
 class ProductOptionGroup
 {
-    use DBO;        // Import database operations
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key, used by DBO class.
      * @var string */

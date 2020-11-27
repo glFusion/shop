@@ -25,7 +25,7 @@ use Shop\Models\CustomInfo;;
  */
 class Gateway
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key, used by DBO class.
      * @var string */

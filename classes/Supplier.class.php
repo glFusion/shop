@@ -19,7 +19,7 @@ namespace Shop;
  */
 class Supplier extends Address
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table name, used by DBO.
      * @var string */

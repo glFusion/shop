@@ -21,7 +21,7 @@ namespace Shop;
  */
 class Category
 {
-    use DBO;        // import generic database operations
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Key field name.
      * @var string */

@@ -20,7 +20,7 @@ namespace Shop;
  */
 class Feature
 {
-    use DBO;    // import trait for reordering
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key, used by DBO class.
      * @var string */

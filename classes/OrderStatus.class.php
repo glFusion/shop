@@ -21,7 +21,7 @@ namespace Shop;
  */
 class OrderStatus extends Workflow
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table name.
      * @var string */

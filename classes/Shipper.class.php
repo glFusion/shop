@@ -22,7 +22,7 @@ use Shop\Models\ShippingQuote;
  */
 class Shipper
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     const TAX_DESTINATION = 1;
     const TAX_ORIGIN = 0;

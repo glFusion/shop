@@ -22,7 +22,7 @@ namespace Shop;
  */
 class ProductVariant
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Key field name.
      * @var string */

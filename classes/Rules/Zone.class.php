@@ -25,7 +25,7 @@ use Shop\Template;
  */
 class Zone
 {
-    use \Shop\DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key for DBO utilities.
      * @var string */

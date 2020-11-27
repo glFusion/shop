@@ -22,7 +22,7 @@ use Shop\Models\Views;
  */
 class Product
 {
-    use DBO;    // Import common DB actions like toggling fields
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
