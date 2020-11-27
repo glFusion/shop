@@ -379,7 +379,6 @@ class MigratePP
                 $Item = new \Shop\OrderItem($A);
                 foreach ($opt_ids as $opt_id) {
                     $OIO = new \Shop\OrderItemOption();
-                    $OIO->oi_id = $A['id'];
                     $OIO->setOpt($opt_id);
                     $OIO->Save();
                 }
@@ -389,11 +388,10 @@ class MigratePP
             if (isset($extras['custom']) && !empty($extras['custom'])) {
                 $values = $extras['custom'];
                 $P = \Shop\Product::getByID($A['product_id']);
-                $names = explode('|', $P->custom);
+                $names = explode('|', $P->getCustom());
                 foreach($names as $id=>$name) {
                     if (!empty($values[$id])) {
                         $OIO = new \Shop\OrderItemOption();
-                        $OIO->oi_id = $A['id'];
                         $OIO->setOpt(0, $name, $values[$id]);
                         $OIO->Save();
                     }
@@ -416,10 +414,10 @@ class MigratePP
         global $_TABLES;
 
         COM_errorLog("Migrating Option Values ...");
-        if (self::tableHasIndex('shop.prod_opt_vals', 'item_id')) {
+        if (self::_tableHasIndex('shop.prod_opt_vals', 'item_id')) {
             self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`");
         }
-        if (self::tableHasIndex('shop.prod_opt_vals', 'pog_value')) {
+        if (self::_tableHasIndex('shop.prod_opt_vals', 'pog_value')) {
             // Drop key so duplicate values can be created, it will be
             // replaced in createVariants()
             self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `pog_value`");
@@ -627,7 +625,8 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.ipnlog']}",
             "INSERT INTO {$_TABLES['shop.ipnlog']}
-                SELECT *, '' as order_id
+                SELECT
+                    id, ip_addr, ts, verified, txn_id, gateway, '', ipn_data, ''
                 FROM {$_TABLES['paypal.ipnlog']}",
         ) );
     }

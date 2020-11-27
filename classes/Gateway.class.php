@@ -206,7 +206,7 @@ class Gateway
                 }
             }
             $cfg_arr = @unserialize($A['config']);
-            if ($cfg_arr) {
+            if (!empty($cfg_arr)) {
                 foreach ($cfg_arr as $env=>$props) {
                     if (!is_array($props)) {
                         continue;   // something bad happened
@@ -223,6 +223,8 @@ class Gateway
                         }
                     }
                 }
+            } else {
+                $this->cfg = $this->cfgFields;
             }
         }
         $this->setEnv();
@@ -1176,7 +1178,7 @@ class Gateway
         static $gateways = NULL;
         if ($gateways === NULL) {
             // Load the gateeways once
-            $gateways = self::getAll();
+            $gateways = self::getAll(false);
         }
         if (!array_key_exists($gw_name, $gateways)) {
             $gateways[$gw_name] = new self;
@@ -1195,6 +1197,7 @@ class Gateway
     {
         global $_TABLES, $_SHOP_CONF;
 
+        $gateways = array();
         $key = $enabled ? 1 : 0;
         $cache_key = 'gateways_' . $key;
         $tmp = Cache::get($cache_key);
@@ -1382,7 +1385,8 @@ class Gateway
                 list($class,$x1,$x2) = explode('.', $parts[count($parts)-1]);
                 if ($class[0] == '_') continue;     // special internal gateway
                 if (array_key_exists($class, $installed)) continue; // already installed
-                $gw = self::getInstance($class);
+                $clsfile = 'Shop\\Gateways\\' . $class;
+                $gw = new $clsfile;
                 if (is_object($gw)) {
                     $data_arr[] = array(
                         'id'    => $gw->getName(),
