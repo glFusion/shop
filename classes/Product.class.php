@@ -2222,7 +2222,11 @@ class Product
      */
     public function getBasePrice()
     {
-        return (float)$this->price;
+        $price = (float)$this->price;
+        if (!is_null($this->Variant)) {
+            $price += (float)$this->Variant->getPrice();
+        }
+        return $price;
     }
 
 
@@ -2647,7 +2651,7 @@ class Product
     public function getSalePrice($price = NULL)
     {
         if ($price === NULL) {
-            $price = $this->price;
+            $price = $this->getBasePrice();
         }
         return $this->getSale()->calcPrice($price);
     }
@@ -4024,13 +4028,16 @@ class Product
 
     /**
      * Set the variant for this product.
+     * Uses the default variant if available and a variant ID is not given.
      *
      * @param   integer|object  $variant    Variant ID or object
      * @return  object  $this
      */
-    public function setVariant($variant)
+    public function setVariant($variant = 0)
     {
-        if (is_integer($variant)) {
+        if ($variant == 0 && $this->def_pv_id > 0) {
+            $this->Variant = ProductVariant::getInstance($this->def_pv_id);
+        } elseif (is_integer($variant) && $variant > 0) {
             $this->Variant = ProductVariant::getInstance($variant);
         } elseif (is_object($variant)) {
             $this->Variant = $variant;
