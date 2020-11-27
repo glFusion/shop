@@ -391,6 +391,7 @@ class OrderBaseView
             'subtotal'      => $subtotal == $total ? '' : $this->Currency->Format($subtotal),
             'total'         => $this->Currency->Format($total),
             'cart_tax'      => $this->Currency->Format($this->Order->getTax()),
+            'cart_tax_amt'  => $this->Order->getTax(),
         ) );
     }
 

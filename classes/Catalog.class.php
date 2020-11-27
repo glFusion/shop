@@ -398,6 +398,12 @@ class Catalog
             if (!$P->canDisplay()) {
                 continue;
             }
+            $price = $P->getPrice();
+            if ($P->getDefVariantID() > 0) {
+                $PV = ProductVariant::getInstance($P->getDefVariantID());
+                $price += $PV->getPrice();
+            }
+
             $prodrows++;
             $T->set_var(array(
                 'item_id'       => $P->getID(),
@@ -410,8 +416,8 @@ class Catalog
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
                 'qty_onhand'    => $P->getOnhand(),
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
-                'price'         => $P->getDisplayPrice(),
-                'orig_price'    => $P->getDisplayPrice($P->getPrice()),
+                'price'         => $P->getDisplayPrice($price),
+                'orig_price'    => $P->getDisplayPrice($price),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
                 'onhand'        => $P->trackOnhand() ? $P->getOnhand() : '',
