@@ -225,12 +225,17 @@ class Invoice extends OrderBaseView
                 'itemsToShip'   => $this->Order->itemsToShip(),
             ) );
             $this->_renderLog();
+        } else {
+            $this->TPL->set_var('status', $status);
         }
+
         $this->TPL->set_var(array(
             'payer_email'   => $this->Order->getBuyerEmail(),
             'invoice_number'  => $this->Order->getInvoiceNumber(),
             'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'shipment_block' => $this->getShipmentBlock(),
+            'shipper_id' => $this->Order->getShipperID(),
+            'ship_method' => $this->Order->getShipperDscp(),
         ) );
         if ($this->Order->getPmtMethod() != '') {
             $gw = Gateway::getInstance($this->Order->getPmtMethod());
