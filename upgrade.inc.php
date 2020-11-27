@@ -361,8 +361,8 @@ function SHOP_do_upgrade($dvlp = false)
         if (!SHOP_do_set_version($current_ver)) return false;
     }
 
-    if (!COM_checkVersion($current_ver, '1.2.3')) {
-        $current_ver = '1.2.3';
+    if (!COM_checkVersion($current_ver, '1.3.0')) {
+        $current_ver = '1.3.0';
         $upd_shipping = !_SHOPtableHasColumn('shop.orders', 'shipping_method');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if ($upd_shipping) {
