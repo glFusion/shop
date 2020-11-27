@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -184,6 +184,10 @@ class Order
     /** Amount paid on the order. Not part of the order record.
      * @var float */
     private $_amt_paid = 0;
+
+    /** Amount paid by gift card.
+     * @var float */
+    private $by_gc = 0;
 
     /** Username to show in log messages.
      * @var string */
