@@ -56,7 +56,7 @@ class ProductOptionGroup
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -75,8 +75,6 @@ class ProductOptionGroup
      */
     public function __construct($id=0)
     {
-        $this->isNew = true;
-
         if (is_array($id)) {
             $this->setVars($id);
         } else {
