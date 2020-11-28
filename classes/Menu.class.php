@@ -216,7 +216,7 @@ class Menu
      */
     public static function adminCatalog($view='')
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP, $LANG_SHOP_HELP, $_SHOP_CONF;
 
         $menu_arr = array(
             array(
@@ -233,36 +233,43 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
                 'text' => $LANG_SHOP['opt_grps'],
                 'active' => $view == 'opt_grp' ? true : false,
+                'help' => $LANG_SHOP_HELP['opt_groups'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?options=x',
                 'text' => $LANG_SHOP['options'],
                 'active' => $view == 'options' ? true : false,
+                'help' => $LANG_SHOP_HELP['options'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?variants=x',
                 'text' => $LANG_SHOP['variants'],
                 'active' => $view == 'variants' ? true : false,
+                'help' => $LANG_SHOP_HELP['variants'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
+                'help' => $LANG_SHOP_HELP['sale_prices'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?codes=x',
                 'text' => $LANG_SHOP['codes'],
                 'active' => $view == 'codes' ? true : false,
+                'help' => $LANG_SHOP_HELP['discount_codes'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?suppliers',
                 'text' => $LANG_SHOP['suppliers'],
                 'active' => $view == 'suppliers' ? true : false,
+                'help' => $LANG_SHOP_HELP['suppliers'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?features',
                 'text' => $LANG_SHOP['features'],
                 'active' => $view == 'features' ? true : false,
+                'help' => $LANG_SHOP_HELP['features'],
             ),
         );
         if ($_SHOP_CONF['gc_enabled']) {
@@ -271,6 +278,7 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?coupons=x',
                 'text' => $LANG_SHOP['coupons'],
                 'active' => $view == 'coupons' ? true : false,
+                'help' => $LANG_SHOP_HELP['coupons'],
             );
         }
         return self::_makeSubMenu($menu_arr);
@@ -531,6 +539,36 @@ class Menu
         }
         return $retval;
     }
+
+
+    public static function checkoutFlow($step = 0)
+    {
+        global $LANG_SHOP;
+
+        $Flows = Workflow::getAll();
+
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/orders.php',
+                'text' => $LANG_SHOP['orders'],
+                'active' => $view == 'orders' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/shipments.php',
+                'text' => $LANG_SHOP['shipments'],
+                'active' => $view == 'shipments' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=x',
+                'text' => $LANG_SHOP['payments'],
+                'active' => $view == 'payments' ? true : false,
+            ),
+        );
+        return self::_makeSubMenu($menu_arr);
+    }
+
+
 
 }
 

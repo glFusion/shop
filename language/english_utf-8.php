@@ -759,7 +759,7 @@ $LANG_SHOP_HELP = array(
 'hlp_bulk_cats' => 'If any categories are selected, all product categories will be deleted and replaced by the new selections.',
 'hlp_chk_all' => 'Select or de-select all items',
 'hlp_new_rule' => 'Enter a name and select the type of rule. After saving, visit Regions, Countries and States to add regions to the rule.',
-'hlp_prod_feat_form' => 'Select features to add to the product. If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
+'hlp_prod_feat_form' => 'Select features to add to the product. Features are static informational fields, as opposed to Options which are selectable by the buyer.<br />If a custom text string is entered then it will be used, otherwise the selection from the Feature Value list is used. Check an existing feature to delete it, or add new features by clicking the (+) icon.',
 'hlp_rules_item' => 'This item cannot be shipped to the location given. Click to delete and resubmit your order.',
 'hlp_rules_noitems' => 'One or more of the items on your order have been highlighted and cannot be shipped to your selected shipping address.<br />Please edit the order to remove the items or change the shipping information.',
 'hlp_rules_del_zones' => 'Check any regions that you wish to remove from this rule. When the rule is saved the selected regions will be excluded.<br />To add regions to an existing rule, visit Regions, Countries and States.',
@@ -767,7 +767,15 @@ $LANG_SHOP_HELP = array(
 'is_money_chk' => 'Uncheck for credits, discounts or other adjustments.',
 'select_files' => 'Select one or multiple files to upload.',
 'tax_import_fmt' => 'File Format and first line: <pre>State,ZipCode,TaxRegionName,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,EstimatedSpecialRate,RiskLevel</pre>',
-'packages' => 'Create and edit shipping packages.',
+'packages' => 'Packages are used to calculate shipping rates using shipping quote APIs.<br />Packages can be configured with the type and class of service for each shipper, or use a fixed rate, or can be disabled for a shipper.',
+'opt_groups' => 'Option groups represent the buyer-selectable options available for a product, such as &quot;color&quot; and &quot;size&quot;. Options for each color, size, etc. are added under the &quot;Options&quot; menu.',
+'options' => 'Options represent each variation available for an Option Group. Add elements such as Large, Medium, Small, etc.',
+'variants' => 'Variants represent each combination of options that can be selected for a product. Each Variant can affect the product price and alter the SKU.',
+'sale_prices' => 'Sales can be applied to a product or category to give an amount or percentage discount. There is no provision for a minimum order quantity, so the percentage is recommended unless you wish to apply a discount amount to specific products.',
+'discount_codes' => 'Discount codes are reusable codes for the buyer to enter at checkout to obtain a discount. Codes can be valid during a date range and can set to require a minimum order value.',
+'suppliers' => 'Suppliers and Brands can be specified for products. Suppliers are used for the re-order report while Brands are shown to the buyers and allow searching by brand name.',
+'features' => 'Features are static items that you wish to highlight for a product, such as Material or Finish. Features apply to all variatiosn of a product and are not selectable by the buyer.<br />Create and edit feature sets here, then apply the appropriate features with specific values to the Products.',
+'coupons' => 'Coupons or Gift Cards can be sent to buyers or buyer groups as loyalty rewards. Coupons are applied to the buyer&apos;s balance and can be used for later purchases.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -822,6 +830,7 @@ $LANG_confignames['shop'] = array(
     'get_country' => 'Country',
     'ena_cart' => 'Enable shopping cart?',
     'weight_unit' => 'Unit of Weight Measurement',
+    'uom_size' => 'Unit of Size Measurement',
     'name'          => 'Remittance/Support Contact',
     'company'       => 'Shop Name',
     'address1'      => 'Address Line 1',
@@ -968,6 +977,10 @@ $LANG_configselects['shop'] = array(
         'SmartyStreets' => 'smartystreets',
         'USPS' => 'usps',
         'TaxCoud' => 'taxcloud',
+    ),
+    23 => array(
+        'Inches' => 'IN',
+        'Centimetres' => 'CM',
     ),
 );
 
