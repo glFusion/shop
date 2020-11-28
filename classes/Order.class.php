@@ -2370,9 +2370,10 @@ class Order
                 '.' . $this->order_total;
             $cache_key = md5($cache_key);
             $quote = Cache::get($cache_key);
+            //$quote = NULL;        // debugging
             if ($quote === NULL) {
                 $quote = $Shipper->getQuote($this);
-                Cache::set($cache_key, $quote, 30);
+                Cache::set($cache_key, $quote, array('shipping'), 30);
             }
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
