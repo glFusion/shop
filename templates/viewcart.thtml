@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<a href="{pi_url}/index.php" class="uk-button uk-button-small uk-button-success">
+<a href="{pi_url}/index.php" class="uk-button uk-button-success">
     <i class="uk-icon uk-icon-backward"></i>
     {$LANG_SHOP['continue_shopping']}
 </a>
