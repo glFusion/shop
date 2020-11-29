@@ -145,6 +145,8 @@ class Package
      */
     public function Edit()
     {
+        global $_SHOP_CONF;
+
         $T = new \Shop\Template('admin');
         $T->set_file('form', 'pkg_form.thtml');
         $T->set_var(array(
@@ -155,6 +157,9 @@ class Package
             'length' => $this->length,
             'max_weight' => $this->max_weight,
             'units' => $this->units,
+            'uom_weight' => strtoupper($_SHOP_CONF['weight_unit']),
+            'uom_size' => $_SHOP_CONF['uom_size'],
+            'doc_url'       => SHOP_getDocURL('pkg_form'),
         ) );
         $T->set_block('form', 'CarrierInfo', 'CI');
         foreach (Shipper::getCarrierNames() as $carrier_id=>$carrier_name) {
@@ -355,6 +360,74 @@ class Package
     public function getLength()
     {
         return (float)$this->length;
+    }
+
+
+    /**
+     * Get the package length, converted to inches.
+     *
+     * @return  float   Package length in inches
+     */
+    public function convertLength()
+    {
+        global $_SHOP_CONF;
+
+        if ($_SHOP_CONF['uom_size'] == 'IN') {
+            return (float)$this->length;
+        } else {
+            return (float)($this->length / 2.54);
+        }
+    }
+
+
+    /**
+     * Get the package height, converted to inches.
+     *
+     * @return  float   Package height in inches
+     */
+    public function convertHeight()
+    {
+        global $_SHOP_CONF;
+
+        if ($_SHOP_CONF['uom_size'] == 'IN') {
+            return (float)$this->height;
+        } else {
+            return (float)($this->height / 2.54);
+        }
+    }
+
+
+    /**
+     * Get the package width, converted to inches.
+     *
+     * @return  float   Package weight in inches
+     */
+    public function convertWidth()
+    {
+        global $_SHOP_CONF;
+
+        if ($_SHOP_CONF['uom_size'] == 'IN') {
+            return (float)$this->width;
+        } else {
+            return (float)($this->width / 2.54);
+        }
+    }
+
+
+    /**
+     * Get the package weight, converted to pounds.
+     *
+     * @return  float   Package weight in pounds
+     */
+    public function convertWeight()
+    {
+        global $_SHOP_CONF;
+
+        if ($_SHOP_CONF['weight_unit'] == 'lbs') {
+            return (float)$this->weight;
+        } else {
+            return (float)($this->weight * 2.204623);
+        }
     }
 
 
@@ -656,7 +729,6 @@ class Package
         if (is_integer($Shipper)) {
             $Shipper = Shipper::getInstance($Shipper);  // @deprecate
         }
-        //var_dump($Shipper);
         $pkgClasses = self::getByShipper($Shipper);
         $retval = array();
         $total_units = 0;
