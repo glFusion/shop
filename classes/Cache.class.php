@@ -40,35 +40,33 @@ class Cache
      */
     public static function set($key, $data, $tag='', $cache_mins=1440)
     {
+        if (!is_array($tag)) {
+            $tag = array($tag);
+        }
+        $ttl = (int)$cache_mins * 60;   // convert to seconds
+
         if (version_compare(GVERSION, self::MIN_GVERSION, '<')) {
             global $_TABLES;
             $key = DB_escapeString($key);
             $data = DB_escapeString(@serialize($data));
-            if (is_array($tag)) {
-                $tag = implode('|', $tag);
-            }
-            $tags = DB_escapeString($tag);
-            $exp = time() + ($cache_mins * 60);
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
+            $tag = implode('|', $tag);
+            $tagstr = DB_escapeString($tag);
+            $exp = time() + $ttl;
+            $sql = "INSERT INTO {$_TABLES['shop.cache']} SET
                 cache_key = '$key',
                 expires = $exp,
                 data = '$data',
-                tags = '$tag'
+                tags = '$tagstr'
                 ON DUPLICATE KEY UPDATE
                     expires = $exp,
                     data = '$data',
-                    tags = '$tags'";
+                    tags = '$tagstr'";
             DB_query($sql);
             return;
         }
 
-        $ttl = (int)$cache_mins * 60;   // convert to seconds
         // Always make sure the base tag is included
-        $tags = array(self::TAG);
-        if (!empty($tag)) {
-            if (!is_array($tag)) $tag = array($tag);
-            $tags = array_merge($tags, $tag);
-        }
+        $tags[] = self::TAG;
         $key = self::makeKey($key);
         return \glFusion\Cache\Cache::getInstance()
             ->set($key, $data, $tags, $ttl);
@@ -100,12 +98,10 @@ class Cache
      * @param   array   $tag    Optional array of tags, base tag used if undefined
      * @return  boolean     True on success, False on error
      */
-    public static function clear($tag = array())
+    public static function clear($tags = array())
     {
-        $tags = array(self::TAG);
-        if (!empty($tag)) {
-            if (!is_array($tag)) $tag = array($tag);
-            $tags = array_merge($tags, $tag);
+        if (!is_array($tags)) {
+            $tags = array($tags);
         }
         if (version_compare(GVERSION, self::MIN_GVERSION, '<')) {
             global $_TABLES;
@@ -119,6 +115,11 @@ class Cache
             return;
         }
 
+        $tags[] = self::TAG;
+        if (!empty($tag)) {
+            if (!is_array($tag)) $tag = array($tag);
+            $tags = array_merge($tags, $tag);
+        }
         return \glFusion\Cache\Cache::getInstance()->deleteItemsByTagsAll($tags);
     }
 
