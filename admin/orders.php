@@ -44,7 +44,7 @@ $expected = array(
     // Actions to perform
     'delete',
     // Views to display
-    'packinglist', 'edit', 'shipments', 'list',
+    'packinglist', 'edit', 'shipments', 'list', 'order',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -95,6 +95,13 @@ default:
 }
 
 switch ($view) {
+case 'order':
+    $order = \Shop\Order::getInstance($actionval);
+    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
+    $content .= Shop\Menu::viewOrder($view, $order);
+    $content .= $V->Render();
+    break;
+
 case 'packinglist':
     if ($actionval == 'x') {
         $shipments = SHOP_getVar($_POST, 'shipments', 'array');
