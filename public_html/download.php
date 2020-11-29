@@ -24,7 +24,10 @@ $id = SHOP_getVar($_GET, 'id', 'int');
 $token = SHOP_getVar($_GET, 'token');
 
 // Need to have one or the other, prefer token
-if (empty($token) && $id == 0) {
+if (
+    (empty($token) && $id == 0) ||
+    !SHOP_isMinVersion()
+) {
     COM_404();
     exit;
 }
