@@ -3,7 +3,7 @@
  * Class to cache DB and web lookup results.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v0.7.0
@@ -38,10 +38,10 @@ class Cache
      * @param   integer $cache_mins Cache minutes
      * @return  boolean     True on success, False on error
      */
-    public static function set($key, $data, $tag='', $cache_mins=1440)
+    public static function set($key, $data, $tags='', $cache_mins=1440)
     {
-        if (!is_array($tag)) {
-            $tag = array($tag);
+        if (!is_array($tags)) {
+            $tags = array($tags);
         }
         $ttl = (int)$cache_mins * 60;   // convert to seconds
 
@@ -49,8 +49,8 @@ class Cache
             global $_TABLES;
             $key = DB_escapeString($key);
             $data = DB_escapeString(@serialize($data));
-            $tag = implode('|', $tag);
-            $tagstr = DB_escapeString($tag);
+            $tags = implode('|', $tags);
+            $tagstr = DB_escapeString($tags);
             $exp = time() + $ttl;
             $sql = "INSERT INTO {$_TABLES['shop.cache']} SET
                 cache_key = '$key',
@@ -115,11 +115,10 @@ class Cache
             return;
         }
 
-        $tags[] = self::TAG;
         if (!empty($tag)) {
-            if (!is_array($tag)) $tag = array($tag);
-            $tags = array_merge($tags, $tag);
+            if (!is_array($tags)) $tags = array($tags);
         }
+        $tags[] = self::TAG;
         return \glFusion\Cache\Cache::getInstance()->deleteItemsByTagsAll($tags);
     }
 
@@ -184,6 +183,7 @@ class Cache
         self::delete('shipping_order_' . $order_id);
     }
 
+
     /**
      * Expire the general cache.
      * Used only for glFusion < 2.0.0.
@@ -199,6 +199,4 @@ class Cache
         }
     }
 
-}   // class Shop\Cache
-
-?>
+}
