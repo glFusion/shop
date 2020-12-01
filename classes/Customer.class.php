@@ -355,18 +355,11 @@ class Customer
         if (empty($A['name']) && empty($A['company'])) {
             $invalid[] = 'name_or_company';
         }
-
-        if ($_SHOP_CONF['get_street'] == 2 && empty($A['address1']))
-            $invalid[] = 'address1';
-        if ($_SHOP_CONF['get_city'] == 2 && empty($A['city']))
-            $invalid[] = 'city';
-        if ($_SHOP_CONF['get_state'] == 2 && empty($A['state']))
-            $invalid[] = 'state';
-        if ($_SHOP_CONF['get_postal'] == 2 && empty($A['zip']))
-            $invalid[] = 'zip';
-        if ($_SHOP_CONF['get_country'] == 2 && empty($A['country']))
-            $invalid[] = 'country';
-
+        foreach (array('address1', 'city', 'state', 'zip', 'country') as $key) {
+            if (!isset($A[$key]) || empty($A[$key])) {
+                $invalid[] = $key;
+            }
+        }
         if (!empty($invalid)) {
             foreach ($invalid as $id) {
                 $retval .= '<li> ' . $LANG_SHOP[$id] . '</li>' . LB;
@@ -515,21 +508,6 @@ class Customer
             'state'     => isset($A['state']) ? $A['state'] : '',
             'zip'       => isset($A['zip']) ? $A['zip'] : '',
             'country'   => isset($A['country']) ? $A['country'] : '',
-            /*'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
-            'checked="checked"' : '',*/
-            'req_street'    => $_SHOP_CONF['get_street'] == 2 ? 'true' : '',
-            'req_city'      => $_SHOP_CONF['get_city'] == 2 ? 'true' : '',
-            'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',
-            'req_country'   => $_SHOP_CONF['get_country'] == 2 ? 'true' : '',
-            'req_postal'    => $_SHOP_CONF['get_postal'] == 2 ? 'true' : '',
-            'req_phone'     => $_SHOP_CONF['get_phone'] == 2 ? 'true' : '',
-            'get_street'    => $_SHOP_CONF['get_street'] > 0 ? 'true' : '',
-            'get_city'      => $_SHOP_CONF['get_city'] > 0 ? 'true' : '',
-            'get_state'     => $_SHOP_CONF['get_state'] > 0 ? 'true' : '',
-            'get_country'   => $_SHOP_CONF['get_country'] > 0 ? 'true' : '',
-            'get_postal'    => $_SHOP_CONF['get_postal'] > 0 ? 'true' : '',
-            'get_phone'     => $_SHOP_CONF['get_phone'] > 0 ? 'true' : '',
-
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,

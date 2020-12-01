@@ -576,6 +576,10 @@ class Address
     public static function getByUser($uid)
     {
         global $_TABLES;
+        static $cache = array();
+        if (isset($cache[$uid])) {
+            return $cache[$uid];
+        }
 
         $uid = (int)$uid;
         $retval = array();
@@ -587,6 +591,7 @@ class Address
                 $retval[$A['addr_id']] = new self($A);
             }
         }
+        $cache[$uid] = $retval;
         return $retval;
     }
 
@@ -877,7 +882,7 @@ class Address
      * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid($required=false)
+    public function isValid($required=true)
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
@@ -888,32 +893,27 @@ class Address
             $invalid[] = 'name_or_company';
         }
         if (
-            ($required || $_SHOP_CONF['get_street'] == 2)
-            && empty($this->address1)
+            $required && empty($this->address1)
         ) {
             $invalid[] = 'address1';
         }
         if (
-            ($required || $_SHOP_CONF['get_city'] == 2)
-            && empty($this->city)
+            $required && empty($this->city)
         ) {
             $invalid[] = 'city';
         }
         if (
-            ($required || $_SHOP_CONF['get_state'] == 2)
-            && empty($this->state)
+            $required && empty($this->state)
         ) {
             $invalid[] = 'state';
         }
         if (
-            ($required || $_SHOP_CONF['get_postal'] == 2)
-            && empty($this->zip)
+            $required && empty($this->zip)
         ) {
             $invalid[] = 'zip';
         }
         if (
-            ($required || $_SHOP_CONF['get_country'] == 2)
-            && $this->country == ''
+            $required && $this->country == ''
         ) {
             $invalid[] = 'country';
         }
@@ -1026,6 +1026,26 @@ class Address
             }
         }
         return $this;       // default if no validator used
+    }
+
+
+    public static function optionList($uid, $type, $sel_id=0)
+    {
+        $retval = '';
+        $Addresses = self::getByUser($uid);
+        foreach ($Addresses as $Addr) {
+            if (
+                ($sel_id == 0 && $Addr->isDefault($type)) ||
+                ($sel_id > 0 && $sel_id == $Addr->getID())
+            ) {
+                $sel = 'selected="selected"';
+            } else {
+                $sel = '';
+            }
+            $retval .= '<option value="' . $Addr->getID() . '" ' . $sel . '>' .
+                $Addr->toText() . '</option>' . LB;
+        }
+        return $retval;
     }
 
 }

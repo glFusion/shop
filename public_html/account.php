@@ -43,7 +43,7 @@ $expected = array(
     // Actions
     'saveaddr', 'savevalidated',
     // Views
-    'addresses',
+    'addresses', 'editaddr',
 );
 //var_dump($_POST);die;
 
@@ -142,20 +142,26 @@ case 'deladdr':
 case 'savevalidated':
 case 'saveaddr':
     if ($actionval == 1 || $actionval == 2) {
-        $addr = json_decode($_POST['addr'][$actionval], true);
+        $addr_vars = json_decode($_POST['addr'][$actionval], true);
     } else {
-        $addr = $_POST;
+        $addr_vars = $_POST;
     }
-    $id = $addr['addr_id'];
-    $status = \Shop\Customer::isValidAddress($addr);
+    $id = $addr_vars['addr_id'];
+    $Addr = Shop\Address::getInstance($id);
+    $status = $Addr->setVars($addr_vars)
+        ->isValid();
     if ($status != '') {
-        COM_setMsg(SHOP_errMsg($status, $LANG_SHOP['invalid_form']));
-        COM_refresh(SHOP_URL . '/account.php?editaddr=' . $id);
+        $content .= Shop\Menu::User('addresses');
+        $content .= COM_showMessageText(
+            $status,
+            $LANG_SHOP['invalid_form'],
+            true,
+            'error'
+        );
+        $content .= $Addr->Edit();
         break;
     }
-    $status = Shop\Address::getInstance($id)
-        ->setVars($addr)
-        ->Save();
+    $status = $Addr->Save();
     if ($status > 0) {
         COM_setMsg("Address saved");
     } else {
@@ -165,8 +171,8 @@ case 'saveaddr':
     break;
 
 case 'editaddr':
-    $Addr = Shop\Address::getInstance($id);
-    if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
+    $Addr = Shop\Address::getInstance($actionval);
+    if ($actionval > 0 && $Addr->getUid() != $_USER['uid']) {
         COM_refresh(SHOP_URL . '/account.php?addresses');
     }
     $content .= Shop\Menu::User('none');
