@@ -118,20 +118,39 @@ class Address
     {
         global $_SHOP_CONF;
 
-        $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
-            ->setID(SHOP_getVar($data, 'addr_id', 'integer'))
-            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
-            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'))
-            ->setName(SHOP_getVar($data, 'name'))
-            ->setCompany(SHOP_getVar($data, 'company'))
-            ->setAddress1(SHOP_getVar($data, 'address1'))
-            ->setAddress2(SHOP_getVar($data, 'address2'))
-            ->setCity(SHOP_getVar($data, 'city'))
-            ->setState(SHOP_getVar($data, 'state'))
-            ->setPostal(SHOP_getVar($data, 'zip'))
-            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']))
-            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
-            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'));
+        if (isset($data['uid'])) {
+            $this->setUid($data['uid']);
+        }
+        if (isset($data['addr_id'])) {
+            $this->setID($data['addr_id']);
+        }
+        if (isset($data['billto_def'])) {
+            $this->setBilltoDefault($data['billto_def']);
+        }
+        if (isset($data['shipto_def'])) {
+            $this->setShiptoDefault($data['shipto_def']);
+        }
+        if (isset($data['name'])) {
+            $this->setName($data['name']);
+        }
+        if (isset($data['address1'])) {
+            $this->setAddress1($data['address1']);
+        }
+        if (isset($data['address2'])) {
+            $this->setAddress2($data['address2']);
+        }
+        if (isset($data['city'])) {
+            $this->setCity($data['city']);
+        }
+        if (isset($data['state'])) {
+            $this->setState($data['state']);
+        }
+        if (isset($data['zip'])) {
+            $this->setPostal($data['zip']);
+        }
+        if (isset($data['country'])) {
+            $this->setCountry($data['country']);
+        }
         return $this;
     }
 
@@ -707,6 +726,18 @@ class Address
 
 
     /**
+     * Get a MD5 hash of the address. Used for caching keys.
+     *
+     * @uses    self::toText()
+     * @return  string      MD5 hash of the text address
+     */
+    public function toHash()
+    {
+        return md5($this->toText());
+    }
+
+
+    /**
      * Get the parsed parts of a name field.
      *
      * @param   string  $req    Requested part, NULL for all
@@ -759,6 +790,7 @@ class Address
             'state_options' => State::optionList($this->country, $this->state),
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
+            'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
         ) );
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -1029,6 +1061,13 @@ class Address
     }
 
 
+    /**
+     * Get the option elements for an address selection list.
+     *
+     * @param   integer $uid        Customer user ID
+     * @param   string  $type       'billto' or 'shipto'
+     * @param   integer $sel_id     Preselected address ID
+     */
     public static function optionList($uid, $type, $sel_id=0)
     {
         $retval = '';
