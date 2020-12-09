@@ -28,10 +28,68 @@ case 'delAddress':          // Remove a shipping address
     );
     break;
 
+case 'getAddressHTML':
+    if ($uid < 2) break;
+    $Cart = Shop\Cart::getInstance();
+    $type = SHOP_getVar($_GET, 'type');
+    $id = SHOP_getVar($_GET, 'id');
+    $Address = Shop\Customer::getInstance($uid)->getAddress($id);
+    $output = array(
+        'addr_text' => $Address->toHTML(),
+    );
+    if ($Address->getID() != $Cart->getAddress($type)->getID()) {
+        $Cart->setAddress($Address->toArray(), $type);
+    }
+    break;
+
+case 'setShipper':
+    $method_id = SHOP_getVar($_POST, 'method_id', 'integer');
+    $Cart = Shop\Cart::getInstance();
+    $Cart->setShippingOption($method_id);
+    $output = array(
+        'status' => true,
+    );
+    break;
+
+case 'setGW':
+    $gw_id = SHOP_getVar($_POST, 'gw_id');
+    $Cart = Shop\Cart::getInstance();
+    $Cart->setGateway($gw_id);
+    $Cart->Save(false);
+    $output = array(
+        'status' => true,
+    );
+    break;
+
 case 'getAddress':
     if ($uid < 2) break;
     $Address = Shop\Customer::getInstance($uid)->getAddress($_GET['id']);
     $output = $Address->toJSON();
+    break;
+
+case 'cartaddone':
+    COM_errorLog(print_r($_POST,true));
+    COM_errorLog("retrieving " . $_POST['oi_id']);
+    $OI = Shop\OrderItem::getInstance($_POST['oi_id']);
+    if ($OI->getID() == $_POST['oi_id']) {
+        $qty = $OI->getQuantity();
+        COM_errorLog("starting quantity: $qty");
+        $OI->setQuantity($qty + (int)$_POST['qty']);
+        COM_errorLog("new qty: " . $OI->getQuantity());
+        $OI->Save();
+        $Order = $OI->getOrder();
+        $Order->Load();
+        $Order->Save();
+        $output = array(
+            'new_oi_qty' => $OI->getQuantity(),
+            'new_total' => $Order->getTotal(),
+            'new_ext' => $OI->getPrice() * $OI->getQuantity(),
+        );
+    } else {
+        $output = array(
+            'status' => 'error',
+        );
+    }
     break;
 
 case 'addcartitem':
@@ -174,23 +232,25 @@ case 'validateAddress':
         'form'      => '',
     );
     $A1 = new Shop\Address($_POST);
-    $A2 = $A1->Validate();
-    if (!$A1->Matches($A2)) {
-        $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
-        $T = new Shop\Template;
-        $T->set_file('popup', 'address_select.thtml');
-        $T->set_var(array(
-            'address1_html' => $A1->toHTML(),
-            'address1_json' => htmlentities($A1->toJSON(false)),
-            'address2_html' => $A2->toHTML(),
-            'address2_json' => htmlentities($A2->toJSON(false)),
-            'ad_type'       => $_POST['ad_type'],
-            'next_step'     => $_POST['next_step'],
-            'save_url'      => $save_url,
-            'save_btn_name' => SHOP_getVar($_POST, 'save_btn_name', 'string,', 'save'),
-        ) );
-        $output['status']  = false;
-        $output['form'] = $T->parse('output', 'popup');
+    if (empty($A1->isValid())) {
+        $A2 = $A1->Validate();
+        if (!$A1->Matches($A2)) {
+            $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
+            $T = new Shop\Template;
+            $T->set_file('popup', 'address_select.thtml');
+            $T->set_var(array(
+                'address1_html' => $A1->toHTML(),
+                'address1_json' => htmlentities($A1->toJSON(false)),
+                'address2_html' => $A2->toHTML(),
+                'address2_json' => htmlentities($A2->toJSON(false)),
+                'ad_type'       => $_POST['ad_type'],
+//                'next_step'     => $_POST['next_step'],
+                'save_url'      => $save_url,
+                'save_btn_name' => SHOP_getVar($_POST, 'save_btn_name', 'string,', 'save'),
+            ) );
+            $output['status']  = false;
+            $output['form'] = $T->parse('output', 'popup');
+        }
     }
     break;
 
@@ -205,17 +265,21 @@ case 'getStateOpts':
 
 case 'setDefAddr':
     $addr_id = SHOP_getVar($_POST, 'addr_id', 'integer');
-    if ($addr_id < 1) {
+    $uid = SHOP_getVar($_POST, 'uid', 'integer');
+    if ($addr_id < 1 || $uid < 2) {
         $ouptut = array(
             'status' => 0,
-            'statusMessage' => 'Invalid address ID given',
+            'statusMessage' => 'Invalid address or User ID given.',
         );
         break;
     }
     $type = SHOP_getVar($_POST, 'addr_type');
-    $status = Shop\Address::getInstance($addr_id)
+    $status = Shop\Customer::getInstance($uid)
+        ->setDefaultAddress($type, $addr_id)
+        ->saveUser();
+    /*$status = Shop\Address::getInstance($addr_id)
         ->setDefault($type)
-        ->Save();
+        ->Save();*/
     $output = array(
         'status' => $status,
         'statusMessage' => $status ? 'Address Updated' : 'An error occurred',
