@@ -261,6 +261,25 @@ class Package
 
 
     /**
+     * Delete a single package record from the database.
+     *
+     * @param   integer $id     Record ID
+     * @return  boolean     True on success, False on invalid ID
+     */
+    public static function Delete($id)
+    {
+        global $_TABLES;
+
+        if ($id <= 0) {
+            return false;
+        }
+
+        DB_delete($_TABLES['shop.packages'], 'pkg_id', $id);
+        return DB_error() ? false : true;
+    }
+
+
+    /**
      * Return the package record ID.
      *
      * @return  integer     Package DB record ID
@@ -642,7 +661,7 @@ class Package
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
+                SHOP_ADMIN_URL. '/packages.php?pkgdelete=' . $A['pkg_id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],

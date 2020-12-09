@@ -55,10 +55,7 @@ foreach($expected as $provided) {
 
 switch ($action) {
 case 'pkgdelete':
-    $Pkg = \Shop\Package::getInstance($_GET['pkg_id']);
-    if ($Pkg !== NULL) {
-        $status = $Pkg->Remove();
-    }
+    Shop\Package::Delete($actionval);
     COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
 
