@@ -640,17 +640,15 @@ class Package
             break;
 
         case 'delete':
-            if (!self::isUsed($A['id'])) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
-                    array(
-                        'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
-                        'title' => $LANG_SHOP['del_item'],
-                        'class' => 'tooltip',
-                    )
-                );
-            }
+            $retval .= COM_createLink(
+                Icon::getHTML('delete'),
+                SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
+                array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                )
+            );
             break;
 
         default:
