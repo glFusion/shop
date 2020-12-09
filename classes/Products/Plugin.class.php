@@ -14,6 +14,7 @@
 namespace Shop\Products;
 use Shop\Currency;
 use Shop\Models\ProductType;
+use Shop\Models\CustomInfo;
 
 
 /**
@@ -178,13 +179,7 @@ class Plugin extends \Shop\Product
 
         // The custom field needs to exist and be an array.
         if (isset($ipn_data['custom'])) {
-           if (is_string($ipn_data['custom'])) {
-               $ipn_data['custom'] = @unserialize($ipn_data['custom']);
-               // Final check in case serialization failed
-               if (!is_array($ipn_data['custom'])) {
-                   $ipn_data['custom'] = array();
-               }
-           }
+            $ipn_data['custom'] =(new CustomInfo($ipn_data['custom']))->toArray();
         } else {
             $ipn_data['custom'] = array();  // should be set, but just in case.
         }
