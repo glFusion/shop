@@ -820,6 +820,7 @@ class IPN
             $ipn_data = $this->ipn_data;
             $ipn_data['status'] = $this->status;
             $ipn_data['custom'] = (string)$this->custom;
+            $ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
