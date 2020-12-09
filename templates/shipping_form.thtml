@@ -94,6 +94,18 @@
     </div>
   </div>
 
+    <div class="uk-form-row" id="prod_sel">
+        <label class="uk-form-label">{$LANG_SHOP['rate_method']}
+            <span id="rate_method" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <select name="quote_method">
+                <option value="1" {chk_qm_1}>{$LANG_SHOP['rate_table']}</option>
+                <option value="2" {chk_qm_2}>{$LANG_SHOP['pkg_rates']}</option>
+            </select>
+        </div>
+    </div>
+
     <div class="uk-form-row" id="selvalues">
       <label class="uk-form-label">{$LANG_SHOP['rate_table']}
         <span id="rate_table" class="tooltip_cfg tooltipstered"></span>
@@ -127,6 +139,7 @@
       </div>
     </div>
 
+{!if 0}
     <div class="uk-form-row">
       <label class="uk-form-label">Package Code
         <span id="hlp_pkg_code" class="tooltip_cfg tooltipstered"></span>
@@ -154,6 +167,7 @@
                 </select>
       </div>
     </div>
+{!endif}
 
     <div class="uk-form-row">
       <label class="uk-form-label">{$LANG_SHOP['grp_access']}:

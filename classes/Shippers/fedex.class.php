@@ -83,6 +83,8 @@ class fedex extends \Shop\Shipper
     private $track_url_prod = 'https://ws.fedex.com:443/web-services';
 
     protected $svc_codes = array(
+        '_na' => '-- Not Available--',
+        '_fixed' => '-- Fixed Rate --',
         'STANDARD_OVERNIGHT' => 'STANDARD_OVERNIGHT',
         'PRIORITY_OVERNIGHT' => 'PRIORITY_OVERNIGHT',
         'FEDEX_GROUND' => 'FEDEX_GROUND',
@@ -296,10 +298,15 @@ class fedex extends \Shop\Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote(Order $Order)
+    protected function _getQuote($Order)
     {
+        global $_SHOP_CONF;
+
         $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
+        $fixed_cost = 0;    // Cost for all containers set to "fixed"
+        $fixed_pkgs = 0;    // Number of fixed-cost containers
+        $retval = array();
 
         // Will throw a SoapFault exception if wsdlPath is unreachable
         $_soapClient = new \SoapClient($this->req_info['crs']['wsdl'], array('trace' => true));
@@ -372,59 +379,76 @@ class fedex extends \Shop\Shipper
 
         $seq_no = 0;
         foreach ($Packages as $Package) {
+            $container = $Package->getContainer($this->module_code);
+            if ($container['service'] == '_fixed') {
+                $fixed_cost += (float)$container['rate'];
+                $fixed_pkgs++;
+                continue;
+            }
             $request['RequestedShipment']['RequestedPackageLineItems'] = array(
                 'SequenceNumber'=> ++$seq_no,
                 'GroupPackageCount'=> 1,
                 'Weight' => array(
                         'Value' => $Package->getWeight(),
-                        'Units' => 'LB'
+                        'Units' => $this->getWeightUOM(),
                 ),
                 'Dimensions' => array(
                         'Length' => $Package->getLength(),
                         'Width' => $Package->getWidth(),
                         'Height' => $Package->getHeight(),
-                        'Units' => 'IN'
+                        'Units' => $this->getSizeUOM(),
                 ),
             );
         }
-        $req = $this->_buildSoapRequest('crs', $request);
-        $response = $_soapClient->getRates($req);
-        $retval = array();
-        if (
-            $response->HighestSeverity != 'FAILURE' &&
-            $response->HighestSeverity != 'ERROR'
-        ) {
-            $RateReply = $response->RateReplyDetails;
-            $svc_dscp = $RateReply->ServiceDescription->Description;
-            $svc_id = 'HD';     // home delivery default
-            foreach ($RateReply->ServiceDescription->Names as $Name) {
-                if ($Name->Type == 'abbrv' && $Name->Encoding == 'ascii') {
-                    $svc_id = $Name->Value;
+        if ($fixed_pkgs < count($Packages)) {
+            $req = $this->_buildSoapRequest('crs', $request);
+            $response = $_soapClient->getRates($req);
+            if (
+                $response->HighestSeverity != 'FAILURE' &&
+                $response->HighestSeverity != 'ERROR'
+            ) {
+                $RateReply = $response->RateReplyDetails;
+                $svc_dscp = $RateReply->ServiceDescription->Description;
+                $svc_id = 'HD';     // home delivery default
+                foreach ($RateReply->ServiceDescription->Names as $Name) {
+                    if ($Name->Type == 'abbrv' && $Name->Encoding == 'ascii') {
+                        $svc_id = $Name->Value;
+                    }
                 }
+                $svc_code = $this->key . '.' . $svc_id;
+                $cost = (float)$RateReply
+                    ->RatedShipmentDetails
+                    ->ShipmentRateDetail
+                    ->TotalNetCharge
+                    ->Amount;
+                $retval[] = (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode($svc_code)
+                    ->setServiceID($svc_id)
+                    ->setServiceTitle($svc_dscp)
+                    ->setCost($cost + $fixed_cost)
+                    ->setPackageCount(count($Packages));
+            } else {
+                SHOP_log(
+                    __CLASS__ . '::' . __FUNCTION__ .
+                    " Error getting Fedex quote for order {$Order->getOrderID()} " .
+                    print_r($response,true)
+                );
             }
-            $svc_code = $this->key . '.' . $svc_id;
-            $cost = (float)$RateReply
-                ->RatedShipmentDetails
-                ->ShipmentRateDetail
-                ->TotalNetCharge
-                ->Amount;
+        } else {
             $retval[] = (new ShippingQuote)
                 ->setID($this->id)
                 ->setShipperID($this->id)
                 ->setCarrierCode($this->key)
                 ->setCarrierTitle($this->getCarrierName())
-                ->setServiceCode($svc_code)
-                ->setServiceID($svc_id)
-                ->setServiceTitle($svc_dscp)
-                ->setCost($cost)
+                ->setServiceCode('_fixed')
+                ->setServiceID('_fixed')
+                ->setServiceTitle($this->getCarrierName())
+                ->setCost($fixed_cost)
                 ->setPackageCount(count($Packages));
-            return $retval;
-        } else {
-            SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ .
-                " Error getting Fedex quote for order {$Order->getOrderID()} " .
-                print_r($response,true)
-            );
         }
         return $retval;
     }

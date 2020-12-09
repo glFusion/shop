@@ -135,6 +135,8 @@ class usps extends \Shop\Shipper
     /** USPS Service Type Codes.
      * @var array */
     protected $svc_codes = array(
+        '_na' => '-- Not Available--',
+        '_fixed' => '-- Fixed Rate --',
         'FC_LTR' => 'First Class / Letter',
         'FC_FLT' => 'First Class / Flat',
         'FC_PKG' => 'First Class / Package Service Retail',
@@ -230,6 +232,8 @@ class usps extends \Shop\Shipper
 
         //$method_data = array();
         $quote_data = array();
+        $fixed_cost = 0;    // Cost for all containers set to "fixed"
+        $fixed_pkgs = 0;    // Number of fixed-cost containers
 
         $postcode = str_replace(' ', '', $Addr->getPostal());
         $status = true;
@@ -242,11 +246,14 @@ class usps extends \Shop\Shipper
             $pkgcount = 0;
             foreach ($Packages as $Package) {
                 $container = $Package->getContainer('usps');
-                $weight = $Package->getWeight();
-                $weight = ($weight < 0.1 ? 0.1 : $weight);
-                if ($_SHOP_CONF['pkg_weight_uom'] == 'KGS') {
-                    $weight /= 2.2;
+                if ($container['service'] == '_fixed') {
+                    $fixed_cost += (float)$container['rate'];
+                    $fixed_pkgs++;
+                    continue;
                 }
+
+                $weight = $Package->convertWeight();
+                $weight = ($weight < 0.1 ? 0.1 : $weight);
                 $pounds = floor($weight);
                 $ounces = round(16 * ($weight - floor($weight)));
                 $pkg = $xml->addChild('Package');
@@ -293,17 +300,23 @@ class usps extends \Shop\Shipper
                     '<IntlRateV2Request USERID="' . $this->getConfig('user_id') . '"></IntlRateV2Request>'
                 );
                 $xml->addChild('Revision', '2');
-                $pkg = $xml->addChild('Package');
-                $pkg->addAttribute('ID', '1ST');
-                $pkg->addChild('Pounds', $pounds);
-                $pkg->addChild('Ounces', $ounces);
-                $pkg->addChild('MailType', 'Package');
-                $pkg->addChild('ValueOfContents', 20);
-                $pkg->addChild('Country', $countryname);
-                $pkg->addChild('Container', $this->usps_container);
-                $pkg->addChild('OriginZip', substr($this->getConfig('origin_zip'), 0, 5));
-                $pkg->addChild('AcceptanceDateTime', $_CONF['_now']->toISO8601(true));
-                $pkg->addChild('DestinationPostalCode', substr($postcode, 0, 5));
+                foreach ($Packages as $Package) {
+                    $weight = $Package->convertWeight();
+                    $weight = ($weight < 0.1 ? 0.1 : $weight);
+                    $pounds = floor($weight);
+                    $ounces = round(16 * ($weight - floor($weight)));
+                    $pkg = $xml->addChild('Package');
+                    $pkg->addAttribute('ID', ++$pkgcount);
+                    $pkg->addChild('Pounds', $pounds);
+                    $pkg->addChild('Ounces', $ounces);
+                    $pkg->addChild('MailType', 'Package');
+                    $pkg->addChild('ValueOfContents',$Package->getValue());
+                    $pkg->addChild('Country', $countryname);
+                    $pkg->addChild('Container', $this->usps_container);
+                    $pkg->addChild('OriginZip', substr($this->getConfig('origin_zip'), 0, 5));
+                    $pkg->addChild('AcceptanceDateTime', $_CONF['_now']->toISO8601(true));
+                    $pkg->addChild('DestinationPostalCode', substr($postcode, 0, 5));
+                }
                 //echo $xml->asXML();
                 $request = 'API=IntlRateV2&XML=' . urlencode($xml->asXML());
             } else {
@@ -311,7 +324,22 @@ class usps extends \Shop\Shipper
             }
         }
 
-        if ($status) {
+        if ($pkgcount < 1 && $fixed_pkgs > 0) {
+            $svc_code = $this->module_code . '.fixed';
+            $quote_data = array(
+                $svc_code => (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode($svc_code)
+                    ->setServiceID('_fixed')
+                    ->setServiceTitle($this->getCarrierName())
+                    ->setCost($fixed_cost)
+                    ->setPackageCount($fixed_pkgs),
+            );
+            $num_packages = $fixed_pkgs;
+        } elseif ($status) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $this->usps_endpoint . '?' . $request);
             curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -339,7 +367,6 @@ class usps extends \Shop\Shipper
                     }
                     $num_packages = count($packages);
                     $pkgcount = 0;
-                    $quote_data = array();
                     foreach ($packages as $pkgid=>$package) {
                         if (!isset($package['Postage'])) {
                             continue;
@@ -371,8 +398,8 @@ class usps extends \Shop\Shipper
                                         ->setPackageCount(1);
                                 } else {
                                     $quote_data[$key]['cost'] += $cost;
-                                    $quote_data[$key]['pkg_count'] =
-                                        $quote_data[$key]['pkg_count'] + 1;
+                                    $quote_data[$key]['pkg_count']++;
+                                    $quote_data[$key]['cost'] += $fixed_cost;
                                 }
                             }
                         }
@@ -409,6 +436,7 @@ class usps extends \Shop\Shipper
                             } else {
                                 $quote_data[$key]['cost'] += $cost;
                                 $quote_data[$key]['pkg_count']++;
+                                $quote_data[$key]['cost'] += $fixed_cost;
                             }
                         }
                     }
@@ -418,11 +446,11 @@ class usps extends \Shop\Shipper
 
         if ($quote_data) {
             foreach ($quote_data as $id=>$quote) {
+                // Remove any quotes that do not include all packages
                 if ($quote['pkg_count'] < $num_packages) {
                     unset($quote_data[$id]);
                 }
             }
-
             $x = uasort($quote_data, array(__CLASS__, 'sortQuotes'));
         }
         return $quote_data;

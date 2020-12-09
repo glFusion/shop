@@ -53,6 +53,8 @@ class ups extends \Shop\Shipper
     /** UPS service codes and descriptions.
      * @var array */
     protected $svc_codes = array(
+        '_na' => '-- Not Available--',
+        '_fixed' => '-- Fixed Rate --',
         '01'    => 'Next Day Air',
         '02'    => '2nd Day Air',
         '03'    => 'Ground',
@@ -84,6 +86,12 @@ class ups extends \Shop\Shipper
         '2c'    => 'Large Express Box',
     );
 
+    protected $uom = array(
+        'IN'    => 'IN',
+        'CM'    => 'CM',
+        'lbs'   => 'LBS',
+        'kgs'   => 'KGS',
+    );
 
     /**
      * Set up local variables and call the parent constructor.
@@ -115,6 +123,12 @@ class ups extends \Shop\Shipper
         } else {
             $this->rate_url = $this->rate_url_prod;
             $this->track_url = $this->track_url_prod;
+        }
+        if (!$this->getConfig('ena_quotes')) {
+            $this->implementsQuoteAPI = false;
+        }
+        if (!$this->getConfig('ena_tracking')) {
+            $this->implementsTrackingAPI = false;
         }
     }
 
@@ -318,10 +332,11 @@ class ups extends \Shop\Shipper
      */
     protected function _getQuote($Order)
     {
-        global $_SHOP_CONF;
-
         $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
+        $fixed_cost = 0;    // Cost for all containers set to "fixed"
+        $fixed_pkgs = 0;    // Number of fixed-cost containers
+        $quote_data = array();
 
         if (
             $this->free_threshold > 0 &&
@@ -408,6 +423,12 @@ class ups extends \Shop\Shipper
             //$service->addChild ( "Description", "Ground" );
 
             foreach ($Packages as $Package) {
+                $container = $Package->getContainer($this->module_code);
+                if ($container['service'] == '_fixed') {
+                    $fixed_cost += (float)$container['rate'];
+                    $fixed_pkgs++;
+                    continue;
+                }
                 $package = $shipment->addChild('Package');
                 $packageType = $package->addChild('PackagingType');
                 $packageType->addChild("Code", "02");
@@ -415,56 +436,67 @@ class ups extends \Shop\Shipper
 
                 $packageWeight = $package->addChild('PackageWeight');
                 $unitOfMeasurement = $packageWeight->addChild ('UnitOfMeasurement');
-                $unitOfMeasurement->addChild("Code", strtoupper($_SHOP_CONF['pkg_weight_uom']));
+                $unitOfMeasurement->addChild("Code", $this->getWeightUOM());
                 $packageWeight->addChild("Weight", $Package->getWeight());
             }
-            $requestXML = $accessRequestXML->asXML () . $rateRequestXML->asXML ();
-
-            // create Post request
-            $form = array (
-                'http' => array (
-                    'method'    => 'POST',
-                    'header'    => 'Content-type: application/x-www-form-urlencoded',
-                    'content'   => $requestXML
-                ),
-            );
-
-            $request = stream_context_create ( $form );
-            $browser = fopen ( $this->rate_url, 'rb', false, $request );
-            if (! $browser) {
-                throw new Exception ( "Connection failed." );
-            }
-
-            // get response
-            $response = stream_get_contents ( $browser );
-            fclose ( $browser );
-            if ($response == false) {
-                throw new Exception ( "Bad data." );
-            } else {
-                // get response status
-                $resp = new SimpleXMLElement ($response);
-                $quotes = $resp->RatedShipment;
-                $quote_data = array();
-                foreach ($quotes as $quote) {
-                    $classid = (string)$quote->Service->Code;
-                    if (!$this->supportsService($classid)) {
-                        continue;
-                    }
-                    $key = $this->key . '.' . $classid;
-                    $dscp = $this->svc_codes[$classid];
-                    $cost = (float)$quote->TotalCharges->MonetaryValue;
-                    $quote_data[] = (new ShippingQuote)
-                        ->setID($this->id)
-                        ->setShipperID($this->id)
-                        ->setCarrierCode($this->key)
-                        ->setCarrierTitle($this->getCarrierName())
-                        ->setServiceCode($key)
-                        ->setServiceID($classid)
-                        ->setServiceTitle(strtoupper($this->key) . ' ' . $dscp)
-                        ->setCost($cost)
-                        ->setPackageCount(count($Packages));
+            if ($fixed_pkgs < count($Packages)) {
+                $requestXML = $accessRequestXML->asXML () . $rateRequestXML->asXML ();
+                // create Post request
+                $form = array (
+                    'http' => array (
+                        'method'    => 'POST',
+                        'header'    => 'Content-type: application/x-www-form-urlencoded',
+                        'content'   => $requestXML
+                    ),
+                );
+                $request = stream_context_create ( $form );
+                $browser = fopen ( $this->rate_url, 'rb', false, $request );
+                if (! $browser) {
+                    throw new Exception ( "Connection failed." );
                 }
-                uasort($quote_data, array($this, 'sortQuotes'));
+
+                // get response
+                $response = stream_get_contents ( $browser );
+                fclose ( $browser );
+                if ($response == false) {
+                    throw new Exception ( "Bad data." );
+                } else {
+                    // get response status
+                    $resp = new SimpleXMLElement ($response);
+                    $quotes = $resp->RatedShipment;
+                    foreach ($quotes as $quote) {
+                        $classid = (string)$quote->Service->Code;
+                        if (!$this->supportsService($classid)) {
+                            continue;
+                        }
+                        $key = $this->key . '.' . $classid;
+                        $dscp = $this->svc_codes[$classid];
+                        $cost = (float)$quote->TotalCharges->MonetaryValue;
+                        $quote_data[] = (new ShippingQuote)
+                            ->setID($this->id)
+                            ->setShipperID($this->id)
+                            ->setCarrierCode($this->key)
+                            ->setCarrierTitle($this->getCarrierName())
+                            ->setServiceCode($key)
+                            ->setServiceID($classid)
+                            ->setServiceTitle(strtoupper($this->key) . ' ' . $dscp)
+                            ->setCost($cost + $fixed_cost)
+                            ->setPackageCount(count($Packages));
+                    }
+                    uasort($quote_data, array($this, 'sortQuotes'));
+                }
+            } else {
+                // All packages are fixed-rate
+                $quote_data[] = (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode($this->key . '.fixed')
+                    ->setServiceID('_fixed')
+                    ->setServiceTitle($this->getCarrierName())
+                    ->setCost($fixed_cost)
+                    ->setPackageCount($fixed_pkgs);
             }
         } catch ( Exception $ex ) {
             SHOP_log(

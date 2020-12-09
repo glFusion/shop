@@ -24,8 +24,11 @@ class Shipper
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    const TAX_DESTINATION = 1;
-    const TAX_ORIGIN = 0;
+    const TAX_DESTINATION = 0;
+    const TAX_ORIGIN = 1;
+    const QUOTE_TABLE = 1;
+    const QUOTE_API = 2;
+    const QUOTE_CACHE_MINS = 90;
 
     /** Table key for DBO functions
      * @var string */
@@ -129,6 +132,10 @@ class Shipper
      * @var float */
     protected $free_threshold = 0; // 0 disables free shipping
 
+    /** Method to use for rate quotes.
+     * @var integer */
+    protected $quote_method = 1;
+
     /** Shipping method used for free shipping.
      * @var string */
     protected $free_method = '';
@@ -149,7 +156,8 @@ class Shipper
     /** Delivery service codes, dependent on shipper.
      * @var array */
     protected $svc_codes = array(
-        '_fixed' => 'Fixed Rate',
+        '_na' => '-- Not Available--',
+        '_fixed' => '-- Fixed Rate --',
     );
 
     /** Selected package type code.
@@ -159,6 +167,16 @@ class Shipper
     /** Selected delivery service code.
      * @var string */
     protected $svc_code = '';
+
+    /** Default unit-of-measurement strings.
+     * configured setting => shipper's required text.
+     * @var array */
+    protected $uom = array(
+        'IN'    => 'IN',
+        'CM'    => 'CM',
+        'lbs'   => 'LB',
+        'kgs'   => 'KG',
+    );
 
 
     /**
@@ -251,6 +269,7 @@ class Shipper
             ->setReqShipto(SHOP_getVar($A, 'req_shipto', 'integer'))
             ->setTaxLocation(SHOP_getVar($A, 'tax_loc', 'integer'))
             ->setUseFixed(SHOP_getVar($A, 'use_fixed', 'integer', 0))
+            ->setQuoteMethod(SHOP_getVar($A, 'quote_method', 'integer', 1))
             ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
         if (!$fromDB) {
             $this->free_threshold = isset($A['ena_free']) ? (float)$A['free_threshold'] : 0;
@@ -430,7 +449,7 @@ class Shipper
 
     private function setTaxLocation($flag)
     {
-        $this->tax_loc = $flag ? 1 : 0;
+        $this->tax_loc = (int)$flag;
         return $this;
     }
 
@@ -450,6 +469,19 @@ class Shipper
     private function setUseFixed($enabled)
     {
         $this->use_fixed = $enabled ? 1 : 0;
+        return $this;
+    }
+
+
+    /**
+     * Set the method used to get rate quotes.
+     *
+     * @param   integer $key        Method key
+     * @return  object  $this
+     */
+    private function setQuoteMethod($key)
+    {
+        $this->quote_method = (int)$key;
         return $this;
     }
 
@@ -957,6 +989,7 @@ class Shipper
             use_fixed = '{$this->use_fixed}',
             free_threshold = '{$this->free_threshold}',
             grp_access = '{$this->grp_access}',
+            quote_method = '{$this->quote_method}',
             rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
@@ -1028,6 +1061,7 @@ class Shipper
             'ena_free_chk' => $this->free_threshold > 0 ? 'checked="checked"' : '',
             'free_threshold' => $this->free_threshold,
             'span_free_vis' => $this->free_threshold > 0 ? '' : 'none',
+            'chk_qm_' . $this->quote_method => 'selected="selected"',
         ) );
 
         // Construct the dropdown selection of defined carrier modules
@@ -1458,9 +1492,10 @@ class Shipper
         global $_TABLES;
 
         $shipper_id = (int)$shipper_id;
-        if (DB_count($_TABLES['shop.orders'], 'shipper_id', $shipper_id) > 0) {
-            return true;
-        } elseif (DB_count($_TABLES['shop.shipment_packages'], 'shipper_id', $shipper_id) > 0) {
+        if (
+            DB_count($_TABLES['shop.orders'], 'shipper_id', $shipper_id) > 0 ||
+            DB_count($_TABLES['shop.shipment_packages'], 'shipper_id', $shipper_id) > 0
+        ) {
             return true;
         } else {
             return false;
@@ -1477,12 +1512,15 @@ class Shipper
     {
         global $_TABLES;
 
-        $code = DB_escapeString($this->key);
-        $data = DB_getItem(
-            $_TABLES['shop.carrier_config'],
-            'data',
-            "code = '$code'"
-        );
+        static $data = NULL;
+        if ($data === NULL) {
+            $code = DB_escapeString($this->key);
+            $data = DB_getItem(
+                $_TABLES['shop.carrier_config'],
+                'data',
+                "code = '$code'"
+            );
+        }
         if ($data) {        // check that a data item was retrieved
             $config = @unserialize($data);
             if ($config) {
@@ -1834,20 +1872,25 @@ class Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getUnitQuote($units)
+    public function getUnitQuote($Order)
     {
+        $info = $Order->getItemShipping();
         $quote = (new ShippingQuote)
             ->setID($this->id)
+            ->setShipperID($this->id)
             ->setCarrierCode($this->key)
             ->setCarrierTitle($this->name)
             ->setServiceTitle($this->name)
-            ->setServiceCode('units')
+            ->setServiceCode('units.' . $this->id)
             ->setServiceID($this->key . '.' . $this->id);
  
         $found = false;
-        if ($units <= $this->max_units && $units >= $this->min_units) {
+        if (
+            $info['units'] <= $this->max_units &&
+            $info['units'] >= $this->min_units
+        ) {
             foreach ($this->rates as $rate) {
-                if ($rate->units > $units) {
+                if ($rate->units > $info['units']) {
                     $found = true;
                     $quote['cost'] = $rate->rate;
                     break;
@@ -1855,6 +1898,9 @@ class Shipper
             }
         }
         if ($found) {
+            if ($this->use_fixed) {
+                $quote['cost'] += $info['amount'];
+            }
             return $quote;
         } else {
             return NULL;
@@ -1870,6 +1916,7 @@ class Shipper
      */
     public function getQuote(\Shop\Order $Order)
     {
+        $retval = array();
         if (
             $this->free_threshold > 0 &&
             $Order->getItemTotal() > $this->free_threshold
@@ -1885,10 +1932,32 @@ class Shipper
                     ->setCost(0)
                     ->setPackageCount(1),
             );
-            return $retval;
+        } else {
+            $cache_key = $this->getID() . '.' . $Order->totalShippingUnits() .
+                '.' . $Order->getShipto()->toHash();
+            $retval = Cache::get($cache_key);
+            if ($retval === NULL) {
+                switch ($this->quote_method) {
+                case self::QUOTE_API:
+                    $retval = $this->_getQuote($Order);
+                    break;
+                case self::QUOTE_TABLE:
+                default:
+                    $quote = $this->getUnitQuote($Order);
+                    if (is_object($quote)) {
+                        $retval = array($quote);
+                    }
+                    break;
+                }
+                Cache::set(
+                    $cache_key,
+                    $retval,
+                    self::$base_tag,
+                    self::QUOTE_CACHE_MINS
+                );
+            }
         }
-
-        return $this->_getQuote($Order);
+        return $retval;
     }
 
 
@@ -1905,7 +1974,7 @@ class Shipper
         // Otherwise, get a quote based on units.
         if ($this->key != 'generic') {
             $Packages = Package::packOrder($Order, $this);
-            $retval = array($this->getPackageQuote($Order->getShipto(), $Packages));
+            $retval = array($this->getPackageQuote($Packages));
         } else {
             $retval = array($this->getUnitQuote($Order));
         }
@@ -1922,6 +1991,32 @@ class Shipper
     public function supportsService($key)
     {
         return in_array($key, $this->supported_services);
+    }
+
+
+    /**
+     * Get the weight unit of measurement to send to the shipper's API.
+     *
+     * @return  string      Correct unit of measure for the shipper
+     */
+    protected function getWeightUOM()
+    {
+        global $_SHOP_CONF;
+
+        return $this->uom[$_SHOP_CONF['weight_unit']];
+    }
+
+
+    /**
+     * Get the size unit of measurement to send to the shipper's API.
+     *
+     * @return  string      Correct unit of measure for the shipper
+     */
+    protected function getSizeUOM()
+    {
+        global $_SHOP_CONF;
+
+        return $this->uom[$_SHOP_CONF['uom_size']];
     }
 
 }   // class Shipper
