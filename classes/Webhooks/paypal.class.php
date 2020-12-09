@@ -71,19 +71,20 @@ class paypal extends \Shop\Webhook
                     $payment = array_pop($payments['transactions']);
                     if (is_array($payment)) {
                         $ref_id = $payment['payment_id'];
-                        $this->logIPN();
-                        // Get the payment by reference ID to make sure it's unique
+                       // Get the payment by reference ID to make sure it's unique
                         $Pmt = Payment::getByReference($ref_id);
                         if ($Pmt->getPmtID() == 0) {
                             $Pmt->setRefID($ref_id)
                                 ->setAmount($payment['amount']['value'])
                                 ->setGateway($this->getSource())
                                 ->setMethod($payment['method'])
-                                ->setComment(SHOP_getVar($payment, 'note'))
+                                ->setComment('Webhook ' . $this->getID())
                                 ->setOrderID($this->getOrderID());
                             return $Pmt->Save();
                         }
-                    }
+                        $this->setID($ref_id);  // use the payment ID
+                        $this->logIPN();
+                     }
                 }
             }
             break;
