@@ -609,16 +609,32 @@ class Gateway
 
         $this->lang = array();
         $langfile = $this->gw_name . '_' . $_CONF['language'] . '.php';
-        if (!is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
-            $langfile = $this->gw_name . '_english.php';
+        if (!is_file(__DIR__ . '/Gateways/language/' . $langfile)) {
+            $langfile = $this->gw_name . '_english_utf-8.php';
         }
-        if (is_file(SHOP_PI_PATH . '/language/' . $langfile)) {
-            include SHOP_PI_PATH . '/language/' . $langfile;
+        if (is_file(__DIR__ . '/Gateways/language/' . $langfile)) {
+            include __DIR__ . '/Gateways/language/' . $langfile;
             if (isset($LANG_SHOP_gateway) && is_array($LANG_SHOP_gateway)) {
                 $this->lang = $LANG_SHOP_gateway;
             }
         }
         return $this;
+    }
+
+
+    /**
+     * Get a language string.
+     *
+     * @param   string  $key    Language string key
+     * @return  string      Language string, or key value if not defined
+     */
+    protected function getLang($key)
+    {
+        if (is_array($this->lang) && array_key_exists($key, $this->lang)) {
+            return $this->lang[$key];
+        } else {
+            return $key;
+        }
     }
 
 
@@ -1723,7 +1739,7 @@ class Gateway
      */
     public function hasAccess($total=0)
     {
-        return $total > 0 && SEC_inGroup($this->grp_access);
+        return $total > 0 && $this->getEnabled() && SEC_inGroup($this->grp_access);
     }
 
 

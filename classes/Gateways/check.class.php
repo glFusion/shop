@@ -44,7 +44,7 @@ class check extends \Shop\Gateway
         // override defaults
         parent::__construct($A);
 
-        $this->gw_desc = $this->lang['descr_text'];
+        $this->gw_desc = $this->getLang('descr_text');
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
         $this->do_redirect = false; // handled internally
@@ -287,6 +287,8 @@ class check extends \Shop\Gateway
             'order_url' => $Order->buildUrl('pdforder'),
             'order_id'  => $Order->getOrderID(),
             'token'     => $Order->getToken(),
+            'lang_print' => $this->getLang('print'),
+            'pmt_instructions' => $this->getLang('pmt_instructions'),
         ) );
         $T->parse('output', 'remit');
         $content = $T->finish($T->get_var('output'));
