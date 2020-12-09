@@ -555,7 +555,11 @@ class Package
             ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                    Icon::getHTML('question', 'tooltip', array('title'=>$LANG_SHOP_HELP['hlp_delete'])),
+                Icon::getHTML(
+                    'question',
+                    'tooltip',
+                    array('title'=>$LANG_SHOP_HELP['hlp_delete'])
+                ),
                 'field' => 'delete',
                 'align' => 'center',
             ),
@@ -636,7 +640,7 @@ class Package
             break;
 
         case 'delete':
-            /*if (!self::isUsed($A['id'])) {
+            if (!self::isUsed($A['id'])) {
                 $retval .= COM_createLink(
                     Icon::getHTML('delete'),
                     SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
@@ -646,7 +650,7 @@ class Package
                         'class' => 'tooltip',
                     )
                 );
-            }*/
+            }
             break;
 
         default:
