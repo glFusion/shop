@@ -44,7 +44,7 @@ $expected = array(
     // Actions to perform
     'delete', 'savepayment', 'delpayment',
     // Views to display
-    'edit', 'payments', 'list', 'ord_pmts', 'newpayment', 'ipndetail',
+    'edit', 'payments', 'list', 'newpayment', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -71,13 +71,13 @@ case 'savepayment':
         ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
         ->setComment($_POST['comment']);
     $Pmt->Save();
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $_POST['order_id']);
+    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
     break;
 
 case 'delete':
 case 'delpayment':
     Shop\Payment::delete($actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $_GET['ord_pmts']);
+    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
     break;
 
 default:
@@ -102,7 +102,6 @@ case 'ipndetail':
 
 case 'list':
 case 'payments':
-case 'ord_pmts':
 default:
     // View payments on an order
     if ($actionval != 'x') {

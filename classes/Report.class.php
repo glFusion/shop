@@ -772,10 +772,10 @@ class Report
         switch($fieldname) {
         case 'order_id':
             if ($extra['isAdmin']) {
-                $url = SHOP_ADMIN_URL . '/index.php?order=' . $fieldvalue;
+                $url = SHOP_ADMIN_URL . '/orders.php?order=' . $fieldvalue;
                 $opts = array('target' => '_blank');
             } else {
-                $url = COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $fieldvalue);
+                $url = COM_buildUrl(SHOP_URL . '/orders.php?mode=view&id=' . $fieldvalue);
                 $opts = array();
             }
             $retval = COM_createLink($fieldvalue, $url, $opts);

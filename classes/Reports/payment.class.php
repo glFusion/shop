@@ -317,7 +317,7 @@ class payment extends \Shop\Report
         case 'pmt_order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $fieldvalue
+                SHOP_ADMIN_URL . '/orders.php?order=' . $fieldvalue
             );
             break;
 
@@ -344,7 +344,7 @@ class payment extends \Shop\Report
         case 'delete':
             $retval = COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&ord_pmts=' . $extra['order_id'],
+                SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
                 array(
                     'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
                 )

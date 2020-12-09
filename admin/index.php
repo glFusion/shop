@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -57,7 +57,7 @@ $expected = array(
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
     // Views to display
-    'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
+    'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
@@ -65,12 +65,14 @@ $expected = array(
     'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl',
-    'shipments', 'ord_ship', 'ord_pmts', 'newpayment',
+    'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
     'products',
+    // deprecated
+    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -648,11 +650,8 @@ default:
 }
 
 switch ($view) {
-case 'history':
-    $content .= \Shop\history(true);
-    break;
-
 case 'orders':
+    echo "$view deprecated";die;
     $content .= Shop\Menu::adminOrders($view);
     $R = \Shop\Report::getInstance('orderlist');
     if ($R !== NULL) {
@@ -669,6 +668,7 @@ case 'coupons':
     break;
 
 case 'order':
+    echo "$view deprecated";die;
     $order = \Shop\Order::getInstance($actionval);
     $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
     $content .= Shop\Menu::viewOrder($view, $order);
@@ -676,6 +676,7 @@ case 'order':
     break;
 
 case 'ipndetail':
+    echo "$view deprecated";die;
     $val = NULL;
     foreach (array('id', 'txn_id') as $key) {
         if (isset($_GET[$key])) {
@@ -950,6 +951,7 @@ case 'ord_pmts':
 
 case 'shipments':
 case 'ord_ship':
+    echo "$view deprecated";die;
     // View admin list of shipments
     SHOP_setUrl();
     if ($actionval != 'x') {
