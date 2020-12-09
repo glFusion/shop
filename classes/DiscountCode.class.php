@@ -94,14 +94,18 @@ class DiscountCode
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
-            WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, false);
-            $retval = new self($A);
-        } else {
-            $retval = new self;
+        static $retval = NULL;
+
+        if ($code === NULL) {
+            $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
+                WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
+            $res = DB_query($sql);
+            if ($res) {
+                $A = DB_fetchArray($res, false);
+                $retval = new self($A);
+            } else {
+                $retval = new self;
+            }
         }
         return $retval;
     }
@@ -684,11 +688,15 @@ class DiscountCode
     {
         global $_CONF, $_TABLES;
 
-        $now = $_CONF['_now']->toMySQL(true);
-        $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
-            WHERE '$now' > `start` AND '$now' < `end`";
-        $res = DB_query($sql);
-        return (int)DB_numRows($res);
+        static $count = -1;
+        if ($count === -1) {
+            $now = $_CONF['_now']->toMySQL(true);
+            $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
+                WHERE '$now' > `start` AND '$now' < `end`";
+            $res = DB_query($sql);
+            $count = (int)DB_numRows($res);
+        }
+        return $count;
     }
 
 }
