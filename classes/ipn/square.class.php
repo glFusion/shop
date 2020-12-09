@@ -51,19 +51,20 @@ class square extends \Shop\IPN
             //->setStatus($status);
         $this->gw_name = $this->GW->getName();;
 
-        $billto = $this->Order->getAddress('billto');
-        $shipto = $this->Order->getAddress('shipto');
-        if (empty($shipto) && !empty($billto)) $shipto = $billto;
-
+        $Billto = $this->Order->getBillto();
+        $Shipto = $this->Order->getShipto();
+        if (empty($Shipto->getID()) && !empty($Billto->getID())) {
+            $Shipto = $Billto;
+        }
         $this->shipto = array(
-            'name'      => SHOP_getVar($shipto, 'name'),
-            'company'   => SHOP_getVar($shipto, 'company'),
-            'address1'  => SHOP_getVar($shipto, 'address1'),
-            'address2'  => SHOP_getVar($shipto, 'address2'),
-            'city'      => SHOP_getVar($shipto, 'city'),
-            'state'     => SHOP_getVar($shipto, 'state'),
-            'country'   => SHOP_getVar($shipto, 'country'),
-            'zip'       => SHOP_getVar($shipto, 'zip'),
+            'name'      => $Shipto->getName(),
+            'company'   => $Shipto->getCompany(),
+            'address1'  => $Shipto->getAddress1(),
+            'address2'  => $Shipto->getAddress2(),
+            'city'      => $Shipto->getCity(),
+            'state'     => $Shipto->getState(),
+            'country'   => $Shipto->getCountry(),
+            'zip'       => $Shipto->getPostal(),
         );
 
         // Set the custom data into an array.  If it can't be unserialized,

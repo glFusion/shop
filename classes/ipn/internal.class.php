@@ -104,7 +104,7 @@ class internal extends \Shop\IPN
         case 'buy_now':
             $this->setTxnId(uniqid() . rand(100,999));
             $this->createOrder();
-            $this->Order->setInfo('gateway', 'test');
+            $this->Order->setGateway('test');
             break;
         }
 
@@ -208,9 +208,11 @@ class internal extends \Shop\IPN
             }
             if (!$this->Order) return NULL;
 
-            $billto = $this->Order->getAddress('billto');
-            $shipto = $this->Order->getAddress('shipto');
-            if (empty($shipto) && !empty($billto)) $shipto = $billto;
+            $billto = $this->Order->getBillto();
+            $shipto = $this->Order->getShipto();
+            if (empty($shipto->getID()) && !empty($billto->getID())) {
+                $shipto = $billto;
+            }
             if (COM_isAnonUser()) {
                 $_USER['email'] = '';
             }

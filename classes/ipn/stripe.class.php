@@ -70,9 +70,9 @@ class stripe extends \Shop\IPN
         }
 
         $this->setOrderId($this->Order->getOrderID());
-        $billto = $this->Order->getAddress('billto');
-        $shipto = $this->Order->getAddress('shipto');
-        if (empty($shipto) && !empty($billto)) {
+        $billto = $this->Order->getBillto();
+        $shipto = $this->Order->getShipto();
+        if (empty($shipto->getID()) && !empty($billto->getID())) {
             $shipto = $billto;
         }
 
