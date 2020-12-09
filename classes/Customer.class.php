@@ -189,7 +189,7 @@ class Customer
         if (array_key_exists($add_id, $this->addresses)) {
             return $this->addresses[$add_id];
         } else {
-            return array();
+            return reset($this->addresses);
         }
     }
 
