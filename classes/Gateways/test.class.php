@@ -243,7 +243,7 @@ class test extends \Shop\Gateway
      */
     public function hasAccess($total=0)
     {
-        return SEC_inGroup($this->grp_access);
+        return $this->getEnabled() && SEC_inGroup($this->grp_access);
     }
 
 }

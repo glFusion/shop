@@ -168,7 +168,7 @@ class free extends \Shop\Gateway
      */
     public function hasAccess($total=0)
     {
-        return $total == 0 && SEC_inGroup($this->grp_access);
+        return $total == 0 && $this->getEnabled() && SEC_inGroup($this->grp_access);
     }
 
 }
