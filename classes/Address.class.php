@@ -101,8 +101,9 @@ class Address
         if (is_array($data)) {
             $this->setVars($data);
         }
-        if ($this->uid < 1) {
+        if ($this->addr_id < 1) {
             // in case an empty object is being created, set the user ID
+            // and defaults for the selections
             $this->setUid($_USER['uid']);
         }
     }
@@ -777,6 +778,20 @@ class Address
      */
     public function Edit()
     {
+        $have_state_country = false;
+        if ($this->uid > 1) {
+            $Addr = Customer::getInstance()->getDefaultAddress('shipto');
+            if ($Addr->getID() > 0) {
+                $this->setState($Addr->getState())
+                    ->setCountry($Addr->getCountry());
+                $have_state_country = true;
+            }
+        }
+        if (!$have_state_country) {
+            $this->setState(Config::get('state'))
+                 ->setCountry(Config::get('country'));
+        }
+
         $T = new Template;
         $T->set_file('form', 'editaddress.thtml');
         $T->set_var(array(
