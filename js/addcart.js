@@ -27,19 +27,14 @@ var shopAddToCart = function(frm_id, nonce)
             try {
                 if (result.content != '') {
                     // Update the shopping cart block if it is displayed
-                    divid = document.getElementById("shopCartBlockContents");
-                    if (divid != undefined) {
-                        divid.innerHTML = result.content;
-                        if (result.unique) {
-                            var btn_id = frm_id + '_add_cart_btn';
-                            btn = document.getElementById(btn_id);
-                            if (btn != undefined) {
-                                document.getElementById(btn_id).disabled = true;
-                                document.getElementById(btn_id).className = 'shopButton grey';
-                            }
-                        }
+                    $("#shopCartBlockContents").html(result.content);
+                    if (result.unique) {
+                        $("#"+frm_id+"_add_cart_btn").prop('disabled', true);
                     }
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                    $.UIkit.notify(
+                        "<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage,
+                        {timeout: 1000,pos:'top-center'}
+                    );
                     // If a return URL is provided, redirect to that page
                     if (result.ret_url != '') {
                         window.location.href = result.ret_url;
@@ -56,6 +51,33 @@ var shopAddToCart = function(frm_id, nonce)
     });
     return false;
 };
+
+function SHOP_delFromCart(oi_id)
+{
+    var dataS = {
+        "oi_id": oi_id,
+    };
+    var data = $.param(dataS);
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=delcartitem",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.content != '') {
+                    // Update the shopping cart block if it is displayed
+                    $("#shopCartBlockContents").html(result.content);
+                }
+            } catch(err) {
+            }
+            blk_setvis_shop_cart(result.content == "" ? "none" : "block");
+        },
+        error: function() {
+        }
+    });
+    return false;
+}
 
 
 /**
@@ -217,3 +239,4 @@ function SHOPvalidateAddress(form)
     });
     return;
 }
+

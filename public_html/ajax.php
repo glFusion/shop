@@ -148,6 +148,16 @@ case 'addcartitem':
     );
     break;
 
+case 'delcartitem':
+    $oi_id = SHOP_getVar($_GET, 'oi_id', 'integer');
+    if ($oi_id > 0) {
+        \Shop\Cart::getInstance()->Remove($oi_id);
+    }
+    $output = array(
+        'content' => phpblock_shop_cart_contents(),
+    );
+    break;
+
 case 'setShipper':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
     $method_id = (int)$_POST['shipper_id'];
