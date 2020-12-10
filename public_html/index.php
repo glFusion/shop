@@ -202,7 +202,7 @@ case 'thanks':
         if ($gw !== NULL) {
             $tVars = $gw->thanksVars();
             if (!empty($tVars)) {
-                $T = new Shop\Template;
+                $T = Shop\Template::getByLang();
                 $T->set_file('msg', 'thanks_for_order.thtml');
                 $T->set_var('site_name', $_CONF['site_name']);
                 foreach ($tVars as $name=>$val) {
@@ -234,7 +234,7 @@ case 'thanks':
 case 'action':      // catch all the "?action=" urls
     switch ($actionval) {
     case 'thanks':
-        $T = new Shop\Template;
+        $T = Shop\Template::getByLang();
         $T->set_file('msg', 'thanks_for_order.thtml');
         $T->set_var(array(
             'site_name'     => $_CONF['site_name'],
