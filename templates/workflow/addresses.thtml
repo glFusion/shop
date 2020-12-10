@@ -1,0 +1,98 @@
+{# begin {templatelocation} #}
+<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
+    <div>
+        <h2>{$LANG_SHOP['select_shipto']}:</h2>
+        <select id="shipto_id" name="shipto_id" onchange="SHOP_updateAddress(this.value, 'shipto',true);">
+            {shipto_opts}
+        </select>
+        <p>
+        <input type="checkbox" id="ShiptoIsBillto" name="ShiptoIsBillto" value="1"
+            onclick="SHOP_showhideBillto();" />&nbsp;{$LANG_SHOP['billto_is_shipto']}
+        </p>
+    </div>
+    <div>
+        <div id="selectBillto">
+        <h2>{$LANG_SHOP['select_billto']}:</h2>
+        <select id="billto_id" name="billto_id" onchange="SHOP_updateAddress(this.value, 'billto',true);">
+            {billto_opts}
+        </select>
+        </div>
+    </div>
+</div>
+<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;height:200px;">
+    <div>
+        <span class="header">{$LANG_SHOP['ship_to']}:</span><br />
+        <span id="shipto_addr">{shipto_addr}</span>
+        <p>
+        <a id="shipto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={shipto_id}">{$LANG_SHOP['update']}</a>
+        </p>
+        <p>
+        <a class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id=0">{$LANG_SHOP['new_address']}</a>
+        </p>
+    </div>
+    <div>
+        <span class="header">{$LANG_SHOP['bill_to']}:</span><br />
+        <span id="billto_addr">{billto_addr}</span>
+        <p>
+        <a id="billto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={billto_id}">{$LANG_SHOP['update']}</a>
+        </p>
+    </div>
+</div>
+
+<div class="orderInstructions">
+    {$LANG_SHOP['enter_email']}:
+    <input required id="buyer_email" type="text"
+        name="buyer_email" size="40" value="{buyer_email}"/>
+    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
+</div>
+<div class="orderInstructions">
+    {$LANG_SHOP['order_instr']}:<br />
+    <textarea name="order_instr" rows="4" style="width:100%">{order_instr}</textarea>
+</div>
+
+{form_footer}
+</form>
+<script>
+SHOP_updateAddress({billto_id}, 'billto');
+SHOP_updateAddress({shipto_id}, 'shipto');
+function SHOP_showhideBillto()
+{
+    if ($("#ShiptoIsBillto").is(':checked')) {
+        $("div#selectBillto").hide();
+        SHOP_updateAddress($("select#shipto_id option:selected").attr("value"), "billto", false);
+        $("span#billto_addr").html($("span#shipto_addr").html());
+    } else {
+        $("div#selectBillto").show();
+        SHOP_updateAddress($("select#billto_id option:selected").attr("value"), "billto", true);
+    }
+}
+
+function SHOP_updateAddress(addr_id, elem, upd_display)
+{
+    var dataS = {
+        "id": addr_id,
+        "type": elem,
+    };
+    data = $.param(dataS);
+
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=getAddressHTML",
+        data: data,
+        success: function(result) {
+            try {
+                $("#"+elem+"_upd_link").attr("href",
+                    "{site_url}/shop/account.php?mode=editaddr&id=" + addr_id
+                );
+                if (upd_display) {
+                    $("#"+elem+"_addr").html(result.addr_text);
+                }
+            } catch(err) {
+            }
+        }
+    });
+    return false;
+}
+</script>
+{# end {templatelocation} #}

@@ -1,0 +1,30 @@
+{# begin {templatelocation} #}
+<ul class="justified uk-nav checkout_menu uk-grid uk-grid-collapse uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}"
+    style="margin:auto;margin-bottom:20px;margin-top:20px;">
+<!-- BEGIN Flows -->
+{!if is_active}
+    <li class="uk-panel uk-panel-box shop-wf-active">
+        <a href="{site_url}/shop/cart.php?{wf_name}=x">
+            <i class="uk-icon uk-icon-chevron-right uk-icon-small"></i>
+            {wf_title}
+        </a>
+{!elseif is_done}
+    <li class="uk-panel uk-panel-box uk-panel-box-primary">
+        <a href="{site_url}/shop/cart.php?{wf_name}=x">
+            <i class="uk-icon uk-icon-check uk-icon-small uk-text-success"></i>
+            {wf_title}
+        </a>
+{!else}
+    <li class="uk-panel uk-panel-box uk-panel-box-secondary">
+        <a href="{site_url}/shop/cart.php?{wf_name}=x">
+            {wf_title}
+        </a>
+{!endif}
+    </li>
+<!-- END Flows -->
+</ul>
+{!if wrap_form}
+<form class="uk-form" action="{site_url}/shop/cart.php" method="post">
+<input type="hidden" name="save_{current_wf}" value="x" />
+{!endif}
+{# end {templatelocation} #}

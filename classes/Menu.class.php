@@ -40,7 +40,7 @@ class Menu
                 'text' => $LANG_SHOP['back_to_catalog'],
             ),
             array(
-                'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
+                'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=orderhist'),
                 'text' => $LANG_SHOP['purchase_history'],
                 'active' => $view == 'orderhist' ? true : false,
             ),
@@ -348,7 +348,7 @@ class Menu
                 'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=x',
+                'url' => SHOP_ADMIN_URL . '/payments.php?payments=x',
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'payments' ? true : false,
             ),
@@ -371,19 +371,19 @@ class Menu
         $retval = '';
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->getOrderID(),
+                'url'  => SHOP_ADMIN_URL . '/orders.php?order=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['order'],
                 'active' => $view == 'order' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->getOrderID(),
+                'url' => SHOP_ADMIN_URL . '/shipments.php?shipments=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['shipments'],
-                'active' => $view == 'ord_ship' ? true : false,
+                'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=' . $Order->getOrderID(),
+                'url' => SHOP_ADMIN_URL . '/payments.php?payments=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
-                'active' => $view == 'ord_pmts' ? true : false,
+                'active' => $view == 'payments' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
@@ -471,7 +471,7 @@ class Menu
             'link_admin' => plugin_ismoderator_shop(),
             'link_account' => ($page != 'account' && $_USER['uid'] > 1),
         ) );
-        if ($page != 'cart' && Cart::getCart()) {
+        if ($page != 'cart' && Cart::getCartID()) {
             $item_count = Cart::getInstance()->hasItems();
             if ($item_count) {
                 $T->set_var('link_cart', $item_count);
@@ -541,33 +541,42 @@ class Menu
     }
 
 
-    public static function checkoutFlow($step = 0)
+    /**
+     * Show the submenu for the checkout workflow.
+     *
+     * @param   object  $Cart   Cart object, to see what steps are needed
+     * @param   string  $step   Current step name
+     * @return  string      HTML for workflow menu
+     */
+    public static function checkoutFlow($Cart, $step = 'viewcart')
     {
-        global $LANG_SHOP;
-
         $Flows = Workflow::getAll();
-
-
-        $menu_arr = array(
-            array(
-                'url'  => SHOP_ADMIN_URL . '/orders.php',
-                'text' => $LANG_SHOP['orders'],
-                'active' => $view == 'orders' ? true : false,
-            ),
-            array(
-                'url' => SHOP_ADMIN_URL . '/shipments.php',
-                'text' => $LANG_SHOP['shipments'],
-                'active' => $view == 'shipments' ? true : false,
-            ),
-            array(
-                'url' => SHOP_ADMIN_URL . '/payments.php?ord_pmts=x',
-                'text' => $LANG_SHOP['payments'],
-                'active' => $view == 'payments' ? true : false,
-            ),
-        );
-        return self::_makeSubMenu($menu_arr);
+        $flow_count = 0;
+        $T = new Template('workflow/');
+        $T->set_file('menu', 'menu.thtml');
+        $T->set_block('menu', 'Flows', 'Flow');
+        foreach ($Flows as $Flow) {
+            if (!$Flow->isNeeded($Cart)) {
+                continue;
+            }
+            $flow_count++;
+            $T->set_var(array(
+                'mnu_cls' => 'completed',
+                'wf_name' => $Flow->getName(),
+                'wf_title' => $Flow->getTitle(),
+                'is_done' => $Flow->isSatisfied($Cart) ? 1 : 0,
+                'is_active' => $Flow->getName() == $step ? 1 : 0,
+                'current_wf' => $step,
+            ) );
+            $T->parse('Flow', 'Flows', true);
+        }
+        $T->set_var(array(
+            'wrap_form' => $step != 'confirm',
+            'flow_count' => $flow_count,
+        ) );
+        $T->parse('output', 'menu');
+        return $T->finish($T->get_var('output'));
     }
-
 
 
 }

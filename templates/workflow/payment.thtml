@@ -1,0 +1,37 @@
+{# begin {templatelocation} #}
+<div class="workflow_options" style="width:60%;margin:auto;">
+    <h2>{$LANG_SHOP['select_payment']}</h2>
+<!-- BEGIN Radios -->
+    <div class="uk-grid workflow_option">
+        <div class="uk-width-1-10">
+            <input required type="radio" name="gateway" value="{gw_id}"
+                id="gw_{gw_id}" {sel}
+                onclick="SHOP_setGateway('{gw_id}');" />
+        </div>
+        <div class="uk-width-9-10">
+            <label for="gw_{gw_id}" style="width:100%;display:inline-block;">{logo}</label>
+        </div>
+    </div>
+<!-- END Radios -->
+</div>
+{form_footer}
+<script>
+function SHOP_setGateway(gw_id)
+{
+    var dataS = {
+        "gw_id": gw_id
+    };
+    data = $.param(dataS);
+
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=setGW",
+        data: data,
+        success: function(result) {
+        }
+    });
+    return false;
+}
+</script>
+{# end {templatelocation} #}
