@@ -190,9 +190,8 @@ class OrderItem
         } else {
             $oi_id = $oi;
         }
-
         if (!array_key_exists($oi_id, $items)) {
-            $items[$oi_id] = new self($oi);
+            $items[$oi_id] = new self($oi_id);
         }
         return $items[$oi_id];
     }
@@ -244,7 +243,7 @@ class OrderItem
         $this->expiration = SHOP_getVar($A, 'expiration', 'integer');
         $this->base_price = SHOP_getVar($A, 'base_price', 'float');
         $this->price = SHOP_getVar($A, 'price', 'float');
-        $this->setQtyDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
+        $this->setDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
         $this->token = SHOP_getVar($A, 'token');
         $this->net_price = SHOP_getVar($A, 'net_price', 'float');
         $this->setOptionsText(SHOP_getVar($A, 'options_text', 'array'));
@@ -488,7 +487,7 @@ class OrderItem
             $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             //Cache::deleteOrder($this->order_id);
@@ -529,7 +528,7 @@ class OrderItem
      * @param   float   $value      Discount percentage
      * @return  object  $this
      */
-    public function setQtyDiscount($value)
+    public function XsetQtyDiscount($value)
     {
         $value = (float)$value;
         if ($value >= 1) {
@@ -620,7 +619,7 @@ class OrderItem
      */
     public function getShippingUnits()
     {
-        $units = $this->Product->shipping_units;
+        $units = $this->Product->getShippingUnits();
         if ($this->variant_id > 0) {
             $units += ProductVariant::getInstance($this->variant_id)->getShippingUnits();
         }
@@ -1055,6 +1054,7 @@ class OrderItem
         if ($this->Product->canApplyDiscountCode()) {
             $price = $this->getPrice() * (1 - $pct);
             $this->setNetPrice(Currency::getInstance()->RoundVal($price));
+            $this->setTax($this->net_price * $this->quantity * $this->tax_rate);
         }
         return $this;
     }
@@ -1093,7 +1093,11 @@ class OrderItem
     public function setTaxRate($rate)
     {
         $this->tax_rate = (float)$rate;
-        $this->setTax($this->quantity * $this->net_price * $this->tax_rate);
+        if ($this->taxable) {
+            $this->setTax($this->quantity * $this->net_price * $this->tax_rate);
+        } else {
+            $this->setTax(0);
+        }
         return $this;
     }
 
