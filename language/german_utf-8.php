@@ -709,6 +709,33 @@ $LANG_SHOP = array (
 'at_dscp_shop' => 'Include a product in the content',
 'at_dscp_shop_cat' => 'Add a link to a catalog category',
 'at_dscp_shop_headlines' => 'Include a headline-style display of products',
+'ena_quoteapi' => 'Enable Quote API',
+'ena_trackingapi' => 'Enable Tracking API',
+'supported_services' => 'Supported Services',
+'packages' => 'Packages',
+'new_package' => 'New Package',
+'free_threshold' => 'Free Shipping Threshold',
+'manual_entry' => 'Manual Entry',
+'pmt_detail' => 'Payment Detail',
+'pkg_height' => 'Package Height',
+'pkg_width' => 'Package Width',
+'pkg_length' => 'Package Length',
+'pkg_max_weight' => 'Package Max. Weight',
+'unit_capacity' => 'Shipping Unit Capacity',
+'carrier_options' => 'Carrier Options',
+'pkg_code' => 'Package Code',
+'svc_code' => 'Service Code',
+'fixed_rate' => 'Fixed Rate',
+'pkg_rates' => 'Package Rates',
+'rate_method' => 'Rate Quote Method',
+'payment' => 'Payment',
+'confirm' => 'Confirm Order',
+'next_step' => 'Next Step',
+'select_billto' => 'Select your Billing Address:',
+'select_shipto' => 'Select your Shipping Address:',
+'billto_is_shipto' => 'Billing address is the same as Shipping',
+'select_shipping' => 'Choose a shipping option:',
+'select_payment' => 'Select a payment method:',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -751,6 +778,15 @@ $LANG_SHOP_HELP = array(
 'select_files' => 'Select one or multiple files to upload.',
 'tax_import_fmt' => 'File Format and first line: <pre>State,ZipCode,TaxRegionName,StateRate,EstimatedCombinedRate,EstimatedCountyRate,EstimatedCityRate,
 EstimatedSpecialRate,RiskLevel</pre>',
+'packages' => 'Packages are used to calculate shipping rates using shipping quote APIs.<br />Packages can be configured with the type and class of service for each shipper, or use a fixed rate, or can be disabled for a shipper.',
+'opt_groups' => 'Option groups represent the buyer-selectable options available for a product, such as &quot;color&quot; and &quot;size&quot;. Options for each color, size, etc. are added under the &quot;Options&quot; menu.',
+'options' => 'Options represent each variation available for an Option Group. Add elements such as Large, Medium, Small, etc.',
+'variants' => 'Variants represent each combination of options that can be selected for a product. Each Variant can affect the product price and alter the SKU.',
+'sale_prices' => 'Sales can be applied to a product or category to give an amount or percentage discount. There is no provision for a minimum order quantity, so the percentage is recommended unless you wish to apply a discount amount to specific products.',
+'discount_codes' => 'Discount codes are reusable codes for the buyer to enter at checkout to obtain a discount. Codes can be valid during a date range and can set to require a minimum order value.',
+'suppliers' => 'Suppliers and Brands can be specified for products. Suppliers are used for the re-order report while Brands are shown to the buyers and allow searching by brand name.',
+'features' => 'Features are static items that you wish to highlight for a product, such as Material or Finish. Features apply to all variatiosn of a product and are not selectable by the buyer.<br />Create and edit feature sets here, then apply the appropriate features with specific values to the Products.',
+'coupons' => 'Coupons or Gift Cards can be sent to buyers or buyer groups as loyalty rewards. Coupons are applied to the buyer&apos;s balance and can be used for later purchases.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -864,6 +900,7 @@ $LANG_confignames['shop'] = array(
 'ipstack_api_key' => 'IPStack API Key',
 'ipgeo_provider' => 'Geolocation Provider',
 'inv_start_num' => 'Invoice starting number/format',
+'uom_size' => 'Unit of Size Measurement',
 );
 
 /** Language strings for the subgroup names in the config section */

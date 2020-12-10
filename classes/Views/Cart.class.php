@@ -19,6 +19,8 @@ use Shop\Shipper;
 use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
+use Shop\Customer;
+use Shop\Address;
 use Shop\IPN;
 use Shop\OrderStatus;
 
@@ -44,7 +46,7 @@ class Cart extends OrderBaseView
     public function __construct($order_id = NULL)
     {
         $this->tplname = 'viewcart';
-        $this->TPL = new Template;
+        $this->TPL = new Template('workflow/');
         $this->TPL->set_file($this->tplname, 'viewcart.thtml');
         $this->Currency = Currency::getInstance();
         if ($order_id !== NULL) {
@@ -83,16 +85,20 @@ class Cart extends OrderBaseView
      */
     public function withView($view)
     {
+        $this->TPL = new Template;
         switch ($view) {
         case 'viewcart':
+            $this->TPL = new Template('workflow/');
             $this->tplname = 'viewcart';
+            break;
+        case 'shipping':
+            $this->tplname = 'shipping';
             break;
         case 'checkout':
         case 'order':
             $this->tplname = 'order';
             break;
         }
-        $this->TPL = new Template;
         $this->TPL->set_file($this->tplname, $this->tplname . '.thtml');
         return $this;
     }
@@ -105,7 +111,9 @@ class Cart extends OrderBaseView
      */
     public function Render()
     {
-        $output = $this->createHTML();
+//        $output = \Shop\Menu::checkoutFlow($this->Order);
+//        $output .= $this->shippingSelection();
+        $output = $this->createHTML2();
         return $output;
     }
 
@@ -115,11 +123,10 @@ class Cart extends OrderBaseView
      * Access is controlled by the caller invoking canView() since a token
      * may be required.
      *
-     * @param  string  $view       View to display (cart, final order, etc.)
-     * @param  integer $step       Current step, for updating next_step in the form
-     * @return string      HTML for order view
+     * @param  boolean  $final      True if this is a final, non-editable fiew
+     * @return string       HTML for order view
      */
-    public function createHTML()
+    public function createHTML2($final = false)
     {
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
 
@@ -128,22 +135,26 @@ class Cart extends OrderBaseView
         // Set flags in the template to indicate which address blocks are
         // to be shown.
         foreach (\Shop\Workflow::getAll($this->Order) as $key => $wf) {
-            $this->TPL->set_var('have_' . $wf->wf_name, 'true');
+            $this->TPL->set_var('have_' . $wf->getName(), 'true');
         }
 
+        if (!$this->Order->hasPhysical()) {
+            $this->Order->setShipper(NULL);
+        }
         $this->Order->calcTotal();
-        if ($this->tplname == 'viewcart') {
+        $this->TPL->set_var('final_checkout', $final);
+        /*if ($this->tplname == 'viewcart') {
             $this->TPL->set_var(array(
                 'not_final' => true,
                 'ship_select'   => $this->Order->selectShipper(),
              ) );
-        }
+        }*/
         $this->_renderCommon();
         $this->_renderAddresses();
         $this->_renderItems();
 
         $payer_email = $this->Order->getBuyerEmail();
-        switch ($this->tplname) {
+        /*switch ($this->tplname) {
         case 'viewcart':
             $this->TPL->set_var('gateway_radios', $this->Order->getCheckoutRadios());
             if ($this->Order->hasInvalid()) {
@@ -174,7 +185,7 @@ class Cart extends OrderBaseView
                 }
             }
             break;
-        }
+        }*/
 
         $this->TPL->set_var('payer_email', $payer_email);
         $icon_tooltips = implode('<br />', $icon_tooltips);
@@ -183,8 +194,18 @@ class Cart extends OrderBaseView
         $this->TPL->set_var(array(
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
+            'discount_code_fld' => $this->Order->canShowDiscountEntry(),
+            'discount_code' => $this->Order->getDiscountCode(),
+            'dc_row_vis'    => $this->Order->getDiscountCode(),
+            'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
+            'dc_pct'        => $this->Order->getDiscountPct() . '%',
+            'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
         ) );
-
+        if (!$final) {
+            $T1 = new Template('workflow/');
+            $T1->set_file('footer', 'footer.thtml');
+            $this->TPL->set_var('footer', $T1->parse('', 'footer'));
+        }
         $this->TPL->parse('output', $this->tplname);
         $form = $this->TPL->finish($this->TPL->get_var('output'));
         return $form;
@@ -234,6 +255,191 @@ class Cart extends OrderBaseView
         $T->parse('output', 'html');
         $html = $T->finish($T->get_var('output'));
         return $html;
+    }
+
+
+    /**
+     * Display the shipping options available for this order.
+     *
+     * @return  string      HTML for shipping selection form
+     */
+    public function shippingSelection()
+    {
+        $methods = $this->Order->getShippingOptions();
+
+        $T = new Template('workflow/');
+        $T->set_file(array(
+            'form' => 'shipping.thtml',
+            'footer' => 'footer.thtml',
+        ) );
+        $T->set_block('form', 'shipMethods', 'SM');
+        foreach ($methods as $method_id=>$method) {
+            $s_amt = $method['method_rate'];
+            $T->set_var(array(
+                'method_sel'    => $method['method_sel'] ? 'checked="checked"' : '',
+                'method_name'   => $method['method_name'],
+                'method_rate'   => Currency::getInstance()->Format($s_amt),
+                'method_id'     => $method_id,
+            ) );
+            $T->parse('SM', 'shipMethods', true);
+            if (count($methods) == 1) {
+                $this->Order->setShipperID($method_id);
+                $this->Order->setShipping($s_amt);
+            }
+        }
+        $T->set_var('form_footer', $T->parse('', 'footer'));
+        $T->parse('output', 'form');
+        return  $T->finish($T->get_var('output'));
+    }
+
+
+    /**
+     * Display the payment selection options for this order.
+     *
+     * @return  string      HTML payment selection form
+     */
+    public function paymentSelection()
+    {
+        global $_SHOP_CONF;
+
+        $retval = '';
+        $T = new Template('workflow/');
+        $T->set_file(array(
+            'form' => 'payment.thtml',
+            'footer' => 'footer.thtml',
+        ) );
+        $total = $this->Order->getTotal();
+        if (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) {
+            return $retval;
+        }
+        $gw_sel = $this->Order->getPmtMethod();
+        $gateways = Gateway::getAll();
+        if ($_SHOP_CONF['gc_enabled']) {
+            $gateways['_coupon'] = Gateway::getInstance('_coupon');
+        }
+        $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
+        if (empty($gateways)) {
+            return $retval;  // no available gateways
+        }
+
+        if ($total == 0) {
+            // Automatically select the "free" gateway if appropriate.
+            // Other gateways shouldn't be shown anyway.
+            $gw_sel = 'free';
+        /*} elseif (
+            isset($this->m_info['gateway']) &&
+            array_key_exists($this->m_info['gateway'], $gateways)
+        ) {
+            // Select the previously selected gateway
+            $gw_sel = $this->m_info['gateway'];*/
+        } elseif ($gc_bal >= $total) {
+            // Select the coupon gateway as full payment
+            $gw_sel = '_coupon';
+        } elseif (empty($gw_sel)) {
+            // Select the first if there's one, otherwise select none.
+            $gw_sel = Gateway::getSelected();
+            if ($gw_sel == '') {
+                $gw_sel = Customer::getInstance($this->Order->getUid())->getPrefGW();
+            }
+        }
+
+        $T->set_block('radios', 'Radios', 'row');
+        foreach ($gateways as $gw_id=>$gw) {
+            if (is_null($gw) || !$gw->hasAccess($total)) {
+                continue;
+            }
+            if ($gw->Supports('checkout')) {
+                if ($gw_sel == '') $gw_sel = $gw->getName();
+                $T->set_var(array(
+                    'gw_id' => $gw->getName(),
+                    'logo'  => $gw->getLogo(),
+                    'sel'   => $gw->getName() == $gw_sel ? 'checked="checked"' : '',
+                ) );
+                $T->parse('row', 'Radios', true);
+            }
+        }
+        $T->set_var('form_footer', $T->parse('', 'footer'));
+        $T->parse('output', 'form');
+        $retval = $T->finish($T->get_var('output'));
+        return $retval;
+    }
+
+
+    /**
+     * Display the selection forms for shipping and billing addresses.
+     * If this is a new customer and there are no addresses available,
+     * go directly to the address entry form.
+     *
+     * @return  string      HTML for address selection form
+     */
+    public function addressSelection()
+    {
+        SHOP_setUrl(SHOP_URL . '/cart.php?addresses');
+        $Cust = Customer::getInstance($this->Order->getUid());
+        if (empty($Cust->getAddresses())) {
+            COM_refresh(SHOP_URL . '/account.php?mode=editaddr&id=0');
+        }
+
+        $T = new Template('workflow/');
+        $T->set_file(array(
+            'form' => 'addresses.thtml',
+            'footer' => 'footer.thtml',
+        ) );
+
+        if ($this->Order->getBillto()->getID() < 1) {
+            $this->Order->setBillto($Cust->getDefaultAddress('billto'));
+        }
+        if ($this->Order->getShipto()->getID() < 1) {
+            $this->Order->setShipto($Cust->getDefaultAddress('shipto'));
+        }
+        $billto_opts = Address::optionList(
+            $this->Order->getUid(),
+            'billto',
+            $this->Order->getBillto()->getID()
+        );
+        $shipto_opts = Address::optionList(
+            $this->Order->getUid(),
+            'shipto',
+            $this->Order->getShipto()->getID()
+        );
+        $T->set_var(array(
+            'billto_addr'   => $this->Order->getBillto()->toHTML(),
+            'shipto_addr'   => $this->Order->getShipto()->toHTML(),
+            'billto_opts'   => $billto_opts,
+            'shipto_opts'   => $shipto_opts,
+            'order_instr'   => $this->Order->getInstructions(),
+            'buyer_email'   => $this->Order->getBuyerEmail(),
+            'billto_id'     => $this->Order->getBillto()->getID(),
+            'shipto_id'     => $this->Order->getShipto()->getID(),
+        ) );
+        $T->set_var('form_footer', $T->parse('', 'footer'));
+        $T->parse('output', 'form');
+        $retval = $T->finish($T->get_var('output'));
+        return $retval;
+    }
+
+
+    /**
+     * Display the final order confirmation page.
+     * There is no editing on this page.
+     *
+     * @return  string      HTML for final checkout page
+     */
+    public function confirmCheckout()
+    {
+        $this->TPL = new Template('workflow/');
+        $this->tplname = 'checkout';
+        $this->TPL->set_file('checkout', 'checkout.thtml');
+
+        $gw = Gateway::getInstance($this->Order->getPmtMethod());
+        $this->TPL->set_var(array(
+            'order_instr'   => $this->Order->getInstructions(),
+            'shipping_method' => $this->Order->getShipperDscp(),
+            'pmt_method' => $this->Order->getPmtDscp(),
+            'buyer_email'   => $this->Order->getBuyerEmail(),
+            'checkout_button' => $this->Order->checkoutButton($gw),
+        ) );
+        return $this->createHTML2(true);
     }
 
 }

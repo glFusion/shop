@@ -36,7 +36,7 @@
 }
 
 .shopButton {
-    padding: 3px 6px;
+    padding: 5px 6px;
     display: inline;
     border: none;
     color: #FFFFFF !important;
@@ -930,8 +930,13 @@ dl#featurelist dd {
 
 
 div.cart {
-    width: 80%;
+    width: 90%;
     margin: auto;
+}
+
+.shop-cart-header {
+    padding: 5px 0px;
+    font-weight: bold;
 }
 
 .cart .cart-item-total .mobile-label {
@@ -1066,4 +1071,13 @@ div.cart-item {
 .shopCustomPriceField {
     text-align: right;
     width: 3em;
+}
+
+.shop-wf-active {
+    background: #ff6f61;
+    color: #fff;
+}
+
+.shop-wf-active a {
+    color: #fff;
 }

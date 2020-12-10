@@ -54,7 +54,7 @@ class Order
      * @var array */
     protected $_addr_fields = array(
         'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country',
+        'city', 'state', 'zip', 'country', 'phone',
     );
 
     /** OrderItem objects.
@@ -458,6 +458,7 @@ class Order
                 Cart::setSession('billing', $addr_id);
                 $this->Billto = Address::getInstance($addr_id);
                 $this->Billto->fromArray($A);
+                $this->Billto->setID($addr_id);
             } else {
                 $this->Billto = new Address($A);
             }
@@ -473,7 +474,8 @@ class Order
                 "billto_city = '" . DB_escapeString($this->Billto->getCity()) . "'",
                 "billto_state = '" . DB_escapeString($this->Billto->getState()) . "'",
                 "billto_country = '" . DB_escapeString($this->Billto->getCountry()) . "'",
-                "billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'"
+                "billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'",
+                "billto_phone = '" . DB_escapeString($this->Billto->getPhone()) . "'"
             ) );
             $this->clearInstance();
         }
@@ -498,15 +500,16 @@ class Order
         } elseif (is_array($A)) {
             foreach (array('useaddress', 'addr_id', 'id') as $key) {
                 if (isset($A[$key])) {
-                    $this->shipto_id = (int)$A[$key];
+                    $addr_id = (int)$A[$key];
                     break;
                 }
             }
-            if (SHOP_getVar($A, 'addr_id', 'integer', 0) > 0) {
+            if ($addr_id > 0) {
                 // If set, read and use an existing address
                 Cart::setSession('shipping', $this->shipto_id);
                 $this->Shipto = Address::getInstance($this->shipto_id);
                 $this->Shipto->fromArray($A);
+                $this->Shipto->setID($addr_id);
             } else {
                 $this->Shipto = new Address($A);
             }
@@ -530,8 +533,10 @@ class Order
                 "shipto_state = '" . DB_escapeString($this->Shipto->getState()) . "'",
                 "shipto_country = '" . DB_escapeString($this->Shipto->getCountry()) . "'",
                 "shipto_zip = '" . DB_escapeString($this->Shipto->getPostal()) . "'",
+                "shipto_phone = '" . DB_escapeString($this->Shipto->getPhone()) . "'",
                 "tax_rate = '{$this->tax_rate}'",
-                "tax = '{$this->tax}'"
+                "tax = '{$this->tax}'",
+                "shipper_id = 0",   // clear to force shipper re-quoting
             ) );
             $this->clearInstance();
         }
@@ -595,10 +600,10 @@ class Order
             }
         }*/
         $this->Billto = (new Address())->fromArray(
-            $this->getAddress('billto', $A), 'billto'
+            $this->getAddressArray('billto', $A), 'billto'
         );
         $this->Shipto = (new Address())->fromArray(
-            $this->getAddress('shipto', $A), 'shipto'
+            $this->getAddressArray('shipto', $A), 'shipto'
         );
         if (isset($A['uid'])) $this->uid = $A['uid'];
 
@@ -885,8 +890,12 @@ class Order
      */
     public function View($view = 'order', $step = 0)
     {
+        $V = new \Shop\Views\Invoice;
+        return $V->withOrder($this)->Render();
+
         global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
-        echo __FUNCTION__ . ' deprecated'; die;
+        var_dump(debug_backtrace(0));die;
+        echo __CLASS__ . '::' . __FUNCTION__ . ' deprecated'; die;
 
         // Safety valve in case an invalid order is requested.
         // This is for administrators, the canView() function will trap this
@@ -964,7 +973,7 @@ class Order
         // Set flags in the template to indicate which address blocks are
         // to be shown.
         foreach (Workflow::getAll($this) as $key => $wf) {
-            $T->set_var('have_' . $wf->wf_name, 'true');
+            $T->set_var('have_' . $wf->getName(), 'true');
         }
 
         $T->set_block('order', 'ItemRow', 'iRow');
@@ -1094,8 +1103,8 @@ class Order
 
         // Reload the address objects in case the addresses were updated
         $ShopAddr = new Company;
-        //$this->Billto = new Address($this->getAddress('billto'));
-        //$this->Shipto = new Address($this->getAddress('shipto'));
+        //$this->Billto = new Address($this->getAddressArray('billto'));
+        //$this->Shipto = new Address($this->getAddressArray('shipto'));
 
         // Call selectShipper() here to get the shipping amount into the local var.
         //$shipper_select = $this->selectShipper();
@@ -1111,7 +1120,7 @@ class Order
         }*/
 
         $this->order_total = $this->calcOrderTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getInfo('apply_gc');
+        $by_gc = (float)$this->getGC();
         // Only show the icon descriptions when the invoice amounts are shown
         if ($is_invoice) {
             if ($discount_items > 0) {
@@ -1288,7 +1297,7 @@ class Order
             if ($this->hasInvalid) {
                 $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
             } else {
-                $gw = Gateway::getInstance($this->getInfo('gateway'));
+                $gw = Gateway::getInstance($this->pmt_method);
                 if ($gw) {
                     $T->set_var(array(
                         'gateway_vars'  => $this->checkoutButton($gw),
@@ -1626,6 +1635,12 @@ class Order
         $email_extras = array();
         $Cur = Currency::getInstance($this->currency);   // get currency object for formatting
         $Shop = new Company;
+        if ($this->pmt_method != '') {
+            $Gateway = Gateway::getInstance($this->pmt_method);
+            $gw_dscp = $Gateway->getDscp();
+        } else {
+            $gw_dscp = '';
+        }
 
         foreach ($this->items as $id=>$item) {
             $P = $item->getProduct();
@@ -1713,7 +1728,7 @@ class Order
             'dl_links'          => $dl_links,
             'buyer_uid'         => $this->uid,
             'user_name'         => $user_name,
-            'gateway_name'      => $this->pmt_method,
+            'gateway_name'      => $gw_dscp,
             'pmt_method'        => $this->pmt_method,
             'pending'           => $this->status == 'pending' ? 'true' : '',
             'gw_msg'            => $gw_msg,
@@ -1807,6 +1822,17 @@ class Order
             // Unauthorized
             return false;
         }
+    }
+
+
+    /**
+     * Get the last-modified timestamp.
+     *
+     * @return  string      DateTime that order was last modified
+     */
+    public function getLastMod()
+    {
+        return $this->last_mod;
     }
 
 
@@ -2024,16 +2050,38 @@ class Order
 
 
     /**
-     * Get the requested address array.
+     * Get the requested address object.
      * Converts internal vars named 'billto_name', etc. to an array keyed by
-     * the base field namee 'name', 'address1', etc. The result can be passed
+     * the base field named 'name', 'address1', etc. The result can be passed
+     * to the Address class.
+     *
+     * @param   string  $type   Type of address, billing or shipping
+     * @return  object      Address object
+     */
+    public function getAddress($type)
+    {
+        switch ($type) {
+        case 'shipto':
+            return $this->Shipto;
+            break;
+        case 'billto':
+            return $this->Billto;
+            break;
+        }
+        return NULL;
+    }
+
+
+    /* Get the requested address array.
+     * Converts internal vars named 'billto_name', etc. to an array keyed by
+     * the base field named 'name', 'address1', etc. The result can be passed
      * to the Address class.
      *
      * @param   string  $type   Type of address, billing or shipping
      * @param   array   $A      Data array, such as the order record
      * @return  array           Array of name=>value address elements
      */
-    public function getAddress($type, $A=NULL)
+    private function getAddressArray($type, $A=NULL)
     {
         if ($type != 'billto') {
             $type = 'shipto';
@@ -2049,7 +2097,7 @@ class Order
             $fields[$var] = isset($A[$var]) ? $A[$var] : '';
         }
         return $fields;
-    }
+     }
 
 
     /**
@@ -2106,11 +2154,12 @@ class Order
     /**
      * Set an info item into the private info array.
      *
+     * @deprecate
      * @param   string  $key    Name of var to set
      * @param   mixed   $value  Value to set
      * @return  object      Current Order object
      */
-    public function setInfo($key, $value)
+    public function XsetInfo($key, $value)
     {
         $this->m_info[$key] = $value;
         return $this;
@@ -2120,9 +2169,10 @@ class Order
     /**
      * Remove an information item from the private info array.
      *
+     * @deprecate
      * @param   string  $key    Name of var to remove
      */
-    public function remInfo($key)
+    public function XremInfo($key)
     {
         unset($this->m_info[$key]);
         return $this;
@@ -2136,7 +2186,7 @@ class Order
      */
     public function getGC()
     {
-        return (float)$this->getInfo('apply_gc');
+        return (float)$this->by_gc;
     }
 
 
@@ -2153,10 +2203,9 @@ class Order
             $gc_bal = \Shop\Products\Coupon::getUserBalance();
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
-        if ($amt != $this->getInfo('apply_gc')) {
-            $this->setInfo('apply_gc', $amt);
-        }
-        return $this;
+        return $this->updateRecord(array(
+            "by_gc = $amt",
+        ) );
     }
 
 
@@ -2183,9 +2232,6 @@ class Order
      */
     public function setGateway($gw_name)
     {
-        if ($gw_name != $this->getInfo('gateway')) {
-            $this->setInfo('gateway', $gw_name);
-        }
         $this->setPmtMethod($gw_name);
         return $this;
     }
@@ -2324,13 +2370,11 @@ class Order
             $this->shipping = 0;
             $this->shipping_method = '';
             $this->shipping_dscp = '';
-            $this->setTaxRate(NULL);
         } elseif (is_array($shipper_id)) {
             $this->shipper_id = (int)$shipper_id['shipper_id'];
             $this->shipping = (float)$shipper_id['cost'];
             $this->shipping_method = $shipper_id['svc_code'];
             $this->shipping_dscp = $shipper_id['title'];
-            $this->setTaxRate(NULL);
         }
         $this->setTaxRate(NULL);
         return $this->updateRecord(array(
@@ -2339,6 +2383,110 @@ class Order
             "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
             "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'"
         ) );
+    }
+
+
+    /**
+     * Get the available shipping options for this order.
+     *
+     * @return  array   Array of shipping methods
+     */
+    public function getShippingOptions()
+    {
+        $retval = array();
+        if (!$this->hasPhysical()) {
+            return $retval;
+        }
+
+        // Get all the shippers and rates for the selection
+        // Save the base charge (total items and handling, exclude tax if present)
+        $base_chg = $this->gross_items + $this->handling + $this->tax;
+
+        $shipping_units = $this->totalShippingUnits();
+        $Shippers = Shipper::getAll(true, $shipping_units);
+        $methods = array();
+        foreach ($Shippers as $code=>$Shipper) {
+            $quote = $Shipper->getQuote($this);
+            if ($this->getTaxShipping()) {
+                $tax_rate = $this->getTaxRate();
+            } else {
+                $tax_rate = 0;
+            }
+            foreach ($quote as $q) {
+                $shipper_id = $q['id'];
+                $title = $q['svc_title'];
+                $ship_tax = $tax_rate * $q['cost'];
+                $order_total = $base_chg + $q['cost'] + $ship_tax;
+                $order_tax = $this->tax + $ship_tax;
+                $methods[] = array(
+                    'shipper_id' => $q['shipper_id'],
+                    'svc_code' => $q['svc_code'],
+                    'title' => $q['svc_title'],
+                    'cost' => Currency::getInstance()->FormatValue($q['cost']),
+                    'order_tax' => Currency::getInstance()->FormatValue($order_tax),
+                    'order_total' => Currency::getInstance()->FormatValue($order_total),
+                );
+            }
+        }
+
+        // Get all the shippers and rates for the selection
+        usort($methods, array(__NAMESPACE__ . '\\Shipper', 'sortQuotes'));
+        $best_shipper = NULL;
+        $best_method = NULL;
+        $shipper_id = $this->shipper_id;
+        if ($shipper_id > 0) {
+            foreach ($methods as $id=>$method) {
+                if (
+                    $method['shipper_id'] == $shipper_id &&
+                    $method['svc_code'] == $this->shipping_method
+                ) {
+                    $best_method = $method;
+                    break;
+                }
+            }
+        } elseif (!empty($methods)) {
+            // No shipper previously specified, set the first method to start.
+            $best_method = $methods[0];
+        }
+
+        if ($best_method === NULL) {
+            // None already selected, grab the first one. It has the best rate.
+            usort($methods, array(__NAMESPACE__ . '\\Shipper', 'sortQuotes'));
+            $best_method = reset($methods);
+            $best_shipper = Shipper::getInstance($best_method['shipper_id']);
+        }
+
+        if ($best_method === NULL) {
+            $this->setShipper(NULL);
+            // None already selected, grab the first one. It has the best rate.
+        } else {
+            $this->setShipper($best_method);
+        }
+
+        $T = new Template;
+        $T->set_file('form', 'shipping_method.thtml');
+        $T->set_block('form', 'shipMethodSelect', 'row');
+
+        foreach ($methods as $method_id=>$method) {
+            $sel = $method['svc_code'] == $this->shipping_method;
+            $s_amt = $method['cost'];
+            $retval[] = array(
+                'method_sel'    => $sel,
+                'shipper_id'    => $method['shipper_id'],
+                'svc_code'      => $method['svc_code'],
+                'method_name'   => $method['title'],
+                'method_rate'   => $method['cost'],
+                'method_id'     => $method_id,
+                'order_id'      => $this->order_id,
+                'multi'         => count($methods) > 1 ? true : false,
+            );
+            if (count($methods) == 1) {
+                $this->shipper_id = $method_id;
+                $this->shipping = $s_amt;
+            }
+        }
+        SESS_setVar('shop.shiprate.' . $this->order_id, $methods);
+        return  $retval;
     }
 
 
@@ -2485,7 +2633,7 @@ class Order
         // Set flags in the template to indicate which address blocks are
         // to be shown.
         foreach (Workflow::getAll($this) as $key => $wf) {
-            $T->set_var('have_' . $wf->wf_name, 'true');
+            $T->set_var('have_' . $wf->getName(), 'true');
         }
         $billto = $this->Billto->toArray();
         $shipto = $this->Shipto->toArray();
@@ -2696,12 +2844,20 @@ class Order
 
         $total_qty = $this->getTotalBaseItems($item_id);
         foreach ($this->items as $key=>$OI) {
-            if ($OI->getProductID() != $item_id) continue;
-            $qty_discount = $P->getDiscount($total_qty);
+            if ($OI->getProductID() != $item_id) {
+                continue;
+            }
+            $new_discount = $P->getDiscount($total_qty);
             $new_price = $P->getDiscountedPrice($total_qty, $OI->getOptionsPrice());
-            $OI->setPrice($new_price);
-            $OI->setDiscount($qty_discount);
-            $OI->Save();
+            if (
+                $new_price != $OI->getPrice() ||
+                $new_discount != $OI->getDiscount()
+            ) {
+                // only update and save if changed
+                $OI->setPrice($new_price);
+                $OI->setDiscount($new_discount);
+                $OI->Save();
+            }
         }
         return true;
     }
@@ -2962,12 +3118,22 @@ class Order
     }
 
 
+    /**
+     * Get the gateway ID of the payment method.
+     *
+     * @return  string      Payment gateway name
+     */
     public function getPmtMethod()
     {
         return $this->pmt_method;
     }
 
 
+    /**
+     * Get the friendly description of the payment gateway.
+     *
+     * @return  string      Payment gateway description
+     */
     public function getPmtDscp()
     {
         return $this->pmt_dscp;
@@ -3190,41 +3356,49 @@ class Order
         global $_TABLES;
 
         if ($new_rate === NULL) {
-            if (Shipper::getInstance($this->getShipperID())->getTaxLocation()) {
+            if (
+                Shipper::getInstance($this->getShipperID())->getTaxLocation() == Shipper::TAX_ORIGIN
+            ) {
                 $tax_addr = new Company;
             } else {
                 $tax_addr = $this->Shipto;
             }
-            $this->tax_rate = Tax::getProvider()
+            $new_rate = Tax::getProvider()
                 ->withAddress($tax_addr)
                 ->withOrder($this)
                 ->getRate();
-        } else {
-            $this->tax_rate = (float)$new_rate;
         }
+        $new_rate = (float)$new_rate;
 
-        foreach ($this->getItems() as $Item) {
-            if ($Item->isTaxable()) {
-                $Item->setTaxRate($this->tax_rate);
+        // Check if the rate changed. If it's the same, nothing to do.
+        if ($this->getTaxRate() != $new_rate) {
+            $this->tax_rate = (float)$new_rate;
+
+            foreach ($this->getItems() as $Item) {
+                if ($Item->isTaxable()) {
+                    $Item->setTaxRate($this->tax_rate);
+                } else {
+                    $Item->setTaxRate(0);
+                }
                 $Item->Save();
             }
+            $this->calcTax();
+            // See if tax is charged on shipping and handling.
+            if ($this->tax_rate > 0) {
+                $State = State::getInstance($this->Shipto);
+                $this->setTaxShipping($State->taxesShipping())
+                    ->setTaxHandling($State->taxesHandling());
+            } else {
+                $this->setTaxShipping(0)
+                    ->setTaxHandling(0);
+            }
+            $this->updateRecord(array(
+                "tax_rate = {$this->tax_rate}",
+                "tax_shipping = {$this->tax_shipping}",
+                "tax_handling = {$this->tax_handling}"
+            ) );
+            $this->clearInstance();
         }
-        $this->calcTax();
-        // See if tax is charged on shipping and handling.
-        if ($this->tax_rate > 0) {
-            $State = State::getInstance($this->Shipto);
-            $this->setTaxShipping($State->taxesShipping())
-                ->setTaxHandling($State->taxesHandling());
-        } else {
-            $this->setTaxShipping(0)
-                ->setTaxHandling(0);
-        }
-        $this->updateRecord(array(
-            "tax_rate = {$this->tax_rate}",
-            "tax_shipping = {$this->tax_shipping}",
-            "tax_handling = {$this->tax_handling}"
-        ) );
-        $this->clearInstance();
         return $this;
     }
 
@@ -3349,7 +3523,7 @@ class Order
      *
      * @return  boolean     True if the field can be shown, False if not.
      */
-    private function canShowDiscountEntry()
+    public function canShowDiscountEntry()
     {
         return DiscountCode::countCurrent() > 0 ? true : false;
     }
@@ -3530,15 +3704,36 @@ class Order
     }
 
 
+    /**
+     * Get the net total for line items.
+     *
+     * @return  float       Item subtotal
+     */
     public function getItemTotal()
     {
         return (float)($this->net_nontax + $this->net_taxable);
     }
 
 
+    /**
+     * Check if the order has any invalid items excluded by rules.
+     *
+     * @return  boolean     True if any items cannot be orderd
+     */
     public function hasInvalid()
     {
         return $this->hasInvalid;
+    }
+
+
+    /**
+     * Check if there are any items in the cart.
+     *
+     * @return  boolean     True if cart is NOT empty, False if it is
+     */
+    public function hasItems()
+    {
+        return count($this->items);
     }
 
 
@@ -3596,7 +3791,7 @@ class Order
      */
     public function getBalanceDue()
     {
-        $by_gc = (float)$this->getInfo('apply_gc');
+        $by_gc = (float)$this->getGC();
         return (float)($this->order_total - $this->_amt_paid - $by_gc);
     }
 
@@ -3778,5 +3973,3 @@ class Order
     }
 
 }
-
-?>

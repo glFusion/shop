@@ -43,7 +43,7 @@ $expected = array(
     // Actions
     'saveaddr', 'savevalidated',
     // Views
-    'addresses', 'editaddr',
+    'orderhist', 'addresses', 'editaddr',
 );
 //var_dump($_POST);die;
 
@@ -146,10 +146,14 @@ case 'saveaddr':
     } else {
         $addr_vars = $_POST;
     }
-    $id = $addr_vars['addr_id'];
+    if (isset($addr_vars['addr_id'])) {
+        $id = $addr_vars['addr_id'];
+    } elseif (isset($addr_vars['id'])) {
+        $id = $addr_vars['id'];
+    }
     $Addr = Shop\Address::getInstance($id);
     $status = $Addr->setVars($addr_vars)
-        ->isValid();
+                   ->isValid();
     if ($status != '') {
         $content .= Shop\Menu::User('addresses');
         $content .= COM_showMessageText(
@@ -167,12 +171,12 @@ case 'saveaddr':
     } else {
         COM_setMsg("Saving address failed");
     }
-    COM_refresh(SHOP_URL . '/account.php?addresses');
+    COM_refresh(SHOP_getUrl(SHOP_URL . '/account.php?addresses'));
     break;
 
 case 'editaddr':
-    $Addr = Shop\Address::getInstance($actionval);
-    if ($actionval > 0 && $Addr->getUid() != $_USER['uid']) {
+    $Addr = Shop\Address::getInstance($id);
+    if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
         COM_refresh(SHOP_URL . '/account.php?addresses');
     }
     $content .= Shop\Menu::User('none');
@@ -223,7 +227,7 @@ default:
 }
 
 $display = \Shop\Menu::siteHeader();
-$display .= \Shop\Menu::pageTitle($page_title, 'account');
+$display .= \Shop\Menu::pageTitle($LANG_SHOP['my_account'], 'account');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;

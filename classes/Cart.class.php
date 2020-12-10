@@ -49,12 +49,15 @@ class Cart extends Order
         global $_TABLES, $_SHOP_CONF, $_USER;
 
         if (empty($cart_id)) {
-            $cart_id = self::getCart();
+            $cart_id = self::getCartID();
         }
 
         parent::__construct($cart_id);
         if ($this->isNew) {
             $this->status = OrderState::CART;
+            if (!COM_isAnonUser()) {
+                $this->buyer_email = $_USER['email'];
+            }
             $this->Save();    // Save to reserve the ID
         }
         self::_setCookie($this->order_id);
@@ -83,7 +86,7 @@ class Cart extends Order
                 $cart_id = self::getSession('cart_id');
             }
         } else {
-            $cart_id = self::getCart($uid);
+            $cart_id = self::getCartID($uid);
         }
         if (isset($carts[$cart_id])) {
             $Cart = $carts[$cart_id];
@@ -95,12 +98,23 @@ class Cart extends Order
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
-        if ($Cart->getUid() != $uid || $Cart->status != OrderState::CART) {
+        if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderState::CART) {
             self::_expireCookie();
             $Cart = new self();
             $carts[$Cart->getOrderID()] = $Cart;
         }
         return $Cart;
+    }
+
+
+    public static function exists($cart_id)
+    {
+        global $_TABLES;
+        return DB_count(
+            $_TABLES['shop.orders'],
+            'order_id',
+            DB_escapeString($cart_id)
+        );
     }
 
 
@@ -242,7 +256,7 @@ class Cart extends Order
             $new_quantity = $this->items[$have_id]->getQuantity();
             $new_quantity += $quantity;
             $this->items[$have_id]->setQuantity($new_quantity);
-            $need_save = true;      // Need to save the cart
+            $this->items[$have_id]->Save();
         } elseif ($quantity == 0) {
             return false;
         } else {
@@ -342,13 +356,12 @@ class Cart extends Order
                     // Re-apply qty discounts in case there are other items
                     // with the same base ID
                     $this->applyQtyDiscounts($item_id);
-                    $this->tainted = true;
                 } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
                     $this->items[$id]->setQuantity($qty);
                     $this->applyQtyDiscounts($item_id);
-                    $this->tainted = true;
+                    $this->items[$id]->Save();
                 }
             }
         }
@@ -360,22 +373,21 @@ class Cart extends Order
             if (!empty($gc)) {
                 if (\Shop\Products\Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
-                    $this->tainted = true;
                 }
             }
         }
-        if (isset($A['gateway'])) {
+        /*if (isset($A['gateway'])) {
             $this->setGateway($A['gateway']);
         }
         if (isset($A['by_gc'])) {
             $this->setGC($A['by_gc']);
-        }
+        }*/
         /*if (isset($_POST['shipper_id'])) {
             $this->setShipper($_POST['shipper_id']);
         }*/
-        if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
+        /*if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
             $this->buyer_email = $A['payer_email'];
-        }
+        }*/
         if (isset($A['discount_code']) && !empty($A['discount_code'])) {
             $dc = $A['discount_code'];
         } else {
@@ -384,33 +396,6 @@ class Cart extends Order
         $this->validateDiscountCode($dc);
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this;
-    }
-
-
-    /**
-     * Get the instructions text
-     *
-     * @return  string  Instructions text, if set
-     */
-    public function getInstructions()
-    {
-        if (isset($this->m_info['order_instr'])) {
-            return $this->m_info['order_instr'];
-        } else {
-            return '';
-        }
-    }
-
-
-    /**
-     * Save the cart. Logging is disabled for cart updates.
-     *
-     * @param   boolean $log    True to log the update, False for silent update
-     * @return  string      Order ID
-     */
-    public function Save($log = true)
-    {
-        return parent::Save(false);
     }
 
 
@@ -450,10 +435,10 @@ class Cart extends Order
                 OrderItem::Delete($Item->getID());
             }
             $this->items = array();
-            if ($del_order) {
+            /*if ($del_order) {
                 DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
                 self::delAnonCart();
-            }
+            }*/
         }
         return $this;
     }
@@ -517,12 +502,15 @@ class Cart extends Order
      * then leave all unselected, unless m_info['gateway'] has already been
      * set for this order.
      *
+     * @deprecate
      * @uses    Gateway::CheckoutButton()
      * @return  string      HTML for checkout buttons
      */
     public function getCheckoutRadios()
     {
         global $_SHOP_CONF;
+
+        echo __CLASS__ . '::' . __FUNCTION__ . ': Deprecated';die;
 
         $retval = '';
         $total = $this->getTotal();
@@ -580,17 +568,6 @@ class Cart extends Order
 
 
     /**
-     * Check if there are any items in the cart.
-     *
-     * @return  boolean     True if cart is NOT empty, False if it is
-     */
-    public function hasItems()
-    {
-        return count($this->items);
-    }
-
-
-    /**
      * Get the cart ID.
      * Returns either the native cart ID, or a version escaped for SQL
      *
@@ -626,6 +603,33 @@ class Cart extends Order
 
 
     /**
+     * Set the selected shipping option information in the cart.
+     * The method_id parameter is an index into the shipping quotes available,
+     * not the shipper's DB record ID.
+     *
+     * @param   integer $method_id  Shipping method ID
+     * @return  object  $this
+     */
+    public function setShippingOption($method_id)
+    {
+        // Get the shipping rates
+        $options = $this->getShippingOptions();
+        if (is_array($options) && array_key_exists($method_id, $options)) {
+            $shipper = $options[$method_id];
+            // Have to convert some of the shipper fields
+            $method = array(
+                'shipper_id' => $shipper['shipper_id'],
+                'cost' => $shipper['method_rate'],
+                'svc_code' => $shipper['svc_code'],
+                'title' => $shipper['method_name'],
+            );
+            $this->setShipper($method);
+        }
+        return $this;
+    }
+
+
+    /**
      * Get a cart ID for a given user.
      * Gets the latest cart, and cleans up extra carts that may accumulate
      * due to expired sessions.
@@ -633,7 +637,7 @@ class Cart extends Order
      * @param   integer $uid    User ID
      * @return  string          Cart ID
      */
-    public static function getCart($uid = 0)
+    public static function getCartID($uid = 0)
     {
         global $_USER, $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
@@ -648,8 +652,11 @@ class Cart extends Order
         if (COM_isAnonUser()) {
             $cart_id = self::getAnonCartID();
             // Check if the order exists but is not a cart.
-            $status = DB_getItem($_TABLES['shop.orders'], 'status',
-                "order_id = '" . DB_escapeString($cart_id) . "'");
+            $status = DB_getItem(
+                $_TABLES['shop.orders'],
+                'status',
+                "order_id = '" . DB_escapeString($cart_id) . "'"
+            );
             if ($status != NULL && $status != OrderState::CART) {
                 $cart_id = NULL;
             }
@@ -790,7 +797,10 @@ class Cart extends Order
     public static function getAnonCartID()
     {
         $cart_id = NULL;
-        if (isset($_COOKIE[self::$session_var]) && !empty($_COOKIE[self::$session_var])) {
+        if (
+            isset($_COOKIE[self::$session_var]) &&
+            !empty($_COOKIE[self::$session_var])
+        ) {
             $cart_id = $_COOKIE[self::$session_var];
         } else {
             $cart_id = self::getSession('cart_id');
@@ -800,8 +810,9 @@ class Cart extends Order
 
 
     /**
-     * Set the order status to indicate that this is no longer a cart and has been submitted for payment.
-     * Pass $status = false to revert back to a cart, e.g. if the purchase is cancelled.
+     * Set the order status to indicate that has been submitted for payment.
+     * Pass $status = false to revert back to a cart, e.g. if the purchase
+     * is cancelled.
      * Also removes the cart_id cookie for anonymous users.
      *
      * @param   string  $status     Status to set, default is "pending"
@@ -833,7 +844,10 @@ class Cart extends Order
         }*/
         // Is it really necessary to log that it changed from a cart to pending?
         //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
-        SHOP_log("Cart {$this->order_id} status changed from $oldstatus to $newstatus", SHOP_LOG_DEBUG);
+        SHOP_log(
+            "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
+            SHOP_LOG_DEBUG
+        );
         return $this;
     }
 
@@ -854,13 +868,14 @@ class Cart extends Order
             $step = 9;
             foreach ($wf as $w) {
                 if (!$w->isSatisfied($this)) {
-                    $wf_name = $w->wf_name;
+                    $wf_name = $w->getName();
                     break;
                 }
             }
         } else {
             $wf_name = 'viewcart';
         }
+
         switch($wf_name) {
         case 'viewcart':
             // Initial cart view. Check here and populate the billing and
@@ -868,7 +883,7 @@ class Cart extends Order
             // users.
             // This allows subsequent steps to go directly to the checkout
             // page if all other workflows are complete.
-            if ($this->uid > 1) {
+            /*if ($this->uid > 1) {
                 // Determine the minimum value for a workflow to be "required"
                 $wf_required = $this->requiresShipto() ? 1 : 3;
                 $U = Customer::getInstance($this->uid);
@@ -890,7 +905,7 @@ class Cart extends Order
                         $this->setAddress($A->toArray(), 'shipto');
                     }
                 }
-            }
+        }*/
             // Fall through to the checkout view
         case 'checkout':
             $V = new Views\Cart;
@@ -1042,6 +1057,7 @@ class Cart extends Order
         global $LANG_SHOP;
 
         $errors = array();
+        $new_wf = '';
         if (!$login) {
             if ($this->buyer_email == '') {
                 SESS_setVar('shop_focus_field', 'payer_email');
@@ -1060,6 +1076,7 @@ class Cart extends Order
             $Addr = new Address($this->Billto->toArray());
             if ($Addr->isValid(true) != '') {
                 $errors['billtoto'] = $LANG_SHOP['req_billto'];
+                $new_wf = 'addresses';
             }
         }
 
@@ -1067,7 +1084,7 @@ class Cart extends Order
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
             COM_setMsg($msg, 'error');
         }
-        return $errors;
+        return $new_wf;
     }
 
 
@@ -1101,7 +1118,7 @@ class Cart extends Order
             !$_SHOP_CONF['ena_fast_checkout'] ||    // not allowed
             COM_isAnonUser() ||         // can't be anonymous, need email addr
             count($Gateways) != 1 ||    // must have only one gateway
-            DiscountCode::countCurrent() > 0 ||     // have active codes
+            DiscountCode::countCurrent() > 0 ||     // can't have active codes
             (
                 $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
                 count(Products\Coupon::getUserCoupons()) > 0
@@ -1115,13 +1132,14 @@ class Cart extends Order
 
         // Get the customer information to set addresses and email addr
         $Customer = Customer::getInstance($this->uid);
-        $Addresses = $Customer->getAddresses();
-        if (!empty($Addresses)) {
-            $Address = array_shift($Addresses);
-            $this->setBillto($Address);
-            $this->setShipto($Address);
-        } elseif ($this->requiresShipto() || $this->requiresBillto()) {
-            // If addresses are requred but none found, can't fast-checkout
+        if ($this->billto_id < 1) {
+            $this->setBillto($Customer->getDefaultAddress('billto'));
+        }
+        if ($this->shipto_id < 1) {
+            $this->setShipto($Customer->getDefaultAddress('shipto'));
+        }
+        if ($this->billto_id == 0 || $this->shipto_id == 0) {
+            // No address found
             return false;
         }
 

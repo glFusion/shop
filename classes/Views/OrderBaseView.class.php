@@ -76,6 +76,10 @@ class OrderBaseView
      * @var string */
     protected $type = 'order';
 
+    /** Flag to include the shop address information.
+     * @var boolean */
+    protected $with_shop_info = false;
+
     protected $TPL = NULL;
 
     protected $Currency = NULL;
@@ -278,14 +282,50 @@ class OrderBaseView
     }
 
 
-    protected function _renderAddresses()
+    /**
+     * Display the shop address for invoices.
+     *
+     * @return  object  $this
+     */
+    protected function _renderShopAddress()
     {
+        $ShopAddr = new Company;
         $this->TPL->set_var(array(
-            'billto_addr'   =>$this->Order->getBillto()->toHTML(),
-            'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
+            'shop_name'     => $ShopAddr->toHTML('company'),
+            'shop_addr'     => $ShopAddr->toHTML('address'),
+            'shop_phone'    => $ShopAddr->getPhone(),
+            'shop_email'    => $ShopAddr->getEmail(),
         ) );
+        return $this;
     }
 
+
+    /**
+     * Show the billing and shipping addresses.
+     *
+     * @return  object  $this
+     */
+    protected function _renderAddresses()
+    {
+        if (
+            $this->Order->getBillto()->getID() > 0 ||
+            $this->Order->getBillto()->getID() > 0
+        ) {
+            $this->TPL->set_var(array(
+                'billto_addr'   =>$this->Order->getBillto()->toHTML(),
+                'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
+                'show_addresses' => true,
+            ) );
+        }
+        return $this;
+    }
+
+
+    /**
+     * Display the order items and other charges.
+     *
+     * @return  object  $this
+     */
     protected function _renderItems()
     {
         global $_SHOP_CONF, $LANG_SHOP;
@@ -297,8 +337,8 @@ class OrderBaseView
         $total = 0;
         $tax_items = 0;
         $discount_items = 0;
-        $shipping = 0;
-        $handling = 0;
+        $handling = $this->Order->getHandling();
+        $shipping = $this->Order->getShipping();
         $icon_tooltips = array();
 
         $this->TPL->set_block('order', 'ItemRow', 'iRow');
@@ -325,10 +365,17 @@ class OrderBaseView
                 $discount_items ++;
                 $price_tooltip = sprintf(
                     $LANG_SHOP['reflects_disc'],
-                    ($Item->getDiscount() * 100)
+                    ($Item->getDiscount())
                 );
+                $this->TPL->set_var(array(
+                    'discount_icon' => $LANG_SHOP['discount'][0],
+                    'discount_tooltip' => $price_tooltip,
+                ) );
             } else {
-                $price_tooltip = '';
+                $this->TPL->set_var(array(
+                    'discount_icon' => '',
+                    'discount_tooltip' => '',
+                ) );
             }
             $item_total = $Item->getPrice() * $Item->getQuantity();
             $subtotal += $item_total;
@@ -346,10 +393,10 @@ class OrderBaseView
                 'item_total'    => $this->Currency->FormatValue($item_total),
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $Item->canDownload(),
-                'taxable'       => $this->Order->getTaxRate() > 0 ? $P->isTaxable() : 0,
+                'taxable'       => $this->Order->getTaxRate() > 0 ? $Item->isTaxable() : 0,
                 'tax_icon'      => $LANG_SHOP['tax'][0],
-                'discount_icon' => 'D',
-                'discount_tooltip' => $price_tooltip,
+                //'discount_icon' => $LANG_SHOP['discount'][0],
+                //'discount_tooltip' => $price_tooltip,
                 'token'         => $Item->getToken(),
                 'item_options'  => $Item->getOptionDisplay(),
                 'sku'           => $P->getSKU($Item),
@@ -357,7 +404,6 @@ class OrderBaseView
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $this->is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
-                'pmt_status' => $this->Order->getPaymentStatus(),
             ) );
             if ($P->isPhysical()) {
                 $no_shipping = 0;
@@ -385,14 +431,26 @@ class OrderBaseView
             'is_invoice'    => $this->is_invoice,
             'icon_dscp'     => $icon_tooltips,
             'have_images'   => $this->is_invoice ? $have_images : false,
-            'shipping'      => $this->Currency->FormatValue($this->Order->getShipping()),
+            'shipping'      => $shipping > 0 ? $this->Currency->FormatValue($shipping) : 0,
             'ship_method'   => $this->Order->getShipperDscp(),
-            'handling'      => $handling > 0 ? $this->Currency->FormatValue($this->Order->getHandling()) : 0,
+            'handling'      => $handling > 0 ? $this->Currency->FormatValue($handling) : 0,
             'subtotal'      => $subtotal == $total ? '' : $this->Currency->Format($subtotal),
             'total'         => $this->Currency->Format($total),
-            'cart_tax'      => $this->Currency->Format($this->Order->getTax()),
-            'cart_tax_amt'  => $this->Order->getTax(),
+            'cart_tax'      => $this->Order->getTax() > 0 ? $this->Currency->FormatValue($this->Order->getTax()) : 0,
         ) );
+        $by_gc = (float)$this->Order->getInfo('apply_gc');
+        $this->TPL->set_var(array(
+            'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
+            'net_total'     => $this->Currency->Format($total - $by_gc),
+            'discount_code_fld' => $this->Order->canShowDiscountEntry(),
+            'discount_code' => $this->Order->getDiscountCode(),
+            'dc_row_vis'    => $this->Order->getDiscountCode(),
+            'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
+            'dc_pct'        => $this->Order->getDiscountPct() . '%',
+            'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
+            'pmt_status'    => $this->Order->getPaymentStatus(),
+        ) );
+        return $this;
     }
 
 
@@ -418,7 +476,7 @@ class OrderBaseView
         // Set flags in the template to indicate which address blocks are
         // to be shown.
         foreach (\Shop\Workflow::getAll($this->Order) as $key => $wf) {
-            $T->set_var('have_' . $wf->wf_name, 'true');
+            $T->set_var('have_' . $wf->getView(), 'true');
         }
 
         $T->set_block('order', 'ItemRow', 'iRow');
@@ -480,7 +538,7 @@ class OrderBaseView
                 'is_admin'      => $this->isAdmin,
                 'is_file'       => $item->canDownload(),
                 'taxable'       => $this->Order->getTaxRate() > 0 ? $P->isTaxable() : 0,
-                'tax_icon'      => $LANG_SHOP['tax'][0],
+                'tax_icon'      => $item->isTaxable() ? $LANG_SHOP['tax'][0] : '',
                 'discount_icon' => 'D',
                 'discount_tooltip' => $price_tooltip,
                 'token'         => $item->getToken(),

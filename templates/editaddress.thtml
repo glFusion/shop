@@ -98,10 +98,10 @@
         <label class="uk-form-label">&nbsp;</label>
         <div class="uk-form-controls" style="text-align:center;">
             <button class="uk-button uk-button-success" type="submit" name="saveaddr"
-                onclick="return validateAddress(this.form);"
+                onsubmit="validateAddress(this.form);return true;"
             >{$LANG_ADMIN['submit']}</button>
             <button class="uk-button" type="reset">{$LANG_ADMIN['reset']}</button>
-            <a href="{site_url}/shop/account.php?addresses" class="uk-button uk-button-primary">{$LANG_ADMIN['cancel']}</a>
+            <a href="{cancel_url}" class="uk-button uk-button-primary">{$LANG_ADMIN['cancel']}</a>
         </div>
     </div>
 </form>
