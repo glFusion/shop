@@ -40,7 +40,8 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = $_SHOP_CONF['adm_def_view'];
+//$action = $_SHOP_CONF['adm_def_view'];
+$action = '';
 $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
@@ -652,6 +653,7 @@ default:
 switch ($view) {
 case 'orders':
     echo "$view deprecated";die;
+    // Kept kere since this may be the default admin view
     $content .= Shop\Menu::adminOrders($view);
     $R = \Shop\Report::getInstance('orderlist');
     if ($R !== NULL) {
@@ -1115,15 +1117,40 @@ case 'newpayment':
     $content .= $Pmt->pmtForm();
     break;
 
+case 'products':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
+    break;
+
 case 'none':
     // Content provided by an action above, don't show anything here
     break;
 
 default:
     SHOP_setUrl();
-    $view = 'products';     // to set the active menu
-    $content .= Shop\Menu::adminCatalog($view);
-    $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
+    switch ($_SHOP_CONF['adm_def_view']) {
+    case 'orders':
+        $view = 'orders';
+        $content .= Shop\Menu::adminOrders($view);
+        $R = \Shop\Report::getInstance('orderlist');
+        if ($R !== NULL) {
+            $R->setAdmin(true);
+            // Params usually from GET but could be POSTed time period
+            $R->setParams($_REQUEST);
+            $content .= $R->Render();
+        }
+        break;
+    case 'categories':
+        $content .= Shop\Menu::adminCatalog('categories');
+        $content .= Shop\Category::adminList();
+        $view = 'products';     // to set the active menu
+        break;
+    default:
+        $view = 'products';     // to set the active menu
+        $content .= Shop\Menu::adminCatalog('products');
+        $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
+        break;
+    }
     break;
 }
 

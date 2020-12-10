@@ -80,7 +80,7 @@
         <button class="uk-button uk-button-success type="submit" name="savepayment" value="{$LANG_ADMIN['save']}">{$LANG_ADMIN['save']}</button>
         <button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
         <button class="uk-button uk-button-primary" type="reset" name="payments" value="{$LANG_ADMIN['cancel']}"
-            onclick="javascript: document.location.href='{site_admin_url}/plugins/shop/payments.php?ord_pmts={order_id}'">{$LANG_ADMIN['cancel']}</button>
+            onclick="javascript: document.location.href='{site_admin_url}/plugins/shop/payments.php?paymments={order_id}'">{$LANG_ADMIN['cancel']}</button>
 {!if can_delete}
         <button style="float:right" class="uk-button uk-button-danger" type="submit" name="delpayment" value="{$LANG_SHOP['delete']}"
             onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['delete']}</button>

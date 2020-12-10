@@ -20,7 +20,7 @@
     <div class="uk-form-row">
         <label class="uk-form-label" style="margin-top:0px;">{$LANG_SHOP['my_orders']}:</label>
         <div class="uk-form-controls">
-            <a href="{site_url}/shop/index.php?orderhist">{orders}</a>
+            <a href="{site_url}/shop/account.php?orderhist">{orders}</a>
         </div>
     </div>
 {!endif}
