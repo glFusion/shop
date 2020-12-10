@@ -46,7 +46,6 @@ function service_genButton_shop($args, &$output, &$svc_msg)
 {
     global $_CONF, $_SHOP_CONF;
 
-    $Cart = Shop\Cart::getInstance();
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
@@ -73,6 +72,7 @@ function service_genButton_shop($args, &$output, &$svc_msg)
         $btn_cls = 'orange';
         $btn_disabled = '';
         $unique = isset($args['unique']) ? 1 : 0;
+        $Cart = Shop\Cart::getInstance();
         if ($unique) {
             // If items may only be added to the cart once, check that
             // this one isn't already there
