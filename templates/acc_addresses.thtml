@@ -34,8 +34,8 @@ function SHOP_setDefAddr(type, addr_id)
     return;
 }
 </script>
-<a href="{site_url}/shop/account.php?editaddr=0">
-    <button class="uk-button uk-button-success">Create New</button>
+<a href="{site_url}/shop/account.php?mode=editaddr&id=0">
+    <button class="uk-button uk-button-success">{$LANG_SHOP['new_address']}</button>
 </a>
 <table class="uk-table uk-text-center">
     <thead>
