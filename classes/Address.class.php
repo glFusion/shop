@@ -80,7 +80,7 @@ class Address
      * @var array */
     protected $_fields = array(
         'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country',
+        'city', 'state', 'zip', 'country', 'phone',
     );
 
 
@@ -150,6 +150,9 @@ class Address
         }
         if (isset($data['country'])) {
             $this->setCountry($data['country']);
+        }
+        if (isset($data['phone'])) {
+            $this->setPhone($data['phone']);
         }
         return $this;
     }
@@ -705,9 +708,9 @@ class Address
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
             $retval .=  $sep . Country::getInstance($this->country)->getName();
         }
-        /*if ($this->phone != '') {
+        if ($this->phone != '') {
             $retval .= $sep . $this->phone;
-        }*/
+        }
         return $retval;
     }
 
@@ -788,6 +791,7 @@ class Address
             'zip' => $this->zip,
             'country_options' => Country::optionList($this->country),
             'state_options' => State::optionList($this->country, $this->state),
+            'phone' => $this->phone,
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
@@ -877,6 +881,7 @@ class Address
             'state'     => $this->state,
             'zip'       => $this->zip,
             'country'   => $this->country,
+            'phone'     => $this->phone,
         );
     }
 

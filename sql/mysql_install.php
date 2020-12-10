@@ -244,7 +244,7 @@ $_SQL = array(
 
 'shop.userinfo' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
   `uid` int(11) unsigned NOT NULL,
-  `cart` text,
+  `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
@@ -807,6 +807,12 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
         CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `phone` `shipto_phone` varchar(30)",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']}
+        DROP `dc_price`",
 
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
