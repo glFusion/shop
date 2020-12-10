@@ -1268,7 +1268,10 @@ class UploadDownload
                 $this->_imageIndex++;
             }
         } else {
-            if ($this->_filesToUpload['name'] != '' && $this->_filesToUpload['error'] == UPLOAD_ERR_OK) {
+            if (
+                $this->_filesToUpload['name'] != '' &&
+                $this->_filesToUpload['error'] == UPLOAD_ERR_OK
+            ) {
                 $fparts = pathinfo($this->_filesToUpload['name']);
                 $this->_currentFile['name'] = $fparts['basename'];
                 $this->_currentFile['extension'] = strtolower($fparts['extension']);

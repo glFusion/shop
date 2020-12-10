@@ -7,7 +7,7 @@ Release TBD
   * Update Stripe API to 7.65.0 - 2020-11-19.
   * Update Square API to 3.20200325.0.
   * Add interface for customers to edit addresses outside of orders.
-  * Add fast-checkout where the order allows it.
+  * Add fast-checkout where the order allows it (no shipping or tax needed).
   * Enable sales tax charges on shipping and handling.
   * Add invoicing via Paypal and Square invoice APIs.
   * Link to customer in order report now filters report.
@@ -17,6 +17,10 @@ Release TBD
   * Shipping methods, e.g. will-call, may set tax based on origin vs. destination.
   * Use the shop.admin privilege for access control instead of a separate admin group.
   * SQL fixes to work with MySQL's strict mode.
+  * Update checkout workflow, steps are easier on mobile devices.
+  * Checkout workflows can no longer be disabled. Unnecessary steps are skipped.
+  * Enable API-based shipping quotes for UPS, USPS and FedEx.
+  * Enable free-shipping thresholds per shipper.
 
 ## v1.2.1
 Release 2020-03-02
