@@ -882,7 +882,10 @@ class IPN
             // Need to create a new, empty order object
             $this->Order = Order::getInstance($this->order_id);
             //$this->Cart = new Cart($this->order_id);
-            if (!$this->Order->hasItems() && !$_SHOP_CONF['sys_test_ipn']) {
+            if (
+                !$this->Order->hasItems() &&
+                !(isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn'])
+            ) {
                 return 1; // shouldn't normally be empty except during testing
             }
         //} else {
