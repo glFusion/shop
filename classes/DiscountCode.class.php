@@ -94,20 +94,20 @@ class DiscountCode
     {
         global $_TABLES;
 
-        static $retval = NULL;
+        static $retval = array();
 
-        if ($code === NULL) {
+        if (!isset($retval[$code])) {
             $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
                 WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
             $res = DB_query($sql);
             if ($res) {
                 $A = DB_fetchArray($res, false);
-                $retval = new self($A);
+                $retval[$code] = new self($A);
             } else {
-                $retval = new self;
+                $retval[$code] = new self;
             }
         }
-        return $retval;
+        return $retval[$code];
     }
 
 
