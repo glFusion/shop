@@ -13,6 +13,7 @@
  */
 namespace Shop;
 
+
 /**
  * Instantiate templates in the Shop plugin templates directory.
  * @package shop
@@ -38,6 +39,37 @@ class Template extends \Template
             $root = $pfx . $root;
         }
         parent::__construct($root, $unknowns);
+    }
+
+
+    /**
+     * Create a template object based on a language prefix.
+     * Looks in template/$root/$lang for templates.
+     * Adds english_utf-8.php if that is not the selected language.
+     *
+     * @param   string  $root   Template base directory
+     * @param   string  $lang   Language string, user's language by default
+     * @return  object      Shop\Template object
+     */
+    public static function getByLang($root = '', $lang = NULL)
+    {
+        global $_USER;
+
+        if ($lang === NULL) {
+            $lang = $_USER['language'];
+        }
+        if(!empty($root) && substr($root, -1) != '/') {
+            $root .= '/';
+        }
+        $roots = array(
+            $root . $lang,
+        );
+        // Add english as a failsafe if not already the selected language
+        if ($lang != 'english_utf-8') {
+            $roots[] = $root . 'english_utf-8';
+        }
+        $roots[] = $root;
+        return new self($roots);
     }
 
 }
