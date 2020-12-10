@@ -248,9 +248,9 @@ class paypal extends \Shop\IPN
                 return false;
             }
             $this
-                ->setPmtTax($this->Order->getInfo('tax'))
-                ->setPmtShipping($this->Order->getInfo('shipping'))
-                ->setPmtHandling($this->Order->getInfo('handling'));
+                ->setPmtTax($this->Order->getTax())
+                ->setPmtShipping($this->Order->getShipping())
+                ->setPmtHandling($this->Order->getHandling());
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
                 SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
