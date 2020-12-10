@@ -19,14 +19,40 @@ if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
 
-/** Include the system configuration class */
-$pp_config = config::get_instance();
-$_SHOP_CONF= $pp_config->get_config('shop');
+spl_autoload_register(function ($class)
+{
+    // project-specific namespace prefix
+    $prefix = 'Shop\\';
+
+    // does the class use the namespace prefix?
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        // no, move to the next registered autoloader
+        return;
+    }
+
+    // base directory for the namespace prefix
+    $base_dir = __DIR__ . '/classes/';
+
+    // get the relative class name
+    $relative_class = substr($class, $len);
+
+    // replace the namespace prefix with the base directory, replace namespace
+    // separators with directory separators in the relative class name, append
+    // with .php
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
+
+    // if the file exists, require it
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+use Shop\Models\Views;
+use Shop\Config;
+Config::getInstance();      // to load $_SHOP_CONF
 
 /** Include plugin config file  */
 require_once __DIR__ . '/shop.php';
-
-$_SHOP_CONF['datetime_fmt'] = 'Y-m-d H:i:s T';
 
 /** Define base path to plugin */
 define('SHOP_PI_PATH', __DIR__);
@@ -87,36 +113,6 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
     $_USER['username'] = 'anonymous';
     $_USER['fullname'] = 'Anonymous';
 }
-
-spl_autoload_register(function ($class)
-{
-    // project-specific namespace prefix
-    $prefix = 'Shop\\';
-
-    // does the class use the namespace prefix?
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        // no, move to the next registered autoloader
-        return;
-    }
-
-    // base directory for the namespace prefix
-    $base_dir = __DIR__ . '/classes/';
-
-    // get the relative class name
-    $relative_class = substr($class, $len);
-
-    // replace the namespace prefix with the base directory, replace namespace
-    // separators with directory separators in the relative class name, append
-    // with .php
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
-
-    // if the file exists, require it
-    if (file_exists($file)) {
-        require $file;
-    }
-});
-use Shop\Models\Views;
 
 
 /**

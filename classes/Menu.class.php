@@ -29,7 +29,7 @@ class Menu
      */
     public static function User($view='')
     {
-        global $_CONF, $LANG_SHOP, $_SHOP_CONF;
+        global $_CONF, $LANG_SHOP;
 
         USES_lib_admin();
 
@@ -52,7 +52,7 @@ class Menu
         );
 
         // Show the Gift Cards menu item only if enabled.
-        if ($_SHOP_CONF['gc_enabled']) {
+        if (Config::get('gc_enabled')) {
             $active = $view == 'couponlog' ? true : false;
             $menu_arr[] = array(
                 'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
@@ -73,7 +73,7 @@ class Menu
      */
     public static function Admin($view='')
     {
-        global $_CONF, $LANG_ADMIN, $LANG_SHOP, $_SHOP_CONF;
+        global $_CONF, $LANG_ADMIN, $LANG_SHOP;
 
         USES_lib_admin();
         if (isset($LANG_SHOP['admin_hdr_' . $view]) &&
@@ -148,7 +148,7 @@ class Menu
         $T = new Template;
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
-            'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
+            'title' => $LANG_SHOP['admin_title'] . ' (' . Config::get('pi_version') . ')',
             'link_store' => true,
             'icon'  => plugin_geticon_shop(),
             'is_admin' => true,
@@ -180,7 +180,7 @@ class Menu
      */
     public static function adminRegions($view='')
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP;
 
         $menu_arr = array(
             array(
@@ -216,7 +216,7 @@ class Menu
      */
     public static function adminCatalog($view='')
     {
-        global $LANG_SHOP, $LANG_SHOP_HELP, $_SHOP_CONF;
+        global $LANG_SHOP, $LANG_SHOP_HELP;
 
         $menu_arr = array(
             array(
@@ -272,7 +272,7 @@ class Menu
                 'help' => $LANG_SHOP_HELP['features'],
             ),
         );
-        if ($_SHOP_CONF['gc_enabled']) {
+        if (Config::get('gc_enabled')) {
             // Show the Coupons menu option only if enabled
             $menu_arr[] = array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?coupons=x',
@@ -490,11 +490,11 @@ class Menu
      */
     public static function siteHeader($title='', $meta='')
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $retval = '';
 
-        switch($_SHOP_CONF['displayblocks']) {
+        switch(Config::get('displayblocks')) {
         case 2:     // right only
         case 0:     // none
             $retval .= COM_siteHeader('none', $title, $meta);
@@ -507,7 +507,7 @@ class Menu
             break;
         }
 
-        if (!$_SHOP_CONF['shop_enabled']) {
+        if (!Config::get('shop_enabled')) {
             $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
         }
         return $retval;
@@ -521,11 +521,9 @@ class Menu
      */
     public static function siteFooter()
     {
-        global $_SHOP_CONF;
-
         $retval = '';
 
-        switch($_SHOP_CONF['displayblocks']) {
+        switch(Config::get('displayblocks')) {
         case 2 : // right only
         case 3 : // left and right
             $retval .= COM_siteFooter();
