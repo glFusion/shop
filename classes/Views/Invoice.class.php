@@ -61,14 +61,6 @@ class Invoice extends OrderBaseView
      * @var boolean */
     protected $isFinalView = false;
 
-    /** Flag to indicate this is an admin.
-     * @var boolean */
-    protected $isAdmin = false;
-
-    /** View type, e.g. order or packing list.
-     * @var string */
-    protected $output_type = 'html';
-
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -82,6 +74,12 @@ class Invoice extends OrderBaseView
     }
 
 
+    /**
+     * Set the order token to allow anonymous views.
+     *
+     * @param   string  $token  Order token string
+     * @return  object  $this
+     */
     public function withToken($token)
     {
         $this->token = $token;
@@ -89,6 +87,13 @@ class Invoice extends OrderBaseView
     }
 
 
+    /**
+     * Set the administrator-view flag.
+     * Enables additional information to be shown.
+     *
+     * @param   boolean $flag   True for admin view
+     * @return  object  $this
+     */
     public function setAdmin($flag)
     {
         $this->isAdmin = $flag ? true : false;
@@ -96,15 +101,30 @@ class Invoice extends OrderBaseView
     }
 
 
+    /**
+     * Specify the type of output - html for normal display or pdf to print.
+     *
+     * @param   string  $out_type   Type of output
+     * @return  object  $this
+     */
     public function withOutput($out_type)
     {
         $this->output_type = $out_type;
-        $this->tplname .= '.pdf';
+        if ($out_type == 'pdf') {
+            $this->tplname .= '.pdf';
+            $this->withShopInfo(true);
+        }
         $this->TPL->set_file('order', $this->tplname . '.thtml');
         return $this;
     }
 
 
+    /**
+     * View the invoice as a packing list.
+     * Suppresses prices and other charges.
+     *
+     * @return  object  $this
+     */
     public function asPackingList()
     {
         $this->type = 'packinglist';
@@ -112,6 +132,13 @@ class Invoice extends OrderBaseView
         return $this;
     }
 
+
+    /**
+     * View the invoice normally.
+     * Includes prices and other charges.
+     *
+     * @return  object  $this
+     */
     public function asInvoice()
     {
         $this->type = 'order';
@@ -126,6 +153,26 @@ class Invoice extends OrderBaseView
         return $this;
     }
 
+
+    /**
+     * Set flag to include shop address and phone.
+     *
+     * @param   boolean $flag   True to show shop info in header
+     * @return  object  $this
+     */
+    public function withShopInfo($flag = true)
+    {
+        $this->with_shop_info = $flag;
+        return $this;
+    }
+
+
+    /**
+     * Set the order ID to show.
+     *
+     * @param   array|string  $order_id   Order record ID
+     * @return  object  $this
+     */
     public function withOrderIds($order_ids)
     {
         if (!is_array($order_ids)) {
@@ -153,6 +200,11 @@ class Invoice extends OrderBaseView
     }
 
 
+    /**
+     * Render the output.
+     *
+     * @return  mixed   HTML or PDF output
+     */
     public function Render()
     {
         if (empty($this->order_ids)) {
@@ -192,12 +244,8 @@ class Invoice extends OrderBaseView
 
 
     /**
-     * View or print the current order.
-     * Access is controlled by the caller invoking canView() since a token
-     * may be required.
+     * Create the HTML output for the invoice.
      *
-     * @param  string  $view       View to display (cart, final order, etc.)
-     * @param  integer $step       Current step, for updating next_step in the form
      * @return string      HTML for order view
      */
     public function createHTML()
@@ -207,6 +255,9 @@ class Invoice extends OrderBaseView
         $this->_renderCommon();
         $this->_renderAddresses();
         $this->_renderItems();
+        if ($this->with_shop_info) {
+            $this->_renderShopAddress();
+        }
 
         $status = $this->Order->getStatus();
         if ($this->isAdmin) {
@@ -328,7 +379,4 @@ class Invoice extends OrderBaseView
         return $html;
     }
 
-
 }
-
-?>
