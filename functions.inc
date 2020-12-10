@@ -413,7 +413,7 @@ function plugin_getuseroption_shop()
             );
         }
         // View cart option is available to anonymous users
-        if (Shop\Cart::getCart() && Shop\Cart::getInstance()->hasItems()) {
+        if (Shop\Cart::getCartID() && Shop\Cart::getInstance()->hasItems()) {
             $retval[] = array(
                 $LANG_SHOP['viewcart'],
                 COM_buildUrl(SHOP_URL . '/cart.php'),
@@ -991,7 +991,11 @@ function phpblock_shop_cart_contents()
     if (!SHOP_access_check()) return '';
 
     // If the cart is not enabled, or there is no cart, return
-    if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
+    if ($_SHOP_CONF['ena_cart'] == 0) {
+        return '';
+    }
+    $cart_id = Shop\Cart::getCartID();
+    if (!Shop\Cart::exists($cart_id)) {
         return '';
     }
 
@@ -1021,7 +1025,8 @@ function phpblock_shop_cart_contents()
         $item_total = (float)$item->getPrice() * $item->getQuantity();
         $T->set_var(array(
             'item_id'       => $item_id,
-//            'options'       => $P->getOptionDisplay($item),
+            'oi_id'         => $item->getID(),
+            //'del_link'      => SHOP_URL . '/cart.php?action=delete&id=' . $item_id,
             'item_name'     => $item->getDscp(),
             'price'         => $Cur->FormatValue($item->getPrice()),
             'quantity'      => $item->getQuantity(),
