@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -17,6 +17,8 @@ use Shop\Country;
 use Shop\State;
 use Shop\Icon;      // for the admin list
 use Shop\Template;
+use Shop\Config;
+use Shop\GeoLocator;
 
 
 /**
@@ -203,7 +205,7 @@ class Zone
     /**
      * Check whether sales are allowed to a region based on this rule.
      *
-     * @param   object  $Addr   Address object
+     * @param   object|null $Addr   Address object, null if virtual to geocode
      * @return  boolean     True if sales are allowed, False if not
      */
     public function isOK($Addr)
@@ -213,10 +215,28 @@ class Zone
             return true;
         }
 
-        $State = State::getInstance($Addr);
+        if ($Addr === NULL) {
+            if (Config::get('ipgeo_provider') != '') {
+                $data = GeoLocator::getProvider()
+                    ->withIP('68.1.122.8')
+                    //->withIP($_SERVER['REAL_ADDR'])
+                    ->geoLocate();
+                if (empty($data['country_code']) || empty($data['state_code'])) {
+                    return true;    // default to OK if unable to geocode
+                } else {
+                    $State = State::getInstance($data['state_code']);
+                    $Country = Country::getInstance($data['country_code']);
+                }
+            } else {
+                return true;    // no geolocation configured
+            }
+        } else {
+            $State = State::getInstance($Addr);
+            $Country = Country::getInstance($Addr->getCountry());
+        }
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
-        $region_id = Country::getInstance($Addr->getCountry())->getRegionID();
+        $region_id = $Country->getRegionID();
 
         // Check if the region, country and country-state is found, in that order
         $apply = in_array($region_id, $this->regions) ||

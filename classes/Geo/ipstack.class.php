@@ -3,10 +3,10 @@
  * Class to look up locations using ipstack.com.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -19,7 +19,7 @@ namespace Shop\Geo;
  * Use ipstack.com
  * @package shop
  */
-class ipstack extends \Shop\GeoLocate
+class ipstack extends \Shop\GeoLocator
 {
     /** Descriptive key name used for caching.
      * @var string */
@@ -31,7 +31,7 @@ class ipstack extends \Shop\GeoLocate
 
     /** Provider API key.
      * @var string */
-    private $api_key;
+    private $api_key = '';
 
 
     /**
@@ -92,7 +92,7 @@ class ipstack extends \Shop\GeoLocate
             if ($status['http_code'] == 200) {
                 $decoded = json_decode($resp, true);
                 if (!isset($decoded['error'])) {
-                    $this->setCache($resp, $thie->ip);
+                    $this->setCache($resp, $this->ip);
                 } else {
                     $msg = $decoded['error']['info'];
                     $decoded = $this->default_data;

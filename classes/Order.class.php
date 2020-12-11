@@ -3744,14 +3744,20 @@ class Order
      *
      * @return  object  $this
      */
-    private function checkRules()
+    public function checkRules()
     {
         $this->hasInvalid = false;
         foreach ($this->items as $id=>$Item) {
-            if ($Item->getProduct()->getRuleID() > 0) {
+            $Product = $Item->getProduct();
+            if ($Product->getRuleID() > 0) {
                 $status = $Item->getInvalid();
-                $Rule = $Item->getProduct()->getRule();
-                if (!$Rule->isOK($this->getShipto())) {
+                $Rule = $Product->getRule();
+                if ($Product->isPhysical()) {
+                    $rule = $Rule->isOK($this->getShipto());
+                } else {
+                    $rule = $Rule->isOK(NULL);
+                }
+                if (!$rule) {
                     $Item->setInvalid(true);
                     $this->hasInvalid = true;
                 } else {

@@ -3,10 +3,10 @@
  * Class to look up locations using IP Geolocation.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -15,11 +15,12 @@
 namespace Shop\Geo;
 use Shop\State;
 
+
 /**
  * Use ipgeolocation.io.
  * @package shop
  */
-class ipgeo extends \Shop\GeoLocate
+class ipgeo extends \Shop\GeoLocator
 {
     /** Descriptive key name used for caching.
      * @var string */
@@ -31,7 +32,7 @@ class ipgeo extends \Shop\GeoLocate
 
     /** Provider API key.
      * @var string */
-    private $api_key;
+    private $api_key = '';
 
 
     /**
