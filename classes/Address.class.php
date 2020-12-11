@@ -810,6 +810,7 @@ class Address
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
+            'return' => SHOP_getVar($_GET, 'return'),
         ) );
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));

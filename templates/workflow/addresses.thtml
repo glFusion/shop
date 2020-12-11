@@ -7,7 +7,7 @@
         </select>
         <p>
         <input type="checkbox" id="ShiptoIsBillto" name="ShiptoIsBillto" value="1"
-            onclick="SHOP_showhideBillto();" />&nbsp;{$LANG_SHOP['billto_is_shipto']}
+            onclick="SHOP_showhideBillto();" /><label for="ShiptoIsBillto">&nbsp;{$LANG_SHOP['billto_is_shipto']}</label>
         </p>
     </div>
     <div>
@@ -24,17 +24,17 @@
         <span class="header">{$LANG_SHOP['ship_to']}:</span><br />
         <span id="shipto_addr">{shipto_addr}</span>
         <p>
-        <a id="shipto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={shipto_id}">{$LANG_SHOP['update']}</a>
+        <a id="shipto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={shipto_id}&return=cart_addresses">{$LANG_SHOP['update']}</a>
         </p>
         <p>
-        <a class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id=0">{$LANG_SHOP['new_address']}</a>
+        <a class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id=0&return=cart_addresses">{$LANG_SHOP['new_address']}</a>
         </p>
     </div>
     <div>
         <span class="header">{$LANG_SHOP['bill_to']}:</span><br />
         <span id="billto_addr">{billto_addr}</span>
         <p>
-        <a id="billto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={billto_id}">{$LANG_SHOP['update']}</a>
+        <a id="billto_upd_link" class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id={billto_id}&return=cart_addresses">{$LANG_SHOP['update']}</a>
         </p>
     </div>
 </div>
@@ -83,7 +83,7 @@ function SHOP_updateAddress(addr_id, elem, upd_display)
         success: function(result) {
             try {
                 $("#"+elem+"_upd_link").attr("href",
-                    "{site_url}/shop/account.php?mode=editaddr&id=" + addr_id
+                    "{site_url}/shop/account.php?mode=editaddr&return=cart_addresses&id=" + addr_id
                 );
                 if (upd_display) {
                     $("#"+elem+"_addr").html(result.addr_text);

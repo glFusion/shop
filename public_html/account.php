@@ -171,7 +171,7 @@ case 'saveaddr':
     } else {
         COM_setMsg("Saving address failed");
     }
-    COM_refresh(SHOP_getUrl(SHOP_URL . '/account.php?addresses'));
+    COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
     break;
 
 case 'editaddr':

@@ -34,7 +34,7 @@ function SHOP_setDefAddr(type, addr_id)
     return;
 }
 </script>
-<a href="{site_url}/shop/account.php?mode=editaddr&id=0">
+<a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id=0">
     <button class="uk-button uk-button-success">{$LANG_SHOP['new_address']}</button>
 </a>
 <table class="uk-table uk-text-center">
@@ -50,7 +50,7 @@ function SHOP_setDefAddr(type, addr_id)
 <!-- BEGIN Addresses -->
     <tr>
         <td>
-            <a href="{site_url}/shop/account.php?mode=editaddr&id={addr_id}">
+            <a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id={addr_id}">
                 <i class="uk-icon uk-icon-edit"></i>
             </a>
         <td>
