@@ -21,6 +21,8 @@ Release TBD
   * Checkout workflows can no longer be disabled. Unnecessary steps are skipped.
   * Enable API-based shipping quotes for UPS, USPS and FedEx.
   * Enable free-shipping thresholds per shipper.
+  * New address entry form defaults to the shop's city and country.
+  * Zone rules can apply to downloads using IP geolocation.
 
 ## v1.2.1
 Release 2020-03-02
