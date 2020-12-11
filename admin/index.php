@@ -63,7 +63,7 @@ $expected = array(
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
-    'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
+    'sales', 'editsale', 'editshipper', 'shipping',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl',
     'newpayment',
@@ -73,7 +73,7 @@ $expected = array(
     'features', 'ft_view', 'ft_edit',
     'products',
     // deprecated
-    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
+    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {

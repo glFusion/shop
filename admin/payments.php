@@ -44,7 +44,7 @@ $expected = array(
     // Actions to perform
     'delete', 'savepayment', 'delpayment',
     // Views to display
-    'edit', 'payments', 'list', 'newpayment', 'ipndetail',
+    'edit', 'payments', 'list', 'newpayment', 'pmtdetail', 'ipndetail',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -93,6 +93,20 @@ case 'newpayment':
     break;
 
 case 'ipndetail':
+    $val = NULL;
+    foreach (array('id', 'txn_id') as $key) {
+        if (isset($_GET[$key])) {
+            $val = $_GET[$key];
+            break;
+        }
+    }
+    if ($val !== NULL) {
+        $content .= \Shop\Report::getInstance('ipnlog')->RenderDetail($val, $key);
+        break;
+    }
+    break;
+
+case 'pmtdetail':
     $val = SHOP_getVar($_GET, 'pmt_id', 'integer');
     if ($val > 0) {
         $content .= \Shop\Report::getInstance('payment')->RenderDetail($val);

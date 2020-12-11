@@ -220,7 +220,7 @@
                 <td>{pmt_amount}</td>
                 <td>{gw_name}</td>
 {!!if {is_admin} && {pmt_txn_id} !!}
-                <td><a href="{ipn_det_url}">{pmt_txn_id}</a></td>
+                <td><a href="{pmt_det_url}">{pmt_txn_id}</a></td>
 {!endif}
             </tr>
 <!-- END Payments -->

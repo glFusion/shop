@@ -19,7 +19,7 @@ use Shop\Shipper;
 use Shop\Template;
 use Shop\Gateway;
 use Shop\Company;
-use Shop\IPN;
+use Shop\Payment;
 use Shop\OrderStatus;
 use Shop\ShipmentPackage;
 
@@ -308,7 +308,7 @@ class Invoice extends OrderBaseView
         foreach ($Payments as $Payment) {
             $this->TPL->set_var(array(
                 'gw_name' => Gateway::getInstance($Payment->getGateway())->getDscp(),
-                'ipn_det_url' => $Payment->getDetailUrl(),
+                'pmt_det_url' => Payment::getDetailUrl($Payment->getPmtID()),
                 'pmt_txn_id' => $Payment->getRefID(),
                 'pmt_amount' => $this->Currency->formatValue($Payment->getAmount()),
             ) );

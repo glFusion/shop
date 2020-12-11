@@ -283,7 +283,7 @@ class ipnlog extends \Shop\Report
         case 'ipn_id':
             $retval = COM_createLink(
                 $A['id'],
-                SHOP_ADMIN_URL . '/index.php?ipndetail=x&amp;id=' . $A['id'],
+                SHOP_ADMIN_URL . '/payments.php?ipndetail=x&amp;id=' . $A['id'],
                 array(
                     'target' => '_blank',
                     'class' => 'tooltip',

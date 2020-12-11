@@ -655,9 +655,9 @@ class Payment
      * @param   integer $pmt_id     Payment record ID
      * @return  string      URL to detail display
      */
-    public function getDetailUrl()
+    public static function getDetailUrl($pmt_id)
     {
-        return SHOP_ADMIN_URL . '/payments.php?ipndetail=x&pmt_id=' . $this->pmt_id;
+        return SHOP_ADMIN_URL . '/payments.php?pmtdetail=x&pmt_id=' . $pmt_id;
      }
 
 }
