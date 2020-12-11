@@ -53,10 +53,10 @@ class Template extends \Template
      */
     public static function getByLang($root = '', $lang = NULL)
     {
-        global $_USER;
+        global $_CONF;
 
         if ($lang === NULL) {
-            $lang = $_USER['language'];
+            $lang = $_CONF['language'];
         }
         if(!empty($root) && substr($root, -1) != '/') {
             $root .= '/';
