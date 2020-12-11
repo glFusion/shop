@@ -125,7 +125,9 @@ class ShipmentForm
                         // Item was not shipped on this order.
                         $toship = 0;
                     }
-                    $shipped -= $oi_shipped[$OI->getID()];
+                    if (isset($oi_shipped[$OI->getID()])) {
+                        $shipped -= $oi_shipped[$OI->getID()];
+                    }
                     $newshipment = true;    // to allow editing qty field
                 } else {
                     $toship = $OI->getQuantity() - $shipped;
