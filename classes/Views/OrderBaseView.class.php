@@ -404,6 +404,7 @@ class OrderBaseView
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $this->is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
+                'embargoed'     => $Item->getInvalid(),
             ) );
             if ($P->isPhysical()) {
                 $no_shipping = 0;

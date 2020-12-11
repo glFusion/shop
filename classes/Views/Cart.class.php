@@ -111,8 +111,7 @@ class Cart extends OrderBaseView
      */
     public function Render()
     {
-//        $output = \Shop\Menu::checkoutFlow($this->Order);
-//        $output .= $this->shippingSelection();
+        $this->Order->checkRules();
         $output = $this->createHTML2();
         return $output;
     }
@@ -152,6 +151,9 @@ class Cart extends OrderBaseView
         $this->_renderCommon();
         $this->_renderAddresses();
         $this->_renderItems();
+        if ($this->Order->hasInvalid()) {
+            $this->TPL->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
+        }
 
         $payer_email = $this->Order->getBuyerEmail();
         /*switch ($this->tplname) {
@@ -431,6 +433,7 @@ class Cart extends OrderBaseView
         $this->tplname = 'checkout';
         $this->TPL->set_file('checkout', 'checkout.thtml');
 
+        $this->Order->checkRules();
         $gw = Gateway::getInstance($this->Order->getPmtMethod());
         $this->TPL->set_var(array(
             'order_instr'   => $this->Order->getInstructions(),

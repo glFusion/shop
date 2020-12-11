@@ -914,6 +914,7 @@ class Gateway
             'cart_id'   => $cart->cartID(),
             'uid'       => $_USER['uid'],
             'gw_js'     => $this->getCheckoutJS($cart),
+            'disabled'  => $cart->hasInvalid(),
         ) );
         return $T->parse('', 'btn');
     }
