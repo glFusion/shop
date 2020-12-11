@@ -407,7 +407,7 @@ class Customer
             $have_address = true;
         }
         if (!$have_address) {
-            $loc = GeoLocate::getProvider()->geoLocate();
+            $loc = GeoLocator::getProvider()->geoLocate();
             if ($loc['ip'] != '') {
                 $A['country'] = $loc['country_code'];
                 $A['state'] = $loc['state_code'];

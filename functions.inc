@@ -1794,7 +1794,7 @@ function plugin_configmanager_select_ipgeo_provider_shop()
     foreach ($files as $file) {
         $tmp = explode('/', $file);
         $opt = explode('.', end($tmp))[0];
-        $provider = Shop\GeoLocate::getProvider($opt)->getProviderName();
+        $provider = Shop\GeoLocator::getProvider($opt)->getProviderName();
         $A[$provider] = $opt;
     }
     return $A;
