@@ -120,23 +120,23 @@
                 </div>
                 <div class="uk-width-1-1 uk-width-medium-5-10 uk-pull-5-10 alignleft">
 {!if order_instr}
-    <div style="margin-top:10px;">
-    {$LANG_SHOP['order_instr']}:<br />
-    {order_instr}
-    </div>
+                    <div style="margin-top:10px;">
+                        {$LANG_SHOP['order_instr']}:<br />
+                        {order_instr}
+                    </div>
 {!endif}
-    <div style="margin-top:10px;">
-    {$LANG_SHOP['pmt_method']}: {pmt_method}
-    </div>
-    <div style="margin-top:10px;">
-    {$LANG_SHOP['notify_email']}: {buyer_email}
-    </div>
+                    <div style="margin-top:10px;">
+                        {$LANG_SHOP['pmt_method']}: {pmt_method}
+                    </div>
+                    <div style="margin-top:10px;">
+                        {$LANG_SHOP['notify_email']}: {buyer_email}
+                    </div>
                 </div>
             </div>
             </div>
         </div>
         <div style="float:right;margin-top:20px;">
-                    {checkout_button}
+            {checkout_button}
         </div>
 </div>
 <div height="200px"></div>
