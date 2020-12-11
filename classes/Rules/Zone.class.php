@@ -218,8 +218,6 @@ class Zone
         if ($Addr === NULL) {
             if (Config::get('ipgeo_provider') != '') {
                 $data = GeoLocator::getProvider()
-                    ->withIP('68.1.122.8')
-                    //->withIP($_SERVER['REAL_ADDR'])
                     ->geoLocate();
                 if (empty($data['country_code']) || empty($data['state_code'])) {
                     return true;    // default to OK if unable to geocode

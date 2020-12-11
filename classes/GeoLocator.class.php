@@ -58,7 +58,7 @@ class GeoLocator
     {
         global $_CONF;
 
-        $this->ip = $_SERVER['REMOTE_ADDR'];
+        $this->ip = $_SERVER['REAL_ADDR'];
         $this->default_data['timezone'] = $_CONF['timezone'];
     }
 
