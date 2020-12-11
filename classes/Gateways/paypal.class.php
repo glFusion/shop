@@ -891,14 +891,12 @@ class paypal extends \Shop\Gateway
         if (!is_array($data)) {
             return array();
         }
-        $pmt_gross = 0;
         $verified = 'true';
         $pmt_status = 'paid';
         $buyer_email = '';
         if (isset($data['event_type'])) {   // webhook
             if (isset($data['resource']['invoice']['payments']['transactions'])) {
                 $info = array_pop($data['resource']['invoice']['payments']['transactions']);
-                $pmt_gross = (float)$info['amount']['value'];
             }
             if (isset($data['resource']['invoice']
                 ['primary_recipients']
@@ -908,13 +906,11 @@ class paypal extends \Shop\Gateway
                     [0]['billing_info']['email_address'];
             }
         } else {        // regular IPN
-            $pmt_gross = $data['mc_gross'] . ' ' . $data['mc_currency'];
             $verified = $data['payer_status'];
             $pmt_status = $data['payment_status'];
             $buyer_email = $data['payer_email'];
         }
         $retval = array(
-            'pmt_gross'     => $pmt_gross,
             'verified'      => $verified,
             'pmt_status'    => $pmt_status,
             'buyer_email'   => $buyer_email,
