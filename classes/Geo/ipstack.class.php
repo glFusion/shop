@@ -109,18 +109,20 @@ class ipstack extends \Shop\GeoLocator
         $retval = array(
             'ip' => $decoded['ip'],
             'continent_code' => $decoded['continent_code'],
+            'continent_name' => $decoded['continent_name'],
             'country_code' => $decoded['country_code'],
+            'country_name' => $decoded['country_name'],
             'state_code' => $decoded['region_code'],
+            'state_name' => $decoded['region_name'],
             'city_name' => $decoded['city'],
             'zip' => $decoded['zip'],
             'lat' => (float)$decoded['latitude'],
             'lng' => (float)$decoded['longitude'],
             'timezone' => $_CONF['timezone'],
             'status' => true,
+            'isp' => NULL,
         );
         return $retval;
     }
 
 }
-
-?>

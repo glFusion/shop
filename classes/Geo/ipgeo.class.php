@@ -117,18 +117,20 @@ class ipgeo extends \Shop\GeoLocator
         $retval = array(
             'ip' => (string)$decoded['ip'],
             'continent_code' => (string)$decoded['continent_code'],
+            'continent_name' => (string)$decoded['continent_name'],
             'country_code' => (string)$decoded['country_code2'],
+            'country_name' => (string)$decoded['country_name'],
             'state_code' => (string)$decoded['state_iso'],
+            'state_name' => (string)$decoded['state_prov'],
             'city_name' => (string)$decoded['city'],
             'zip' => (string)$decoded['zipcode'],
             'lat' => (float)$decoded['latitude'],
             'lng' => (float)$decoded['longitude'],
             'timezone' => (string)$decoded['time_zone']['name'],
             'status' => $decoded['status'],
+            'isp' => $decoded['isp'],
         );
         return $retval;
     }
 
 }
-
-?>

@@ -38,13 +38,16 @@ class GeoLocator
         'ip' => '',
         'continent_code' => '',
         'country_code' => '',
+        'country_name' => '',
         'state_code' => '',
+        'state_name' => '',
         'city_name' => '',
         'zip' => '',
         'timezone' => '',
         'lat' => 0,
         'lng' => 0,
         'status' => false,
+        'isp' => NULL,
     );
 
 
@@ -91,7 +94,7 @@ class GeoLocator
     public function withIP($ip = '')
     {
         if (empty($ip)) {
-            $this->ip = $_SERVER['REMOTE_ADDR'];
+            $this->ip = $_SERVER['REAL_ADDR'];
         } else {
             $this->ip = $ip;
         }
@@ -167,5 +170,3 @@ class GeoLocator
     }
 
 }
-
-?>
