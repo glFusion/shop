@@ -184,24 +184,23 @@ case 'editaddr':
     break;
 
 case 'addresses':
+    SHOP_setUrl($_SERVER['REQUEST_URI']);
     $content .= Shop\Menu::User($mode);
     $A = Shop\Customer::getInstance()->getAddresses();
-    if (!empty($A)) {
-        $T = new Template;
-        $T->set_file('list', 'acc_addresses.thtml');
-        $T->set_block('list', 'Addresses', 'aRow');
-        foreach ($A as $Addr) {
-            $T->set_var(array(
-                'addr_id' => $Addr->getID(),
-                'address' => $Addr->toText('all', ','),
-                'def_billto' => $Addr->isDefaultBillto() ? 'checked="checked"' : '',
-                'def_shipto' => $Addr->isDefaultShipto() ? 'checked="checked"' : '',
-            ) );
-            $T->parse('aRow', 'Addresses', true);
-        }
-        $T->parse('output', 'list');
-        $content .= $T->finish($T->get_var('output'));
+    $T = new Template;
+    $T->set_file('list', 'acc_addresses.thtml');
+    $T->set_block('list', 'Addresses', 'aRow');
+    foreach ($A as $Addr) {
+        $T->set_var(array(
+            'addr_id' => $Addr->getID(),
+            'address' => $Addr->toText('all', ','),
+            'def_billto' => $Addr->isDefaultBillto() ? 'checked="checked"' : '',
+            'def_shipto' => $Addr->isDefaultShipto() ? 'checked="checked"' : '',
+        ) );
+        $T->parse('aRow', 'Addresses', true);
     }
+    $T->parse('output', 'list');
+    $content .= $T->finish($T->get_var('output'));
     break;
 
 case 'orderhist':

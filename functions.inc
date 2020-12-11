@@ -2365,17 +2365,18 @@ function SHOP_setUrl($url='')
  * @param   boolean $keep       True to keep the url in the session var
  * @return  string  URL
  */
-function SHOP_getUrl($def_url = '', $keep=true)
+function SHOP_getUrl($def_url = '', $keep=false)
 {
     $url = SESS_getVar('shop_ret_url');
-    if (!$url) {
+    if ($url === 0) {
         if ($def_url !== '') {
             $url = $def_url;
         } else {
             // final failsafe
             $url = SHOP_URL . '/index.php';
         }
-    } elseif (!$keep) {
+    }
+    if (!$keep) {
         // This is a one-time use value
         SESS_unSet('shop_ret_url');
     }
