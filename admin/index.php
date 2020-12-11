@@ -553,7 +553,6 @@ case 'updateshipment':
     break;
 
 case 'del_shipment':
-    echo "del_shipment deprecated";die;
     $S = new Shop\Shipment($actionval);
     $S->Delete();
     $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?shipments');
@@ -563,7 +562,7 @@ case 'del_shipment':
 case 'addshipment':
     $S = Shop\Shipment::create($_POST['order_id']);
     if ($S->Save($_POST)) {
-        COM_refresh(SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?order=' . $S->getOrderID()));
+        COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $_POST['order_id']);
     } else {
         COM_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
