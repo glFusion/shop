@@ -137,7 +137,8 @@ class authorizenet extends \Shop\Gateway
         );
 
         $by_gc = $cart->getGC();
-        if ($by_gc > 0) {
+        $dc_pct = $cart->getDiscountPct() / 100;
+        if ($by_gc > 0 || $dc_pct > 0) {
             $total_amount = $cart->getTotal() - $by_gc;
             $line_items[] = array(
                     'itemId' => $LANG_SHOP['cart'],
@@ -294,7 +295,6 @@ class authorizenet extends \Shop\Gateway
             return array();
         }
         $retval = array(
-            'pmt_gross'     => 0,
             'verified'      => 'verified',
             'pmt_status'    => $data['status'],
             'buyer_email'   => '',
