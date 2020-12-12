@@ -1828,11 +1828,18 @@ class Order
     /**
      * Get the last-modified timestamp.
      *
+     * @param   boolean $unix   True to get as a Unix timestamp
      * @return  string      DateTime that order was last modified
      */
-    public function getLastMod()
+    public function getLastMod($unix=false)
     {
-        return $this->last_mod;
+        global $_CONF;
+        if ($unix) {
+            $dt = new \Date($this->last_mod, $_CONF['timezone']);
+            return $dt->toUnix();
+        } else {
+            return $this->last_mod;
+        }
     }
 
 

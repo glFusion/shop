@@ -1190,4 +1190,27 @@ class Cart extends Order
         return DiscountCode::countCurrent() > 0 ? true : false;
     }
 
+
+    /**
+     * Check if the cart is up to date.
+     * This uses the last_mod timestamp to see if it is outdated and should
+     * be recalculated due to expiring/new sale prices, etc.
+     *
+     * @return  boolean     True if up to date, False if not.
+     */
+    public function isCurrent()
+    {
+        global $_CONF;
+
+        $now = $_CONF['_now']->toUnix();
+        $cart = $this->getLastMod(true);
+
+        // Consider current if last updated with a day.
+        if (($now - $cart) > 86400) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
 }

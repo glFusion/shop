@@ -429,6 +429,10 @@ class Cart extends OrderBaseView
      */
     public function confirmCheckout()
     {
+        if (!$this->Order->isCurrent()) {
+            COM_refresh(SHOP_URL . '/cart.php');
+        }
+
         $this->TPL = new Template('workflow/');
         $this->tplname = 'checkout';
         $this->TPL->set_file('checkout', 'checkout.thtml');
