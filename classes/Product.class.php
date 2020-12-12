@@ -827,13 +827,33 @@ class Product
 
 
     /**
-     * Get the zone rule ID
+     * Get the zone rule ID.
+     * Looks first for a rule affecting this specific product. If none found,
+     * recurse backwards through the categories to determine if any has a
+     * rule set. First non-zero rule ID is returned.
      *
-     * @return  intger      Rule ID
+     * @return  integer     Rule record ID
      */
     public function getRuleID()
     {
-        return (int)$this->zone_rule;
+        static $retval = NULL;
+
+        if ($retval === NULL) {
+            $retval = 0;
+            if ($this->zone_rule > 0) {
+                $retval = $this->zone_rule;
+            } else {
+                $Cats = $this->getCategories();
+                $Cats = array_reverse($Cats, true);
+                foreach ($Cats as $Cat) {
+                    if ($Cat->getRuleID() > 0) {
+                        $retval = $Cat->getRuleID();
+                        break;
+                    }
+                }
+            }
+        }
+        return (int)$retval;
     }
 
 
@@ -844,8 +864,8 @@ class Product
      */
     public function getRule()
     {
-        if ($this->zone_rule> 0) {
-            return Rules\Zone::getInstance($this->zone_rule);
+        if ($this->getRuleID() > 0) {
+            return Rules\Zone::getInstance($this->getRuleID());
         } else {
             return new Rules\Zone;
         }
@@ -1125,7 +1145,7 @@ class Product
             $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
             COM_setMsg($msg, 'error');
             SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
-            COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $this->id);
+            COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
         }
     }
@@ -3805,7 +3825,7 @@ class Product
         case 'edit':
             $retval .= COM_createLink(
                 Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?editproduct=x&amp;id={$A['id']}"
+                SHOP_ADMIN_URL . "/index.php?return=products&editproduct=x&amp;id={$A['id']}"
             );
             break;
 
@@ -4497,5 +4517,3 @@ class Product
     }
 
 }
-
-?>

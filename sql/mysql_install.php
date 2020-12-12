@@ -137,6 +137,7 @@ $_SQL = array(
   `grp_access` mediumint(8) unsigned NOT NULL DEFAULT '1',
   `image` varchar(255) DEFAULT '',
   `google_taxonomy` text,
+  `zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
   `lft` smallint(5) unsigned NOT NULL DEFAULT '0',
   `rgt` smallint(5) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`cat_id`),
@@ -813,6 +814,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `billto_phone` varchar(30) AFTER `billto_zip`",
     "ALTER TABLE {$_TABLES['shop.orderitems']}
         DROP `dc_price`",
+    "ALTER TABLE {$_TABLES['shop.categories']}
+        ADD `zone_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `google_taxonomy`",
 
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",

@@ -23,6 +23,7 @@ Release TBD
   * Enable free-shipping thresholds per shipper.
   * New address entry form defaults to the shop's city and country.
   * Zone rules can apply to downloads using IP geolocation.
+  * Zone rules can be applied to categories as well as products.
 
 ## v1.2.1
 Release 2020-03-02

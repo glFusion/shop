@@ -75,6 +75,10 @@ class Category
      * @var string */
     private $google_taxonomy = '';
 
+    /** Zone restriction rule ID.
+     * @var integer */
+    private $zone_rule = 0;
+
     /** Indicate whether the current user is an administrator.
      * @var boolean */
     private $isAdmin;
@@ -149,6 +153,7 @@ class Category
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
         $this->image = $row['image'];
+        $this->zone_rule = (int)$row['zone_rule'];
     }
 
 
@@ -273,7 +278,8 @@ class Category
                 enabled='{$this->enabled}',
                 grp_access ='{$this->grp_access}',
                 image='" . DB_escapeString($this->image) . "',
-                google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "'";
+                google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "',
+                zone_rule = " . $this->getRuleID();
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
             //COM_errorLog($sql);
@@ -447,6 +453,7 @@ class Category
             'doc_url'       => SHOP_getDocURL('category_form'),
             'google_taxonomy' => $this->google_taxonomy,
             'nonce'         => Images\Category::makeNonce(),
+            'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
         ) );
         if ($this->image != '') {
             $T->set_var(array(
@@ -1292,15 +1299,12 @@ class Category
 
     /**
      * Get the zone rule ID for this category.
-     * Traverses the tree in reverse and returns the first rule found.
-     * TODO: stub function during testing
      *
      * @return  integer     Applicable rule ID
      */
     public function getRuleID()
     {
-        return 3;
+        return (int)$this->zone_rule;
     }
-}
 
-?>
+}
