@@ -457,7 +457,6 @@ class OrderBaseView
         $this->TPL->set_var(array(
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
-            'discount_code_fld' => $this->Order->canShowDiscountEntry(),
             'discount_code' => $this->Order->getDiscountCode(),
             'dc_row_vis'    => $this->Order->getDiscountCode(),
             'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
