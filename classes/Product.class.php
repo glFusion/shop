@@ -214,6 +214,8 @@ class Product
     public $buttons;
 
     /** Special fields, created by adding text strings.
+     * Set statically by the product, see the $custom property for
+     * admin-created input fields such as embroidery or engraving info.
      * @var array */
     protected $special_fields = array();
 
@@ -270,6 +272,7 @@ class Product
     /** Custom text input fields solicited on the order form.
      * @var string */
     protected $custom = '';
+
     /** Supplier ID.
      * @var integer */
     protected $supplier_id = 0;
@@ -2188,12 +2191,12 @@ class Product
     {
         if (
             $this->isTaxable()          // need address in cart for tax
-            || $this->zone_rule > 0       // has an active zone rule
+            || $this->zone_rule > 0     // has an active zone rule
             || !$this->canOrder()       // Can't be ordered at all, unavailable
-            || $this->hasOptions()      // no attributes to select
-            || $this->hasDiscounts()    // no quantity-based discounts
-            || $this->hasCustomFields() // no text fields to fill in
-            || $this->hasSpecialFields()    // no special fields to fill in
+            || $this->hasOptions()      // has attributes to select
+            || $this->hasDiscounts()    // has quantity-based discounts
+            || $this->hasCustomFields() // has text fields to fill in
+            || $this->hasSpecialFields()    // has special fields to fill in
         ) {
             // If any of the above apply, then the buy-now button can't be used.
             return false;

@@ -413,9 +413,9 @@ class Coupon extends \Shop\Product
         $T->parse('output', 'message');
         $msg_text = $T->finish($T->get_var('output'));
         if (empty($recip_name)) {
-            $recip_name = $email;
+            $recip_name = $recip;
         }
-        COM_emailNotification(array(
+        $email_vars = array(
             'to' => array(
                 $recip,
                 $recip_name,
@@ -426,7 +426,8 @@ class Coupon extends \Shop\Product
             ),
             'htmlmessage' => $msg_text,
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
-        ) );
+        );
+        COM_emailNotification($email_vars);
         SHOP_log("Coupon notification sent to $recip.", SHOP_LOG_DEBUG);
     }
 
