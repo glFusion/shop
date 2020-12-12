@@ -68,6 +68,11 @@ class ipgeo extends \Shop\GeoLocator
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        // Can't geolocate if the api key is empty
+        if (empty($this->ip) || empty($this->api_key)) {
+            return $this->default_data;
+        }
+
         $resp = $this->getCache($this->ip);   // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
             $ch = curl_init();

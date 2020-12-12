@@ -67,13 +67,14 @@ class ipstack extends \Shop\GeoLocator
     {
         global $_SHOP_CONF, $LANG_SHOP, $_CONF;
 
-        $endpoint = $this->getEndpoint($this->ip);
-        if (empty($endpoint)) {
+        // Can't geolocate if the api key is empty
+        if (empty($this->ip) || empty($this->api_key)) {
             return $this->default_data;
         }
 
         $resp = $this->getCache($this->ip);   // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
+            $endpoint = $this->getEndpoint($this->ip);
             $ch = curl_init();
             curl_setopt_array($ch, array(
                 CURLOPT_RETURNTRANSFER => 1,
