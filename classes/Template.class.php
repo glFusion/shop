@@ -56,8 +56,14 @@ class Template extends \Template
         global $_CONF;
 
         if ($lang === NULL) {
-            $lang = $_CONF['language'];
+            $lang = COM_getLanguageName();
+        } else {
+            $charset = '_' . strtolower(COM_getCharset());
+            if (substr($lang, -strlen($charset)) == $charset) {
+                $lang = substr($lang, 0, -strlen($charset));
+            }
         }
+
         if(!empty($root) && substr($root, -1) != '/') {
             $root .= '/';
         }
@@ -65,8 +71,8 @@ class Template extends \Template
             $root . $lang,
         );
         // Add english as a failsafe if not already the selected language
-        if ($lang != 'english_utf-8') {
-            $roots[] = $root . 'english_utf-8';
+        if ($lang != 'english') {
+            $roots[] = $root . 'english';
         }
         $roots[] = $root;
         return new self($roots);
