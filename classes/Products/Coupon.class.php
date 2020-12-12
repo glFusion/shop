@@ -723,11 +723,26 @@ class Coupon extends \Shop\Product
 
         SHOP_log("Setting $code as $newstatus", SHOP_LOG_DEBUG);
         $code = DB_escapeString($code);
+        $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
+                WHERE code = '$code'";
+        $res = DB_query($sql);
+        if (DB_numRows($res) == 1) {
+            $A = DB_fetchArray($res, false);
+        } else {
+            return false;
+        }
+
+        $balance = (float)$A['balance'];
         $newstatus = DB_escapeString($newstatus);
+
         $sql = "UPDATE {$_TABLES['shop.coupons']}
             SET status = '$newstatus'
             WHERE code = '$code'";
         if ($newstatus == self::VOID) {
+            if ($balance <= 0) {
+                // break here, balance must be > 0 to void
+                return false;
+            }
             $log_code = 'gc_voided';
             $sql .= ' AND balance > 0';
         } else {
@@ -735,7 +750,7 @@ class Coupon extends \Shop\Product
         }
         DB_query($sql);
         if (!DB_error()) {
-            self::writeLog($code, $_USER['uid'], 0, $log_code);
+            self::writeLog($code, $_USER['uid'], $balance, $log_code);
             return true;
         } else {
             return false;
