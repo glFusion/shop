@@ -218,7 +218,7 @@ class coupons extends \Shop\Report
                 break;
             case 'gc_voided':
             case 'gc_unvoided':
-                $var = COM_getDisplayName($A['uid']);
+                $var = COM_getDisplayName($A['uid']) . ' (' . $A['code'] . ')';
                 break;
             }
             $retval = sprintf(
@@ -230,6 +230,7 @@ class coupons extends \Shop\Report
         case 'amount':
             switch ($A['msg']) {
             case 'gc_redeemed':
+            case 'gc_unvoided':
                 break;
             default:
                 $fieldvalue *= -1;
