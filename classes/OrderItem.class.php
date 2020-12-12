@@ -982,6 +982,29 @@ class OrderItem
 
 
     /**
+     * Shortcut function to get the gross line item extension.
+     * Includes option prices, excludes discounts.
+     *
+     * @return  float   Item price * quantity
+     */
+    public function getGrossExtension()
+    {
+        return (float)$this->price * (float)$this->quantity;
+    }
+
+
+    /**
+     * Shortcut function to get the net line item extension, after discount.
+     *
+     * @return  float   Item price * quantity
+     */
+    public function getNetExtension()
+    {
+        return (float)$this->net_price * (float)$this->quantity;
+    }
+
+
+    /**
      * Get the product ID for this order item.
      *
      * @return  string      Product ID

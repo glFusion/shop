@@ -53,7 +53,7 @@ class DiscountCode
 
     /** Message text regarding application of a code.
      * @var string */
-    private $msg_text = '';
+    private $messages = array();
 
 
     /**
@@ -390,33 +390,46 @@ class DiscountCode
     /**
      * Validate a customer-entered discount code.
      *
-     * @param   float   $amt    Net order amount, to check min order required
+     * @param   object  $Cart   Cart object
      * @return  float       Percentage discount, NULL if invalid
      */
-    public function Validate($amt)
+    public function Validate($Cart)
     {
         global $_CONF, $LANG_SHOP;
 
         $now = $_CONF['_now']->toMySQL(true);
         if ($this->code_id < 1) {  // discount code not created yet
-            $this->msg_text = sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']);
-            return NULL;
-        } elseif ($this->min_order > (float)$amt) {  // order doesn't meet minimum
-            $this->msg_text = sprintf(
-                $LANG_SHOP['min_order_not_met'],
-                Currency::getInstance()->Format($this->min_order)
-            );
+            $this->messages[] = sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']);
             return NULL;
         } elseif (
             $now > $this->getEnd()->toMySQL(true) ||
             $now < $this->getStart()->toMySQL(true)
         ) {
-            $this->msg_text = $LANG_SHOP['dc_expired'];
+            $this->messages[] = $LANG_SHOP['dc_expired'];
             return NULL;
-        } else {
-            $this->msg_text = $LANG_SHOP['dc_applied'];
-            return $this->getPercent();
         }
+
+        // Get the item total from the order, excluding products that
+        // do not allow discount codes
+        $gross_items = $Cart->getItemTotal();
+        foreach($Cart->getItems() as $Item) {
+            if (!$Item->getProduct()->canApplyDiscountCode()) {
+                $gross_items -= $Item->getGrossExtension();
+            }
+        }
+        if ($gross_items < $Cart->getItemTotal()) {
+            $this->messages[] = $LANG_SHOP['dc_items_excluded'];
+        }
+        if ($this->min_order > (float)$gross_items) {  // order doesn't meet minimum
+            $this->messages[] = sprintf(
+                $LANG_SHOP['min_order_not_met'],
+                Currency::getInstance()->Format($this->min_order)
+            );
+            return NULL;
+        }
+
+        $this->messages[] = $LANG_SHOP['dc_applied'];
+        return $this->getPercent();
     }
 
 
@@ -427,7 +440,14 @@ class DiscountCode
      */
     public function getMessage()
     {
-        return $this->msg_text;
+        $cnt = count($this->messages);
+        if ($cnt == 0) {
+            return '';
+        } elseif ($cnt == 1) {
+            return $this->messages[0];
+        } elseif ($cnt > 1) {
+            return '<ul><li>' . implode('</li><li>', $this->messages) . '</li></ul>';
+        }
     }
 
 
@@ -700,5 +720,3 @@ class DiscountCode
     }
 
 }
-
-?>

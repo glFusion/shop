@@ -3516,20 +3516,6 @@ class Order
 
 
     /**
-     * Determine if the discount code entry field can be shown.
-     * This wrapper allows for future conditions based on group menbership,
-     * existence of sale prices, etc. but currently just shows the field if
-     * there are any active codes.
-     *
-     * @return  boolean     True if the field can be shown, False if not.
-     */
-    public function canShowDiscountEntry()
-    {
-        return DiscountCode::countCurrent() > 0 ? true : false;
-    }
-
-
-    /**
      * Get the amount of the discount yielded by the discount code.
      *
      * @return  float   Discount amount
@@ -3622,8 +3608,7 @@ class Order
         // total may have changed.
         if (!empty($code)) {
             $DC = DiscountCode::getInstance($code);
-            $this->calcItemTotals();
-            $pct = $DC->Validate($this->gross_items);
+            $pct = $DC->Validate($this);
         }
 
         // If the code and percentage have not changed, just return true.

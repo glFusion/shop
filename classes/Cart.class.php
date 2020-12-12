@@ -435,6 +435,24 @@ class Cart extends Order
                 OrderItem::Delete($Item->getID());
             }
             $this->items = array();
+            $vals = array(
+                "gross_items = 0",
+                "net_nontax = 0",
+                "net_taxable = 0",
+                "order_total = 0",
+                "tax = 0",
+                "shipping = 0",
+                "handling = 0",
+                "by_gc = 0",
+                "tax_rate = 0",
+                "shipper_id = 0",
+                "discount_code = ''",
+                "discount_pct = 0",
+                "instructions = 0",
+                "tax_shipping = 0",
+                "tax_handling = 0",
+            );
+            $this->updateRecord($vals);
             /*if ($del_order) {
                 DB_delete($_TABLES['shop.orders'], 'order_id', $this->cartID());
                 self::delAnonCart();
@@ -1158,6 +1176,18 @@ class Cart extends Order
         return true;
     }
 
-}   // class Cart
 
-?>
+    /**
+     * Determine if the discount code entry field can be shown.
+     * This wrapper allows for future conditions based on group menbership,
+     * existence of sale prices, etc. but currently just shows the field if
+     * there are any active codes.
+     *
+     * @return  boolean     True if the field can be shown, False if not.
+     */
+    public function canShowDiscountEntry()
+    {
+        return DiscountCode::countCurrent() > 0 ? true : false;
+    }
+
+}
