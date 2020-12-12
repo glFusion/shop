@@ -125,17 +125,17 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
  */
 function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 {
-    global $_SHOP_CONF, $LANG_SHOP;
+    global $LANG_SHOP;
 
     $display = '';
 
     // Only show if no topic is requested
-    if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
+    if (Config::get('centerblock') == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
         $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
         $Catalog = new Shop\Catalog;
-        $display .= $Cat->setCatID($cat_id)->defaultCatalog();
+        $display .= $Catalog->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
     }
     return $display;
