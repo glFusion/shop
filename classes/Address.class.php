@@ -681,11 +681,12 @@ class Address
         $common = array(
             'name', 'company', 'address1', 'address2',
         );
-
+        $incl_phone = true;
         if ($part == 'address') {
             // Requesting only the address portion, remove name and company
             unset($common[0]);
             unset($common[1]);
+            $incl_phone = false;
         } elseif ($part != 'all') {
             // Immediately return the single requested element.
             // Typically name or company, not address components.
@@ -709,7 +710,7 @@ class Address
         if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
             $retval .=  $sep . Country::getInstance($this->country)->getName();
         }
-        if ($this->phone != '') {
+        if ($incl_phone && $this->phone != '') {
             $retval .= $sep . $this->phone;
         }
         return $retval;
@@ -737,7 +738,7 @@ class Address
      */
     public function toHash()
     {
-        return md5($this->toText());
+        return md5($this->toText('address'));
     }
 
 
