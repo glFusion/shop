@@ -809,7 +809,7 @@ class Sales
      */
     public function getFormattedValue()
     {
-        if ($this->type == 'amount') {
+        if ($this->discount_type == 'amount') {
             return Currency::getInstance()->Format($this->amount);
         } else {
             return $this->amount;
