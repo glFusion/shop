@@ -324,7 +324,7 @@ class payment extends \Shop\Report
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                Payment::getDetailUrl($A['pmt_id']),
+                \Shop\Payment::getDetailUrl($A['pmt_id']),
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
