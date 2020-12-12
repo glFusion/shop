@@ -115,8 +115,7 @@ class IPN
      * @var string */
     private $event = 'payment';
 
-    /**
-     * Holder for the complete IPN data array.
+    /** Holder for the complete IPN data array.
      * Used only for recording the raw data; no processing is done on this data
      * by the base class. Instantiated classes will use this to populate the
      * standard variables.
@@ -124,14 +123,12 @@ class IPN
      */
     protected $ipn_data = array();
 
-    /**
-     * Custom data that comes from the IPN provider, typically pass-through.
+    /** Custom data that comes from the IPN provider, typically pass-through.
      * @var array
      */
     protected $custom = NULL;
 
-    /**
-     * Shipping address information.
+    /** Shipping address information.
      * @var array
      */
     protected $shipto = array();
