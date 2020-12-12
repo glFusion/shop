@@ -621,6 +621,7 @@ $LANG_SHOP = array (
 'new_rate' => 'New Rate',
 'min_order' => 'Minimum Order',
 'min_order_not_met' => 'The minimum order amount of %s has not been met for the discount code.',
+'dc_items_excluded' => 'Some items are not elegible for the discount code.',
 'dc_expired' => 'The discount code has expired.',
 'dc_removed' => 'The discount has been removed.',
 'dc_applied' => 'The discount code has been applied successfully.',
@@ -745,6 +746,8 @@ $LANG_SHOP = array (
 'billto_is_shipto' => 'Billing address is the same as Shipping',
 'select_shipping' => 'Choose a shipping option',
 'select_payment' => 'Select a payment method',
+'dc_applied_tip' => '%.02f%% Discount code applied to this item.',
+'notes' => 'Notes',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

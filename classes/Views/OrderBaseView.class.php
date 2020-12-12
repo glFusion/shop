@@ -377,6 +377,20 @@ class OrderBaseView
                     'discount_tooltip' => '',
                 ) );
             }
+            if ($Item->getPrice() > $Item->getNetPrice()) {
+                $this->TPL->set_var(array(
+                    'dc_icon' => 'C',
+                    'dc_tip' => sprintf(
+                        $LANG_SHOP['dc_applied_tip'],
+                        $this->Order->getDiscountPct()
+                    ),
+                ) );
+            } else {
+                $this->TPL->set_var(array(
+                    'dc_icon' => '',
+                    'dc_tip' => '',
+                ) );
+            }
             $item_total = $Item->getPrice() * $Item->getQuantity();
             $subtotal += $item_total;
             if ($P->isTaxable()) {

@@ -28,6 +28,7 @@
                     <div class="uk-width-medium-1-10">{$LANG_SHOP['price']}</div>
                     <div class="uk-width-medium-1-10">{$LANG_SHOP['quantity']}</div>
                     <div class="uk-width-medium-2-10 cart-item-total">{$LANG_SHOP['total']}</div>
+                    <div class="uk-width-medium-1-10">{$LANG_SHOP['notes']}</div>
                 </div>
 <!-- BEGIN ItemRow -->
                 <div class="cart-item {!if embargoed}embargo{!endif}">
@@ -64,6 +65,9 @@
 {!endif}
 {!if discount_icon}
                             <span class="tooltip" title="{discount_tooltip}"">{discount_icon}</span>
+{!endif}
+{!if dc_icon}
+                            <span class="tooltip" title="{dc_tip}"">{dc_icon}</span>
 {!endif}
                         </div>
                     </div>
