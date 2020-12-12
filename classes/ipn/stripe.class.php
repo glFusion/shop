@@ -82,17 +82,7 @@ class stripe extends \Shop\IPN
             ->setGwName($this->GW->getName())
             ->setStatus(OrderState::PENDING);
 
-        $this->shipto = array(
-            'name'      => SHOP_getVar($shipto, 'name'),
-            'company'   => SHOP_getVar($shipto, 'company'),
-            'address1'  => SHOP_getVar($shipto, 'address1'),
-            'address2'  => SHOP_getVar($shipto, 'address2'),
-            'city'      => SHOP_getVar($shipto, 'city'),
-            'state'     => SHOP_getVar($shipto, 'state'),
-            'country'   => SHOP_getVar($shipto, 'country'),
-            'zip'       => SHOP_getVar($shipto, 'zip'),
-        );
-
+        $this->shipto = $shipto->toArray();
         $this->custom = new CustomInfo(array(
             'transtype' => $this->GW->getName(),
             'uid'       => $this->Order->getUid(),
