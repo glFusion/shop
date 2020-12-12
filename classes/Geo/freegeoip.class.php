@@ -61,7 +61,7 @@ class freegeoip extends \Shop\GeoLocator
      *
      * @return  array       Array containing country and state codes
      */
-    public function geoLocate()
+    protected function _geoLocate()
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
@@ -87,8 +87,8 @@ class freegeoip extends \Shop\GeoLocator
         if (is_array($decoded)) {
             $retval = array(
                 'ip' => (string)$decoded['ip'],
-                'continent_code' => (string)$decoded['continent_code'],
-                'continent_name' => (string)$decoded['continent_name'],
+                'continent_code' => '',
+                'continent_name' => '',
                 'country_code' => (string)$decoded['country_code'],
                 'country_name' => (string)$decoded['country_name'],
                 'state_code' => (string)$decoded['region_code'],

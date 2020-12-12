@@ -219,7 +219,11 @@ class Zone
             if (Config::get('ipgeo_provider') != '') {
                 $data = GeoLocator::getProvider()
                     ->geoLocate();
-                if (empty($data['country_code']) || empty($data['state_code'])) {
+                if (
+                    $data['status'] == false ||
+                    empty($data['country_code']) ||
+                    empty($data['state_code'])
+                ) {
                     return true;    // default to OK if unable to geocode
                 } else {
                     $State = State::getInstance($data['state_code']);

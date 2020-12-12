@@ -103,6 +103,17 @@ class GeoLocator
 
 
     /**
+     * Get the geolocation data from the provider.
+     *
+     * @return  array   Array of location data
+     */
+    protected function _geoLocate()
+    {
+        return $this->default_data;
+    }
+
+
+    /**
      * Default dummy function.
      *
      * @param   string  $ip     IP address
@@ -110,7 +121,23 @@ class GeoLocator
      */
     public function geoLocate()
     {
-        return $this->default_data;
+        $retval = $this->_geoLocate();
+        if ($retval['status'] == false) {
+            // Already determined to be invalid, no further validation needed.
+            return $retval;
+        }
+
+        // Validate that good data was received.
+        // At least country_code and state_code are required.
+        if (
+            !isset($retval['country_code']) ||
+            empty($retval['country_code']) ||
+            !isset($decoded['state_code']) ||
+            empty($decoded['state_code'])
+        ) {
+            $retval['status'] = false;
+        }
+        return $retval;
     }
 
 

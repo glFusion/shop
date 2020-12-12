@@ -42,6 +42,7 @@ class ipstack extends \Shop\GeoLocator
         global $_SHOP_CONF;
 
         $this->api_key = SHOP_getVar($_SHOP_CONF, 'ipstack_api_key');
+        parent::__construct();
     }
 
 
@@ -62,7 +63,7 @@ class ipstack extends \Shop\GeoLocator
      *
      * @return  array       Array containing country and state codes
      */
-    public function geoLocate()
+    protected function _geoLocate()
     {
         global $_SHOP_CONF, $LANG_SHOP, $_CONF;
 
