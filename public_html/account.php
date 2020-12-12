@@ -89,7 +89,7 @@ case 'couponlog':
     $content .= \Shop\Menu::User($mode);
     $content .= '<p>';
     $gc_bal = \Shop\Products\Coupon::getUserBalance();
-    $content .= $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal);
+    $content .= '<h2>' . $LANG_SHOP['gc_bal'] . ': ' . \Shop\Currency::getInstance()->Format($gc_bal) . '</h2>';
     $url = \Shop\Products\Coupon::redemptionUrl();
     $content .= '&nbsp;&nbsp;' . COM_createLink(
         $LANG_SHOP['add_gc'],
