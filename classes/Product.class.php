@@ -838,6 +838,12 @@ class Product
     {
         static $retval = NULL;
 
+        if ($retval !== NULL) {
+            return $retval;     // already got the rule this session.
+        }
+
+        $cache_key = 'prod_eff_rule_id_' . $this->id;
+        $retval = Cache::get($cache_key);
         if ($retval === NULL) {
             $retval = 0;
             if ($this->zone_rule > 0) {
@@ -853,6 +859,7 @@ class Product
                 }
             }
         }
+        Cache::set($cache_key, $retval, array('categories', 'products'));
         return (int)$retval;
     }
 
@@ -864,11 +871,15 @@ class Product
      */
     public function getRule()
     {
-        if ($this->getRuleID() > 0) {
-            return Rules\Zone::getInstance($this->getRuleID());
-        } else {
-            return new Rules\Zone;
+        static $retval = NULL;
+        if ($retval === NULL) {
+            if ($this->getRuleID() > 0) {
+                $retval = Rules\Zone::getInstance($this->getRuleID());
+            } else {
+                $retval = new Rules\Zone;
+            }
         }
+        return $retval;
     }
 
 
@@ -1996,6 +2007,15 @@ class Product
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
         $buttons = array();
+
+        // Don't show any buttons for downloads that aren't available
+        // in the buyer's location.
+        // Physical item rule checks are done during checkout after the
+        // shipping address is known.
+        if ($this->isDownload() && !$this->getRule()->isOK()) {
+            return $buttons;
+        }
+
         $this->_view = $type;
 
         // Indicate that an "add to cart" button should be returned along with
@@ -2022,7 +2042,10 @@ class Product
             $add_cart = false;
         } else {
             // Normal buttons for everyone else
-            if ($this->canBuyNow() && $this->btn_type != '') {
+            if (
+                $this->canBuyNow() &&
+                $this->btn_type != ''
+            ) {
                 // Gateway buy-now buttons only used if no options
                 foreach (Gateway::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {

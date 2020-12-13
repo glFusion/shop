@@ -132,8 +132,8 @@ class GeoLocator
         if (
             !isset($retval['country_code']) ||
             empty($retval['country_code']) ||
-            !isset($decoded['state_code']) ||
-            empty($decoded['state_code'])
+            !isset($retval['state_code']) ||
+            empty($retval['state_code'])
         ) {
             $retval['status'] = false;
         }

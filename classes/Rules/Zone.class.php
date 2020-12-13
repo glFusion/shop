@@ -208,7 +208,7 @@ class Zone
      * @param   object|null $Addr   Address object, null if virtual to geocode
      * @return  boolean     True if sales are allowed, False if not
      */
-    public function isOK($Addr)
+    public function isOK($Addr = NULL)
     {
         // If there is no actual rule set, or the rule is disabled, return true
         if ($this->rule_id == 0 || !$this->enabled) {
@@ -239,7 +239,6 @@ class Zone
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
         $region_id = $Country->getRegionID();
-
         // Check if the region, country and country-state is found, in that order
         $apply = in_array($region_id, $this->regions) ||
             in_array($country_id, $this->countries) ||
