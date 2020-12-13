@@ -29,8 +29,10 @@ $_SHOP_SAMPLEDATA = array(
             (id, wf_name, orderby, enabled, can_disable)
         VALUES
             (1, 'viewcart', 10, 3, 0),
-            (2, 'billto', 20, 0, 1),
-            (3, 'shipto', 30, 2, 1)",
+            (2, 'addresses', 20, 3, 0),
+            (3, 'shipping', 30, 3, 0),
+            (4, 'payment', 40, 3, 0),
+            (5, 'confirm', 50, 3, 0)",
     'shop.orderstatus' => "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer, notify_admin)
         VALUES

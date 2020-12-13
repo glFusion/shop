@@ -819,6 +819,12 @@ $SHOP_UPGRADE['1.3.0'] = array(
         DROP `dc_price`",
     "ALTER TABLE {$_TABLES['shop.categories']}
         ADD `zone_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `google_taxonomy`",
+    "UPDATE {$_TABLES['shop.workflows']} SET enabled=3, can_disable=0",
+    "UPDATE {$_TABLES['shop.workflows']} SET wf_name='addresses' WHERE id=2",
+    "UPDATE {$_TABLES['shop.workflows']} SET wf_name='shipping' WHERE id=3",
+    "INSERT IGNORE INTO {$_TABLES['shop.workflows']} VALUES
+        (4, 'payment', 40, 3, 0),
+        (5, 'confirm', 50, 3, 0)",
 
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
