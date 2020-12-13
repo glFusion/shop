@@ -13,7 +13,7 @@
  */
 
 /** Include plugin configuration */
-require_once __DIR__  . '/shop.php';
+require_once __DIR__  . '/functions.inc';
 /** Include database queries */
 require_once __DIR__ . '/sql/mysql_install.php';
 /** Include default values */
