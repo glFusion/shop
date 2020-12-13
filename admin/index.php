@@ -54,7 +54,7 @@ $expected = array(
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
-    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
+    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del', 'prod_bulk_reset',
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
     // Views to display
@@ -156,7 +156,6 @@ case 'deletecat':
     break;
 
 case 'saveproduct':
-    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php');
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
         $msg = $P->PrintErrors();
@@ -164,7 +163,7 @@ case 'saveproduct':
             COM_setMsg($msg, 'error');
         }
     }
-    COM_refresh($url);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'savecat':
@@ -609,6 +608,16 @@ case 'prod_bulk_del':
         if (!Shop\Product::getById($id)->Delete()) {
             $msg = $LANG_SHOP['msg_some_not_del'];
         }
+    }
+    COM_setMsg($msg);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
+case 'prod_bulk_reset':
+    $prod_ids = SHOP_getVar($_POST, 'prod_bulk', 'array', array());
+    $mag = $LANG_SHOP['msg_updated'];   // assume success
+    foreach ($prod_ids as $id) {
+        RATING_resetRating(Shop\Config::PI_NAME, $id);
     }
     COM_setMsg($msg);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');

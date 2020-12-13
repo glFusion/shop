@@ -24,6 +24,8 @@ Release TBD
   * New address entry form defaults to the shop's city and country.
   * Zone rules can apply to downloads using IP geolocation.
   * Zone rules can be applied to categories as well as products.
+  * Remove unnecessary `cache_max_age` setting for blocks.
+  * Add button to reset multiple products' ratings.
 
 ## v1.2.1
 Release 2020-03-02

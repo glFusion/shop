@@ -3752,6 +3752,12 @@ class Product
             'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
             'title="' . $LANG_SHOP['bulk_delete'] . '">' .
             $LANG_SHOP['delete'] .
+            '</button>&nbsp;' .
+            '<button type="submit" name="prod_bulk_reset" value="x" ' .
+            'class="uk-button uk-button-mini uk-button-primary tooltip" ' .
+            'onclick="return confirm\'' . $LANG_SHOP['q_reset_ratings'] . '\');" ' .
+            'title="' . $LANG_SHOP['bulk_reset'] . '">' .
+            $LANG_SHOP['reset_ratings'] .
             '</button>';
 
         $options = array(

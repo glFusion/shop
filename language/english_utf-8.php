@@ -748,6 +748,9 @@ $LANG_SHOP = array (
 'select_payment' => 'Select a payment method',
 'dc_applied_tip' => '%.02f%% Discount code applied to this item.',
 'notes' => 'Notes',
+'reset_ratings' => 'Reset Ratings',
+'bulk_reset' => 'Reset selected product ratings',
+'q_reset_ratings' => 'Are you sure you want to reset the ratings for the selected items?',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
