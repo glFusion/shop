@@ -846,8 +846,8 @@ class Product
                 $Cats = $this->getCategories();
                 $Cats = array_reverse($Cats, true);
                 foreach ($Cats as $Cat) {
-                    if ($Cat->getRuleID() > 0) {
-                        $retval = $Cat->getRuleID();
+                    $retval = $Cat->getEffectiveZoneRule();
+                    if ($retval > 0) {
                         break;
                     }
                 }

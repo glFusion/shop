@@ -177,9 +177,9 @@ class Category
             return;
         }
 
-        $result = DB_query("SELECT *
-                    FROM {$_TABLES['shop.categories']}
-                    WHERE cat_id='$id'");
+        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+                WHERE cat_id='$id'";
+        $result = DB_query($sql);
         if (!$result || DB_numRows($result) != 1) {
             return false;
         } else {
@@ -763,6 +763,27 @@ class Category
 
 
     /**
+     * Get the categories above this one, in descending order up to Root.
+     *
+     * @return  array       Array of Category objects
+     */
+    public function getParentTree()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+            WHERE lft < {$this->lft} AND rgt > {$this->rgt}
+            ORDER BY lft DESC";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['cat_id']] = new self($A);
+        }
+        return $retval;
+    }
+
+
+    /**
      * Get the full path to a category, optionally including sub-categories.
      *
      * @param   boolean $incl_sub   True to include sub-categories
@@ -1297,6 +1318,33 @@ class Category
     public function getRuleID()
     {
         return (int)$this->zone_rule;
+    }
+
+
+
+    /**
+     * Get the effective zone rule for this category by checking parents.
+     *
+     * @return  integer     Zone rule ID
+     */
+    public function getEffectiveZoneRule()
+    {
+        $retval = 0;
+        if ($this->getRuleID() > 0) {
+            $retval = $this->getRuleID();
+        } elseif ($this->getID() > 1) {
+            // Don't get parents of root category, not needed.
+            $Parents = $this->getParentTree();
+            foreach ($Parents as $Parent) {
+                // Look for rules in parent categories, stop at the
+                // first one foune.
+                if ($Parent->getRuleID() > 0) {
+                    $retval = $Parent->getRuleID();
+                    break;
+                }
+            }
+        }
+        return $retval;
     }
 
 }
