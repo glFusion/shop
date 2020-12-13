@@ -1569,20 +1569,6 @@ function plugin_runScheduledTask_shop()
         }
     }
 
-    // Clean up the HTML cache if used
-    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
-        $cachedir = "{$_CONF['path_data']}/layout_cache";
-        $files = glob("$cachedir/__shop__*");
-        if ($files) {
-            $timeAgo = time() - (int)$_SHOP_CONF['cache_max_age'];
-            foreach ($files as $file) {
-                if (@filemtime($file) < $timeAgo) {
-                    @unlink($file);
-                }
-            }
-        }
-    }
-
     // Treat disabled and expired products as "deleted" to get them out of
     // search results, etc.
     $sql = "SELECT id, prod_type FROM {$_TABLES['shop.products']}
@@ -1593,7 +1579,7 @@ function plugin_runScheduledTask_shop()
         PLG_itemDeleted($A['id'], $A['prod_type']);
         $clear_cache = true;
         // Toggle to disabled, also clears the product cache
-        //Shop\Product::toggleEnabled(1, $A['id']);
+        Shop\Product::toggleEnabled(1, $A['id']);
     }
 
     // Delete old cached buttons which are keyed by item_id and price.

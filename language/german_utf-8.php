@@ -848,7 +848,6 @@ $LANG_confignames['shop'] = array(
     'shop_email' => 'Shop E-Mail',
     'product_tpl_ver' => 'Vorlage Produkt-Ansicht',
     'list_tpl_ver' => 'Vorlage Produk-Liste',
-    'cache_max_age' => 'Block-Zwischenspeicher (Sek.)',
     'tc_link' => 'Link zu Geschäftsbedingungen',
     'show_plugins' => 'Include plugin products in catalog?',
     'gc_enabled'    => 'Enable Gift Cards',

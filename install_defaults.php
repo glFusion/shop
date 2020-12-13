@@ -540,17 +540,6 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
-    array(
-        'name' => 'cache_max_age',
-        'default_value' => '900',
-        'type' => 'text',
-        'subgroup' => 0,
-        'fieldset' => 30,
-        'selection_array' => 0,
-        'sort' => 40,
-        'set' => true,
-        'group' => 'shop',
-    ),
 
     array(
         'name' => 'fs_debug',   // Debugging settings
