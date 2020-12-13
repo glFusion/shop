@@ -157,7 +157,7 @@ class Cache
             if ($data) {
                 $data = @unserialize($data);
             }
-            if (!$data) {
+            if ($data === false) {
                 $data = NULL;   // convert false to NULL for consistency
             }
             return $data;
