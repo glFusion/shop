@@ -858,8 +858,8 @@ class Product
                     }
                 }
             }
+            Cache::set($cache_key, $retval, array('categories', 'products'));
         }
-        Cache::set($cache_key, $retval, array('categories', 'products'));
         return (int)$retval;
     }
 
