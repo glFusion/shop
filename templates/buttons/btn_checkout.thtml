@@ -15,12 +15,12 @@
   {button_url}
 {!else}
 {!if disabled}
-    <button type="reset" class="uk-button uk-button-danger" name="submit"
+    <button type="reset" class="uk-button uk-button-danger uk-button-large" name="submit"
         onclick="window.location.replace('{site_url}/shop/cart.php?viewcart');">
         {$LANG_SHOP['edit_order']}
     </button>
 {!else}
-    <button type="submit" class="uk-button uk-button-success" name="submit">
+    <button type="submit" class="uk-button uk-button-success uk-button-large" name="submit" style="color:#933">
         {$LANG_SHOP['confirm_order']}
     </button>
 {!endif}

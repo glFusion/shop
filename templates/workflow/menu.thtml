@@ -23,8 +23,17 @@
     </li>
 <!-- END Flows -->
 </ul>
+<div style="clear:both;">
+<a href="{pi_url}/index.php" class="uk-button uk-button-primary uk-button-large" style="float:left">
+    <i class="uk-icon uk-icon-backward"></i>&nbsp;&nbsp;{$LANG_SHOP['continue_shopping']}
+</a>
 {!if wrap_form}
 <form class="uk-form" action="{site_url}/shop/cart.php" method="post">
 <input type="hidden" name="save_{current_wf}" value="x" />
+<button style="float:right;" id="checkoutButtons" type="submit" class="uk-button uk-button-primary uk-button-large" name="next_step">
+    {$LANG_SHOP['next_step']}&nbsp;&nbsp;<i class="uk-icon uk-icon-forward"></i>
+</button>
 {!endif}
+</div>
+<div style="clear:both;margin-bottom:10px;"></div>
 {# end {templatelocation} #}

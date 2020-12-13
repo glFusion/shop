@@ -1,8 +1,4 @@
 {# begin {templatelocation} #}
-<a href="{pi_url}/index.php" class="uk-button uk-button-success">
-    <i class="uk-icon uk-icon-backward"></i>
-    {$LANG_SHOP['continue_shopping']}
-</a>
 <div style="text-align:center; margin-left:auto;">
     <h1>{$LANG_SHOP['cart_blocktitle']}</h1>
 {!if rules_msg}

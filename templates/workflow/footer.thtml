@@ -1,3 +1,0 @@
-<button style="float:right;" id="checkoutButtons" type="submit" class="uk-button uk-button-success" name="next_step">
-    <i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;&nbsp;{$LANG_SHOP['next_step']} >>
-</button>
