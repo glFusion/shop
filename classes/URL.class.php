@@ -23,8 +23,8 @@ class URL
     /** Array of key=>URL values.
      * @var array */
     private static $urls = array(
-        'addresses' => '/account.php/addresses',
-        'cart_addresses' => '/cart.php/addresses',
+        'addresses' => '/account.php?addresses',
+        'cart_addresses' => '/cart.php?addresses',
     );
 
 

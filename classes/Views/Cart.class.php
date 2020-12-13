@@ -285,7 +285,7 @@ class Cart extends OrderBaseView
             ) );
             $T->parse('SM', 'shipMethods', true);
             if (count($methods) == 1) {
-                $this->Order->setShipperID($method_id);
+                $this->Order->setShipper($method['method_id']);
                 $this->Order->setShipping($s_amt);
             }
         }
@@ -379,7 +379,7 @@ class Cart extends OrderBaseView
         SHOP_setUrl(SHOP_URL . '/cart.php?addresses');
         $Cust = Customer::getInstance($this->Order->getUid());
         if (empty($Cust->getAddresses())) {
-            COM_refresh(SHOP_URL . '/account.php?mode=editaddr&id=0');
+            COM_refresh(SHOP_URL . '/account.php?mode=editaddr&id=0&return=cart_addresses');
         }
 
         $T = new Template('workflow/');

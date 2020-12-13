@@ -2483,7 +2483,7 @@ class Order
                 'svc_code'      => $method['svc_code'],
                 'method_name'   => $method['title'],
                 'method_rate'   => $method['cost'],
-                'method_id'     => $method_id,
+                'method_id'     => $method['shipper_id'],
                 'order_id'      => $this->order_id,
                 'multi'         => count($methods) > 1 ? true : false,
             );
