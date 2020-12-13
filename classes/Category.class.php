@@ -101,7 +101,7 @@ class Category
      * Reads in the specified class, if $id is set.  If $id is zero,
      * then a new entry is being created.
      *
-     * @param   integer $id Optional type ID
+     * @param   integer|array   $id Record ID or array
      */
     public function __construct($id=0)
     {
@@ -109,17 +109,6 @@ class Category
 
         $this->isNew = true;
 
-        $this->cat_id = 0;
-        $this->parent_id = 0;
-        $this->cat_name = '';
-        $this->dscp = '';
-        $this->grp_access = 2;  // All users have access by default
-        $this->image = '';
-        $this->enabled = 1;
-        $this->disp_name = '';
-        $this->lft = 0;
-        $this->rgt = 0;
-        $this->google_taxonomy = '';
         if (is_array($id)) {
             $this->SetVars($id, true);
         } elseif ($id > 0) {
@@ -1178,11 +1167,14 @@ class Category
         $cache_key = 'shop.categories_' . $prod_id;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
-                WHERE product_id = $prod_id";
+            $sql = "SELECT c.* FROM {$_TABLES['shop.prodXcat']} px
+                LEFT JOIN {$_TABLES['shop.categories']} c
+                ON c.cat_id = px.cat_id
+                WHERE px.product_id = $prod_id
+                ORDER BY c.lft DESC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+                $retval[$A['cat_id']] = new self($A);
             }
 
             // If no categories are found, add the root category to be sure
