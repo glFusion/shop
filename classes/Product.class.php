@@ -694,7 +694,7 @@ class Product
             ->setSupplierRef($row['supplier_ref'])
             ->setLeadTime($row['lead_time'])
             ->setDefVariantID(SHOP_getVar($row, 'def_pv_id', 'integer'))
-            ->setRuleID($row['zone_rule']);
+            ->setZoneRuleID($row['zone_rule']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -818,11 +818,22 @@ class Product
      * @param   integer $id     Rule ID
      * @return  object  $this
      */
-    private function setRuleID($id)
+    private function setZoneRuleID($id)
     {
         $this->zone_rule = (int)$id;
         return $this;
 
+    }
+
+
+    /**
+     * Get the zone rule ID for this item.
+     *
+     * @return  integer     Zone rule record ID
+     */
+    public function getZoneRuleID()
+    {
+        return (int)$this->zone_rule;
     }
 
 
@@ -834,7 +845,7 @@ class Product
      *
      * @return  integer     Rule record ID
      */
-    public function getRuleID()
+    public function getEffectiveRuleID()
     {
         static $retval = NULL;
 
@@ -873,8 +884,8 @@ class Product
     {
         static $retval = NULL;
         if ($retval === NULL) {
-            if ($this->getRuleID() > 0) {
-                $retval = Rules\Zone::getInstance($this->getRuleID());
+            if ($this->getEffectiveRuleID() > 0) {
+                $retval = Rules\Zone::getInstance($this->getEffectiveRuleID());
             } else {
                 $retval = new Rules\Zone;
             }
@@ -1060,7 +1071,7 @@ class Product
                 supplier_ref = '{$this->getSupplierRef()}',
                 lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
                 def_pv_id = {$this->getDefVariantID()},
-                zone_rule = {$this->getRuleID()},
+                zone_rule = {$this->getZoneRuleID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";

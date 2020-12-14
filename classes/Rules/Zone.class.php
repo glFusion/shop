@@ -153,34 +153,6 @@ class Zone
 
 
     /**
-     * Find the applicable zone rule for a product.
-     *
-     * @param   object  $P  Product object
-     * @return  object      Applicable Zone Rule object
-     */
-    public static function findRule($P)
-    {
-        $rule_id = 0;
-        if ($P->getRuleID() > 0) {
-            $rule_id = $P->getRuleID();
-        } else {
-            $cats = array();
-            foreach ($P->getCategories() as $Cat) {
-                $cats = array_merge($cats, $Cat->getPath(false));
-            }
-            $cats = array_reverse($cats);
-            foreach ($cats as $Cat) {
-                if ($Cat->getRuleID() > 0) {
-                    $rule_id = $Cat->getRuleID();
-                    break;
-                }
-            }
-        }
-        return self::getInstance($rule_id);
-    }
-
-
-    /**
      * Get the rule ID.
      *
      * @return  integer     Rule record ID

@@ -3741,22 +3741,20 @@ class Order
         $this->hasInvalid = false;
         foreach ($this->items as $id=>$Item) {
             $Product = $Item->getProduct();
-            if ($Product->getRuleID() > 0) {
-                $status = $Item->getInvalid();
-                $Rule = $Product->getRule();
-                if ($Product->isPhysical()) {
-                    $rule = $Rule->isOK($this->getShipto());
-                } else {
-                    $rule = $Rule->isOK(NULL);
-                }
-                if (!$rule) {
-                    $Item->setInvalid(true);
-                    $this->hasInvalid = true;
-                } else {
-                    $Item->setInvalid(false);
-                }
+            $Rule = $Product->getRule();
+            if ($Product->isPhysical()) {
+                $status = $Rule->isOK($this->getShipto());
+            } else {
+                $status = $Rule->isOK(NULL);
+            }
+            if (!$status) {
+                $Item->setInvalid(true);
+                $this->hasInvalid = true;
+            } else {
+                $Item->setInvalid(false);
             }
         }
+        return $this;
     }
 
 
