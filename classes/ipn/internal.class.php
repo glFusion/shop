@@ -226,18 +226,7 @@ class internal extends \Shop\IPN
                 ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id'))
                 ->setPmtTax($this->Order->getInfo('tax'))
                 ->setStatus(SHOP_getVar($this->ipn_data, 'payment_status'));
-
-            $this->shipto = array(
-                'name'      => SHOP_getVar($shipto, 'name'),
-                'company'   => SHOP_getVar($shipto, 'company'),
-                'address1'  => SHOP_getVar($shipto, 'address1'),
-                'address2'  => SHOP_getVar($shipto, 'address2'),
-                'city'      => SHOP_getVar($shipto, 'city'),
-                'state'     => SHOP_getVar($shipto, 'state'),
-                'country'   => SHOP_getVar($shipto, 'country'),
-                'zip'       => SHOP_getVar($shipto, 'zip'),
-            );
-
+            $this->shipto = $shipto;
             break;
         }
 
