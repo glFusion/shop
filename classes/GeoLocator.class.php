@@ -182,7 +182,7 @@ class GeoLocator
             $exp = 1440 * 14;   // 14 days
         }
         $key = $this->_makeCacheKey($key);
-        Cache::set($key, $data, $exp);
+        Cache::set($key, $data, '', $exp);
     }
 
 
