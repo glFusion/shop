@@ -1550,9 +1550,11 @@ function plugin_runScheduledTask_shop()
     // Get pending (unpaid) orders not updated in a while
     $days = SHOP_getVar($_SHOP_CONF, 'days_purge_pending', 'integer');
     if ($days > 0) {
-        $conds[] = "(ord.status = 'pending' AND
-                ord.order_seq IS NULL AND
-                ord.last_mod < DATE_SUB(NOW(), INTERVAL $days DAY))";
+        $conds[] = "(
+            (ord.status = 'pending' OR ord.order_total = 0)
+            AND ord.order_seq IS NULL
+            AND ord.last_mod < DATE_SUB(NOW(), INTERVAL $days DAY)
+        )";
     }
 
     if (!empty($conds)) {
