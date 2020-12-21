@@ -78,7 +78,7 @@ class ShipmentPL
                 'item_dscp'     => htmlspecialchars($OI->getDscp()),
                 'item_options'  => $OI->getOptionDisplay(),
                 'item_quantity' => $Item->getQuantity(),
-                'sku'           => $P->getSKU($OI),
+                'sku'           => $OI->getSKU(),
             ) );
             $T->parse('iRow', 'ItemRow', true);
             $T->clear_var('iOpts');

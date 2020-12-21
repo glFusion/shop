@@ -148,7 +148,7 @@ class ShipmentForm
                 'item_dscp'     => htmlspecialchars($OI->getDscp()),
                 'item_quantity' => $OI->getQuantity(),
                 'item_options'  => $OI->getOptionDisplay(),
-                'sku'           => $P->getSKU($OI),
+                'sku'           => $OI->getSKU(),
                 'pi_url'        => SHOP_URL,
             ) );
             if (isset($oi_shipped[$OI->getID()])) {

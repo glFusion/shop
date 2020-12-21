@@ -3,16 +3,16 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-
 namespace Shop;
+
 
 /**
  * Class for order line items.
@@ -1146,6 +1146,22 @@ class OrderItem
         return $this->taxable ? 1 : 0;
     }
 
-}
 
-?>
+    /**
+     * Get the SKU (product name) for the item.
+     *
+     * @return  string      Item SKU
+     */
+    public function getSKU()
+    {
+        if ($this->variant_id > 0) {
+            // Check for a variant, it already has the full SKU.
+            $sku = ProductVariant::getInstance($this->variant_id)->getSKU();
+        } else {
+            // Get the base product SKU field.
+            $sku = Product::getInstance($this->product_id)->getName();
+        }
+        return $sku;
+    }
+
+}

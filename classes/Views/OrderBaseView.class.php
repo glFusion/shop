@@ -413,7 +413,7 @@ class OrderBaseView
                 //'discount_tooltip' => $price_tooltip,
                 'token'         => $Item->getToken(),
                 'item_options'  => $Item->getOptionDisplay(),
-                'sku'           => $P->getSKU($Item),
+                'sku'           => $Item->getSKU(),
                 'item_link'     => $P->getLink($Item->getID()),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $this->is_invoice,
@@ -435,7 +435,7 @@ class OrderBaseView
         }
         $total = $this->Order->getTotal();     // also calls calcTax()
         $icon_tooltips = implode('<br />', $icon_tooltips);
-        $by_gc = (float)$this->Order->getInfo('apply_gc');
+        $by_gc = (float)$this->Order->getGC();
 
         $this->TPL->set_var(array(
             'total_prefix'  => $this->Currency->Pre(),
@@ -453,7 +453,6 @@ class OrderBaseView
             'total'         => $this->Currency->Format($total),
             'cart_tax'      => $this->Order->getTax() > 0 ? $this->Currency->FormatValue($this->Order->getTax()) : 0,
         ) );
-        $by_gc = (float)$this->Order->getInfo('apply_gc');
         $this->TPL->set_var(array(
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
@@ -558,7 +557,7 @@ class OrderBaseView
                 'token'         => $item->getToken(),
                 //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
-                'sku'           => $P->getSKU($item),
+                'sku'           => $item->getSKU(),
                 'item_link'     => $P->getLink($item->getID()),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,

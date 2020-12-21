@@ -68,7 +68,7 @@ class OrderPL extends Shipment
                 'item_dscp'     => htmlspecialchars($OI->description),
                 'item_options'  => $OI->getOptionDisplay(),
                 'item_quantity' => $OI->quantity,
-                'sku'           => $P->getSKU($OI),
+                'sku'           => $OI->getSKU(),
             ) );
             $T->parse('iRow', 'ItemRow', true);
             $T->clear_var('iOpts');
