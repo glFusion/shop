@@ -469,7 +469,7 @@ class check extends \Shop\Gateway
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="gateway" value="' . $this->gw_name . '" />',
-            '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
+            '<input type="hidden" name="cart_id" value="' . $cart->getOrderID() . '" />',
         );
         return implode("\n", $gatewayVars);
     }
