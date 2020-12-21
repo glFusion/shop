@@ -20,6 +20,10 @@ namespace Shop;
  */
 class Tracking
 {
+    /** Time in minutes to cache tracking info.
+     * @const integer */
+    private const CACHE_MINUTES = 60;
+
     /** Steps recorded along the way.
      * @var array */
     private $steps = array();
@@ -171,8 +175,6 @@ class Tracking
      */
     public static function getCache($shipper, $tracknum)
     {
-        global $_TABLES;
-
         $key = self::_makeCacheKey($shipper, $tracknum);
         $data = Cache::get($key);
         return $data;
@@ -187,10 +189,8 @@ class Tracking
      */
     public function setCache($shipper, $tracknum)
     {
-        global $_TABLES;
-
         $key = self::_makeCacheKey($shipper, $tracknum);
-        Cache::set($key, $this, 'shop.tracking', 10);
+        Cache::set($key, $this, 'shop.tracking', self::CACHE_MINUTES);
     }
 
 }
