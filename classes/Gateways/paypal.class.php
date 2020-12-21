@@ -196,7 +196,7 @@ class paypal extends \Shop\Gateway
             return '';
         }
 
-        $cartID = $cart->CartID();
+        $cartID = $cart->getOrderId();
         $custom_arr = new CustomInfo(array(
             'uid' => $_USER['uid'],
             'transtype' => 'cart_upload',
@@ -207,7 +207,9 @@ class paypal extends \Shop\Gateway
             'transtype' => 'cart_upload',
             'cart_id' => $cartID,
         );*/
-        $custom_arr->merge($cart->custom_info);
+        if (isset($cart->custom_info)) {
+            $custom_arr->merge($cart->custom_info);
+        }
         //$custom_arr = array_merge($custom_arr, $cart->custom_info);
 
         $fields = array(
@@ -245,7 +247,7 @@ class paypal extends \Shop\Gateway
         // which won't work with Paypal. Just create one cart item to
         // represent the entire cart including tax, shipping, etc.
         //if (SHOP_getVar($custom_arr, 'by_gc', 'float') > 0) {
-        $by_gc = $cart->getInfo('apply_gc');
+        $by_gc = $cart->getGC();
         if ($by_gc > 0) {
             $total_amount = $cart->getTotal() - $by_gc;
             $fields['item_number_1'] = $LANG_SHOP['cart'];
@@ -301,7 +303,6 @@ class paypal extends \Shop\Gateway
                 $shipping += $cart->getShipping();
             }
 
-            //$fields['tax_cart'] = (float)$cart->getInfo('tax');
             $fields['tax_cart'] = (float)$cart->getTax();
             $total_amount += $cart->getTax();
             if ($shipping > 0) $total_amount += $shipping;
