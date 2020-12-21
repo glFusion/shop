@@ -51,4 +51,8 @@ class OrderState
      * Not really an order status, but may be used for logging.
      */
     public const PAID = 'paid';
+
+    /** Order was cancelled.
+     */
+    public const CANCELED = 'canceled';
 }

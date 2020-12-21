@@ -235,6 +235,7 @@ $LANG_SHOP = array (
         'processing' => 'Procesando',
         'closed'    => 'Cerrada',
         'refunded'  => 'Reembolsado',
+        'cancelled' => 'Cancelled',
     ),
 'message' => 'Mensaje',
 'timestamp' => 'Timestamp',
