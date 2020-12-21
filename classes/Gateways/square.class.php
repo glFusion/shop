@@ -5,13 +5,14 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Gateways;
+use Shop\Config;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Cart;
@@ -521,8 +522,7 @@ class square extends \Shop\Gateway
      */
     protected function returnUrl($cart_id, $token)
     {
-        return $this->ipn_url . '?thanks=' . $this->gw_name .
-            '&o=' . $cart_id .
+        return $this->ipn_url . '&o=' . $cart_id .
             '&t=' . $token;
     }
 
@@ -605,6 +605,7 @@ class square extends \Shop\Gateway
             return false;
         }
     }
+
 
     /**
      * Create and send an invoice for an order.
@@ -745,6 +746,4 @@ class square extends \Shop\Gateway
         return $this->_errors;
     }
 
-}   // class square
-
-?>
+}
