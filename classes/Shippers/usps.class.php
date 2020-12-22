@@ -346,7 +346,6 @@ class usps extends \Shop\Shipper
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
             $result = curl_exec($ch);
             curl_close($ch);
-
             if ($result) {
                 $json = json_encode(simplexml_load_string($result));
                 $json = json_decode($json, true);
@@ -473,10 +472,10 @@ class usps extends \Shop\Shipper
     /**
      * Get tracking data via API and return a Tracking object.
      *
-     * @param   string  $tracking   Single tracking number
+     * @param   string  $track_num   Single tracking number
      * @return  object      Tracking object
      */
-    public function getTracking($tracking)
+    public function getTracking($track_num)
     {
         global $LANG_SHOP;
 
@@ -484,7 +483,7 @@ class usps extends \Shop\Shipper
             return $false;
         }
 
-        $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
+        $Tracking = \Shop\Tracking::getCache($this->key, $track_num);
         if ($Tracking !== NULL) {
             return $Tracking;
         }
@@ -500,7 +499,7 @@ class usps extends \Shop\Shipper
             $RequestXML->addChild('SourceId', 'glfusion-shop');
             $RequestXML
                 ->addChild('TrackID')
-                ->addAttribute('ID', $tracking);
+                ->addAttribute('ID', $track_num);
             $XML = $RequestXML->asXML ();
             $request = 'API=TrackV2&XML=' . urlencode($XML);
 
@@ -523,7 +522,7 @@ class usps extends \Shop\Shipper
                 // get response status
                 $resp = new SimpleXMLElement($result);
                 $info = $resp->TrackInfo;
-                $Tracking->addMeta($LANG_SHOP['tracking_num'], $tracking);
+                $Tracking->addMeta($LANG_SHOP['tracking_num'], $track_num);
                 $Tracking->addMeta($LANG_SHOP['carrier'], self::getCarrierName());
                 $Tracking->addMeta($LANG_SHOP['service'], $info->Class);
 
@@ -544,8 +543,8 @@ class usps extends \Shop\Shipper
                     $Tracking->addMeta($LANG_SHOP['status'], $info->StatusSummary);
                 }
                 $Tracking->AddMeta($LANG_SHOP['tracking_info'], COM_createLink(
-                    $this->_getTrackingUrl($tracking),
-                    $this->_getTrackingUrl($tracking),
+                    $this->_getTrackingUrl($track_num),
+                    $this->_getTrackingUrl($track_num),
                     array(
                         'target' => '_blank',
                     )
@@ -576,7 +575,7 @@ class usps extends \Shop\Shipper
         } catch ( Exception $ex ) {
             echo $ex;
         }
-        $Tracking->setCache($this->key, $tracking);
+        $Tracking->setCache($this->key, $track_num);
         return $Tracking;
     }
 
