@@ -3,9 +3,9 @@
  * Class to standardize shipment tracking information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -35,6 +35,10 @@ class Tracking
     /** Error messages to be shown.
      * @var array */
     private $errors = array();
+
+    /** Timestamp when data was retrieved from the shipper.
+     * @var string */
+    private $timestamp = '';
 
 
     /**
@@ -148,6 +152,7 @@ class Tracking
             $err_msg = '<p>' . implode('</p><p>', $this->errors) . '</p>';
             $T->set_var('err_msg', $err_msg);
         }
+        $T->set_var('current_as_of', sprintf($LANG_SHOP['current_as_of'], $this->getTimestamp()));
         $T->parse('output', 'tracking');
         return $T->finish($T->get_var('output'));
     }
@@ -190,9 +195,37 @@ class Tracking
     public function setCache($shipper, $tracknum)
     {
         $key = self::_makeCacheKey($shipper, $tracknum);
+        $this->setTimestamp();
         Cache::set($key, $this, 'shop.tracking', self::CACHE_MINUTES);
     }
 
-}
 
-?>
+    /**
+     * Set the timestamp string when data was retrieved.
+     *
+     * @param   string|null $ts Timestamp, null for current date/time
+     * @return  object  $this
+     */
+    protected function setTimestamp($ts=NULL)
+    {
+        global $_CONF;
+
+        if ($ts === NULL) {
+            $ts = $_CONF['_now']->toMySQL(true);
+        }
+        $this->timestamp = $ts;
+        return $this;
+    }
+
+
+    /**
+     * Get the timestamp when data was updated.
+     *
+     * @return  string      Timestamp string
+     */
+    public function getTimestamp()
+    {
+        return $this->timestamp;
+    }
+
+}
