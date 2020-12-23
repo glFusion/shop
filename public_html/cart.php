@@ -391,10 +391,14 @@ case 'confirm':
 case 'cancel':
     list($cart_id, $token) = explode('/', $actionval);
     if (!empty($cart_id)) {
-        $Cart = Shop\Cart::getInstance($cart_id);
+        // Don't use getInstance() to avoid creating a new cart
+        $Cart = new Shop\Cart($cart_id, false);
         if ($token == $Cart->getToken()) {
+            // Only reset if the token is valid, then update the token to
+            // invalidate further changes using this token.
             $Cart->setFinal('cart')
-                ->setToken();
+                 ->setToken()
+                 ->Save(false);
         }
     }
     // fall through to view cart
