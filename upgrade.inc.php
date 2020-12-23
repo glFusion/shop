@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.1
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -364,6 +364,7 @@ function SHOP_do_upgrade($dvlp = false)
     if (!COM_checkVersion($current_ver, '1.3.0')) {
         $current_ver = '1.3.0';
         $upd_shipping = !_SHOPtableHasColumn('shop.orders', 'shipping_method');
+        $upd_oi_sku = !_SHOPtableHasColumn('shop.orderitems', 'sku');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if ($upd_shipping) {
             // Now update the shipping_method and shipping_dscp fields
@@ -376,6 +377,16 @@ function SHOP_do_upgrade($dvlp = false)
                     orders.shipping_dscp = shipping.name
                 WHERE orders.shipper_id > 0";
             DB_query($sql);
+        }
+        if ($upd_oi_sku) {
+            // If the OrderItem SKU field was added, update the SKUs from
+            // the product/variant info
+            $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                $OI = new Shop\OrderItem($A);
+                $OI->setSKU()->Save();
+            }
         }
         if (!SHOP_do_set_version($current_ver)) return false;
     }

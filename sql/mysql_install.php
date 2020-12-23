@@ -93,6 +93,7 @@ $_SQL = array(
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,
   `variant_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `sku` varchar(128) NOT NULL DEFAULT '',
   `description` varchar(255) DEFAULT NULL,
   `quantity` int(11) NOT NULL DEFAULT '1',
   `txn_id` varchar(128) DEFAULT '',
@@ -825,7 +826,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "INSERT IGNORE INTO {$_TABLES['shop.workflows']} VALUES
         (4, 'payment', 40, 3, 0),
         (5, 'confirm', 50, 3, 0)",
-
+    "ALTER TABLE {$_TABLES['shop.orderitems']}
+        ADD sku varchar(128) NOT NULL DEFAULT '' AFTER `variant_id`",
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
 );

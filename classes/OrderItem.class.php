@@ -32,6 +32,10 @@ class OrderItem
      * @var integer */
     private $quantity = 0;
 
+    /** Product SKU, derived from product name and variant SKU.
+     * @var string */
+    private $sku = '';
+
     /** Product description.
      * Saved with the orderitem in case the product is updated or deleted.
      * @var string */
@@ -236,6 +240,7 @@ class OrderItem
         $this->id = SHOP_getVar($A, 'id', 'integer');
         $this->order_id = SHOP_getVar($A, 'order_id');
         $this->product_id = SHOP_getVar($A, 'product_id');
+        $this->setSKU(SHOP_getVar($A, 'sku'));
         $this->dscp = SHOP_getVar($A, 'description');
         $this->quantity = SHOP_getVar($A, 'quantity', 'integer');
         $this->txn_id = SHOP_getVar($A, 'txn_id');
@@ -465,6 +470,7 @@ class OrderItem
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
                 product_id = '" . DB_escapeString($this->product_id) . "',
                 variant_id = '" . (int)$this->variant_id . "',
+                sku = '" . DB_escapeString($this->sku) . "',
                 description = '" . DB_escapeString($this->dscp) . "',
                 quantity = '" . (float)$this->quantity. "',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
@@ -1154,14 +1160,40 @@ class OrderItem
      */
     public function getSKU()
     {
-        if ($this->variant_id > 0) {
-            // Check for a variant, it already has the full SKU.
-            $sku = ProductVariant::getInstance($this->variant_id)->getSKU();
-        } else {
-            // Get the base product SKU field.
-            $sku = Product::getInstance($this->product_id)->getName();
+        return $this->sku;
+    }
+
+
+    /**
+     * Check if this order item is from a plugin.
+     *
+     * @return  boolean     True if it is a plugin item, False if catalog
+     */
+    public function isPluginItem()
+    {
+        return Product::isPluginItem($this->product_id);
+    }
+
+
+    /**
+     * Set the SKU, creating from the variant or product name if empty.
+     *
+     * @param   string  $sku    SKU, empty if not known
+     * @return  object  $this
+     */
+    public function setSKU($sku='')
+    {
+        if (empty($sku) && !$this->isPluginItem()) {
+            if ($this->variant_id > 0) {
+                // Check for a variant, it already has the full SKU.
+                $sku = ProductVariant::getInstance($this->variant_id)->getSKU();
+            } else {
+                // Get the base product SKU field.
+                $sku = Product::getInstance($this->product_id)->getName();
+            }
         }
-        return $sku;
+        $this->sku = $sku;
+        return $this;
     }
 
 }
