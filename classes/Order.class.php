@@ -37,6 +37,10 @@ class Order
      * @var boolean */
     private $isFinalView = false;
 
+    /** Session variable name for storing cart info.
+     * @var string */
+    protected static $session_var = 'glShopCart';
+
     /** Flag to indicate that this is a new record.
      * @var boolean */
     protected $isNew = true;
@@ -212,6 +216,11 @@ class Order
      * @var string */
     protected $shipping_dscp = '';
 
+    /** Holder for custom information.
+     * Used only by Cart, required here to create checkout button from orders.
+     * @var array */
+    public $custom_info = array();
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -265,6 +274,9 @@ class Order
             $id = $key;
         }
         if (!empty($id)) {
+            if (!is_string($id)) {
+                var_dump(debug_backtrace(0));die;
+            }
             if (!array_key_exists($id, self::$orders)) {
                 self::$orders[$id] = new self($id);
             }
@@ -534,8 +546,8 @@ class Order
                 "shipto_country = '" . DB_escapeString($this->Shipto->getCountry()) . "'",
                 "shipto_zip = '" . DB_escapeString($this->Shipto->getPostal()) . "'",
                 "shipto_phone = '" . DB_escapeString($this->Shipto->getPhone()) . "'",
-                "tax_rate = '{$this->tax_rate}'",
-                "tax = '{$this->tax}'",
+                "tax_rate = '{$this->getTaxRate()}'",
+                "tax = '{$this->getTax()}'",
                 "shipper_id = 0",   // clear to force shipper re-quoting
             ) );
             $this->clearInstance();
@@ -772,7 +784,7 @@ class Order
      *
      * @return  string      Order ID
      */
-    public function Save($save_items=true)
+    public function Save($save_items=false)
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -789,7 +801,7 @@ class Order
             }
         }
         $order_total = $this->calcOrderTotal();
-
+        $db_order_id = DB_escapeString($this->order_id);
         if ($this->isNew) {
             // Shouldn't have an empty order ID, but double-check
             if ($this->order_id == '') $this->order_id = self::_createID();
@@ -799,13 +811,13 @@ class Order
             Cart::setSession('order_id', $this->order_id);
             // Set field values that can only be set once and not updated
             $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
-                    order_id='{$this->order_id}',
+                    order_id = '{$db_order_id}',
                     token = '" . DB_escapeString($this->token) . "',
-                    uid = '" . (int)$this->uid . "', ";
+                    uid = " . (int)$this->uid . ", ";
             $sql2 = '';
         } else {
             $sql1 = "UPDATE {$_TABLES['shop.orders']} SET ";
-            $sql2 = " WHERE order_id = '{$this->order_id}'";
+            $sql2 = " WHERE order_id = '{$db_order_id}'";
         }
 
         $fields = array(
@@ -816,9 +828,9 @@ class Order
             "pmt_dscp = '" . DB_escapeString($this->pmt_dscp) . "'",
             "by_gc = '{$this->by_gc}'",
             //"phone = '" . DB_escapeString($this->phone) . "'",
-            "tax = '{$this->tax}'",
-            "shipping = '{$this->shipping}'",
-            "handling = '{$this->handling}'",
+            "tax = '{$this->getTax()}'",
+            "shipping = '{$this->getShipping()}'",
+            "handling = '{$this->getHandling}'",
             "gross_items = '{$this->gross_items}'",
             "net_nontax = '{$this->net_nontax}'",
             "net_taxable = '{$this->net_taxable}'",
@@ -826,12 +838,12 @@ class Order
             "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
             //"info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
             "info = '" . (string)$this->m_info . "'",
-            "tax_rate = '{$this->tax_rate}'",
+            "tax_rate = {$this->getTaxRate()}",
             "currency = '{$this->currency}'",
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
-            "discount_pct = '{$this->discount_pct}'",
+            "discount_pct = {$this->getDiscountPct()}",
             "order_total = {$order_total}",
-            "shipper_id = '{$this->shipper_id}'",
+            "shipper_id = {$this->getShipperID()}",
             "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
             "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
         );
@@ -924,7 +936,7 @@ class Order
                     ->getRate()
                 )
                 ->calcTotalCharges()
-                ->Save();
+                ->Save(true);
             $tplname = 'order';
             break;
         case 'viewcart':
@@ -1068,7 +1080,7 @@ class Order
                 'sale_tooltip'  => $sale_tooltip,
                 'token'         => $item->getToken(),
                 'item_options'  => $item->getOptionDisplay(),
-                'sku'           => $P->getSKU($item),
+                'sku'           => $item->getSKU(),
                 'item_link'     => $P->getLink($item->getID()),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
@@ -1722,7 +1734,7 @@ class Order
             'payer_email'       => $this->buyer_email,
             'payer_name'        => $this->Billto->getName(),
             'store_name'        => $Shop->getCompany(),
-            'txn_id'            => $this->pmt_txn_id,
+            //'txn_id'            => $this->pmt_txn_id,
             'pi_url'            => SHOP_URL,
             'pi_admin_url'      => SHOP_ADMIN_URL,
             'dl_links'          => $dl_links,
@@ -1944,16 +1956,20 @@ class Order
     /**
      * Set a new token on the order.
      * Used after an action is performed to prevent the same action from
-     * happening again accidentally.
+     * happening again accidentally. Only available to non-final orders since
+     * the token may be used to validate payment callbacks, etc. and shoule
+     * not be changed once the order is final.
      *
      * @return  object  $this
      */
     public function setToken()
     {
-        global $_TABLES;
-
-        $this->token = $this->_createToken();
-        return $this->updateRecord("token = '" . DB_escapeString($this->token) . "'");
+        if (!$this->isFinal()) {
+            $this->token = $this->_createToken();
+            return $this->updateRecord("token = '" . DB_escapeString($this->token) . "'");
+        } else {
+            return $this;
+        }
     }
 
 
@@ -2695,7 +2711,7 @@ class Order
 
             // Set the order's currency code to the new value and save.
             $this->currency = $new;
-            $this->Save();
+            $this->Save(true);
         }
         return true;
     }
@@ -2863,7 +2879,7 @@ class Order
                 // only update and save if changed
                 $OI->setPrice($new_price);
                 $OI->setDiscount($new_discount);
-                $OI->Save();
+                $OI->Save(true);
             }
         }
         return true;
@@ -3102,9 +3118,7 @@ class Order
      */
     public function setByGC($amt)
     {
-        if ($this->by_gc != $amt) {
-            $this->by_gc = (float)$amt;
-        }
+        $this->by_gc = (float)$amt;
         return $this;
     }
 
@@ -3345,7 +3359,7 @@ class Order
         if (array_key_exists($newstatus, $LANG_SHOP['orderstatus'])) {
             $this->status = $newstatus;
         } else {
-            SHOP_log("Invalid log status '{$newstatus}' specified for order {$this->getID()}");
+            SHOP_log("Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
         }
         return $this;
     }
@@ -3400,9 +3414,9 @@ class Order
                     ->setTaxHandling(0);
             }
             $this->updateRecord(array(
-                "tax_rate = {$this->tax_rate}",
-                "tax_shipping = {$this->tax_shipping}",
-                "tax_handling = {$this->tax_handling}"
+                "tax_rate = {$this->getTaxRate()}",
+                "tax_shipping = {$this->getTaxShipping()}",
+                "tax_handling = {$this->getTaxHandling()}"
             ) );
             $this->clearInstance();
         }
@@ -3966,6 +3980,115 @@ class Order
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Get the cancellation URL to pass to payment gateways.
+     * This url will set the status from "pending" back to "cart".
+     *
+     * @return  string      Cancellation URL
+     */
+    public function cancelUrl()
+    {
+        return SHOP_URL . '/cart.php?cancel=' . urlencode($this->order_id) .
+            '/' . urlencode($this->token);
+    }
+
+
+    /**
+     * Set the order status to indicate that has been submitted for payment.
+     * This is normally only used for Cart objects, but is included here to
+     * allow the "Pay Now" button on pending orders to work.
+     *
+     * Pass $status = false to revert back to a cart, e.g. if the purchase
+     * is cancelled.
+     *
+     * Also removes the cart_id cookie for anonymous users.
+     *
+     * @param   string  $status     Status to set, default is "pending"
+     * @return  object  $this
+     */
+    public function setFinal($status='pending')
+    {
+        global $_TABLES, $LANG_SHOP, $_CONF;
+
+        if ($this->isNew()) {
+            SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
+            // Cart not found, do nothing
+            return $this;
+        }
+
+        $newstatus = $status == OrderState::PENDING ? OrderState::PENDING : OrderState::CART;
+        $oldstatus = $this->status;
+
+        if ($oldstatus != $newstatus) {
+            $this->setStatus($newstatus)->setOrderDate()->Save(false);
+            SHOP_log(
+                "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
+                SHOP_LOG_DEBUG
+            );
+        }
+        self::setSession('order_id', $this->getOrderID());
+
+        /*if ($newstatus != 'cart') {
+            // Make sure the cookie gets deleted also
+            self::_expireCookie();
+        } else {
+            // restoring the cart, put back the cookie
+            self::_setCookie($cart_id);
+            // delete all open user carts except this one
+            self::deleteUser(0, $cart_id);
+        }*/
+        // Is it really necessary to log that it changed from a cart to pending?
+        //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
+        return $this;
+    }
+
+
+    /**
+     * Add a session variable.
+     *
+     * @param   string  $key    Name of variable
+     * @param   mixed   $value  Value to set
+     */
+    public static function setSession($key, $value)
+    {
+        if (!isset($_SESSION[self::$session_var])) {
+            $_SESSION[self::$session_var] = array();
+        }
+        $_SESSION[self::$session_var][$key] = $value;
+    }
+
+
+    /**
+     * Retrieve a session variable.
+     *
+     * @param   string  $key    Name of variable
+     * @return  mixed       Variable value, or NULL if it is not set
+     */
+    public static function getSession($key)
+    {
+        if (isset($_SESSION[self::$session_var][$key])) {
+            return $_SESSION[self::$session_var][$key];
+        } else {
+            return NULL;
+        }
+    }
+
+
+    /**
+     * Remove a session variable.
+     *
+     * @param   string  $key    Name of variable
+     */
+    public static function clearSession($key=NULL)
+    {
+        if ($key === NULL) {
+            unset($_SESSION[self::$session_var]);
+        } else {
+            unset($_SESSION[self::$session_var][$key]);
+        }
     }
 
 }

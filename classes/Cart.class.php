@@ -25,15 +25,6 @@ use Shop\Models\OrderState;
  */
 class Cart extends Order
 {
-    /** Holder for custom information.
-     * @var array */
-    public $custom_info = array();
-
-    /** Session variable name for storing cart info.
-     * @var string */
-    private static $session_var = 'glShopCart';
-
-
     /**
      * Read the cart contents from the "cart" table, if available.
      * Does not read from the userinfo table- that's up to the uesr
@@ -699,52 +690,6 @@ class Cart extends Order
 
 
     /**
-     * Add a session variable.
-     *
-     * @param   string  $key    Name of variable
-     * @param   mixed   $value  Value to set
-     */
-    public static function setSession($key, $value)
-    {
-        if (!isset($_SESSION[self::$session_var])) {
-            $_SESSION[self::$session_var] = array();
-        }
-        $_SESSION[self::$session_var][$key] = $value;
-    }
-
-
-    /**
-     * Retrieve a session variable.
-     *
-     * @param   string  $key    Name of variable
-     * @return  mixed       Variable value, or NULL if it is not set
-     */
-    public static function getSession($key)
-    {
-        if (isset($_SESSION[self::$session_var][$key])) {
-            return $_SESSION[self::$session_var][$key];
-        } else {
-            return NULL;
-        }
-    }
-
-
-    /**
-     * Remove a session variable.
-     *
-     * @param   string  $key    Name of variable
-     */
-    public static function clearSession($key=NULL)
-    {
-        if ($key === NULL) {
-            unset($_SESSION[self::$session_var]);
-        } else {
-            unset($_SESSION[self::$session_var][$key]);
-        }
-    }
-
-
-    /**
      * Delete any cart(s) for a user.
      *
      * @param   integer $uid    User ID
@@ -824,49 +769,6 @@ class Cart extends Order
             $cart_id = self::getSession('cart_id');
         }
         return $cart_id;
-    }
-
-
-    /**
-     * Set the order status to indicate that has been submitted for payment.
-     * Pass $status = false to revert back to a cart, e.g. if the purchase
-     * is cancelled.
-     * Also removes the cart_id cookie for anonymous users.
-     *
-     * @param   string  $status     Status to set, default is "pending"
-     * @return  object  $this
-     */
-    public function setFinal($status='pending')
-    {
-        global $_TABLES, $LANG_SHOP, $_CONF;
-
-        if ($this->isNew()) {
-            SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
-            // Cart not found, do nothing
-            return $this;
-        }
-
-        $newstatus = $status ? OrderState::PENDING : OrderState::CART;
-        $oldstatus = $this->status;
-        $this->setOrderDate()->Save();
-        self::setSession('order_id', $this->getOrderID());
-
-        /*if ($newstatus != 'cart') {
-            // Make sure the cookie gets deleted also
-            self::_expireCookie();
-        } else {
-            // restoring the cart, put back the cookie
-            self::_setCookie($cart_id);
-            // delete all open user carts except this one
-            self::deleteUser(0, $cart_id);
-        }*/
-        // Is it really necessary to log that it changed from a cart to pending?
-        //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
-        SHOP_log(
-            "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
-            SHOP_LOG_DEBUG
-        );
-        return $this;
     }
 
 
@@ -1103,19 +1005,6 @@ class Cart extends Order
             COM_setMsg($msg, 'error');
         }
         return $new_wf;
-    }
-
-
-    /**
-     * Get the cancellation URL to pass to payment gateways.
-     * This url will set the status from "pending" back to "cart".
-     *
-     * @return  string      Cancellation URL
-     */
-    public function cancelUrl()
-    {
-        return SHOP_URL . '/cart.php?cancel=' . urlencode($this->order_id) .
-            '/' . urlencode($this->token);
     }
 
 
