@@ -1002,10 +1002,11 @@ class paypal extends \Shop\Gateway
     /**
      * Create and send an invoice for an order.
      *
-     * @param   string  $order_num  Order Number
+     * @param   object  $Order  Order object
+     * @param   object  $terms_gw   Terms gateway object, for config data
      * @return  boolean     True on success, False on error
      */
-    public function createInvoice($order_num, $terms_gw)
+    public function createInvoice($Order, $terms_gw)
     {
         global $_CONF, $LANG_SHOP;
 
@@ -1016,7 +1017,7 @@ class paypal extends \Shop\Gateway
         }
 
         $Shop = new Company();
-        $Order = Order::getInstance($order_num);
+        //$Order = Order::getInstance($order_num);
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
@@ -1025,7 +1026,7 @@ class paypal extends \Shop\Gateway
         $A = array(
             'detail' => array(
                 'invoice_number' => $Order->getInvoiceNumber(),
-                'reference' => $order_num,
+                'reference' => $Order->getOrderID(),
                 'currency_code' => $Currency->getCode(),
                 'payment_term' => array(
                     'term_type' => $this->getInvoiceTerms($terms_gw->getConfig('net_days')),
@@ -1178,12 +1179,12 @@ class paypal extends \Shop\Gateway
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
-                    SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
+                    SHOP_log("Error sending invoice for {$Order->getOrderID()}. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
                     return false;
                 }
             }
         } else {
-            SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
+            SHOP_log("Error creating invoice for {$Order->getOrderID()}", SHOP_LOG_ERROR);
             SHOP_Log("Data: " . var_export($inv, true));
             return false;
         }

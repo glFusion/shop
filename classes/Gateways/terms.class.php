@@ -43,7 +43,10 @@ class terms extends \Shop\Gateway
         $this->gw_desc = 'Net Terms';
         $this->req_billto = true;
         // This gateway processes the order via AJAX and just returns to the shopping page.
-        $this->gw_url = SHOP_URL . '/index.php?msg=09&plugin=shop';
+        $this->gw_url = SHOP_URL . '/confirm.php';
+
+        // Only out-of-band payments are accpeted.
+        $this->can_pay_online = 0;
 
         // Set default values for the config items, just to be sure that
         // something is set here.
@@ -94,23 +97,20 @@ class terms extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
-        return '';      // TODO not needed? Probably call Gateway::createInvoice() here.
         global $_USER;
 
         // Add custom info for the internal ipn processor
-        $cust = $cart->custom_info;
+        /*$cust = $cart->custom_info;
         $cust['uid'] = $_USER['uid'];
         $cust['transtype'] = 'coupon';
-        $cust['cart_id'] = $cart->CartID();
-        $cust['token'] = $cart->getToken();
-
+        $cust['cart_id'] = $cart->getOrderID();
+        $cust['token'] = $cart->getToken();*/
         $pmt_gross = $cart->getTotal();
         if (isset($cust['by_gc'])) {
             $pmt_gross -= (float)$cust['by_gc'];
         }
         $gatewayVars = array(
-            '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
-            '<input type="hidden" name="custom" value=\'' . htmlspecialchars(@serialize($cust)) . '\' />',
+            '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
         );
         return implode("\n", $gatewayVars);
@@ -188,14 +188,33 @@ class terms extends \Shop\Gateway
      * @param   string  $order_id   Order ID
      * @return  boolean     True on success, False on error
      */
-    public function processOrder($order_id)
+    public function processOrder($Order)
     {
         $gw_name = $this->getConfig('gateway');
         if (empty($gw_name)) {
             return false;           // unconfigured
         }
-        return Gateway::getInstance($gw_name)->createInvoice($order_id, $this);
+        return Gateway::getInstance($gw_name)->createInvoice($Order, $this);
     }
+
+
+    /**
+     * Confirm an order.
+     * For Net Terms, this is the same as processOrder().
+     *
+     * @param   object  $Order  Order object
+     * @return  boolean     True on success, False on error
+     */
+    public function confirmOrder($Order)
+    {
+        $status = $this->processOrder($Order);
+        if ($status) {
+            COM_setMsg($this->getLang('invoice_created'));
+        } else {
+            COM_setMsg($this->getLang('invoice_error'));
+        }
+        return SHOP_URL . '/index.php';
+     }
 
 
     /**
@@ -219,6 +238,12 @@ class terms extends \Shop\Gateway
     public function getDscp()
     {
         return $this->getLogo();
+    }
+
+
+    public function getCheckoutJS($cart)
+    {
+        return '';
     }
 
 }

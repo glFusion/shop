@@ -610,15 +610,14 @@ class square extends \Shop\Gateway
     /**
      * Create and send an invoice for an order.
      *
-     * @param   string  $order_num  Order Number
+     * @param   object  $Order  Order object
      * @param   object  $terms_gw   Invoice terms gateway, for config values
      * @return  boolean     True on success, False on error
      */
-    public function createInvoice($order_num, $terms_gw)
+    public function createInvoice($Order, $terms_gw)
     {
         global $_CONF;
 
-        $Order = Order::getInstance($order_num);
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
@@ -633,7 +632,10 @@ class square extends \Shop\Gateway
             $createOrderResponse = $apiResponse->getResult();
         } else {
             $this->_errors = $apiResponse->getErrors();
-        COM_errorLog(__LINE__ . ': ' . print_r($this->_errors,true));
+            SHOP_log(
+                __FUNCTION__ . ':' . __LINE__ . ': ' .
+                print_r($this->_errors,true)
+            );
             return false;
         }
 
@@ -685,10 +687,8 @@ class square extends \Shop\Gateway
             $Invoice = $createInvoiceResponse->getInvoice();
         } else {
             $this->_errors = $apiResponse->getErrors();
-        COM_errorLog(__LINE__ . ': ' . print_r($this->_errors,true));
             return false;
         }
-
         // If we got this far, the Invoice was created.
         // Now publish it to send it to the buyer.
         $body = new \Square\Models\PublishInvoiceRequest(
