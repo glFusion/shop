@@ -55,6 +55,9 @@
     </div>
 {!endif}
 </div>
+<div style="padding-top:15px;">
+    <span style="font-style:italic;">{current_as_of}</span>
+</div>
 </body>
 </html>
 {# end {templatelocation} #}
