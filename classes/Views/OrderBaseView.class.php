@@ -313,7 +313,9 @@ class OrderBaseView
         ) {
             $this->TPL->set_var(array(
                 'billto_addr'   =>$this->Order->getBillto()->toHTML(),
+                'billto_phone'  => $this->Order->getBillto()->toText('phone'),
                 'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
+                'shipto_phone'  => $this->Order->getShipto()->toText('phone'),
                 'show_addresses' => true,
             ) );
         }
@@ -596,8 +598,10 @@ class OrderBaseView
             ) );
         }
         $T->set_var(array(
-            'billto_addr'   =>$this->Order->getBillto()->toHTML(),
-            'shipto_addr'   =>$this->Order->getShipto()->toHTML(),
+            'billto_addr'   => $this->Order->getBillto()->toHTML(),
+            'billto_phone'  => $this->Order->getBillto()->toText('phone'),
+            'shipto_addr'   => $this->Order->getShipto()->toHTML(),
+            'shipto_phone'  => $this->Order->getShipto()->toText('phone'),
             'pi_url'        => SHOP_URL,
             'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
             'pi_admin_url'  => SHOP_ADMIN_URL,

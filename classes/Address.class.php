@@ -664,10 +664,13 @@ class Address
 
     /**
      * Render the address as text, separated by the specified separator.
-     * Sets the city, state, zip line according to the country format.
-     * A single address field can be retrieved by setting `$part` to one
-     * of the field names. The special value `address` can be supplied to
-     * get all the address lines except company and person name.
+     * Request can be for a single address field, an array of fields,
+     * or a keyword to get multiple standard parts. Keywords include:
+     *   - street: gets only the street address
+     *   - address: gets street address, city/state/zip line and country
+     *   - all : gets all components except the phone number
+     * The special key `cityline` can be used also to get the city/state/zip
+     * line according to the country format.
      *
      * @param   string  $part   Optional part of address to retrieve
      * @param   string  $sep    Line separator, simple `\n` by default.
@@ -675,44 +678,50 @@ class Address
      */
     public function toText($part="all", $sep="\n")
     {
-        global $_SHOP_CONF;
-
-        $retval = '';
-        $common = array(
-            'name', 'company', 'address1', 'address2',
-        );
-        $incl_phone = true;
-        if ($part == 'address') {
-            // Requesting only the address portion, remove name and company
-            unset($common[0]);
-            unset($common[1]);
-            $incl_phone = false;
-        } elseif ($part != 'all') {
-            // Immediately return the single requested element.
-            // Typically name or company, not address components.
-            if ($this->$part !== NULL) {
-                return $this->$part;
-            } else {
-                return '';
+        $parts = array();
+        if (is_string($part)) {
+            $part = array($part);
+        }
+        foreach ($part as $p) {
+            switch ($p) {
+            case 'all':
+                $parts[] = 'name';
+                $parts[] = 'company';
+            case 'address':
+                $parts[] = 'address1';
+                $parts[] = 'address2';
+                $parts[] = 'cityline';
+                $parts[] = 'country';
+                break;
+            case 'street':
+                $parts[] = 'address1';
+                $parts[] = 'address2';
+                break;
+            default:
+                $parts[] = $p;
+                break;
             }
         }
 
-        // No specific part requested, format and return all element
-        foreach ($common as $key) {
-            if ($this->$key != '') {
-                $retval .= $this->$key . $sep;
+        $retval = array();
+        foreach ($parts as $part) {
+            switch ($part) {
+            case 'cityline':
+                $retval[] = $this->getCityLine($sep);
+                break;
+            case 'country':
+                if ($this->country != Config::get('country')) {
+                    $retval[] = Country::getInstance($this->country)->getName();
+                }
+                break;
+            default:
+                if (isset($this->$part) && !empty($this->$part)) {
+                    $retval[] = $this->$part;
+                }
+                break;
             }
         }
-
-        $retval .= $this->getCityLine($sep);
-
-        // Include the country as the last line, unless this is a domestic address.
-        if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
-            $retval .=  $sep . Country::getInstance($this->country)->getName();
-        }
-        if ($incl_phone && $this->phone != '') {
-            $retval .= $sep . $this->phone;
-        }
+        $retval = implode($sep, $retval);
         return $retval;
     }
 
@@ -854,7 +863,6 @@ class Address
                 shipto_def = '" . $this->isDefaultShipto() . "'";
         $sql = $sql1 . $sql . $sql2;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->addr_id == 0) {
