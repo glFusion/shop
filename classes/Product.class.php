@@ -843,23 +843,23 @@ class Product
      * recurse backwards through the categories to determine if any has a
      * rule set. First non-zero rule ID is returned.
      *
+     * @param   boolean $incl_prod  True to include the product rule
      * @return  integer     Rule record ID
      */
-    public function getEffectiveRuleID()
+    public function getEffectiveRuleID($incl_prod=true)
     {
         static $retval = NULL;
 
         if ($retval !== NULL) {
             return $retval;     // already got the rule this session.
         }
-
-        $cache_key = 'prod_eff_rule_id_' . $this->id;
-        $retval = Cache::get($cache_key);
-        if ($retval === NULL) {
-            $retval = 0;
-            if ($this->zone_rule > 0) {
-                $retval = $this->zone_rule;
-            } else {
+        if ($this->zone_rule > 0 && $incl_prod) {
+            $retval = $this->zone_rule;
+        } else {
+            $cache_key = 'prod_eff_rule_id_' . $this->id;
+            $retval = Cache::get($cache_key);
+            if ($retval === NULL) {
+                $retval = 0;
                 $Cats = $this->getCategories();
                 $Cats = array_reverse($Cats, true);
                 foreach ($Cats as $Cat) {
@@ -1379,7 +1379,7 @@ class Product
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
-            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
+            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?products'),
             'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand_id,
