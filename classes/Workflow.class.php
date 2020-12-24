@@ -207,7 +207,7 @@ class Workflow
             break;
         case 'addresses':
             $billto = !$Cart->requiresBillto() || (
-                $Cart->getBillto()->getID() == 0 &&
+                $Cart->getBillto()->getID() > 0 &&
                 $Cart->getBillto()->isValid() == ''
             );
             $shipto = !$Cart->requiresShipto() || (
