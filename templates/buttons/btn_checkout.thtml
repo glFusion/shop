@@ -20,8 +20,12 @@
         {$LANG_SHOP['edit_order']}
     </button>
 {!else}
-    <button type="submit" class="uk-button uk-button-success uk-button-large" name="submit" style="color:#933">
-        {$LANG_SHOP['confirm_order']}
+    <button type="submit" class="uk-button uk-button-success uk-button-large shop-ckout-btn" name="submit"
+{!if btn_js}
+        {btn_js}
+{!endif}'
+    >
+        {btn_text}
     </button>
 {!endif}
 {!endif}
