@@ -19,8 +19,9 @@
         </div>
     </div>
 </div>
-<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;height:200px;">
-    <div>
+
+<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
+    <div style="padding-top:20px;">
         <span class="header">{$LANG_SHOP['ship_to']}:</span><br />
         <span id="shipto_addr">{shipto_addr}</span>
         <p>
@@ -30,7 +31,7 @@
         <a class="uk-button uk-button-primary" href="{site_url}/shop/account.php?mode=editaddr&id=0&return=cart_addresses">{$LANG_SHOP['new_address']}</a>
         </p>
     </div>
-    <div>
+    <div style="padding-top:20px;">
         <span class="header">{$LANG_SHOP['bill_to']}:</span><br />
         <span id="billto_addr">{billto_addr}</span>
         <p>
