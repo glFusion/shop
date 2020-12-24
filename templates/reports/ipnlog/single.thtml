@@ -1,11 +1,15 @@
 {# begin {templatelocation} #}
 <h1 style="text-align:center;">{$LANG_SHOP['ipnlog']}</h1>
-<table border="0">
+<table class="uk-table-condensed">
   <tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{id}</td></tr>
-  <tr><td><b>{$LANG_SHOP['ip_addr']}:</b></td><td>{ip_addr}<br/ ></td></tr>
-  <tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}<br /></td></tr>
+  <tr><td><b>{$LANG_SHOP['order']}:</b></td><td>
+    <a href="{site_admin_url}/plugins/shop/orders.php?order={order_id}">{order_id}</a>
+  </td></tr>
+  <tr><td><b>{$LANG_SHOP['ip_addr']}:</b></td><td>{ip_addr}</td></tr>
+  <tr><td><b>{$LANG_SHOP['timestamp']}:</b></td><td>{time}</td></tr>
+  <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}</td></tr>
+  <tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}</td></tr>
+  <tr><td><b>{$LANG_SHOP['status']}:</b></td><td>{event}</td></tr>
 <!-- BEGIN DataBlock -->
   <tr><td><b>{prompt}:</b></td><td>{value}</td></tr>
 <!-- END DataBlock -->
