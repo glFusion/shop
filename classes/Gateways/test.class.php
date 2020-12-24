@@ -40,9 +40,10 @@ class test extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'test';
         $this->gw_desc = 'Internal Testing Gateway';
-        $this->gw_url = SHOP_URL . '/ipn/internal.php';
         $this->do_redirect = false; // handled internally
         parent::__construct($A);
+        //$this->gw_url = SHOP_URL . '/ipn/internal.php';
+        $this->gw_url = $this->ipn_url;
     }
 
 
