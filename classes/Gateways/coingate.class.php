@@ -13,7 +13,6 @@
  */
 namespace Shop\Gateways;
 use Shop\Currency;
-use Shop\Cart;
 use Shop\Config;
 use LGLib\NameParser;
 
@@ -27,10 +26,6 @@ class coingate extends \Shop\Gateway
     /** Internal API client to facilitate reuse.
      * @var object */
     private $_api_client = NULL;
-
-    /** API errors.
-     * @var object */
-    //private $_errors = NULL;
 
 
     /**
@@ -51,7 +46,6 @@ class coingate extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'coingate';
         $this->gw_desc = 'CoinGate Crypto Currency';
-        $this->ipn_url = Config::get('url') . '/ipn/coingate.php';
 
         // Set default values for the config items, just to be sure that
         // something is set here.
@@ -303,12 +297,6 @@ class coingate extends \Shop\Gateway
             return '';
         }
     
-        /*$order = $this->createGWorder($Cart);
-        SHOP_log("coingate order created: " . print_r($order,true), SHOP_LOG_DEBUG);
-        if (!is_object($order)) {
-            COM_setMsg("There was an error processing your order");
-            COM_refresh(Shop\Config::get('url'));
-        }*/
         $vars = array(
             'order_id' => $Cart->getOrderID(),
         );
@@ -434,15 +422,13 @@ class coingate extends \Shop\Gateway
         $Cur = $Cart->getCurrency();
         $by_gc = $Cart->getGC();
         $total_amount = $Cart->getTotal() - $Cart->getGC();
-        $cancel_url = Config::get('url') . '/cart.php?cancel=' .
-            $Cart->getOrderId() . '/' . $Cart->getToken();
         $params = array(
             'order_id'          => $Cart->getOrderID(),
             'price_amount'      => $Cart->getTotal() - $Cart->getGC(),
             'price_currency'    => $Cart->getCurrency()->getCode(),
             'receive_currency'  => $this->getConfig('rcv_currency'),
-            'callback_url'      => $this->ipn_url,
-            'cancel_url'        => $cancel_url,
+            'callback_url'      => $this->getIpnUrl(),
+            'cancel_url'        => $Cart->cancelUrl(),
             'success_url'       => Config::get('url') . '/index.php?thanks=' . $this->gw_name,
             'title'             => $LANG_SHOP['order'] . ' ' . $Cart->getOrderId(),
             'description'       => $LANG_SHOP['order'] . ' ' . $Cart->getOrderId(),
@@ -482,14 +468,20 @@ class coingate extends \Shop\Gateway
     }
 
 
+    /**
+     * Confirm the order and create an invoice on Coingate.
+     *
+     * @param   object  $Order  Shop Order object
+     * @return  string      Redirect URL
+     */
     public function confirmOrder($Order)
     {
         $redirect = '';
-        if (!$Cart->isNew()) {
-            $order = $this->createGWorder($Cart);
-            SHOP_log("order created: " . print_r($order,true), SHOP_LOG_DEBUG);
-            if (is_object($order)) {
-                $redirect = $order->payment_url;
+        if (!$Order->isNew()) {
+            $gwOrder = $this->createGWorder($Order);
+            SHOP_log("order created: " . print_r($gwOrder,true), SHOP_LOG_DEBUG);
+            if (is_object($gwOrder)) {
+                $redirect = $gwOrder->payment_url;
             } else {
                 COM_setMsg("There was an error processing your order");
             }
