@@ -830,7 +830,7 @@ class Order
             //"phone = '" . DB_escapeString($this->phone) . "'",
             "tax = '{$this->getTax()}'",
             "shipping = '{$this->getShipping()}'",
-            "handling = '{$this->getHandling}'",
+            "handling = '{$this->getHandling()}'",
             "gross_items = '{$this->gross_items}'",
             "net_nontax = '{$this->net_nontax}'",
             "net_taxable = '{$this->net_taxable}'",
