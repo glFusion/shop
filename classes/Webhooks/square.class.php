@@ -98,6 +98,7 @@ class square extends \Shop\Webhook
                                         ->setAmount($amt_paid)
                                         ->setGateway($this->getSource())
                                         ->setMethod("Online")
+                                        ->setComment('Webhook ' . $this->getID())
                                         ->setOrderID($this->getOrderID());
                                     $retval = $Pmt->Save();
                                 }
@@ -196,5 +197,3 @@ class square extends \Shop\Webhook
     }
 
 }
-
-?>
