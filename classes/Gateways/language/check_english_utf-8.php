@@ -20,5 +20,6 @@ $LANG_SHOP_gateway = array(
 'remit_to'          => 'Send your payment to',
 'print'             => 'Print Order',
 'pmt_instructions'  => 'Please print this page and include with your remittance to ensure proper credit.',
+'make_payable'  => 'Make your check or money order payable to &quot;%s&quot; and send it to',
 );
 ?>

@@ -14,5 +14,7 @@
 
 $LANG_SHOP_gateway = array(
     'gw_instr'  => 'The Net Terms gateway uses an actual gateway to submit online invoices.',
+    'invoice_created' => 'An invoice has been created for your order and will be emailed to you.',
+    'invoice_error' => 'There was an error creating your invoice.',
 );
 ?>
