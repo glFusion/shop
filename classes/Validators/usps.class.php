@@ -13,6 +13,8 @@
  */
 namespace Shop\Validators;
 use \SimpleXMLElement;
+use Shop\Cache;
+
 
 /**
  * Class to handle address validation.
@@ -54,8 +56,8 @@ class usps extends \Shop\Shippers\usps
             return false;
         }
 
-        $cache_key = 'av.usps.' . md5(@serialize($this->Address->toText()));
-        $result = \Shop\Cache::get($cache_key);
+        $cache_key = 'av.usps.' . md5(@serialize($this->Address->toText('address')));
+        $result = Cache::get($cache_key);
         if ($result === NULL) {
             $xml = new SimpleXMLElement(
                 '<AddressValidateRequest USERID="' . $this->getConfig('user_id') . '"></AddressValidateRequest>'
@@ -86,7 +88,7 @@ class usps extends \Shop\Shippers\usps
                 // Assume address is ok to avoid interrupting checkout flow
                 return false;
             }
-            \Shop\Cache::set($cache_key, $result, 'addresses', 3600);
+            Cache::set($cache_key, $result, 'addresses', 3600);
         }
         $xml = new SimpleXMLElement($result);
         if (property_exists($xml, 'Number')) {
