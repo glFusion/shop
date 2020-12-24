@@ -3,9 +3,9 @@
  * Class to handle company information from the configuration.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -32,19 +32,25 @@ class Company extends Address
      */
     public function __construct($data=array())
     {
-        global $_SHOP_CONF, $_CONF;
+        global $_CONF;
 
         // The store name may be set in the configuration but still be empty.
         // Use the site name if the store name is empty, site url as a fallback.
-        if (!empty($_SHOP_CONF['company'])) {
-            $store_name = $_SHOP_CONF['company'];
-        } elseif (!empty($_CONF['site_name'])) {
-            $store_name = $_CONF['site_name'];
-        } else {
-            $store_name = preg_replace('/^https?\:\/\//i', '', $_CONF['site_url']);
+        if (empty(Config::get('company'))) {
+            if (!empty($_CONF['site_name'])) {
+                Config::set('company', $_CONF['site_name']);
+            } else {
+                Config::set(
+                    'company',
+                    preg_replace('/^https?\:\/\//i', '', $_CONF['site_url'])
+                );
+            }
         }
+
         // Same for the company email
-        $email = empty($_SHOP_CONF['shop_email']) ? $_CONF['site_mail'] : $_SHOP_CONF['shop_email'];
+        if (empty(Config::get('shop_email'))) {
+            Config::set('shop_email', $_CONF['site_mail']);
+        }
 
         // The data variable is disregarded, all values come from the config.
         $this
@@ -52,16 +58,16 @@ class Company extends Address
             ->setID(0)          // not applicable
             ->setBilltoDefault(0)   // not applicable
             ->setShiptoDefault(0)   // not applicable
-            ->setCompany($store_name)
-            ->setAddress1(SHOP_getVar($_SHOP_CONF, 'address1'))
-            ->setAddress2(SHOP_getVar($_SHOP_CONF, 'address2'))
-            ->setCity(SHOP_getVar($_SHOP_CONF, 'city'))
-            ->setState(SHOP_getVar($_SHOP_CONF, 'state'))
-            ->setPostal(SHOP_getVar($_SHOP_CONF, 'zip'))
-            ->setCountry(SHOP_getVar($_SHOP_CONF, 'country'))
-            ->setName(SHOP_getVar($_SHOP_CONF, 'remit_to'))
-            ->setPhone($_SHOP_CONF['shop_phone'])
-            ->setEmail($email);
+            ->setCompany(Config::get('company'))
+            ->setAddress1(Config::get('address1'))
+            ->setAddress2(Config::get('address2'))
+            ->setCity(Config::get('city'))
+            ->setState(Config::get('state'))
+            ->setPostal(Config::get('zip'))
+            ->setCountry(Config::get('country'))
+            ->setName(Config::get('remit_to'))
+            ->setPhone(Config::get('shop_phone'))
+            ->setEmail(Config::get('shop_email'));
     }
 
 
@@ -106,5 +112,3 @@ class Company extends Address
     }
 
 }
-
-?>
