@@ -352,6 +352,11 @@ class Menu
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'payments' ? true : false,
             ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=x',
+                'text' => $LANG_SHOP['webhooks'],
+                'active' => $view == 'webhooks' ? true : false,
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }
@@ -384,6 +389,11 @@ class Menu
                 'url' => SHOP_ADMIN_URL . '/payments.php?payments=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
                 'active' => $view == 'payments' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=' . $Order->getOrderID(),
+                'text' => $LANG_SHOP['webhooks'],
+                'active' => $view == 'webhooks' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);

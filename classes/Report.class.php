@@ -112,6 +112,10 @@ class Report
      * @var integer */
     protected $limit = 50;
 
+    /** Order ID to limit payment, shipment and IPN reports to a single order.
+     * @var string */
+    protected $order_id = '';
+
 
     /**
      * Initializes the report.
@@ -309,6 +313,19 @@ class Report
             return 'html';
             break;
         }
+    }
+
+
+    /**
+     * Set the order ID to limit report output.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  $this
+     */
+    public function withOrderId($order_id)
+    {
+        $this->order_id = $order_id;
+        return $this;
     }
 
 

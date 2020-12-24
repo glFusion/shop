@@ -45,6 +45,7 @@ $expected = array(
     'delete', 'savepayment', 'delpayment',
     // Views to display
     'edit', 'payments', 'list', 'newpayment', 'pmtdetail', 'ipndetail',
+    'webhooks',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -58,6 +59,7 @@ foreach($expected as $provided) {
     }
 }
 $view = $action;
+$mainview = '';   // default main menu selection
 
 switch ($action) {
 case 'savepayment':
@@ -114,6 +116,18 @@ case 'pmtdetail':
     }
     break;
 
+case 'webhooks':
+    $R = Shop\Report::getInstance('ipnlog');
+    if ($actionval != 'x') {
+        $R->withOrderId($actionval);
+        $Order = Shop\Order::getInstance($actionval);
+        $content .= Shop\Menu::viewOrder($view, $Order);
+    } else {
+        $content .= Shop\Menu::adminOrders($view);
+    }
+    $content .= $R->Render();
+    break;
+
 case 'list':
 case 'payments':
 default:
@@ -128,7 +142,7 @@ default:
     break;
 }
 $display = COM_siteHeader();
-$display .= \Shop\Menu::Admin('orders');
+$display .= \Shop\Menu::Admin($mainview);
 if (!empty($msg)) {
     $messages = implode('<br />', $msg);
     $display .= COM_showMessageText($messages);
