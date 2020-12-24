@@ -121,6 +121,17 @@
                         {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
                     </div>
                 </div>
+{!if apply_gc}
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-2-5 cart-total-info subtotal">{$LANG_SHOP['apply_gc']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-2-5 cart-item-total money">-&nbsp;{apply_gc}</div>
+                </div>
+                <div class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-2-5 cart-total-info">{$LANG_SHOP['pmt_total']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-2-5 cart-item-total money">{net_total}</div>
+                </div>
+{!endif}
+
                 </div>
                 <div class="uk-width-1-1 uk-width-medium-5-10 uk-pull-5-10 alignleft">
 {!if order_instr}
