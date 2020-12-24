@@ -22,6 +22,7 @@ use Shop\Company;
 use Shop\Payment;
 use Shop\OrderStatus;
 use Shop\ShipmentPackage;
+use Shop\Models\OrderState;
 
 
 /**
@@ -279,7 +280,18 @@ class Invoice extends OrderBaseView
         } else {
             $this->TPL->set_var('status', $status);
         }
-
+        if (
+            $status == OrderState::PENDING &&
+            !empty($this->Order->getPmtMethod())
+        ) {
+            $gw = \Shop\Gateway::getInstance($this->Order->getPmtMethod());
+            if ($gw->canPayOnline()) {
+                $this->TPL->set_var(
+                    'pmt_btn',
+                    $gw->checkoutButton($this->Order, $LANG_SHOP['buttons']['pay_now'])
+                );
+            }
+        }
         $this->TPL->set_var(array(
             'payer_email'   => $this->Order->getBuyerEmail(),
             'invoice_number'  => $this->Order->getInvoiceNumber(),

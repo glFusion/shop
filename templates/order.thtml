@@ -41,14 +41,12 @@
         <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1">
             <div class="orderAddress">
                 <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
-                <br />
-                {billto_addr}
+                <br />{billto_addr}
             </div>
 
             <div class="orderAddress">
                 <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
-                <br />
-                {shipto_addr}
+                <br />{shipto_addr}
             </div>
         </div>
 
@@ -211,7 +209,11 @@
             <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
 {!if checkout}
 {!else}
-            <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span><br />
+            <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
+{!if pmt_btn}
+            {pmt_btn}
+{!endif}
+            <br />
             <b>{$LANG_SHOP['payments']}:</b>
 {!endif}
             <table>
