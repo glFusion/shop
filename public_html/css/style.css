@@ -809,8 +809,8 @@ input.shopErr {
 }
 
 div#trackinginfo {
-    float:right;
-    width: calc( (100%) * .5 - 30px );
+    /*float:right;*/
+    /*width: calc( (100%) * .5 - 30px );*/
     background: #ccc;
 }
 table#trackingTable {
@@ -1085,4 +1085,11 @@ div.cart-item {
 .checkout_menu > li > a {
     font-size: 16px;
     font-weight:bold;
+}
+.shop-ckout-btn {
+    /* Adjust button text for better visibility */
+    color: darkred;
+}
+.shop-ckout-btn:hover {
+    color: darkred;
 }
