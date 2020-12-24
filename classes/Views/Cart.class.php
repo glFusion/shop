@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Views;
+use Shop\Config;
 use Shop\Currency;
 use Shop\Workflow;
 use Shop\Shipment;
@@ -191,7 +192,7 @@ class Cart extends OrderBaseView
 
         $this->TPL->set_var('payer_email', $payer_email);
         $icon_tooltips = implode('<br />', $icon_tooltips);
-        $by_gc = (float)$this->Order->getInfo('apply_gc');
+        $by_gc = (float)$this->Order->getGC();
         $total = $this->Order->getTotal();     // also calls calcTax()
         $this->TPL->set_var(array(
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
@@ -304,6 +305,10 @@ class Cart extends OrderBaseView
     {
         global $_SHOP_CONF;
 
+        if (!$this->Order->hasItems()) {
+            COM_refresh(Config::get('url'));
+        }
+
         $retval = '';
         $T = new Template('workflow/');
         $T->set_file(array(
@@ -317,9 +322,14 @@ class Cart extends OrderBaseView
         $gw_sel = $this->Order->getPmtMethod();
         $gateways = Gateway::getAll();
         if ($_SHOP_CONF['gc_enabled']) {
-            $gateways['_coupon'] = Gateway::getInstance('_coupon');
+            $gateways['_coupon'] = new \Shop\Gateways\_coupon;
+            $gc_bal = \Shop\Products\Coupon::getUserBalance();
+            if (empty($gw_sel) && $gc_bal >= $total) {
+                $gw_sel = '_coupon';
+            }
+        } else {
+            $gc_bal = 0;
         }
-        $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
         if (empty($gateways)) {
             return $retval;  // no available gateways
         }
@@ -352,14 +362,20 @@ class Cart extends OrderBaseView
             }
             if ($gw->Supports('checkout')) {
                 if ($gw_sel == '') $gw_sel = $gw->getName();
-                $T->set_var(array(
-                    'gw_id' => $gw->getName(),
-                    'logo'  => $gw->getLogo(),
-                    'sel'   => $gw->getName() == $gw_sel ? 'checked="checked"' : '',
-                ) );
-                $T->parse('row', 'Radios', true);
+                $opt = $gw->checkoutRadio($this->Order, $gw_sel == $gw->getName());
+                if ($opt) {
+                    $T->set_var(array(
+                        'gw_id' => $opt['gw_name'],
+                        'opt_type' => $opt['type'],
+                        'opt_value' => $opt['value'],
+                        'logo'  => $opt['logo'],
+                        'sel'   => $opt['selected'],
+                    ) );
+                    $T->parse('row', 'Radios', true);
+                }
             }
         }
+
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
