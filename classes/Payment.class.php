@@ -424,12 +424,6 @@ class Payment
                         $this->getGateway()
                     )
                 );
-            $Order->Notify(
-                OrderState::PAID,
-                $LANG_SHOP['notify_pmt_received'],
-                true,
-                false
-            );
         }
         return $this;
     }
