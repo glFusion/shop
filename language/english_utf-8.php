@@ -753,6 +753,7 @@ $LANG_SHOP = array (
 'bulk_reset' => 'Reset selected product ratings',
 'q_reset_ratings' => 'Are you sure you want to reset the ratings for the selected items?',
 'webhooks' => 'Webhooks',
+'current_as_of' => 'Updated as of %s',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
