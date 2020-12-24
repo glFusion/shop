@@ -28,7 +28,6 @@ class Shipper
     const TAX_ORIGIN = 1;
     const QUOTE_TABLE = 1;
     const QUOTE_API = 2;
-    const QUOTE_CACHE_MINS = 90;
 
     /** Table key for DBO functions
      * @var string */
@@ -447,6 +446,12 @@ class Shipper
     }
 
 
+    /**
+     * Set the sales tax location to either "origin" or "destination".
+     *
+     * @param   integer $flag   Location flag, 1=origin, 0=destination
+     * @return  object  $this
+     */
     private function setTaxLocation($flag)
     {
         $this->tax_loc = (int)$flag;
@@ -454,6 +459,11 @@ class Shipper
     }
 
 
+    /**
+     * Get the sales tax location flag.
+     *
+     * @return  integer     Location flag, 1=origin, 0=destination
+     */
     public function getTaxLocation()
     {
         return (int)$this->tax_loc;
@@ -758,12 +768,12 @@ class Shipper
     {
         global $LANG_SHOP;
 
-        /*$cache_key = 'shipping_order_' . $Order->getOrderID();
+        $cache_key = 'shipping_order_' . $Order->getOrderID() .
+            '_' . $Order->getShippingUnits();
         $shippers = Cache::get($cache_key);
         if (is_array($shippers)) {
             return $shippers;
         }
-         */
 
         // Get all the order items into a simple array where they can be
         // ordered by unit count and marked when packed.
@@ -837,7 +847,7 @@ class Shipper
 
         // Cache the shippers for a short time.
         // The cache is also cleared whenever a shipper or the order is updated.
-        //Cache::set($cache_key, $shippers, array('orders', self::$base_tag), 30);
+        Cache::set($cache_key, $shippers, array('orders', self::$base_tag));
         return $shippers;
     }
 
@@ -1952,8 +1962,7 @@ class Shipper
                 Cache::set(
                     $cache_key,
                     $retval,
-                    self::$base_tag,
-                    self::QUOTE_CACHE_MINS
+                    self::$base_tag
                 );
             }
         }
@@ -1972,7 +1981,7 @@ class Shipper
     {
         // If a shipper module is used, use the configured packages.
         // Otherwise, get a quote based on units.
-        if ($this->key != 'generic') {
+        if ($this->key != '') {
             $Packages = Package::packOrder($Order, $this);
             $retval = array($this->getPackageQuote($Packages));
         } else {
