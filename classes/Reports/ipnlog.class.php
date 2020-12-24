@@ -109,6 +109,11 @@ class ipnlog extends \Shop\Report
                 'sort'  => true,
             ),
             array(
+                'text'  => $LANG_SHOP['status'],
+                'field' => 'event',
+                'sort'  => false,
+            ),
+            array(
                 'text'  => $LANG_SHOP['order_number'],
                 'field' => 'order_id',
                 'sort'  => true,
@@ -123,6 +128,9 @@ class ipnlog extends \Shop\Report
         $where = "WHERE ts BETWEEN {$this->startDate->toUnix()} AND {$this->endDate->toUnix()}";
         if (!empty($this->gateway)) {
             $where .= " AND gateway = '" . DB_escapeString($this->gateway) . "'";
+        }
+        if (!empty($this->order_id)) {
+            $where .= " AND order_id = '" . DB_escapeString($this->order_id) . "'";
         }
 
         $query_arr = array(
@@ -222,9 +230,11 @@ class ipnlog extends \Shop\Report
             $T->set_var(array(
                 'id'        => $A['id'],
                 'ip_addr'   => $A['ip_addr'],
-                'time'      => SHOP_dateTooltip($Dt),
+                'time'      => $Dt->format('Y-m-d H:i:s T', true),
                 'txn_id'    => $A['txn_id'],
                 'gateway'   => $A['gateway'],
+                'order_id'  => $A['order_id'],
+                'event'     => $A['event'],
                  //'pmt_gross' => $vals['pmt_gross'],
                 //'verified'  => $vals['verified'],
                 //'pmt_status' => $vals['pmt_status'],
