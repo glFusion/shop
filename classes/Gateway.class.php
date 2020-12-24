@@ -13,6 +13,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Config;
 use Shop\Models\OrderState;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
@@ -64,6 +65,8 @@ class Gateway
     /** The URL to the gateway's IPN processor.
      * @var string */
     protected $ipn_url = '';
+
+    protected $ipn_filename = 'ipn.php';
 
     /** Indicator of whether the gateway is enabled at all.
      * @var boolean */
@@ -134,6 +137,10 @@ class Gateway
      * @var boolean */
     protected $do_redirect = true;
 
+    /** Are payments taken online?
+     * @var boolean */
+    protected $can_pay_online = 1;
+
 
     /**
      * Constructor. Initializes variables.
@@ -154,17 +161,7 @@ class Gateway
 
         $this->custom = new CustomInfo;
         $this->properties = array();
-        if (empty($_SHOP_CONF['ipn_url'])) {
-            // Use the default IPN url
-            $this->ipn_url = SHOP_URL . '/ipn/' . $this->gw_name . '.php';
-        } else {
-            // Override the default IPN url and append the gateway IPN filename
-            $url = $_SHOP_CONF['ipn_url'];
-            if (substr($url, -1) != '/') {
-                $url .= '/';
-            }
-            $this->ipn_url =  $url . $this->gw_name . '.php';
-        }
+        $this->getIpnUrl();     // construct the IPN processor URL
         $this->currency_code = empty($_SHOP_CONF['currency']) ? 'USD' :
             $_SHOP_CONF['currency'];
 
@@ -675,7 +672,7 @@ class Gateway
         }
 
         // Create an order record to get the order ID
-        $Order = $this->CreateOrder($vals, $cart);
+        $Order = $this->createOrder($vals, $cart);
         $db_order_id = DB_escapeString($Order->getOrderID());
 
         $prod_types = 0;
@@ -814,7 +811,7 @@ class Gateway
      * @param   array   $cart   The shopping cart, to get addresses, etc.
      * @return  string          Order ID just created
      */
-    protected function CreateOrder($A, $cart)
+    protected function createOrder($A, $cart)
     {
         global $_TABLES, $_USER;
 
@@ -897,9 +894,9 @@ class Gateway
      * @param   object  $cart   Shoppping cart
      * @return  string      HTML for checkout button
      */
-    public function checkoutButton($cart)
+    public function checkoutButton($cart, $text='')
     {
-        global $_SHOP_CONF, $_USER;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP;
 
         if (!$this->Supports('checkout')) return '';
 
@@ -911,10 +908,13 @@ class Gateway
             'method'    => $this->getMethod(),
             'gateway_vars' => $gateway_vars,
             'button_url' => $this->getCheckoutButton(),
-            'cart_id'   => $cart->cartID(),
+            'cart_id'   => $cart->getOrderId(),
             'uid'       => $_USER['uid'],
             'gw_js'     => $this->getCheckoutJS($cart),
+            'btn_js'    => $this->getButtonJS($cart),
             'disabled'  => $cart->hasInvalid(),
+            'uniqid'    => uniqid(),
+            'btn_text'  => $text != '' ? $text : $LANG_SHOP['confirm_order'],
         ) );
         return $T->parse('', 'btn');
     }
@@ -1160,6 +1160,16 @@ class Gateway
                 }
                 $field .= '/>';
                 break;
+            case 'select':
+                $field = '<select name="' . $fld_name . '">' . LB;
+                foreach ($this->getConfigOptions($name, $env) as $opt) {
+                    $sel = $opt['selected'] ? 'selected="selected"' : '';
+                    $field .= '<option value="' . $opt['value'] .
+                        '" ' . $sel . '">' .
+                        $opt['name'] . '</option>' . LB;
+                }
+                $field .= '</select>' . LB;
+                break;
             default:
                 if (isset($this->config[$env][$name])) {
                     $val = $this->config[$env][$name];
@@ -1231,7 +1241,6 @@ class Gateway
             }
             Cache::set($cache_key, $tmp, 'gateways');
         }
-
         // For each available gateway, load its class file and add it
         // to the static array. Check that a valid object is
         // returned from getInstance()
@@ -1337,14 +1346,20 @@ class Gateway
      * @param   boolean $selected   True if the button should be selected
      * @return  string      HTML for radio button
      */
-    public function checkoutRadio($selected = false)
+    public function checkoutRadio($Cart, $selected = false)
     {
-        $sel = $selected ? 'checked="checked" ' : '';
+        $retval = new \Shop\Models\PaymentRadio;
+        $retval['gw_name'] = $this->gw_name;
+        $retval['value'] = $this->gw_name;
+        $retval['selected'] = $selected ? 'checked="checked" ' : '';
+        $retval['logo'] = $this->getLogo();
+/*
         $radio = '<input required type="radio" name="gateway" value="' .
             $this->gw_name . '" id="' . $this->gw_name . '" ' . $sel . '/>';
         $radio .= '<label for="' . $this->gw_name . '">&nbsp;' . $this->getLogo() .
             '</label>';
-        return $radio;
+        return $radio;*/
+        return $retval;
     }
 
 
@@ -1385,6 +1400,12 @@ class Gateway
     }
 
 
+    public function getButtonJS($cart)
+    {
+        return NULL;
+    }
+
+
     /**
      * Get an array of uninstalled gateways for the admin list.
      *
@@ -1400,8 +1421,10 @@ class Gateway
             foreach ($files as $fullpath) {
                 $parts = explode('/', $fullpath);
                 list($class,$x1,$x2) = explode('.', $parts[count($parts)-1]);
-                if ($class[0] == '_') continue;     // special internal gateway
-                if (array_key_exists($class, $installed)) continue; // already installed
+                //if ($class[0] == '_') continue;     // special internal gateway
+                if (array_key_exists($class, $installed)) {
+                    continue; // already installed
+                }
                 $clsfile = 'Shop\\Gateways\\' . $class;
                 $gw = new $clsfile;
                 if (is_object($gw)) {
@@ -1561,7 +1584,7 @@ class Gateway
 
         $data_arr = array();
         self::getInstalled($data_arr);
-        self::getUnInstalled($data_arr);
+        self::getUninstalled($data_arr);
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['edit'],
@@ -1818,6 +1841,44 @@ class Gateway
         return $this->req_billto ? 1 : 0;
     }
 
-}   // class Gateway
 
-?>
+    /**
+     * Get the IPN processor URL.
+     *
+     * @return  string      IPN URL
+     */
+    public function getIpnUrl($args = array())
+    {
+        if ($this->ipn_url === '') {
+            $url = Config::get('ipn_url');
+            if (empty($url)) {
+                // Use the default IPN url
+                $url = Config::get('url') . '/ipn/';
+            }
+            if (substr($url, -1) != '/') {
+                $url .= '/';
+            }
+            $this->ipn_url = $url . $this->ipn_filename . '?_gw=' . $this->gw_name;
+        }
+        if (!empty($args)) {
+            $params = '&' . http_build_query($args);
+        } else {
+            $params = '';
+        }
+        return $this->ipn_url . $params;
+    }
+
+
+    /**
+     * Check if online payments can be made via this gateway.
+     * Most use online payments but some, like "check" and "terms"
+     * require out-of-band payments.
+     *
+     * @return  boolean     True of online payments accepted
+     */
+    public function canPayOnline()
+    {
+        return $this->can_pay_online ? 1 : 0;
+    }
+
+}

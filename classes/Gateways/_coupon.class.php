@@ -1,11 +1,11 @@
 <?php
 /**
- * Class to manage payment by gift card.
+ * Class to manage full or partial payment by gift card.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -60,62 +60,65 @@ class _coupon extends \Shop\Gateway
      * @param   boolean $selected   Indicate if this should be the selected option
      * @return  string      HTML for the radio button or checkbox
      */
-    public function checkoutRadio($selected = false)
+    public function checkoutRadio($Cart, $selected = false)
     {
         global $LANG_SHOP;
 
         // Get the order total from the cart, and the user's balance
         // to decide what kind of button to show.
-        $cart = Cart::getInstance();
-        $total = $cart->getTotal();
+        $total = $Cart->getTotal();
         $gc_bal = Coupon::getUserBalance();
         if ($gc_bal == 0) {
             // No gift card balance to apply, no selection to show
-            return '';
+            return false;
         }
 
         // Get the amount that can be paid by gift card,
         // since coupon products cannot.
-        $gc_can_apply = Coupon::canPayByGC($cart);
+        $gc_can_apply = Coupon::canPayByGC($Cart);
 
         // If no gift card amount can be applied, don't show this gateway option
-        if ($gc_can_apply == 0) return '';
+        if ($gc_can_apply == 0) {
+            return false;
+        }
 
+        $retval = new \Shop\Models\PaymentRadio;
+        $retval['gw_name'] = $this->gw_name;
+        $retval['varname'] = 'by_gc';
         // Create the radio button or checkbox as appropriate based
         // on the card balance vs. the amount that can be paid by card.
         if ($gc_bal < $gc_can_apply) {
-            // GC balance is not enough, option to apply the whole thing.
-            $radio = '<input type="checkbox" name="by_gc" value="' . $gc_bal .
-                '" checked="checked" />&nbsp;';
-            $radio .= sprintf($LANG_SHOP['use_gc_full'],
-                    Currency::getInstance()->Format($gc_bal));
+            $retval['type'] = 'checkbox';
+            $retval['value'] = $gc_bal;
+            $retval['selected'] = 'checked="checked"';
+            $retval['dscp'] = sprintf(
+                       $LANG_SHOP['use_gc_full'],
+                        Currency::getInstance()->Format($gc_bal)
+            );
+            $retval['logo'] = $retval['dscp'];
+
+            // Set the partial payment amount by coupon.
+            // If the coupon balance is sufficient for the order, it will be treated
+            // as the single payment gateway.
+            $Cart->setByGC($retval['value'])->Save(false);
         } elseif ($gc_bal >= $gc_can_apply && $gc_can_apply == $total) {
             // GC balance is enough to pay for the order. Show a regular
             // radio button to pay the entire order.
-            $sel = $selected ? 'checked="checked" ' : '';
-            $radio = '<input required type="radio" name="gateway" value="' .
-                $this->gw_name . '" ' . $sel . '/>&nbsp;';
-            $radio .= sprintf($LANG_SHOP['use_gc_part'],
-                    Currency::getInstance()->Format($gc_can_apply),
-                    Currency::getInstance()->Format($gc_bal));
-            // Make sure any apply_gc amount is hidden, it will be created
-            // from the gateway radio
-            $radio .= '<input type="hidden" name="by_gc" value="0" />';
+            $retval['selected'] = $selected ? 'checked="checked" ' : '';
+            $retval['value'] = $gc_can_apply;
+            $retval['dscp'] = sprintf(
+                       $LANG_SHOP['use_gc_part'],
+                        Currency::getInstance()->Format($gc_can_apply),
+                        Currency::getInstance()->Format($gc_bal)
+                   );
+            $retval['logo'] = $retval['dscp'];
         } else {
             // Have a GC balance, but not enough to pay the entire order because
             // some items can't be paid by GC. Same checkbox as above but with
             // a different text message.
             $by_gc = min($gc_bal, $gc_can_apply);
-            $radio = '<input type="checkbox" name="by_gc" value="' . $by_gc .
-                '" checked="checked" />&nbsp;';
-            $radio .= sprintf($LANG_SHOP['use_gc_part'],
-                    Currency::getInstance()->Format($by_gc),
-                    Currency::getInstance()->Format($gc_bal));
-            if ($gc_can_apply < $total) {
-                $radio .= '<br /><div class="ppNoGCMsg">' . $LANG_SHOP['some_gc_disallowed'] . '</div>';
-            }
         }
-        return $radio;
+        return $retval;
     }
 
 
@@ -129,6 +132,7 @@ class _coupon extends \Shop\Gateway
     public function gatewayVars($cart)
     {
         global $_USER;
+        return '';
 
         // Add custom info for the internal ipn processor
         $cust = $cart->custom_info;
@@ -143,8 +147,8 @@ class _coupon extends \Shop\Gateway
             '<input type="hidden" name="custom" value=\'' . @serialize($cust) . '\' />',
             '<input type="hidden" name="payment_status" value="Completed" />',
         );
-        $cart->setGC($cart->getInfo('final_total'));
-        $cart->Save();
+        //$cart->setGC($cart->getInfo('final_total'));
+        //$cart->Save();
         if (COM_isAnonUser()) {
             //$T->set_var('need_email', true);
         } else {
@@ -167,5 +171,3 @@ class _coupon extends \Shop\Gateway
     }
 
 }
-
-?>

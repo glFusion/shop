@@ -40,6 +40,9 @@ class check extends \Shop\Gateway
             'checkout'  => 1,
         );
 
+        // Only out-of-band payments are accpeted.
+        $this->can_pay_online = 0;
+
         // The parent constructor reads our config items from the database to
         // override defaults
         parent::__construct($A);

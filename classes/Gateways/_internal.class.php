@@ -29,7 +29,7 @@ class _internal extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name  = '_internal';
         $this->gw_desc  = 'Internal Payment Gateway';
-        $this->gw_url   = SHOP_URL . '/ipn/internal.php';
+        //$this->gw_url   = SHOP_URL . '/ipn/internal.php';
 
         // This gateway can service all button type by default
         $this->services = array(
