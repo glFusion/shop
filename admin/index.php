@@ -103,7 +103,7 @@ case 'statcomment':         // update comment and status
             $Ord->Notify($newstatus, $comment, $notify, false);
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
+    COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $order_id);
     break;
 
 case 'prod_clone':
@@ -1126,6 +1126,7 @@ case 'newpayment':
     break;
 
 case 'products':
+    SHOP_setUrl();
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
     break;

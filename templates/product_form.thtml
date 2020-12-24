@@ -13,6 +13,8 @@
   <input type="hidden" name="nonce" value="{nonce}" />
   <input type="hidden" id="imgorder" name="imgorder" value="{imgorder}" />
   <input type="hidden" id="imgdelete" name="imgdelete" value="" />
+  <input type="hidden" name="return" value="{ret_url}" />
+
   <ul id="tabs" class="uk-tab" data-uk-switcher="{connect:'#product-form',swiping:false}">
     <li id="tab-general" {tabactive_general}><a href="#">{$LANG_SHOP['product_info']}</a></li>
     <li id="tab-images" {tabactive_images}><a href="#">{$LANG_SHOP['images']}</a></li>

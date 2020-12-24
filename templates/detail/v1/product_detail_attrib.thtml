@@ -3,7 +3,7 @@
 <div style="margin=-top:10px;clear:both;"></div>
 {!if can_edit}
 <div class="floatright">
-  <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}&from={from_url}">
+  <a href="{pi_admin_url}/index.php?return=detail&editproduct=x&amp;id={id}&from={from_url}">
     <i class="uk-icon uk-icon-pencil uk-icon-small"></i>
   </a>
 </div>
