@@ -4,9 +4,14 @@
 <!-- BEGIN Radios -->
     <div class="uk-grid workflow_option">
         <div class="uk-width-1-10">
+{!!if {opt_type} == "checkbox" !!}
+            <input type="checkbox" name="{opt_name}" value="{opt_value}" id="gw_{gw_id}" {sel}
+                onchange="SHOP_setCoupon(this);" />
+{!else}
             <input required type="radio" name="gateway" value="{gw_id}"
                 id="gw_{gw_id}" {sel}
                 onclick="SHOP_setGateway('{gw_id}');" />
+{!endif}
         </div>
         <div class="uk-width-9-10">
             <label for="gw_{gw_id}" style="width:100%;display:inline-block;">{logo}</label>
@@ -19,7 +24,8 @@
 function SHOP_setGateway(gw_id)
 {
     var dataS = {
-        "gw_id": gw_id
+        "gw_id": gw_id,
+//        "unset_gc": {have_full_coupon},
     };
     data = $.param(dataS);
 
@@ -27,6 +33,24 @@ function SHOP_setGateway(gw_id)
         type: "POST",
         dataType: "json",
         url: glfusionSiteUrl + "/shop/ajax.php?action=setGW",
+        data: data,
+        success: function(result) {
+        }
+    });
+    return false;
+}
+function SHOP_setCoupon(elem)
+{
+    var dataS = {
+        "checked": elem.checked,
+        "amount": elem.value,
+    };
+    data = $.param(dataS);
+
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=setGCamt",
         data: data,
         success: function(result) {
         }
