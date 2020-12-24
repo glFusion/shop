@@ -13,6 +13,7 @@
  */
 namespace Shop\ipn;
 use Shop\Cart;
+use Shop\Gateway;
 use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 
@@ -38,11 +39,15 @@ class stripe extends \Shop\IPN
      * @var object */
     private $_payment;
 
+    /** Override the IPN filename, Stripe needs further processing for now.
+     * @var string */
+    protected $ipn_filename = 'stripe.php';
+
 
     /**
      * Constructor.
      *
-     * @param   string  $A      Payload provided by Stripe
+     * @param   array   $A  Payload provided by Stripe
      */
     function __construct($A=array())
     {
@@ -51,11 +56,35 @@ class stripe extends \Shop\IPN
         $this->gw_id = 'stripe';
         parent::__construct();  // construct without IPN data.
 
-        if (empty($A)) {
+        // Instantiate the gateway to load the needed API key.
+        $GW = Gateway::getInstance('stripe');
+        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+        $payload = @file_get_contents('php://input');
+        SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
+        $event = null;
+
+        try {
+            \Stripe\Stripe::setApiKey($GW->getSecretKey());
+            $event = \Stripe\Webhook::constructEvent(
+                $payload, $sig_header, $GW->getWebhookSecret()
+            );
+        } catch(\UnexpectedValueException $e) {
+            // Invalid payload
+            SHOP_log("Unexpected Value received from Stripe");
+            http_response_code(400); // PHP 5.4 or greater
+            exit;
+        } catch(\Stripe\Error\SignatureVerification $e) {
+            // Invalid signature
+            SHOP_log("Invalid Stripe signature received");
+            http_response_code(400); // PHP 5.4 or greater
+            exit;
+        }
+
+        if (empty($event)) {
             return;
         }
 
-        $this->_event = $A;        
+        $this->_event = $event;
         $session = $this->_event->data->object;
         $order_id = $session->client_reference_id;
         $this->ipn_data['order_id'] = $order_id;
@@ -98,7 +127,7 @@ class stripe extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         // Get the payment intent from Stripe
         $trans = $this->GW->getPayment($this->getTxnId());
@@ -147,13 +176,11 @@ class stripe extends \Shop\IPN
      * Process an incoming IPN transaction.
      * Do the following:
      *  - Verify IPN
-     *  - Log IPN
      *  - Check that transaction is complete
      *  - Check that transaction is unique
      *  - Check for valid receiver email address
      *  - Process IPN
      *
-     * @uses   IPN::AddItem()
      * @uses   IPN::handleFailure()
      * @uses   IPN::handlePurchase()
      * @uses   IPN::isUniqueTxnId()
@@ -164,6 +191,11 @@ class stripe extends \Shop\IPN
      */
     public function Process()
     {
+        // Handle the checkout.session.completed event
+        if ($this->_event->type != 'checkout.session.completed') {
+            return false;
+        }
+
         // Backward compatibility, get custom data into IPN for plugin
         // products.
         $this->ipn_data['custom'] = $this->custom;
@@ -192,5 +224,3 @@ class stripe extends \Shop\IPN
     }
 
 }
-
-?>

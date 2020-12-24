@@ -569,6 +569,7 @@ class IPN
         case OrderState::PAID:
         case OrderState::REFUNDED:
         case OrderState::CLOSED:
+        case OrderState::CANCELED;
             $this->status = $status;
             break;
         default:
@@ -693,7 +694,11 @@ class IPN
         }
 
         // Count purchases with txn_id, if > 0
-        $count = DB_count($_TABLES['shop.ipnlog'], 'txn_id', $this->txn_id);
+        $count = DB_count(
+            $_TABLES['shop.ipnlog'],
+            array('gateway', 'txn_id', 'event'),
+            array($this->GW->getName(), $this->txn_id, $this->event)
+        );
         if ($count > 0) {
             SHOP_log("Received duplicate IPN {$this->txn_id} for {$this->gw_id}", SHOP_LOG_ERROR);
             return false;
@@ -821,28 +826,15 @@ class IPN
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
             }
-            /*if ($this->pmt_gross > 0) {
-                $this->Order->Log(sprintf(
-                    $LANG_SHOP['amt_paid_gw'],
-                    $this->pmt_gross,
-                    $this->GW->getDisplayName()
-                ));
-            }*/
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;
         }
 
-        $this->recordPayment();     // Also updates order status
-        if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
-            // If this paid order has only downloadable items, them mark
-            // it closed since there's no further action needed.
-            // Notification should have been done above, set notify to false to
-            // avoid duplicates.
-            $this->setStatus(OrderState::CLOSED);
-        }
+        $this->recordPayment();
+        $this->Order->updatePmtStatus();
         return true;
-    }  // function handlePurchase
+    }
 
 
     /**
@@ -885,8 +877,6 @@ class IPN
             ) {
                 return 1; // shouldn't normally be empty except during testing
             }
-        //} else {
-        //    $this->Cart = NULL;
         }
 
         $this->Order->setUID($this->uid);
@@ -901,31 +891,9 @@ class IPN
         // if any.  There may not be a cart in the database if it was
         // removed by a previous IPN, e.g. this is the 'completed' message
         // and we already processed a 'pending' message
-        $BillTo = '';
-        /*if ($this->Cart) {
-            $BillTo = $this->Cart->getAddress('billto');
-            $this->Order->instructions = $this->Cart->getInstructions();
-        }
-        if (empty($BillTo) && $this->uid > 1) {
-            $BillTo = $U->getDefaultAddress('billto');
-            $this->Order->setBillto($BillTo);
-        }*/
-
         $ShipTo = $this->shipto;
         if (!empty($ShipTo)) {
             $this->Order->setShipto($ShipTo);
-        }
-        /*    if ($this->Order) {
-                $ShipTo = $this->Order->getAddress('shipto');
-            }
-            if (empty($ShipTo) && $this->uid > 1) {
-                $ShipTo = $U->getDefaultAddress('shipto');
-                $this->Order->setShipto($ShipTo);
-            }
-    }*/
-        if (isset($this->shipto['phone'])) {
-            // override the phone number if one came in the IPN.
-            $this->Order->setPhone($this->shipto['phone']);
         }
 
         // We're creating an order based on a single IPON message,
@@ -937,7 +905,6 @@ class IPN
             ->setBuyerEmail($this->payer_email)
             ->setLogUser($this->GW->getDscp());
 
-        //$this->Order->items = array();
         foreach ($this->items as $id=>$item) {
             $options = DB_escapeString($item['options']);
             $option_desc = array();
@@ -1238,7 +1205,7 @@ class IPN
             $order_id = $this->order_id;
         }
         $this->Order = Order::getInstance($order_id);
-        $this->addCredit('gc', $this->getCurrency()->RoundUp($this->Order->getInfo('apply_gc')));
+        $this->addCredit('gc', $this->getCurrency()->RoundUp($this->Order->getGC()));
         return $this->Order;
     }
 
@@ -1312,6 +1279,61 @@ class IPN
         return $Pmt->Save();
     }
 
-}   // class IPN
 
-?>
+    /**
+     * Verify that the webhook message is valid and can be processed.
+     * This stub function always returns true, derived classes should test
+     * the actual IPN message.
+     *
+     * @return  boolean     True if valid, False if not.
+     */
+    public function Verify()
+    {
+        return true;
+    }
+
+
+    /**
+     * Set the event type, e.g. payment, cancelled, etc.
+     * This is logged in the ipnlog table and used to help check for duplicate
+     * messages.
+     *
+     * @param   string  $event  Event type supplied by the IPN message
+     * @return  object  $this
+     */
+    public function setEvent($event)
+    {
+        $this->event = $event;
+        return $this;
+    }
+
+
+    /**
+     * Get the actual event code sent by the gateway.
+     *
+     * @return  string      Event code
+     */
+    public function getEvent()
+    {
+        return $this->event;
+    }
+
+
+    /**
+     * Echo a response to the IPN request based on the status from Process().
+     *
+     * @param   boolean $status     Result from processing
+     * @return  void
+     */
+    public function Response($status)
+    {
+        echo "Thanks";
+        exit;
+        /*if ($status) {
+            echo COM_refresh(SHOP_URL . '/index.php?thanks=' . $this->gw_id);
+        } else {
+            echo COM_refresh(SHOP_URL . '/index.php?msg=8');
+        }*/
+    }
+
+}

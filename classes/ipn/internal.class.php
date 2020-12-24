@@ -35,7 +35,7 @@ class internal extends \Shop\IPN
 {
     /** Indicate if this is "buy_now" or "cart".
      * @var string */
-    private $ipn_type;
+    protected $ipn_type;
 
 
     /**
@@ -44,11 +44,12 @@ class internal extends \Shop\IPN
      *
      * @param   array   $A      $_POST'd variables from Shop
      */
-    function __construct($A=array())
+    public function __construct($A=array())
     {
         global $_USER;
 
         $this->gw_id = '_internal';
+        $A = $_POST;
         parent::__construct($A);
 
         // Set the custom data into an array. If it can't be unserialized,
@@ -92,7 +93,7 @@ class internal extends \Shop\IPN
      *
      * @return  boolean         True if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         switch($this->ipn_type) {
         case 'cart':

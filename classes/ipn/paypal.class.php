@@ -44,6 +44,7 @@ class paypal extends \Shop\IPN
     function __construct($A=array())
     {
         $this->gw_id = 'paypal';
+        $A = $_POST;
         parent::__construct($A);
 
         $this
@@ -120,7 +121,7 @@ class paypal extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {

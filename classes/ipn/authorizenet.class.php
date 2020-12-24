@@ -32,6 +32,42 @@ class authorizenet extends \Shop\IPN
     function __construct($A=array())
     {
         $this->gw_id = 'authorizenet';
+        if (empty($_POST)) {
+            // Received a webhook, a single parameter string
+            $json = file_get_contents('php://input');
+            SHOP_log("WEBHOOK: $json", SHOP_LOG_DEBUG);
+            $A = json_decode($json,true);
+        } elseif (isset($_POST['shop_test_ipn'])) {
+            // Received POST, testing only. Must already be complete
+            $A  = $_POST;
+            SHOP_log("TEST: " . var_export($post,true), SHOP_LOG_DEBUG);
+        } else {
+            // Received a Silent URL post. Convert to webhook format.
+            SHOP_log("Silent URL: " . var_export($_POST,true), SHOP_LOG_DEBUG);
+            switch (SHOP_getVar($_POST, 'x_type')) {
+            case 'auth_capture':
+                $eventtype = 'net.authorize.payment.authcapture.created';
+                break;
+            default:
+                $eventtype = 'undefined';
+                break;
+            }
+            $A = array(
+                'notificationId'    => 'unused',
+                'eventtype'     => $eventtype,
+                'eventDate'     => date('Y-m-d\TH:i:s\Z'),
+                'webhookId'     => 'unused',
+                'payload'       => array(
+                    'responseCode'  => SHOP_getVar($_POST, 'x_response_code', 'integer'),
+                    'authCode'  => SHOP_getVar($_POST, 'x_auth_code'),
+                    'avsResponse'   => SHOP_getVar($_POST, 'x_avs_code'),
+                    'authAmount'    => SHOP_getVar($_POST, 'x_amount', 'float'),
+                    'entityName'    => 'transaction',
+                    'id'        => SHOP_getVar($_POST, 'x_trans_id'),
+                ),
+            );
+        }
+
         parent::__construct($A);
 
         // Get the needed values from the Webhook payload
@@ -93,7 +129,7 @@ class authorizenet extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         if (isset($this->ipn_data['shop_test_ipn'])) {
             // Use the order ID provided in the constructor to get the order

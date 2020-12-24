@@ -30,10 +30,11 @@ class square extends \Shop\IPN
      *
      * @param   array   $A      $_POST'd variables from Shop
      */
-    function __construct($A=array())
+    public function __construct()
     {
         global $_USER, $_CONF;
 
+        $A = $_GET;
         $this->gw_id = 'square';
         parent::__construct($A);
 
@@ -86,6 +87,16 @@ class square extends \Shop\IPN
     }
 
 
+    public static function create()
+    {
+        // Get the complete IPN message prior to any processing
+        SHOP_log('Recieved Square IPN: ' . var_export($_GET, true), SHOP_LOG_DEBUG);
+
+        // Process IPN request
+        $ipn = new self($_GET);
+    }
+
+
     /**
      * Verify the transaction.
      * Checks that a valid, unique transaction was received and checks the
@@ -93,7 +104,7 @@ class square extends \Shop\IPN
      *
      * @return  boolean     True if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {
@@ -197,8 +208,22 @@ class square extends \Shop\IPN
             $logId = $this->Log(true);
         }
         return $this->handlePurchase();
-    }   // function Process
+    }
+
+
+    /**
+     * Echo a response to the IPN request based on the status from Process().
+     *
+     * @param   boolean $status     Result from processing
+     * @return  void
+     */
+    public function Response($status)
+    {
+        if ($status) {
+            echo COM_refresh(SHOP_URL . '/index.php?thanks=' . $this->gw_id);
+        } else {
+            echo COM_refresh(SHOP_URL . '/index.php?msg=8');
+        }
+    }
 
 }
-
-?>

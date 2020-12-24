@@ -14,41 +14,12 @@
 
 require_once '../../lib-common.php';
 
-// Instantiate the gateway to load the needed API key.
-$GW = Shop\Gateway::getInstance('stripe');
-$sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-$payload = @file_get_contents('php://input');
-SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
-$event = null;
-
-try {
-    \Stripe\Stripe::setApiKey($GW->getSecretKey());
-    $event = \Stripe\Webhook::constructEvent(
-        $payload, $sig_header, $GW->getWebhookSecret()
-    );
-} catch(\UnexpectedValueException $e) {
-    // Invalid payload
-    SHOP_log("Unexpected Value received from Stripe");
-    http_response_code(400); // PHP 5.4 or greater
-    exit;
-} catch(\Stripe\Error\SignatureVerification $e) {
-    // Invalid signature
-    SHOP_log("Invalid Stripe signature received");
-    http_response_code(400); // PHP 5.4 or greater
-    exit;
+$ipn = \Shop\IPN::getInstance('stripe');
+if ($ipn) {
+    $ipn->Process();
+} else {
+    SHOP_log('Stripe IPN processor not found');
 }
-
-// Handle the checkout.session.completed event
-if ($event->type == 'checkout.session.completed') {
-    // Fulfill the purchase...
-    $ipn = \Shop\IPN::getInstance('stripe', $event);
-    if ($ipn) {
-        $ipn->Process();
-    } else {
-        SHOP_log('Stripe IPN processor not found');
-    }
-}
-
-http_response_code(200); // PHP 5.4 or greater
+http_response_code(200);
 
 ?>
