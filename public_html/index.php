@@ -226,7 +226,7 @@ case 'thanks':
             }
         }
     }
-    $Cart = Shop\Cart::getInstance();   // generate a new cart
+    //$Cart = Shop\Cart::getInstance();   // generate a new cart
     $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
     $view = 'products';
     break;

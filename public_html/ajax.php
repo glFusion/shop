@@ -51,8 +51,24 @@ case 'setShipper':
     );
     break;
 
+case 'setGCamt':
+    $is_checked = SHOP_getVar($_POST, 'checked', 'string');
+    $Cart = Shop\Cart::getInstance();
+    if ($is_checked == 'true') {
+        $amount = SHOP_getVar($_POST, 'amount', 'float');
+        $Cart->setByGC($amount);
+    } else {
+        $Cart->setByGC(0);
+    }
+    $Cart->Save(false);
+    $output = array(
+        'status' => true,
+    );
+    break;
+
 case 'setGW':
     $gw_id = SHOP_getVar($_POST, 'gw_id');
+    $unset_gc = SHOP_getVar($_POST, 'unset_gc', 'bool');
     $Cart = Shop\Cart::getInstance();
     $Cart->setGateway($gw_id);
     $Cart->Save(false);
@@ -68,14 +84,10 @@ case 'getAddress':
     break;
 
 case 'cartaddone':
-    COM_errorLog(print_r($_POST,true));
-    COM_errorLog("retrieving " . $_POST['oi_id']);
     $OI = Shop\OrderItem::getInstance($_POST['oi_id']);
     if ($OI->getID() == $_POST['oi_id']) {
         $qty = $OI->getQuantity();
-        COM_errorLog("starting quantity: $qty");
         $OI->setQuantity($qty + (int)$_POST['qty']);
-        COM_errorLog("new qty: " . $OI->getQuantity());
         $OI->Save();
         $Order = $OI->getOrder();
         $Order->Load();
@@ -180,16 +192,15 @@ case 'setShipper':
 
 case 'finalizecart':
     $cart_id = SHOP_getVar($_POST, 'cart_id');
-    $Cart = Shop\Cart::getInstance($cart_id, 0);
+    $Order = Shop\Order::getInstance($cart_id, 0);
     $status_msg = '';
-    if ($Cart->isNew()) {
-        $status_msg = 'Cart not found';
-    }
-    $status = Shop\Gateway::getInstance($Cart->getPmtMethod())
-        ->processOrder($cart_id);
-    if (!$status) {
-        // If no action taken by the gateway, set the cart status normally.
-        $Cart->setFinal();
+    $status = false;
+    if (!$Order->isNew()) {
+        $status = Shop\Gateway::getInstance($Order->getPmtMethod())
+            ->processOrder($cart_id);
+        if (!$status) {
+            $Order->setFinal();
+        }
     }
     $output = array(
         'status' => $status,
