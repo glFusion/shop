@@ -26,6 +26,8 @@ Release TBD
   * Zone rules can be applied to categories as well as products.
   * Remove unnecessary `cache_max_age` setting for blocks.
   * Add button to reset multiple products' ratings.
+  * Add Paylike payment processor.
+  * Add Coingate crypto-currency payment processor.
 
 ## v1.2.1
 Release 2020-03-02
