@@ -17,8 +17,15 @@
 /** Import core glFusion functions */
 require_once '../lib-common.php';
 
-// Get the order and make sure it's valid. Also it must not be "final"
-$order_id = SHOP_getVar($_POST, 'order_id');
+// Get the order and make sure it's valid. Also it must not be "final".
+if (isset($_POST['order_id'])) {
+    $order_id = $_POST['order_id'];
+} elseif (isset($_GET['order_id'])) {
+    $order_id = $_GET['order_id'];
+} else {
+    $order_id = '';
+}
+
 if (!empty($order_id)) {
     $Order = Shop\Order::getInstance($order_id);
     if (!$Order->isNew()) {
