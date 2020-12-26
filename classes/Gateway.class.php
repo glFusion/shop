@@ -2052,12 +2052,11 @@ class Gateway
         }
         @unlink($Finalfilename);
 
-        // Copy the extracted upload into the Gateways class directory.
         if (!$dh = @opendir($tmp_path)) {
             COM_errorLog("Failed to open $tmp_path");
             return false;
         }
-        $upl_path = '';
+        $upl_path = $tmp_path;
         while (false !== ($file = readdir($dh))) {
             if ($file == '..' || $file == '.') {
                 continue;
@@ -2073,8 +2072,18 @@ class Gateway
             return false;
         }
 
-        $fs = new FileSystem;
-        $fs->dirCopy($upl_path, SHOP_PI_PATH . '/classes/Gateways');
+        // Copy the extracted upload into the Gateways class directory.
+        if (is_file($upl_path . '/gateway.json')) {
+            $json = @file_get_contents($upl_path . '/gateway.json');
+            if ($json) {
+                $json = @json_decode($json, true);
+                if ($json) {
+                    $gw_name = $json['name'];
+                    $fs = new FileSystem;
+                    $fs->dirCopy($upl_path, SHOP_PI_PATH . '/classes/Gateways/' . $gw_name);
+                }
+            }
+        }
         return empty($fs->getErrors()) ? true : false;
     }
 
