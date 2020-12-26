@@ -290,11 +290,16 @@ div.shopProductListOuter {
     /*height: 30px;*/
 }
 
+li.shopListItemBlock a {
+    text-decoration: none;
+}
+
 .shopProductListItemUrl2 div.ratingbar,
 .shopRatingBar {
   /*position: relative;*/
   bottom: 0;
   margin-bottom: 4px;
+  text-decoration: none;
 }
 
 .shopRatingBar.list.v1 {
@@ -618,7 +623,7 @@ div.ItemOptions {
 .shopPrice.sale,
 .shopQtyDisc
 {
-    color: #FF0000;
+    color: #E33;
     font-size:150%;
     font-style:italic;
 }
@@ -886,7 +891,7 @@ ul.product-flags {
 }
 ul.product-flags li {
     /*background: #f39d72;*/
-    background: red;
+    background: #E33;
     color: white;
     width: 100%;
     text-align: center;
