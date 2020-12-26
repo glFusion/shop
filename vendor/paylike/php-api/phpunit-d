@@ -1,3 +1,0 @@
-export XDEBUG_CONFIG="idekey=phpstorm-xdebug";
-vendor/bin/phpunit $@
-

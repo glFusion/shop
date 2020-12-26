@@ -7,7 +7,7 @@
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -26,7 +26,7 @@ class paylike extends \Shop\IPN
     /** Transaction data holder.
      * @var object */
     private $txn = NULL;
-i
+
 
     /**
      * Constructor.

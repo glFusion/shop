@@ -595,7 +595,7 @@ class Gateway
 
     /**
      * Load a gateway's language file.
-     * The language variable should be $LANG_SHOP_<gwname> and should be
+     * The language variable should be $LANG_SHOP_gateway and should be
      * declared "global" in the language file.
      *
      * @return  object  $this
@@ -605,14 +605,17 @@ class Gateway
         global $_CONF;
 
         $this->lang = array();
-        $langfile = $this->gw_name . '_' . $_CONF['language'] . '.php';
-        if (!is_file(__DIR__ . '/Gateways/language/' . $langfile)) {
-            $langfile = $this->gw_name . '_english_utf-8.php';
-        }
-        if (is_file(__DIR__ . '/Gateways/language/' . $langfile)) {
-            include __DIR__ . '/Gateways/language/' . $langfile;
-            if (isset($LANG_SHOP_gateway) && is_array($LANG_SHOP_gateway)) {
-                $this->lang = $LANG_SHOP_gateway;
+        $langfile = $_CONF['language'] . '.php';
+        $langpath = __DIR__ . '/Gateways/' . $this->gw_name . '/language/';
+        if (is_dir($langpath)) {    // some gateways may not have language files.
+            if (!is_file($langpath . $langfile)) {
+                $langfile = 'english_utf-8.php';
+            }
+            if (is_file($langpath . $langfile)) {
+                include $langpath . $langfile;
+                if (isset($LANG_SHOP_gateway) && is_array($LANG_SHOP_gateway)) {
+                    $this->lang = $LANG_SHOP_gateway;
+                }
             }
         }
         return $this;
@@ -625,10 +628,12 @@ class Gateway
      * @param   string  $key    Language string key
      * @return  string      Language string, or key value if not defined
      */
-    protected function getLang($key)
+    protected function getLang($key, $default=NULL)
     {
         if (is_array($this->lang) && array_key_exists($key, $this->lang)) {
             return $this->lang[$key];
+        } elseif ($default !== NULL) {
+            return $default;
         } else {
             return $key;
         }
@@ -921,6 +926,37 @@ class Gateway
 
 
     /**
+     * Get the logo files for light and dark themes.
+     * Gateway classes may override this if necessary.
+     *
+     * @return  array   Array of image file paths
+     */
+    protected function getLogoFile()
+    {
+        global $_SYSTEM;
+
+        $path = __DIR__ . '/Gateways/' . $this->gw_name . '/images/';
+        $default = $path . $this->gw_name . '.png';
+        if (!is_file($default)) {
+            $default = '';
+        }
+        if (
+            isset($_SYSTEM['theme_hue']) &&
+            $_SYSTEM['theme_hue'] == 'dark'
+        ) {
+            $retval = $path . '/' . $this->gw_name . '_dark.png';
+        } else {
+            $retval = $path . '/' . $this->gw_name . '_light.png';
+        }
+
+        if (!is_file($retval)) {
+            $retval = $default;
+        }
+        return $retval;
+    }
+
+
+    /**
      * Get the URL to a logo image for this gateway.
      * Returns the description by default.
      *
@@ -928,7 +964,30 @@ class Gateway
      */
     public function getLogo()
     {
-        return $this->gw_desc;
+        global $_CONF;
+
+        $width = 240;
+        $height = 40;
+        $srcImage = $this->getLogoFile();
+        $tag = $this->gw_desc;  // default if no image or resizing fails
+        if (!empty($srcImage ) && is_file($srcImage)) {
+            $destPath = $_CONF['path_html'] . '/shop/images/gateways/';
+            $L = new Logo;
+            $L->withImage($srcImage)
+              ->withDestPath($destPath)
+              ->reSize($width, $height);
+            if ($L->isValid()) {
+                $tag = COM_createImage(
+                    $_CONF['site_url'] . '/shop/images/gateways/' . $L->getFilename(),
+                    $this->gw_desc,
+                    array(
+                        'width' => $L->getDestWidth(),
+                        'height' => $L->getDestHeight(),
+                    )
+                );
+            }
+        }
+        return $tag;
     }
 
 
@@ -1122,6 +1181,7 @@ class Gateway
                     'field_name'    => $name,
                     'param_field'   => $field['param_field'],
                     'other_label'   => isset($field['other_label']) ? $field['other_label'] : '',
+                    'hlp_text'      => $this->getLang('hlp_' . $name, ''),
                 ) );
                 $T->parse('Row' . $env, $env . 'Row', true);
             }
@@ -1191,6 +1251,25 @@ class Gateway
 
 
     /**
+     * Create an instance of a gateway.
+     * This function takes no variables and ignores the `enabled` state.
+     *
+     * @param   string  $gw_name    Gateway name
+     * @return  object      Gateway object
+     */
+    public static function create($gw_name)
+    {
+        $cls = __NAMESPACE__ . "\\Gateways\\{$gw_name}\\{$gw_name}";
+        if (class_exists($cls)) {
+            $gw = new $cls;
+        } else {
+            $gw = NULL;
+        }
+        return $gw;
+    }
+
+
+    /**
      * Get an instance of a gateway.
      * Supports reading multiple gateways, but only one is normally needed.
      *
@@ -1245,7 +1324,7 @@ class Gateway
         // to the static array. Check that a valid object is
         // returned from getInstance()
         foreach ($tmp as $A) {
-            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'];
+            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'] . '\\' . $A['id'];
             if (class_exists($cls)) {
                 $gw = new $cls($A);
             } else {
@@ -1416,7 +1495,29 @@ class Gateway
         global $LANG32;
 
         $installed = self::getAll(false);
-        $files = glob(__DIR__ . '/Gateways/*.class.php');
+        $base_path = __DIR__ . '/Gateways';
+        $dirs = scandir($base_path);
+        if (is_array($dirs)) {
+            foreach ($dirs as $dir) {
+                if (
+                    is_dir("{$base_path}/{$dir}") &&
+                    is_file("{$base_path}/{$dir}/{$dir}.class.php") &&
+                    !array_key_exists($dir, $installed)
+                ) {
+                    $clsfile = 'Shop\\Gateways\\' . $dir . '\\' . $dir;
+                    $gw = new $clsfile;
+                    if (is_object($gw)) {
+                        $data_arr[] = array(
+                            'id'    => $gw->getName(),
+                            'description' => $gw->getDscp(),
+                            'enabled' => 'na',
+                            'orderby' => 999,
+                        );
+                    }
+                }
+            }
+        }
+        /*$files = glob(__DIR__ . '/Gateways/*');
         if (is_array($files)) {
             foreach ($files as $fullpath) {
                 $parts = explode('/', $fullpath);
@@ -1436,7 +1537,7 @@ class Gateway
                     );
                 }
             }
-        }
+        }*/
     }
 
 
@@ -1645,7 +1746,14 @@ class Gateway
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/gateways.php?gwadmin',
         );
-
+        $display .= '<form action="' . SHOP_ADMIN_URL . '/gateways.php" method="post" enctype="multipart/form-data">
+		<input placeholder="Selected File" disabled="disabled" />
+		<div class="tm-fileUpload uk-button uk-button-small uk-button-primary">
+			<span>Select File</span>
+			<input type="file" name="gw_file" id="gw_file" class="tm-upload">
+		</div>
+		<button class="uk-button uk-button-success uk-button-small" type="submit" name="gw_upload" value="Upload">Upload</button>
+	</form>';
         $display .= ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_gwlist',
             array(__CLASS__,  'getAdminField'),
@@ -1879,6 +1987,95 @@ class Gateway
     public function canPayOnline()
     {
         return $this->can_pay_online ? 1 : 0;
+    }
+
+
+    /**
+     * Upload the files for a gateway package.
+     */
+    public static function upload()
+    {
+        global $_CONF;
+
+        $retval = '';
+
+        if (
+            count($_FILES) > 0 &&
+            $_FILES['gw_file']['error'] != UPLOAD_ERR_NO_FILE
+        ) {
+            $upload = new UploadDownload();
+            $upload->setMaxFileUploads(1);
+            $upload->setMaxFileSize(25165824);
+            $upload->setAllowedMimeTypes(array (
+                'application/x-gzip'=> array('.gz', '.gzip,tgz'),
+                'application/gzip'=> array('.gz', '.gzip,tgz'),
+                'application/zip'   => array('.zip'),
+                'application/octet-stream' => array(
+                    '.gz' ,'.gzip', '.tgz', '.zip', '.tar', '.tar.gz',
+                ),
+                'application/x-tar' => array('.tar', '.tar.gz', '.gz'),
+                'application/x-gzip-compressed' => array('.tar.gz', '.tgz', '.gz'),
+            ) );
+            $upload->setFieldName('gw_file');
+            if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
+                COM_errorLog("Error setting temp path: " . $upload->printErrors(false));
+            }
+
+            $filename = $_FILES['gw_file']['name'];
+            $upload->setFileNames($filename);
+            $upload->uploadFiles();
+
+            if ($upload->areErrors()) {
+                COM_errorLog("Errors during upload: " . $upload->printErrors());
+                return false;
+            }
+            $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
+        } else {
+            COM_errorLog("No file found to upload");
+            return false;
+        }
+
+        // decompress into temp directory
+        if (function_exists('set_time_limit')) {
+            @set_time_limit( 60 );
+        }
+        $tmp = FileSystem::mkTmpDir();
+        if ($tmp === false) {
+            COM_errorLog("Failed to create temp directory");
+            return false;
+        }
+        $tmp_path = $_CONF['path_data'] . $tmp;
+        if (!COM_decompress($Finalfilename, $tmp_path)) {
+            COM_errorLog("Failed to decompress $Finalfilename into $tmp_path");
+            FileSystem::deleteDir($tmp_path);
+            return false;
+        }
+        @unlink($Finalfilename);
+
+        // Copy the extracted upload into the Gateways class directory.
+        if (!$dh = @opendir($tmp_path)) {
+            COM_errorLog("Failed to open $tmp_path");
+            return false;
+        }
+        $upl_path = '';
+        while (false !== ($file = readdir($dh))) {
+            if ($file == '..' || $file == '.') {
+                continue;
+            }
+            if (@is_dir($tmp_path . '/' . $file)) {
+                $upl_path = $tmp_path . '/' . $file;
+                break;
+            }
+        }
+        closedir($dh);
+        if (empty($upl_path)) {
+            COM_errorLog("Could not find upload path under $tmp_path");
+            return false;
+        }
+
+        $fs = new FileSystem;
+        $fs->dirCopy($upl_path, SHOP_PI_PATH . '/classes/Gateways');
+        return empty($fs->getErrors()) ? true : false;
     }
 
 }

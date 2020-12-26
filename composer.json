@@ -1,6 +1,0 @@
-{
-    "require": {
-        "stripe/stripe-php": "^7.65",
-        "square/square": "^6.1.0.20200722"
-    }
-}

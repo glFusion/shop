@@ -794,6 +794,10 @@ EstimatedSpecialRate,RiskLevel</pre>',
 'suppliers' => 'Suppliers and Brands can be specified for products. Suppliers are used for the re-order report while Brands are shown to the buyers and allow searching by brand name.',
 'features' => 'Features are static items that you wish to highlight for a product, such as Material or Finish. Features apply to all variatiosn of a product and are not selectable by the buyer.<br />Create and edit feature sets here, then apply the appropriate features with specific values to the Products.',
 'coupons' => 'Coupons or Gift Cards can be sent to buyers or buyer groups as loyalty rewards. Coupons are applied to the buyer&apos;s balance and can be used for later purchases.',
+'gw_enabled' => 'Check this box to indicate that this gateway is enabled for use. If not checked, the  gateway will not be available for checkout.',
+'gw_services' => 'Select the buttons that are supported by this gateway. This is primarily meant to reduce clutter in blocks and product lists, where you may want only one gateway handling immediate purchases. In some cases, a gateway may not be able to handle a type of service, such as donations.',
+'gw_grp_access' => 'Select the glFusion group that is allowed to use this gateway. You may wish to restrict access to some gateways sucn as terms or C.O.D.',
+'gw_order' => 'Enter a number to represent the priority of this gateway (lower number means higher priority).',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
