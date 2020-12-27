@@ -807,7 +807,7 @@ $LANG_SHOP_HELP = array(
 'gw_enabled' => 'Check this box to indicate that this gateway is enabled for use. If not checked, the  gateway will not be available for checkout.' ,
 'gw_services' => 'Select the buttons that are supported by this gateway. This is primarily meant to reduce clutter in blocks and product lists, where you may want only one gateway handling immediate purchases. In some cases, a gateway may not be able to handle a type of service, such as donations.',
 'gw_grp_access' => 'Select the glFusion group that is allowed to use this gateway. You may wish to restrict access to some gateways sucn as terms or C.O.D.',
-'gw_order' => 'Enter a number to represent the priority of this gateway (lower number means higher priority).',
+'gw_order' => 'Enter a number to represent the order in which this gateway will appear in the payment options list (lower number means higher).',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
