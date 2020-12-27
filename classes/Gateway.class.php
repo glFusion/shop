@@ -1259,7 +1259,7 @@ class Gateway
      */
     public static function create($gw_name)
     {
-        $cls = __NAMESPACE__ . "\\Gateways\\{$gw_name}\\{$gw_name}";
+        $cls = __NAMESPACE__ . "\\Gateways\\{$gw_name}\\Gateway";
         if (class_exists($cls)) {
             $gw = new $cls;
         } else {
@@ -1469,6 +1469,7 @@ class Gateway
 
     /**
      * Get additional javascript to be attached to the checkout button.
+     * The default is to finalize the cart via AJAX.
      *
      * @param   object  $cart   Shopping cart object
      * @return  string  Javascript commands.
@@ -1500,11 +1501,12 @@ class Gateway
         if (is_array($dirs)) {
             foreach ($dirs as $dir) {
                 if (
+                    $dir !== '.' && $dir != '..' &&
                     is_dir("{$base_path}/{$dir}") &&
-                    is_file("{$base_path}/{$dir}/{$dir}.class.php") &&
+                    is_file("{$base_path}/{$dir}/Gateway.class.php") &&
                     !array_key_exists($dir, $installed)
                 ) {
-                    $clsfile = 'Shop\\Gateways\\' . $dir . '\\' . $dir;
+                    $clsfile = 'Shop\\Gateways\\' . $dir . '\\Gateway';
                     $gw = new $clsfile;
                     if (is_object($gw)) {
                         $data_arr[] = array(
@@ -1889,17 +1891,6 @@ class Gateway
         return SHOP_URL . '/index.php?thanks=' . $this->gw_name .
             '/' . $cart_id .
             '/' . $token;
-    }
-
-
-    /**
-     * Check if the gateway supports invoicing. Default is false.
-     *
-     * @return  boolean True if invoicing is supported, False if not.
-     */
-    public function supportsInvoicing()
-    {
-        return false;
     }
 
 
