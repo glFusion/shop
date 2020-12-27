@@ -322,7 +322,7 @@ class Cart extends OrderBaseView
         $gw_sel = $this->Order->getPmtMethod();
         $gateways = Gateway::getAll();
         if ($_SHOP_CONF['gc_enabled']) {
-            $gateways['_coupon'] = new \Shop\Gateways\_coupon;
+            $gateways['_coupon'] = \Shop\Gateway::create('_coupon');
             $gc_bal = \Shop\Products\Coupon::getUserBalance();
             if (empty($gw_sel) && $gc_bal >= $total) {
                 $gw_sel = '_coupon';
