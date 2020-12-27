@@ -21,7 +21,7 @@ use Shop\Currency;
  * Coupon gateway class, just to provide checkout buttons for coupons.
  * @package shop
  */
-class _coupon extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /**
      * Constructor.

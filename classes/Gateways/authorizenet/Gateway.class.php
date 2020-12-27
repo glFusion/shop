@@ -18,7 +18,7 @@ namespace Shop\Gateways\authorizenet;
  * Class for Authorize.Net Hosted Accept payment gateway.
  * @package shop
  */
-class authorizenet extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /** Authorize.net transaction key.
      * @var string */

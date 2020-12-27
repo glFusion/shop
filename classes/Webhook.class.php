@@ -7,7 +7,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
+ * @version     v1.3.0
  * @since       vTBD
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -22,6 +22,13 @@ use Shop\Logger\IPN as logIPN;
  */
 class Webhook
 {
+    const FAILURE_UNKNOWN = 0;
+    const FAILURE_VERIFY = 1;
+    const FAILURE_COMPLETED = 2;
+    const FAILURE_UNIQUE = 3;
+    const FAILURE_EMAIL = 4;
+    const FAILURE_FUNDS = 5;
+
     /** Event type for regular payment notifications.
      * @const string */
     const EV_PAYMENT = 'payment_created';
@@ -69,6 +76,26 @@ class Webhook
     /** Headers sent with the webhook.
      * @var array */
     protected $whHeaders = array();
+
+
+    /**
+     * Instantiate and return a Webhook object.
+     *
+     * @param   string  $name   Gateway name, e.g. shop
+     * @param   array   $blob   Gateway variables to be passed to the IPN
+     * @return  object          IPN handler object
+     */
+    public static function getInstance($name, $blob='')
+    {
+        $cls = __NAMESPACE__ . '\\Gateways\\' . $name . '\\Webhook';
+        if (class_exists($cls)) {
+            return new $cls($blob);
+        } else {
+            SHOP_log("Webhook::getInstance() - $cls doesn't exist");
+            return NULL;
+        }
+        return $ipns[$name];
+    }
 
 
     /**
@@ -353,6 +380,20 @@ class Webhook
         }
     }
 
-}
 
-?>
+    /**
+     * Handle what to do in the event of a purchase/IPN failure.
+     *
+     * This method does some basic failure handling.  For anything more
+     * advanced it is recommend you override this method.
+     *
+     * @param   integer $type   Type of failure that occurred
+     * @param   string  $msg    Failure message
+     */
+    protected function handleFailure($type = self::FAILURE_UNKNOWN, $msg = '')
+    {
+        // Log the failure to glFusion's error log
+        $this->Error($this->gw_id . '-IPN: ' . $msg, 1);
+    }
+
+}

@@ -17,7 +17,7 @@ namespace Shop\Gateways\_internal;
 /**
  * Internal gateway class, just to support zero-balance orders.
  */
-class _internal extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /**
      * Constructor.

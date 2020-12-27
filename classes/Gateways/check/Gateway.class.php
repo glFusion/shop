@@ -20,7 +20,7 @@ use Shop\Template;
  * Class for check payments.
  * @package shop
  */
-class check extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /**
      * Constructor.

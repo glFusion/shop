@@ -25,7 +25,7 @@ use Shop\Template;
  * Class for Paypal payment gateway
  * @package shop
  */
-class paypal extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /** Business e-mail to be used for creating buttons.
      * @var string */

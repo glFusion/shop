@@ -14,14 +14,13 @@
  * @filesource
  */
 namespace Shop\Gateways\terms;
-use Shop\Gateway;
 
 
 /**
  *  Net Terms gateway class.
  *  @package shop
  */
-class terms extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /** Number of days for net terms, default = "Net 30"
      * @var integer */
@@ -194,7 +193,7 @@ class terms extends \Shop\Gateway
         if (empty($gw_name)) {
             return false;           // unconfigured
         }
-        return Gateway::getInstance($gw_name)->createInvoice($Order, $this);
+        return parent::getInstance($gw_name)->createInvoice($Order, $this);
     }
 
 

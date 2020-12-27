@@ -1092,7 +1092,7 @@ class IPN
      */
     public static function getInstance($name, $vars=array())
     {
-        $cls = __NAMESPACE__ . '\\ipn\\' . $name;
+        $cls = __NAMESPACE__ . '\\Gateways\\' . $name . '\\ipn';
         if (class_exists($cls)) {
             return new $cls($vars);
         } else {

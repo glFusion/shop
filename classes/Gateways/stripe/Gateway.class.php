@@ -12,15 +12,15 @@
  * @filesource
  */
 namespace Shop\Gateways\stripe;
-
 use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
 
+
 /**
  *  Coupon gateway class, just to provide checkout buttons for coupons
  */
-class stripe extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /** Active public API Key.
      * @var string */

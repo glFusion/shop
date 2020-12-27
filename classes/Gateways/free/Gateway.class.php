@@ -21,7 +21,7 @@ use Shop\Template;
 /**
  *  Coupon gateway class, just to provide checkout buttons for coupons
  */
-class free extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /**
      * Constructor.

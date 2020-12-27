@@ -31,7 +31,7 @@ use LGLib\NameParser;
  * Class for Square payment gateway.
  * @package shop
  */
-class square extends \Shop\Gateway
+class Gateway extends \Shop\Gateway
 {
     /** Square location value.
      * @var string */
@@ -606,16 +606,10 @@ class square extends \Shop\Gateway
     {
         global $_CONF;
 
-        $Currency = $Order->getCurrency();
-        $Billto = $Order->getBillto();
-        $Shipto = $Order->getShipto();
-        $locationId = $this->loc_id;
-
         $apiClient = $this->_getApiClient();
         $ordersApi = $apiClient->getOrdersApi();
         $order_req = $this->_createOrderRequest($Order);
-
-        $apiResponse = $ordersApi->createOrder($locationId, $order_req);
+        $apiResponse = $ordersApi->createOrder($order_req);
         if ($apiResponse->isSuccess()) {
             $createOrderResponse = $apiResponse->getResult();
         } else {

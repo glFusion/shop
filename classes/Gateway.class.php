@@ -1324,7 +1324,7 @@ class Gateway
         // to the static array. Check that a valid object is
         // returned from getInstance()
         foreach ($tmp as $A) {
-            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'] . '\\' . $A['id'];
+            $cls = __NAMESPACE__ . '\\Gateways\\' . $A['id'] . '\\Gateway';
             if (class_exists($cls)) {
                 $gw = new $cls($A);
             } else {
