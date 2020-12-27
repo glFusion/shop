@@ -101,7 +101,8 @@ class Webhook extends \Shop\Webhook
             SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
             $Order = Order::getInstance($this->getOrderID());
             if (!$Order->isNew()) {
-                $Order->updateStatus(OrderState::INVOICED);
+                $terms_gw = \Shop\Gateway::create($Order->getPmtMethod());
+                $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
             }
             break;
 

@@ -14,6 +14,7 @@
  * @filesource
  */
 namespace Shop\Gateways\terms;
+use Shop\Models\OrderState;
 
 
 /**
@@ -53,6 +54,7 @@ class Gateway extends \Shop\Gateway
             'global' => array(
                 'gateway'   => '',
                 'net_days'  => 30,
+                'after_inv_status' => OrderState::PROCESSING,
             ),
         );
         $this->cfgFields= array(
@@ -70,46 +72,20 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Check if the current gateway supports a specific button type.
-     * This gateway always supports "checkout" if it's enabled.
-     *
-     * @uses    self::Supports()
-     * @param   string  $btn_type   Button type to check
-     * @return  boolean             True if the button is supported
-     */
-    protected function X_Supports($btn_type)
-    {
-        $arr_parms = array(
-            'enabled' => $this->enabled,
-            'services' => array('checkout'),
-        );
-        return self::Supports($btn_type, $arr_parms);
-    }
-
-
-    /**
      *  Get the form variables for this checkout button.
      *  Used if the entire order is being paid by the gift card balance.
      *
      *  @param  object  $cart   Shopping cart
      *  @return string          HTML for input vars
      */
-    public function gatewayVars($cart)
+    public function gatewayVars($Cart)
     {
         global $_USER;
 
         // Add custom info for the internal ipn processor
-        /*$cust = $cart->custom_info;
-        $cust['uid'] = $_USER['uid'];
-        $cust['transtype'] = 'coupon';
-        $cust['cart_id'] = $cart->getOrderID();
-        $cust['token'] = $cart->getToken();*/
-        $pmt_gross = $cart->getTotal();
-        if (isset($cust['by_gc'])) {
-            $pmt_gross -= (float)$cust['by_gc'];
-        }
+        $pmt_gross = $Cart->getTotal();
         $gatewayVars = array(
-            '<input type="hidden" name="order_id" value="' . $cart->getOrderID() . '" />',
+            '<input type="hidden" name="order_id" value="' . $Cart->getOrderID() . '" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
         );
         return implode("\n", $gatewayVars);
@@ -152,6 +128,18 @@ class Gateway extends \Shop\Gateway
                 }
                 $field .= '</select>' . LB;
                 break;
+            case 'after_inv_status':
+                $field = '<select name="' . $name . '[global]">' . LB;
+                foreach (array(
+                    OrderState::INVOICED, OrderState::PROCESSING
+                ) as $status) {
+                    $sel = $status == $this->getConfig($name) ? 'selected="selected"' : '';
+                    $field .= '<option value="' . $status . '" ' . $sel . '>' .
+                        $LANG_SHOP['orderstatus'][$status] . '</option>' . LB;
+                }
+                $field .= '</select>' . LB;
+                break;
+
             default:
                 $field = '<input type="text" name="' . $name . '[global]" value="' .
                     $value . '" size="60" />';
@@ -193,7 +181,8 @@ class Gateway extends \Shop\Gateway
         if (empty($gw_name)) {
             return false;           // unconfigured
         }
-        return parent::getInstance($gw_name)->createInvoice($Order, $this);
+        $status = parent::getInstance($gw_name)->createInvoice($Order, $this);
+        return $status;
     }
 
 
@@ -240,9 +229,27 @@ class Gateway extends \Shop\Gateway
     }
 
 
+    /**
+     * Get the Javascript to include in the checkout button.
+     * The terms gateway doesn't use any, the order is finalized
+     * by the return or webhook from the handling gateway.
+     *
+     * @return  string      Empty string
+     */
     public function getCheckoutJS($cart)
     {
         return '';
+    }
+
+
+    /**
+     * Get the instruction text to show at the top of the gateway config page.
+     *
+     * @return  string      Instructional text
+     */
+    protected function getInstructions()
+    {
+        return $this->getLang('config_instr');
     }
 
 }

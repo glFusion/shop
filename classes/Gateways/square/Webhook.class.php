@@ -37,12 +37,18 @@ class Webhook extends \Shop\Webhook
      */
     public function __construct($blob='')
     {
-        $blob = file_get_contents('php://input');
-
         $this->setSource('square');
-        $this->setHeaders();
+        // Load the payload into the blob property for later use in Verify().
+        if (isset($_POST['headers'])) {
+            $this->blob = base64_decode($_POST['vars']);
+            $this->setHeaders(json_decode(base64_decode($_POST['headers']),true));
+        } else {
+            $this->blob = file_get_contents('php://input');
+            $this->setHeaders(NULL);
+        }
+        SHOP_log('Got Square Webhook: ' . $this->blob, SHOP_LOG_DEBUG);
+        SHOP_log('Got Square Headers: ' . var_export($_SERVER,true), SHOP_LOG_DEBUG);
         $this->setTimestamp();
-        $this->body = $blob;    // Need the original for verification
         $this->setData(json_decode($this->blob, true));
     }
 
@@ -87,7 +93,7 @@ class Webhook extends \Shop\Webhook
                                 $cur_code = SHOP_getVar($total_money, 'currency', 'string', NULL);
                                 $amt_paid = Currency::getInstance($cur_code)->fromInt($amt);
                                 $this->logIPN();
-                                $Pmt = Payment::getInstance($this->getID());
+                                $Pmt = Payment::getByReference($this->getID());
                                 if ($Pmt->getPmtID() == 0) {
                                     $Pmt->setRefID($this->getID())
                                         ->setAmount($amt_paid)
@@ -117,7 +123,7 @@ class Webhook extends \Shop\Webhook
                     return false;
                 }
                 $sqOrder = $GW->getOrder($order_id);
-                COM_errorLog($sqOrder);die;
+                //COM_errorLog($sqOrder);die;
             }
             break;
 
@@ -131,7 +137,8 @@ class Webhook extends \Shop\Webhook
                     if (!$Order->isNew()) {
                         $this->setOrderID($inv_num);
                         SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
-                        $Order->updateStatus(OrderState::INVOICED);
+                        $terms_gw = \Shop\Gateway::create($Order->getPmtMethod());
+                        $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
                         $retval = true;
                     } else {
                         SHOP_log("Order number '$inv_num' not found for Square invoice");
@@ -192,13 +199,15 @@ class Webhook extends \Shop\Webhook
         $gw = \Shop\Gateway::create($this->getSource());
         $notificationSignature = $this->getHeader('X-Square-Signature');
         $notificationUrl = $_CONF['site_url'] . '/shop/hooks/webhook.php?_gw=square';
-        $stringToSign = $notificationUrl . $this->body;
+        $stringToSign = $notificationUrl . $this->blob;
         $webhookSignatureKey = $gw->getConfig('webhook_sig_key');
 
         // Generate the HMAC-SHA1 signature of the string
         // signed with your webhook signature key
         $hash = hash_hmac('sha1', $stringToSign, $webhookSignatureKey, true);
         $generatedSignature = base64_encode($hash);
+        SHOP_log("Generated Signature: " . $generatedSignature, SHOP_LOG_DEBUG);
+        SHOP_log("Received Signature: " . $notificationSignature, SHOP_LOG_DEBUG);
         // Compare HMAC-SHA1 signatures.
         return hash_equals($generatedSignature, $notificationSignature);
     }

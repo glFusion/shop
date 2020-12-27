@@ -148,17 +148,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Check if the gateway supports invoicing. Default is false.
-     *
-     * @return  boolean True if invoicing is supported, False if not.
-     */
-    public function supportsInvoicing()
-    {
-        return true;
-    }
-
-
-    /**
      * Create a Square order object for the order/cart.
      *
      * @param   object  $Ord    Cart or order object
@@ -679,7 +668,7 @@ class Gateway extends \Shop\Gateway
         $body->setIdempotencyKey(uniqid());
         $apiResponse = $invoicesApi->publishInvoice($Invoice->getId(), $body);
         if ($apiResponse->isSuccess()) {
-            $Order->updateStatus(OrderState::INVOICED);
+            $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
             //$publishInvoiceResponse = $apiResponse->getResult();
         } else {
             $this->_errors = $apiResponse->getErrors();

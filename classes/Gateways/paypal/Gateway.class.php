@@ -845,17 +845,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get the custom string properly formatted for the gateway.
-     *
-     * @return  string      Formatted custom string
-     */
-    protected function XPrepareCustom()
-    {
-        return str_replace('"', '\'', serialize($this->custom));
-    }
-
-
-    /**
      * Sets the receiver_email and cert_id properties.
      *
      * @param   float   $amount     Total puchase amount.
@@ -1021,7 +1010,7 @@ class Gateway extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
-        $Order->updateStatus(OrderState::INVOICED);
+        $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
 
         $A = array(
             'detail' => array(
@@ -1176,6 +1165,7 @@ class Gateway extends \Shop\Gateway
                     CURLOPT_POSTFIELDS => '{"send_to_recipient": true}',
                 ) );
                 $send_response = curl_exec($ch);
+                SHOP_log("Response from send-invoice: " . var_export($send_response,true), SHOP_LOG_DEBUG);
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
@@ -1213,17 +1203,4 @@ class Gateway extends \Shop\Gateway
         return $this->getConfig('webhook_id');
     }
 
-
-    /**
-     * Check if the gateway supports invoicing. Default is false.
-     *
-     * @return  boolean True if invoicing is supported, False if not.
-     */
-    public function supportsInvoicing()
-    {
-        return true;
-    }
-
 }
-
-?>
