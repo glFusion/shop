@@ -16,7 +16,7 @@
 require_once '../../lib-common.php';
 
 $gw_name = SHOP_getVar($_GET, '_gw');
-if (empty($gw_namne)) {
+if (empty($gw_name)) {
     SHOP_log("Gateway not specified in Webhook message data");
     SHOP_log("Got Webhook GET: " . var_export($_GET, true));
     SHOP_log("Got Webhook POST: " . var_export($_POST, true));
