@@ -67,6 +67,7 @@ $_TABLES['shop.features_values'] = $_SHOP_table_prefix . 'features_values';
 $_TABLES['shop.prodXfeat'] = $_SHOP_table_prefix . 'prodXfeat';
 $_TABLES['shop.zone_rules'] = $_SHOP_table_prefix . 'zone_rules';
 $_TABLES['shop.packages'] = $_SHOP_table_prefix . 'packages';
+$_TABLES['shop.cust_gw'] = $_SHOP_table_prefix . 'cust_gw';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

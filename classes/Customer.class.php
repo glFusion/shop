@@ -48,6 +48,10 @@ class Customer
      * @var string */
     private $pref_gw;
 
+    /** Customer IDs created by payment gateways.
+     * @var array */
+    private $gw_ids = array();
+
     /**  Flag to indicate that this is a new record.
      * @var boolean */
     private $isNew = true;
@@ -108,7 +112,7 @@ class Customer
             "SELECT u.username, u.fullname, u.email, u.language, ui.*
                 FROM {$_TABLES['users']} u
                 LEFT JOIN {$_TABLES['shop.userinfo']} ui
-                ON u.uid = ui.uid
+                    ON u.uid = ui.uid
                 WHERE u.uid = $uid"
         );
         if (DB_numRows($res) == 1) {
@@ -121,6 +125,7 @@ class Customer
             $this->isNew = false;
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
+            $this->gw_ids = $this->getCustomerIds($uid);
         } else {
             $this->cart = array();
             $this->isNew = true;
@@ -128,6 +133,78 @@ class Customer
             $this->pref_gw = '';
             $this->saveUser();      // create a user record
         }
+    }
+
+
+    /**
+     * Get the gateway-specific customer IDs for this customer.
+     * This is to be able to check if the customer exists with the gateway
+     * provider and to search transactions.
+     *
+     * @return  array   Array of gateway-specific customer IDs
+     */
+    public function getCustomerIds()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.cust_gw']}
+            WHERE uid = {$this->uid}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['gw_id']] = $A['cust_id'];
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Set the customer reference ID for a payment gateway.
+     * This stores the customer ID returned from the payment gateway
+     * when a customer record is created during invoicing.
+     *
+     * @param   string  $gw_id      ID of gateway
+     * @param   string  $cust_id    Gateway's reference ID
+     * @return  object  $this
+     */
+    public function setGatewayID($gw_id, $cust_id)
+    {
+        global $_TABLES;
+
+        $gw_id = DB_escapeString($gw_id);
+        $cust_id = DB_escapeString($cust_id);
+        $sql = "INSERT INTO {$_TABLES['shop.cust_gw']} SET
+            uid = {$this->uid},
+            gw_id = '$gw_id',
+            cust_id = '$cust_id'
+            ON DUPLICATE KEY UPDATE
+            cust_id = '$cust_id'";
+        //echo $sql;die;
+        DB_query($sql);
+        return $this;
+    }
+
+
+    /**
+     * Get the customer reference ID for a payment gateway.
+     *
+     * @param   string  $gw_id      ID of gateway
+     * @return  string      Customer ID, NULL if not set
+     */
+    public function getGatewayId($gw_id)
+    {
+        return SHOP_getVar($this->gw_ids, $gw_id, 'string', NULL);
+    }
+
+
+    /**
+     * Get the customer's full name from the glFusion profile.
+     *
+     * @return  string      Full name
+     */
+    public function getFullname()
+    {
+        return $this->fullname;
     }
 
 
@@ -629,7 +706,4 @@ class Customer
         return $this->pref_gw;
     }
 
-
-}   // class Customer
-
-?>
+}

@@ -458,6 +458,13 @@ $_SQL = array(
   PRIMARY KEY (`cache_key`),
   KEY (`expires`)
 ) ENGINE=MyISAM",
+
+'shop.cust_gw' => "CREATE TABLE `{$_TABLES['shop.cust_gw']}` (
+  `uid` int(11) unsigned NOT NULL,
+  `gw_id` varchar(40) NOT NULL,
+  `cust_id` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`uid`,`gw_id`)
+) ENGINE=MyISAM",
 );
 
 $SHOP_UPGRADE['0.7.1'] = array(
@@ -764,10 +771,18 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `pmt_amount` decimal(12,4) DEFAULT NULL,
       `pmt_ref_id` varchar(255) DEFAULT NULL,
       `pmt_method` varchar(32) DEFAULT NULL,
+      'is_complete' tinyint(1) unsigned NOT NULL DEFAULT 1,
+      'pmt_status' varchar(40) NOT NULL DEFAULT 'COMPLETED',
       `pmt_comment` text,
       `pmt_uid` int(11) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`pmt_id`),
       KEY `order_id` (`pmt_order_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.cust_gw']}` (
+      `uid` int(11) unsigned NOT NULL,
+      `gw_id` varchar(40) NOT NULL,
+      `cust_id` varchar(128) DEFAULT NULL,
+      PRIMARY KEY (`uid`,`gw_id`)
     ) ENGINE=MyISAM",
     $_SHOP_SAMPLEDATA['shop.packages'],
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
