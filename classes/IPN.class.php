@@ -154,6 +154,10 @@ class IPN
      * @var object */
     protected $Order = NULL;
 
+    /** Payment object.
+     * @var object */
+    protected $Payment = NULL;
+
     /** Cart object.
     * @var object */
     //protected $Cart = NULL;
@@ -785,6 +789,7 @@ class IPN
         }   // foreach item
          */
 
+        $this->recordPayment();
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status == 0) {
             // Now all of the items are in the order object, check for sufficient
@@ -822,6 +827,7 @@ class IPN
             $ipn_data = $this->ipn_data;
             $ipn_data['status'] = $this->status;
             $ipn_data['custom'] = (string)$this->custom;
+            $ipn_data['uid'] = $this->Order->getUid();
             $ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             foreach ($this->Order->getItems() as $item) {
                 $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
@@ -831,7 +837,6 @@ class IPN
             return false;
         }
 
-        $this->recordPayment();
         $this->Order->updatePmtStatus();
         return true;
     }
@@ -1268,15 +1273,15 @@ class IPN
     {
         global $LANG_SHOP;
 
-        $Pmt = new Payment;
-        $Pmt->setRefID($this->getTxnId())
+        $this->Payment = new Payment;
+        $this->Payment->setRefID($this->getTxnId())
             ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)
             ->setMethod($this->GW->getDisplayName())
             ->setComment($LANG_SHOP['ipn_pmt_comment'])
             ->setOrderID($this->Order->getOrderId());
-        return $Pmt->Save();
+        return $this->Payment->Save();
     }
 
 
