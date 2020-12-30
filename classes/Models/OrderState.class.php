@@ -55,4 +55,46 @@ class OrderState
     /** Order was cancelled.
      */
     public const CANCELED = 'canceled';
+
+        /**
+         * Put the statuses into an ordered array.
+         * Used to check an order's progress.
+         * @var array */
+        static $statuses = array(
+            self::CART => -1,
+            self::PENDING => 0,
+            self::INVOICED => 1,
+            self::PROCESSING => 2,
+            self::SHIPPED => 3,
+            self::CLOSED => 4,
+            self::REFUNDED => 5,
+        );
+
+    /**
+     * Check if an order is at least at a given point in processing.
+     *
+     * @param   string  $desired    Desired status
+     * @param   string  $actual     Actual status
+     * @return  boolean     True if order has reached or passed desired status
+     */
+    public static function atLeast($desired, $actual)
+    {
+        if (!isset($statuses[$actual]) || !isset($statuses[$desired])) {
+            return false;
+        } else {
+            return $statuses[$actual] >= $statuses[$desired];
+        }
+    }
+
+
+    /**
+     * Check if a requested status is valid.
+     *
+     * @return  boolean     True if valid, False if non-existent
+     */
+    public static function isValid($status)
+    {
+        return array_key_exists($status, self::$statuses);
+    }
+
 }
