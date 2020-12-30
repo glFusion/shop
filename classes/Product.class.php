@@ -2526,11 +2526,10 @@ class Product
      *  - Update qty on hand if track_onhand is set (min. value 0)
      *
      * @param   object  $Item       Item record, to get options, etc.
-     * @param   object  $Order      Optional order (not used yet)
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $Order=NULL, $ipn_data = array())
+    public function handlePurchase(&$Item, $ipn_data = array())
     {
         global $_TABLES;
 

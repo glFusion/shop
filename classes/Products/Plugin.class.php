@@ -168,22 +168,17 @@ class Plugin extends \Shop\Product
      * - Update qty on hand if track_onhand is set (min. value 0).
      *
      * @param   object  $Item       Item object, to get options, etc.
-     * @param   object  $Order      Optional order object (not used yet)
      * @param   array   $ipn_data   IPN data
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
+    public function handlePurchase(&$Item, $ipn_data = array())
     {
         SHOP_log('pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
-        // The custom field needs to exist and be an array.
-        if (isset($ipn_data['custom'])) {
-            $ipn_data['custom'] =(new CustomInfo($ipn_data['custom']))->toArray();
-        } else {
-            $ipn_data['custom'] = array();  // should be set, but just in case.
+        if (!isset($ipn_data['uid'])) {
+            $ipn_data['uid'] = \Shop\Order::getInstance($Item->getOrderID())->getUid();
         }
-
         $args = array(
             'item'  => array(
                 'item_id' => $Item->getProductID(),
@@ -191,11 +186,11 @@ class Plugin extends \Shop\Product
                 'name' => $Item->getDscp(),
                 'price' => $Item->getPrice(),
                 'paid' => $Item->getPrice(),
+                'order_id' => $Item->getOrderID(),
             ),
-            'ipn_data'  => $ipn_data,
-            'order' => $Order,      // Pass the order object, may be used in the future
+            'ipn_data' => $ipn_data,
         );
-        if ($ipn_data['status'] == 'paid') {
+        //if ($ipn_data['status'] == 'paid') {
             $status = LGLIB_invokeService(
                 $this->pi_name,
                 'handlePurchase',
@@ -203,7 +198,7 @@ class Plugin extends \Shop\Product
                 $output,
                 $svc_msg
             );
-        }
+        //}
         return $status == PLG_RET_OK ? true : false;
     }
 
