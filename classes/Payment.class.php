@@ -21,6 +21,9 @@ use Shop\Models\OrderState;
  */
 class Payment
 {
+    const UNVERIFIED = 0;
+    const VERIFIED = 1;
+
     /** Payment record ID in the database.
      * @var integer */
     private $pmt_id = 0;
@@ -62,6 +65,15 @@ class Payment
      * @var boolean */
     private $is_money = 1;
 
+    /** Flag to indicate the payment status.
+     * @var integer */
+    private $is_complete = 1;   // assume completed, for backwards compatibility
+
+    /** Payment status from latest webhook.
+     * @var status */
+    private $status = '';
+
+
 
     /**
      * Set internal variables from a data array.
@@ -81,6 +93,8 @@ class Payment
                 ->setOrderID($A['pmt_order_id'])
                 ->setComment($A['pmt_comment'])
                 ->setMethod($A['pmt_method'])
+                ->setStatus($A['pmt_status'])
+                ->setComplete($A['is_complete'])
                 ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
@@ -411,6 +425,8 @@ class Payment
             pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
             pmt_method = '" . DB_escapeString($this->method) . "',
             pmt_comment = '" . DB_escapeString($this->comment) . "',
+            pmt_status = '" . DB_escapeString($this->getStatus()) . "',
+            is_complete = {$this->isComplete()},
             pmt_uid = " . (int)$this->uid;
         //echo $sql;die;
         $res = DB_query($sql);
@@ -512,9 +528,10 @@ class Payment
      * Get all the payment objects for a specific order.
      *
      * @param   string  $order_id   Order ID
+     * @param   integer $is_complete    True to get only completed pmts
      * @return  array       Array of Payment objects
      */
-    public static function getByOrder($order_id)
+    public static function getByOrder($order_id, $is_complete=1)
     {
         global $_TABLES;
         static $P = array();
@@ -526,8 +543,11 @@ class Payment
         $P[$order_id] = array();
         $order_id = DB_escapeString($order_id);
         $sql = "SELECT * FROM {$_TABLES['shop.payments']}
-            WHERE pmt_order_id = '$order_id'
-            ORDER BY pmt_ts ASC";
+            WHERE pmt_order_id = '$order_id'";
+        if ($is_complete) {
+            $sql .= " AND is_complete = 1";
+        }
+        $sql .= " ORDER BY pmt_ts ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $P[$order_id][] = new self($A);
@@ -652,6 +672,56 @@ class Payment
     public static function getDetailUrl($pmt_id)
     {
         return SHOP_ADMIN_URL . '/payments.php?pmtdetail=x&pmt_id=' . $pmt_id;
-     }
+    }
+
+
+    /**
+     * Set the payment complete flag.
+     * True indicates that the payment has been confirmed complete by the
+     * gateway.
+     *
+     * @param   integer $status     1 if complete, 0 if pending
+     * @eturn   object  $this
+     */
+    public function setComplete($status)
+    {
+        $this->is_complete = (int)$status;
+        return $this;
+    }
+
+
+    /**
+     * Check if the payment is finalized.
+     *
+     * @return  integer     1 if complete, 0 if pending
+     */
+    public function isComplete()
+    {
+        return (int)$this->is_complete;
+    }
+
+
+    /**
+     * Set the payment status string from the gateway.
+     *
+     * @param   string  $status     Informational status
+     * @return  object  $this
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+
+    /**
+     * Get the payment status string.
+     *
+     * @return  string      Informational status info
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
 
 }
