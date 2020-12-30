@@ -251,8 +251,9 @@ class payment extends \Shop\Report
         }
 
         // Allow all serialized data to be available to the template
+        $gw = \Shop\Gateway::create($A['gateway']);
+        $gw->loadSDK();
         $ipn = @unserialize($A['ipn_data']);
-        $gw = \Shop\Gateway::getInstance($A['gateway']);
         if ($gw !== NULL) {
             if ($ipn) {
                 $vals = $gw->ipnlogVars($ipn);

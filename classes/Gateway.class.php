@@ -317,6 +317,18 @@ class Gateway
 
 
     /**
+     * Make the API class functions available for gateways that need them.
+     *
+     * @return  object  $this
+     */
+    public function loadSDK()
+    {
+        // Does nothing by default
+        return $this;
+    }
+
+
+    /**
      * Get a single buy_now-type button from the database.
      *
      * @param   object  $P      Product object
@@ -786,7 +798,7 @@ class Gateway
                         product_id = '{$item_number}',
                         description = '{$items[$id]['name']}',
                         quantity = '{$item['quantity']}',
-                        txn_type = '{$this->gw_id}',
+                        txn_type = '{$this->gw_name}',
                         txn_id = '',
                         status = 'complete',
                         token = '$token',
@@ -1906,7 +1918,7 @@ class Gateway
 
 
     /**
-     * Return a dummy `true` value during AJAX finalizing cart.
+     * Return a dummy value during AJAX finalizing cart.
      *
      * @param   string  $order_id   Order ID
      * @return  boolean     False, indicating no action was taken
@@ -2009,7 +2021,7 @@ class Gateway
             ) );
             $upload->setFieldName('gw_file');
             if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
-                COM_errorLog("Error setting temp path: " . $upload->printErrors(false));
+                SHOP_log("Error setting temp path: " . $upload->printErrors(false));
             }
 
             $filename = $_FILES['gw_file']['name'];
@@ -2017,12 +2029,12 @@ class Gateway
             $upload->uploadFiles();
 
             if ($upload->areErrors()) {
-                COM_errorLog("Errors during upload: " . $upload->printErrors());
+                SHOP_log("Errors during upload: " . $upload->printErrors());
                 return false;
             }
             $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
-            COM_errorLog("No file found to upload");
+            SHOP_log("No file found to upload");
             return false;
         }
 
@@ -2032,19 +2044,19 @@ class Gateway
         }
         $tmp = FileSystem::mkTmpDir();
         if ($tmp === false) {
-            COM_errorLog("Failed to create temp directory");
+            SHOP_log("Failed to create temp directory");
             return false;
         }
         $tmp_path = $_CONF['path_data'] . $tmp;
         if (!COM_decompress($Finalfilename, $tmp_path)) {
-            COM_errorLog("Failed to decompress $Finalfilename into $tmp_path");
+            SHOP_log("Failed to decompress $Finalfilename into $tmp_path");
             FileSystem::deleteDir($tmp_path);
             return false;
         }
         @unlink($Finalfilename);
 
         if (!$dh = @opendir($tmp_path)) {
-            COM_errorLog("Failed to open $tmp_path");
+            SHOP_log("Failed to open $tmp_path");
             return false;
         }
         $upl_path = $tmp_path;
@@ -2059,7 +2071,7 @@ class Gateway
         }
         closedir($dh);
         if (empty($upl_path)) {
-            COM_errorLog("Could not find upload path under $tmp_path");
+            SHOP_log("Could not find upload path under $tmp_path");
             return false;
         }
 
@@ -2076,6 +2088,19 @@ class Gateway
             }
         }
         return empty($fs->getErrors()) ? true : false;
+    }
+
+
+    /**
+     * Check if the order can be processed.
+     * For most payment methods the order can only be processed after
+     * it is paid.
+     *
+     * @return  boolean     True to process the order, False to hold
+     */
+    public function okToProcess($Order)
+    {
+        return $Order->isPaid();
     }
 
 }
