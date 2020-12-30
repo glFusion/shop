@@ -236,6 +236,14 @@ class ipn extends \Shop\IPN
         switch ($this->ipn_data['txn_type']) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
+            if (isset($this->ipn_data['item_number'])) {
+                $this->addItem(array(
+                    'item_id'   => $this->ipn_data['item_number'],
+                    'item_name' => $this->ipn_data['item_name'],
+                    'quantity'  => $this->ipn_data['quantity'],
+                    'price'     => (float)$this->ipn_data['mc_gross'],
+                ));
+            }
             SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
