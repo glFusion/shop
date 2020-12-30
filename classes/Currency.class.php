@@ -293,11 +293,17 @@ class Currency
         $key = $this->code . (string)$amount;
         if (!array_key_exists($key, $amounts)) {
             // Format the price as a number.
-            $price = number_format($this->RoundVal(abs($amount)),
-                    $this->decimals,
-                    $this->decimal_sep,
-                    $this->thousands_sep);
-            $negative = $amount < 0 ? '-' : '';
+            $price = number_format(
+                $this->RoundVal(abs($amount)),
+                $this->decimals,
+                $this->decimal_sep,
+                $this->thousands_sep
+            );
+            if ($amount < 0 && $price != 0) {
+                $negative = '-';
+            } else {
+                $negative = '';
+            }
             $formatted = array($this->Pre(), $negative.$price, $this->Post());
             $amounts[$key] = $formatted;
         }
