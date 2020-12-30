@@ -275,11 +275,15 @@ class Invoice extends OrderBaseView
             $this->TPL->set_var(array(
                 'is_admin'  => true,
                 'itemsToShip'   => $this->Order->itemsToShip(),
+                'oldstatus' => $this->Order->getStatus(),
             ) );
-            $this->_renderLog();
         } else {
             $this->TPL->set_var('status', $status);
         }
+
+        // Show the log of payments and status changes
+        $this->_renderLog();
+
         if (
             $status == OrderState::PENDING &&
             !empty($this->Order->getPmtMethod())
@@ -316,13 +320,15 @@ class Invoice extends OrderBaseView
                 'pmt_dscp' => $this->Order->getPmtDscp(),
             ) );
         }
+        $this->TPL->set_var('num_payments', count($Payments));
         $this->TPL->set_block('order', 'Payments', 'pmtRow');
         foreach ($Payments as $Payment) {
             $this->TPL->set_var(array(
                 'gw_name' => Gateway::getInstance($Payment->getGateway())->getDscp(),
                 'pmt_det_url' => Payment::getDetailUrl($Payment->getPmtID()),
                 'pmt_txn_id' => $Payment->getRefID(),
-                'pmt_amount' => $this->Currency->formatValue($Payment->getAmount()),
+                'pmt_amount' => $this->Currency->format($Payment->getAmount()),
+                'pmt_date' => $Payment->getDt()->toMySQL(true),
             ) );
             $this->TPL->parse('pmtRow', 'Payments', true);
         }
@@ -336,10 +342,9 @@ class Invoice extends OrderBaseView
             $paid = $this->Order->getAmountPaid();
             $this->TPL->set_var(array(
                 'amt_paid_num' => $this->Currency->formatValue($paid),
-                'due_amount' => $this->Currency->formatValue($this->Order->getTotal() - $paid),
+                'due_amount' => $this->Currency->formatValue($this->Order->getBalanceDue()),
             ) );
         }
-
         $this->TPL->parse('output', 'order');
         $form = $this->TPL->finish($this->TPL->get_var('output'));
         return $form;
