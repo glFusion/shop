@@ -216,10 +216,17 @@
             <br />
             <b>{$LANG_SHOP['payments']}:</b>
 {!endif}
+{!if num_payments}
             <table>
+            <tr><th>{$LANG_SHOP['datetime]'}</th><th>{$LANG_SHOP['amount']}</th><th>{$LANG_SHOP['paid_by']]}</th>
+{!if is_admin}
+            <th>{$LANG_SHOP['trans_id']}</th>
+{!endif}
+            </tr>
 <!-- BEGIN Payments -->
             <tr>
-                <td>{pmt_amount}</td>
+                <td>{pmt_date}</td>
+                <td style="text-align:right">{pmt_amount}</td>
                 <td>{gw_name}</td>
 {!!if {is_admin} && {pmt_txn_id} !!}
                 <td><a href="{pmt_det_url}">{pmt_txn_id}</a></td>
@@ -227,6 +234,7 @@
             </tr>
 <!-- END Payments -->
             </table>
+{!endif}
             <p>
             <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
             </p>
