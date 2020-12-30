@@ -26,7 +26,7 @@
 {!endif}
 {!endif}
 <!-- BEGIN ProductItems -->
-    <li class="uk-vertical-align-top ppProductListItem v2 uk-margin-bottom">
+    <li class="uk-vertical-align-top uk-margin-bottom shopListItemBlock">
       <a href="{item_url}">
         <div class="shopProductListItem v2">
           <div class="ItemImage">
