@@ -15,6 +15,7 @@ namespace Shop\Gateways\_coupon;
 use Shop\Cart;
 use Shop\Products\Coupon;
 use Shop\Currency;
+use Shop\Payment;
 
 
 /**
@@ -36,7 +37,7 @@ class Gateway extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = '_coupon';
         $this->gw_desc = $LANG_SHOP['apply_gc'];
-        $this->gw_url = SHOP_URL . '/ipn/internal.php';
+        $this->gw_url = SHOP_URL . '/confirm.php';
         // Set the services that this gateway can provide
         $this->services = array(
             'buy_now'   => 0,
@@ -132,26 +133,11 @@ class Gateway extends \Shop\Gateway
     public function gatewayVars($cart)
     {
         global $_USER;
-        return '';
-
-        // Add custom info for the internal ipn processor
-        $cust = $cart->custom_info;
-        $cust['uid'] = $_USER['uid'];
-        $cust['transtype'] = 'coupon';
-        $cust['cart_id'] = $cart->CartID();
-        $cust['by_gc'] = $cart->getTotal();
 
         $gatewayVars = array(
-            '<input type="hidden" name="processorder" value="by_gc" />',
-            '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
-            '<input type="hidden" name="custom" value=\'' . @serialize($cust) . '\' />',
-            '<input type="hidden" name="payment_status" value="Completed" />',
+            '<input type="hidden" name="order_id" value="' . $cart->getOrderId() . '" />',
         );
-        //$cart->setGC($cart->getInfo('final_total'));
-        //$cart->Save();
-        if (COM_isAnonUser()) {
-            //$T->set_var('need_email', true);
-        } else {
+        if (!COM_isAnonUser()) {
             $gateway_vars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';
         }
         return implode("\n", $gatewayVars);
@@ -168,6 +154,59 @@ class Gateway extends \Shop\Gateway
     public function hasAccess($total = 0)
     {
         return true;
+    }
+
+
+    /**
+     * Confirm an order.
+     * For full payment by coupon this processes the order.
+     *
+     * @param   object  $Order  Order object
+     * @return  string      Redirect URL
+     */
+    public function confirmOrder($Order)
+    {
+        global $_CONF;
+
+        // Check that the user has sufficient coupon balance.
+        $gc_bal = Coupon::getUserBalance($Order->getUid());
+        if ($gc_bal < $Order->getTotal()) {
+            COM_setMsg($this->getLang('insuf_bal'));
+        } else {
+            $Order->setByGC($Order->getTotal());
+            $Order->Save();
+            $coupons = Coupon::Apply($Order->getTotal(), $Order->getUid());
+            COM_setMsg($this->getLang('pd_by_coupon', 'Paid by Coupon'));
+
+            // Create the webhook object and add some data.
+            // This is mostly to initialize the IPN property which gets
+            // used in handlePurchase().
+            $WH = new \Shop\Webhook;
+            $WH->setID('gcfull_' . $Order->getOrderId());
+            $WH->setSource($this->gw_name);
+            $WH->setPayment($Order->getTotal());
+            $WH->setTxnDate();
+            $WH->setOrderId($Order->getOrderId());
+            $status = $WH->handlePurchase($Order);
+            if (!$status) {
+                COM_setMsg($this->getLang('error', 'An Error Occurred'));
+            }
+        }
+        return SHOP_URL . '/index.php';
+    }
+
+
+    /**
+     * Get additional javascript to be attached to the checkout button.
+     * Paying by coupon routes through confirmOrder() only, no
+     * javascript needed.
+     *
+     * @param   object  $cart   Shopping cart object
+     * @return  string  Javascript commands.
+     */
+    public function getCheckoutJS($cart)
+    {
+        return '';
     }
 
 }
