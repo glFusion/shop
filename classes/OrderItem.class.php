@@ -600,21 +600,19 @@ class OrderItem
 
     /**
      * Check if the buyer can download a file from the order view.
+     * If the order is "paid" or "invoiced" then download is available.
+     *
+     * @return  boolean     True if download is allowed.
      */
     public function canDownload()
     {
         if (
-            // Check that the order is paid
-            !$this->getOrder()->isPaid() ||
-            // Check if product is not a download
             $this->Product->getFilename() == '' ||
-            // or is expired
-            ( $this->expiration > 0 && $this->expiration < time() )
+            $this->expiration > 0 && $this->expiration < time()
         ) {
             return false;
         }
-        // All conditions passed, return true
-        return true;
+        return $this->getOrder()->okToShip();
     }
 
 
