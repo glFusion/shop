@@ -19,8 +19,7 @@ require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check('shop.admin')
 ) {
     COM_404();
@@ -315,6 +314,7 @@ case 'purge_trans':
     if (!$_SHOP_CONF['shop_enabled']) {
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
+        \Shop\Payment::Purge();
         \Shop\Products\Coupon::Purge();
         \Shop\Shipment::Purge();
         \Shop\Cache::clear();

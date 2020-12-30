@@ -16,11 +16,9 @@
 require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
-if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
-    (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) ||
-    !SHOP_access_check()
+ if (
+    !function_exists('SHOP_access_check') ||
+    !SHOP_access_check('shop.admin')
 ) {
     COM_404();
     exit;

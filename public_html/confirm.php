@@ -16,6 +16,13 @@
 
 /** Import core glFusion functions */
 require_once '../lib-common.php';
+if (
+    !function_exists('SHOP_access_check') ||
+    !SHOP_access_check('shop.admin')
+) {
+    COM_404();
+    exit;
+}
 
 // Get the order and make sure it's valid. Also it must not be "final".
 if (isset($_POST['order_id'])) {

@@ -14,6 +14,13 @@
 
 /** Include required glFusion functions */
 require_once '../lib-common.php';
+if (
+    !function_exists('SHOP_access_check') ||
+    !SHOP_access_check()
+) {
+    COM_404();
+    exit;
+}
 
 // Get the shipper code and tracking number.
 // Check that both are provided.

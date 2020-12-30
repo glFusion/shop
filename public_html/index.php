@@ -21,8 +21,7 @@ require_once '../lib-common.php';
 
 // Ensure sufficient privleges and dependencies to read this page
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check()
 ) {
     COM_404();

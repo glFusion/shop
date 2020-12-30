@@ -18,6 +18,14 @@
 
 /** Import core glFusion libraries */
 require_once('../lib-common.php');
+// Make sure the plugin is available
+if (
+    !function_exists('SHOP_access_check') ||
+    !SHOP_access_check()
+) {
+    COM_404();
+    exit;
+}
 
 // Sanitize the product ID and token
 $id = SHOP_getVar($_GET, 'id', 'int');
