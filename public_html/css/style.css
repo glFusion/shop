@@ -290,7 +290,8 @@ div.shopProductListOuter {
     /*height: 30px;*/
 }
 
-li.shopListItemBlock a {
+li.shopListItemBlock a,
+li.shopListItemBlock a:hover {
     text-decoration: none;
 }
 
