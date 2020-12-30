@@ -252,6 +252,18 @@ class Gateway extends \Shop\Gateway
         return $this->getLang('config_instr');
     }
 
+
+    /**
+     * Check if the order can be processed.
+     * For invoicing, orders can be processed upon invoice creation.
+     *
+     * @return  boolean     True to process the order, False to hold
+     */
+    public function okToProcess($Order)
+    {
+        return true;
+    }
+
 }
 
 ?>
