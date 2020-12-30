@@ -32,7 +32,7 @@ class CustomInfo implements \ArrayAccess
     public function __construct($val='')
     {
         if (is_string($val) && !empty($val)) {
-            $x = json_decode(base64_decode($val), true);
+            $x = json_decode($val, true);
             if ($x) {
                 $this->properties = $x;
             }
@@ -139,10 +139,12 @@ class CustomInfo implements \ArrayAccess
      * Sets the internal properties by decoding the supplied string.
      *
      * @param   string  $data   Base64-encoded JSON string
+     * @return  array       Properties array
      */
     public function decode($data)
     {
         $this->properties = json_decode(base64_decode($data), true);
+        return $this->properties;
     }
 
 
@@ -153,6 +155,6 @@ class CustomInfo implements \ArrayAccess
      */
     public function __toString()
     {
-        return $this->encode();
+        return json_encode($this->properties);
     }
 }
