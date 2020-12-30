@@ -144,7 +144,7 @@ class FileSystem
                             @chmod($dstfile, 0644);
                             $this->bytesCopied += filesize($dstfile);
                         } else {
-                            COM_errorLog("File '$srcfile' could not be copied - check directory permissions.");
+                            SHOP_log("File '$srcfile' could not be copied - check directory permissions.");
                             $fail++;
                             $this->errors[] = 'dirCopy :: Unable to copy '. $srcfile;
                             $this->errorFiles[] = $dstfile;
@@ -159,7 +159,7 @@ class FileSystem
             }
             closedir($curdir);
         } else {
-            COM_errorLog("Unable to open temporary directory: " . $srcdir);
+            SHOP_log("Unable to open temporary directory: " . $srcdir);
             $this->errors[] = 'Unable to create temporary directory';
             return false;
         }
@@ -195,11 +195,11 @@ class FileSystem
                 @touch($dstfile, filemtime($srcfile));
                 @chmod($dstfile, 0644);
             } else {
-                COM_errorLog("File '$srcfile' could not be copied");
+                SHOP_log("File '$srcfile' could not be copied");
                 return false;
             }
         } else {
-            COM_errorLog("ERROR: Unable to open temporary file: " . $srcfile);
+            SHOP_log("ERROR: Unable to open temporary file: " . $srcfile);
             return false;
         }
         return true;
@@ -229,7 +229,7 @@ class FileSystem
             $rc = self::mkDir($dstdir);
             if ($rc == false ) {
                 $this->errorFiles[] = $dstdir;
-                COM_errorLog("ERROR: Unable to create directory " . $dstdir);
+                SHOP_log("ERROR: Unable to create directory " . $dstdir);
                 return false;
             }
             $createdDst = 1;
@@ -241,17 +241,13 @@ class FileSystem
                     $srcfile = $srcdir . '/' . $file;
                     $dstfile = $dstdir . '/' . $file;
                     if (is_file($srcfile)) {
-//forced error
-//if ( $this->isWritable($dstfile) ) {
                         if ( ! self::isWritable($dstfile) ) {
                             $this->errorFiles[] = $dstfile;
-                            COM_errorLog("ERROR: File '$dstfile' cannot be written");
+                            SHOP_log("ERROR: File '$dstfile' cannot be written");
                             $fail++;
                         }
                     } else if (@is_dir($srcfile)) {
                         $ret = $this->testCopy($srcfile,$dstfile,$verbose);
-//forced error
-//$ret = false;
                         if ($ret === false) {
                             $fail++;
                         }
