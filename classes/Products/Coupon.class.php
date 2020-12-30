@@ -279,18 +279,19 @@ class Coupon extends \Shop\Product
 
     /**
      * Apply a coupon value against an order.
-     * Does not update the coupon table, but deducts the maximum of the
-     * coupon balance or the order value from the userinfo table.
+     * Deducts the maximum of the coupon balance or the order value from
+     * the coupons table.
      *
      * @param   float   $amount     Amount to redeem (order value)
      * @param   integer $uid        User ID redeeming the coupon
      * @param   object  $Order      Order object
-     * @return  float               Remaining order value, if any
+     * @return  array|false     Array of codes and amounts, False on error
      */
     public static function Apply($amount, $uid = 0, $Order = NULL)
     {
         global $_TABLES, $_USER, $LANG_SHOP;
 
+        $retval = array();
         if ($uid == 0) $uid = $_USER['uid'];
         $order_id = '';
         if (is_object($Order) && !$Order->isNew()) {
@@ -300,7 +301,11 @@ class Coupon extends \Shop\Product
         if ($uid < 2 || $amount == 0) {
             // Nothing to do if amount is zero, and anon users not supported
             // at this time.
-            return 0;
+            return $retval;
+        }
+        $user_balance = self::getUserBalance($uid);
+        if ($user_balance < $amount) {  // error: insufficient balance
+            return false;
         }
         $coupons = self::getUserCoupons($uid);
         $remain = (float)$amount;
@@ -312,22 +317,25 @@ class Coupon extends \Shop\Product
                 // Coupon balance is enough to cover the remaining amount
                 $bal -= $remain;
                 $applied += $remain;
+                $retval[$code] = $remain;
                 $remain = 0;
             } else {
                 // Apply the total balance on this coupon and loop to the next one
                 $remain -= $bal;
                 $applied += $bal;
+                $retval[$code] = $bal;
                 $bal = 0;
             }
             $sql = "UPDATE {$_TABLES['shop.coupons']}
                     SET balance = $bal
                     WHERE code = '$code';";
             self::writeLog($code, $uid, $applied, 'gc_applied', $order_id);
+            //echo $sql . "\n";
             DB_query($sql);
             if ($remain == 0) break;
         }
 
-        if ($applied > 0) {
+        /*if ($applied > 0) {
             // Record one payment record for the coupon
             $Pmt = new Payment;
             $Pmt->setRefID(uniqid())
@@ -337,10 +345,33 @@ class Coupon extends \Shop\Product
                 ->setComment($LANG_SHOP['gc_pmt_comment'])
                 ->setOrderID($order_id)
                 ->Save();
-        }
+        }*/
 
         \Shop\Cache::clear('coupons_' . $uid);
-        return $remain;     // Return unapplied balance
+        return $retval;     // return array of applied coupons and amounts
+    }
+
+
+    /**
+     * Restore used card balances to the card records.
+     * This is used after a finalized order is reverted to `cart` status,
+     * such as when the payment process is cancelled.
+     *
+     * @param   string  $code   Coupon code
+     * @param   float   $amount Amount to restore
+     * @return  boolean     True on success, False on error
+     */
+    public static function Restore($code, $amount)
+    {
+        global $_TABLES;
+
+        $code = DB_escapeString($code);
+        $amount = (float)$amount;
+        $sql = "UPDATE {$_TABLES['shop.coupons']}
+            SET balance = balance + $amount
+            WHERE code = '$code'";
+        $res = DB_query($sql);
+        return DB_error() ? false : true;
     }
 
 
