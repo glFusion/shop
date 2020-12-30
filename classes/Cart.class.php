@@ -85,7 +85,6 @@ class Cart extends Order
             $Cart = new self($cart_id);
             $carts[$Cart->getOrderID()] = $Cart;
         }
-
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
@@ -1045,9 +1044,11 @@ class Cart extends Order
         if ($this->shipto_id < 1) {
             $this->setShipto($Customer->getDefaultAddress('shipto'));
         }
-        if ($this->billto_id == 0 || $this->shipto_id == 0) {
-            // No address found
-            return false;
+        if ($this->hasPhysical()) {
+            if ($this->billto_id == 0 || $this->shipto_id == 0) {
+                // No address found
+                return false;
+            }
         }
 
         // Go ahead and save the gateway as preferred for future use
@@ -1056,7 +1057,7 @@ class Cart extends Order
 
         // Populate required elements of this order
         $this->setGateway($gateway->getName())
-            ->setGC(0)
+            ->setByGC(0)
             ->setEmail($Customer->getEmail())
             ->setShipper(0)
             ->setInstructions('');
