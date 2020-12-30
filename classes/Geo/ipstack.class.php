@@ -99,7 +99,7 @@ class ipstack extends \Shop\GeoLocator
                     $msg = $decoded['error']['info'];
                     $decoded = $this->default_data;
                     $decoded['message'] = $msg;
-                    COM_errorLog("Shop\Geo\ipstack error $msg", SHOP_LOG_ERROR);
+                    SHOP_log($msg, SHOP_LOG_ERROR);
                 }
             } else {
                 SHOP_log("Geo/ipstack error {$status['http_code']}, data: $resp", SHOP_LOG_ERROR);
