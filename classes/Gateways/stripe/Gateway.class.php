@@ -15,6 +15,8 @@ namespace Shop\Gateways\stripe;
 use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
+use Shop\Customer;
+use Shop\Models\OrderState;
 
 
 /**
@@ -56,7 +58,7 @@ class Gateway extends \Shop\Gateway
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'stripe';
         $this->gw_desc = 'Stripe Payment Gateway';
-        $this->gw_url = SHOP_URL . '/ipn/ipn.php';
+        $this->gw_url = '';
 
         $this->cfgFields = array(
             'prod' => array(
@@ -75,23 +77,28 @@ class Gateway extends \Shop\Gateway
         );
 
         // Set the only service supported
-        $this->services = array('checkout' => 1);
+        $this->services = array(
+            'checkout' => 1,
+            'terms' => 1,
+        );
 
         parent::__construct($A);
 
         $this->pub_key = $this->getConfig('pub_key');
         $this->sec_key = $this->getConfig('sec_key');
         $this->hook_sec = $this->getConfig('hook_sec');
-//        var_dump($this->sec_key);die;
-        /*if ($this->getConfig('test_mode') == 1) {
-            $this->pub_key = $this->getConfig('pub_key_test');
-            $this->sec_key = $this->getConfig('sec_key_test');
-            $this->hook_sec = $this->getConfig('hook_sec_test');
-        } else {
-            $this->pub_key = $this->getConfig('pub_key_prod');
-            $this->sec_key = $this->getConfig('sec_key_prod');
-            $this->hook_sec = $this->getConfig('hook_sec_prod');
-        }*/
+    }
+
+
+    /**
+     * Make the API classes available. May be needed for reports.
+     *
+     * @return  object  $this
+     */
+    public function loadSDK()
+    {
+        require_once __DIR__ . '/vendor/autoload.php';
+        return $this;
     }
 
 
@@ -100,10 +107,15 @@ class Gateway extends \Shop\Gateway
      *
      * @return  object      SquareClient object
      */
-    private function _getApiClient()
+    public function getApiClient()
     {
-        require_once __DIR__ . '/vendor/autoload.php';
-        \Stripe\Stripe::setApiKey($this->sec_key);
+        static $_client = NULL;
+        if ($_client === NULL) {
+            $this->loadSDK();
+            \Stripe\Stripe::setApiKey($this->sec_key);
+            $_client = new \Stripe\StripeClient($this->sec_key);
+        }
+        return $_client;
     }
 
 
@@ -124,16 +136,17 @@ class Gateway extends \Shop\Gateway
             return '';
         }
 
-        $this->_getApiClient();
+        $this->getApiClient();
         $this->_cart = $cart;   // Save to it is available to getCheckoutButton()
-        $cartID = $cart->CartID();
+        $cartID = $cart->getOrderID();
         $shipping = 0;
         $Cur = \Shop\Currency::getInstance();
         $line_items = array();
+        $taxRates = array();    // save tax rate objects for reuse
 
         // If the cart has a gift card applied, set one line item for the
         // entire cart. Stripe does not support discounts or gift cards.
-        $by_gc = $cart->getInfo('apply_gc');
+        $by_gc = $cart->getGC();
         if ($by_gc > 0) {
             $total_amount = $cart->getTotal() - $by_gc;
             $line_items[] = array(
@@ -153,11 +166,15 @@ class Gateway extends \Shop\Gateway
                     $dscp .= ' : ' . $opts;
                 }
                 $line_items[] = array(
-                    'name'      => $Item->getDscp(),
-                    'description' => $dscp,
-                    'amount'    => $Cur->toInt($Item->getPrice()),
-                    'currency'  => strtolower($Cur),
                     'quantity'  => $Item->getQuantity(),
+                    'price_data' => array(
+                        'unit_amount' => $Cur->toInt($Item->getPrice()),
+                        'currency'  => strtolower($Cur),
+                        'product_data' => array(
+                            'name'      => $Item->getDscp(),
+                            'description' => $dscp,
+                        ),
+                    ),
                 );
             }
 
@@ -165,32 +182,45 @@ class Gateway extends \Shop\Gateway
             // These are included in "all items" above when using a coupon.
             if ($cart->getTax() > 0) {
                 $line_items[] = array(
-                    'name'      => '__tax',
-                    'description' => $LANG_SHOP['tax'],
-                    'amount'    => $cart->getTax() * pow(10, $Cur->Decimals()),
-                    'currency'  => strtolower($Cur),
                     'quantity'  => 1,
+                    'price_data' => array(
+                        'unit_amount'    => $Cur->toInt($cart->getTax()),
+                        'currency'  => strtolower($Cur),
+                        'product_data' => array(
+                            'name'      => '__tax',
+                            'description' => $LANG_SHOP['tax'],
+                        ),
+                    ),
                 );
             }
             if ($cart->getShipping() > 0) {
                 $line_items[] = array(
-                    'name'      => '__shipping',
-                    'description' => $LANG_SHOP['shipping'],
-                    'amount'    => $cart->getShipping() * pow(10, $Cur->Decimals()),
-                    'currency'  => strtolower($Cur),
                     'quantity'  => 1,
+                    'price_data' => array(
+                        'unit_amount' => $Cur->toInt($cart->getShipping()),
+                        'currency'  => strtolower($Cur),
+                        'product_data' => array(
+                            'name'      => '__shipping',
+                            'description' => $LANG_SHOP['shipping'],
+                        ),
+                    ),
                 );
             }
         }
 
         // Create the checkout session
-        $this->session = \Stripe\Checkout\Session::create(array(
+        $session_params = array(
+            'mode' => 'payment',
             'payment_method_types' => ['card'],
             'line_items' => $line_items,
             'success_url' => $_CONF['site_url'],        // todo
             'cancel_url' => $cart->cancelUrl(),
             'client_reference_id' => $cartID,
-        ) );
+            'metadata' => array(
+                'order_id' => $cart->getOrderID(),
+            ),
+        );
+        $this->session = \Stripe\Checkout\Session::create($session_params);
 
         if (!$have_js) {
             $outputHandle = \outputHandler::getInstance();
@@ -269,7 +299,7 @@ class Gateway extends \Shop\Gateway
         if (empty($pmt_id)) {
             return false;
         }
-        $this->_getApiClient();
+        $this->getApiClient();
         return \Stripe\PaymentIntent::retrieve($pmt_id);
     }
 
@@ -287,6 +317,144 @@ class Gateway extends \Shop\Gateway
             $LANG_SHOP_HELP['gw_wh_instr'] . '</li></ul>';
     }
 
-}
 
-?>
+    /**
+     * Get the gateway's customer record by user ID.
+     * Creates a customer if not already present.
+     *
+     * @param   integer $uid    Customer user ID
+     * @return  object      Stripe customer record
+     */
+    public function getCustomer($uid)
+    {
+        $cust_info = NULL;
+        $Customer = Customer::getInstance($uid);
+        $gw_id = $Customer->getGatewayId($this->gw_name);
+        if ($gw_id) {
+            $client = $this->getApiClient();
+            $cust_info = $client->customers->retrieve($gw_id);
+        }
+        if (
+            !is_object($cust_info) ||
+            !isset($cust_info->id) ||
+            !isset($cust_info->created)
+        ) {
+            $cust_info = $this->createCustomer($Customer);
+        }
+        return $cust_info;
+    }
+
+
+    /**
+     * Create a new customer record with Stripe.
+     * Called if getCustomer() returns an empty set.
+     *
+     * @param   object  $Order      Order object, to get customer info
+     * @return  object|false    Customer object, or false if an error occurs
+     */
+    private function createCustomer($Customer)
+    {
+        // Get the default billing address to user in the Stripe record.
+        // If there is no name entered for the default address, use the
+        // glFusion full name.
+        $Address = $Customer->getDefaultAddress('billto');
+        $name = $Address->getName();
+        if (empty($name)) {
+            $name = $Customer->getFullname();
+        }
+
+        $params = [
+            'name' => $name,
+            'email' => $Customer->getEmail(),
+            'address' => [
+                'line1' => $Address->getAddress1(),
+                'line2' => $Address->getAddress2(),
+                'city' => $Address->getCity(),
+                'state' => $Address->getState(),
+                'postal_code' => $Address->getPostal(),
+                'country' => $Address->getCountry(),
+            ],
+        ];
+
+        $client = $this->getApiClient();
+        $apiResponse = $client->customers->create($params);
+        if (isset($apiResponse->id)) {
+            $Customer->setGatewayId($this->gw_name, $apiResponse->id);
+        }
+        return $apiResponse;
+    }
+
+
+    /**
+     * Create and send an invoice for an order.
+     *
+     * @param   object  $Order  Order object
+     * @param   object  $terms_gw   Invoice terms gateway, for config values
+     * @return  boolean     True on success, False on error
+     */
+    public function createInvoice($Order, $terms_gw)
+    {
+        global $_CONF, $LANG_SHOP;
+
+        $Currency = $Order->getCurrency();
+        $cust_id = $this->getCustomer($Order->getUid());
+        $apiClient = $this->getApiClient();
+        $taxRates = array();
+
+        foreach ($Order->getItems() as $Item) {
+            $opts = implode(', ', $Item->getOptionsText());
+            $dscp = $Item->getDscp();
+            if (!empty($opts)) {
+                $dscp .= ' : ' . $opts;
+            }
+            $params = array(
+                'customer' => $cust_id,
+                'unit_amount' => $Currency->toInt($Item->getNetPrice()),
+                'quantity' => $Item->getQuantity(),
+                'description' => $dscp,
+                'currency' => $Order->getCurrency(),
+            );
+            if ($Item->getTaxRate() > 0) {
+                if (!isset($taxRates[$Item->getTaxRate()])) {
+                    $taxRates[$Item->getTaxRate()]  = $apiClient->taxRates->create([
+                        'display_name' => $LANG_SHOP['sales_tax'],
+                        'percentage' => $Item->getTaxRate() * 100,
+                        'inclusive' => false,
+                    ]);
+                }
+                $params['tax_rates'] = array(
+                    $taxRates[$Item->getTaxRate()],
+                );
+            }
+            $apiClient->invoiceItems->create($params);
+        }
+
+        if ($Order->getShipping() > 0) {
+            $apiClient->invoiceItems->create(array(
+                'customer' => $cust_id,
+                'unit_amount' => $Currency->toInt($Order->getShipping()),
+                'quantity' => 1,
+                'description' => $LANG_SHOP['shipping'],
+                'currency' => $Order->getCurrency(),
+            ) );
+        }
+        $invObj = $apiClient->invoices->create(array(
+            'customer' => $cust_id,
+            'auto_advance' => true,
+            'metadata' => array(
+                'order_id' => $Order->getOrderID(),
+            ),
+            'collection_method' => 'send_invoice',
+            'days_until_due' => (int)$terms_gw->getConfig('net_days'),
+        ) );
+        // Get the invoice number if a valid draft invoice was created.
+        if (isset($invObj->status) && $invObj->status == 'draft') {
+            $Order->setInfo('gw_invoice', $invObj->id)->Save();
+            $Order->updateStatus(OrderState::INVOICED);
+        }
+        $invObj->finalizeInvoice();
+        return $invObj;
+    }
+
+
+}
