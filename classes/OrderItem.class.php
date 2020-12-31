@@ -145,19 +145,17 @@ class OrderItem
             $this->base_price = $this->Product->getPrice(array(), 1, $overrides);
             if ($this->id == 0) {
                 // New item, add options from the supplied arguments.
-                if (isset($oi_id['variant']) && $oi_id['variant'] > 0) {
-                    $Var = ProductVariant::getInstance($oi_id['variant']);
-                    if ($Var->getID() > 0) {
-                        $this->variant_id = $Var->getID();
-                        $this->setOptions($Var->getOptions());
-                    }
-                } elseif (isset($oi_id['options'])) {
+                $this->price = $this->base_price;   // default if no variant
+                if (isset($oi_id['variant'])) {
+                    $this->variant_id = (int)$oi_id['variant'];
+                    $this->setOptions($this->getVariant()->getOptions());
+                    $this->price = $this->getItemPrice();
+                } elseif (isset($oi_id['options'])) {       // deprecated
                     $this->setOptions($oi_id['options']);
-                } elseif (isset($oi_id['attributes'])) {
+                } elseif (isset($oi_id['attributes'])) {    // deprecated
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
                     $this->setOptions($oi_id['attributes']);
                 }
-
                 if (
                     is_array($oi_id['extras']) &&
                     isset($oi_id['extras']['custom']) &&
@@ -175,6 +173,7 @@ class OrderItem
             } else {
                 // Existing orderitem record, get the existing options
                 $this->options = $this->getOptions();
+                $this->Variant = ProductVariant::getInstance($this->variant_id);
             }
         }
     }
@@ -270,9 +269,24 @@ class OrderItem
      *
      * @return  integer     Product Variant ID
      */
-    function getVariantId()
+    public function getVariantId()
     {
         return (int)$this->variant_id;
+    }
+
+
+    /**
+     * Get the associated product variant.
+     *
+     * return   object      ProductVariant object.
+     */
+    public function getVariant()
+    {
+        static $PV = NULL;
+        if ($PV === NULL) {
+            $PV = ProductVariant::getInstance($this->getVariantId());
+        }
+        return $PV;
     }
 
 
@@ -931,11 +945,7 @@ class OrderItem
      */
     public function getOptionsPrice()
     {
-        $retval = 0;
-        foreach ($this->options as $OIO) {
-            $retval += $OIO->getPrice();
-        }
-        return $retval;
+        return $this->getVariant()->getPrice();
     }
 
 
