@@ -70,7 +70,7 @@ class Webhook extends \Shop\Webhook
             }
         }
         switch ($this->getEvent()) {
-        case self::EV_INV_PAYMENT:
+        case 'INVOICING.INVOICE.PAID':
             if ($invoice) {
                 $this->IPN = new IPNModel(array(
                     'sql_date' => '',       // SQL-formatted date string
@@ -112,7 +112,7 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
-        case self::EV_INV_CREATED:
+        case 'INVOICING.INVOICE.CREATED':
             SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
             $Order = Order::getInstance($this->getOrderID());
             if (!$Order->isNew()) {
@@ -121,7 +121,7 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
-        case self::EV_PAYMENT:
+        case 'PAYMENT.CAPTURE.COMPLETED':
             var_dump($this->getData());die;
             SHOP_log("Payment received for {$this->getOrderID()}", SHOP_LOG_DEBUG);
             if (isset($resource['amount']['value'])) {
@@ -144,33 +144,6 @@ class Webhook extends \Shop\Webhook
             break;
         }
         return false;
-    }
-
-
-    /**
-     * Get the standard event type string based on the webhook-specific string.
-     *
-     * @return  string      Standard string for the plugin to use
-     */
-    public function getEvent()
-    {
-        switch ($this->whEvent) {
-        case 'INVOICING.INVOICE.PAID':
-            return self::EV_INV_PAYMENT;
-            break;
-        case 'INVOICING.INVOICE.CREATED':
-            return self::EV_INV_CREATED;
-            break;
-        case 'CHECKOUT.ORDER.APPROVED':
-            return 'approved';
-            break;
-        case 'PAYMENT.CAPTURE.COMPLETED':
-            return self::EV_PAYMENT;
-            break;
-        default:
-            return self::EV_UNDEFINED;
-            break;
-        }
     }
 
 

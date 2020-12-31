@@ -72,7 +72,7 @@ class Webhook extends \Shop\Webhook
         }
 
         switch ($this->getEvent()) {
-        case self::EV_INV_PAYMENT:
+        case 'invoice.payment_made':
             break;      // deprecated
             $invoice = SHOP_getVar($object, 'invoice', 'array', NULL);
             if ($invoice) {
@@ -115,7 +115,8 @@ class Webhook extends \Shop\Webhook
                 }
             }
             break;
-        case self::EV_PAYMENT:
+        case 'payment':
+        case 'payment.created':
             $payment = $object->payment;
             $this->setID($payment->id);
             if ($payment) {
@@ -150,7 +151,7 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
-        case self::EV_PAYMENT_UPDATED:
+        case 'payment.updated':
             $data = $this->getData()->data;
             $payment = $data->object->payment;
             $this->setID($payment->id);
@@ -177,7 +178,7 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
-        case self::EV_INV_CREATED:
+        case 'invoice.created':
             $invoice = $object->invoice;
             if ($invoice) {
                 $inv_num = $invoice->invoice_number;
@@ -199,34 +200,6 @@ class Webhook extends \Shop\Webhook
             break;
         }
         return $retval;
-    }
-
-
-    /**
-     * Get the standard event type string based on the webhook-specific string.
-     *
-     * @return  string      Standard string for the plugin to use
-     */
-    public function getEvent()
-    {
-        switch ($this->whEvent) {
-        case 'invoice.payment_made':
-            return self::EV_INV_PAYMENT;
-            break;
-        case 'payment':
-        case 'payment.created':
-            return self::EV_PAYMENT;
-            break;
-        case 'payment.updated':
-            return self::EV_PAYMENT_UPDATED;
-            break;
-        case 'invoice.created':
-            return self::EV_INV_CREATED;
-            break;
-        default:
-            return self::EV_UNDEFINED;
-            break;
-        }
     }
 
 
