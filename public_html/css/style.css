@@ -1080,18 +1080,22 @@ div.cart-item {
     width: 3em;
 }
 
-.shop-wf-active {
-    background: #ff6f61;
+.checkout_menu > li.shop-wf-active {
+    background-color: #ff6f61;
     color: #fff;
 }
 
-.shop-wf-active a {
+.checkout_menu > li.shop-wf-active a {
     color: #fff;
 }
 .checkout_menu > li > a {
     font-size: 16px;
     font-weight:bold;
 }
+/*.checkout_menu > li.uk-panel-box-secondary {
+    border-color: rgba(45,112,145,.3);
+}*/
+
 .shop-ckout-btn {
     /* Adjust button text for better visibility */
     color: darkred;
