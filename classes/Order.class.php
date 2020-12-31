@@ -340,7 +340,7 @@ class Order
 
         $sql = "SELECT ord.*,
             ( SELECT sum(pmt_amount) FROM {$_TABLES['shop.payments']} pmt
-            WHERE pmt.pmt_order_id = ord.order_id
+            WHERE pmt.pmt_order_id = ord.order_id AND is_complete = 1
             ) as amt_paid
             FROM {$_TABLES['shop.orders']} ord
             WHERE ord.order_id='{$this->order_id}'";
@@ -602,7 +602,6 @@ class Order
         //}
         $this->setTaxShipping($A['tax_shipping'])
             ->setTaxHandling($A['tax_handling']);
-
         $this->m_info = new CustomInfo(SHOP_getVar($A, 'info'));
         //if ($this->m_info === false) $this->m_info = array();
         /*foreach (array('billto', 'shipto') as $type) {
@@ -1338,6 +1337,7 @@ class Order
                 'ipn_det_url' => IPN::getDetailUrl($Payment->getRefID(), 'txn_id'),
                 'pmt_txn_id' => $Payment->getRefID(),
                 'pmt_amount' => $Currency->formatValue($Payment->getAmount()),
+                'pmt_date' => $Payment->getDt()->toMySQL(true),
             ) );
             $T->parse('pmtRow', 'Payments', true);
         }
@@ -1376,10 +1376,13 @@ class Order
             // Get the status to set. For non-physical items, the order is
             // fullfilled so close it.
             if ($this->hasPhysical()) {
-                $this->updateStatus(OrderState::PROCESSING);
-            } else {
+               if (!$this->statusAtLeast(OrderState::PROCESSING)) {
+                   $this->updateStatus(OrderState::PROCESSING);
+               }
+            } elseif (!$this->statusAtLeast(OrderState::SHIPPED)) {
                 // Update to shipped first, mainly to notify the buyer
-                $this->updateStatus(OrderState::CLOSED);
+                $this->updateStatus(OrderState::SHIPPED);
+                //$this->updateStatus(OrderState::CLOSED);
             }
         }
         return $this;
@@ -1699,7 +1702,8 @@ class Order
             $this->Billto->setName($user_name);
         }
 
-        if ($incl_trk) {        // include tracking information block
+        if ($incl_trk) {        // include tracking information block for buyers
+            $order_url = $this->buildUrl('view');
             $Shipments = Shipment::getByOrder($this->order_id);
             if (count($Shipments) > 0) {
                 foreach ($Shipments as $Shp) {
@@ -1834,6 +1838,18 @@ class Order
             // Unauthorized
             return false;
         }
+    }
+
+
+    /**
+     * Get the order sequence number.
+     * Used to check if the order has been invoiced or paid.
+     *
+     * @return  integer|NULL    Order sequence number
+     */
+    public function getSeqNum()
+    {
+        return $this->order_seq;
     }
 
 
@@ -2177,12 +2193,11 @@ class Order
     /**
      * Set an info item into the private info array.
      *
-     * @deprecate
      * @param   string  $key    Name of var to set
      * @param   mixed   $value  Value to set
      * @return  object      Current Order object
      */
-    public function XsetInfo($key, $value)
+    public function setInfo($key, $value)
     {
         $this->m_info[$key] = $value;
         return $this;
@@ -2192,10 +2207,9 @@ class Order
     /**
      * Remove an information item from the private info array.
      *
-     * @deprecate
      * @param   string  $key    Name of var to remove
      */
-    public function XremInfo($key)
+    public function remInfo($key)
     {
         unset($this->m_info[$key]);
         return $this;
@@ -2344,6 +2358,18 @@ class Order
 
 
     /**
+     * Check if this order is invoiced.
+     * Used to consider net-terms orders as "complete".
+     *
+     * @return  boolean     True if status is "invoiced"
+     */
+    public function isInvoiced()
+    {
+        return $this->status == OrderState::INVOICED;
+    }
+
+
+    /**
      * Get shipping information for the items to use when selecting a shipper.
      *
      * @return  array   Array('units'=>unit_count, 'amount'=> fixed per-item amount)
@@ -2404,7 +2430,8 @@ class Order
             "shipper_id = {$this->shipper_id}",
             "shipping = {$this->shipping}",
             "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
-            "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'"
+            "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
+            "order_total = " . $this->calcTotal(),
         ) );
     }
 
@@ -2721,11 +2748,16 @@ class Order
      * Provide a central location to get the URL to print or view a single order.
      *
      * @param   string  $view   View type (order or print)
+     * @param   boolean $token  True to include the token
      * @return  string      URL to the view/print page
      */
-    public function buildUrl($view)
+    public function buildUrl($view, $token=true)
     {
-        return COM_buildUrl(SHOP_URL . "/order.php?mode=$view&id={$this->order_id}&token={$this->token}");
+        $url = SHOP_URL . "/order.php?mode=$view&id={$this->order_id}";
+        if ($token) {
+            $url .= "&token={$this->token}";
+        }
+        return COM_buildUrl($url);
     }
 
 
@@ -3356,7 +3388,7 @@ class Order
     {
         global $LANG_SHOP;
 
-        if (array_key_exists($newstatus, $LANG_SHOP['orderstatus'])) {
+        if (OrderState::isValid($newstatus)) {
             $this->status = $newstatus;
         } else {
             SHOP_log("Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
@@ -3416,7 +3448,8 @@ class Order
             $this->updateRecord(array(
                 "tax_rate = {$this->getTaxRate()}",
                 "tax_shipping = {$this->getTaxShipping()}",
-                "tax_handling = {$this->getTaxHandling()}"
+                "tax_handling = {$this->getTaxHandling()}",
+                "order_total = " . $this->calcTotal(),
             ) );
             $this->clearInstance();
         }
@@ -3475,6 +3508,7 @@ class Order
     public function setShipping($amt)
     {
         $this->shipping = (float)$amt;
+        $this->calcTotal();
         return $this;
     }
 
@@ -3801,8 +3835,9 @@ class Order
      */
     public function getBalanceDue()
     {
-        $by_gc = (float)$this->getGC();
-        return (float)($this->order_total - $this->_amt_paid - $by_gc);
+        $due = $this->order_total - $this->_amt_paid - $this->getGC();
+        $due = $this->getCurrency()->formatValue($due);
+        return $due;
     }
 
 
@@ -3860,7 +3895,7 @@ class Order
     /**
      * Maintenance function to sync order total fields from item records.
      *
-     * @deprecate
+     * @deprecated
      * @param   string  $ord_id     Optional order ID, all orders if empty
      */
     public static function XXupdateTotals($ord_id = '')
@@ -4023,25 +4058,49 @@ class Order
         $oldstatus = $this->status;
 
         if ($oldstatus != $newstatus) {
+            // Finalize the gift card application if any part of the order
+            // is paid by coupon.
+            if ($this->getGC() > 0) {
+                $this->setInfo(
+                    'applied_gc',
+                    \Shop\Products\Coupon::Apply($this->getGC(), $this->getUid(), $this)
+                );
+            }
+
+            // Update the order status and date
             $this->setStatus($newstatus)->setOrderDate()->Save(false);
+
             SHOP_log(
                 "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
                 SHOP_LOG_DEBUG
             );
         }
         self::setSession('order_id', $this->getOrderID());
+        return $this;
+    }
 
-        /*if ($newstatus != 'cart') {
-            // Make sure the cookie gets deleted also
-            self::_expireCookie();
-        } else {
-            // restoring the cart, put back the cookie
-            self::_setCookie($cart_id);
-            // delete all open user carts except this one
-            self::deleteUser(0, $cart_id);
-        }*/
-        // Is it really necessary to log that it changed from a cart to pending?
-        //$Order->Log(sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus));
+
+    /**
+     * Cancel an order payment and revert to `cart` status.
+     *
+     * @return  object  $this
+     */
+    public function cancelFinal()
+    {
+        // Get any coupons that were applied and restore their balances
+        $cards = $this->getInfo('applied_gc');
+        if (is_array($cards)) {
+            foreach ($cards as $code=>$amount) {
+                \Shop\Products\Coupon::Restore($code, $amount);
+            }
+        }
+
+        // Set the order status back to "cart" and reset the token
+        // to prevent duplication of this function.
+        $this->setStatus(OrderState::CART)
+             ->remInfo('applied_gc')
+             ->setToken()
+             ->Save(false);
         return $this;
     }
 
@@ -4088,6 +4147,43 @@ class Order
             unset($_SESSION[self::$session_var]);
         } else {
             unset($_SESSION[self::$session_var][$key]);
+        }
+    }
+
+
+    /**
+     * Check that the order status is at least a certain level.
+     *
+     * @param   string  $desired    Desired status
+     * @return  boolean     True if the order is at or past the status
+     */
+    public function statusAtLeast($desired)
+    {
+        return OrderState::atLeast($desired, $this->getStatus());
+    }
+
+
+    /**
+     * Check if an order is OK to be shipped.
+     * Paid orders can always be shipped.
+     * Other orders that are invoiced or in-process can also be shipped.
+     *
+     * @return  boolean     True if the order can be shipped, False if not.
+     */
+    public function okToShip()
+    {
+        if ($this->isPaid()) {
+            return true;
+        }
+
+        switch ($this->status) {
+        case OrderState::INVOICED;
+        case OrderState::PROCESSING;
+        case OrderState::SHIPPED;
+        case OrderState::CLOSED;
+            return true;
+        default:
+            return false;
         }
     }
 
