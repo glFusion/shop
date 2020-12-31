@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\_internal;
+use Shop\Template;
 
 
 /**
@@ -40,8 +41,32 @@ class Gateway extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
+            'terms'     => 1,
         );
         parent::__construct($A);
+    }
+
+
+    /**
+     * Get the command value and template name for the requested button type.
+     *
+     * @param   string  $btn_type   Type of button being created
+     * @return  array       Array ('cmd'=>command, 'tpl'=>template name
+     */
+    private function gwButtonType($btn_type='')
+    {
+        switch ($btn_type) {
+        case 'donation':
+            $cmd = '_donations';
+            $tpl = 'donation';
+            break;
+        case 'buy_now':
+        default:
+            $cmd = '_xclick';
+            $tpl = 'buy_now';
+            break;
+        }
+        return array('cmd' => $cmd, 'tpl' => $tpl);
     }
 
 
@@ -61,26 +86,21 @@ class Gateway extends \Shop\Gateway
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        return '';      // TODO
+
         // Make sure we want to create a buy_now-type button
-        $btn_type = $P->btn_type;
+        $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
 
         $btn_info = self::gwButtonType($btn_type);
         $this->AddCustom('transtype', $btn_type);
         $gateway_vars = '';
 
-        // See if the button is in our cache table
-        $btn_key = $P->btn_type . '_' . $P->getPrice();
-        if ($this->config['encrypt']) {
-            $gateway_vars = $this->_ReadButton($P, $btn_key);
-        }
         if (empty($gateway_vars)) {
             $vars = array();
             $vars['cmd'] = $btn_info['cmd'];
-            $this->setReceiver($P->getPrice());
-            $vars['business'] = $this->receiver_email;
-            $vars['item_number'] = htmlspecialchars($P->id);
-            $vars['item_name'] = htmlspecialchars($P->short_description);
+            $vars['item_number'] = htmlspecialchars($P->getID());
+            $vars['item_name'] = htmlspecialchars($P->getShortDscp());
             $vars['currency_code'] = $this->currency_code;
             $vars['custom'] = $this->PrepareCustom();
             $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
@@ -98,18 +118,18 @@ class Gateway extends \Shop\Gateway
                 $vars['quantity'] = $qty;
             }
 
-            if ($P->weight > 0) {
-                $vars['weight'] = $P->weight;
+            if ($P->getWeight() > 0) {
+                $vars['weight'] = $P->getWeight();
             } else {
                 $vars['no_shipping'] = '1';
             }
 
-            switch ($P->shipping_type) {
+            switch ($P->getShippingType()) {
             case 0:
                 $vars['no_shipping'] = '1';
                 break;
             case 2:
-                $vars['shipping'] = $P->shipping_amt;
+                $vars['shipping'] = $P->getShipping();
                 $vars['no_shipping'] = '1';
                 break;
             case 1:
@@ -123,50 +143,35 @@ class Gateway extends \Shop\Gateway
 
             // Buy-now product button, set default billing/shipping addresses
             $U = self::Customer();
-            $shipto = $U->getDefaultAddress('shipto');
-            if (!empty($shipto)) {
-                if (strpos($shipto['name'], ' ')) {
-                    list($fname, $lname) = explode(' ', $shipto['name']);
+            $Shipto = $U->getDefaultAddress('shipto');
+            if (!empty($Shipto)) {
+                if (strpos($Shipto->getName(), ' ')) {
+                    list($fname, $lname) = explode(' ', $Shipto->getName());
                     $vars['first_name'] = $fname;
                     if ($lname) $vars['last_name'] = $lname;
                 } else {
-                    $vars['first_name'] = $shipto['name'];
+                    $vars['first_name'] = $Shipto->getName();
                 }
-                $vars['address1'] = $shipto['address1'];
-                if (!empty($shipto['address2']))
-                    $vars['address2'] = $shipto['address2'];
-                $vars['city'] = $shipto['city'];
-                $vars['state'] = $shipto['state'];
-                $vars['zip'] = $shipto['zip'];
-                $vars['country'] = $shipto['country'];
+                $vars['address1'] = $Shipto->getAddress1();
+                $vars['address2'] = $Shipto->getAddress2();
+                $vars['city'] = $Shipto->getCity();
+                $vars['state'] = $Shipto->getState();
+                $vars['zip'] = $Shipto->getPostal();
+                $vars['country'] = $Shipto->getCountry();
             }
 
             $gateway_vars = '';
-            $enc_btn = '';
-            if ($this->config['encrypt']) {
-                $enc_btn = $this->_encButton($vars);
-                if (!empty($enc_btn)) {
-                    $gateway_vars .=
-                    '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
-                    '<input type="hidden" name="encrypted" value=\'' .
-                        $enc_btn . '\' />' . "\n";
-                }
-            }
-            if (empty($enc_btn)) {
-                // Create unencrypted buttons if not configured to encrypt,
-                // or if encryption fails.
-                foreach ($vars as $name=>$value) {
-                    $gateway_vars .= '<input type="hidden" name="' . $name .
-                        '" value="' . $value . '" />' . "\n";
-                }
-            } else {
-                $this->_SaveButton($P, $btn_key, $gateway_vars);
+            // Create unencrypted buttons if not configured to encrypt,
+            // or if encryption fails.
+            foreach ($vars as $name=>$value) {
+                $gateway_vars .= '<input type="hidden" name="' . $name .
+                    '" value="' . $value . '" />' . "\n";
             }
         }
 
         // Set the text for the button, falling back to our Buy Now
         // phrase if not available
-        $btn_text = $P->btn_text;    // maybe provided by a plugin
+        $btn_text = $P->getBtnText();    // maybe provided by a plugin
         if ($btn_text == '') {
             $btn_text = isset($LANG_SHOP['buttons'][$btn_type]) ?
                 $LANG_SHOP['buttons'][$btn_type] : $LANG_SHOP['buy_now'];
@@ -211,17 +216,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Check if the gateway supports invoicing. Default is false.
-     *
-     * @return  boolean True if invoicing is supported, False if not.
-     */
-    public function supportsInvoicing()
-    {
-        return true;
-    }
-
-
-    /**
      * Check that the current user is allowed to use this gateway.
      * This limits access to special gateways like 'check' or 'terms'.
      * The internal gateway can be used by all users if the order value
@@ -236,5 +230,3 @@ class Gateway extends \Shop\Gateway
     }
 
 }
-
-?>
