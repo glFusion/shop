@@ -70,9 +70,6 @@ class Gateway extends \Shop\Gateway
         $this->gw_name = 'square';
         $this->gw_desc = 'SquareConnect';
 
-        // Import the Square API
-        require_once __DIR__ . '/vendor/autoload.php';
-
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'CZK', 'ILS', 'MXN',
@@ -131,6 +128,18 @@ class Gateway extends \Shop\Gateway
         if (!in_array($this->currency_code, $supported_currency)) {
             $this->enabled = 0;
         }
+    }
+
+
+    /**
+     * Make the API classes available. May be needed for reports.
+     *
+     * @return  object  $this
+     */
+    public function loadSDK()
+    {
+        require_once __DIR__ . '/vendor/autoload.php';
+        return $this;
     }
 
 
@@ -435,8 +444,8 @@ class Gateway extends \Shop\Gateway
      */
     private function _getApiClient()
     {
-        require_once __DIR__ . '/vendor/autoload.php';
         if ($this->_api_client === NULL) {
+            $this->loadSDK();
             $this->_api_client = new SquareClient(array(
                 'accessToken' => $this->token,
                 'environment' => $this->isSandbox() ?
@@ -678,14 +687,35 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    /*public function getPayment($pmt_id)
+    /**
+     * Retrieve a payment using the payment intent ID.
+     * Called from Webhook to get the order information.
+     *
+     * @param   string  $pmt_id     Payment Intent ID
+     * @return  object      Square Payment object
+     */
+    public function getPayment($pmt_id)
     {
         $apiClient = $this->_getApiClient();
         $pmtApi = $apiClient->getPaymentsApi();
-        var_dump($pmtApi->getPayment($pmt_id));die;
+        return $pmtApi->getPayment($pmt_id);
     }
 
-    public function getInvoice($inv_id)
+
+    /**
+     * Retrieve the order from Square.
+     *
+     * @param   string  $order_id   Square order ID
+     * @return  object      Square order
+     */
+    public function getOrder($order_id)
+    {
+        $apiClient = $this->_getApiClient();
+        $api = $apiClient->getOrdersApi();
+        return $api->retrieveOrder($order_id);
+    }
+
+    /*public function getInvoice($inv_id)
     {
         $apiClient = $this->_getApiClient();
         $api = $apiClient->getInvoicesApi();
@@ -712,6 +742,11 @@ class Gateway extends \Shop\Gateway
     }*/
 
 
+    /**
+     * Get any errors that were set during processing.
+     *
+     * @return  array   Array of Square error objects
+     */
     public function getErrors()
     {
         return $this->_errors;
