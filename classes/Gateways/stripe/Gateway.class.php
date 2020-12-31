@@ -104,6 +104,8 @@ class Gateway extends \Shop\Gateway
 
     /**
      * Get the Square API client object.
+     * Initializes the API for use with static functions as well as
+     * returning a client object.
      *
      * @return  object      SquareClient object
      */
@@ -136,7 +138,7 @@ class Gateway extends \Shop\Gateway
             return '';
         }
 
-        $this->getApiClient();
+        $apiClient = $this->getApiClient();
         $this->_cart = $cart;   // Save to it is available to getCheckoutButton()
         $cartID = $cart->getOrderID();
         $shipping = 0;
@@ -220,8 +222,15 @@ class Gateway extends \Shop\Gateway
                 'order_id' => $cart->getOrderID(),
             ),
         );
-        $this->session = \Stripe\Checkout\Session::create($session_params);
 
+        // Retrieve or create a Square customer record as needed
+        $gwCustomer = $this->getCustomer($cart->getUid());
+        if ($gwCustomer) {
+            $session_params['customer'] = $gwCustomer->id;
+        }
+
+        // Create the checkout session and load the Stripe javascript
+        $this->session = $apiClient->checkout->sessions->create($session_params);
         if (!$have_js) {
             $outputHandle = \outputHandler::getInstance();
             $outputHandle->addLinkScript('https://js.stripe.com/v3/');
@@ -396,8 +405,15 @@ class Gateway extends \Shop\Gateway
     {
         global $_CONF, $LANG_SHOP;
 
+        $gwCustomer = $this->getCustomer($Order->getUid());
+        if ($gwCustomer) {
+            $cust_id = $gwCustomer->id;
+        } else {
+            SHOP_log("Error creating Stripe customer for order {$Order->getOrderId()}");
+            return false;
+        }
+
         $Currency = $Order->getCurrency();
-        $cust_id = $this->getCustomer($Order->getUid());
         $apiClient = $this->getApiClient();
         $taxRates = array();
 
