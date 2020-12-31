@@ -221,7 +221,7 @@ class Gateway extends \Shop\Gateway
             'paymentaction' => 'sale',
             'notify_url' => $this->ipn_url,
             'currency_code'  => $this->currency_code,
-            'custom'    => (string)$custom_arr, //str_replace('"', '\'', serialize($custom_arr)),
+            'custom'    => (string)$custom_arr->encode(),
             'invoice'   => $cartID,
         );
         $address = $cart->getShipto();
@@ -1010,7 +1010,10 @@ class Gateway extends \Shop\Gateway
         $Currency = $Order->getCurrency();
         $Billto = $Order->getBillto();
         $Shipto = $Order->getShipto();
-        $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
+
+        // Invoiced is a pseudo-fake status to keep this order from
+        // showing up in the cart.
+        $Order->updateStatus(OrderState::INVOICED);
 
         $A = array(
             'detail' => array(
@@ -1150,7 +1153,7 @@ class Gateway extends \Shop\Gateway
 
         // If the invoice was created successfully, send to the buyer
         if ($http_code == 201) {
-            $Order->updateStatus(OrderState::INVOICED);
+            $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
             $json = json_decode($inv, true);
             if (isset($json['href'])) {
                 $ch = curl_init();
