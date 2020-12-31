@@ -9,7 +9,7 @@ Release TBD
   * Add interface for customers to edit addresses outside of orders.
   * Add fast-checkout where the order allows it (no shipping or tax needed).
   * Enable sales tax charges on shipping and handling.
-  * Add invoicing via Paypal and Square invoice APIs.
+  * Add invoicing via Paypal, Square and Stripe invoice APIs.
   * Link to customer in order report now filters report.
   * Enable/disable donation buttons in Paypal gateway config.
   * Allow user-entered prices for some plugin items, e.g. Donations.
@@ -26,8 +26,7 @@ Release TBD
   * Zone rules can be applied to categories as well as products.
   * Remove unnecessary `cache_max_age` setting for blocks.
   * Add button to reset multiple products' ratings.
-  * Add Paylike payment processor.
-  * Add Coingate crypto-currency payment processor.
+  * Enable plugin-style installation of payment gateways.
 
 ## v1.2.1
 Release 2020-03-02
