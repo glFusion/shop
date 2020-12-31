@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner
  * @package     shop
- * @varsion     v1.2.0
+ * @varsion     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,9 +16,10 @@
 require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
- if (
+if (
     !function_exists('SHOP_access_check') ||
-    !SHOP_access_check('shop.admin')
+    (!$_SHOP_CONF['anon_buy'] && COM_isAnonUser()) ||
+    !SHOP_access_check()
 ) {
     COM_404();
     exit;
@@ -33,7 +34,7 @@ $expected = array(
     'update', 'checkout', 'savebillto', 'saveshipto', 'delete', 'nextstep',
     'empty', 'save_viewcart', 'save_addresses', 'save_shipping', 'save_payment',
     // Views
-    'editcart', 'cancel', 'view', 'billto', 'shipto', 'addresses', 'shipping',
+    'editcart', 'viewcart', 'cancel', 'view', 'billto', 'shipto', 'addresses', 'shipping',
     'payment', 'confirm',
 );
 foreach($expected as $provided) {
@@ -394,9 +395,7 @@ case 'cancel':
         if ($token == $Cart->getToken()) {
             // Only reset if the token is valid, then update the token to
             // invalidate further changes using this token.
-            $Cart->setFinal('cart')
-                 ->setToken()
-                 ->Save(false);
+            $Cart->cancelFinal();
         }
     }
     // fall through to view cart
@@ -406,7 +405,7 @@ default:
     SHOP_setUrl($_SERVER['REQUEST_URI']);
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
-    if ($view != 'editcart' && $Cart->canFastCheckout()) {
+    if ($view != 'viewcart' && $Cart->canFastCheckout()) {
         $V = new Shop\Views\Cart;
         $content .= Shop\Menu::checkoutFlow($Cart, 'confirm');
         $content .= $V->withOrder($Cart)->confirmCheckout();
