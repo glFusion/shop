@@ -15,6 +15,9 @@
  */
 namespace Shop;
 use Shop\Logger\IPN as logIPN;
+use Shop\Models\IPN as IPNModel;
+use Shop\Models\OrderState;
+
 
 /**
  * Base webhook class.
@@ -32,6 +35,10 @@ class Webhook
     /** Event type for regular payment notifications.
      * @const string */
     const EV_PAYMENT = 'payment_created';
+
+    /** Event type for regular payment notifications.
+     * @const string */
+    const EV_PAYMENT_UPDATED = 'payment_updated';
 
     /** Standard event type for invoice payment.
      * @const string */
@@ -77,6 +84,30 @@ class Webhook
      * @var array */
     protected $whHeaders = array();
 
+    /** Payment method, comment, etc. Default is gateway name.
+     * @var string */
+    protected $pmt_method = '';
+
+    /** Currency object, based on order or default.
+     * @var object */
+    protected $Currency = NULL;
+
+    /** Order object.
+     * @var object */
+    protected $Order = NULL;
+
+    /** Gateway object.
+     * @var object */
+    protected $GW = NULL;
+
+    /** Payment object.
+     * @var object */
+    protected $Payment = NULL;
+
+    /** IPN Model to hold payment data in a standard layout.
+     * @var object */
+    protected $IPN = NULL;
+
 
     /**
      * Instantiate and return a Webhook object.
@@ -94,7 +125,6 @@ class Webhook
             SHOP_log("Webhook::getInstance() - $cls doesn't exist");
             return NULL;
         }
-        return $ipns[$name];
     }
 
 
@@ -118,6 +148,7 @@ class Webhook
     public function setID($whID)
     {
         $this->whID = $whID;
+        $this->setIPN('txn_id', $this->whID);
         return $this;
     }
 
@@ -142,6 +173,7 @@ class Webhook
     public function setSource($source)
     {
         $this->whSource = $source;
+        $this->setIPN('gw_name', $this->whSource);
         return $this;
     }
 
@@ -154,6 +186,23 @@ class Webhook
     public function getSource()
     {
         return $this->whSource;
+    }
+
+
+    /**
+     * Set the transaction date, current date/time by default.
+     *
+     * @param   string|null $dt     Date/time string or null for current
+     * @return  object  $this
+     */
+    public function setTxnDate($dt=NULL)
+    {
+        global $_CONF;
+
+        if ($dt === NULL) {
+            $dt = $_CONF['_now']->toMySQL(true);
+        }
+        $this->IPN['sql_date'] = $dt;
     }
 
 
@@ -189,10 +238,14 @@ class Webhook
      */
     public function setTimestamp($ts=NULL)
     {
+        global $_CONF;
+
         if ($ts === NULL) {
             $ts = time();
         }
         $this->whTS = $ts;
+        $dt = new \Date($ts, $_CONF['timezone']);
+        $this->setIPN('sql_date', $dt->toMySQL(true));
         return $this;
     }
 
@@ -265,6 +318,7 @@ class Webhook
     public function setPayment($amount)
     {
         $this->whPmtTotal = (float)$amount;
+        $this->setIPN('pmt_gross', $this->whPmtTotal);
         return $this;
     }
 
@@ -277,6 +331,30 @@ class Webhook
     public function getPayment()
     {
         return (float)$this->whPmtTotal;
+    }
+
+
+    /**
+     * Set the payment method, comment, etc. Default is gateway name.
+     *
+     * @param   string  $method     Payment method
+     * @return  object  $this
+     */
+    public function setPmtMethod($method)
+    {
+        $this->pmt_method = $method;
+        return $this;
+    }
+
+
+    /**
+     * Get the payment method or comment.
+     *
+     * @return  string      Payment method
+     */
+    public function getPmtMethod()
+    {
+        return $this->pmt_method;
     }
 
 
@@ -308,17 +386,20 @@ class Webhook
      * Record a payment via webhook in the database.
      * Creates a Payment object from the webhook data and saves it.
      *
-     * @return  integer     Record ID returned from Payment::Save()
+     * @return  object      Payment object
      */
     public function recordPayment()
     {
-
-        $Pmt = new Payment();
-        $Pmt->setRefID($this->whID)
-            ->setGateway($this->whSource)
+        $Payment = new Payment();
+        $Payment->setRefID($this->getID())
             ->setAmount($this->getPayment())
-            ->setOrderID($this->whOrderID);
-        return $Pmt->Save();
+            ->setGateway($this->getSource())
+            ->setMethod($this->getPmtMethod())
+            ->setComment('Webhook ' . $this->getData()->id)
+            ->setComplete(1)
+            ->setStatus($this->getData()->type)
+            ->setOrderID($this->getOrderID());
+        return $Payment->Save();
     }
 
 
@@ -382,6 +463,57 @@ class Webhook
 
 
     /**
+     * Set the payment currency object.
+     *
+     * @param   string  $code   Currency code, empty for site default
+     * @return  object  $this
+     */
+    public function setCurrency($code='')
+    {
+        $this->Currency = Currency::getInstance(strtoupper($code));
+        return $this;
+    }
+
+
+    /**
+     * Get the payment currency object.
+     *
+     * @return string  Currency code
+     */
+    public function getCurrency()
+    {
+        if ($this->Currency === NULL) {
+            $this->setCurrency();
+        }
+        return $this->Currency;
+    }
+
+
+    /**
+     * Check that provided funds are sufficient to cover the cost of the purchase.
+     *
+     * @return boolean                 True for sufficient funds, False if not
+     */
+    protected function isSufficientFunds()
+    {
+        if (!$this->Order) {
+            return false;
+        }
+        $bal_due = $this->Order->getBalanceDue();
+        $msg = $Cur->FormatValue($this->getPmtGross()) . ' received, require ' .
+            $Cur->FormatValue($credit) .' credit, require ' .
+            $Cur->FormatValue($total_order);
+        if ($bal_due <= $$this->getPmtGross() + .0001) {
+            SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
+            return true;
+        } else {
+            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_ERROR);
+            return false;
+        }
+    }
+
+
+    /**
      * Handle what to do in the event of a purchase/IPN failure.
      *
      * This method does some basic failure handling.  For anything more
@@ -394,6 +526,83 @@ class Webhook
     {
         // Log the failure to glFusion's error log
         $this->Error($this->gw_id . '-IPN: ' . $msg, 1);
+    }
+
+
+    /**
+     * Handles the item purchases.
+     * The purchase should already have been validated; this function simply
+     * records the purchases. Purchased files will be emailed to the
+     * customer by Order::Notify().
+     *
+     * @return  boolean     True if processed successfully, False if not
+     */
+    public function handlePurchase($Order = NULL)
+    {
+        if ($Order === NULL) {
+            $Order = Order::getInstance($this->getOrderID());
+        }
+        $GW = Gateway::create($Order->getPmtMethod());
+        if (
+            $GW->okToProcess($Order)
+            //&& !$Order->statusAtLeast(OrderState::PROCESSING)
+        ) {
+            $this->IPN->setUid($Order->getUid());
+            // Handle the purchase for each order item
+            foreach ($Order->getItems() as $Item) {
+                $Item->getProduct()->handlePurchase($Item, $this->IPN);
+            }
+            if ($Order->hasPhysical()) {
+                $Order->updateStatus(OrderState::PROCESSING);
+            } else {
+                $Order->updateStatus(OrderState::SHIPPED);
+            }
+        } else {
+            SHOP_log('Cannot process order ' . $this->getOrderID(), SHOP_LOG_ERROR);
+            SHOP_log('canprocess? ' . var_export($GW->okToProcess($Order),true), SHOP_LOG_DEBUG);
+            SHOP_log('status ' . $Order->getStatus(), SHOP_LOG_DEBUG);
+            return false;
+        }
+        return true;
+    }
+
+
+    /**
+     * Checks that the transaction id is unique to prevent double counting.
+     *
+     * @return  boolean             True if unique, False otherwise
+     */
+    protected function isUniqueTxnId()
+    {
+        global $_TABLES, $_SHOP_CONF;
+
+        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
+            // Special config value set only in config.php for IPN testing
+            return true;
+        }
+
+        // Count IPN log records with txn_id = this one.
+        $count = DB_count(
+            $_TABLES['shop.ipnlog'],
+            array('gateway', 'txn_id', 'event'),
+            array($this->GW->getName(), $this->getID(), $this->getEvent())
+        );
+        if ($count > 0) {
+            SHOP_log("Received duplicate IPN {$this->getID()} for {$this->GW->getName()}", SHOP_LOG_ERROR);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+
+    protected function setIPN($key, $value)
+    {
+        if ($this->IPN === NULL) {
+            $this->IPN = new IPNModel;
+        }
+        $this->IPN[$key] = $value;
+        return $this;
     }
 
 }

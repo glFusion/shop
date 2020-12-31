@@ -49,9 +49,8 @@ class Webhook extends \Shop\Webhook
         SHOP_log('Got Square Webhook: ' . $this->blob, SHOP_LOG_DEBUG);
         SHOP_log('Got Square Headers: ' . var_export($_SERVER,true), SHOP_LOG_DEBUG);
         $this->setTimestamp();
-        $this->setData(json_decode($this->blob, true));
+        $this->setData(json_decode($this->blob));
     }
-
 
 
     /**
@@ -63,12 +62,9 @@ class Webhook extends \Shop\Webhook
     {
         $retval = false;        // be pessimistic
 
-        $data = SHOP_getVar($this->getData(), 'data', 'array', NULL);
-        if  ($data) {
-            $object = SHOP_getVar($data, 'object', 'array', NULL);
-            if (!$object) {
-                return false;
-            }
+        $object = $this->getData()->data->object;
+        if (!$object) {
+            return false;
         }
         $GW = Gateway::getInstance($this->getSource());
         if (!$GW) {
@@ -77,29 +73,39 @@ class Webhook extends \Shop\Webhook
 
         switch ($this->getEvent()) {
         case self::EV_INV_PAYMENT:
+            break;      // deprecated
             $invoice = SHOP_getVar($object, 'invoice', 'array', NULL);
             if ($invoice) {
                 $ord_id = SHOP_getVar($invoice, 'invoice_number', 'string', NULL);
                 $status = SHOP_getVar($invoice, 'status', 'string', NULL);
-                if ($ord_id && $status == 'PAID') {
+                if ($ord_id) {
+                    $this->setOrderID($ord_id);
                     $Order = Order::getInstance($ord_id);
                     if (!$Order->isNew()) {
-                        $this->setOrderID($ord_id);
                         $pmt_req = SHOP_getVar($invoice, 'payment_requests', 'array', NULL);
                         if ($pmt_req && isset($pmt_req[0])) {
-                            $total_money = SHOP_getVar($pmt_req[0], 'total_completed_amount_money', 'array', NULL);
-                            if ($total_money) {
-                                $amt = SHOP_getVar($total_money, 'amount', 'string', NULL);
-                                $cur_code = SHOP_getVar($total_money, 'currency', 'string', NULL);
-                                $amt_paid = Currency::getInstance($cur_code)->fromInt($amt);
-                                $this->logIPN();
+                            $bal_due = $Order->getBalanceDue();
+                            $next_pmt = SHOP_getVar($invoice, 'next_payment_amount_money', 'array', NULL);
+                            $sq_bal_due = Currency::getInstance($next_pmt['currency'])
+                                ->fromInt($next_pmt['amount']);
+                            if ($status == 'PAID') {
+                                // Invoice is paid in full by this payment
+                                $amt_paid = $bal_due;
+                            } elseif ($status == 'PARTIALLY_PAID') {
+                                // Have to figure out the amount of this payment by deducting
+                                // the "next payment amount"
+                                $amt_paid = (float)($Order->getTotal() - $sq_bal_due);
+                            } else {
+                                $amt_paid = 0;
+                            }
+                            if ($amt_paid > 0) {
                                 $Pmt = Payment::getByReference($this->getID());
                                 if ($Pmt->getPmtID() == 0) {
                                     $Pmt->setRefID($this->getID())
                                         ->setAmount($amt_paid)
                                         ->setGateway($this->getSource())
                                         ->setMethod("Online")
-                                        ->setComment('Webhook ' . $this->getID())
+                                        ->setComment('Webhook ' . $this->getData()->event_id)
                                         ->setOrderID($this->getOrderID());
                                     $retval = $Pmt->Save();
                                 }
@@ -110,35 +116,80 @@ class Webhook extends \Shop\Webhook
             }
             break;
         case self::EV_PAYMENT:
-            break;  // not currently enabled
-            $payment = SHOP_getVar($object, 'payment', 'array', NULL);
+            $payment = $object->payment;
+            $this->setID($payment->id);
             if ($payment) {
-                $status = SHOP_getVar($payment, 'status', 'string', NULL);
-                $amt_money = SHOP_getVar($payment, 'amount_money', 'array', NULL);
-                if (!$amt_money) {
-                    return false;
+                $this->logIPN();
+                $amount_money = $payment->amount_money->amount;
+                if (
+                    $amount_money > 0 &&
+                    ( $payment->status == 'APPROVED' || $payment->status == 'COMPLETED')
+                ) {
+                    $currency = $payment->amount_money->currency;
+                    $this_pmt = Currency::getInstance($currency)->fromInt($amount_money);
+                    $order_id = $payment->order_id;
+                    $sqOrder = $GW->getOrder($order_id);
+                    $this->setOrderID($sqOrder->getResult()->getOrder()->getReferenceId());
+                    $Order = Order::getInstance($this->getOrderID());
+                    if (!$Order->isNew()) {
+                        $Pmt = Payment::getByReference($this->getID());
+                        if ($Pmt->getPmtID() == 0) {
+                            $Pmt->setRefID($this->getID())
+                                ->setAmount($this_pmt)
+                                ->setGateway($this->getSource())
+                                ->setMethod("Online")
+                                ->setComment('Webhook ' . $this->getData()->event_id)
+                                ->setComplete(0)
+                                ->setStatus($payment->status)
+                                ->setOrderID($this->getOrderID());
+                        }
+                        $this->handlePurchase();    // process if fully paid
+                        $retval = true;
+                    }
                 }
-                $order_id = SHOP_getVar($payment, 'order_id', 'string', NULL);
-                if (!$order_id) {
-                    return false;
+            }
+            break;
+
+        case self::EV_PAYMENT_UPDATED:
+            $data = $this->getData()->data;
+            $payment = $data->object->payment;
+            $this->setID($payment->id);
+            $ref_id = $payment->id;
+            if ($payment->id) {
+                $this->setID($payment->id);
+                $this->logIPN();
+                if (
+                    $payment->status == 'COMPLETED' ||
+                    $payment->status == 'CAPTURED'
+                ) {
+                    $Pmt = Payment::getByReference($ref_id);
+                    $Cur = Currency::getInstance($payment->total_money->currency);
+                    if ($Pmt->getPmtID() == 0) {
+                        SHOP_log("Payment not found: " . var_export($data,true));
+                    } elseif (
+                        $payment->total_money->amount == $Cur->toInt($Pmt->getAmount())
+                    ) {
+                        $Pmt->setComplete(1)->setStatus($payment->status)->Save();
+                    }
+                    $this->handlePurchase();    // process if fully paid
+                    $retval = true; 
                 }
-                $sqOrder = $GW->getOrder($order_id);
-                //COM_errorLog($sqOrder);die;
             }
             break;
 
         case self::EV_INV_CREATED:
-            $invoice = SHOP_getVar($object, 'invoice', 'array', NULL);
+            $invoice = $object->invoice;
             if ($invoice) {
-                $inv_num = SHOP_getVar($invoice, 'invoice_number', 'string', NULL);
-                $sq_ord_id = SHOP_getVar($invoice, 'order_id', 'string', NULL);
+                $inv_num = $invoice->invoice_number;
                 if (!empty($inv_num)) {
                     $Order = Order::getInstance($inv_num);
                     if (!$Order->isNew()) {
                         $this->setOrderID($inv_num);
                         SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
-                        $terms_gw = \Shop\Gateway::create($Order->getPmtMethod());
-                        $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
+                        // Always OK to process for a Net-30 invoice
+                        $this->handlePurchase();
+                        //$terms_gw = \Shop\Gateway::create($Order->getPmtMethod());
+                        //$Order->updateStatus($terms_gw->getConfig('after_inv_status'));
                         $retval = true;
                     } else {
                         SHOP_log("Order number '$inv_num' not found for Square invoice");
@@ -163,7 +214,11 @@ class Webhook extends \Shop\Webhook
             return self::EV_INV_PAYMENT;
             break;
         case 'payment':
+        case 'payment.created':
             return self::EV_PAYMENT;
+            break;
+        case 'payment.updated':
+            return self::EV_PAYMENT_UPDATED;
             break;
         case 'invoice.created':
             return self::EV_INV_CREATED;
@@ -187,14 +242,10 @@ class Webhook extends \Shop\Webhook
         // Check that the blob was decoded successfully.
         // If so, extract the key fields and set Webhook variables.
         $data = $this->getData();
-        if ($data) {     // Indicates that the blob was decoded
-            if (isset($data['data']) && is_array($data['data'])) {
-                $this->setID(SHOP_getVar($data, 'event_id'));
-                $this->setEvent(SHOP_getVar($data, 'type'));
-            }
-        } else {
+        if (!is_object($data) || !$data->event_id) {
             return false;
         }
+        $this->setEvent($data->type);
 
         $gw = \Shop\Gateway::create($this->getSource());
         $notificationSignature = $this->getHeader('X-Square-Signature');

@@ -48,7 +48,7 @@ class Webhook extends \Shop\Webhook
         SHOP_log("Paypal Webhook Headers: " . var_export($_SERVER,true), SHOP_LOG_DEBUG);
 
         $this->setTimestamp();
-        $this->setData(json_decode($this->blob, true));
+        $this->setData(json_decode($this->blob));
     }
 
 
@@ -72,6 +72,21 @@ class Webhook extends \Shop\Webhook
         switch ($this->getEvent()) {
         case self::EV_INV_PAYMENT:
             if ($invoice) {
+                $this->IPN = new IPNModel(array(
+                    'sql_date' => '',       // SQL-formatted date string
+                    'uid' => 0,             // user ID to receive credit
+                    'pmt_gross' => 0,       // gross amount paid
+                    'txn_id' => '',         // transaction ID
+                    'gw_name' => '',        // gateway short name
+                    'memo' => '',           // misc. comment
+                    'first_name' => '',     // payer's first name
+                    'last_name' => '',      // payer's last name
+                    'payer_name' => '',     // payer's full name
+                    'payer_email' => '',    // payer's email address
+                    'custom' => array(  // backward compatibility for plugins
+                        'uid' => 0,
+                ),
+
                 $payments = SHOP_getVar($invoice, 'payments', 'array', NULL);
                 if (is_array($payments) && !empty($payments)) {
                     // Get just the latest payment.

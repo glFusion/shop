@@ -12,8 +12,10 @@
  * @filesource
  */
 namespace Shop\Gateways\stripe;
-use Shop\Cart;
+use Shop\Order;
 use Shop\Gateway;
+use Shop\Currency;
+use Shop\Payment;
 use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 
@@ -24,21 +26,16 @@ if (!defined ('GVERSION')) {
 }
 
 /**
- *  Class to provide IPN for internal-only transactions,
- *  such as zero-balance orders.
+ * Class to provide IPN for internal-only transactions,
+ * such as zero-balance orders.
  *
- *  @package shop
+ * @package shop
  */
 class Webhook extends \Shop\Webhook
 {
-    /** Event object obtained from the IPN payload.
-     * @var object */
-    private $_event;
-
     /** Payment Intent object obtained from the ID in the Event object.
      * @var object */
     private $_payment;
-
 
     /**
      * Constructor.
@@ -49,81 +46,9 @@ class Webhook extends \Shop\Webhook
     {
         global $_USER, $_CONF;
 
-        $this->gw_id = 'stripe';
-        parent::__construct();  // construct without IPN data.
-        
+        $this->setSource('stripe');
         // Instantiate the gateway to load the needed API key.
-        $GW = Gateway::getInstance('stripe');
-        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-        $payload = @file_get_contents('php://input');
-        SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
-        $event = null;
-
-        try {
-            \Stripe\Stripe::setApiKey($GW->getSecretKey());
-            $event = \Stripe\Webhook::constructEvent(
-                $payload, $sig_header, $GW->getWebhookSecret()
-            );
-        } catch(\UnexpectedValueException $e) {
-            // Invalid payload
-            SHOP_log("Unexpected Value received from Stripe");
-            http_response_code(400); // PHP 5.4 or greater
-            exit;
-        } catch(\Stripe\Error\SignatureVerification $e) {
-            // Invalid signature
-            SHOP_log("Invalid Stripe signature received");
-            http_response_code(400); // PHP 5.4 or greater
-            exit;
-        }
-
-        // Handle the checkout.session.completed event
-        /*if ($event->type != 'checkout.session.completed') {
-            // Fulfill the purchase...
-            $ipn = \Shop\IPN::getInstance('stripe', $event);
-            if ($ipn) {
-                $ipn->Process();
-            } else {
-                SHOP_log('Stripe IPN processor not found');
-            }
-        }*/
-
-        if (empty($event)) {
-            return;
-        }
-
-        $this->_event = $event;        
-        $session = $this->_event->data->object;
-        $order_id = $session->client_reference_id;
-        $this->ipn_data['order_id'] = $order_id;
-        $this->setTxnId($session->payment_intent);
-
-        if (!empty($order_id)) {
-            $this->Order = $this->getOrder($order_id);
-        }
-        if (!$this->Order || $this->Order->isNew()) {
-            // Invalid order specified, nothing can be done.
-            return NULL;
-        }
-
-        $this->setOrderId($this->Order->getOrderID());
-        $billto = $this->Order->getBillto();
-        $shipto = $this->Order->getShipto();
-        if (empty($shipto->getID()) && !empty($billto->getID())) {
-            $shipto = $billto;
-        }
-
-        $this
-            ->setEmail($this->Order->getBuyerEmail())
-            ->setPayerName($_USER['fullname'])
-            ->setGwName($this->GW->getName())
-            ->setStatus(OrderState::PENDING);
-
-        $this->shipto = $shipto->toArray();
-        $this->custom = new CustomInfo(array(
-            'transtype' => $this->GW->getName(),
-            'uid'       => $this->Order->getUid(),
-            'by_gc'     => $this->Order->getInfo()['apply_gc'],
-        ) );
+        $this->GW = Gateway::getInstance('stripe');
     }
 
 
@@ -136,101 +61,184 @@ class Webhook extends \Shop\Webhook
      */
     public function Verify()
     {
-        // Get the payment intent from Stripe
-        $trans = $this->GW->getPayment($this->getTxnId());
-        $this->_payment = $trans;
+        $event = NULL;
+        if (isset($_POST['vars'])) {
+            $payload = base64_decode($_POST['vars']);
+            $sig_header = $_POST['HTTP_STRIPE_SIGNATURE'];
+            $event = json_decode($payload);
+        } elseif (isset($_SERVER['HTTP_STRIPE_SIGNATURE'])) {
+            $payload = @file_get_contents('php://input');
+            $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+        } else {
+            $payload = '';
+            $sig_header = 'invalid';
+        }
+        SHOP_log('Recieved Stripe Webhook: ' . var_export($payload, true), SHOP_LOG_DEBUG);
+        SHOP_log('Sig Key: ' . var_export($sig_header, true), SHOP_LOG_DEBUG);
 
-        if (!$trans || $trans->status != 'succeeded') {
-            // Payment verification failed.
-            SHOP_log('ipn\stripe::Verify() failed', SHOP_LOG_DEBUG);
+        if ($sig_header == 'invalid') {
             return false;
         }
-        $this->ipn_data['txn'] = $trans;
 
-        // Verification succeeded, get payment info.
-        $this
-            ->setStatus(OrderState::PAID)
-            ->setCurrency($trans->currency)
-            ->setPmtGross($this->getCurrency()->fromInt($trans->amount_received));
-
-        $session = $this->_event->data->object;
-        $pmt_shipping = 0;
-        $pmt_tax = 0;
-        foreach ($session->display_items as $item) {
-            if ($item->custom->name == '__tax') {
-                $pmt_tax += $this->getCurrency()->fromInt($item->amount);
-            } elseif ($item->custom->name == '__shipping') {
-                $pmt_shipping += $this->getCurrency()->fromInt($item->amount);
-            } elseif ($item->custom->name == '__gc') {
-                // TODO when Stripe supports coupons
-                $this->addCredit('gc', $item->amount);
+        if ($event === NULL) {  // to skip test data from $_POST
+            require_once __DIR__ . '/vendor/autoload.php';
+            try {
+                \Stripe\Stripe::setApiKey($this->GW->getSecretKey());
+                $event = \Stripe\Webhook::constructEvent(
+                    $payload, $sig_header, $this->GW->getWebhookSecret()
+                );
+            } catch(\UnexpectedValueException $e) {
+                // Invalid payload
+                SHOP_log("Unexpected Value received from Stripe");
+                return false;
+                //http_response_code(400); // PHP 5.4 or greater
+                //exit;
+            } catch(\Stripe\Error\SignatureVerification $e) {
+                // Invalid signature
+                SHOP_log("Invalid Stripe signature received");
+                return false;
+                //http_response_code(400); // PHP 5.4 or greater
+                //exit;
             }
         }
-
-        $this
-            ->setPmtTax($pmt_tax)
-            ->setPmtShipping($pmt_shipping);
-        $this->ipn_data['pmt_shipping'] = $this->getPmtShipping();
-        $this->ipn_data['pmt_tax'] = $this->getPmtTax();
-        $this->ipn_data['pmt_gross'] = $this->getPmtGross();
-        $this->ipn_data['status'] = $this->getStatus();  // to get into handlePurchase()
-        SHOP_log("Stripe transaction verified OK", SHOP_LOG_DEBUG);
+        if (empty($event)) {
+            SHOP_log("Unable to create Stripe webhook event");
+            return false;
+        }
+        $this->setData($event);
+        $this->setEvent($this->getData()->type);
+        $this->setVerified(true);
+        SHOP_log("Stripe webhook verified OK", SHOP_LOG_DEBUG);
         return true;
     }
 
 
     /**
-     * Process an incoming IPN transaction.
-     * Do the following:
-     *  - Verify IPN
-     *  - Log IPN
-     *  - Check that transaction is complete
-     *  - Check that transaction is unique
-     *  - Check for valid receiver email address
-     *  - Process IPN
+     * Perform the necessary actions based on the webhook.
+     * At this point all required objects should be valid.
      *
-     * @uses   Webhook::handleFailure()
-     * @uses   IPN::handlePurchase()
-     * @uses   IPN::isUniqueTxnId()
-     * @uses   IPN::Log()
-     * @uses   Verify()
-     * @param  array   $in     POST variables of transaction
-     * @return boolean true if processing valid and completed, false otherwise
+     * @return  boolean     True on success, False on error
      */
-    public function Process()
+    public function Dispatch()
     {
-        // Handle the checkout.session.completed event only
-        if ($this->_event->type != 'checkout.session.completed') {
-            return false;
-        }
+        $retval = false;        // be pessimistic
 
-        // Backward compatibility, get custom data into IPN for plugin
-        // products.
-        $this->ipn_data['custom'] = $this->custom;
+        switch ($this->getEvent()) {
+        case 'invoice.created':
+            // Invoice was created. As a net-terms customer, the order
+            // can be processed.
+            if (!isset($this->getData()->data->object->metadata->order_id)) {
+                SHOP_log("Order ID not found in invoice metadata");
+                return false;
+            }
+            $this->setOrderID($this->getData()->data->object->metadata->order_id);
+            $this->Order = Order::getInstance($this->getOrderID());
+            if ($this->Order->isNew()) {
+                SHOP_log("Invalid Order ID received in webhook");
+                return false;
+            }
+            if ($this->Order->statusAtLeast(OrderState::PROCESSING)) {
+                SHOP_log("Order " . $this->Order->getOrderId() . " was already invoiced and processed");
+//                return false;
+            }
+            $retval = $this->handlePurchase($this->Order);
+            break;
+        case 'invoice.payment_succeeded': 
+            // Invoice payment notification
+            if (!isset($this->getData()->data->object->metadata->order_id)) {
+                SHOP_log("Order ID not found in invoice metadata");
+                return false;
+            }
 
-        if (!$this->Verify()) {
-            $logId = $this->Log(false);
-            $this->handleFailure(
-                self::FAILURE_VERIFY,
-                "($logId) Verification failed"
-            );
-            return false;
-        } elseif (!$this->isUniqueTxnId()) {
-            SHOP_log("Duplicate Txn ID " . $this->getTxnId());
-            $logId = $this->Log(false);
-            return false;
-        } else {
-            $logId = $this->Log(true);
-        }
+            if (!isset($this->getData()->data->object->payment_intent)) {
+                SHOP_log("Payment Intent value not include in webhook");
+                return false;
+            }
+            $Payment = $this->getData()->data->object;
+            $this->setID($Payment->payment_intent);
+            if (!$this->isUniqueTxnId()) {
+                SHOP_log("Duplicate Stripe Webhook received: " . $this->getData()->id);
+                return false;
+            }
 
-        // If no data has been received, then there's nothing to do.
-        if (empty($this->_payment)) {
-            SHOP_log("Empty payment received");
-            return false;
+            $this->setOrderID($this->getData()->data->object->metadata->order_id);
+            $this->Order = Order::getInstance($this->getOrderID());
+            if ($this->Order->isNew()) {
+                SHOP_log("Invalid Order ID received in webhook");
+                return false;
+            }
+            $amt_paid = $Payment->amount_paid;
+            if ($amt_paid > 0) {
+                $this->setID($Payment->payment_intent);
+                $currency = $Payment->currency;
+                $this_pmt = Currency::getInstance($currency)->fromInt($amt_paid);
+                $Pmt = Payment::getByReference($this->getID());
+                if ($Pmt->getPmtID() == 0) {
+                    $Pmt->setRefID($this->getID())
+                        ->setAmount($this_pmt)
+                        ->setGateway($this->getSource())
+                        ->setMethod("Online")
+                        ->setComment('Webhook ' . $this->getData()->id)
+                        ->setComplete(1)
+                        ->setStatus($this->getData()->type)
+                        ->setOrderID($this->getOrderID());
+                    $retval = $Pmt->Save();
+                }
+                $this->logIPN();
+            }
+            break;
+        case 'checkout.session.completed':
+            // Immediate checkout notification
+            if (!isset($this->getData()->data->object->client_reference_id)) {
+                SHOP_log("Order ID not found in invoice metadata");
+                return false;
+            }
+            if (!isset($this->getData()->data->object->payment_intent)) {
+                SHOP_log("Payment Intent value not include in webhook");
+                return false;
+            }
+
+            $Payment = $this->getData()->data->object;
+            $this->setID($Payment->payment_intent);
+            if (!$this->isUniqueTxnId()) {
+                SHOP_log("Duplicate Stripe Webhook received: " . $this->getData()->id);
+                return false;
+            }
+
+            $this->setOrderID($this->getData()->data->object->client_reference_id);
+            $this->Order = Order::getInstance($this->getOrderID());
+            if ($this->Order->isNew()) {
+                SHOP_log("Invalid Order ID received in webhook");
+                return false;
+            }
+            $amt_paid = $Payment->amount_total;
+            if ($amt_paid > 0) {
+                $this->setID($Payment->payment_intent);
+                $currency = $Payment->currency;
+                $this_pmt = Currency::getInstance($currency)->fromInt($amt_paid);
+                $this->Payment = Payment::getByReference($this->getID());
+                if ($this->Payment->getPmtID() == 0) { 
+                    $this->Payment->setRefID($this->getID())
+                        ->setAmount($this_pmt)
+                        ->setGateway($this->getSource())
+                        ->setMethod("Online")
+                        ->setComment('Webhook ' . $this->getData()->id)
+                        ->setComplete(1)
+                        ->setStatus($this->getData()->type)
+                        ->setOrderID($this->getOrderID());
+                    $this->Payment->Save();
+                    $retval = true;
+                }
+                $retval = $this->handlePurchase($this->Order);
+                $this->logIPN();
+            }
+            break;
+        default:
+            SHOP_log("Unhandled Stripe event {$this->getData()->type} received", SHOP_LOG_DEBUG);
+            return $retval;
+            break;
         }
-        return $this->handlePurchase();
+        return $retval;
     }
 
 }
-
-?>

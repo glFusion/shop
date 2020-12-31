@@ -31,5 +31,6 @@ $WH = Shop\Webhook::getInstance($gw_name);
 if ($WH->Verify()) {
     $WH->Dispatch();
 }
+echo "Completed.";
 exit;
 ?>
