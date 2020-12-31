@@ -18,7 +18,7 @@
 require_once '../lib-common.php';
 if (
     !function_exists('SHOP_access_check') ||
-    !SHOP_access_check('shop.admin')
+    !SHOP_access_check()
 ) {
     COM_404();
     exit;
@@ -37,9 +37,12 @@ if (!empty($order_id)) {
     $Order = Shop\Order::getInstance($order_id);
     if (!$Order->isNew()) {
         $GW = Shop\Gateway::getInstance($Order->getPmtMethod());
+        $Order->finalizeGC();
         $redirect = $GW->confirmOrder($Order);
         if (!empty($redirect)) {
             COM_refresh($redirect);
+        } else {
+            COM_refresh(Shop\Config::get('url'));
         }
     }
 } else {
