@@ -4054,6 +4054,14 @@ class Order
             return $this;
         }
 
+        if (
+            $this->status != OrderState::PENDING &&
+            $this->status != OrderState::CART
+        ) {
+            // Do nothing if already processing, shipped, etc.
+            return $this;
+        }
+
         $newstatus = $status == OrderState::PENDING ? OrderState::PENDING : OrderState::CART;
         $oldstatus = $this->status;
 
