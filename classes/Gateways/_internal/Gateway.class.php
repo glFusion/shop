@@ -41,7 +41,7 @@ class Gateway extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
-            'terms'     => 1,
+            'terms'     => 0,
         );
         parent::__construct($A);
     }
@@ -226,7 +226,7 @@ class Gateway extends \Shop\Gateway
      */
     public function hasAccess($total=0)
     {
-        return $this->getEnabled() && SEC_inGroup($this->grp_access);
+        return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
 
 }

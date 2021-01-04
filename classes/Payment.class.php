@@ -584,7 +584,7 @@ class Payment
             'money_chk' => $this->is_money ? 'checked="checked"' : '',
             'bal_due' => Currency::getInstance($Order->getCurrency()->getCode())->formatMoney($bal_due),
         ) );
-        $Gateways = Gateway::getAll();
+        $Gateways = Gateway::getEnabled();
         $T->set_block('form', 'GatewayOpts', 'gwo');
         foreach ($Gateways as $GW) {
             $T->set_var(array(

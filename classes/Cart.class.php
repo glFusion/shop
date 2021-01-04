@@ -488,7 +488,7 @@ class Cart extends Order
 
         $gateway_vars = '';
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
-            foreach (Gateway::getAll() as $gw) {
+            foreach (Gateway::getEnabled() as $gw) {
                 if ($gw->hasAccess($this->order_total) && $gw->Supports('checkout')) {
                     $gateway_vars .= '<div class="shopCheckoutButton">' .
                         $gw->CheckoutButton($this) . '</div>';
@@ -526,7 +526,7 @@ class Cart extends Order
         $T->set_file('radios', 'gw_checkout_select.thtml');
         $T->set_block('radios', 'Radios', 'row');
         if ($_SHOP_CONF['anon_buy'] || !COM_isAnonUser()) {
-            $gateways = Gateway::getAll();
+            $gateways = Gateway::getEnabled();
             if ($_SHOP_CONF['gc_enabled']) {
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
@@ -1019,7 +1019,7 @@ class Cart extends Order
     {
         global $_SHOP_CONF;
 
-        $Gateways = Gateway::getAll();
+        $Gateways = Gateway::getEnabled();
         if (
             !$_SHOP_CONF['ena_fast_checkout'] ||    // not allowed
             COM_isAnonUser() ||         // can't be anonymous, need email addr

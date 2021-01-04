@@ -543,7 +543,7 @@ class Gateway
             $sql = "INSERT INTO {$_TABLES['shop.gateways']} SET
                     id = '" . DB_escapeString($this->gw_name) . "',
                     orderby = 990,
-                    enabled = {$this->getEnabled()},
+                    enabled = {$this->isEnabled()},
                     description = '" . DB_escapeString($this->gw_desc) . "',
                     config = '" . DB_escapeString($config) . "',
                     services = '" . DB_escapeString($services) . "',
@@ -1267,7 +1267,8 @@ class Gateway
 
     /**
      * Create an instance of a gateway.
-     * This function takes no variables and ignores the `enabled` state.
+     * This function ignores the `installed` state and simply creates an object
+     * from the class file, if present.
      *
      * @param   string  $gw_name    Gateway name
      * @return  object      Gateway object
@@ -1309,12 +1310,23 @@ class Gateway
 
 
     /**
+     * Helper function to get only enabled gateways.
+     *
+     * @return  array       Array of installed and enabled gateways
+     */
+    public static function getEnabled()
+    {
+        return self::getAll(true);
+    }
+
+
+    /**
      * Get all gateways into a static array.
      *
      * @param   boolean $enabled    True to get only enabled gateways
      * @return  array       Array of gateways, enabled or all
      */
-    public static function getAll($enabled = true)
+    public static function getAll($enabled = false)
     {
         global $_TABLES, $_SHOP_CONF;
 
@@ -1888,7 +1900,7 @@ class Gateway
      */
     public function hasAccess($total=0)
     {
-        return $total > 0 && $this->getEnabled() && SEC_inGroup($this->grp_access);
+        return $total > 0 && $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
 
 
@@ -1914,7 +1926,7 @@ class Gateway
      *
      * @return  integer     1 if enabled, 0 if not
      */
-    protected function getEnabled()
+    protected function isEnabled()
     {
         return $this->enabled ? 1 : 0;
     }
