@@ -348,7 +348,8 @@ class Gateway
         $btn_key = DB_escapeString($btn_key);
         $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
                 "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
-                gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'");
+                gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'"
+        );
         return $btn;
     }
 
@@ -365,8 +366,8 @@ class Gateway
     {
         global $_TABLES;
 
-        $pi_name = DB_escapeString($P->pi_name);
-        $item_id = DB_escapeString($P->item_id);
+        $pi_name = DB_escapeString($P->getPluginName());
+        $item_id = DB_escapeString($P->getID());
         $btn_key = DB_escapeString($btn_key);
         $btn_value = DB_escapeString($btn_value);
 

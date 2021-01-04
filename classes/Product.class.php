@@ -2949,6 +2949,18 @@ class Product
 
 
     /**
+     * Get the name of the plugin supplying the product.
+     * Returns `shop` for catalog items.
+     *
+     * @return  string      Plugin name
+     */
+    public function getPluginName()
+    {
+        return $this->pi_name;
+    }
+
+
+    /**
      * Get the text string and value for special fields.
      * Used when displaying cart info
      *

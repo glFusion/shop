@@ -424,12 +424,14 @@ class Gateway extends \Shop\Gateway
         }
 
         // Now sign the plaintext values into the signed file
-        if (!openssl_pkcs7_sign($dataFile . '_plain.txt',
-                    $dataFile . '_signed.txt',
-                    $pub_key,
-                    $prv_key,
-                    array(),
-                    PKCS7_BINARY)) {
+        if (!openssl_pkcs7_sign(
+            $dataFile . '_plain.txt',
+            $dataFile . '_signed.txt',
+            $pub_key,
+            $prv_key,
+            array(),
+            PKCS7_BINARY
+        )) {
             return '';
         }
 
@@ -444,17 +446,21 @@ class Gateway extends \Shop\Gateway
         @fclose($fh);
 
         // Now encrypt the signed file we just wrote
-        if (!openssl_pkcs7_encrypt($dataFile . '_signed.txt',
-                    $dataFile . '_enc.txt',
-                    $pp_cert,
-                    array(),
-                    PKCS7_BINARY)) {
+        if (!openssl_pkcs7_encrypt(
+            $dataFile . '_signed.txt',
+            $dataFile . '_enc.txt',
+            $pp_cert,
+            array(),
+            PKCS7_BINARY
+        )) {
             return '';
         }
 
         // Parse the encrypted file between header and content
-        $encryptedData = explode("\n\n",
-                file_get_contents($dataFile . "_enc.txt"));
+        $encryptedData = explode(
+            "\n\n",
+            file_get_contents($dataFile . "_enc.txt")
+        );
         $encText = $encryptedData[1];
 
         // Delete all of our temporary files
@@ -475,8 +481,6 @@ class Gateway extends \Shop\Gateway
      *
      * @uses    gwButtonType()
      * @uses    PrepareCustom()
-     * @uses    Gateway::_ReadButton()
-     * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
@@ -567,12 +571,16 @@ class Gateway extends \Shop\Gateway
         $gateway_vars = '';
         $enc_btn = '';
         if ($this->getConfig('encrypt')) {
-            $enc_btn = $this->_encButton($vars);
-            if (!empty($enc_btn)) {
-                $gateway_vars .=
-                '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
-                '<input type="hidden" name="encrypted" value=\'' .
+            $enc_btn = $this->_ReadButton($P, $btn_type);
+            if (empty($enc_btn)) {
+                $enc_btn = $this->_encButton($vars);
+                if (!empty($enc_btn)) {
+                    $gateway_vars .=
+                    '<input type="hidden" name="cmd" value="_s-xclick" />'.LB .
+                    '<input type="hidden" name="encrypted" value=\'' .
                     $enc_btn . '\' />' . "\n";
+                    $this->_SaveButton($P, $btn_type, $gateway_vars);
+                }
             }
         }
         if (empty($enc_btn)) {
@@ -588,8 +596,6 @@ class Gateway extends \Shop\Gateway
                         '" value="' . $value . '" />' . "\n";
                 }
             }
-            //} else {
-            //    $this->_SaveButton($P, $btn_key, $gateway_vars);
         }
 
         // Set the text for the button, falling back to our Buy Now
