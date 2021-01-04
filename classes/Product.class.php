@@ -2120,7 +2120,7 @@ class Product
      */
     public function hasOptions()
     {
-        return empty($this->OptionGroups) ? false : true;
+        return count($this->OptionGroups);
     }
 
 
@@ -2357,7 +2357,7 @@ class Product
 
         // Discount the price, including attributes
         $price *= $discount_factor;
-        $price = round($price, Currency::getInstance()->Decimals());
+        $price = Currency::getInstance()->RoundVal($price);
         return $price;
     }
 
