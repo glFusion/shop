@@ -80,8 +80,9 @@ case 'gwinstall':
 case 'gwdelete':
     $gw = \Shop\Gateway::getInstance($_GET['id']);
     if ($gw !== NULL) {
-        $status = $gw->Remove();
+        $gw->ClearButtonCache();
     }
+    $status = \Shop\Gateway::Remove($_GET['id']);
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
