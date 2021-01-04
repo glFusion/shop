@@ -221,6 +221,10 @@ class Order
      * @var array */
     public $custom_info = array();
 
+    /** Payment gateway order reference.
+     * @var string */
+    private $gw_order_ref = '';
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -637,6 +641,7 @@ class Order
         $this->shipping_method = $A['shipping_method'];
         $this->shipping_dscp = $A['shipping_dscp'];
         $this->last_mod = $A['last_mod'];
+        $this->gw_order_ref = SHOP_getVar($A, 'gw_order_ref', 'string', NULL);
         return $this;
     }
 
@@ -845,6 +850,7 @@ class Order
             "shipper_id = {$this->getShipperID()}",
             "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
             "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
+            "gw_order_ref = '" . DB_escapeString($this->gw_order_ref) . "'",
         );
 
         $billto = $this->Billto->toArray();
@@ -3545,6 +3551,30 @@ class Order
     public function getHandling()
     {
         return (float)$this->handling;
+    }
+
+
+    /**
+     * Set the order reference assigned by the payment gateway.
+     *
+     * @param   string  $ref_id     Gateway-assigned order ID
+     * @return  object  $this
+     */
+    public function setGatewayRef($ref_id)
+    {
+        $this->gw_order_ref = $ref_id;
+        return $this;
+    }
+
+
+    /**
+     * Get the order reference at the payment gateway.
+     *
+     * @return  string  Gateway order reference
+     */
+    public function getGatewayRef()
+    {
+        return $this->gw_order_ref;
     }
 
 

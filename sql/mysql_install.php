@@ -224,6 +224,7 @@ $_SQL = array(
   `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `shipping_method` varchar(20) DEFAULT NULL,
   `shipping_dscp` varchar(120) DEFAULT NULL,
+  `gw_order_ref` varchar(128) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
   KEY `order_date` (`order_date`)
@@ -812,6 +813,12 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
     "ALTER TABLE {$_TABLES['shop.orders']}
         ADD shipping_dscp varchar(20) DEFAULT NULL AFTER shipping_method",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `phone` `shipto_phone` varchar(30)",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD gw_order_ref varchar(128) DEFAULT NULL AFTER shipping_dscp",
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         ADD `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER shipping_units",
     "ALTER TABLE {$_TABLES['shop.shipping']}
@@ -827,10 +834,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
         CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        CHANGE `phone` `shipto_phone` varchar(30)",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
     "ALTER TABLE {$_TABLES['shop.orderitems']}
         DROP `dc_price`",
     "ALTER TABLE {$_TABLES['shop.categories']}
