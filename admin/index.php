@@ -374,7 +374,7 @@ case 'pv_move':
         $PV = new \Shop\ProductVariant($pv_id);
         $PV->moveRow($actionval);
     }
-    COM_refresh(SHOP_ADMIN_URL . "/index.php?editproduct=x&id={$PV->getItemID()}");
+    COM_refresh(SHOP_ADMIN_URL . "/index.php?editproduct=x&id={$PV->getItemID()}&tab=variants");
     break;
 
 case 'pov_move':
