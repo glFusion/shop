@@ -28,9 +28,9 @@ class Gateway
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Table key, used by DBO class.
+    /** Table name, used by DBO class.
      * @var string */
-    private static $TABLE = 'shop.gateways';
+    protected static $TABLE = 'shop.gateways';
 
     /** Items on this order.
      * @var array */
@@ -224,6 +224,7 @@ class Gateway
                 $this->cfg = $this->cfgFields;
             }
         }
+
         $this->setEnv();
 
         // The user ID is usually required, and doesn't hurt to add it here.
@@ -323,7 +324,10 @@ class Gateway
      */
     public function loadSDK()
     {
-        // Does nothing by default
+        $dir = __DIR__ . '/Gateways/' . $this->gw_name . '/vendor';
+        if (is_dir($dir)) {
+            require_once $dir . '/autoload.php';
+        }
         return $this;
     }
 
@@ -429,13 +433,13 @@ class Gateway
         //echo $sql;die;
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        self::ClearButtonCache();   // delete all buttons for this gateway
+        $this->clearButtonCache();   // delete all buttons for this gateway
         if (DB_error()) {
             return false;
         } else {
             $this->_postConfigSave();   // Run function for further setup
             Cache::clear('gateways');
-            self::Reorder();
+            self::ReOrder();
             return true;
         }
     }
@@ -504,7 +508,7 @@ class Gateway
     /**
      * Clear the cached buttons for this payment gateway.
      */
-    function ClearButtonCache()
+    public function clearButtonCache()
     {
         global $_TABLES;
 
@@ -556,12 +560,11 @@ class Gateway
      * Remove the current gateway.
      * This removes all of the configuration for the gateway, but not files.
      */
-    public function Remove()
+    public static function Remove($gw_name)
     {
         global $_TABLES;
 
-        $this->ClearButtonCache();
-        DB_delete($_TABLES['shop.gateways'], 'id', $this->gw_name);
+        DB_delete($_TABLES['shop.gateways'], 'id', $gw_name);
         Cache::clear('gateways');
     }
 
@@ -956,9 +959,9 @@ class Gateway
             isset($_SYSTEM['theme_hue']) &&
             $_SYSTEM['theme_hue'] == 'dark'
         ) {
-            $retval = $path . '/' . $this->gw_name . '_dark.png';
+            $retval = $path . $this->gw_name . '_dark.png';
         } else {
-            $retval = $path . '/' . $this->gw_name . '_light.png';
+            $retval = $path . $this->gw_name . '_light.png';
         }
 
         if (!is_file($retval)) {
@@ -1172,7 +1175,7 @@ class Gateway
             ),
         ), false, false);
 
-        $fields = $this->getConfigFields();
+        //$fields = $this->getConfigFields();
         foreach ($this->cfgFields as $env=>$flds) {
             $fields = $this->getConfigFields($env);
             if (empty($fields)) {
@@ -1990,6 +1993,18 @@ class Gateway
     public function canPayOnline()
     {
         return $this->can_pay_online ? 1 : 0;
+    }
+
+
+    /**
+     * Create the "pay now" button for orders.
+     * For most gateways this is the same as the checkout button.
+     *
+     * @return  string  HTML for payment button
+     */
+    public function payOnlineButton($Order)
+    {
+        return $this->checkoutButton($Order, $LANG_SHOP['buttons']['pay_now']);
     }
 
 
