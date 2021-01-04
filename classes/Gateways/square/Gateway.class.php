@@ -465,7 +465,6 @@ class Gateway extends \Shop\Gateway
      */
     public function getTransaction($trans_id)
     {
-        //$trans_id = SHOP_getVar($_GET, 'transactionId');
         if (empty($trans_id)) {
             return false;
         }
@@ -473,7 +472,7 @@ class Gateway extends \Shop\Gateway
         $apiClient = $this->_getApiClient()->getOrdersApi();
         $order_ids = array($trans_id);
         $body = new \Square\Models\BatchRetrieveOrdersRequest($order_ids);
-        $resp = $apiClient->batchRetrieveOrders($this->loc_id, $body);
+        $resp = $apiClient->batchRetrieveOrders($body);
         if ($resp->isSuccess()) {
             $retval = $resp->getResult();
         } else {
