@@ -5,7 +5,7 @@
  * calls the configured gateway (e.g. "paypal") to process the invoice.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
@@ -15,6 +15,7 @@
  */
 namespace Shop\Gateways\terms;
 use Shop\Models\OrderState;
+use Shop\Gateway as GW;
 
 
 /**
@@ -44,9 +45,6 @@ class Gateway extends \Shop\Gateway
         $this->req_billto = true;
         // This gateway processes the order via AJAX and just returns to the shopping page.
         $this->gw_url = SHOP_URL . '/confirm.php';
-
-        // Only out-of-band payments are accpeted.
-        $this->can_pay_online = 0;
 
         // Set default values for the config items, just to be sure that
         // something is set here.
@@ -181,7 +179,12 @@ class Gateway extends \Shop\Gateway
         if (empty($gw_name)) {
             return false;           // unconfigured
         }
-        $status = parent::getInstance($gw_name)->createInvoice($Order, $this);
+        $gw = parent::getInstance($gw_name);
+        if ($gw && $gw->Supports($this->gw_name)) {
+            $status = parent::getInstance($gw_name)->createInvoice($Order, $this);
+        } else {
+            $status = false;
+        }
         return $status;
     }
 
@@ -264,6 +267,34 @@ class Gateway extends \Shop\Gateway
         return true;
     }
 
-}
 
-?>
+    /**
+     * Create the "pay now" button for orders.
+     * For invoices, get the link to the invoice payment screen if available.
+     *
+     * @return  string  HTML for payment button
+     */
+    public function payOnlineButton($Order)
+    {
+        global $LANG_SHOP;
+
+        // Get the URL that was recorded during invoice creation or
+        // webhook processing, if available.
+        $url = $Order->getInfo('gw_pmt_url');
+        if (!empty($url)) {
+            $link = COM_createLink(
+                '<button class="uk-button uk-button-success">' .
+                    $LANG_SHOP['buttons']['pay_now'] .
+                    '</button>',
+                $url,
+                array(
+                    'target' => '_blank',
+                )
+            );
+        } else {
+            $link = '';
+        }
+        return $link;
+    }
+
+}
