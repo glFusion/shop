@@ -10,6 +10,8 @@
 {!endif}
 <form id="add_cart_{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
   <input type="hidden" name="item_number" value="{id}" />
+  <input type="hidden" name="has_options" value="{have_attributes}" />
+
   <div class="shopProductDetail v1">
     <div id="shopShortDesc" class="shopShortDesc v1">
       <h1>{short_description}

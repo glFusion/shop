@@ -30,6 +30,7 @@
       <div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
         <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{frm_id}" action="javascript:void()">
             <input type="hidden" name="item_number" value="{id}" />
+            <input type="hidden" name="has_options" value="{have_attributes}" />
             <div class="shopDetailPrice v2">
 {!if on_sale}
                 <span class="shopPrice was">{price_prefix}</span>
