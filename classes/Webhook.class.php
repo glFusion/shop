@@ -596,6 +596,13 @@ class Webhook
     }
 
 
+    /**
+     * Set a generic IPN variable.
+     *
+     * @param   string  $key    Key name
+     * @param   mixed   $value  Value
+     * @return  object  $this
+     */
     protected function setIPN($key, $value)
     {
         if ($this->IPN === NULL) {
