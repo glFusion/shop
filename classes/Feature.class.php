@@ -24,11 +24,11 @@ class Feature
 
     /** Table key, used by DBO class.
      * @var string */
-    private static $TABLE = 'shop.features';
+    protected static $TABLE = 'shop.features';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    private static $F_ID = 'ft_id';
+    protected static $F_ID = 'ft_id';
 
     /** Tag array used with caching, for consistency.
      * @var array */

@@ -31,11 +31,11 @@ class Zone
 
     /** Table key for DBO utilities.
      * @var string */
-    private static $TABLE = 'shop.zone_rules';
+    protected static $TABLE = 'shop.zone_rules';
 
     /** ID Field name for DBO utilities.
      * @var string */
-    private static $F_ID = 'rule_id';
+    protected static $F_ID = 'rule_id';
 
     /** Record ID of the rule.
      * @var integer */

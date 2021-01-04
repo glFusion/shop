@@ -24,15 +24,15 @@ class ProductOptionGroup
 
     /** Table key, used by DBO class.
      * @var string */
-    private static $TABLE = 'shop.prod_opt_grps';
+    protected static $TABLE = 'shop.prod_opt_grps';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    private static $F_ID = 'pog_id';
+    protected static $F_ID = 'pog_id';
 
     /** Order field name, useb by DBO class.
      * @var string */
-    private static $F_ORDERBY = 'pog_orderby';
+    protected static $F_ORDERBY = 'pog_orderby';
 
     /** Tag array used with caching, for consistency.
      * @var array */

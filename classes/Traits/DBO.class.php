@@ -23,11 +23,11 @@ trait DBO
 {
     /** Key field name. Can be overridden by defining `$F_ID`.
      * @var string */
-    private static $_F_ID = 'id';
+    protected static $_F_ID = 'id';
 
     /** Order field name. Can be overridden by defining `$F_ORDERBY`.
      * @var string */
-    private static $_F_ORDERBY = 'orderby';
+    protected static $_F_ORDERBY = 'orderby';
 
 
     /**

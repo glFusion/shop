@@ -23,11 +23,11 @@ class Supplier extends Address
 
     /** Table name, used by DBO.
      * @var string */
-    private static $TABLE = 'shop.suppliers';
+    protected static $TABLE = 'shop.suppliers';
 
     /** Key field ID, used by DBO.
      * @var string */
-    private static $F_ID = 'sup_id';
+    protected static $F_ID = 'sup_id';
 
     /** Flag indicates that this is a supplier (default)
      * @var integer */

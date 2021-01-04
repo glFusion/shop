@@ -31,7 +31,7 @@ class Shipper
 
     /** Table key for DBO functions
      * @var string */
-    private static $TABLE = 'shop.shipping';
+    protected static $TABLE = 'shop.shipping';
 
     /** Minimim possible effective date/time.
      * @const string */

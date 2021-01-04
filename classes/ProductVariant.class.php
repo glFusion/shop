@@ -26,11 +26,11 @@ class ProductVariant
 
     /** Key field name.
      * @var string */
-    private static $TABLE = 'shop.product_variants';
+    protected static $TABLE = 'shop.product_variants';
 
     /** Key field name.
      * @var string */
-    private  static $F_ID = 'pv_id';
+    protected static $F_ID = 'pv_id';
 
     /** Variant record ID.
      * @var integer */
