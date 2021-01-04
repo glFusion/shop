@@ -581,6 +581,8 @@ class Gateway extends \Shop\Gateway
                     $enc_btn . '\' />' . "\n";
                     $this->_SaveButton($P, $btn_type, $gateway_vars);
                 }
+            } else {
+                $gateway_vars = $enc_btn;
             }
         }
         if (empty($enc_btn)) {
