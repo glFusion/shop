@@ -17,6 +17,7 @@ use Shop\Config;
 use Shop\Models\OrderState;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
+use Shop\Models\ButtonKey;;
 
 
 /**
@@ -345,7 +346,11 @@ class Gateway
 
         $pi_name = DB_escapeString($P->getPluginName());
         $item_id = DB_escapeString($P->getItemID());
-        $btn_key = DB_escapeString($btn_key);
+        $BtnKey = new ButtonKey(array(
+            'btn_type' => $btn_key,
+            'price' => $P->getPrice(),
+        ) );
+        $btn_key = DB_escapeString((string)$BtnKey);
         $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
                 "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
                 gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'"
@@ -368,7 +373,11 @@ class Gateway
 
         $pi_name = DB_escapeString($P->getPluginName());
         $item_id = DB_escapeString($P->getID());
-        $btn_key = DB_escapeString($btn_key);
+        $BtnKey = new ButtonKey(array(
+            'btn_type' => $btn_key,
+            'price' => $P->getPrice(),
+        ) );
+        $btn_key = DB_escapeString((string)$BtnKey);
         $btn_value = DB_escapeString($btn_value);
 
         $sql = "INSERT INTO {$_TABLES['shop.buttons']}
