@@ -556,13 +556,15 @@ function SHOP_remove_old_files()
             'classes/UserInfo.class.php',
             'templates/attribute_form.thtml',
             // 1.3.0
-            'vendor/square/connect',
+            'vendor',
             'Autoload.class.php',
             'language/english.php',
             'language/german.php',
             'language/german_formal.php',
             'classes/CacheDB.class.php',
             'classes/DBO.class.php',
+            'classes/Webhooks',
+            'classes/ipn',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
