@@ -20,7 +20,7 @@ $LANG_SHOP_gateway = array(
 
     'hlp_gateway' => 'Select the payment gateway which will be used to process invoices.',
     'hlp_net_days' => 'Enter the number of days for terms, e.g. &quot;30&quot; for &quot;Net 30 Days&quot;.',
-    'hlp_after_inv_status' => 'Set the order to this status after an invoice is successfully created.',
+    'hlp_after_inv_status' => 'Set the order to this status after an invoice is successfully created. Virtual-only orders will be set to &quot;shipped&quot;.',
     'config_instr' => 'The access control for this gateway supercedes that of the underlying Gateway',
 );
 ?>
