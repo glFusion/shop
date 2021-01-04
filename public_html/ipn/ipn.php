@@ -37,7 +37,9 @@ SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), tr
 // It's the gateway's job to retrieve from $_GET, $_POST, etc.
 if (!empty($gateway)) {
     $IPN = \Shop\IPN::getInstance($gateway);
-    $IPN->Response($IPN->Process());
+    if ($IPN) {
+        $IPN->Response($IPN->Process());
+    }
 }
 
 ?>
