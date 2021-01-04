@@ -285,14 +285,15 @@ class Invoice extends OrderBaseView
         $this->_renderLog();
 
         if (
-            $status == OrderState::PENDING &&
+            //$status == OrderState::PENDING &&
+            !$this->Order->isPaid() &&
             !empty($this->Order->getPmtMethod())
         ) {
             $gw = \Shop\Gateway::getInstance($this->Order->getPmtMethod());
             if ($gw->canPayOnline()) {
                 $this->TPL->set_var(
                     'pmt_btn',
-                    $gw->checkoutButton($this->Order, $LANG_SHOP['buttons']['pay_now'])
+                    $gw->payOnlineButton($this->Order, $LANG_SHOP['buttons']['pay_now'])
                 );
             }
         }
