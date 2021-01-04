@@ -66,8 +66,8 @@ class Webhook extends \Shop\Webhook
         if (!$object) {
             return false;
         }
-        $GW = Gateway::getInstance($this->getSource());
-        if (!$GW) {
+        $this->GW = Gateway::getInstance($this->getSource());
+        if (!$this->GW) {
             return false;
         }
 
@@ -129,8 +129,8 @@ class Webhook extends \Shop\Webhook
                     $currency = $payment->amount_money->currency;
                     $this_pmt = Currency::getInstance($currency)->fromInt($amount_money);
                     $order_id = $payment->order_id;
-                    $sqOrder = $GW->getOrder($order_id);
                     $this->setOrderID($sqOrder->getResult()->getOrder()->getReferenceId());
+                    //$sqOrder = $this->GW->getOrder($order_id);
                     $Order = Order::getInstance($this->getOrderID());
                     if (!$Order->isNew()) {
                         $Pmt = Payment::getByReference($this->getID());
@@ -144,8 +144,7 @@ class Webhook extends \Shop\Webhook
                                 ->setStatus($payment->status)
                                 ->setOrderID($this->getOrderID());
                         }
-                        $this->handlePurchase();    // process if fully paid
-                        $retval = true;
+                        $retval = $this->handlePurchase();    // process if fully paid
                     }
                 }
             }
