@@ -259,6 +259,7 @@ class Order
             $this->by_gc = 0;
             $this->Billto = new Address;
             $this->Shipto = new Address;
+            $this->m_info = new CustomInfo;
         }
     }
 
@@ -841,7 +842,7 @@ class Order
             "instructions = '" . DB_escapeString($this->instructions) . "'",
             "buyer_email = '" . DB_escapeString($this->buyer_email) . "'",
             //"info = '" . DB_escapeString(@serialize($this->m_info)) . "'",
-            "info = '" . (string)$this->m_info . "'",
+            "info = '" . DB_escapeString((string)$this->m_info) . "'",
             "tax_rate = {$this->getTaxRate()}",
             "currency = '{$this->currency}'",
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
