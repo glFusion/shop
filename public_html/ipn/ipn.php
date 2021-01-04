@@ -23,21 +23,21 @@ $gateway = SHOP_getVar($_GET, '_gw');
 
 if (empty($gateway)) {
     SHOP_log("Gateway not specified in IPN message data");
-    SHOP_log("Got IPN GET: " . var_export($_GET, true));
-    SHOP_log("Got IPN POST: " . var_export($_POST, true));
-    SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), true));
     $log_level = SHOP_LOG_ALERT;
-    exit;
+} else {
+    $log_level = SHOP_LOG_DEBUG;
 }
 
 // Debug logging
-SHOP_log("Got IPN GET: " . var_export($_GET, true), SHOP_LOG_DEBUG);
-SHOP_log("Got IPN POST: " . var_export($_POST, true), SHOP_LOG_DEBUG);
-SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), true), SHOP_LOG_DEBUG);
+SHOP_log("Got IPN GET: " . var_export($_GET, true), $log_level);
+SHOP_log("Got IPN POST: " . var_export($_POST, true), $log_level);
+SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), true), $log_level);
 
 // Instantiate without data.
 // It's the gateway's job to retrieve from $_GET, $_POST, etc.
-$IPN = \Shop\IPN::getInstance($gateway);
-$IPN->Response($IPN->Process());
+if (!empty($gateway)) {
+    $IPN = \Shop\IPN::getInstance($gateway);
+    $IPN->Response($IPN->Process());
+}
 
 ?>
