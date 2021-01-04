@@ -137,7 +137,9 @@ class Webhook extends \Shop\Webhook
                 SHOP_log("Invalid Order ID received in webhook");
                 return false;
             }
-            $this->Order->setGatewayRef($this->getData()->data->object->id)->Save();
+            $this->Order->setGatewayRef($this->getData()->data->object->id)
+                        ->setInfo('terms_gw', $this->GW->getName())
+                        ->Save();
             if ($this->Order->statusAtLeast(OrderState::PROCESSING)) {
                 SHOP_log("Order " . $this->Order->getOrderId() . " was already invoiced and processed");
 //                return false;

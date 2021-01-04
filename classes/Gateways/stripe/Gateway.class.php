@@ -465,7 +465,9 @@ class Gateway extends \Shop\Gateway
         ) );
         // Get the invoice number if a valid draft invoice was created.
         if (isset($invObj->status) && $invObj->status == 'draft') {
-            $Order->setGatewayRef($invObj->id)->Save();
+            $Order->setGatewayRef($invObj->id)
+                  ->setInfo('terms_gw', $this->getConfig('gateway'))
+                  ->Save();
             $Order->updateStatus(OrderState::INVOICED);
         }
         $invObj->finalizeInvoice();
