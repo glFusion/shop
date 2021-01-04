@@ -21,6 +21,7 @@ use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 use Shop\Template;
 
+
 /**
  * Class for Paypal payment gateway
  * @package shop
@@ -34,10 +35,6 @@ class Gateway extends \Shop\Gateway
     /** PayPal-assigned certificate ID to be used for encrypted buttons.
     * @var string */
     private $cert_id;
-
-    /** Paypal API URL, sandbox or production.
-     * @var string */
-    private $api_url;
 
 
     /**
@@ -58,7 +55,7 @@ class Gateway extends \Shop\Gateway
 
         // These are used by the parent constructor, set them first.
         $this->gw_name = 'paypal';
-        $this->gw_provider = 'Paypal';
+        $this->gw_provider = 'PayPal Web Payments';
         $this->gw_desc = 'PayPal Web Payments Standard';
         $this->button_url = '<img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/checkout-logo-medium.png" alt="Check out with PayPal" />';
 
@@ -69,9 +66,9 @@ class Gateway extends \Shop\Gateway
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
                 'endpoint'          => 'string',
-                'webhook_id'   => 'string',
-                'api_username'      => 'password',
-                'api_password'      => 'password',
+                //'webhook_id'   => 'string',
+                //'api_username'      => 'password',
+                //'api_password'      => 'password',
                 'pp_cert'           => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
@@ -80,9 +77,9 @@ class Gateway extends \Shop\Gateway
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
                 'endpoint'       => 'string',
-                'webhook_id' => 'string',
-                'api_username'      => 'password',
-                'api_password'      => 'password',
+                //'webhook_id' => 'string',
+                //'api_username'      => 'password',
+                //'api_password'      => 'password',
                 'pp_cert' => 'string',
                 'pp_cert_id'        => 'string',
                 'micro_cert_id'     => 'string',
@@ -120,22 +117,16 @@ class Gateway extends \Shop\Gateway
             'subscribe' => 1,
             'checkout'  => 1,
             'external'  => 1,
-            'terms'     => 1,
         );
 
         // Call the parent constructor to initialize the common variables.
         parent::__construct($A);
 
-        $this->gw_url = $this->getConfig('endpoint');
         // Set the gateway URL depending on whether we're in test mode or not
         if ($this->getConfig('test_mode') == 1) {
-            //$this->gw_url = $this->getConfig('sandbox_url');
-            $this->postback_url = 'https://ipnpb.sandbox.paypal.com/cgi-bin/webscr';
-            $this->api_url = 'https://api.sandbox.paypal.com';
+            $this->gw_url = 'https://www.sandbox.paypal.com';
         } else {
-            //$this->gw_url = $this->getConfig('prod_url');
-            $this->postback_url = 'https://ipnpb.paypal.com/cgi-bin/webscr';
-            $this->api_url = 'https://api.paypal.com';
+            $this->gw_url = 'https://www.paypal.com';
         }
 
         // If the configured currency is not one of the supported ones,
@@ -930,280 +921,6 @@ class Gateway extends \Shop\Gateway
     protected function getInstructions()
     {
         return $this->adminWarnBB();
-    }
-
-
-    /**
-     * Get the Paypal API token to be used for web requests.
-     *
-     * @return  string  API token value
-     */
-    public function getBearerToken()
-    {
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $this->api_url . '/v1/oauth2/token',
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
-            CURLOPT_USERPWD => $this->getConfig('api_username') . ':' . $this->getConfig('api_password'),
-            CURLOPT_HTTPHEADER  => array (
-                'Accept: application/json',
-            ),
-            CURLOPT_RETURNTRANSFER  => true,
-        ) );
-
-        $result = curl_exec($ch);
-        curl_close($ch);
-
-        $auth = json_decode($result, true);
-        $access_token = isset($auth['access_token']) ? $auth['access_token'] : NULL;
-        return $access_token;
-    }
-
-
-    /**
-     * Get the invoice terms string to pass to Paypal.
-     * Returns the closest Paypal terms string to match the days due.
-     *
-     * @param   integer $due_days   Due days (terms)
-     * @return  string      Proper terms string for Paypal
-     */
-    private function getInvoiceTerms($due_days=0)
-    {
-        $due_days = (int)$due_days;
-        if ($due_days == 0) {
-            $retval = 'DUE_ON_RECEIPT';
-        } else {
-            $day_arr = array(10, 15, 30, 45, 60, 90);
-            $retval = 90;
-            foreach ($day_arr as $days) {
-                if ($due_days <= $days) {
-                    $retval = $days;
-                    break;
-                }
-            }
-            $retval = 'NET_' . $retval;
-        }
-        return $retval;
-    }
-
-
-    /**
-     * Create and send an invoice for an order.
-     *
-     * @param   object  $Order  Order object
-     * @param   object  $terms_gw   Terms gateway object, for config data
-     * @return  boolean     True on success, False on error
-     */
-    public function createInvoice($Order, $terms_gw)
-    {
-        global $_CONF, $LANG_SHOP;
-
-        $access_token = $this->getBearerToken();
-        if (!$access_token) {
-            SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
-            return false;
-        }
-
-        $Shop = new Company();
-        //$Order = Order::getInstance($order_num);
-        $Currency = $Order->getCurrency();
-        $Billto = $Order->getBillto();
-        $Shipto = $Order->getShipto();
-
-        // Invoiced is a pseudo-fake status to keep this order from
-        // showing up in the cart.
-        $Order->updateStatus(OrderState::INVOICED);
-
-        $A = array(
-            'detail' => array(
-                'invoice_number' => $Order->getInvoiceNumber(),
-                'reference' => $Order->getOrderID(),
-                'currency_code' => $Currency->getCode(),
-                'payment_term' => array(
-                    'term_type' => $this->getInvoiceTerms($terms_gw->getConfig('net_days')),
-                ),
-            ),
-            'invoicer' => array(
-                'name' => array(
-                    'business_name' => $Shop->getCompany(),
-                ),
-                'address' => array(
-                    'address_line_1' => $Shop->getAddress1(),
-                    'address_line_2' => $Shop->getAddress2(),
-                    'admin_area_2' => $Shop->getCity(),
-                    'admin_area_1' => $Shop->getState(),
-                    'postal_code' => $Shop->getPostal(),
-                    'country_code' => $Shop->getCountry(),
-                ),
-                'website' => $_CONF['site_url'],
-            ),
-            'primary_recipients' => array(
-                array(
-                    'billing_info' => array(
-                        'name' => array(
-                            'given_name' => $Billto->parseName('fname'),
-                            'surname' => $Billto->parseName('lname'),
-                        ),
-                        'address' => array(
-                            'address_line_1'    => $Billto->getAddress1(),
-                            'address_line_2'    => $Billto->getAddress2(),
-                            'admin_area_2'      => $Billto->getCity(),
-                            'admin_area_1'      => $Billto->getState(),
-                            'postal_code'       => $Billto->getPostal(),
-                            'country_code'      => $Billto->getCountry(),
-                        ),
-                        'email_address' => $Order->getBuyerEmail(),
-                    ),
-                    'shipping_info' => array(
-                        'name' => array(
-                            'given_name' => $Shipto->parseName('fname'),
-                            'surname' => $Shipto->parseName('lname'),
-                        ),
-                        'address' => array(
-                            'address_line_1'    => $Shipto->getAddress1(),
-                            'address_line_2'    => $Shipto->getAddress2(),
-                            'admin_area_2'      => $Shipto->getCity(),
-                            'admin_area_1'      => $Shipto->getState(),
-                            'postal_code'       => $Shipto->getPostal(),
-                            'country_code'      => $Shipto->getCountry(),
-                        ),
-                    ),
-                ),
-            ),
-            'items' => array(
-            ),
-            'configuration' => array(
-                'partial_payment' => array(
-                    'allow_partial_payment' => false,
-                ),
-                'tax_calculated_after_discount' => true,
-                'tax_inclusive' => false,
-            ),
-            'amount' => array(
-                'breakdown' => array(
-//                    'tax_total' => array(
-//                        'currency_code' => $Currency->getCode(),
-//                        'value' => $Currency->FormatValue($Order->getTax()),
-//                    ),
-                    'shipping' => array(
-                        'amount' => array(
-                            'currency_code' => $Currency->getCode(),
-                            'value' => sprintf('%.02f', $Order->getShipping()),
-                        ),
-                    ),
-                ),
-            ),
-        );
-        if ($Order->getShipping() > 0 && $Order->getTaxShipping()) {
-            $A['amount']['breakdown']['shipping']['tax'] = array(
-                'currency_code' => $Currency->getCode(),
-                'percent' => $Order->getTaxRate() * 100,
-            );
-        }
-        /*if ($Order->getHandling() > 0) {
-            $handling = $Order->getHandling();
-            $A['amount']['breakdown']['shipping']['tax'] = array(
-                'currency_code' => $Currency->getCode(),
-                'percent' => $Order->getTaxRate() * 100,
-            );
-        }*/
-
-        foreach ($Order->getItems() as $OI) {
-            $item = array(
-                'name' => $OI->getProduct()->getName(),
-                'description' => $OI->getDscp(),
-                'quantity' => $OI->getQuantity(),
-                'unit_amount' => array(
-                    'currency_code' => $Currency->getCode(),
-                    'value' => $Currency->FormatValue($OI->getNetPrice()),
-                ),
-                'unit_of_measure' => 'QUANTITY',
-            );
-            $opts = $OI->getOptionsText();
-            if (!empty($opts)) {
-                $item['description'] .= ' ' . implode(', ', $opts);
-            }
-            if ($OI->getProduct()->isTaxable()) {
-                $item['tax'] = array(
-                    'name' => $LANG_SHOP['sales_tax'],
-                    'percent' => $Order->getTaxRate() * 100,
-                );
-            }
-            $A['items'][] = $item;
-        }
-        //var_dump($item);die;
-        //var_export($A);die;
-
-        // Create the draft invoice
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $this->api_url . '/v2/invoicing/invoices',
-            CURLOPT_POST => true,
-            CURLOPT_RETURNTRANSFER  => true,
-            CURLOPT_HTTPHEADER => array(
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $access_token,
-            ),
-            CURLOPT_POSTFIELDS => json_encode($A),
-        ) );
-        $inv = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-        curl_close($ch);
-
-        // If the invoice was created successfully, send to the buyer
-        if ($http_code == 201) {
-            $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
-            $json = json_decode($inv, true);
-            if (isset($json['href'])) {
-                $ch = curl_init();
-                curl_setopt_array($ch, array(
-                    CURLOPT_URL => $json['href'] . '/send',
-                    CURLOPT_RETURNTRANSFER  => true,
-                    CURLOPT_HTTPHEADER => array(
-                        'Content-Type: application/json',
-                        'Authorization: Bearer ' . $access_token,
-                    ),
-                    CURLOPT_POST => true,
-                    CURLOPT_POSTFIELDS => '{"send_to_recipient": true}',
-                ) );
-                $send_response = curl_exec($ch);
-                SHOP_log("Response from send-invoice: " . var_export($send_response,true), SHOP_LOG_DEBUG);
-                $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-                curl_close($ch);
-                if ($http_code > 299) {
-                    SHOP_log("Error sending invoice for {$Order->getOrderID()}. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
-                    return false;
-                }
-            }
-        } else {
-            SHOP_log("Error creating invoice for {$Order->getOrderID()}", SHOP_LOG_ERROR);
-            SHOP_Log("Data: " . var_export($inv, true));
-            return false;
-        }
-        return true;
-    }
-
-
-    /**
-     * Expose the API url for webhook verification.
-     *
-     * @return  string      API URL
-     */
-    public function getApiUrl()
-    {
-        return $this->api_url;
-    }
-
-
-    /**
-     * Get the webhook ID depending on whether in test or production mode.
-     *
-     * @return  string      Webhook ID from Paypal
-     */
-    public function getWebhookID()
-    {
-        return $this->getConfig('webhook_id');
     }
 
 }
