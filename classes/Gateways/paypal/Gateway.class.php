@@ -350,7 +350,8 @@ class Gateway extends \Shop\Gateway
             empty($this->getConfig('prv_key')) ||
             empty($this->getConfig('pub_key')) ||
             empty($this->getConfig('pp_cert')) ||
-            $this->cert_id == '') {
+            $this->cert_id == ''
+        ) {
             return '';
         }
 
