@@ -758,40 +758,6 @@ class IPN
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        /*
-        // For each item purchased, create an order item
-        foreach ($this->items as $id=>$item) {
-            $P = Product::getByID($item['item_number']);
-            if ($P->isNew()) {
-                $this->Error("Item {$item['item_number']} not found - txn " .
-                        $this->getTxnId());
-                continue;
-            }
-
-            $this->items[$id]['prod_type'] = $P->getProductType();
-            SHOP_log("Shop item " . $item['item_number'], SHOP_LOG_DEBUG);
-
-            // If it's a downloadable item, then get the full path to the file.
-            if ($P->getFilename() != '') {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->getFilename();
-                $token_base = $this->getTxnId() . time() . rand(0,99);
-                $token = md5($token_base);
-                $this->items[$id]['token'] = $token;
-            } else {
-                $token = '';
-            }
-            if ($P->getExpiration() > 0) {
-                $this->items[$id]['expiration'] = $P->getExpiration();
-            }
-
-            // If a custom name was supplied by the gateway's IPN processor,
-            // then use that.  Otherwise, plug in the name from inventory or
-            // the plugin, for the notification email.
-            if (empty($item['name'])) {
-                $this->items[$id]['name'] = $P->getShortDscp();
-            }
-        }   // foreach item
-         */
         $status = is_null($this->Order) ? $this->createOrder() : 0;
         if ($status) {
             $order_id = 'Unknown';
@@ -804,18 +770,14 @@ class IPN
             // for each item.
             if (!$this->isSufficientFunds()) {
                 $logId = $this->gw_name . ' - ' . $this->txn_id;
-                $this->handleFailure(self::FAILURE_FUNDS,
-                        "($logId) Insufficient/incorrect funds for purchase");
+                $this->handleFailure(
+                    self::FAILURE_FUNDS,
+                    "($logId) Insufficient/incorrect funds for purchase"
+                );
                 return false;
             }
 
             // Get the gift card amount applied to this order and save it with the order record.
-            // @deprecated - GC amount is already stored with the order
-            /*$by_gc = $this->getCredit('gc');
-            if ($by_gc > 0) {
-                $this->Order->setByGC($by_gc);
-                Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
-            }*/
             $coupons = \Shop\Products\Coupon::Apply(
                 $this->Order->getGC(),
                 $this->Order->getUid(),
