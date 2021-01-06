@@ -1,11 +1,12 @@
 <?php
 /**
- * Paypal Checkout gateway plugin.
+ * Paypal Checkout bundled gateway plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.0.1
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
