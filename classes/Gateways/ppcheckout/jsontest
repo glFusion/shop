@@ -1,0 +1,114 @@
+            <script>
+            var ipn_url = "' . SHOP_URL . '/ipn/paypal.php?_gw=paypal&_type=ppjs' . '";
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        intent: "CAPTURE",
+                        custom_id: "' . $Cart->getOrderId() . '",
+                        reference_id: "' . $Cart->getOrderId() . '",
+                        purchase_units: [{
+                            custom_id: "' . $Cart->getOrderId() . '",
+                            amount: {
+                                value: "' . $Cart->getTotal() . '",
+                                currency_code: "' . $currency_code . '",
+                            },
+                            items: ' . $items . ',
+                            amount_breakdown: {
+                                item_total: ' . $Cart->getTotal() . ',
+                                shipping: ' . $Cart->getShipping() . ',
+                                handling: ' . $Cart->getHandling() . ',
+                                tax_total: ' . $Cart->getTax() . ',
+                            }
+                        }]
+                    })
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture()
+                        .then(function(details) {
+                            alert("Transaction completed by " + details.payer.name.given_name);
+                            console.log(details);
+                            /*var params = {
+                                orderId: "' . $Cart->getOrderId() . '",
+                                status: details.status,
+                                intent: details.intent,
+                                txn_id: details.id
+                            };
+                            console.log(params);
+                            console.log(JSON.stringify(params));*/
+                            console.log(details);
+                            console.log(JSON.stringify(details));
+                            fetch(ipn_url, {
+                                method: "post",
+                                headers: {
+                                    "Accept": "application/json, text/plain, */*",
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(details)
+                            })
+                            .then (res => res.json())
+                            .then (data => {
+                                console.log(res);
+                                console.log(data);
+                            })
+                        })
+                }
+            })
+            .render("#paypal-button-container"); // Display payment options on your web page
+
+
+
+            var hook_url = "' . SHOP_URL . '/hooks/webhook.php?_gw=paypalsdk' . '";
+        $items = array();
+        foreach ($Cart->getItems() as $OI) {
+            $items[] = array(
+                'name' => $OI->getID(),
+                'description' => $OI->getDscp(),
+                'unit_amount' => array(
+                    'value' => $OI->getNetPrice() * $OI->getQuantity(),
+                    'currency_code' => $currency_code,
+                ),
+                'tax' => array(
+                    'value' => $OI->getTax(),
+                    'currency_code' => $currency_code,
+                ),
+                'quantity' => $OI->getQuantity(),
+            );
+        }
+        $items = json_encode($items);
+/*                            },
+                            items: ' . $items . ',
+                            amount_breakdown: {
+                                item_total: ' . $Cart->getTotal() . ',
+                                shipping: ' . $Cart->getShipping() . ',
+                                handling: ' . $Cart->getHandling() . ',
+                                tax_total: ' . $Cart->getTax() . ',
+ */
+
+/*                        .then(function(details) {
+                            //alert("Transaction completed by " + details.payer.name.given_name);
+                            console.log(details);
+                            console.log(details);
+                            console.log(JSON.stringify(details));
+                            fetch(hook_url, {
+                                method: "post",
+                                headers: {
+                                    "Accept": "application/json, text/plain, */*",
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify(details)
+                            })
+                            .then (res => res.json())
+                            .then (data => {
+                                console.log(res);
+                                console.log(data);
+                            })
+                        })
+
+
+
+                                /*body: JSON.stringify({
+                                    orderId: "' . $Cart->getOrderId() . '",
+                                    status: details.status,
+                                    intent: details.intent
+                                })*/
+

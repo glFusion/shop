@@ -1,0 +1,75 @@
+<div id="paypal-button-container"></div>
+<script>
+var hook_url = "{shop_url}/hooks/webhook.php?_gw={gw_name}";
+paypal.Buttons({
+    createOrder: function (data, actions) {
+        return actions.order.create({
+            intent: "{intent}",
+            custom_id: "{order_id}",
+            reference_id: "{order_id}",
+             purchase_units: [{
+                custom_id: "{order_id}",
+                amount: {
+                    value: "{order_total}",
+                    currency_code: "{cur_code}"
+                }
+            }]
+        })
+        .then (finalizeCart("{order_id}", "{uid}", true));
+    },
+    onApprove: function(data, actions) {
+        actions.order.authorize().then(function (authorization) {
+            console.log(authorization);
+            // Get the authorization id
+            /*var authorizationID = authorization.purchase_units[0]
+              .payments.authorizations[0].id;
+
+            // Call your server to validate and capture the transaction
+            return fetch(hook_url, {
+                method: 'post',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderID: data.orderID,
+                    authorizationID: authorizationID,
+                    resource: authorization
+                })
+            });*/
+            window.location.replace("{shop_url}");
+        });
+    },
+    onCancel: function(data, actions) {
+        actions.redirect("{cancel_url}");
+    }
+}).render("#paypal-button-container"); // Display payment options on your web page
+</script>
+{!if 0}
+        /*return actions.order.capture()
+            .then(function(details) {
+                alert("Transaction completed by " + details.payer.name.given_name);
+                console.log(details);
+                console.log(JSON.stringify(details));
+                fetch("{hook_url}", {
+                    method: "post",
+                    headers: {
+                        "Accept": 'application/json, text/plain, */*',
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(details)
+                })
+                .then (res => res.json())
+                .then (data => {
+                    console.log(res);
+                    console.log(data);
+                })
+            })
+            .then(function() {
+                actions.redirect("{success_url}");
+            })
+        },
+        onCancel: function(data, actions) {
+            actions.redirect("{cancel_url}");
+        }
+    })*/
+{!endif}
