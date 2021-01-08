@@ -56,6 +56,7 @@ class Gateway extends \Shop\Gateway
             'terms'     => 0,
         );
         parent::__construct($A);
+        $this->enabled = 0;     // force disabled to hide from list
     }
 
 
