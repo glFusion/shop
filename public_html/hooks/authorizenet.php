@@ -1,6 +1,6 @@
 <?php
 /**
- * IPN endpoint for Authorize.Net. Included for backwards compatibility.
+ * Webhook endpoint for Authorize.Net.
  * Authorize.Net does not support $_GET arguments in the webhook.
  *
  * @author      Lee Garner <lee@leegarner.com>
