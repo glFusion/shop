@@ -47,7 +47,7 @@
             </div>
         </div>
         <div class="uk-form-row">
-            <label class="uk-form-label">{$LANG_SHOP['txt_buttons']}:</label>
+            <label class="uk-form-label">{$LANG_SHOP['txt_services']}:</label>
             <div class="uk-form-controls">
                 {svc_checkboxes}
                 <i style="margin-left:10px;" class="uk-icon uk-icon-question-circle tooltip" title="{$LANG_SHOP_HELP['gw_services']}"></i>

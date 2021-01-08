@@ -115,6 +115,7 @@ $LANG_SHOP = array (
 'add_to_cart'       => 'Add to Cart',
 'donate'            => 'Donate',
 'txt_buttons'       => 'Buttons',
+'txt_services'      => 'Services',
 'incl_blocks'       => 'Include in Blocks',
 'buttons'           => array(
     'buy_now'   => 'Buy Now',
@@ -754,6 +755,8 @@ $LANG_SHOP = array (
 'q_reset_ratings' => 'Are you sure you want to reset the ratings for the selected items?',
 'webhooks' => 'Webhooks',
 'current_as_of' => 'Updated as of %s',
+'upgrade' => 'Upgrade',
+'upgrade_ok' => 'Upgrade Successful',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
