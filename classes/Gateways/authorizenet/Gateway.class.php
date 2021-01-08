@@ -7,7 +7,7 @@
  * @package     shop
  * @version     v1.3.0
  * @since       v0.7.0
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -20,6 +20,22 @@ namespace Shop\Gateways\authorizenet;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'authorizenet';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Authorize.Net';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Authorize.Net Accept Hosted';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
     /** Authorize.net transaction key.
      * @var string */
     private $trans_key = '';
@@ -36,8 +52,7 @@ class Gateway extends \Shop\Gateway
      * @var string */
     private $token_url = '';
 
-    /**
-     * Shopping cart object.
+    /** Shopping cart object.
      * We need to access this both from `CheckoutButon()`  and `_getButton()`.
      * @var object
      */
@@ -54,24 +69,16 @@ class Gateway extends \Shop\Gateway
     {
         global $_SHOP_CONF;
 
-        // These are used by the parent constructor, set them first
-        $this->gw_name = 'authorizenet';
-        $this->gw_provider = 'Authorize.Net';
-        $this->gw_desc = 'Authorize.Net Accept Hosted';
-
-        // Set default values for the config items, just to be sure that
-        // something is set here.
+        // Set up the configuration field definitions.
         $this->cfgFields= array(
             'prod' => array(
                 'api_login'    => 'password',
                 'trans_key'    => 'password',
-    //            'md5_hash'     => '',
                 'hash_key'     => 'password',
             ),
             'test' => array(
                 'api_login'    => 'password',
                 'trans_key'    => 'password',
-    //            'md5_hash'     => '',
                 'hash_key'     => 'password',
             ),
             'global' => array(
@@ -80,7 +87,7 @@ class Gateway extends \Shop\Gateway
         );
 
         // Set the supported services as this gateway only supports cart checkout
-        $this->services = array('checkout' => 1); 
+        $this->services = array('checkout' => 1);
 
         // The parent constructor reads our config items from the database to
         // override defaults
@@ -95,13 +102,9 @@ class Gateway extends \Shop\Gateway
             $this->token_url = 'https://apitest.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://test.authorize.net/payment/payment';
         } else {
-            /*$this->api_login    = trim($this->getConfig('prod_api_login'));
-            $this->trans_key    = trim($this->getConfig('prod_trans_key'));
-            $this->hash_key     = trim($this->getconfig('prod_hash_key'));*/
             $this->token_url = 'https://api.authorize.net/xml/v1/request.api';
             $this->gw_url = 'https://accept.authorize.net/payment/payment';
         }
-        $this->get_shipping = 0;
     }
 
 
@@ -232,7 +235,7 @@ class Gateway extends \Shop\Gateway
         curl_setopt($ch, CURLOPT_HTTPHEADER, array(
             'Content-Type: application/json',
             'Accept: application/json',
-        )); 
+        ));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $result = curl_exec($ch);
         //var_dump($result);die;
