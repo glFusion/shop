@@ -757,6 +757,7 @@ $LANG_SHOP = array (
 'current_as_of' => 'Updated as of %s',
 'upgrade' => 'Upgrade',
 'upgrade_ok' => 'Upgrade Successful',
+'version' => 'Version',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

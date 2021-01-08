@@ -40,6 +40,7 @@ class Gateway extends \Shop\Gateway
     protected $gw_desc = 'Checkout with PayPal';
 
     /** Flag this gateway as bundled with the Shop plugin.
+     * Gateway version will be set to the Shop plugin's version.
      * @var integer */
     protected $bundled = 1;
 
@@ -60,8 +61,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_SHOP_CONF, $_USER;
-
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN',
@@ -553,6 +552,19 @@ class Gateway extends \Shop\Gateway
         }
         SHOP_log('Capture response: ' . var_export($response,true), SHOP_LOG_DEBUG);
         return $response;
+    }
+
+
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('webhook_id')) &&
+            !empty($this->getConfig('api_username')) &&
+            !empty($this->getConfig('api_password'));
     }
 
 }

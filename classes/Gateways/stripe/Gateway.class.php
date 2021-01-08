@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\stripe;
+use Shop\Config;
 use Shop\Cart;
 use Shop\Coupon;
 use Shop\Currency;
@@ -69,8 +70,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $LANG_SHOP, $_SHOP_CONF;
-
         // Set up the config field definitions.
         $this->cfgFields = array(
             'prod' => array(
@@ -142,7 +141,7 @@ class Gateway extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP, $_CONF;
+        global $LANG_SHOP;
 
         static $have_js = false;
 
@@ -227,7 +226,7 @@ class Gateway extends \Shop\Gateway
             'mode' => 'payment',
             'payment_method_types' => ['card'],
             'line_items' => $line_items,
-            'success_url' => $_CONF['site_url'],        // todo
+            'success_url' => Config::get('url') . '/index.php',
             'cancel_url' => $cart->cancelUrl(),
             'client_reference_id' => $cartID,
             'metadata' => array(
@@ -415,7 +414,7 @@ class Gateway extends \Shop\Gateway
      */
     public function createInvoice($Order, $terms_gw)
     {
-        global $_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $gwCustomer = $this->getCustomer($Order->getUid());
         if ($gwCustomer) {
@@ -484,6 +483,19 @@ class Gateway extends \Shop\Gateway
         }
         $invObj->finalizeInvoice();
         return $invObj;
+    }
+
+
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('pub_key')) &&
+            !empty($this->getConfig('sec_key')) &&
+            !empty($this->getConfig('hook_sec'));
     }
 
 }

@@ -67,8 +67,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_SHOP_CONF;
-
         // Set up the configuration field definitions.
         $this->cfgFields= array(
             'prod' => array(
@@ -128,7 +126,7 @@ class Gateway extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_USER, $LANG_SHOP;
 
         // Make sure we have at least one item
         if (empty($cart->getItems())) return '';
@@ -376,6 +374,16 @@ class Gateway extends \Shop\Gateway
         return $this->adminWarnBB();
     }
 
-}   // class authorizenet
 
-?>
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('api_login')) &&
+            !empty($this->getConfig('trans_key'));
+    }
+
+}

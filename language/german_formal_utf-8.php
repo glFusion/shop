@@ -752,6 +752,7 @@ $LANG_SHOP = array (
 'webhooks' => 'Webhooks',
 'upgrade' => 'Upgrade',
 'upgrade_ok' => 'Upgrade Successful',
+'version' => 'Version',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

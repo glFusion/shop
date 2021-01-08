@@ -762,4 +762,17 @@ class Gateway extends \Shop\Gateway
         return $this->_errors;
     }
 
+
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('loc_id')) &&
+            !empty($this->getConfig('appid')) &&
+            !empty($this->getConfig('token'));
+    }
+
 }

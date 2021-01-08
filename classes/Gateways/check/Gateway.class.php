@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\check;
+use Shop\Config;
 use Shop\Models\ProductType;
 use Shop\Template;
 
@@ -43,7 +44,7 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         // Set the services array to override the default.  Only checkout
         // is supported by this gateway.
@@ -146,7 +147,7 @@ class Gateway extends \Shop\Gateway
      */
     private function _getButton($btn_type)
     {
-        global $_SHOP_CONF, $_USER;
+        global $_USER;
 
         // Make sure we have at least one item
         if (!$this->Supports($btn_type) || empty($this->items)) return '';
@@ -284,8 +285,6 @@ class Gateway extends \Shop\Gateway
      */
     public function handlePurchase($vals = array())
     {
-        global $LANG_SHOP_gateway, $_SHOP_CONF;
-
         $cart_id = SHOP_getVar($vals, 'cart_id');
         if (empty($cart_id)) {
             return '';
@@ -319,7 +318,7 @@ class Gateway extends \Shop\Gateway
      */
     private function _handlePurchase($vals)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP_gateway;
+        global $_TABLES, $_CONF;
 
         if (!empty($vals['cart_id'])) {
             $cart = Cart::getInstance($vals['cart_id']);
@@ -419,7 +418,7 @@ class Gateway extends \Shop\Gateway
 
             // If it's a downloadable item, then get the full path to the file.
             if (!empty($A['file'])) {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $A['file'];
+                $this->items[$id]['file'] = Config::get('download_path') . $A['file'];
                 $token_base = $this->pp_data['txn_id'] . time() . rand(0,99);
                 $token = md5($token_base);
                 $this->items[$id]['token'] = $token;
@@ -463,11 +462,12 @@ class Gateway extends \Shop\Gateway
             DB_delete($_TABLES['shop.cart'], 'cart_id', $vals['cart_id']);
         }
 
-        $gw_msg = $LANG_SHOP_check['make_check_to'] . ':<br />' .
-                $_SHOP_CONF['shop_name'] . '<br /><br />' .
-                $LANG_SHOP_check['remit_to'] . ':<br />' .
-                $_SHOP_CONF['shop_name'] . '<br />' .
-                $_SHOP_CONF['shop_addr'];
+        $Company = Company::getInstance();
+        $gw_msg = $this->getLang('make_check_to') . ':<br />' .
+                Config::get('shop_name') . '<br /><br />' .
+                $this->getLang('remit_to') . ':<br />' .
+                $Company->getName() . '<br />' .
+                $Company->toHTML('address');
         $Order->Notify('pending', $gw_msg);
     }
 

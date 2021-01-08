@@ -33,6 +33,7 @@ class Gateway extends \Shop\Gateway
     protected $gw_provider = 'Net Terms';
 
     /** Flag this gateway as bundled with the Shop plugin.
+     * Gateway version will be set to the Shop plugin's version.
      * @var integer */
     protected $bundled = 1;
 
@@ -306,6 +307,17 @@ class Gateway extends \Shop\Gateway
             $link = '';
         }
         return $link;
+    }
+
+
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('gateway'));
     }
 
 }
