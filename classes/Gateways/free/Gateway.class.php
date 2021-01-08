@@ -51,7 +51,8 @@ class Gateway extends \Shop\Gateway
         global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
-        $this->gw_url = SHOP_URL . '/ipn/internal.php';
+        $this->gw_url = SHOP_URL . '/hooks/webhook.php?_gw=free';
+
         // This gateway can service all button type by default
         $this->services = array(
             'buy_now'   => 0,
@@ -60,7 +61,6 @@ class Gateway extends \Shop\Gateway
             'subscribe' => 0,
             'checkout'  => 1,
             'external'  => 0,
-            //'terms'     => 0,
         );
         $this->enabled = 1;         // set default for installation
         parent::__construct($A);
@@ -78,26 +78,21 @@ class Gateway extends \Shop\Gateway
     {
         global $_USER;
 
-        // Add custom info for the internal ipn processor
-        $cust = $cart->custom_info;
-        $cust['uid'] = $_USER['uid'];
-        $cust['transtype'] = 'free';
-        $cust['cart_id'] = $cart->CartID();
-
         $pmt_gross = $cart->getTotal();
-        if (isset($cust['by_gc'])) {
-            $pmt_gross -= (float)$cust['by_gc'];
+        if ($pmt_gross > 0) {
+            return '';
         }
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="free" />',
-            '<input type="hidden" name="cart_id" value="' . $cart->CartID() . '" />',
-            '<input type="hidden" name="custom" value=\'' . htmlspecialchars(@serialize($cust)) . '\' />',
+            '<input type="hidden" name="order_id" value="' . $cart->CartID() . '" />',
             '<input type="hidden" name="payment_status" value="Completed" />',
             '<input type="hidden" name="pmt_gross" value="' . $pmt_gross . '" />',
             '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
             '<input type="hidden" name="status" value="paid" />',
-            '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />',
         );
+        if (!COM_isAnonUser()) {
+            $gatewayVars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';
+        }
         return implode("\n", $gatewayVars);
     }
 
@@ -187,5 +182,3 @@ class Gateway extends \Shop\Gateway
     }
 
 }
-
-?>
