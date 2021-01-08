@@ -36,7 +36,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = 'gwadmin';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
-    'gwmove', 'gwsave', 'gwinstall', 'gwdelete', 'gw_upload',
+    'gwmove', 'gwsave', 'gwinstall', 'gwdelete', 'gwupload', 'gwupgrade',
     // Views to display
     'gwadmin', 'gwedit',
 );
@@ -54,7 +54,15 @@ foreach($expected as $provided) {
 
 
 switch ($action) {
-case 'gw_upload':
+case 'gwupgrade':
+    $GW = Shop\Gateway::getInstance($actionval);
+    if ($GW->doUpgrade()) {
+        COM_setMsg($LANG_SHOP['upgrade_ok']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    break;
+
+case 'gwupload':
     $status = Shop\Gateway::upload();
     if ($status) {
         COM_setMsg("The gateway was successfully uploaded");

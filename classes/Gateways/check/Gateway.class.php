@@ -22,6 +22,19 @@ use Shop\Template;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'check';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Pay by Check';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
+
     /**
      * Constructor.
      * Sets gateway-specific variables and calls the parent constructor.
@@ -32,8 +45,6 @@ class Gateway extends \Shop\Gateway
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        // These are used by the parent constructor, set them first
-        $this->gw_name = 'check';
         // Set the services array to override the default.  Only checkout
         // is supported by this gateway.
         $this->services = array(
@@ -47,7 +58,7 @@ class Gateway extends \Shop\Gateway
         // override defaults
         parent::__construct($A);
 
-        $this->gw_desc = $this->getLang('descr_text');
+        $this->gw_desc = $this->getLang('gw_dscp');
         $this->gw_url = SHOP_URL;
         $this->ipn_url = '';
         $this->do_redirect = false; // handled internally

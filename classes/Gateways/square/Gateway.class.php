@@ -33,6 +33,22 @@ use LGLib\NameParser;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'square';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'SquareUp.com';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'SquareUp Payments';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
     /** Square location value.
      * @var string */
     private $loc_id;
@@ -66,18 +82,13 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        // These are used by the parent constructor, set them first.
-        $this->gw_name = 'square';
-        $this->gw_desc = 'SquareConnect';
-
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'CZK', 'ILS', 'MXN',
             'PHP', 'TWD', 'THB', 'MYR', 'RUB',
         );
 
-        // Set default values for the config items, just to be sure that
-        // something is set here.
+        // Set up the configuration field definitions.
         $this->cfgFields = array(
             'prod' => array(
                 'loc_id'   => 'password',

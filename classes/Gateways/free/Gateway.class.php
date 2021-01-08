@@ -3,9 +3,9 @@
  * Testing gateway to handle free orders. Based on the Test gateway.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright  Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -23,6 +23,23 @@ use Shop\Template;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'free';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Free Order';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Free Order';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
+
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
@@ -34,8 +51,6 @@ class Gateway extends \Shop\Gateway
         global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
-        $this->gw_name = 'free';
-        $this->gw_desc = 'Free Order';
         $this->gw_url = SHOP_URL . '/ipn/internal.php';
         // This gateway can service all button type by default
         $this->services = array(

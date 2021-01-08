@@ -24,6 +24,18 @@ use Shop\Gateway as GW;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'terms';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Net Terms';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
     /** Number of days for net terms, default = "Net 30"
      * @var integer */
     private $net_days = 30;
@@ -40,8 +52,6 @@ class Gateway extends \Shop\Gateway
         global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
-        $this->gw_name = 'terms';
-        $this->gw_desc = 'Net Terms';
         $this->req_billto = true;
         // This gateway processes the order via AJAX and just returns to the shopping page.
         $this->gw_url = SHOP_URL . '/confirm.php';
@@ -66,6 +76,7 @@ class Gateway extends \Shop\Gateway
         );
         $this->do_redirect = false; // handled internally
         parent::__construct($A);
+        $this->gw_desc = $this->getLang('gw_dscp');
     }
 
 

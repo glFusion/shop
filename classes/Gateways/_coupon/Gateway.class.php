@@ -24,6 +24,19 @@ use Shop\Payment;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway name.
+     * @var string */
+    protected $gw_name = '_coupon';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Pay by Coupon';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
+
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
@@ -35,9 +48,8 @@ class Gateway extends \Shop\Gateway
         global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
-        $this->gw_name = '_coupon';
-        $this->gw_desc = $LANG_SHOP['apply_gc'];
         $this->gw_url = SHOP_URL . '/confirm.php';
+
         // Set the services that this gateway can provide
         $this->services = array(
             'buy_now'   => 0,

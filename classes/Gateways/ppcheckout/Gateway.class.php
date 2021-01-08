@@ -27,13 +27,21 @@ use Shop\Template;
  */
 class Gateway extends \Shop\Gateway
 {
-    /** Business e-mail to be used for creating buttons.
+    /** Gateway ID.
      * @var string */
-    private $receiver_email;
+    protected $gw_name = 'ppcheckout';
 
-    /** PayPal-assigned certificate ID to be used for encrypted buttons.
-    * @var string */
-    private $cert_id;
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'PayPal Checkout';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Checkout with PayPal';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
 
     /** Paypal API URL, sandbox or production.
      * @var string */
@@ -42,10 +50,6 @@ class Gateway extends \Shop\Gateway
     /** Order Intent.
      * @var string */
     private $intent = 'authorize';
-
-    /** Flag this as a bundled gateway.
-     * @var integer */
-    protected $bundled = 1;
 
 
     /**
@@ -64,13 +68,7 @@ class Gateway extends \Shop\Gateway
             'PHP', 'TWD', 'THB',
         );
 
-        // These are used by the parent constructor, set them first.
-        $this->gw_name = 'ppcheckout';
-        $this->gw_provider = 'PayPal Checkout';
-        $this->gw_desc = 'Checkout with PayPal';
-
-        // Set default values for the config items, just to be sure that
-        // something is set here.
+        // Create the configuration item definitions
         $this->cfgFields= array(
             'prod' => array(
                 'webhook_id'    => 'string',
@@ -87,7 +85,7 @@ class Gateway extends \Shop\Gateway
             ),
         );
 
-        // Set defaults
+        // Set default config values.
         $this->config = array(
             'global' => array(
                 'test_mode'         => '1',

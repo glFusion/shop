@@ -28,6 +28,22 @@ use Shop\Template;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'paypal';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'PayPal Web Payments';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'PayPal Web Payments Standard';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
     /** Business e-mail to be used for creating buttons.
      * @var string */
     private $receiver_email;
@@ -53,48 +69,35 @@ class Gateway extends \Shop\Gateway
             'PHP', 'TWD', 'THB',
         );
 
-        // These are used by the parent constructor, set them first.
-        $this->gw_name = 'paypal';
-        $this->gw_provider = 'PayPal Web Payments';
-        $this->gw_desc = 'PayPal Web Payments Standard';
         $this->button_url = '<img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/checkout-logo-medium.png" alt="Check out with PayPal" />';
 
-        // Set default values for the config items, just to be sure that
-        // something is set here.
+        // Set up the configuration field definitions.
         $this->cfgFields= array(
             'prod' => array(
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
-                'endpoint'          => 'string',
-                //'webhook_id'   => 'string',
-                //'api_username'      => 'password',
-                //'api_password'      => 'password',
-                'pp_cert'           => 'string',
-                'pp_cert_id'        => 'string',
-                'micro_cert_id'     => 'string',
+                'encrypt'           => 'checkbox',
+                'ena_donations'     => 'checkbox',
             ),
             'test' => array(
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
-                'endpoint'       => 'string',
-                //'webhook_id' => 'string',
-                //'api_username'      => 'password',
-                //'api_password'      => 'password',
-                'pp_cert' => 'string',
-                'pp_cert_id'        => 'string',
-                'micro_cert_id'     => 'string',
+                'encrypt'           => 'checkbox',
+                'ena_donations'     => 'checkbox',
             ),
             'global' => array(
                 'test_mode'         => 'checkbox',
                 'micro_threshold'   => 'string',
-                'encrypt'           => 'checkbox',
+                'pp_cert'           => 'string',
+                'pp_cert_id'        => 'string',
+                'micro_pp_cert'           => 'string',
+                'pp_cert_id'        => 'string',
                 'prv_key'           => 'string',
                 'pub_key'           => 'string',
-                'ena_donations'     => 'checkbox',
             ),
         );
 
-        // Set defaults
+        // Set configuration defaults
         $this->config = array(
             'global' => array(
                 'micro_threshold'   => '10',
@@ -359,8 +362,10 @@ class Gateway extends \Shop\Gateway
         // Now check that the files exist and can be read
         foreach (array('prv_key', 'pub_key', 'pp_cert') as $idx=>$name) {
             $keys[$name] = $_SHOP_CONF['tmpdir'] . 'keys/' . $this->getConfig($name);
-            if (!is_file($keys[$name]) ||
-                !is_readable($keys[$name])) {
+            if (
+                !is_file($keys[$name]) ||
+                !is_readable($keys[$name])
+            ) {
                 return '';
             }
         }
@@ -930,6 +935,43 @@ class Gateway extends \Shop\Gateway
     protected function getInstructions()
     {
         return $this->adminWarnBB();
+    }
+
+
+    /**
+     * Perform upgrade functions for this gateway.
+     *
+     * @param   string  $to     Target version
+     * @return  boolean     True on success, False on error
+     */
+    protected function _doUpgrade($to)
+    {
+        global $_TABLES;
+
+        if ($to == '') {
+            $to = $this->version;
+        }
+        switch ($to) {
+        case '1.3.0':
+            if ($this->getInstalledVersion() < '1.3.0') {
+                $cfg = DB_getItem($_TABLES['shop.gateways'], 'config', "id='paypal'");
+                $this->config = @unserialize($cfg);
+                foreach (array('encrypt', 'ena_donations') as $key) {
+                    if (isset($this->config['global'][$key])) {
+                        $this->setConfig($key, $Old['global'][$key], 'test');
+                        $this->setConfig($key, $Old['global'][$key], 'prod');
+                        unset($this->config['global'][$key]);
+                    }
+                }
+                foreach (array('api_username', 'api_password', 'webhook_id') as $key) {
+                    unset($this->config['prod'][$key]);
+                    unset($this->config['test'][$key]);
+                }
+                $this->version = '1.3.0';
+            }
+            break;
+        }
+        return true;
     }
 
 }

@@ -12,9 +12,9 @@
  */
 
 $LANG_SHOP_gateway = array(
+'gw_dscp'           => 'Pay by Check',
 'btn_text'          => 'Pay by Check',
 'buy_now'           => 'Buy Now',
-'descr_text'        => 'Pay by Check',
 'prod_types'        => 'Supported Product Types',
 'make_check_to'     => 'Please make your check payable to',
 'remit_to'          => 'Send your payment to',

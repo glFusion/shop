@@ -20,6 +20,23 @@ use Shop\Template;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = '_internal';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'Internal';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Internal Payment Gateway';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
+
     /**
      * Constructor.
      * Set gateway-specific items and call the parent constructor.
@@ -28,11 +45,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        // These are used by the parent constructor, set them first.
-        $this->gw_name  = '_internal';
-        $this->gw_desc  = 'Internal Payment Gateway';
-        //$this->gw_url   = SHOP_URL . '/ipn/internal.php';
-
         // This gateway can service all button type by default
         $this->services = array(
             'buy_now'   => 1,

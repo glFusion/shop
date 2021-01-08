@@ -78,6 +78,20 @@ class Gateway
      * @var integer */
     protected $orderby = 999;
 
+    /** Gateway code version.
+     * For bundled gateways this will be the plugin version.
+     * Other installable gateways will have their own versions.
+     * @var string */
+    protected $version = '';
+
+    /** Gateway installed version.
+     * @var string */
+    protected $inst_version = '';
+
+    /** Indicator of a bundled gateway, vs an installable one.
+     * @var integer */
+    protected $bundled = 0;
+
     /** Environment configuration for prod or test.
      * Also contains global settings. This is a subset of `$config`.
      * @var array */
@@ -195,6 +209,7 @@ class Gateway
             $this->orderby = (int)$A['orderby'];
             $this->enabled = (int)$A['enabled'];
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
+            $this->inst_version = SHOP_getVar($A, 'version');
             $services = @unserialize($A['services']);
             if ($services) {
                 foreach ($services as $name=>$status) {
@@ -235,6 +250,9 @@ class Gateway
         // then assume it's the gateway url.
         if ($this->postback_url === NULL) {
             $this->postback_url = $this->gw_url;
+        }
+        if ($this->bundled) {
+            $this->version = Config::get('pi_version');
         }
         $this->loadLanguage();
     }
@@ -410,20 +428,23 @@ class Gateway
             $this->test_mode = SHOP_getVar($A, 'test_mode', 'integer');
             $services = SHOP_getVar($A, 'service', 'array');
         }
-        foreach ($this->cfgFields as $env=>$flds) {
-            foreach ($flds as $name=>$type) {
-                switch ($type) {
-                case 'checkbox':
-                    $value = isset($A[$name][$env]) ? 1 : 0;
-                    break;
-                case 'password':
-                    $value = COM_encrypt($A[$name][$env]);
-                    break;
-                default:
-                    $value = $A[$name][$env];
-                    break;
+        if ($A !== NULL) {
+            // Only update config if provided from form
+            foreach ($this->cfgFields as $env=>$flds) {
+                foreach ($flds as $name=>$type) {
+                    switch ($type) {
+                    case 'checkbox':
+                        $value = isset($A[$name][$env]) ? 1 : 0;
+                        break;
+                    case 'password':
+                        $value = COM_encrypt($A[$name][$env]);
+                        break;
+                    default:
+                        $value = $A[$name][$env];
+                        break;
+                    }
+                    $this->setConfig($name, $value, $env);
                 }
-                $this->setConfig($name, $value, $env);
             }
         }
         $config = @serialize($this->config);
@@ -557,6 +578,7 @@ class Gateway
                     description = '" . DB_escapeString($this->gw_desc) . "',
                     config = '" . DB_escapeString($config) . "',
                     services = '" . DB_escapeString($services) . "',
+                    version = '" . DB_escapeString($this->getCodeVersion()) . "',
                     grp_access = 1";
             DB_query($sql);
             Cache::clear('gateways');
@@ -1701,12 +1723,15 @@ class Gateway
                 ON g.grp_id = gw.grp_access";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
+            $gw = self::create($A['id']);
             $data_arr[] = array(
                 'id'    => $A['id'],
                 'orderby' => $A['orderby'],
                 'enabled' => $A['enabled'],
                 'description' => $A['description'],
                 'grp_name' => $A['grp_name'],
+                'inst_version' => $A['version'],
+                'code_version' => $gw->getCodeVersion(),
             );
         }
     }
@@ -1791,7 +1816,7 @@ class Gateway
 			<span>Select File</span>
 			<input type="file" name="gw_file" id="gw_file" class="tm-upload">
 		</div>
-		<button class="uk-button uk-button-success uk-button-small" type="submit" name="gw_upload" value="Upload">Upload</button>
+		<button class="uk-button uk-button-success uk-button-small" type="submit" name="gwupload" value="Upload">Upload</button>
 	</form>';
         $display .= ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_gwlist',
@@ -1838,6 +1863,15 @@ class Gateway
                     array(
                         'data-uk-tooltip' => '',
                         'title' => $LANG_SHOP['ck_to_install'],
+                    )
+                );
+            } elseif (!COM_checkVersion($A['inst_version'], $A['code_version'])) {
+                return COM_createLink(
+                    $LANG_SHOP['upgrade'] . '&nbsp;<i class="uk-icon uk-icon-level-up"></i>',
+                    Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
+                    array(
+                        'class' => 'tooltip',
+                        'title' => $LANG_SHOP['upgrade'],
                     )
                 );
             } elseif ($fieldvalue == '1') {
@@ -1979,11 +2013,42 @@ class Gateway
 
 
     /**
-     * Get the IPN processor URL.
+     * Get the webhook url.
+     * Allows a custom base url for SSL if needed.
      *
+     * @param   array   $args   Array of optional arguments
      * @return  string      IPN URL
      */
-    public function getIpnUrl($args = array())
+    public function getWebhookUrl($args=array())
+    {
+        static $url = NULL;
+        if ($url === NULL) {
+            $url = Config::get('ipn_url');
+            if (empty($url)) {
+                // Use the default IPN url
+                $url = Config::get('url') . '/hooks/webhook.php';
+            }
+            if (substr($url, -1) != '/') {
+                $url .= '/';
+            }
+            $url .= 'webhook.php?_gw=' . $this->gw_name;
+        }
+        if (!empty($args)) {
+            $params = '&' . http_build_query($args);
+        } else {
+            $params = '';
+        }
+        return $url . $params;
+     }
+
+
+    /**
+     * Get the IPN processor URL.
+     *
+     * @param   array   $args   Array of optional arguments
+     * @return  string      IPN URL
+     */
+    public function getIpnUrl($args=array())
     {
         if ($this->ipn_url === '') {
             $url = Config::get('ipn_url');
@@ -2026,12 +2091,14 @@ class Gateway
      */
     public function payOnlineButton($Order)
     {
+        global $LANG_SHOP;
+
         return $this->checkoutButton($Order, $LANG_SHOP['buttons']['pay_now']);
     }
 
 
     /**
-     * Upload the files for a gateway package.
+     * Upload and install the files for a gateway package.
      */
     public static function upload()
     {
@@ -2107,20 +2174,28 @@ class Gateway
             }
         }
         closedir($dh);
+
         if (empty($upl_path)) {
             SHOP_log("Could not find upload path under $tmp_path");
             return false;
         }
 
         // Copy the extracted upload into the Gateways class directory.
+        $fs = new FileSystem;
         if (is_file($upl_path . '/gateway.json')) {
             $json = @file_get_contents($upl_path . '/gateway.json');
             if ($json) {
                 $json = @json_decode($json, true);
                 if ($json) {
                     $gw_name = $json['name'];
-                    $fs = new FileSystem;
-                    $fs->dirCopy($upl_path, SHOP_PI_PATH . '/classes/Gateways/' . $gw_name);
+                    $gw_path = SHOP_PI_PATH . __DIR__ . '/Gateways/' . $gw_name;
+                    $fs->dirCopy($upl_path, $gw_path);
+                    // Got the files copied, delete the path.
+                    FileSystem::deleteDir($tmp_path);
+                    if (@is_dir($gw_path . '/public_html')) {
+                        $fs->dirCopy($gw_path . '/public_html', $_CONF['path_html'] . '/shop');
+                        FileSystem::deleteDir($gw_path . '/public_html');
+                    }
                 }
             }
         }
@@ -2138,6 +2213,91 @@ class Gateway
     public function okToProcess($Order)
     {
         return $Order->isPaid();
+    }
+
+
+
+    /**
+     * Perform actions required during plugin upgrades.
+     *
+     * @param   string  $to     Target version
+     */
+    public static function UpgradeAll($to)
+    {
+        foreach (self::getAll() as $gw) {
+            $gw->doUpgrade($to);
+        }
+    }
+
+
+    /**
+     * Default gateway upgrade function.
+     * Just sets the current version for bundled gateways,
+     * ignores others.
+     */
+    public function doUpgrade($to='')
+    {
+        global $_TABLES;
+
+        if ($to == '') {
+            $to = $this->version;
+        }
+        if ($this->_doUpgrade($to)) {
+            $this->version = $to;
+            $sql = "UPDATE {$_TABLES['shop.gateways']}
+                SET version = '{$this->version}'
+                WHERE id = '{$this->gw_name}'";
+            DB_query($sql);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * Actually perform the gateway-specific upgrade functions.
+     *
+     * @param   string  $to     Target version
+     * @return  boolean     True on success, False on error
+     */
+    protected function _doUpgrade($to)
+    {
+        // nothing to do by default
+        return true;
+    }
+
+
+    /**
+     * Get the current gateway code version.
+     *
+     * @return  string      Current version
+     */
+    public function getCodeVersion()
+    {
+        return $this->version;
+    }
+
+
+    /**
+     * Get the current gateway installed version.
+     *
+     * @return  string      Current version
+     */
+    public function getInstalledVersion()
+    {
+        return $this->inst_version;
+    }
+
+
+    /**
+     * Check if this gateway is bundled with the Shop plugin.
+     *
+     * return   integer     1 if bundled, 0 if not.
+     */
+    public function isBundled()
+    {
+        return $this->bundled ? 1 : 0;
     }
 
 }

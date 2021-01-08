@@ -24,6 +24,22 @@ use Shop\Models\OrderState;
  */
 class Gateway extends \Shop\Gateway
 {
+    /** Gateway ID.
+     * @var string */
+    protected $gw_name = 'stripe';
+
+    /** Gateway provide. Company name, etc.
+     * @var string */
+    protected $gw_provider = 'stripe.com';
+
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Stripe Payment Gateway';
+
+    /** Flag this gateway as bundled with the Shop plugin.
+     * @var integer */
+    protected $bundled = 1;
+
     /** Active public API Key.
      * @var string */
     private $pub_key;
@@ -55,11 +71,7 @@ class Gateway extends \Shop\Gateway
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
-        // These are used by the parent constructor, set them first.
-        $this->gw_name = 'stripe';
-        $this->gw_desc = 'Stripe Payment Gateway';
-        $this->gw_url = '';
-
+        // Set up the config field definitions.
         $this->cfgFields = array(
             'prod' => array(
                 'pub_key'  => 'password',

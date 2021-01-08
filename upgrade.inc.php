@@ -402,6 +402,7 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = $installed_ver;
     }
     \Shop\Cache::clear();
+    Shop\Gateway::UpgradeAll($current_ver);
     SHOP_remove_old_files();
     CTL_clearCache();   // clear cache to ensure CSS updates come through
     SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);

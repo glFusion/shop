@@ -26,9 +26,7 @@ if (!defined ('GVERSION')) {
 }
 
 /**
- * Class to provide IPN for internal-only transactions,
- * such as zero-balance orders.
- *
+ * Class to provide webhook for the Stripe payment processor.
  * @package shop
  */
 class Webhook extends \Shop\Webhook
