@@ -500,10 +500,10 @@ class Webhook
             return false;
         }
         $bal_due = $this->Order->getBalanceDue();
-        $msg = $Cur->FormatValue($this->getPmtGross()) . ' received, require ' .
-            $Cur->FormatValue($credit) .' credit, require ' .
-            $Cur->FormatValue($total_order);
-        if ($bal_due <= $$this->getPmtGross() + .0001) {
+        $Cur = $this->Order->getCurrency();
+        $msg = $Cur->FormatValue($this->getPayment()) . ' received, require ' .
+            $Cur->FormatValue($bal_due);
+        if ($bal_due <= $this->getPayment() + .0001) {
             SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
             return true;
         } else {
