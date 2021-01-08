@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\paypal;
+use Shop\Config;
 use Shop\Company;
 use Shop\Address;
 use Shop\Currency;
@@ -41,6 +42,7 @@ class Gateway extends \Shop\Gateway
     protected $gw_desc = 'PayPal Web Payments Standard';
 
     /** Flag this gateway as bundled with the Shop plugin.
+     * Gateway version will be set to the Shop plugin's version.
      * @var integer */
     protected $bundled = 1;
 
@@ -61,15 +63,13 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_SHOP_CONF, $_USER;
+        global $_USER;
 
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN',
             'PHP', 'TWD', 'THB',
         );
-
-        $this->button_url = '<img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/checkout-logo-medium.png" alt="Check out with PayPal" />';
 
         // Set up the configuration field definitions.
         $this->cfgFields= array(
@@ -105,10 +105,8 @@ class Gateway extends \Shop\Gateway
                 'ena_donations'     => 0,
             ),
             'prod' => array(
-                'endpoint' => 'https://www.paypal.com',
             ),
             'test' => array(
-                'endpoint' => 'https://www.sandbox.paypal.com',
             ),
         );
 
@@ -184,7 +182,7 @@ class Gateway extends \Shop\Gateway
      */
     public function gatewayVars($cart)
     {
-        global $_SHOP_CONF, $_USER, $_TABLES, $LANG_SHOP;
+        global $_USER, $_TABLES, $LANG_SHOP;
 
         if (!$this->Supports('checkout')) {
             return '';
@@ -346,7 +344,7 @@ class Gateway extends \Shop\Gateway
      */
     private function _encButton($fields)
     {
-        global $_CONF, $_SHOP_CONF;
+        global $_CONF;
 
         // Make sure button encryption is enabled and needed values are set
         if ($this->getConfig('encrypt') != 1 ||
@@ -361,7 +359,7 @@ class Gateway extends \Shop\Gateway
         $keys = array();
         // Now check that the files exist and can be read
         foreach (array('prv_key', 'pub_key', 'pp_cert') as $idx=>$name) {
-            $keys[$name] = $_SHOP_CONF['tmpdir'] . 'keys/' . $this->getConfig($name);
+            $keys[$name] = Config::get('tmpdir') . 'keys/' . $this->getConfig($name);
             if (
                 !is_file($keys[$name]) ||
                 !is_readable($keys[$name])
@@ -372,7 +370,7 @@ class Gateway extends \Shop\Gateway
 
         // Create a temporary file to begin storing our data.  If this fails,
         // then return.
-        $dataFile = tempnam($_SHOP_CONF['tmpdir'].'cache/', 'data');
+        $dataFile = tempnam(Config::get('tmpdir') . 'cache/', 'data');
         if (!is_writable($dataFile)) {
             return '';
         }
@@ -491,7 +489,7 @@ class Gateway extends \Shop\Gateway
      */
     public function ProductButton($P)
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
@@ -637,7 +635,7 @@ class Gateway extends \Shop\Gateway
      */
     public function ExternalButton($attribs = array(), $type = 'buy_now')
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $_LANG_SHOP;
 
         $T = new Template('buttons/' . $this->gw_name);
         $T->set_file('btn', 'btn_' . $type . '.thtml');
@@ -921,7 +919,14 @@ class Gateway extends \Shop\Gateway
      */
     public function getLogo()
     {
-        return $this->button_url;
+        return COM_createImage(
+            'https://www.paypalobjects.com/webstatic/en_US/i/buttons/buy-logo-large.png"',
+            'Buy now with PayPal',
+            array(
+                'width' => self::LOGO_WIDTH,
+                'height' => self::LOGO_HEIGHT,
+            )
+        );
     }
 
 
@@ -948,30 +953,37 @@ class Gateway extends \Shop\Gateway
     {
         global $_TABLES;
 
-        if ($to == '') {
-            $to = $this->version;
-        }
-        switch ($to) {
-        case '1.3.0':
-            if ($this->getInstalledVersion() < '1.3.0') {
-                $cfg = DB_getItem($_TABLES['shop.gateways'], 'config', "id='paypal'");
-                $this->config = @unserialize($cfg);
-                foreach (array('encrypt', 'ena_donations') as $key) {
+        $installed = $this->getInstalledVersion();
+        if (!COM_checkVersion($installed, '1.3.0')) {
+            // Get the config straight from the DB.
+            $cfg = DB_getItem($_TABLES['shop.gateways'], 'config', "id='paypal'");
+            $this->config = @unserialize($cfg);
+            foreach (array('encrypt', 'ena_donations') as $key) {
                     if (isset($this->config['global'][$key])) {
                         $this->setConfig($key, $Old['global'][$key], 'test');
                         $this->setConfig($key, $Old['global'][$key], 'prod');
                         unset($this->config['global'][$key]);
                     }
-                }
-                foreach (array('api_username', 'api_password', 'webhook_id') as $key) {
+            }
+            foreach (array('api_username', 'api_password', 'webhook_id', 'endpoint') as $key) {
                     unset($this->config['prod'][$key]);
                     unset($this->config['test'][$key]);
-                }
-                $this->version = '1.3.0';
             }
-            break;
+            $this->version = '1.3.0';
+            $this->SaveConfig();
         }
         return true;
+    }
+
+
+    /**
+     * Check that a valid config has been set for the environment.
+     *
+     * @return  boolean     True if valid, False if not
+     */
+    public function hasValidConfig()
+    {
+        return !empty($this->getConfig('receiver_email'));
     }
 
 }

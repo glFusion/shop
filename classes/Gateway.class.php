@@ -29,6 +29,9 @@ class Gateway
 {
     use \Shop\Traits\DBO;        // Import database operations
 
+    const LOGO_WIDTH = 240;
+    const LOGO_HEIGHT = 40;
+
     /** Table name, used by DBO class.
      * @var string */
     protected static $TABLE = 'shop.gateways';
@@ -427,8 +430,6 @@ class Gateway
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
             $this->test_mode = SHOP_getVar($A, 'test_mode', 'integer');
             $services = SHOP_getVar($A, 'service', 'array');
-        }
-        if ($A !== NULL) {
             // Only update config if provided from form
             foreach ($this->cfgFields as $env=>$flds) {
                 foreach ($flds as $name=>$type) {
@@ -447,6 +448,7 @@ class Gateway
                 }
             }
         }
+
         $config = @serialize($this->config);
         if (!$config) return false;
 
@@ -636,7 +638,8 @@ class Gateway
      */
     public function Supports($btn_type)
     {
-        return SHOP_getVar($this->services, $btn_type, 'integer', 0) ? true : false;
+        $supports = SHOP_getVar($this->services, $btn_type, 'integer', 0);
+        return $supports && $this->hasValidConfig();
     }
 
 
@@ -1013,8 +1016,6 @@ class Gateway
     {
         global $_CONF;
 
-        $width = 240;
-        $height = 40;
         $srcImage = $this->getLogoFile();
         $tag = $this->gw_desc;  // default if no image or resizing fails
         if (!empty($srcImage ) && is_file($srcImage)) {
@@ -1022,7 +1023,7 @@ class Gateway
             $L = new Logo;
             $L->withImage($srcImage)
               ->withDestPath($destPath)
-              ->reSize($width, $height);
+              ->reSize(self::LOGO_WIDTH, self::LOGO_HEIGHT);
             if ($L->isValid()) {
                 $tag = COM_createImage(
                     $_CONF['site_url'] . '/shop/images/gateways/' . $L->getFilename(),
@@ -1778,6 +1779,10 @@ class Gateway
                 'sort'  => false,
             ),
             array(
+                'text'  => $LANG_SHOP['version'],
+                'field' => 'inst_version',
+            ),
+            array(
                 'text'  => $LANG_SHOP['control'],
                 'field' => 'enabled',
                 'sort'  => false,
@@ -1864,15 +1869,6 @@ class Gateway
                         'title' => $LANG_SHOP['ck_to_install'],
                     )
                 );
-            } elseif (!COM_checkVersion($A['inst_version'], $A['code_version'])) {
-                return COM_createLink(
-                    $LANG_SHOP['upgrade'] . '&nbsp;<i class="uk-icon uk-icon-level-up"></i>',
-                    Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
-                    array(
-                        'class' => 'tooltip',
-                        'title' => $LANG_SHOP['upgrade'],
-                    )
-                );
             } elseif ($fieldvalue == '1') {
                 $switch = ' checked="checked"';
                 $enabled = 1;
@@ -1888,6 +1884,25 @@ class Gateway
                 title=\"$tip\"
                 onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
                 "\"gateway\");' />" . LB;
+            break;
+
+        case 'inst_version':
+            // Show the upgrade link if needed. Only display this for
+            // installed gateways.
+            if (isset($A['inst_version'])) {
+                $retval = $fieldvalue;
+                if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
+                    $retval .= COM_createLink(
+                        '&nbsp;<i class="uk-icon uk-icon-arrow-up"></i>&nbsp;',
+                        Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
+                        array(
+                            'class' => 'tooltip uk-text-success',
+                            'title' => $LANG_SHOP['upgrade'],
+                        )
+                    );
+                    $retval .= $A['code_version'];
+                }
+            }
             break;
 
         case 'orderby':
@@ -2310,6 +2325,18 @@ class Gateway
     public function confirmOrder($Order)
     {
         return '';
+    }
+
+
+    /**
+     * Check that the gateway is properly configured.
+     * Each gateway needs to override this.
+     *
+     * @return  boolean     True if a valid config is set, False if not
+     */
+    public function hasValidConfig()
+    {
+        return true;
     }
 
 }
