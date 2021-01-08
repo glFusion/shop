@@ -890,15 +890,10 @@ class MigratePP
             'prod' => array(
                 'receiver_email'    => $cfg['bus_prod_email'],
                 'micro_receiver_email'  => $cfg['micro_prod_email'],
-                'micro_cert_id'     => $cfg['micro_cert_id'],
-                'endpoint'          => $cfg['prod_url'],
-                'webhook_id'   => '',
                 'pp_cert'           => $cfg['pp_cert'],
                 'pp_cert_id'        => $cfg['pp_cert_id'],
                 'micro_cert'        => $cfg['micro_cert'],
                 'micro_cert_id'     => $cfg['micro_cert_id'],
-                'api_username'      => '',
-                'api_password'      => '',
             ),
             'test' => array(
                 'receiver_email'    => $cfg['bus_test_email'],
@@ -907,9 +902,6 @@ class MigratePP
                 'pp_cert_id'        => $cfg['pp_cert_id'],
                 'micro_cert'        => $cfg['micro_cert'],
                 'micro_cert_id'     => $cfg['micro_cert_id'],
-                'webhook_id' => '',
-                'api_username'      => '',
-                'api_password'      => '',
             ),
             'global' => array(
                 'micro_threshold'   => $cfg['micro_threshold'],
