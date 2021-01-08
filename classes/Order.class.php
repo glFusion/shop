@@ -3387,6 +3387,8 @@ class Order
 
     /**
      * Set the order status to a new value.
+     * This just forces the status to be the new status, if valid. No
+     * notifications or other actions are done.
      *
      * @param   string  $newstatus  New status to set
      * @return  object  $this
@@ -3911,10 +3913,11 @@ class Order
     public function requiresShipto()
     {
         if (
+            // Shippers normally need an address, but "will call" doesn't.
             Shipper::getInstance($this->shipper_id)->requiresShipto() &&
             (
-                $this->hasTaxable() ||
-                $this->hasPhysical()
+                $this->hasPhysical() ||
+                ( $this->hasTaxable() && $this->getTotal() > 0 )
             )
         ) {
             return true;
@@ -4027,6 +4030,30 @@ class Order
     {
         $this->tainted = true;
         return $this;
+    }
+
+
+    /**
+     * Set the payment URL provided for invoices by the payment gateway.
+     *
+     * @param   string  $url    URL to payment page
+     * @return  object  $this/
+     */
+    public function setPaymentUrl($url)
+    {
+        $this->setInfo('gw_pmt_url', $url);
+        return $this;
+    }
+
+
+    /**
+     * Get the URL to pay this invoice online.
+     *
+     * @return  string      Payment URL
+     */
+    public function getPaymentUrl()
+    {
+        return $this->getInfo('gw_pmt_url');
     }
 
 
