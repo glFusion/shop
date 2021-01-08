@@ -32,6 +32,10 @@ class Gateway extends \Shop\Gateway
      * @var string */
     protected $gw_provider = 'Pay by Coupon';
 
+    /** Gateway service description.
+     * @var string */
+    protected $gw_desc = 'Payment by Coupon/Gift Card';
+
     /** Flag this gateway as bundled with the Shop plugin.
      * @var integer */
     protected $bundled = 1;
@@ -48,7 +52,7 @@ class Gateway extends \Shop\Gateway
         global $LANG_SHOP;
 
         // These are used by the parent constructor, set them first.
-        $this->gw_url = SHOP_URL . '/confirm.php';
+        $this->gw_url = SHOP_URL . '/hooks/webhook.php?_gw=' . $this->gw_name;
 
         // Set the services that this gateway can provide
         $this->services = array(
@@ -148,6 +152,8 @@ class Gateway extends \Shop\Gateway
 
         $gatewayVars = array(
             '<input type="hidden" name="order_id" value="' . $cart->getOrderId() . '" />',
+            '<input type="hidden" name="txn_id" value="' . uniqid() . '" />',
+            '<input type="hidden" name="uid" value="' . $_USER['uid'] . '" />',
         );
         if (!COM_isAnonUser()) {
             $gateway_vars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';
