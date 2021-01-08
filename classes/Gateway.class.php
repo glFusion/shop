@@ -1207,7 +1207,6 @@ class Gateway
             ),
         ), false, false);
 
-        //$fields = $this->getConfigFields();
         foreach ($this->cfgFields as $env=>$flds) {
             $fields = $this->getConfigFields($env);
             if (empty($fields)) {
@@ -2298,6 +2297,19 @@ class Gateway
     public function isBundled()
     {
         return $this->bundled ? 1 : 0;
+    }
+
+
+    /**
+     * Stub function to confirm an order.
+     * Some gateways will override this.
+     *
+     * @param   object  $Order  Order object
+     * @return  string      Redirect URL
+     */
+    public function confirmOrder($Order)
+    {
+        return '';
     }
 
 }
