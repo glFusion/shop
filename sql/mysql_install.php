@@ -29,7 +29,7 @@ $_SQL = array(
   `verified` tinyint(1) DEFAULT '0',
   `txn_id` varchar(255) DEFAULT NULL,
   `gateway` varchar(25) DEFAULT NULL,
-  `event` varchar(40) DEFAULT 'payment',
+  `event` varchar(128) DEFAULT 'payment',
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -263,6 +263,7 @@ $_SQL = array(
   `config` text,
   `services` varchar(255) DEFAULT NULL,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
+  `version` varchar(12) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
@@ -799,7 +800,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY `key_expires` (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
     "DELETE FROM {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
-    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(128) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
     "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `key_name` (`wf_name`)",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
@@ -846,8 +847,12 @@ $SHOP_UPGRADE['1.3.0'] = array(
         (5, 'confirm', 50, 3, 0)",
     "ALTER TABLE {$_TABLES['shop.orderitems']}
         ADD sku varchar(128) NOT NULL DEFAULT '' AFTER `variant_id`",
+    "ALTER TABLE {$_TABLES['shop.gateways']}
+        ADD `version` varchar(12) DEFAULT NULL AFTER `grp_access`",
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
+    // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.
+    "UPDATE {$_TABLES['shop.gateways']} SET version = '1.2.2' WHERE version IS NULL",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
