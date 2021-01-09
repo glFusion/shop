@@ -130,7 +130,7 @@ class Webhook extends \Shop\Webhook
                 $Pmt->setRefID($this->getID())
                     ->setAmount($this->getPayment())
                     ->setGateway($this->getSource())
-                    ->setMethod("Online")
+                    ->setMethod($this->GW->getDscp())
                     ->setComment('Webhook ' . $this->getData()->notificationId)
                     ->setComplete(1)
                     ->setUid($this->Order->getUid())

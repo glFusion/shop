@@ -104,7 +104,7 @@ class Webhook extends \Shop\Webhook
                                     $Pmt->setRefID($this->getID())
                                         ->setAmount($amt_paid)
                                         ->setGateway($this->getSource())
-                                        ->setMethod("Online")
+                                        ->setMethod($this->GW->getDscp())
                                         ->setComment('Webhook ' . $this->getData()->event_id)
                                         ->setOrderID($this->getOrderID());
                                     $retval = $Pmt->Save();
@@ -138,7 +138,7 @@ class Webhook extends \Shop\Webhook
                             $Pmt->setRefID($this->getID())
                                 ->setAmount($this_pmt)
                                 ->setGateway($this->getSource())
-                                ->setMethod("Online")
+                                ->setMethod($this->GW->getDscp())
                                 ->setComment('Webhook ' . $this->getData()->event_id)
                                 ->setComplete(0)
                                 ->setStatus($payment->status)
