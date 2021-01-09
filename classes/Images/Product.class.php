@@ -22,15 +22,15 @@ class Product extends \Shop\Image
 {
     /** Key into $_SHOP_CONF where the image path can be found.
      * @var string */
-    static $pathkey = 'products';
+    protected static $pathkey = 'products';
 
     /** Maximum width, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxwidth = 1024;
+    protected static $maxwidth = 1024;
 
     /** Maximum height, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxheight = 1024;
+    protected static $maxheight = 1024;
 
 
     /**
