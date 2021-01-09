@@ -171,8 +171,8 @@
 <!-- END LogMessages -->
 </table>
 {!endif}
-{!if pmt_method}
-<p><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
+{!if pmt_dscp}
+<p><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}
 {!if is_admin}
 {!if pmt_txn_id}
   , {$LANG_SHOP['trans_id']}

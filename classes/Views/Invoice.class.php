@@ -308,19 +308,17 @@ class Invoice extends OrderBaseView
         if ($this->Order->getPmtMethod() != '') {
             $gw = Gateway::getInstance($this->Order->getPmtMethod());
             if ($gw !== NULL) {
-                $pmt_method = $gw->getDscp();
+                $pmt_dscp = $gw->getDscp();
             } else {
-                $pmt_method = $this->Order->getPmtMethod();
+                $pmt_dscp = $this->Order->getPmtMethod();
             }
+            $this->TPL->set_var(array(
+                'pmt_method' => $this->Order->getPmtMethod(),
+                'pmt_dscp' => $pmt_dscp,
+            ) );
         }
 
         $Payments = $this->Order->getPayments();
-        if ($this->Order->getPmtMethod() != '') {
-            $this->TPL->set_var(array(
-                'pmt_method' => $this->Order->getPmtMethod(),
-                'pmt_dscp' => $this->Order->getPmtDscp(),
-            ) );
-        }
         $this->TPL->set_var('num_payments', count($Payments));
         $this->TPL->set_block('order', 'Payments', 'pmtRow');
         foreach ($Payments as $Payment) {
