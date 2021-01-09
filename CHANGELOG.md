@@ -27,6 +27,8 @@ Release TBD
   * Remove unnecessary `cache_max_age` setting for blocks.
   * Add button to reset multiple products' ratings.
   * Enable plugin-style installation of payment gateways.
+  * Fix: OrderItem was using default option price instead of variant price.
+  * Fix: Updated supplier/brand logos not shown due to image caching.
 
 ## v1.2.1
 Release 2020-03-02
