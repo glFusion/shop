@@ -365,6 +365,7 @@ function SHOP_do_upgrade($dvlp = false)
         $current_ver = '1.3.0';
         $upd_shipping = !_SHOPtableHasColumn('shop.orders', 'shipping_method');
         $upd_oi_sku = !_SHOPtableHasColumn('shop.orderitems', 'sku');
+        $upd_sup_logos = !_SHOPtableHasColumn('shop.supplisers', 'logo_image');
         if (!SHOP_do_upgrade_sql($current_ver, $dvlp)) return false;
         if ($upd_shipping) {
             // Now update the shipping_method and shipping_dscp fields
@@ -386,6 +387,20 @@ function SHOP_do_upgrade($dvlp = false)
             while ($A = DB_fetchArray($res, false)) {
                 $OI = new Shop\OrderItem($A);
                 $OI->setSKU()->Save();
+            }
+        }
+        if ($upd_sup_logos) {
+            // Update the suppliers table with the logo image filenames.
+            $img_path = Shop\Config::get('tmpdir') . '/images/brands/';
+            $sql = "SELECT * FROM {$_TABLES['shop.suppliers']}";
+            $res = DB_query($sql);
+            while ($A = DB_fetchArray($res, false)) {
+                if (is_file($img_path . $A['sup_id'] . '.jpg')) {
+                    $sql1 = "UPDATE {$_TABLES['shop.suppliers']}
+                        SET logo_image = '{$A['sup_id']}.jpg'
+                        WHERE sup_id = {$A['sup_id']}";
+                    DB_query($sql1);
+                }
             }
         }
         if (!SHOP_do_set_version($current_ver)) return false;

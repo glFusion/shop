@@ -394,10 +394,11 @@ $_SQL = array(
   `country` varchar(127) NOT NULL DEFAULT '',
   `zip` varchar(40) NOT NULL DEFAULT '',
   `phone` varchar(40) NOT NULL DEFAULT '',
-  `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `dscp` text,
+  `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  `is_brand` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `dscp` text DEFAULT NULL,
   `lead_time` varchar(64) NOT NULL DEFAULT '',
+  `logo_image` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`sup_id`),
   KEY `is_supplier` (`is_supplier`,`name`),
   KEY `is_brand` (`is_brand`,`name`)
@@ -849,6 +850,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD sku varchar(128) NOT NULL DEFAULT '' AFTER `variant_id`",
     "ALTER TABLE {$_TABLES['shop.gateways']}
         ADD `version` varchar(12) DEFAULT NULL AFTER `grp_access`",
+    "ALTER TABLE {$_TABLES['shop.suppliers']}
+        ADD `logo_image` varchar(128) NOT NULL DEFAULT '' AFTER `lead_time`",
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
     // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.

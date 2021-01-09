@@ -45,6 +45,10 @@ class Supplier extends Address
      * @var string */
     private $lead_time = '';
 
+    /** Logo image filename.
+     * @var string */
+    private $logo_image = '';
+
     /** Array of error messages.
      * @var array */
     private $_errors = array();
@@ -80,8 +84,8 @@ class Supplier extends Address
     /**
      * Get a specific supplier by ID.
      *
-     * @param   integer $addr_id    Address ID to retrieve
-     * @return  object      Address object, empty if not found
+     * @param   integer $id Record ID to retrieve
+     * @return  object      Supplier object, empty if not found
      */
     public static function getInstance($addr_id)
     {
@@ -106,6 +110,9 @@ class Supplier extends Address
     {
         global $_SHOP_CONF;
 
+        if (isset($data['logo_image'])) {
+            $this->setLogoImage(SHOP_getVar($data, 'logo_image', 'string', ''));
+        }
         return $this->setID(SHOP_getVar($data, 'sup_id', 'integer'))
             ->setName(SHOP_getVar($data, 'name'))
             ->setCompany(SHOP_getVar($data, 'company'))
@@ -132,6 +139,7 @@ class Supplier extends Address
     public function setLeadTime($str)
     {
         $this->lead_time = $str;
+        return $this;
     }
 
 
@@ -234,6 +242,30 @@ class Supplier extends Address
 
 
     /**
+     * Set the logo image filename.
+     *
+     * @param   string  $fname  Image filename
+     * @return  object  $this
+     */
+    public function setLogoImage($fname)
+    {
+        $this->logo_image = $fname;
+        return $this;
+    }
+
+
+    /**
+     * Get the logo image filename only, no path.
+     *
+     * @return  string      Logo image filename
+     */
+    public function getLogoImage()
+    {
+        return $this->logo_image;
+    }
+
+
+    /**
      * Get a selection list for brand, supplier, or all records.
      *
      * @param   integer $sel    Selected record ID
@@ -301,6 +333,27 @@ class Supplier extends Address
 
 
     /**
+     * Deletes a single image from disk.
+     *
+     * @param   string  $fname  Optional filename override.
+     */
+    public function deleteImage($fname=NULL)
+    {
+        if ($fname === NULL) {
+            $fname = $this->getLogoImage();
+        }
+        $path = Config::get('tmpdir') . '/images/brands';
+        if (is_file("{$path}/{$fname}")) {
+            @unlink("{$path}/{$fname}");
+        }
+        if ($fname === NULL) {
+            $this->setLogoImage('');
+        }
+    }
+
+
+
+    /**
      * Save the supplier information.
      *
      * @param   array   $A  Optional data array from $_POST
@@ -310,6 +363,24 @@ class Supplier extends Address
     {
         global $_TABLES;
 
+        // Handle the image upload first.
+        if (
+            !empty($_FILES) &&
+            is_array($_FILES['logofile']) &&
+            !empty($_FILES['logofile']['tmpname'])
+        ) {
+            $Img = new Images\Supplier($this->getID(), 'logofile');
+            $Img->uploadFiles();
+            if (!empty($Img->getErrors())) {
+                $this->_errors = array_merge($this->_errors, $Img->getErrors());
+                return false;
+            } else {
+                if (!empty($this->getLogoImage())) {
+                    $this->deleteImage();
+                }
+                $this->setLogoImage($Img->getFilenames()[0]);
+            }
+        }
         if (is_array($A)) {
             $this->setAddress($A);
         }
@@ -332,7 +403,8 @@ class Supplier extends Address
                 dscp = '" . DB_escapeString($this->getDscp()) . "',
                 is_supplier = {$this->getIsSupplier()},
                 is_brand = {$this->getIsBrand()},
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "'";
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                logo_image = '" . DB_escapeString($this->logo_image) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -346,14 +418,7 @@ class Supplier extends Address
         } else {
             $status = false;
         }
-        if (!empty($_FILES)) {
-            $Img = new Images\Supplier($this->getID(), 'logofile');
-            $Img->uploadFiles();
-            if (!empty($Img->getErrors())) {
-                $this->_errors = array_merge($this->_errors, $Img->getErrors());
-                return false;
-            }
-        }
+
         return $status;
     }
 
@@ -380,7 +445,7 @@ class Supplier extends Address
      */
     public function getImage()
     {
-        return Images\Supplier::getUrl($this->getID() . '.jpg');
+        return Images\Supplier::getUrl($this->getLogoImage());
     }
 
 
@@ -571,7 +636,7 @@ class Supplier extends Address
             break;
 
         case 'logo':
-            $url = Images\Supplier::getUrl($A['sup_id'] . '.jpg')['url'];
+            $url = Images\Supplier::getUrl($A['logo_image'])['url'];
             if ($url != '') {
                 $retval = COM_createImage($url, '', array(
                     'class' => 'shopLogoImage small',
