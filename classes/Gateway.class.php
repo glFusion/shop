@@ -35,11 +35,11 @@ class Gateway
 
     /** Gateway logo width, in pixels.
      * @const integer */
-    private const LOGO_WIDTH = 240;
+    protected const LOGO_WIDTH = 240;
 
     /** Gateway logo height, in pixels.
      * @const integer */
-    private const LOGO_HEIGHT = 40;
+    protected const LOGO_HEIGHT = 40;
 
     /** Table name, used by DBO class.
      * @var string */
