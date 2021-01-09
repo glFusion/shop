@@ -77,21 +77,22 @@ class Gateway extends \Shop\Gateway
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
                 'encrypt'           => 'checkbox',
+                'pp_cert_id'        => 'string',
+                'micro_pp_cert'     => 'string',
                 'ena_donations'     => 'checkbox',
             ),
             'test' => array(
                 'receiver_email'    => 'string',
                 'micro_receiver_email'  => 'string',
                 'encrypt'           => 'checkbox',
+                'pp_cert_id'        => 'string',
+                'micro_pp_cert'     => 'string',
                 'ena_donations'     => 'checkbox',
             ),
             'global' => array(
                 'test_mode'         => 'checkbox',
                 'micro_threshold'   => 'string',
                 'pp_cert'           => 'string',
-                'pp_cert_id'        => 'string',
-                'micro_pp_cert'           => 'string',
-                'pp_cert_id'        => 'string',
                 'prv_key'           => 'string',
                 'pub_key'           => 'string',
             ),
@@ -949,7 +950,7 @@ class Gateway extends \Shop\Gateway
      * @param   string  $to     Target version
      * @return  boolean     True on success, False on error
      */
-    protected function _doUpgrade($to)
+    protected function _doUpgrade()
     {
         global $_TABLES;
 
@@ -958,13 +959,14 @@ class Gateway extends \Shop\Gateway
             // Get the config straight from the DB.
             $cfg = DB_getItem($_TABLES['shop.gateways'], 'config', "id='paypal'");
             $this->config = @unserialize($cfg);
-            foreach (array('encrypt', 'ena_donations') as $key) {
+            foreach (array('encrypt', 'ena_donations', 'pp_cert_id', 'micro_pp_cert') as $key) {
                     if (isset($this->config['global'][$key])) {
-                        $this->setConfig($key, $Old['global'][$key], 'test');
-                        $this->setConfig($key, $Old['global'][$key], 'prod');
+                        $this->setConfig($key, $this->config['global'][$key], 'test');
+                        $this->setConfig($key, $this->config['global'][$key], 'prod');
                         unset($this->config['global'][$key]);
                     }
             }
+            // Remove these config items. No longer used, use only by the ppcheckout gateway
             foreach (array('api_username', 'api_password', 'webhook_id', 'endpoint') as $key) {
                     unset($this->config['prod'][$key]);
                     unset($this->config['test'][$key]);

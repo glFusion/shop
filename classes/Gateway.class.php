@@ -29,8 +29,17 @@ class Gateway
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    const LOGO_WIDTH = 240;
-    const LOGO_HEIGHT = 40;
+    /** Gateway version.
+     * @const string */
+    protected const VERSION = '1.3.0';
+
+    /** Gateway logo width, in pixels.
+     * @const integer */
+    private const LOGO_WIDTH = 240;
+
+    /** Gateway logo height, in pixels.
+     * @const integer */
+    private const LOGO_HEIGHT = 40;
 
     /** Table name, used by DBO class.
      * @var string */
@@ -81,15 +90,11 @@ class Gateway
      * @var integer */
     protected $orderby = 999;
 
-    /** Gateway code version.
+    /** Gateway installed version.
      * For bundled gateways this will be the plugin version.
      * Other installable gateways will have their own versions.
      * @var string */
     protected $version = '';
-
-    /** Gateway installed version.
-     * @var string */
-    protected $inst_version = '';
 
     /** Indicator of a bundled gateway, vs an installable one.
      * @var integer */
@@ -212,7 +217,7 @@ class Gateway
             $this->orderby = (int)$A['orderby'];
             $this->enabled = (int)$A['enabled'];
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $this->inst_version = SHOP_getVar($A, 'version');
+            $this->version = SHOP_getVar($A, 'version');
             $services = @unserialize($A['services']);
             if ($services) {
                 foreach ($services as $name=>$status) {
@@ -253,9 +258,6 @@ class Gateway
         // then assume it's the gateway url.
         if ($this->postback_url === NULL) {
             $this->postback_url = $this->gw_url;
-        }
-        if ($this->bundled) {
-            $this->version = Config::get('pi_version');
         }
         $this->loadLanguage();
     }
@@ -1206,6 +1208,9 @@ class Gateway
                 'grp_id,grp_name',
                 $this->grp_access
             ),
+            'inst_version'  => $this->version,
+            'code_version'  => static::VERSION,
+            'need_upgrade'  => !COM_checkVersion($this->version, static::VERSION),
         ), false, false);
 
         foreach ($this->cfgFields as $env=>$flds) {
@@ -1730,7 +1735,7 @@ class Gateway
                 'enabled' => $A['enabled'],
                 'description' => $A['description'],
                 'grp_name' => $A['grp_name'],
-                'inst_version' => $A['version'],
+                'version' => $A['version'],
                 'code_version' => $gw->getCodeVersion(),
             );
         }
@@ -1780,7 +1785,7 @@ class Gateway
             ),
             array(
                 'text'  => $LANG_SHOP['version'],
-                'field' => 'inst_version',
+                'field' => 'version',
             ),
             array(
                 'text'  => $LANG_SHOP['control'],
@@ -1886,10 +1891,10 @@ class Gateway
                 "\"gateway\");' />" . LB;
             break;
 
-        case 'inst_version':
+        case 'version':
             // Show the upgrade link if needed. Only display this for
             // installed gateways.
-            if (isset($A['inst_version'])) {
+            if (isset($A['version'])) {
                 $retval = $fieldvalue;
                 if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
                     $retval .= COM_createLink(
@@ -2249,15 +2254,11 @@ class Gateway
      * Just sets the current version for bundled gateways,
      * ignores others.
      */
-    public function doUpgrade($to='')
+    public function doUpgrade()
     {
         global $_TABLES;
 
-        if ($to == '') {
-            $to = $this->version;
-        }
-        if ($this->_doUpgrade($to)) {
-            $this->version = $to;
+        if ($this->_doUpgrade()) {
             $sql = "UPDATE {$_TABLES['shop.gateways']}
                 SET version = '{$this->version}'
                 WHERE id = '{$this->gw_name}'";
@@ -2272,12 +2273,12 @@ class Gateway
     /**
      * Actually perform the gateway-specific upgrade functions.
      *
-     * @param   string  $to     Target version
      * @return  boolean     True on success, False on error
      */
-    protected function _doUpgrade($to)
+    protected function _doUpgrade()
     {
-        // nothing to do by default
+        // nothing to do by default, just update the version.
+        $this->version = static::VERSION;
         return true;
     }
 
@@ -2289,7 +2290,7 @@ class Gateway
      */
     public function getCodeVersion()
     {
-        return $this->version;
+        return static::VERSION;
     }
 
 
@@ -2300,7 +2301,7 @@ class Gateway
      */
     public function getInstalledVersion()
     {
-        return $this->inst_version;
+        return $this->version;
     }
 
 

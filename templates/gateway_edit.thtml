@@ -1,7 +1,16 @@
 {# begin {templatelocation} #}
 <div class="uk-grid uk-grid-width-1-2">
     <div>
-        <h2>{gw_description}</h2>
+        <h2>{gw_description}
+        {$LANG_SHOP['version']} {inst_version}
+{!if need_upgrade}
+        <a href="{site_admin_url}/plugins/shop/gateways.php?gwupgrade={$gw_id}">
+        <i class="uk-icon uk-icon-arrow-up uk-text-success tooltip"
+            title="{$LANG_SHOP['upgrade']}"></i>
+        </a>
+        {code_version}
+{!endif}
+        </h2>
     </div>
 </div>
 {!if gw_instr}
