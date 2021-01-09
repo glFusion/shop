@@ -614,24 +614,6 @@ class usps extends \Shop\Shipper
     }
 
 
-    public function XXgetConfigForm()
-    {
-        global $LANG_SHOP;
-
-        foreach (array('domestic', 'international') as $region) {
-            $prompt = $LANG_SHOP['supported_services'];
-            $form = '<ul class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2">' . LB;
-            foreach ($this->$region as $key=>$dscp) {
-                $chk = in_array($key, $this->supported_services[$region]) ? 'checked="checked"' : '';
-                $form .= '<li><input type="checkbox" name="spcfg[]['.$region.'[]" value="' . $key .
-                    ' " ' . $chk . '>&nbsp;' . $dscp . '</li>' . LB;
-            }
-        }
-        $form .= '</ul>';
-        return array($prompt=>$form);
-    }
-
-
     private function _svcAllowedIntl()
     {
         return $this->international;
@@ -646,15 +628,6 @@ class usps extends \Shop\Shipper
     public function getAllServices()
     {
         return array_merge($this->domestic, $this->international);
-    }
-
-    public function XXgetServiceCodes()
-    {
-        if ($this->hasQuoteAPI()) {
-            return $this->svc_codes;
-        } else {
-            return parent::getServiceCodes();
-        }
     }
 
 }

@@ -543,23 +543,6 @@ class OrderItem
 
 
     /**
-     * Set the quantity discount.
-     *
-     * @param   float   $value      Discount percentage
-     * @return  object  $this
-     */
-    public function XsetQtyDiscount($value)
-    {
-        $value = (float)$value;
-        if ($value >= 1) {
-            $value = $value / 100;  // convert to percent
-        }
-        $this->qty_discount = round($value, 2);
-        return $this;
-    }
-
-
-    /**
      * Public accessor to set the item price.
      *
      * @param   float   $newprice   New price to set

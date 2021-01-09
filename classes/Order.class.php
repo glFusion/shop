@@ -1505,33 +1505,6 @@ class Order
 
 
     /**
-     * Get the last log entry.
-     * Called from admin ajax to display the log after the status is updated.
-     * Resets the "ts" field to the formatted timestamp.
-     *
-     * @return  array   Array of DB fields.
-     */
-    public function XgetLastLog()
-    {
-        global $_TABLES, $_SHOP_CONF, $_USER;
-
-        $sql = "SELECT * FROM {$_TABLES['shop.order_log']}
-                WHERE order_id = '" . DB_escapeString($this->order_id) . "'
-                ORDER BY ts DESC
-                LIMIT 1";
-        //echo $sql;die;
-        if (!DB_error()) {
-            $L = DB_fetchArray(DB_query($sql), false);
-            if (!empty($L)) {
-                $dt = new \Date($L['ts'], $_USER['tzid']);
-                $L['ts'] = $dt->format($_SHOP_CONF['datetime_fmt'], true);
-            }
-        }
-        return $L;
-    }
-
-
-    /**
      * Send an email to the administrator and/or buyer.
      *
      * @param   string  $status     Order status (pending, paid, etc.)
@@ -3010,53 +2983,6 @@ class Order
 
 
     /**
-     * Create PDF output of one or more orders.
-     *
-     * @param   array   $ids    Array of order IDs
-     * @param   string  $type   View type, 'pl' or 'order'
-     * @param   boolean $isAdmin    True if run by an administrator
-     * @return  boolean     True on success, False on error
-     */
-    public static function XprintPDF($ids, $type='pdfpl', $isAdmin = false)
-    {
-        USES_lglib_class_html2pdf();
-        try {
-            if (class_exists('\\Spipu\\Html2Pdf\\Html2Pdf')) {
-                $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
-            } else {
-                $html2pdf = new \HTML2PDF('P', 'A4', 'en');
-            }
-            //$html2pdf->setModeDebug();
-            $html2pdf->setDefaultFont('Arial');
-        } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
-            return false;
-        }
-
-        if (!is_array($ids)) {
-            $ids = array($ids);
-        }
-        foreach ($ids as $ord_id) {
-            $O = self::getInstance($ord_id);
-            $O->setAdmin($isAdmin);
-            if ($O->isNew) {
-                continue;
-            }
-            $content = $O->View($type);
-            //echo $content;die;
-            try {
-                $html2pdf->writeHTML($content);
-            } catch(HTML2PDF_exception $e) {
-                SHOP_log($e);
-                return false;
-            }
-        }
-        $html2pdf->Output($type . 'list.pdf', 'I');
-        return true;
-    }
-
-
-    /**
      * Force the user ID to a given value.
      * Used by the gateway to set the correct user during IPN processing.
      *
@@ -3923,90 +3849,6 @@ class Order
             return true;
         }
         return false;
-    }
-
-
-    /**
-     * Maintenance function to sync order total fields from item records.
-     *
-     * @deprecated
-     * @param   string  $ord_id     Optional order ID, all orders if empty
-     */
-    public static function XXupdateTotals($ord_id = '')
-    {
-        global $_TABLES;
-
-        if ($ord_id != '') {
-            // Simulate the result from DB_fetchAll()
-            $A = array(
-                array(
-                    'order_id' => $ord_id,
-                ),
-            );
-        } else {
-            $sql = "SELECT order_id
-                FROM {$_TABLES['shop.orders']}";
-            $res = DB_query($sql);
-            $A = DB_fetchAll($res, false);
-        }
-        $decimals = array();
-        foreach ($A as $data) {
-            $Ord = self::getInstance($data['order_id']);
-            $gross_items = 0;
-            $net_taxable = 0;
-            $net_nontax = 0;
-            $tax = 0;
-            $shipping = $Ord->getShipping();
-            $handling = $Ord->getHandling();
-            $currency = $Ord->getCurrency();
-            $curcode = $currency->getCode();
-            if (!isset($decimals[$curcodei])) {
-                $decimals[$curcode] = $currency->Decimals();
-            }
-            $dec = $decimals[$curcode];
-            foreach ($Ord->getItems() as $Item) {
-                $gross_item = round($Item->getPrice(), $dec);
-                $net_item = round($Item->getNetPrice(), $dec);
-                $gross_items += $gross_item * $Item->getQuantity();
-                if ($Item->isTaxable()) {
-                    $net_taxable += round($net_item * $Item->getQuantity(), $dec);
-                    $item_tax = round($net_item * $Item->getTaxRate(), $dec);
-                } else {
-                    $net_nontax += round($net_item * $Item->getQuantity(), $dec);
-                    $item_tax = 0;
-                }
-                $tax += $item_tax;
-                if ($item_tax != $Item->getTax()) {
-                    $sql = "UPDATE {$_TABLES['shop.orderitems']}
-                        SET tax = $tax
-                        WHERE id = '{$Item->getID()}'";
-                    DB_query($sql);
-                }
-            }
-            $order_total = $net_taxable + $net_nontax + $shipping + $handling + $tax;
-            $order_total = round($order_total, $dec);
-            if (
-                $order_total != $Ord->getAmount('order_total') ||
-                $net_taxable != $Ord->getAmount('net_taxable') ||
-                $net_nontax != $Ord->getAmount('net_nontax') ||
-                $tax != $Ord->getAmount('tax')
-            ) {
-                $this->updateRecord(array(
-                    "order_total = $order_total",
-                    "tax = $tax",
-                    "net_nontax = $net_nontax",
-                    "net_taxable = $net_taxable"
-                ) );
-                /*$sql = "UPDATE {$_TABLES['shop.orders']} SET
-                    order_total = $order_total,
-                    tax = $tax,
-                    net_nontax = $net_nontax,
-                    net_taxable = $net_taxable
-                    WHERE order_id = '{$Ord->getOrderID()}'";
-                DB_query($sql);*/
-            }
-        }
-        $this->clearInstance();
     }
 
 

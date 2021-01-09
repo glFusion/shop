@@ -509,29 +509,9 @@ class ups extends \Shop\Shipper
     }
 
 
-    public function XXgetConfigForm()
-    {
-        global $LANG_SHOP;
-
-        $prompt = $LANG_SHOP['supported_services'];
-        $form = '<ul class="uk-grid uk-grid-width-1-1 uk-grid-width-medium-1-2">' . LB;
-        foreach ($this->svc_codes as $key=>$dscp) {
-            $chk = in_array($key, $this->supported_services) ? 'checked="checked"' : '';
-            $form .= '<li><input type="checkbox" name="spcfg[services][]" value="' . $key .
-                '" ' . $chk . '">&nbsp;' . $dscp . '</li>' . LB;
-        }
-        $form .= '</ul>';
-        return array($prompt=>$form);
-    }
-
     public function getAllServices()
     {
         return $this->svc_codes;
-    }
-
-    public function XgetServiceCodes()
-    {
-        return array('01' => 'Available');
     }
 
 }

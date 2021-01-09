@@ -246,26 +246,6 @@ class ProductVariant
 
 
     /**
-     * Get the option selections for a product's variants.
-     *
-     * @deprecated
-     * @param   integer $item_id    Product record ID
-     */
-    public static function XXgetSelections($item_id)
-    {
-        $sql = "SELECT pov.* FROM {$_TABLES['shop.product_var_opts']} pov
-            INNER JOIN {$_TABLES['shop.variantXopt']} vxo
-                ON pov.pov_id = vxo.pov_id
-            INNER JOIN {$_TABLES['shop.product_variants']} pv
-                ON pv.pv_id = vxo.pv_id
-            INNER JOIN {$_TABLES['shop.product_option_groups']} pog
-                ON pog.pog_id = pov.pog_id
-            WHERE pv.item_id = $item_id
-            ORDER BY pog.pog_orderby asc";
-    }
-
-
-    /**
      * Load the product attributs into the options array.
      *
      * @access  public  To be called during upgrade
@@ -281,11 +261,11 @@ class ProductVariant
             if ($this->Options === NULL) {
                 $this->Options = array();
                 $sql = "SELECT pov.*, pog.pog_name FROM {$_TABLES['shop.prod_opt_vals']} pov
-                INNER JOIN {$_TABLES['shop.variantXopt']} vx
-                    ON vx.pov_id = pov.pov_id
+                INNER JOIN {$_TABLES['shop.variantXopt']} vxo
+                    ON vxo.pov_id = pov.pov_id
                 INNER JOIN {$_TABLES['shop.prod_opt_grps']} pog
                     ON pog.pog_id = pov.pog_id
-                WHERE vx.pv_id = {$this->getID()}
+                WHERE vxo.pv_id = {$this->getID()}
                 ORDER BY pog.pog_orderby ASC";
                 //echo $sql;die;
                 $res = DB_query($sql);

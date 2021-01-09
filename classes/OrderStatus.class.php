@@ -167,41 +167,6 @@ class OrderStatus extends Workflow
 
 
     /**
-     * Toggles a DB field from the given value to the opposite.
-     *
-     * @param   integer $id         ID number of element to modify
-     * @param   string  $field      Database fieldname to change
-     * @param   integer $oldvalue   Original value to change
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function XToggle($id, $field, $oldvalue)
-    {
-        global $_TABLES;
-
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-        $id = (int)$id;
-        if ($id < 1)
-            return $oldvalue;
-        $field = DB_escapeString($field);
-
-        // Determing the new value (opposite the old)
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES[self::$TABLE]}
-                SET $field = $newvalue
-                WHERE id ='$id'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            return $newvalue;
-        } else {
-            SHOP_log("OrderStatus::Toggle() SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        }
-    }
-
-
-    /**
      * Get the name of the order status from the private variable
      *
      * @return  string      Name value
