@@ -18,11 +18,21 @@ paypal.Buttons({
         .then (finalizeCart("{order_id}", "{uid}", true));
     },
     onApprove: function(data, actions) {
-        actions.order.authorize().then(function (authorization) {
+        actions.order.capture().then(function(details) {
+            // This function shows a transaction success message to your buyer.
+            console.log('Transaction completed by ' + details.payer.name.given_name);
+            window.location.replace("{shop_url}");
+        });
+        /*actions.order.authorize().then(function (authorization) {
             console.log(authorization);
             // Get the authorization id
-            /*var authorizationID = authorization.purchase_units[0]
+            var authorizationID = authorization.purchase_units[0]
               .payments.authorizations[0].id;
+            console.log(JSON.stringify({
+                    orderID: data.orderID,
+                    authorizationID: authorizationID,
+                    resource: authorization
+                }));
 
             // Call your server to validate and capture the transaction
             return fetch(hook_url, {
@@ -35,9 +45,9 @@ paypal.Buttons({
                     authorizationID: authorizationID,
                     resource: authorization
                 })
-            });*/
-            window.location.replace("{shop_url}");
-        });
+            });
+            //window.location.replace("{shop_url}");
+        });*/
     },
     onCancel: function(data, actions) {
         actions.redirect("{cancel_url}");

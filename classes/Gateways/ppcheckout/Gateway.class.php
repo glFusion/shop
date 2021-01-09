@@ -50,7 +50,7 @@ class Gateway extends \Shop\Gateway
 
     /** Order Intent.
      * @var string */
-    private $intent = 'authorize';
+    private $intent = 'capture';
 
 
     /**
