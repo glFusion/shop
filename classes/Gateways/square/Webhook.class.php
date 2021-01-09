@@ -25,11 +25,6 @@ use Shop\Models\OrderState;
  */
 class Webhook extends \Shop\Webhook
 {
-    /** Undecoded blob received as input.
-     * @var string */
-    private $blob = '';
-
-
     /**
      * Set up the webhook data from the supplied JSON blob.
      *

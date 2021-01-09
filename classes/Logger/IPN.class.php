@@ -159,7 +159,12 @@ class IPN extends \Shop\Logger
     {
         global $_TABLES;
 
-       // Log to database
+        if (!is_string($this->ipn_data)) {
+            $data = @serialize($this->ipn_data);
+        } else {
+            $data = $this->ipn_data;
+        }
+        // Log to database
         $sql = "INSERT INTO {$_TABLES['shop.ipnlog']} SET
                 ip_addr = '" . DB_escapeString($this->ip_addr) . "',
                 ts = UNIX_TIMESTAMP(),
@@ -168,7 +173,7 @@ class IPN extends \Shop\Logger
                 gateway = '{$this->gw_id}',
                 event = '{$this->event}',
                 order_id = '" . DB_escapeString($this->order_id) . "',
-                ipn_data = '" . DB_escapeString(serialize($this->ipn_data)) . "'";
+                ipn_data = '" . DB_escapeString($data) . "'";
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {

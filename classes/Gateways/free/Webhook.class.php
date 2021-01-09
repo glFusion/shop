@@ -24,8 +24,6 @@ use Shop\Payment;
  */
 class Webhook extends \Shop\Webhook
 {
-    private $blob = '';
-
     /**
      * Constructor.
      * Most of the variables for this IPN come from the transaction,
@@ -38,7 +36,8 @@ class Webhook extends \Shop\Webhook
         $this->setSource('free');
 
         // Load the payload into the blob property for later use in Verify().
-        $this->blob = $_POST;
+        $this->setData($_POST);
+        $this->blob = json_encode($_POST);
         $this->setHeaders(NULL);
         $this->setTimestamp();
         $this->GW = \Shop\Gateway::getInstance($this->getSource());
@@ -54,8 +53,8 @@ class Webhook extends \Shop\Webhook
     public function Verify()
     {
         $this->setEvent('free_order');
-        $this->setOrderID(SHOP_getVar($this->blob, 'order_id'));
-        $this->setID(SHOP_getVar($this->blob, 'txn_id'));
+        $this->setOrderID(SHOP_getVar($this->getData(), 'order_id'));
+        $this->setID(SHOP_getVar($this->getData(), 'txn_id'));
 
         if (!$this->isUniqueTxnId()) {
             return false;

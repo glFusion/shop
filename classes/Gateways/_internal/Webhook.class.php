@@ -26,8 +26,6 @@ use Shop\Models\OrderState;
  */
 class Webhook extends \Shop\Webhook
 {
-    private $blob = '';
-
     /**
      * Constructor.
      * Most of the variables for this IPN come from the transaction,
@@ -40,7 +38,8 @@ class Webhook extends \Shop\Webhook
         $this->setSource('_internal');
 
         // Load the payload into the blob property for later use in Verify().
-        $this->blob = $_POST;
+        $this->blob = json_encode($_POST);
+        $this->setData($_POST);
         $this->setHeaders(NULL);
         $this->setTimestamp();
         $this->GW = \Shop\Gateway::getInstance($this->getSource());
@@ -55,9 +54,9 @@ class Webhook extends \Shop\Webhook
      */
     public function Verify()
     {
-        $this->setEvent(SHOP_getVar($this->blob, 'status'));
-        $this->setOrderID(SHOP_getVar($this->blob, 'order_id'));
-        $this->setID(SHOP_getVar($this->blob, 'txn_id'));
+        $this->setEvent(SHOP_getVar($this->getData(), 'status'));
+        $this->setOrderID(SHOP_getVar($this->getData(), 'order_id'));
+        $this->setID(SHOP_getVar($this->getData(), 'txn_id'));
 
         if (!$this->isUniqueTxnId()) {
             SHOP_log("Duplicate transaction ID {$this->getID()}");
@@ -93,7 +92,7 @@ class Webhook extends \Shop\Webhook
         switch ($this->getEvent()) {
         case 'paid':
             $status = false;
-            $this->setPayment(SHOP_getVar($this->blob, 'pmt_gross', 'float'));
+            $this->setPayment(SHOP_getVar($this->getData(), 'pmt_gross', 'float'));
             if ($this->isSufficientFunds()) {
                 $Pmt = Payment::getByReference($this->getID());
                 if ($Pmt->getPmtID() == 0) {

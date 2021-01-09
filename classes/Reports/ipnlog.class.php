@@ -216,8 +216,8 @@ class ipnlog extends \Shop\Report
             return "Nothing Found";
         }
 
-        // Allow all serialized data to be available to the template
-        $ipn = @unserialize($A['ipn_data']);
+        // Allow all json-encoded data to be available to the template
+        $ipn = @json_decode($A['ipn_data'], true);
         $gw = \Shop\Gateway::getInstance($A['gateway']);
         if ($gw !== NULL && $ipn !== NULL) {
             $vals = $gw->ipnlogVars($ipn);

@@ -78,6 +78,8 @@ class Webhook extends \Shop\Webhook
             return false;
         }
 
+        $this->blob = $payload;
+
         if ($event === NULL) {  // to skip test data from $_POST
             require_once __DIR__ . '/vendor/autoload.php';
             try {

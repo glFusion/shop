@@ -108,6 +108,10 @@ class Webhook
      * @var object */
     protected $IPN = NULL;
 
+    /** Payload as a JSON string.
+     * @var string */
+    protected $blob = '';
+
 
     /**
      * Instantiate and return a Webhook object.
@@ -416,7 +420,7 @@ class Webhook
             ->setGateway($this->whSource)
             ->setEvent($this->whEvent)
             ->setVerified($this->isVerified())
-            ->setData($this->whData);
+            ->setData(json_decode($this->blob, true));
         return $ipn->Write();
     }
 

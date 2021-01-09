@@ -41,11 +41,13 @@ class Webhook extends \Shop\Webhook
         if (empty($_POST)) {
             // Received a webhook, a single parameter string
             $json = file_get_contents('php://input');
+            $this->blob = $json;
             SHOP_log("WEBHOOK: $json", SHOP_LOG_DEBUG);
             $A = json_decode($json);
         } elseif (isset($_POST['shop_test_ipn'])) {
             // Received POST, testing only. Must already be complete
-            $A  = json_decode(json_encode($_POST)); // convert to object
+            $this->blob = json_encode($_POST);
+            $A  = json_decode($this->blob); // convert to object
             SHOP_log("TEST: " . var_export($_POST,true), SHOP_LOG_DEBUG);
         } else {
             // Received a Silent URL POST. Convert to webhook format.
@@ -83,7 +85,8 @@ class Webhook extends \Shop\Webhook
                 );
                 return false;
             }
-            $A = json_decode(json_encode($A));  // convert to object
+            $this->blob = json_encode($A);
+            $A = json_decode($this->blob);  // convert to object
         }
         $this->setData($A);
 

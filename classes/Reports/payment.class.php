@@ -250,10 +250,10 @@ class payment extends \Shop\Report
             return "Nothing Found";
         }
 
-        // Allow all serialized data to be available to the template
+        // Allow all json-encoded data to be available to the template
         $gw = \Shop\Gateway::create($A['pmt_gateway']);
         $gw->loadSDK();
-        $ipn = @unserialize($A['ipn_data']);
+        $ipn = @json_decode($A['ipn_data'],true);
         if ($gw !== NULL) {
             if ($ipn) {
                 $vals = $gw->ipnlogVars($ipn);

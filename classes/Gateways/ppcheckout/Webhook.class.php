@@ -24,11 +24,6 @@ use Shop\Models\IPN as IPNModel;
  */
 class Webhook extends \Shop\Webhook
 {
-    /** Un-decoded original payload contents.
-     * @var string */
-    private $blob = '';
-
-
     /**
      * Set up the webhook data from the supplied JSON blob.
      *
