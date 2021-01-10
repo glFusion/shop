@@ -2045,7 +2045,7 @@ class Gateway
             $url = Config::get('ipn_url');
             if (empty($url)) {
                 // Use the default IPN url
-                $url = Config::get('url') . '/hooks/webhook.php';
+                $url = Config::get('url') . '/hooks/';
             }
             if (substr($url, -1) != '/') {
                 $url .= '/';
