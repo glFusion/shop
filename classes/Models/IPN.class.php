@@ -38,6 +38,7 @@ class IPN implements \ArrayAccess
         'custom' => array(  // backward compatibility for plugins
             'uid' => 0,
         ),
+        'data' => array(),
     );
 
 
@@ -163,6 +164,18 @@ class IPN implements \ArrayAccess
         $this->properties['uid'] = (int)$uid;
         $this->properties['custom']['uid'] = (int)$uid;
         return $this;
+    }
+
+
+    public function getData($key=NULL)
+    {
+        if ($key === NULL) {
+            return $this->properties['data'];
+        } elseif (isset($this->properties['data'][$key])) {
+            return $this->properties['data'][$key];
+        } else {
+            return NULL;
+        }
     }
 
 }
