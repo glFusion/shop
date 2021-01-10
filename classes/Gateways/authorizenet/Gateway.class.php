@@ -330,26 +330,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get a logo image to show on the order as the payment method.
-     *
-     * @return  string      HTML for logo image
-     */
-    public function getLogo()
-    {
-        global $_CONF;
-        return COM_createImage(
-            'https://www.authorize.net/content/dam/anet-redesign/reseller/authorizenet-200x50.png',
-            $this->gw_provider,
-            array(
-                'width' => 160,
-                'height' => 40,
-                'border' => 0,
-            )
-        );
-    }
-
-
-    /**
      * Hash a text string using the hash_key.
      *
      * @param   string  $text   Text to hash
