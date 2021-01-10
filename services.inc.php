@@ -341,7 +341,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
 
     $output = array();
     $svc_msg = array();
-    if (!$_SHOP_CONF['gc_enabled'] || !$_SHOP_CONF['shop_enabled']) {
+    if (!$_SHOP_CONF['gc_enabled']) {
         $svc_msg[] = 'Shop or Gift Cards not enabled';
         return PLG_RET_PERMISSION_DENIED;
     }
