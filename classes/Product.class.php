@@ -1282,7 +1282,8 @@ class Product
         SEC_setCookie(
             $_CONF['cookie_name'].'adveditor',
             SEC_createTokenGeneral('advancededitor'),
-            time() + 1200, $_CONF['cookie_path'],
+            time() + 1200,
+            $_CONF['cookie_path'],
             $_CONF['cookiedomain'],
             $_CONF['cookiesecure'],
             false
@@ -1300,15 +1301,6 @@ class Product
             $T->set_var('show_htmleditor', true);
             PLG_requestEditor($_SHOP_CONF['pi_name'], $tpl_var, 'ckeditor_shop.thtml');
             PLG_templateSetVars($tpl_var, $T);
-            SEC_setCookie(
-                $_CONF['cookie_name'].'adveditor',
-                SEC_createTokenGeneral('advancededitor'),
-                time() + 1200,
-                $_CONF['cookie_path'],
-                $_CONF['cookiedomain'],
-                $_CONF['cookiesecure'],
-                false
-            );
             break;
         case 'tinymce' :
             $T->set_var('show_htmleditor',true);
