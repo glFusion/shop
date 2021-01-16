@@ -119,7 +119,7 @@ class IPN extends \Shop\Logger
      */
     public function setEvent($event)
     {
-        $this->event = DB_escapeString($event); // might as well sanitize here
+        $this->event = substr($event, 0, 128);
         return $this;
     }
 
@@ -171,7 +171,7 @@ class IPN extends \Shop\Logger
                 verified = '$this->verified',
                 txn_id = '" . DB_escapeString($this->txn_id) . "',
                 gateway = '{$this->gw_id}',
-                event = '{$this->event}',
+                event = '" . DB_escapeString($this->event) . "',
                 order_id = '" . DB_escapeString($this->order_id) . "',
                 ipn_data = '" . DB_escapeString($data) . "'";
         // Ignore DB error in order to not block IPN
