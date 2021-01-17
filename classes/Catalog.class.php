@@ -80,6 +80,13 @@ class Catalog
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
+        // Check access here in case centerblock is enabled.
+        // This will cause a 404 for the homepage, it's up to the admin
+        // to fix this.
+        if (!SHOP_access_check()) {
+            COM_404();
+        }
+
         $content = '';
         if (
             ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
