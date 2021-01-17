@@ -22,6 +22,22 @@ use Shop\Models\Views;
  */
 class Catalog
 {
+    /** Homepage layout - product list (default).
+     * @const integer */
+    public const HP_PRODUCT = 1;
+
+    /** Homepage layout - category list, all categories.
+     * @const integer */
+    public const HP_CAT = 2;
+
+    /** Homepage layout - category list, all categories including.
+     * @const integer */
+    public const HP_CATHOME = 4;
+
+    /** Homepage layout - category list, top-level only, no root.
+     * @const integer */
+    public const HP_CATTOP = 8;
+
     /** Brand ID, to limit results.
      * @var integer */
     private $brand_id = 0;
@@ -89,7 +105,7 @@ class Catalog
 
         $content = '';
         if (
-            ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
+            ($_SHOP_CONF['hp_layout'] & self::HP_CAT) == self::HP_CAT &&
             $this->cat_id == 0 &&
             (!isset($_GET['query']) || isset($_GET['clearsearch']))
         ) {
@@ -517,7 +533,7 @@ class Catalog
      *
      * @param   object  $T      Template object
      * @param   string  $pi_name    Plugin name, empty for all plugins
-     */ 
+     */
     private function getPluginProducts(&$T, $pi_name='')
     {
         global $_SHOP_CONF, $_PLUGINS, $_USER;
@@ -628,14 +644,14 @@ class Catalog
         $RootCat = Category::getRoot();
         // If showing only top-level categories then get the children of Root,
         // otherwise get the whole category tree.
-        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
+        if (($_SHOP_CONF['hp_layout'] & self::HP_CATTOP) == self::HP_CATTOP) {
             $Cats = $RootCat->getChildren();
-            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) == SHOP_HP_CATHOME) {
+            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) == self::HP_CATHOME) {
                 array_unshift($Cats, $RootCat);
             }
         } else {
             $Cats = \Shop\Category::getTree();
-            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME) {
+            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) != self::HP_CATHOME) {
                 unset($Cats[$RootCat->cat_id]);
             }
         }
