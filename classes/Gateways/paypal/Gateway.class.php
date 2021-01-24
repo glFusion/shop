@@ -484,7 +484,6 @@ class Gateway extends \Shop\Gateway
      * a new button will be created.
      *
      * @uses    gwButtonType()
-     * @uses    PrepareCustom()
      * @param   object  $P      Product Item object
      * @return  string          HTML code for the button.
      */
@@ -509,7 +508,7 @@ class Gateway extends \Shop\Gateway
             'item_number' => htmlspecialchars($P->getID()),
             'item_name' => htmlspecialchars($P->getShortDscp()),
             'currency_code' => $this->currency_code,
-            'custom' => $this->PrepareCustom(),
+            'custom' => $this->custom->encode(),
             'return' => $this->returnUrl('', ''),
             'cancel_return' => $P->getCancelUrl(),
             'amount' => $P->getPrice(),
@@ -669,7 +668,7 @@ class Gateway extends \Shop\Gateway
             'item_number'   => $attribs['item_number'],
             'item_name'     => $attribs['item_name'],
             'currency_code' => $this->currency_code,
-            'custom'        => $this->PrepareCustom(),
+            'custom'        => $this->custom->encode(),
             'return'        => isset($attribs['return']) ? $attribs['return'] :
                             $this->returnUrl('', ''),
             'rm'            => 1,
