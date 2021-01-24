@@ -177,7 +177,7 @@ class Plugin extends \Shop\Product
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
         if (!isset($ipn_data['uid'])) {
-            $ipn_data['uid'] = \Shop\Order::getInstance($Item->getOrderID())->getUid();
+            $ipn_data['uid'] = $Item->getOrder()->getUid();
         }
         $args = array(
             'item'  => array(
@@ -186,7 +186,7 @@ class Plugin extends \Shop\Product
                 'name' => $Item->getDscp(),
                 'price' => $Item->getPrice(),
                 'paid' => $Item->getPrice(),
-                'order_id' => $Item->getOrderID(),
+                'order_id' => $Item->getOrder()->getOrderID(),
             ),
             'ipn_data' => $ipn_data,
         );
