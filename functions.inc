@@ -503,7 +503,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
         return $tags;
         break;
     case 'tagusage':
-        return array('namespace' => $pi_name, 'usage' => 'description');
+        return array(array('namespace' => $pi_name, 'usage' => 'description'));
         break;
     case 'desc':
         switch ($content) {
