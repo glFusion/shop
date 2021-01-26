@@ -251,7 +251,7 @@ class Invoice extends OrderBaseView
      */
     public function createHTML()
     {
-        global $_SHOP_CONF, $_USER, $LANG_SHOP;
+        global $_SHOP_CONF, $_USER, $LANG_SHOP, $_CONF;
 
         $this->_renderCommon();
         $this->_renderAddresses();
@@ -284,8 +284,12 @@ class Invoice extends OrderBaseView
         // Show the log of payments and status changes
         $this->_renderLog();
 
+        // Show the link to pay the order online, if it hasn't been paid and
+        // is over 5 minutes old. This is to give webhooks time to be recorded.
+        $now = clone $_CONF['_now'];
+
         if (
-            //$status == OrderState::PENDING &&
+            $this->Order->getOrderDate() < $now->sub(new \DateInterval('PT5M')) &&
             !$this->Order->isPaid() &&
             !empty($this->Order->getPmtMethod())
         ) {
