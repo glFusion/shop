@@ -24,7 +24,9 @@
   {!if _ret_url}
     <input type="hidden" name="_ret_url" value="{_ret_url}" />
   {!endif}
-  <button id="{frm_id}_add_cart_btn" type="button" class="uk-button uk-button-success uk-button-small" border="0" {btn_disabled}
+  <button id="{frm_id}_add_cart_btn"
+    style="float:right;"
+    class="uk-button uk-button-success uk-button-small" border="0" {btn_disabled}
     onclick='shopAddToCart("{frm_id}");return false;' value="{$LANG_SHOP['add_to_cart']}"><i
         class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['add_to_cart']}</button>
 </form>
