@@ -36,7 +36,6 @@ if (!defined ('GVERSION')) {
  * desired.  $args['add_cart'] simply needs to be set to get an add-to-cart
  * button.
  *
- * @uses    Gateway::ExternalButton()
  * @param   array   $args       Array of item information
  * @param   array   $output     Pointer to output array
  * @param   array   $svc_msg    Unused
@@ -49,12 +48,16 @@ function service_genButton_shop($args, &$output, &$svc_msg)
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
 
+    if (!SHOP_access_check()) {
+        // If the shop is closed, return now but consider this normal.
+        return PLG_RET_OK;
+    }
+
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
         foreach (Shop\Gateway::getall() as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
-                //$output[] = $gw->ExternalButton($args, $btn_type);
                 $P = Shop\Product::getByID($args['item_number']);
                 $output[] = $gw->ProductButton($P);
             }
