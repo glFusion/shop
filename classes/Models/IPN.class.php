@@ -42,7 +42,8 @@ class IPN implements \ArrayAccess
     );
 
 
-    /** Initialize the properties from a supplied string or array.
+    /**
+     * Initialize the properties from a supplied string or array.
      *
      * @param   string|array    $val    Optonal initial properties
      */
@@ -55,6 +56,9 @@ class IPN implements \ArrayAccess
             }
         } elseif (is_array($val)) {
             $this->properties = $val;
+        } else {
+            // Make sure required fields are available.
+            $this->setTimestamp();
         }
     }
 
