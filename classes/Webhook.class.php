@@ -249,7 +249,7 @@ class Webhook
         }
         $this->whTS = $ts;
         $dt = new \Date($ts, $_CONF['timezone']);
-        $this->setIPN('sql_date', $dt->toMySQL(true));
+        $this->setTxnDate($dt->toMySQL(true));
         return $this;
     }
 
