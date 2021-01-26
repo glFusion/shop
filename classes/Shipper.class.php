@@ -140,9 +140,10 @@ class Shipper
     protected $free_method = '';
 
     /** Flag to indicate where sales tax is calculated.
-     * 1 = origin (shop address), 0 = destination (customer address)
+     * 1 = origin (shop address), 0 = destination (customer address).
+     * Default to origin for any taxable virtual items.
      * @var integer */
-    protected $tax_loc = 0;
+    protected $tax_loc = 1;
 
     /** Supported services.
      * @var array */
@@ -1893,7 +1894,7 @@ class Shipper
             ->setServiceTitle($this->name)
             ->setServiceCode('units.' . $this->id)
             ->setServiceID($this->key . '.' . $this->id);
- 
+
         $found = false;
         if (
             $info['units'] <= $this->max_units &&
@@ -2028,4 +2029,4 @@ class Shipper
         return $this->uom[$_SHOP_CONF['uom_size']];
     }
 
-}   // class Shipper
+}
