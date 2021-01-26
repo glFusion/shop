@@ -98,44 +98,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get a button for an external (plugin) item.
-     * Only supports a "buy now" button since we don't necessarily know
-     * what type of button the item uses.  Assumes a quantity of one.
-     *
-     * @uses    _addItem()
-     * @uses    _getButton()
-     * @uses    getActionUrl()
-     * @uses    PaymentGw::AddCustom()
-     * @param   array   $attribs    Attribute array (item_number, price)
-     * @param   string  $btn_type   Button type
-     * @return  string              HTML for button
-     */
-    public function ExternalButton($attribs = array(), $btn_type = 'buy_now')
-    {
-
-        return '';      // TODO -can COD support plugins?
-
-        // Add options, if present.  Only 2 are supported, and the amount must
-        // already be included in the $amount above.
-        if (isset($attribs['options']) && is_array($attribs['options'])) {
-            foreach ($attribs['options'] as $name => $value) {
-                $this->AddCustom($name, $value);
-            }
-        }
-
-        $this->_addItem($attribs['item_number'], $attribs['amount']);
-        $gateway_vars = $this->_getButton($btn_type);
-
-        $T = new Template('buttons/' . $this->gw_name);
-        $T->set_file('btn', 'btn_buy_now.thtml');
-        $T->set_var('amazon_url', $this->getActionUrl());
-        $T->set_var('gateway_vars', $gateway_vars);
-        $retval = $T->parse('', 'btn');
-        return $retval;
-    }
-
-
-    /**
      * Get a purchase button.
      * This takes separate parameters so it can be called directly or via
      * ExternalButton or ProductButton

@@ -21,6 +21,7 @@ use Shop\Shipper;
 use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 use Shop\Template;
+use Shop\Tax;
 
 
 /**
@@ -195,15 +196,9 @@ class Gateway extends \Shop\Gateway
             'transtype' => 'cart_upload',
             'cart_id' => $cartID,
         ) );
-        /*$custom_arr = array(
-            'uid' => $_USER['uid'],
-            'transtype' => 'cart_upload',
-            'cart_id' => $cartID,
-        );*/
         if (isset($cart->custom_info)) {
             $custom_arr->merge($cart->custom_info);
         }
-        //$custom_arr = array_merge($custom_arr, $cart->custom_info);
 
         $fields = array(
             'cmd'       => '_cart',
@@ -612,136 +607,6 @@ class Gateway extends \Shop\Gateway
         }
         $T = new Template('buttons/' . $this->gw_name);
         $T->set_file('btn', 'btn_' . $btn_info['tpl'] . '.thtml');
-        $T->set_var(array(
-            'action_url'    => $this->getActionUrl(),
-            'btn_text'      => $btn_text,
-            'gateway_vars'  => $gateway_vars,
-            'method'        => $this->getMethod(),
-        ) );
-        $retval = $T->parse('', 'btn');
-        return $retval;
-    }
-
-
-    /**
-     * Get a button for an external item, not one of our catalog items.
-     *
-     * @uses    getActionUrl()
-     * @uses    AddCustom()
-     * @uses    setReceiver()
-     * @param   array   $attribs    Array of standard item attributes
-     * @param   string  $type       Type of button (buy_now, etc.)
-     * @return  string              HTML for button
-     */
-    public function ExternalButton($attribs = array(), $type = 'buy_now')
-    {
-        global $_LANG_SHOP;
-
-        $T = new Template('buttons/' . $this->gw_name);
-        $T->set_file('btn', 'btn_' . $type . '.thtml');
-        $btn_text = isset($LANG_SHOP['buttons'][$type]) ?
-                $LANG_SHOP['buttons'][$type] : $LANG_SHOP['buy_now'];
-        $amount = isset($attribs['amount']) ? (float)$attribs['amount'] : 0;
-        $this->setReceiver($amount);
-        $this->AddCustom('transtype', $type);
-        if (isset($attribs['custom']) && is_array($attribs['custom'])) {
-            foreach ($attribs['custom'] as $key => $value) {
-                $this->AddCustom($key, $value);
-            }
-        }
-        $cmd = '_xclick';       // default Paypal command type
-        if (isset($attribs['cmd'])) {
-            $valid_cmds = array(
-                '_xclick', '_cart', '_oe-gift-certificate',
-                '_xclick-subscriptions',
-                '_xclick-auto-billing',
-                '_xclick-payment-plan',
-                '_donations',
-            );
-            if (in_array($attribs['cmd'], $valid_cmds)) {
-                $cmd = $attribs['cmd'];
-            }
-        }
-        $vars = array(
-            'cmd'           => $cmd,
-            'business'      => $this->receiver_email,
-            'item_number'   => $attribs['item_number'],
-            'item_name'     => $attribs['item_name'],
-            'currency_code' => $this->currency_code,
-            'custom'        => $this->custom->encode(),
-            'return'        => isset($attribs['return']) ? $attribs['return'] :
-                            $this->returnUrl('', ''),
-            'rm'            => 1,
-            'notify_url'    => $this->ipn_url,
-            'amount'        => $amount,
-        );
-
-        // Add options, if present.  Only 2 are supported, and the amount must
-        // already be included in the $amount above.
-        // Option variables are shown on the checkout page, but the custom value
-        // is what's really used to process the purchase since that's available
-        // to all gateways.
-        if (isset($attribs['options']) && is_array($attribs['options'])) {
-            $i = 0;
-            foreach ($attribs['options'] as $name => $value) {
-                $this->addcustom($name, $value);
-                $vars['on' . $i] = $name;
-                $vars['os' . $i] = $value;
-                $i++;
-            }
-        }
-
-        if (!isset($attribs['quantity']) || $attribs['quantity'] == 0) {
-            $vars['undefined_quantity'] = '1';
-        } else {
-            $vars['quantity'] = $attribs['quantity'];
-        }
-
-        if (isset($attribs['weight']) && $attribs['weight'] > 0) {
-            $vars['weight'] = $attribs['weight'];
-        } else {
-            $vars['no_shipping'] = '1';
-        }
-
-        if (!isset($attribs['shipping_type']))
-            $attribs['shipping_type'] = 0;
-        switch ($attribs['shipping_type']) {
-        case 0:
-            $vars['no_shipping'] = '1';
-            break;
-        case 2:
-            $vars['shipping'] = $attribs['shipping_amt'];
-        case 1:
-            $vars['no_shipping'] = '2';
-            break;
-        }
-
-        // Set the tax flag.  If item is taxable ($attribs['taxable'] == 1), then set
-        // the tax amount to the specific $attribs['tax'] amount if given.  If no tax
-        // amount is given for a taxable item, do not set the value- let PayPal calculate
-        // the tax.  Setting $vars['tax'] to zero means no tax is charged.
-        if (isset($attribs['taxable']) && $attribs['taxable'] > 0) {
-            if (isset($attribs['tax']) && $attribs['tax'] > 0) {
-                $vars['tax'] = (float)$attribs['tax'];
-            }
-        } else {
-            $vars['tax'] = '0';
-        }
-
-        if ($this->getConfig('encrypt')) {
-            $enc_btn = $this->_encButton($vars);
-            if (!empty($enc_btn)) {
-                $vars = array(
-                    'encrypted' => $enc_btn,
-                    'cmd'       => '_s-xclick',
-                );
-            }
-        }
-        $gateway_vars = '';
-        foreach ($vars as $name=>$value) {
-            $gateway_vars .= '<input type="hidden" name="' . $name .
-                        '" value="' . $value . '" />' . "\n";
-        }
         $T->set_var(array(
             'action_url'    => $this->getActionUrl(),
             'btn_text'      => $btn_text,
