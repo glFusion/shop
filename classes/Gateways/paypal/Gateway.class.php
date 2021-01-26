@@ -540,11 +540,17 @@ class Gateway extends \Shop\Gateway
             break;
         }
 
-            /*if ($P->taxable) {
-                $vars['tax_rate'] = sprintf("%0.4f", SHOP_getTaxRate() * 100);
-            }*/
+        // Set the tax rate based on the company location if taxable.
+        if ($P->isTaxable()) {
+            $vars['tax_rate'] = sprintf(
+                '%0.4f',
+                Tax::getProvider()
+                    ->withAddress(new Company)
+                    ->getRate() * 100
+            );
+        }
 
-            // Buy-now product button, set default billing/shipping addresses
+        // Buy-now product button, set default billing/shipping addresses
         $U = self::Customer();
         $shipto = $U->getDefaultAddress('shipto');
         if (!empty($shipto)) {
