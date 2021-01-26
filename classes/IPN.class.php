@@ -633,8 +633,10 @@ class IPN
         }
         // If the product allows the price to be overridden, just take the
         // IPN-supplied price. This is the case for donations.
-        $overrides = $this->custom->toArray();
+        //$overrides = $this->custom->toArray();
+        $overrides = array();
         $overrides['price'] = $args['price'];
+        $overrides['tax'] = LGLIB_getVar($args, 'tax', 'float');
         $price = $P->getPrice($opts, $args['quantity'], $overrides);
 
         $this->items[] = array(
@@ -650,6 +652,7 @@ class IPN
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
             'extras'    => isset($args['extras']) ? $args['extras'] : '',
             'overrides' => $overrides,
+            'custom'    => $this->custom->toArray(),
         );
     }
 
