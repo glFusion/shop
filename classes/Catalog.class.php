@@ -88,6 +88,19 @@ class Catalog
 
 
     /**
+     * Set the query string.
+     *
+     * @param   string  $query  Search string
+     * @return  object  $this
+     */
+    public function withQuery($query)
+    {
+        $this->query_str = $query;
+        return $this;
+    }
+
+
+    /**
      * Show the default catalog layout based on plugin configuration.
      *
      * @return  string      HTML for catalog display
@@ -107,7 +120,7 @@ class Catalog
         if (
             ($_SHOP_CONF['hp_layout'] & self::HP_CAT) == self::HP_CAT &&
             $this->cat_id == 0 &&
-            (!isset($_GET['query']) || isset($_GET['clearsearch']))
+            empty($this->query)
         ) {
             $content .= $this->Categories();
         } else {
@@ -308,13 +321,8 @@ class Catalog
 
         $search = '';
         // Add search query, if any
-        if (
-            isset($_REQUEST['query']) &&
-            !empty($_REQUEST['query']) &&
-            !isset($_REQUEST['clearsearch'])
-        ) {
-            $this->query_str = urlencode($_REQUEST['query']);
-            $search = DB_escapeString($_REQUEST['query']);
+        if (!empty($this->query_str)) {
+            $search = DB_escapeString($this->query_str);
             $fields = array(
                 'p.name', 'c.cat_name', 'p.short_description', 'p.description',
                 'p.keywords',

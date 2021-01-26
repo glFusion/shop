@@ -386,6 +386,9 @@ default:
     $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
     $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
     $Cat = new Shop\Catalog;
+    if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
+        $Cat->withQuery($_REQUEST['query']);
+    }
     $content .= $Cat->setCatID($cat_id)
         ->setBrandID($brand_id)
         ->defaultCatalog();
