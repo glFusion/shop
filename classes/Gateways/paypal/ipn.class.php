@@ -236,12 +236,19 @@ class ipn extends \Shop\IPN
         switch ($this->ipn_data['txn_type']) {
         case 'web_accept':  //usually buy now
         case 'send_money':  //usually donation/send money
+            $tax = LGLIB_getVar($this->ipn_data, 'tax', 'float');
+            $shipping = LGLIB_getVar($this->ipn_data, 'shipping', 'float');
+            $handling = LGLIB_getVar($this->ipn_data, 'handling', 'float');
+            $price = (float)$this->ipn_data['mc_gross'] - $tax - $shipping - $handling;
             if (isset($this->ipn_data['item_number'])) {
                 $this->addItem(array(
                     'item_id'   => $this->ipn_data['item_number'],
                     'item_name' => $this->ipn_data['item_name'],
                     'quantity'  => $this->ipn_data['quantity'],
-                    'price'     => (float)$this->ipn_data['mc_gross'],
+                    'price'     => $price,
+                    'tax'       => $tax,
+                    'shipping'  => $shipping,
+                    'handling'  => $handling,
                 ));
             }
             SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
