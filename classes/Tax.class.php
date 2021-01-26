@@ -183,6 +183,7 @@ abstract class Tax
 
     /**
      * Look up a tax rate for the Address provided in the constructor.
+     * Updates the order items if an order is defined.
      *
      * @return  float   Total tax rate for a location, globally-configurated rate on error.
      */
@@ -193,10 +194,12 @@ abstract class Tax
         } else {
             $rate = 0;;
         }
-        foreach ($this->Order->getItems() as &$Item) {
-            if ($Item->isTaxable()) {
-                $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
-                $Item->setTax($tax)->setTaxRate($rate);
+        if ($this->Order !== NULL) {
+            foreach ($this->Order->getItems() as &$Item) {
+                if ($Item->isTaxable()) {
+                    $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                    $Item->setTax($tax)->setTaxRate($rate);
+                }
             }
         }
         return $rate;
