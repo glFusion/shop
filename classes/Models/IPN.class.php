@@ -49,6 +49,8 @@ class IPN implements \ArrayAccess
      */
     public function __construct($val='')
     {
+        global $_CONF;
+
         if (is_string($val) && !empty($val)) {
             $x = json_decode($val, true);
             if ($x) {
@@ -58,7 +60,7 @@ class IPN implements \ArrayAccess
             $this->properties = $val;
         } else {
             // Make sure required fields are available.
-            $this->setTimestamp();
+            $this->sql_date = $_CONF['_now']->toMySQL(true);
         }
     }
 
