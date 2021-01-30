@@ -64,16 +64,7 @@ class Webhook extends \Shop\Webhook
         } else {
             $resource = new \stdClass;
         }
-        /*    if (isset($resource->intent)) {
-                $intent = $resource
-            $invoice = $resource->invoice;
-            if ($invoice) {
-                $detail = SHOP_getVar($invoice, 'detail', 'array', NULL);
-                if ($detail) {
-                    $this->setOrderID(SHOP_getVar($detail, 'reference'));
-                }
-            }
-        }*/
+
         switch ($this->getEvent()) {
         case 'PAYMENT.AUTHORIZATION.CREATED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
@@ -112,7 +103,7 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
-        case 'CHECKOUT.ORDER.APPROVED':
+        case 'CHECKOUT.ORDER.APPROVED_X':
             $intent = 'CAPTURE';
             if (isset($resource->intent)) {
                 $intent = $resource->intent;
@@ -121,7 +112,7 @@ class Webhook extends \Shop\Webhook
                 break;
                 $gw->captureAuth($resource->id);
             }
-            if ($resource) {
+            if ($resource && isset($resource->payer)) {
                 $payer = $resource->payer;
                 if (isset($payer->name)) {
                     $fname = '';
@@ -174,7 +165,6 @@ class Webhook extends \Shop\Webhook
                     }
                 }
             }
-
             break;
 
         case 'INVOICING.INVOICE.PAID':
