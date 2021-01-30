@@ -109,7 +109,7 @@ class reorder extends \Shop\Report
             'direction' => 'ASC',
         );
 
-        $where = " WHERE track_onhand = 1 AND (
+        $where = " WHERE p.track_onhand = 1 AND (
             (pv.pv_id IS NULL AND p.onhand <= p.reorder) OR
             (pv.pv_id IS NOT NULL AND pv.onhand <= pv.reorder)
         )";
