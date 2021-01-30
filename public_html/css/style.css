@@ -1096,10 +1096,3 @@ div.cart-item {
     border-color: rgba(45,112,145,.3);
 }*/
 
-.shop-ckout-btn {
-    /* Adjust button text for better visibility */
-    color: darkred;
-}
-.shop-ckout-btn:hover {
-    color: darkred;
-}
