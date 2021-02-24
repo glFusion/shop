@@ -306,20 +306,32 @@ class Webhook extends \Shop\Webhook
             'Authorization: Bearer ' . $gw->getBearerToken(),
         ) ); 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $result = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $status = false;
-        if ($code != 200) {
-            SHOP_log("Error $code : $result");
-            $status = false;
-        } else {
-            $result = @json_decode($result, true);
-            if (!$result) {
-                SHOP_log("Error: Code $code, Data " . print_r($result,true));
+
+        // Paypal has issues with verification, it may report INVALID_RESOURCE_ID
+        // a couple of times.
+        for ($i = 0; $i < 10; $i++) {
+            $result = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if ($code != 200) {
+                SHOP_log("Error $code : $result");
                 $status = false;
             } else {
-                SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
-                $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
+                $result = @json_decode($result, true);
+                if (!$result) {
+                    SHOP_log("Error: Code $code, Data " . print_r($result,true));
+                    $status = false;
+                } else {
+                    SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
+                    $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
+                }
+            }
+            if ($status) {
+                // Got a successful status, no further checks needed.
+                break;
+            } else {
+                // Bad status, wait a couple of seconds and try again
+                sleep(2);
             }
         }
         $this->setVerified($status);
