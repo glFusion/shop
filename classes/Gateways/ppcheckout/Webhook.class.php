@@ -66,6 +66,15 @@ class Webhook extends \Shop\Webhook
         }
 
         switch ($this->getEvent()) {
+        case 'GL.CHECKOUT.AUTHORIZED':
+            // Change the resource to be similar to a Paypal webhook
+            $auth_id = $resource->id;   // Need to add this back as $resource->id
+            if (isset($resource->purchase_units) && is_array($resource->purchase_units)) {
+                $resource = $resource->purchase_units[0];
+                $resource->id = $auth_id;
+            } else {
+                break;
+            }
         case 'PAYMENT.AUTHORIZATION.CREATED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
                 /*$this->setPayment($resource->amount->value);
@@ -81,6 +90,28 @@ class Webhook extends \Shop\Webhook
             }
             break;
 
+        case 'GL.CHECKOUT.CAPTURED':
+            $response = NULL;
+            if (isset($resource->purchase_units) && is_array($resource->purchase_units)) {
+                $payments = $resource->purchase_units[0]->payments;
+                if (isset($payments->captures) && is_array($payments->captures)) {
+                    $capture = $payments->captures[0];
+                    $response = $this->GW->getCaptureDetails($capture->id);
+                }
+            }
+            if ($response) {
+                // Got a response, now set $resource to be the same as a Paypal
+                // webhook resource from payment.capture.completed
+                $resource = $response->result;
+                if (
+                    $resource->id != $capture->id ||
+                    $resource->status != 'COMPLETED'
+                ) {
+                    break;
+                }
+            } else {
+                break;
+            }
         case 'PAYMENT.CAPTURE.COMPLETED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
                 $this->setOrderID($resource->custom_id);
@@ -96,7 +127,9 @@ class Webhook extends \Shop\Webhook
                         ->setMethod($this->getSource())
                         ->setComment('Webhook ' . $this->getID())
                         ->setOrderID($this->getOrderID());
-                    return $Pmt->Save();
+                    if ($Pmt->Save()) {
+                        $retval = $this->handlePurchase();
+                    }
                 }
                 $this->setID($ref_id);  // use the payment ID
                 $this->logIPN();
@@ -264,6 +297,8 @@ class Webhook extends \Shop\Webhook
      */
     public function Verify()
     {
+        $status = false;        // default to invalid
+
         // Check that the blob was decoded successfully.
         // If so, extract the key fields and set Webhook variables.
         $data = $this->getData();
@@ -271,22 +306,41 @@ class Webhook extends \Shop\Webhook
             $this->setID($data->id);
             $this->setEvent($data->event_type);
         } else {
-            return false;
+            return $status;
+        }
+
+        //var_dump($data);die;
+        /*switch ($this->getEvent()) {
+        case 'CHECKOUT.CAPTURED':
+            return true;
         }
 
         if (isset($_GET['testhook'])) {
             $this->setVerified(true);
             return true;
-        }
-
-        // Handle an authorization from Paypal Checkout.
-        // Does not validate using headers, instead set up the data
-        // for capture.
-        //var_dump($data);die;
-        
-
-
+        }*/
         $gw = \Shop\Gateway::getInstance($this->getSource());
+        /*for ($i = 0; $i < 3; $i++) {
+            if ($i > 0) {
+                sleep(10);
+            }
+            $resp = json_decode($gw->getWebhookDetails($this->getID()));
+            COM_errorLog("DEBUG: " . var_export($resp, true));
+            if ($resp) {
+                if (
+                    isset($resp->id) && isset($resp->event_id) &&
+                    $resp->id == $data->id &&
+                    $resp->event_type == $data->event_type
+                ) {
+                    $status = true;
+                    break;
+                }
+            }
+        }
+        $this->setVerified($status);
+        return $status;
+         */
+
         $body = '{
             "auth_algo": "' . $this->getHeader('Paypal-Auth-Algo') . '",
             "cert_url": "' . $this->getHeader('Paypal-Cert-Url') . '",
@@ -306,33 +360,33 @@ class Webhook extends \Shop\Webhook
             'Authorization: Bearer ' . $gw->getBearerToken(),
         ) ); 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $status = false;
 
-        // Paypal has issues with verification, it may report INVALID_RESOURCE_ID
-        // a couple of times.
-        for ($i = 0; $i < 10; $i++) {
-            $result = curl_exec($ch);
-            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            if ($code != 200) {
-                SHOP_log("Error $code : $result");
-                $status = false;
-            } else {
-                $result = @json_decode($result, true);
-                if (!$result) {
-                    SHOP_log("Error: Code $code, Data " . print_r($result,true));
-                    $status = false;
-                } else {
-                    SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
-                    $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
-                }
-            }
-            if ($status) {
-                // Got a successful status, no further checks needed.
+        $result = @json_decode(curl_exec($ch), true);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if (!is_array($result)) {
+            SHOP_log("Error decoding response: Code $code, Data " . print_r($result,true));
+            $status = false;
+        }
+        SHOP_log("Received code $code from PayPal", SHOP_LOG_DEBUG);
+        switch ($code) {
+        case 200:
+            SHOP_log("Result " . print_r($result,true), SHOP_LOG_DEBUG);
+            $status = SHOP_getVar($result, 'verification_status') == 'SUCCESS' ? true : false;
+            break;
+        default:
+            SHOP_log("Error $code : " . var_export($result, true));
+            $status = false;
+            if (isset($result['name']) && $result['name'] == 'VALIDATION_ERROR') {
+                // fatal error
                 break;
             } else {
-                // Bad status, wait a couple of seconds and try again
-                sleep(2);
+                // Failed to get the information, return a 503 so PayPal will resend
+                header('HTTP/1.1 503 Validation Error');
+                header('Status: 503 Invalid Response');
+                echo '503: Invalid Response';
+                exit;
             }
+            break;
         }
         $this->setVerified($status);
         return $status;
