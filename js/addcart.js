@@ -2,6 +2,21 @@
  * Shop plugin javascript.
  */
 
+var SHOP_spinner = null;
+function SHOP_showSpinner()
+{
+    if (SHOP_spinner == null) {
+        SHOP_spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
+    }
+    SHOP_spinner.show();
+}
+
+function SHOP_hideSpinner()
+{
+    SHOP_spinner.hide();
+}
+
+
 /*
  * Add an item to the shopping cart.
  */
