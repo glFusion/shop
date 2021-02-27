@@ -20,6 +20,8 @@ use Shop\Shipper;
 use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 use Shop\Template;
+use Shop\Cache;
+
 
 /**
  * Class for Paypal Checkout gateway plugin.
@@ -51,6 +53,7 @@ class Gateway extends \Shop\Gateway
     /** Order Intent.
      * @var string */
     private $intent = 'capture';
+    //private $intent = 'authorize';
 
 
     /**
@@ -243,22 +246,26 @@ class Gateway extends \Shop\Gateway
      */
     public function getBearerToken()
     {
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $this->api_url . '/v1/oauth2/token',
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
-            CURLOPT_USERPWD => $this->getConfig('api_username') . ':' . $this->getConfig('api_password'),
-            CURLOPT_HTTPHEADER  => array (
-                'Accept: application/json',
-            ),
-            CURLOPT_RETURNTRANSFER  => true,
-        ) );
-
-        $result = curl_exec($ch);
-        curl_close($ch);
-
-        $auth = json_decode($result, true);
+        $cache_key = 'paypal-oath2-token';
+        $auth = Cache::get($cache_key);
+        if ($auth === NULL) {
+            $ch = curl_init();
+            curl_setopt_array($ch, array(
+                CURLOPT_URL => $this->api_url . '/v1/oauth2/token',
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => 'grant_type=client_credentials',
+                CURLOPT_USERPWD => $this->getConfig('api_username') . ':' . $this->getConfig('api_password'),
+                CURLOPT_HTTPHEADER  => array (
+                    'Accept: application/json',
+                ),
+                CURLOPT_RETURNTRANSFER  => true,
+            ) );
+            $result = curl_exec($ch);
+            curl_close($ch);
+            $auth = json_decode($result, true);
+            // Cache the auth token for its duration minus 5 minutes
+            Cache::set($cache_key, $auth, 'auth', $auth['expires_in'] - 300);
+        }
         $access_token = isset($auth['access_token']) ? $auth['access_token'] : NULL;
         return $access_token;
     }
@@ -551,6 +558,74 @@ class Gateway extends \Shop\Gateway
             $response = NULL;
         }
         SHOP_log('Capture response: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        return $response;
+    }
+
+
+    /**
+     * Get the details of a captured payment.
+     *
+     * @param   string  $captureId  Paypal payment ID
+     * @return  string      JSON response string
+     */
+    public function getCaptureDetails($captureId)
+    {
+        $client = $this->getApiClient();
+        $request = new \PayPalCheckoutSdk\Payments\CapturesGetRequest($captureId);
+        $request->body = '{}';      // Null body
+        try {
+            $response = $client->execute($request);
+        } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
+            SHOP_log("Error capturing $captureId, response " . var_export($response,true));
+            $response = NULL;
+        }
+        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        return $response;
+    }
+
+
+    /**
+     * Retrieve the details of an order from Paypal.
+     *
+     * @param   string  $orderId    Paypal order ID (not the plugin order_id)
+     * @return  string      JSON response string
+     */
+    public function getOrderDetails($orderId)
+    {
+        $client = $this->getApiClient();
+        $request = new \PayPalCheckoutSdk\Orders\OrdersGetRequest($orderId);
+        $request->body = '{}';      // Null body
+        try {
+            $response = $client->execute($request);
+        } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
+            SHOP_log("Error retrieving order $orderId, response " . var_export($response,true));
+            $response = NULL;
+        }
+        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        return $response;
+    }
+
+
+    /**
+     * Retrieve the details of a webhook from Paypal.
+     *
+     * @param   string  $whId       Webhook ID (`WH-XXXX...`)
+     * @return  string      JSON response string
+     */
+    public function getWebhookDetails($whId)
+    {
+        $access_token = $this->getBearerToken();
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $this->api_url . '/v1/notifications/webhooks-events/' . $whId,
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $access_token,
+            ),
+        ) );
+        $response = curl_exec($ch);
+        curl_close($ch);
         return $response;
     }
 
