@@ -2089,6 +2089,19 @@ class Gateway
 
 
     /**
+     * Check if payments can be made "later", e.g. pay a pending order.
+     * Most gateways do not support this to avoid confusion, but invoiced
+     * orders can be paid later.
+     *
+     * @return  boolean     True if pay-later is supported, False if not
+     */
+    public function canPayLater()
+    {
+        return false;
+    }
+
+
+    /**
      * Create the "pay now" button for orders.
      * For most gateways this is the same as the checkout button.
      *

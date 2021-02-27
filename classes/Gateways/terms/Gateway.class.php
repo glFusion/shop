@@ -320,4 +320,16 @@ class Gateway extends \Shop\Gateway
         return !empty($this->getConfig('gateway'));
     }
 
+
+    /**
+     * Check if payments can be made "later", e.g. pay a pending order.
+     * Invoiced orders support this.
+     *
+     * @return  boolean     True if pay-later is supported, False if not
+     */
+    public function canPayLater()
+    {
+        return true;
+    }
+
 }

@@ -294,7 +294,7 @@ class Invoice extends OrderBaseView
             !empty($this->Order->getPmtMethod())
         ) {
             $gw = \Shop\Gateway::getInstance($this->Order->getPmtMethod());
-            if ($gw->canPayOnline()) {
+            if ($gw->canPayOnline() && $gw->canPayLater()) {
                 $this->TPL->set_var(
                     'pmt_btn',
                     $gw->payOnlineButton($this->Order, $LANG_SHOP['buttons']['pay_now'])
