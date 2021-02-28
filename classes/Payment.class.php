@@ -431,11 +431,13 @@ class Payment
         //echo $sql;die;
         $res = DB_query($sql);
         if (!DB_error()) {
+            $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
             $this->setPmtId(DB_insertID());
             $Order = Order::getInstance($this->getOrderID());
             $Order->updatePmtStatus()
                 ->Log(
-                    sprintf($LANG_SHOP['amt_paid_gw'],
+                    sprintf(
+                        $lang_str,
                         $this->getAmount(),
                         $this->getGateway()
                     )

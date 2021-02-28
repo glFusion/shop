@@ -393,6 +393,7 @@ $LANG_SHOP = array (
 'forgotten_user' => 'User Forgotten',
 'tax_on_x_items' => '%.2f%% Tax on %s item(s)',
 'amt_paid_gw' => '%0.2f paid via %s',
+'amt_credit_gw' => '%0.2f credit/refund via %s',
 'balance' => 'Balance',
 'all_items' => 'All items in your shopping cart',
 'cart' => 'Cart',
