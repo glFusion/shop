@@ -285,6 +285,32 @@ class Webhook extends \Shop\Webhook
                 SHOP_log("Error processing webhook " . $this->getEvent());
             }
             break;
+
+        case 'PAYMENT.CAPTURE.REFUNDED':
+            if (isset($resource->custom_id)) {
+                $this->setOrderID($resource->custom_id);
+                $this->setPayment($resource->amount->value);
+                $this->setCurrency($resource->amount->currency_code);
+                $ref_id = $resource->id;
+                // Get the payment by reference ID to make sure it's unique
+                $Pmt = Payment::getByReference($ref_id);
+                if ($Pmt->getPmtID() == 0) {
+                    $Pmt->setRefID($ref_id)
+                        ->setAmount($this->getPayment() * -1)
+                        ->setGateway($this->getSource())
+                        ->setMethod($this->getSource())
+                        ->setComment('Webhook ' . $this->getID())
+                        ->setOrderID($this->getOrderID());
+                    $Pmt->Save();
+                }
+                $this->setID($ref_id);  // use the payment ID
+                $this->logIPN();
+                return true;
+            } else {
+                SHOP_log("Order number not found for refund");
+                break;
+            }
+            break;
         }
         return false;
     }
@@ -309,16 +335,10 @@ class Webhook extends \Shop\Webhook
             return $status;
         }
 
-        //var_dump($data);die;
-        /*switch ($this->getEvent()) {
-        case 'CHECKOUT.CAPTURED':
-            return true;
-        }
-
         if (isset($_GET['testhook'])) {
             $this->setVerified(true);
             return true;
-        }*/
+        }
         $gw = \Shop\Gateway::getInstance($this->getSource());
         /*for ($i = 0; $i < 3; $i++) {
             if ($i > 0) {
