@@ -160,7 +160,7 @@ class IPN extends \Shop\Logger
         global $_TABLES;
 
         if (!is_string($this->ipn_data)) {
-            $data = @serialize($this->ipn_data);
+            $data = @json_encode($this->ipn_data);
         } else {
             $data = $this->ipn_data;
         }

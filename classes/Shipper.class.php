@@ -1533,7 +1533,7 @@ class Shipper
             );
         }
         if ($data) {        // check that a data item was retrieved
-            $config = @unserialize($data);
+            $config = @json_decode($data, true);
             if ($config) {
                 foreach ($config as $name=>$value) {
                     if (isset($this->cfgFields[$name])) {
@@ -1698,7 +1698,7 @@ class Shipper
             $cfg_data['services'] = $form['services'];
         }
 
-        $data = DB_escapeString(serialize($cfg_data));
+        $data = DB_escapeString(json_encode($cfg_data));
         $sql = "INSERT INTO {$_TABLES['shop.carrier_config']} SET
             code = '$code',
             data = '$data'

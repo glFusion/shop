@@ -409,10 +409,22 @@ function SHOP_do_upgrade($dvlp = false)
         while ($A = DB_fetchArray($res, false)) {
             $arr = @unserialize($A['ipn_data']);
             if ($arr !== false) {
-                $json = json_encode($arr);
+                $json = DB_escapeString(json_encode($arr));
                 DB_query("UPDATE {$_TABLES['shop.ipnlog']}
-                    SET ipn_data = '" . DB_escapeString($json) . "'
+                    SET ipn_data = '$json'
                     WHERE id = {$A['id']}");
+            }
+        }
+        // Change shipper configuration to json_encoded
+        $sql = "SELECT code, data FROM {$_TABLES['shop.carrier_config']}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $arr = @unserialize($A['data']);
+            if ($arr !== false) {
+                $json = DB_escapeString(json_encode($arr));
+                DB_query("UPDATE {$_TABLES['shop.carrier_config']}
+                    SET data = '$json'
+                    WHERE code = '{$A['code']}'");
             }
         }
         if (!SHOP_do_set_version($current_ver)) return false;
