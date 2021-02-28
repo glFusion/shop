@@ -263,8 +263,14 @@ class Gateway extends \Shop\Gateway
             $result = curl_exec($ch);
             curl_close($ch);
             $auth = json_decode($result, true);
-            // Cache the auth token for its duration minus 5 minutes
-            Cache::set($cache_key, $auth, 'auth', $auth['expires_in'] - 300);
+            // Cache the auth token for its duration minus 1 hour, or 8 hours
+            $expire_seconds = min(($auth['expires_in'] - 3600) , 28800);
+            Cache::set(
+                $cache_key,
+                $auth,
+                'auth',
+                (int)($expire_seconds / 60)
+            );
         }
         $access_token = isset($auth['access_token']) ? $auth['access_token'] : NULL;
         return $access_token;
