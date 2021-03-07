@@ -131,6 +131,7 @@ class Gateway extends \Shop\Gateway
         } else {
             $this->gw_url = 'https://www.paypal.com';
         }
+        $this->postback_url = $this->gw_url;
 
         // If the configured currency is not one of the supported ones,
         // this gateway cannot be used, so disable it.
