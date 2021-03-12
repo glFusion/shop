@@ -1686,16 +1686,34 @@ class Gateway
      */
     protected function adminWarnBB()
     {
-        global $LANG_SHOP_HELP, $_CONF;
+        global $LANG_SHOP_HELP, $_CONF, $_TABLES;
 
-        return sprintf(
-            $LANG_SHOP_HELP['gw_bb2_instr'],
-            str_replace(
-                $_CONF['site_url'],
-                '',
-                $this->ipn_url
-            )
-        );
+        $url = parse_url($this->ipn_url);
+        $ipn_url = $url['path'];
+        if (!empty($url['query'])) {
+            $ipn_url .= '?' . $url['query'];
+        }
+        $whitelisted = 0;
+        if (function_exists('plugin_chkversion_bad_behavior2')) {
+            try {
+                $whitelisted = DB_count(
+                    $_TABLES['bad_behavior2_whitelist'],
+                    array('type', 'item'),
+                    array('url', $url['path'])
+                );
+            } catch (\Exception $e) {
+                // Do nothing, $whitelisted is already zero
+            }
+        }
+        $retval = sprintf($LANG_SHOP_HELP['gw_ipn_url_is'], $ipn_url). ' ';
+        if ($whitelisted) {
+            $cls = 'success';
+            $retval .= $LANG_SHOP_HELP['gw_bb2_wl_done'];
+        } else {
+            $cls = 'danger';
+            $retval .= '<br />' . sprintf($LANG_SHOP_HELP['gw_bb2_wl_needed'], $url['path']);
+        }
+        return '<span class="uk-text-' . $cls . '">' . $retval . '</span>';
     }
 
 

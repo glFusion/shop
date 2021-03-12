@@ -93,6 +93,7 @@ class Gateway extends \Shop\Gateway
             'terms' => 1,
         );
 
+        $this->ipn_url = $this->getWebhookUrl();
         parent::__construct($A);
 
         $this->pub_key = $this->getConfig('pub_key');
@@ -332,7 +333,6 @@ class Gateway extends \Shop\Gateway
     protected function getInstructions()
     {
         global $LANG_SHOP_HELP;
-
         return '<ul><li>' . $this->adminWarnBB() . '</li><li>' .
             $LANG_SHOP_HELP['gw_wh_instr'] . '</li></ul>';
     }
