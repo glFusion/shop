@@ -14,6 +14,7 @@
 namespace Shop;
 use Shop\Models\Dates;
 use Shop\Models\ShippingQuote;
+use Shop\Config;
 
 
 /**
@@ -1462,11 +1463,12 @@ class Shipper
     public function getTrackingUrl($tracking_num, $internal=true)
     {
         $text = $tracking_num;
+        $tracking_num = urlencode($tracking_num);
         if ($internal && $this->hasTrackingAPI()) {
             // Return the internal tracking page
             $retval = COM_createLink(
                 $text,
-                SHOP_URL . "/track.php?shipper={$this->key}&tracking={$tracking_num}",
+                Config::get('url') . "/track.php?shipper={$this->key}&tracking={$tracking_num}",
                 array(
                     'data-uk-lightbox' => '',
                     'data-lightbox-type' => 'iframe',
