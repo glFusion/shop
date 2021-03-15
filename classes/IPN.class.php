@@ -820,9 +820,7 @@ class IPN
             //$ipn_data['uid'] = $this->Order->getUid();
             //$ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             $this->IPN['uid'] = $this->Order->getUid();
-            foreach ($this->Order->getItems() as $Item) {
-                $Item->getProduct()->handlePurchase($Item, $this->IPN);
-            }
+            $this->Order->handlePurchase($this->IPN);
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;
@@ -865,6 +863,10 @@ class IPN
         } else {
             // Need to create a new, empty order object
             $this->Order = Order::getInstance(0);
+            if (isset($this->custom['ref_token']) && !empty($this->custom['ref_token'])) {
+                $this->Order->setReferralToken($this->custom['ref_token']);
+            }
+
             foreach ($this->items as $id=>$item) {
                 $options = DB_escapeString($item['options']);
                 $option_desc = array();

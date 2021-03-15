@@ -759,6 +759,11 @@ $LANG_SHOP = array (
 'upgrade' => 'Upgrade',
 'upgrade_ok' => 'Upgrade Successful',
 'version' => 'Version',
+'ref_token' => 'Referral ID',
+'affiliates' => 'Affiliates',
+'payout' => 'Payout',
+'process' => 'Process',
+'pending_payout' => 'Pending Payout',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -928,6 +933,9 @@ $LANG_confignames['shop'] = array(
     'ipstack_api_key' => 'IPStack API Key',
     'ipgeo_provider' => 'Geolocation Provider',
     'inv_start_num' => 'Invoice starting number/format',
+    'aff_enabled' => 'Affiliate Referrals Enabled',
+    'aff_ref_exp_days' => 'Referral Expiration (Days)',
+    'aff_allow_entry' => 'Allow referral code entry during checkout',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -937,6 +945,7 @@ $LANG_configsubgroups['shop'] = array(
     'sg_gc'     => 'Gift Cards',
     'sg_tax'    => 'Sales Tax',
     'sg_geo'    => 'Geolocation',
+    'sg_affiliate' => 'Affiliate Program',
 );
 
 /** Language strings for the field set names in the config section */
@@ -960,6 +969,7 @@ $LANG_fs['shop'] = array(
     'fs_geo'    => 'Geolocation Settings',
     'fs_geo_ipgeo' => 'IPGeo',
     'fs_geo_ipstack' => 'IPStack',
+    'fs_aff_general' => 'Program Settings',
 );
 
 /**
@@ -971,6 +981,13 @@ $LANG_configselects['shop'] = array(
     0 => array('True' => 1, 'False' => 0),
     2 => array('Yes' => 1, 'No' => 0),
     5 => array('Name' => 'name', 'Price' => 'price', 'Product ID' => 'id'),
+    11 => array(
+        'Pending'   => 'Pending',
+        'Invoiced'  => 'Invoiced',
+        'Processing' => 'Processing',
+        'Shipped'   => 'Shipped',
+        'Closed'    => 'Closed',
+    ),
     12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3),
     13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
     14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),

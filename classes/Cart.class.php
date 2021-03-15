@@ -17,6 +17,7 @@
  */
 namespace Shop;
 use Shop\Models\OrderState;
+use Shop\Models\Session;
 
 
 /**
@@ -74,11 +75,12 @@ class Cart extends Order
         $uid = (int)$uid;
         if ($uid < 2) {
             if ($cart_id == '') {
-                $cart_id = self::getSession('cart_id');
+                $cart_id = Session::get('cart_id');
             }
         } else {
             $cart_id = self::getCartID($uid);
         }
+
         if (isset($carts[$cart_id])) {
             $Cart = $carts[$cart_id];
         } else {
@@ -185,7 +187,6 @@ class Cart extends Order
     public function addItem($args)
     {
         global $_SHOP_CONF, $_USER;
-
         if (
             !isset($args['item_number'])
             ||
@@ -375,15 +376,27 @@ class Cart extends Order
         /*if (isset($_POST['shipper_id'])) {
             $this->setShipper($_POST['shipper_id']);
         }*/
-        /*if (isset($A['payer_email']) && COM_isEmail($A['payer_email'])) {
-            $this->buyer_email = $A['payer_email'];
-        }*/
+        if (isset($A['buyer_email']) && COM_isEmail($A['buyer_email'])) {
+            $this->buyer_email = $A['buyer_email'];
+        }
         if (isset($A['discount_code']) && !empty($A['discount_code'])) {
             $dc = $A['discount_code'];
         } else {
             $dc = $this->getDiscountCode();
         }
         $this->validateDiscountCode($dc);
+
+        // If the affiliate program is enabled and a valid token is supplied,
+        // record the token and user ID in the order.
+        if ($_SHOP_CONF['aff_enabled']) {
+            if (isset($A['ref_token']) && !empty($A['ref_token'])) {
+                // Set the token and user ID in this order
+                $this->setReferralToken($this->referral_token);
+                // Save the token for this customer.
+                // Overrides prevous tokens.
+                Customer::getInstance($this->uid)->setReferralToken($A['ref_token']);
+            }
+        }
         $this->Save();  // Save cart vars, if changed, and update the timestamp
         return $this;
     }
@@ -659,12 +672,16 @@ class Cart extends Order
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
         if (COM_isAnonUser()) {
             $cart_id = self::getAnonCartID();
-            // Check if the order exists but is not a cart.
-            $status = DB_getItem(
-                $_TABLES['shop.orders'],
-                'status',
-                "order_id = '" . DB_escapeString($cart_id) . "'"
-            );
+            if (!empty($cart_id)) {
+                // Check if the order exists but is not a cart.
+                $status = DB_getItem(
+                    $_TABLES['shop.orders'],
+                    'status',
+                    "order_id = '" . DB_escapeString($cart_id) . "'"
+                );
+            } else {
+                $status = NULL;
+            }
             if ($status != NULL && $status != OrderState::CART) {
                 $cart_id = NULL;
             }
@@ -765,7 +782,7 @@ class Cart extends Order
         ) {
             $cart_id = $_COOKIE[self::$session_var];
         } else {
-            $cart_id = self::getSession('cart_id');
+            $cart_id = Session::get('cart_id');
         }
         return $cart_id;
     }
@@ -867,7 +884,7 @@ class Cart extends Order
         } elseif ($this->getUid() > 1 && $_USER['uid'] == $this->getUid()) {
             // Logged-in cart owner
             $canview = true;
-        } elseif ($this->getUid() == 1 && self::getSession('order_id') == $this->getOrderID()) {
+        } elseif ($this->getUid() == 1 && Session::get('order_id') == $this->getOrderID()) {
             // Anonymous with this cart ID set in the session
             $canview = true;
         }
@@ -900,7 +917,7 @@ class Cart extends Order
 
         $exp = time() + ($_SHOP_CONF['days_purge_cart'] * 86400);
         SEC_setCookie(self::$session_var, $value, $exp);
-        self::setSession('cart_id', $value);
+        Session::set('cart_id', $value);
     }
 
 
@@ -910,9 +927,9 @@ class Cart extends Order
      */
     private static function _expireCookie()
     {
-        unset($_COOKIE[self::$session_var]);
-        self::clearSession();
-        SEC_setCookie(self::$session_var, '', time()-3600);
+        //unset($_COOKIE[self::$session_var]);
+        Session::clear();
+        //SEC_setCookie(self::$session_var, '', time()-3600);
     }
 
 

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Session;
 
 
 /**
@@ -615,7 +616,8 @@ class Report
      */
     protected static function _setSessVar($opt, $val)
     {
-        SESS_setVar('shop.report.' . $opt, $val);
+        Session::set('report.' . $opt, $val);
+        //SESS_setVar('shop.report.' . $opt, $val);
     }
 
 
@@ -629,7 +631,8 @@ class Report
      */
     protected static function _getSessVar($opt, $type='string', $default=NULL)
     {
-        $val = SESS_getVar('shop.report.' . $opt);
+        //$val = SESS_getVar('shop.report.' . $opt);
+        $val = Session::get('report.' . $opt);
         switch ($type) {
         case 'string':
             if (!is_string($val)) $val = (string)$default;

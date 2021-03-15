@@ -50,6 +50,7 @@ spl_autoload_register(function ($class)
 use Shop\Models\Views;
 use Shop\Config;
 Config::getInstance();      // to load $_SHOP_CONF
+global $_SHOP_CONF;
 
 /** Include plugin config file  */
 require_once __DIR__ . '/shop.php';
@@ -78,6 +79,8 @@ define('SHOP_LOG_ALERT',    550);
 define('SHOP_LOG_EMERGEHCY', 600);
 
 // Session variables for TimThumb image url, if used
+// This needs to be an array var named for the plugin,
+// can't use the Session class
 SESS_setVar($_SHOP_CONF['pi_name'], array(
     'origpath' => $_SHOP_CONF['image_dir'],
 ));
@@ -144,8 +147,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
  */
 function plugin_upgrade_shop($dvlp = false)
 {
-    require_once __DIR__ . '/upgrade.inc.php';
-    return SHOP_do_upgrade($dvlp);
+    return \Shop\Upgrades\Upgrade::doUpgrade($dvlp);
 }
 
 
@@ -729,6 +731,29 @@ function plugin_getheadercss_shop()
     return $styles;
 }
 
+function plugin_getheadercode_shop()
+{
+    global $_USER;
+    //Shop\Models\Token::unset();
+
+//    $Cust = Shop\Customer::getInstance($_USER['uid']);
+//    var_dump($Cust);die;
+//    $_COOKIE['TEST'] = 123;
+    if (isset($_GET['shop_ref'])) {
+        if ($_USER['uid'] > 1) {
+            // Set in the customer table, also sets the session var
+            Shop\Customer::getInstance($_USER['uid'])
+                ->setReferralToken($_GET['shop_ref'])
+                ->saveUser();
+        } else {
+            // Only set the session var
+            Shop\Models\Token::set($_GET['shop_ref']);
+        }
+    }
+    //var_dump($_SESSION);die;
+    //var_dump($_COOKIE);die;
+}
+
 
 /**
  * Get the URL to the localized configuration help file.
@@ -847,6 +872,9 @@ function plugin_autouninstall_shop()
             // v1.3.0
             'shop.payments',
             'shop.cust_gw',
+            'shop.affiliate_sales',
+            'shop.affiliate_saleitems',
+            'shop.affiliate_payments',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
@@ -1485,13 +1513,24 @@ function plugin_user_login_shop($uid)
 {
     global $_SHOP_CONF;
 
-    if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
+    if ($uid < 2 /*|| $_SHOP_CONF['ena_cart'] == 0*/) return;
 
-    $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
-    if (!empty($anon_cart)) {
-        $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
-        $user_cart->Merge($anon_cart);
+    if ($_SHOP_CONF['ena_cart']) {
+        $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
+        if (!empty($anon_cart)) {
+            $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
+            $user_cart->Merge($anon_cart);
+        }
     }
+    $token = Shop\Models\Token::get();
+    if (!empty($token)) {
+        // There's a token set in the session, save it in the DB for further use.
+        Shop\Customer::getInstance($uid)
+            ->setReferralToken($token)
+            ->saveUser();
+    }
+    Shop\Models\Token::unset();
+    //var_dump($_SESSION);die;
 }
 
 
@@ -1500,8 +1539,9 @@ function plugin_user_login_shop($uid)
  *
  * @param   integer $uid    User ID
  */
-function NOOP_plugin_user_logout_shop($uid)
+function plugin_user_logout_shop($uid)
 {
+//    Shop\Models\Session::clear();
 /*    global $_SHOP_CONF;
 
     $C = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
@@ -2301,6 +2341,7 @@ function SHOP_isMinVersion($required = '')
             $installed = $_PLUGIN_INFO[$pi_name];
         }
     }
+
     if (!COM_checkVersion($installed, $required)) {
         if (plugin_ismoderator_shop()) {
             COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
@@ -2336,7 +2377,7 @@ function SHOP_setUrl($url='')
     if ($url == '') {
         $url = COM_getCurrentURL();
     }
-    SESS_setVar('shop_ret_url', $url);
+    Shop\Models\Session::set('ret_url', $url);
 }
 
 
@@ -2349,7 +2390,7 @@ function SHOP_setUrl($url='')
  */
 function SHOP_getUrl($def_url = '', $keep=false)
 {
-    $url = SESS_getVar('shop_ret_url');
+    $url = Shop\Models\Session::get('ret_url');
     if ($url === 0) {
         if ($def_url !== '') {
             $url = $def_url;
@@ -2360,7 +2401,7 @@ function SHOP_getUrl($def_url = '', $keep=false)
     }
     if (!$keep) {
         // This is a one-time use value
-        SESS_unSet('shop_ret_url');
+        Shop\Models\Session::clear('ret_url');
     }
     return $url;
 }

@@ -139,10 +139,17 @@ class Menu
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
             ),
-            array(
-                'url'  => $_CONF['site_admin_url'],
-                'text' => $LANG_ADMIN['admin_home'],
-            ),
+        );
+        if (Config::get('aff_enabled')) {
+            $menu_arr[] = array(
+                'url' => SHOP_ADMIN_URL . '/affiliates.php',
+                'text' => $LANG_SHOP['affiliates'],
+                'active' => $view == 'affiliates' ? true : false,
+            );
+        }
+        $menu_arr[] = array(
+            'url'  => $_CONF['site_admin_url'],
+            'text' => $LANG_ADMIN['admin_home'],
         );
 
         $T = new Template;
@@ -403,6 +410,32 @@ class Menu
         );
         $retval .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $retval;
+    }
+
+
+    /**
+     * Create the administrator sub-menu for the Affiliate management.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminAffiliates($view='')
+    {
+        global $LANG_SHOP, $LANG_SHOP_HELP;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/affiliates.php',
+                'text' => $LANG_SHOP['all'],
+                'active' => $view == 'affiliates' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/affiliates.php?payout',
+                'text' => $LANG_SHOP['pending_payout'],
+                'active' => $view == 'payout' ? true : false,
+            ),
+        );
+        return self::_makeSubMenu($menu_arr);
     }
 
 

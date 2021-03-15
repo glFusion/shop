@@ -18,5 +18,8 @@ $LANG_SHOP_gateway = array(
 'hlp_webhook_id' => 'The webhook ID set up with PayPal. Required for webhook verification.',
 'hlp_api_username' => 'Enter the API username associated with your application at Paypal. Required to use the Net Terms payment gateway.',
 'hlp_api_password' => 'Enter the API password for your application. Required to use the Net Terms payment gateway.',
+'hlp_fee_fixed' => 'Enter the fixed portion of the payment fee.',
+'hlp_fee_percent' => 'Enter the percentage portion of the payment fee.',
+'hlp_supports_payouts' => 'Select whether this gateway can be used for affiliate payouts',
 );
 ?>

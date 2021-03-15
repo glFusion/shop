@@ -16,6 +16,7 @@ use Shop\Cart;
 use Shop\Products\Coupon;
 use Shop\Currency;
 use Shop\Payment;
+use Shop\Models\PayoutHeader;
 
 
 /**
@@ -226,6 +227,31 @@ class Gateway extends \Shop\Gateway
     public function getCheckoutJS($cart)
     {
         return '';
+    }
+
+
+    /**
+     * Send affiliate payouts.
+     *
+     * @param   array   $Payouts    Array of Payout objects
+     */
+    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    {
+        global $_TABLES;
+
+        foreach ($Payouts as $Payout) {
+            $uid = (int)$Payout['uid'];
+            $amt = (float)$Payout['amount'];
+            $exp = '9999-12-31 23:59:59';
+            $code = Coupon::Purchase($amt, $uid, $exp);
+            $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+            $name = COM_getDisplayName($uid);
+            $msg = 'You have an affiliate payment via coupon';
+            if (!empty($email)) {
+                Coupon::Notify($code, $email, $amt, '', $msg, $exp, $name);
+            }
+            $Payout['txn_id'] = $code;
+        }
     }
 
 }

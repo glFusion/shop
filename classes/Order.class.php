@@ -15,6 +15,9 @@ namespace Shop;
 use Shop\Models\OrderState;
 use Shop\Models\ShippingQuote;
 use Shop\Models\CustomInfo;
+use Shop\Models\Token;
+use Shop\Models\Session;
+use Shop\Models\AffiliateSale;
 
 
 /**
@@ -216,6 +219,12 @@ class Order
      * @var string */
     protected $shipping_dscp = '';
 
+    protected $referral_token = '';
+
+    /** Referring user's glFusion user ID.
+     * @var integer */
+    protected $referrer_uid = 0;
+
     /** Holder for custom information.
      * Used only by Cart, required here to create checkout button from orders.
      * @var array */
@@ -253,13 +262,17 @@ class Order
                 $this->order_id = self::_createID();
             }
             $this->order_date = SHOP_now();
-            $this->token = $this->_createToken();
+            $this->token = Token::create();
             $this->shipping = 0;
             $this->handling = 0;
             $this->by_gc = 0;
             $this->Billto = new Address;
             $this->Shipto = new Address;
             $this->m_info = new CustomInfo;
+            $token = Token::get();
+            if ($token != $this->getReferralToken()) {
+                $this->setReferralToken($token);
+            }
         }
     }
 
@@ -278,17 +291,21 @@ class Order
         } else {
             $id = $key;
         }
+
         if (!empty($id)) {
             if (!is_string($id)) {
                 var_dump(debug_backtrace(0));die;
             }
             if (!array_key_exists($id, self::$orders)) {
                 self::$orders[$id] = new self($id);
+                //$retval = new self($id);
             }
-            return self::$orders[$id];
         } else {
-            return new self;
+            $retval = new self;
+            $id = $retval->getOrderId();
+            self::$orders[$id] = $retval;
         }
+        return self::$orders[$id];
     }
 
 
@@ -434,7 +451,7 @@ class Order
             $args['product_id'] = $item_id[0];
         }
         $args['order_id'] = $this->order_id;    // make sure it's set
-        $args['token'] = $this->_createToken();  // create a unique token
+        $args['token'] = Token::create();  // create a unique token
         $OI = new OrderItem($args);
         if (isset($args['price'])) {
             $OI->setPrice($args['price']);
@@ -472,7 +489,7 @@ class Order
             if ($addr_id > 0) {
                 // If set, the user has selected an existing address. Read
                 // that value and use it's values.
-                Cart::setSession('billing', $addr_id);
+                Session::set('billing', $addr_id);
                 $this->Billto = Address::getInstance($addr_id);
                 $this->Billto->fromArray($A);
                 $this->Billto->setID($addr_id);
@@ -494,7 +511,6 @@ class Order
                 "billto_zip = '" . DB_escapeString($this->Billto->getPostal()) . "'",
                 "billto_phone = '" . DB_escapeString($this->Billto->getPhone()) . "'"
             ) );
-            $this->clearInstance();
         }
         return $this;
     }
@@ -523,7 +539,7 @@ class Order
             }
             if ($addr_id > 0) {
                 // If set, read and use an existing address
-                Cart::setSession('shipping', $this->shipto_id);
+                Session::set('shipping', $this->shipto_id);
                 $this->Shipto = Address::getInstance($this->shipto_id);
                 $this->Shipto->fromArray($A);
                 $this->Shipto->setID($addr_id);
@@ -555,7 +571,6 @@ class Order
                 "tax = '{$this->getTax()}'",
                 "shipper_id = 0",   // clear to force shipper re-quoting
             ) );
-            $this->clearInstance();
         }
         $this->setTaxRate(NULL);
         return $this;
@@ -626,7 +641,7 @@ class Order
         if (isset($A['order_id']) && !empty($A['order_id'])) {
             $this->order_id = $A['order_id'];
             $this->isNew = false;
-            Cart::setSession('order_id', $A['order_id']);
+            Session::set('order_id', $A['order_id']);
         } else {
             $this->order_id = '';
             $this->isNew = true;
@@ -643,6 +658,12 @@ class Order
         $this->shipping_dscp = $A['shipping_dscp'];
         $this->last_mod = $A['last_mod'];
         $this->gw_order_ref = SHOP_getVar($A, 'gw_order_ref', 'string', NULL);
+        if (isset($A['referrer_uid'])) {
+            $this->referrer_uid = (int)$A['referrer_uid'];
+        }
+        if (isset($A['referral_token'])) {
+            $this->referral_token = $A['referral_token'];
+        }
         return $this;
     }
 
@@ -756,7 +777,7 @@ class Order
         global $_TABLES;
 
         if ($order_id == '') {
-            $order_id = Cart::getSession('order_id');
+            $order_id = Session::get('order_id');
         }
         if (!$order_id) {
             // Still an empty order ID, nothing to do
@@ -813,7 +834,7 @@ class Order
             if ($this->Billto->getName() == '') {
                 $this->billto_name = COM_getDisplayName($this->uid);
             }
-            Cart::setSession('order_id', $this->order_id);
+            Session::set('order_id', $this->order_id);
             // Set field values that can only be set once and not updated
             $sql1 = "INSERT INTO {$_TABLES['shop.orders']} SET
                     order_id = '{$db_order_id}',
@@ -852,6 +873,8 @@ class Order
             "shipping_method = '" . DB_escapeString($this->shipping_method) . "'",
             "shipping_dscp = '" . DB_escapeString($this->shipping_dscp) . "'",
             "gw_order_ref = '" . DB_escapeString($this->gw_order_ref) . "'",
+            "referral_token = '" . DB_escapeString($this->referral_token) . "'",
+            "referrer_uid = {$this->referrer_uid}",
         );
 
         $billto = $this->Billto->toArray();
@@ -892,7 +915,12 @@ class Order
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET $vals
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
+        //$this->clearInstance();
         DB_query($sql);
+        /*echo $sql;
+        var_dump(debug_backtrace(0));die;
+        echo $this->order_id;die;
+        exit;*/
         return $this;
     }
 
@@ -1411,7 +1439,7 @@ class Order
      */
     public function updateStatus($newstatus, $log = true, $notify=true)
     {
-        global $_TABLES, $LANG_SHOP;
+        global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
         // When orders are paid by IPN, move the status to "processing"
         if ($newstatus == 'paid') {
@@ -1432,11 +1460,19 @@ class Order
 
         // If promoting from a cart status to a real order, add the sequence number.
         if (!$this->isFinal($oldstatus) && $this->isFinal() && $this->order_seq < 1) {
+            if (!$this->verifyReferrer()) {
+                // If the referrer is invalid, remove from the order record
+                $other_updates = ", referrer_uid = {$this->referrer_uid},
+                    info = '" . DB_escapeString((string)$this->m_info) . "'";
+            } else {
+                $other_updates = '';
+            }
             $sql = "START TRANSACTION;
                 SELECT COALESCE(MAX(order_seq)+1,1) FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE;
-                UPDATE {$_TABLES['shop.orders']}
-                    SET status = '". DB_escapeString($newstatus) . "',
+                UPDATE {$_TABLES['shop.orders']} SET
+                    status = '". DB_escapeString($newstatus) . "',
                     order_seq = @seqno
+                    $other_updates
                 WHERE order_id = '$db_order_id';
                 COMMIT;";
             DB_query($sql);
@@ -1465,8 +1501,82 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
+
+        // Process affiliate bonus if the required status has been reached
+        if (
+            $_SHOP_CONF['aff_enabled'] &&
+            $this->statusAtLeast($_SHOP_CONF['aff_min_ordstatus'])
+        ) {
+            AffiliateSale::create($this);
+        }
+
         $this->clearInstance();
         return $newstatus;
+    }
+
+
+    /**
+     * Verify that the referrer token is valid, if present.
+     * Also resets the token and referring user ID if the token is invalid.
+     *
+     * @return  boolean     True if valid or not present, False if invalid
+     */
+    public function verifyReferrer()
+    {
+        // Save the original values
+        $_uid = $this->referrer_uid;
+        $_token = $this->referral_token;
+
+        // Set the current value.
+        // This also validates the token and sets it to empty if invalid.
+        $this->setReferralToken($this->referral_token, true);
+
+        // Finally, check that the values are unchanged, indicating
+        // a valid token is already set.
+        if (
+            $this->referrer_uid != $_uid ||
+            $this->referral_token != $_token
+        ) {
+            return false;
+        } else {
+            return true;
+        }
+
+        /*if (empty($token)) {
+            return true;
+        } else {
+            $uid = Token::validate($token);
+            if ($uid != $this->referrer_uid) {
+                $update = true;
+            }
+            if ($uid > 1) {
+                $this->referrer_id = (int)$uid;
+                $retval = true;
+            } else {
+                $this->referrer_token = '';
+                $this->referrer_uid = 0;
+                $retval = false;
+            }
+        }*/
+    }
+
+
+    /**
+     * Complete the purchase when payment or invoicing is complete.
+     *
+     * @param   object  $IPN    IPN data object
+     */
+    public function handlePurchase($IPN=NULL)
+    {
+        foreach ($this->getItems() as $Item) {
+            $Item->getProduct()->handlePurchase($Item, $IPN);
+        }
+        if ($this->hasPhysical()) {
+            $this->updateStatus(OrderState::PROCESSING);
+        } else {
+            $this->updateStatus(OrderState::SHIPPED);
+        }
+        return $this;
     }
 
 
@@ -1923,33 +2033,6 @@ class Order
 
 
     /**
-     * Create a random token string for this order.
-     * Allows anonymous users to view the order from an email link.
-     *
-     * @return  string      Token string
-     */
-    private function _createToken()
-    {
-        $len = 12;      // Actual length of the token needed.
-        if (function_exists("random_bytes")) {
-            $bytes = random_bytes(ceil($len / 2));
-        } elseif (function_exists("openssl_random_pseudo_bytes")) {
-            $bytes = openssl_random_pseudo_bytes(ceil($len / 2));
-        } else {
-            $options = array(
-                'length'    => ceil($len / 2),
-                'letters'   => 3,       // mixed case
-                'numbers'   => true,    // include numbers
-                'symbols'   => true,    // include symbols
-                'mask'      => '',
-            );
-            $bytes = \Shop\Products\Coupon::generate($options);
-        }
-        return substr(bin2hex($bytes), 0, $len);
-    }
-
-
-    /**
      * Set a new token on the order.
      * Used after an action is performed to prevent the same action from
      * happening again accidentally. Only available to non-final orders since
@@ -1961,7 +2044,7 @@ class Order
     public function setToken()
     {
         if (!$this->isFinal()) {
-            $this->token = $this->_createToken();
+            $this->token = Token::create();
             return $this->updateRecord("token = '" . DB_escapeString($this->token) . "'");
         } else {
             return $this;
@@ -2251,6 +2334,73 @@ class Order
     {
         $this->setPmtMethod($gw_name);
         return $this;
+    }
+
+
+    /**
+     * Set the referral token for this order.
+     *
+     * @param   string  $ref_id     Token ID
+     * @return  object  $this
+     */
+    public function setReferralToken($ref_id, $save=false)
+    {
+        $_uid = $this->referrer_uid;
+        $_token = $this->referral_token;
+        $Affiliate = Customer::findByAffiliate($ref_id);
+        if ($Affiliate) {
+            $this->referral_token = $ref_id;
+            $this->referrer_uid = $Affiliate->getUid();
+        } else {
+            $this->referral_token = '';
+            $this->referrer_uid = 0;
+        }
+        if (
+            $save &&
+            $_uid != $this->referrer_uid &&
+            $_token != $this->referral_token
+        ) {
+            $this->updateRecord(array(
+                "referral_token = '" . DB_escapeString($this->referral_token) . "'",
+                "referrer_uid = " . $this->referrer_uid,
+            ) );
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the order referral token.
+     *
+     * @return  string      Token ID
+     */
+    public function getReferralToken()
+    {
+        return $this->referral_token;
+    }
+
+
+    /**
+     * Set the referring user's ID in the order.
+     *
+     * @param   string  $uid    Referring user ID
+     * @return  object  $this
+     */
+    public function setReferrerId($uid)
+    {
+        $this->referrer_uid = (int)$uid;
+        return $this;
+    }
+
+
+    /**
+     * Get the referring user's ID.
+     *
+     * @return  string      User ID
+     */
+    public function getReferrerId()
+    {
+        return $this->referrer_uid;
     }
 
 
@@ -3386,7 +3536,6 @@ class Order
                 "tax_handling = {$this->getTaxHandling()}",
                 "order_total = " . $this->calcTotal(),
             ) );
-            $this->clearInstance();
         }
         return $this;
     }
@@ -3587,7 +3736,6 @@ class Order
                 $this->items[$id]->applyDiscountPct($this->getDiscountPct());
             }
         }
-        $this->clearInstance();
         return $this;
     }
 
@@ -3983,7 +4131,7 @@ class Order
                 SHOP_LOG_DEBUG
             );
         }
-        self::setSession('order_id', $this->getOrderID());
+        Session::set('order_id', $this->getOrderID());
         return $this;
     }
 
@@ -4019,7 +4167,7 @@ class Order
      * @param   string  $key    Name of variable
      * @param   mixed   $value  Value to set
      */
-    public static function setSession($key, $value)
+    public static function XsetSession($key, $value)
     {
         if (!isset($_SESSION[self::$session_var])) {
             $_SESSION[self::$session_var] = array();
@@ -4034,7 +4182,7 @@ class Order
      * @param   string  $key    Name of variable
      * @return  mixed       Variable value, or NULL if it is not set
      */
-    public static function getSession($key)
+    public static function XgetSession($key)
     {
         if (isset($_SESSION[self::$session_var][$key])) {
             return $_SESSION[self::$session_var][$key];
@@ -4049,7 +4197,7 @@ class Order
      *
      * @param   string  $key    Name of variable
      */
-    public static function clearSession($key=NULL)
+    public static function XclearSession($key=NULL)
     {
         if ($key === NULL) {
             unset($_SESSION[self::$session_var]);

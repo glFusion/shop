@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Token;
 
 
 /**
@@ -47,6 +48,23 @@ class Customer
     /** Customer's preferred payment gateway ID.
      * @var string */
     private $pref_gw;
+
+    /** Referrer ID.
+     * @var string */
+    private $affiliate_id = '';
+
+    /** Affiliate payment method.
+     * @var string */
+    private $aff_pmt_method = '_coupon';
+
+    /** Referrer Expiration.
+     * @var object */
+    private $ref_expires = NULL;
+
+    /** Referrer token to be applied to orders.
+     * Saved with the customer record to survive login/logout events.
+     * @var string */
+    private $ref_token = '';
 
     /** Customer IDs created by payment gateways.
      * @var array */
@@ -100,7 +118,7 @@ class Customer
      */
     private function ReadUser($uid = 0)
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF;
 
         $uid = (int)$uid;
         if ($uid == 0) $uid = $this->uid;
@@ -126,12 +144,17 @@ class Customer
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
             $this->gw_ids = $this->getCustomerIds($uid);
+            $this->affiliate_id = $A['affiliate_id'];
+            $this->aff_pmt_method = $A['aff_pmt_method'];
+            $this->ref_expires = new \Date($A['ref_expires']);
+            $this->ref_token = $A['ref_token'];
         } else {
             $this->cart = array();
             $this->isNew = true;
             $this->addresses = array();
             $this->pref_gw = '';
             $this->saveUser();      // create a user record
+            $this->ref_expires = clone $_CONF['_now'];
         }
     }
 
@@ -318,6 +341,46 @@ class Customer
 
 
     /**
+     * Set the referral token value into the customer table.
+     *
+     * @param   string  $token      Referral token
+     * @return  object  $this
+     */
+    public function setReferralToken($token)
+    {
+        global $_SHOP_CONF;
+
+        if (!empty($token)) {
+            // Changing the referrer token, reset the expiration
+            if ($_SHOP_CONF['aff_ref_exp_days'] > 0) {
+                $this->ref_expires = new \Date('now');
+                $this->ref_expires->setTime(23, 59, 59);
+                $this->ref_expires->add(
+                    new \DateInterval('P' . (int)$_SHOP_CONF['aff_ref_exp_days'] . 'D')
+                );
+            } else {
+                $this->ref_expires = new \Date('9999-12-31 23:59:59');
+            }
+            $this->ref_token = $token;
+            //Token::set($token);
+            Cart::getInstance()->setReferralToken($token,true);
+        }
+        return $this;
+    }
+
+
+    /**
+     * Get the referral token.
+     *
+     * @return  string      Token value
+     */
+    public function getReferralToken()
+    {
+        return $this->ref_token;
+    }
+
+
+    /**
      * Save the current values to the database.
      * The $A parameter must contain the addr_id value if updating.
      *
@@ -356,21 +419,33 @@ class Customer
      */
     public function saveUser()
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF, $_SHOP_CONF;
 
         if ($this->uid < 2) {
             // Act as if saving was successful but do nothing.
             return true;
         }
 
+        // Create a new referrer token if this one is expired.
+        if ($this->affiliate_id == '') {
+            $this->affiliate_id = Token::create();
+        }
+
         $cart = DB_escapeString(@serialize($this->cart));
         $sql = "INSERT INTO {$_TABLES['shop.userinfo']} SET
             uid = {$this->uid},
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
-            cart = '$cart'
+            cart = '$cart',
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
+            ref_expires = '" . $this->ref_expires->toMySQL(false) . "',
+            ref_token = '" . DB_escapeString($this->ref_token) . "'
             ON DUPLICATE KEY UPDATE
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
-            cart = '$cart'";
+            cart = '$cart',
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
+            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "',
+            ref_expires = '" . $this->ref_expires->toMySQL(false) . "',
+            ref_token = '" . DB_escapeString($this->ref_token) . "'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         return DB_error() ? false : true;
@@ -640,7 +715,34 @@ class Customer
         if (!isset(self::$users[$uid])) {
             self::$users[$uid] = new self($uid);
         }
+        if ($uid == $_USER['uid']) {
+            $token = Token::get();
+            if (!empty($token)) {
+                self::$users[$uid]->setReferralToken($token);
+            }
+        }
         return self::$users[$uid];
+    }
+
+
+    /**
+     * Get a customer record by the referrer token.
+     * Used to validate a supplied referral.
+     *
+     * @param   string  $affiliate_id   Affiliate ID
+     * @return  object|boolean  Customer object, false if token not valid
+     */
+    public static function findByAffiliate($affiliate_id)
+    {
+        global $_TABLES, $_CONF;
+
+        $where = "affiliate_id ='" . DB_escapeString($affiliate_id) . "'";
+        $uid = (int)DB_getItem($_TABLES['shop.userinfo'], 'uid', $where);
+        if ($uid > 1) {
+            return new self($uid);
+        } else {
+            return false;
+        }
     }
 
 
@@ -704,6 +806,18 @@ class Customer
     public function getPrefGW()
     {
         return $this->pref_gw;
+    }
+
+
+    /**
+     * Get the customer's preferred payout method for affiliate referrals.
+     * Only Coupons are currently supported.
+     *
+     * @return  string      Payout method (Gateway name)
+     */
+    public function getAffPayoutMethod()
+    {
+        return '_coupon';
     }
 
 }

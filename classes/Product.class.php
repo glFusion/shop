@@ -322,6 +322,11 @@ class Product
      * @var string */
     protected $pi_name = '';
 
+    /** Flag to indicate the product purchase affects referral bonuses.
+     * Catalog products typically will do this, plugins will not.
+     * @var boolean */
+    protected $aff_apply_bonus = true;
+
 
     /**
      * Constructor.
@@ -2446,7 +2451,7 @@ class Product
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $ipn_data = array())
+    public function handlePurchase(&$Item, $ipn_data=array())
     {
         global $_TABLES;
 
@@ -4476,12 +4481,41 @@ class Product
 
     /**
      * Check if a discount code can be applied to this product.
+     * Normal catalog items can have a discount code applied.
      *
      * @return  boolean     True if a code can apply, False if not
      */
     public function canApplyDiscountCode()
     {
         return true;
+    }
+
+
+    /**
+     * Check if an affiliate bonus is available on this product.
+     *
+     * @return  boolean     True if bonus-elibible, False if not
+     */
+    public function affApplyBonus()
+    {
+        return $this->aff_apply_bonus;
+    }
+
+
+    /**
+     * Get the affiliate bonus percentage for this product.
+     *
+     * @return  fload       Percentage in whole numbers, 4.5 = .045
+     */
+    public function getAffiliatePercent()
+    {
+        global $_SHOP_CONF;
+
+        if ($this->aff_apply_bonus) {
+            return $_SHOP_CONF['aff_pct'];
+        } else {
+            return 0;
+        }
     }
 
 }

@@ -21,6 +21,9 @@ use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
 use Shop\Template;
 use Shop\Cache;
+use Shop\Models\Token;
+use Shop\Models\Payout;
+use Shop\Models\PayoutHeader;
 
 
 /**
@@ -84,6 +87,9 @@ class Gateway extends \Shop\Gateway
             ),
             'global' => array(
                 'test_mode'         => 'checkbox',
+                'fee_percent'       => 'string',
+                'fee_fixed'         => 'string',
+                'supports_payouts'  => 'checkbox',
             ),
         );
 
@@ -91,6 +97,9 @@ class Gateway extends \Shop\Gateway
         $this->config = array(
             'global' => array(
                 'test_mode'         => '1',
+                'fee_percent'       => 2.9,
+                'fee_fixed'         => .3,
+                'supports_payouts'  => '0',
             ),
             'prod' => array(
             ),
@@ -263,8 +272,12 @@ class Gateway extends \Shop\Gateway
             $result = curl_exec($ch);
             curl_close($ch);
             $auth = json_decode($result, true);
-            // Cache the auth token for its duration minus 1 hour, or 8 hours
-            $expire_seconds = min(($auth['expires_in'] - 3600) , 28800);
+            // Cache the auth token for its duration minus 1 hour, or 8 hours.
+            // Only deduct the hour if the token expires in more than 2 hours.
+            if ($auth['expires_in'] > 7200) {
+                $auth['expires_in'] -= 3600;
+            }
+            $expire_seconds = min($auth['expires_in'] , 28800);
             Cache::set(
                 $cache_key,
                 $auth,
@@ -646,6 +659,77 @@ class Gateway extends \Shop\Gateway
         return !empty($this->getConfig('webhook_id')) &&
             !empty($this->getConfig('api_username')) &&
             !empty($this->getConfig('api_password'));
+    }
+
+
+    public function calcPayoutFee($amount)
+    {
+        $fee = ((float)$amount * ($this->getConfig('fee_percent') / 100)) +
+            $this->getConfig('fee_fixed');
+        return $fee;
+    }
+
+
+    public function calcPayout($amount)
+    {
+
+        $payout = (float)$amount - $this->calcPayoutFee($amount);
+        return $payout;
+    }
+
+
+    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    {
+        $A = array(
+            'sender_batch_header' => array(
+                'sender_batch_id' => uniqid(),
+                'email_subject' => $Header['email_subject'],
+                'email_message' => $Header['email_message'],
+            ),
+            'items' => array(),
+        );
+
+        foreach ($Payouts as $id=>$Payout) {
+            $amount = (float)$Payout['amount'];
+            $amount -= $this->calcPayoutFee($amount);
+            if ($Payout['amount'] >= $this->payout_threshold) {
+                $A['items'][] = array(
+                    'recipient_type' => 'EMAIL',
+                    'amount' => array(
+                        'value' =>  (float)$Payout['amount'],
+                        'currency' => $Payout['currency'],
+                    ),
+                    'note' => $Payout['message'],
+                    'sender_item_id' => $Payout['type'] . '_' . $Payout['uid'] . '_' . $id,
+                    'receiver' => 'lee-buyer@leegarner.com', //$Payout['email'],
+                );
+            }
+        }
+        if (!empty($A['items'])) {
+            $access_token = $this->getBearerToken();
+            $ppRequestId = Token::uuid();
+            $ch = curl_init();
+            curl_setopt_array($ch, array(
+                CURLOPT_URL => $this->api_url . '/v1/payments/payouts',
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json',
+                    'Authorization: Bearer ' . $access_token,
+                    'PayPal-Request-Id ' . $ppRequestId,
+                ),
+                CURLOPT_POSTFIELDS => json_encode($A),
+            ) );
+            $resp = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+            curl_close($ch);
+            if ($http_code == 201) {
+                $resp = json_decode($resp, true);
+                foreach ($Payouts as $Payout) {
+                    $Payout['txn_id'] = $resp['batch_header']['payout_batch_id'];
+                }
+            }
+        }
     }
 
 }

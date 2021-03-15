@@ -78,6 +78,7 @@ class Plugin extends \Shop\Product
         array_shift($item_parts);         // Remove plugin name
         $this->pi_info['item_id'] = $item_parts;
         $this->product_id = $item_parts[0];
+        $this->aff_apply_bonus = false;     // typical for plugins
 
         // Get the user ID to pass to the plugin in case it's needed.
         if (!isset($mods['uid'])) {
@@ -125,6 +126,9 @@ class Plugin extends \Shop\Product
             if (array_key_exists('custom_price', $A) && $A['custom_price']) {
                 $this->custom_price = true;
             }
+            if (array_key_exists('aff_apply_bonus', $A) && $A['aff_apply_bonus']) {
+                $this->aff_apply_bonus = true;
+            }
          } else {
             // probably an invalid product ID
             $this->price = 0;
@@ -167,13 +171,13 @@ class Plugin extends \Shop\Product
      * Handle the purchase of this item.
      * - Update qty on hand if track_onhand is set (min. value 0).
      *
-     * @param   object  $Item       Item object, to get options, etc.
+     * @param   object  $Item       OrderItem object, to get options, etc.
      * @param   array   $ipn_data   IPN data
      * @return  integer     Zero or error value
      */
     public function handlePurchase(&$Item, $ipn_data = array())
     {
-        SHOP_log('pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
+        SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
 
         if (!isset($ipn_data['uid'])) {
@@ -189,6 +193,10 @@ class Plugin extends \Shop\Product
                 'order_id' => $Item->getOrder()->getOrderID(),
             ),
             'ipn_data' => $ipn_data,
+            'referrer' => array(
+                'ref_uid' => $Item->getOrder()->getReferrerId(),
+                'ref_token' => $Item->getOrder()->getReferralToken(),
+            ),
         );
         //if ($ipn_data['status'] == 'paid') {
             $status = LGLIB_invokeService(

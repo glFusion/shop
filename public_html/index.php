@@ -28,6 +28,7 @@ if (
     exit;
 }
 
+$display = \Shop\Menu::siteHeader();
 $page_title = '';
 $action = '';
 $actionval = '';
@@ -399,7 +400,6 @@ case 'none':
     break;
 }
 
-$display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::pageTitle($page_title);
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();

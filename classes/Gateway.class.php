@@ -18,6 +18,7 @@ use Shop\Models\OrderState;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
 use Shop\Models\ButtonKey;;
+use Shop\Models\PayoutHeader;
 
 
 /**
@@ -719,6 +720,9 @@ class Gateway
     public function handlePurchase($vals = array())
     {
         global $_TABLES, $_CONF, $_SHOP_CONF;
+
+        COM_errorLog('Gateway::handlePurchase deprecated');
+        return;
 
         if (!empty($vals['cart_id'])) {
             $cart = Cart::getInstance($vals['cart_id']);
@@ -2355,6 +2359,32 @@ class Gateway
     public function hasValidConfig()
     {
         return true;
+    }
+
+
+    /**
+     * Check if this gateway is configured to support affiliate payouts.
+     *
+     * @return  boolean     True if payouts are supported, otherwise false
+     */
+    public function supportsPayouts()
+    {
+        return $this->getConfig('supports_payouts') ? true : false;
+    }
+
+
+    /**
+     * Default stub function to handle payouts.
+     * Gateways that support this will supply their own function.
+     *
+     * @param   array   $Payouts    Array of Payout objects
+     */
+    public function sendPayouts(PayoutHeader $Header, array $Payouts)
+    {
+        SHOP_LOG("Payouts not implemented for gateway {$this->gw_name}", SHOP_LOG_ERROR);
+        foreach ($Payouts as $Payout) {
+            $Payout['txn_id'] = 'n/a';
+        }
     }
 
 }

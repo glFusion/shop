@@ -25,6 +25,7 @@ if (
     exit;
 }
 
+$display = \Shop\Menu::siteHeader();
 $content = '';
 $action = '';
 $actionval = '';
@@ -64,6 +65,10 @@ switch ($action) {
 case 'save_viewcart':
     $Cart = Shop\Cart::getInstance();
     $Cart->Update($_POST);
+    if (empty($Cart->getBuyerEmail())) {
+        COM_setMsg($LANG_SHOP['err_missing_email'], 'error');
+        COM_refresh(SHOP_URL . '/cart.php');
+    }
     $wf = Shop\Workflow::getNextView('viewcart', $Cart);
     COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
     break;
@@ -428,7 +433,6 @@ default:
     }
     break;
 }
-$display = \Shop\Menu::siteHeader();
 $display .= \Shop\Menu::pageTitle('', 'cart');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();

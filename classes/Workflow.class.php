@@ -13,6 +13,8 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Session;
+
 
 /**
  * Class for workflow items.
@@ -378,7 +380,7 @@ class Workflow
         }
 
         if ($curr_key > -1) {
-            Cart::setSession('prevpage', $workflows[$curr_key]);
+            Session::set('prevpage', $workflows[$curr_key]);
         }
         if (isset($workflows[$curr_key + 1])) {
             $view = $workflows[$curr_key + 1];

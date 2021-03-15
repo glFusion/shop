@@ -157,6 +157,10 @@ class Cart extends OrderBaseView
         }
 
         $payer_email = $this->Order->getBuyerEmail();
+        if (empty($payer_email)) {
+            $Cust = Customer::getInstance($this->Order->getUid());
+            $payer_email = $Cust->getEmail();
+        }
         /*switch ($this->tplname) {
         case 'viewcart':
             $this->TPL->set_var('gateway_radios', $this->Order->getCheckoutRadios());
@@ -189,8 +193,6 @@ class Cart extends OrderBaseView
             }
             break;
         }*/
-
-        $this->TPL->set_var('payer_email', $payer_email);
         $icon_tooltips = implode('<br />', $icon_tooltips);
         $by_gc = (float)$this->Order->getGC();
         $total = $this->Order->getTotal();     // also calls calcTax()
@@ -198,11 +200,14 @@ class Cart extends OrderBaseView
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
             'discount_code_fld' => $this->Order->canShowDiscountEntry(),
+            'ref_token_fld' => $_SHOP_CONF['aff_enabled'] && $_SHOP_CONF['aff_allow_entry'],
+            'ref_token' => $this->Order->getReferralToken(),
             'discount_code' => $this->Order->getDiscountCode(),
             'dc_row_vis'    => $this->Order->getDiscountCode(),
             'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
             'dc_pct'        => $this->Order->getDiscountPct() . '%',
             'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
+            'buyer_email'   => $payer_email,
         ) );
         if (!$final) {
             $T1 = new Template('workflow/');

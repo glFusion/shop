@@ -19,12 +19,13 @@ require_once __DIR__ . '/sql/mysql_install.php';
 /** Include default values */
 require_once __DIR__ . '/install_defaults.php';
 
+global $_CONF;
 $language = $_CONF['language'];
 if (!is_file(__DIR__  . '/language/' . $language . '.php')) {
     $language = 'english';
 }
 require_once __DIR__ . '/language/' . $language . '.php';
-global $LANG_SHOP, $_SQL;
+global $LANG_SHOP, $_SQL, $_SHOP_CONF, $_TABLES;
 
 /** Plugin installation options */
 $INSTALL_plugin['shop'] = array(
@@ -151,6 +152,7 @@ $tables = array(
     'features', 'features_values', 'prodXfeat', 'zone_rules',
     // v1.3.0
     'payments',
+    'affiliate_sales', 'affiliate_saleitems', 'affiliate_payments',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(

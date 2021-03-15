@@ -67,7 +67,6 @@ class OrderState
             self::PROCESSING => 2,
             self::SHIPPED => 3,
             self::CLOSED => 4,
-            self::REFUNDED => 5,
         );
 
     /**
@@ -79,11 +78,35 @@ class OrderState
      */
     public static function atLeast($desired, $actual)
     {
-        if (!isset($statuses[$actual]) || !isset($statuses[$desired])) {
+        if (!isset(self::$statuses[$actual]) || !isset(self::$statuses[$desired])) {
             return false;
         } else {
-            return $statuses[$actual] >= $statuses[$desired];
+            return self::$statuses[$actual] >= self::$statuses[$desired];
         }
+    }
+
+
+    /**
+     * Get an array of all order statuses that are at or above a value.
+     *
+     * @param   string  $desired    Minimum status
+     * @return  array       All statuses at or above $desired
+     */
+    public static function allAtLeast($desired)
+    {
+        $retval = array();
+        if (self::isValid($desired)) {
+            $min = self::$statuses[$desired];
+            $retval = self::$statuses;
+            foreach ($retval as $key=>$val) {
+                if ($val < $min) {
+                    unset($retval[$key]);
+                } else {
+                    break;
+                }
+            }
+        }
+        return $retval;
     }
 
 

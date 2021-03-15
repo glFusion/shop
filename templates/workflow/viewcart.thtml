@@ -150,6 +150,19 @@
                 </div>
 {!endif}
                 <div class="orderInstructions">
+                    {$LANG_SHOP['enter_email']}: {buyer_email}
+                    <input id="buyer_email" type="text"
+                        name="buyer_email" size="40" value="{buyer_email}"/>
+                    <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
+                </div>
+
+{!if ref_token_fld}
+                <div>
+                    {$LANG_SHOP['ref_token']}: <input id="ref_token" type="text" name="ref_token" value="{ref_token}" />
+                </div>
+{!endif}
+
+                <div class="orderInstructions">
                     <button style="float:none;" type="submit"
                         class="uk-button uk-button-primary" name="update" id="updatebtn">
                     <i class="uk-icon uk-icon-refresh"></i>&nbsp;{$LANG_SHOP['update_cart']}

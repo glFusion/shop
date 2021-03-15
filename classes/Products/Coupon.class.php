@@ -34,6 +34,10 @@ class Coupon extends \Shop\Product
      * @const string */
     const VALID =  'valid';
 
+    /** Pending status.  Used to accumulate a coupon balance.
+     * @const string */
+    const PENDING = 'pending';
+
     /** Voided status.
      * @const string */
     const VOID = 'void';
@@ -430,8 +434,8 @@ class Coupon extends \Shop\Product
         SHOP_log("Sending Coupon to " . $recip, SHOP_LOG_DEBUG);
         $T = new Template;
         $T->set_file('message', 'coupon_email_message.thtml');
-        if ($exp != self::MAX_EXP) {
-            $dt = new \Date($exp, $_CONF['timezone']);
+        if ($exp < self::MAX_EXP) {
+            $dt = new \Date($exp,);
             $exp = $dt->format(Dates::FMT_FULLDATE);
             $T->set_var('expires', $exp);
         }

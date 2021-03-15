@@ -112,7 +112,7 @@ case 'addcartitem':
     }
     $item_number = $_POST['item_number'];     // isset ensured above
     $P = Shop\Product::getByID($item_number);
-    if ($P->isNew) {
+    if ($P->isNew()) {
         // Invalid product ID passed
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
@@ -144,6 +144,7 @@ case 'addcartitem':
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
     $new_qty = $Cart->addItem($args);
+    COM_errorLog("Adding $item_number, qty $new_qty");
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];

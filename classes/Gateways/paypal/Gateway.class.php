@@ -18,10 +18,12 @@ use Shop\Address;
 use Shop\Currency;
 use Shop\Order;
 use Shop\Shipper;
-use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;
+use Shop\Models\OrderState;
+use Shop\Models\Token;
 use Shop\Template;
 use Shop\Tax;
+use Shop\Customer;
 
 
 /**
@@ -192,6 +194,9 @@ class Gateway extends \Shop\Gateway
         }
 
         $cartID = $cart->getOrderId();
+        /*$this->AddCustom('uid' => $_USER['uid']);
+        $this->AddCustom('transtype' => 'cart_upload');
+        $this->AddCustom('cart_id' => $cartID);*/
         $custom_arr = new CustomInfo(array(
             'uid' => $_USER['uid'],
             'transtype' => 'cart_upload',
@@ -495,8 +500,10 @@ class Gateway extends \Shop\Gateway
             return '';    // Not for items that require shipping
         }
 
+        $U = Customer::getInstance();
         $btn_info = self::gwButtonType($btn_type);
         $this->AddCustom('transtype', $btn_type);
+        $this->AddCustom('ref_token', $U->getReferralToken());
         $this->setReceiver($P->getPrice());
         $vars = array(
             'cmd' => $btn_info['cmd'],
@@ -552,7 +559,6 @@ class Gateway extends \Shop\Gateway
         }
 
         // Buy-now product button, set default billing/shipping addresses
-        $U = self::Customer();
         $shipto = $U->getDefaultAddress('shipto');
         if (!empty($shipto)) {
             $fullname = $shipto->getName();

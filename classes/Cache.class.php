@@ -35,7 +35,7 @@ class Cache
      * @param   string  $key    Item key
      * @param   mixed   $data   Data, typically an array
      * @param   mixed   $tag    Tag, or array of tags
-     * @param   integer $cache_mins Cache minutes
+     * @param   integer $cache_mins Cache minutes, default = 24 hours
      * @return  boolean     True on success, False on error
      */
     public static function set($key, $data, $tags='', $cache_mins=1440)

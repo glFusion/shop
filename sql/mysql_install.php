@@ -252,6 +252,9 @@ $_SQL = array(
   `uid` int(11) unsigned NOT NULL,
   `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
+  `aff_token` varchar(40) DEFAULT NULL,
+  `ref_expires` datetime DEFAULT NULL,
+  `ref_token` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -787,6 +790,40 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `cust_id` varchar(128) DEFAULT NULL,
       PRIMARY KEY (`uid`,`gw_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_sales']}` (
+      `aff_sale_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_sale_uid` int(11) unsigned DEFAULT NULL,
+      `aff_sale_date` datetime DEFAULT NULL,
+      `aff_order_id` varchar(40) DEFAULT NULL,
+      `aff_order_total` decimal(12,4) DEFAULT NULL,
+      `aff_pmt_total` decimal(12,4) DEFAULT NULL,
+      `aff_percent` decimal(4,2) NOT NULL DEFAULT 0.00,
+      `aff_pmt_id` int(11) unsigned NOT NULL DEFAULT 0,
+      PRIMARY KEY (`aff_sale_id`),
+      UNIQUE KEY `aff_order_id` (`aff_order_id`),
+      KEY `aff_uid` (`aff_sale_uid`),
+      KEY `aff_sale_date` (`aff_sale_date`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_saleitems']}` (
+      `aff_item_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_sale_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `aff_oi_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `aff_item_total` decimal(12,4) DEFAULT NULL,
+      `aff_item_pmt` decimal(12,4) DEFAULT NULL,
+      `aff_percent` decimal(4,2) DEFAULT NULL,
+      PRIMARY KEY (`aff_item_id`),
+      KEY `aff_sale_id` (`aff_sale_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_payments']}` (
+      `aff_pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_pmt_uid` int(11) unsigned DEFAULT NULL,
+      `aff_pmt_amount` decimal(12,4) unsigned DEFAULT NULL,
+      `aff_pmt_date` datetime DEFAULT NULL,
+      `aff_pmt_method` varchar(20) DEFAULT NULL,
+      `aff_pmt_txn_id` varchar(128) NOT NULL DEFAULT '',
+      PRIMARY KEY (`aff_pmt_id`),
+      KEY `aff_id` (`aff_pmt_uid`)
+    ) ENGINE=MyISAM",
     $_SHOP_SAMPLEDATA['shop.packages'],
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
     "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
@@ -852,6 +889,10 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `version` varchar(12) DEFAULT NULL AFTER `grp_access`",
     "ALTER TABLE {$_TABLES['shop.suppliers']}
         ADD `logo_image` varchar(128) NOT NULL DEFAULT '' AFTER `lead_time`",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `affiliate_id` varchar(40)",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `aff_pmt_method` varchar(20)",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `ref_token` varchar(40)",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `ref_expires` datetime",
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
     // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.
@@ -876,7 +917,11 @@ $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
-$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
 $_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
+$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
+$_SQL['shop.cust_gw'] = $SHOP_UPGRADE['1.3.0'][2];
+$_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
+$_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
+$_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
 
 ?>

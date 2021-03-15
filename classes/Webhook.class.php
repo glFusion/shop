@@ -553,14 +553,15 @@ class Webhook
         ) {
             $this->IPN->setUid($Order->getUid());
             // Handle the purchase for each order item
-            foreach ($Order->getItems() as $Item) {
+            $this->Order->handlePurchase($this->IPN);
+            /*foreach ($Order->getItems() as $Item) {
                 $Item->getProduct()->handlePurchase($Item, $this->IPN);
             }
             if ($Order->hasPhysical()) {
                 $Order->updateStatus(OrderState::PROCESSING);
             } else {
                 $Order->updateStatus(OrderState::SHIPPED);
-            }
+            }*/
         } else {
             SHOP_log('Cannot process order ' . $this->getOrderID(), SHOP_LOG_ERROR);
             SHOP_log('canprocess? ' . var_export($GW->okToProcess($Order),true), SHOP_LOG_DEBUG);
