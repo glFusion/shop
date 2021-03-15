@@ -150,7 +150,7 @@ $tables = array(
     // v1.2.0
     'features', 'features_values', 'prodXfeat', 'zone_rules',
     // v1.3.0
-    'payments',
+    'payments', 'cust_gw',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(
