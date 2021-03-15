@@ -1019,7 +1019,7 @@ class OrderItem
      */
     public function getID()
     {
-        return $this->id;
+        return (int)$this->id;
     }
 
 
