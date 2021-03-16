@@ -43,7 +43,7 @@ class AffiliateSale
 
     /** Total payment to the affiliate.
      * @var float */
-    private $aff_pmt_total = 0;
+    //private $aff_pmt_total = 0;
 
     /** Affiliate payment record ID.
      * @var integer */
@@ -104,7 +104,7 @@ class AffiliateSale
         $this->withUid($A['aff_sale_uid']);
         $this->withOrderId($A['aff_order_id']);
         $this->withOrderTotal($A['aff_order_total']);
-        $this->withPmtTotal($A['aff_pmt_total']);
+        //$this->withPmtTotal($A['aff_pmt_total']);
         $this->withPmtId($A['aff_pmt_id']);
         $this->withSaleDate($A['aff_sale_date']);
         $this->withPercent($A['aff_percent']);
@@ -252,7 +252,7 @@ class AffiliateSale
 
         //$aff_pct = (float)$_SHOP_CONF['aff_pct'] / 100;
         $total = 0;
-        $aff_pmt_total = 0;
+        //$aff_pmt_total = 0;
         $AffSaleItems = array();
         foreach ($Order->getItems() as $Item) {
             if ($Item->getProduct()->affApplyBonus()) {
@@ -260,27 +260,24 @@ class AffiliateSale
                 if ($AffSaleItem) {
                     $AffSaleItems[] = $AffSaleItem;
                     $total += $AffSaleItem->getItemTotal();
-                    $aff_pmt_total += $AffSaleItem->getItemPayment();
+                    //$aff_pmt_total += $AffSaleItem->getItemPayment();
                 }
             }
         }
 
-            //$aff_pmt_total = round($aff_pct * $total, 2);
-            // Find the affiliate. Also verifies that the referral is valid.
-            SHOP_log("Processing referral bonus for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
-            $AffSale = new self;
-            $AffSale->withOrderId($Order->getOrderId())
-                    ->withUid($Affiliate->getUid())
-                    ->withSaleDate()
-                    ->withPmtTotal($aff_pmt_total)
-                    ->withOrderTotal($total)
-                    ->withPercent($_SHOP_CONF['aff_pct'])
-                    ->Save();
-            foreach ($AffSaleItems as $AffSaleItem) {
-                if ($AffSaleItem) {
-                    $AffSaleItem->withSaleId($AffSale->getId())->Save();
-                }
+        // Find the affiliate. Also verifies that the referral is valid.
+        SHOP_log("Processing referral bonus for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
+        $AffSale = new self;
+        $AffSale->withOrderId($Order->getOrderId())
+                ->withUid($Affiliate->getUid())
+                ->withSaleDate()
+                ->withOrderTotal($total);
+                ->Save();
+        foreach ($AffSaleItems as $AffSaleItem) {
+            if ($AffSaleItem) {
+                $AffSaleItem->withSaleId($AffSale->getId())->Save();
             }
+        }
         return $AffSale;
     }
 
@@ -305,7 +302,6 @@ class AffiliateSale
             aff_sale_date = '" . $this->SaleDate->toMySQL() . "',
             aff_order_id = '" . DB_escapeString($this->aff_order_id) . "',
             aff_order_total = {$this->aff_order_total},
-            aff_pmt_total = {$this->aff_pmt_total},
             aff_pmt_id = {$this->aff_pmt_id}";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
