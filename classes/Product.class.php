@@ -343,6 +343,12 @@ class Product
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
         $this->cancel_url = SHOP_URL . '/index.php';
+
+        // Disable affiliate bonuses if the program is disabled.
+        if (!Config::get('aff_enables')) {
+            $this->aff_apply_bonus = false;
+        }
+
         if (is_array($id)) {
             // Record has already been read from the DB
             $this->setVars($id, true);
@@ -4509,10 +4515,8 @@ class Product
      */
     public function getAffiliatePercent()
     {
-        global $_SHOP_CONF;
-
         if ($this->aff_apply_bonus) {
-            return $_SHOP_CONF['aff_pct'];
+            return (float)Config::get('aff_pct');
         } else {
             return 0;
         }
