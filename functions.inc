@@ -731,14 +731,15 @@ function plugin_getheadercss_shop()
     return $styles;
 }
 
+
+/**
+ * Execute additional functions when COM_siteHeader() is called.
+ * - Check for a Shop referral token and save it if found.
+ */
 function plugin_getheadercode_shop()
 {
     global $_USER;
-    //Shop\Models\Token::unset();
 
-//    $Cust = Shop\Customer::getInstance($_USER['uid']);
-//    var_dump($Cust);die;
-//    $_COOKIE['TEST'] = 123;
     if (isset($_GET['shop_ref'])) {
         if ($_USER['uid'] > 1) {
             // Set in the customer table, also sets the session var
@@ -750,8 +751,6 @@ function plugin_getheadercode_shop()
             Shop\Models\Token::set($_GET['shop_ref']);
         }
     }
-    //var_dump($_SESSION);die;
-    //var_dump($_COOKIE);die;
 }
 
 
