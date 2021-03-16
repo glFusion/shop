@@ -269,10 +269,6 @@ class Order
             $this->Billto = new Address;
             $this->Shipto = new Address;
             $this->m_info = new CustomInfo;
-            $token = Token::get();
-            if ($token != $this->getReferralToken()) {
-                $this->setReferralToken($token);
-            }
         }
     }
 
@@ -443,6 +439,13 @@ class Order
     public function addItem($args)
     {
         if (!is_array($args)) return;
+
+        if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
+            $token = Token::get();
+            if ($token) {
+                $this->setReferralToken($token);
+            }
+        }
 
         // Set the product_id if it is not supplied but the item_id is,
         // which is formated as "id|opt1,opt2,..."
