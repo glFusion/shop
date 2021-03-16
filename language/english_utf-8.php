@@ -936,6 +936,10 @@ $LANG_confignames['shop'] = array(
     'aff_enabled' => 'Affiliate Referrals Enabled',
     'aff_ref_exp_days' => 'Referral Expiration (Days)',
     'aff_allow_entry' => 'Allow referral code entry during checkout',
+    'aff_pct' => 'Default referral percentage',
+    'aff_delay_days' => 'Days after order to wait before paying bonuses',
+    'aff_min_payment' => 'Default minimum payout amount',
+    'aff_min_ordstatus' => 'Minimum order status before paying bonuses',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -982,11 +986,11 @@ $LANG_configselects['shop'] = array(
     2 => array('Yes' => 1, 'No' => 0),
     5 => array('Name' => 'name', 'Price' => 'price', 'Product ID' => 'id'),
     11 => array(
-        'Pending'   => 'Pending',
-        'Invoiced'  => 'Invoiced',
-        'Processing' => 'Processing',
-        'Shipped'   => 'Shipped',
-        'Closed'    => 'Closed',
+        'Pending'   => 'pending',
+        'Invoiced'  => 'invoiced',
+        'Processing' => 'processing',
+        'Shipped'   => 'shipped',
+        'Closed'    => 'closed',
     ),
     12 => array('No access' => 0, 'Read-Only' => 2, 'Read-Write' => 3),
     13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
