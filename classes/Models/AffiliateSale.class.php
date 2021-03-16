@@ -37,21 +37,9 @@ class AffiliateSale
      * @var string */
     private $aff_order_id = '';
 
-    /** Total order amount subject to affiliate rewards.
-     * @var float */
-    private $aff_order_total = 0;
-
-    /** Total payment to the affiliate.
-     * @var float */
-    //private $aff_pmt_total = 0;
-
     /** Affiliate payment record ID.
      * @var integer */
     private $aff_pmt_id = 0;
-
-    /** Affiliate payment rate (percentage).
-     * @var float */
-    private $aff_percent = 0;
 
 
     /**
@@ -103,11 +91,8 @@ class AffiliateSale
         $this->withId($A['aff_sale_id']);
         $this->withUid($A['aff_sale_uid']);
         $this->withOrderId($A['aff_order_id']);
-        $this->withOrderTotal($A['aff_order_total']);
-        //$this->withPmtTotal($A['aff_pmt_total']);
         $this->withPmtId($A['aff_pmt_id']);
         $this->withSaleDate($A['aff_sale_date']);
-        $this->withPercent($A['aff_percent']);
         return $this;
     }
 
@@ -172,34 +157,6 @@ class AffiliateSale
 
 
     /**
-     * Set the total qualifying sale amount from the order.
-     *
-     * @param   float   $total      Qualifying total amount
-     * @return  object  $this
-     */
-    public function withOrderTotal($total)
-    {
-        $this->aff_order_total = (float)$total;
-        return $this;
-    }
-
-
-    /**
-     * Set the total payment amount.
-     * For now this is equal to the order total but may be adjusted in the
-     * future for holdbacks.
-     *
-     * @param   float   $total      Total payment amount
-     * @return  object  $this
-     */
-    public function withPmtTotal($total)
-    {
-        $this->aff_pmt_total = (float)$total;
-        return $this;
-    }
-
-
-    /**
      * Set the payment record ID when a payment to the affiliate is created.
      *
      * @param   integer $id     Payment record ID
@@ -208,19 +165,6 @@ class AffiliateSale
     public function withPmtId($id)
     {
         $this->aff_pmt_id = (int)$id;
-        return $this;
-    }
-
-
-    /**
-     * Set the percentage being paid to the affiliate.
-     *
-     * @param   float   $pct    Affiliate payment rate
-     * @return  object  $this
-     */
-    public function withPercent($pct)
-    {
-        $this->aff_percent = (float)$pct;
         return $this;
     }
 
@@ -250,9 +194,7 @@ class AffiliateSale
             return false;
         }
 
-        //$aff_pct = (float)$_SHOP_CONF['aff_pct'] / 100;
         $total = 0;
-        //$aff_pmt_total = 0;
         $AffSaleItems = array();
         foreach ($Order->getItems() as $Item) {
             if ($Item->getProduct()->affApplyBonus()) {
@@ -260,25 +202,29 @@ class AffiliateSale
                 if ($AffSaleItem) {
                     $AffSaleItems[] = $AffSaleItem;
                     $total += $AffSaleItem->getItemTotal();
-                    //$aff_pmt_total += $AffSaleItem->getItemPayment();
                 }
             }
         }
 
         // Find the affiliate. Also verifies that the referral is valid.
         SHOP_log("Processing referral bonus for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
-        $AffSale = new self;
-        $AffSale->withOrderId($Order->getOrderId())
-                ->withUid($Affiliate->getUid())
-                ->withSaleDate()
-                ->withOrderTotal($total);
-                ->Save();
-        foreach ($AffSaleItems as $AffSaleItem) {
-            if ($AffSaleItem) {
-                $AffSaleItem->withSaleId($AffSale->getId())->Save();
+        if (!empty($AffSaleItems)) {
+            $AffSale = new self;
+            $AffSale->withOrderId($Order->getOrderId())
+                    ->withUid($Affiliate->getUid())
+                    ->withSaleDate()
+                    //->withOrderTotal($total);
+                    ->Save();
+            foreach ($AffSaleItems as $AffSaleItem) {
+                if ($AffSaleItem) {
+                    $AffSaleItem->withSaleId($AffSale->getId())->Save();
+                }
             }
+            return $AffSale;
+        } else {
+            SHOP_log("No eligible referral bonus items found for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
+            return false;
         }
-        return $AffSale;
     }
 
 
@@ -301,7 +247,6 @@ class AffiliateSale
         $sql2 = "aff_sale_uid = {$this->aff_uid},
             aff_sale_date = '" . $this->SaleDate->toMySQL() . "',
             aff_order_id = '" . DB_escapeString($this->aff_order_id) . "',
-            aff_order_total = {$this->aff_order_total},
             aff_pmt_id = {$this->aff_pmt_id}";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;

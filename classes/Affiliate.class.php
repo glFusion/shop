@@ -82,7 +82,7 @@ class Affiliate
         }
 
         $sql = "SELECT u.uid, u.fullname, u.email, af.affiliate_id,
-            sum(s.aff_order_total) as total_sales,
+            sum(si.aff_item_total) as total_sales,
             sum(si.aff_item_pmt) as total_payout
             $pending_sql
             FROM {$_TABLES['users']} u

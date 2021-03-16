@@ -14,6 +14,7 @@
 namespace Shop\Models;
 use Shop\Currency;
 use Shop\Config;
+use Shop\Customer;
 
 
 /**
@@ -184,15 +185,15 @@ class AffiliatePayment
      */
     public static function generate($uids=array())
     {
-        global $_SHOP_CONF, $_TABLES;
+        global $_TABLES;
 
         // Collect outstanding affiliate sales grouped by affiliate ID
-        $max_date = new \Date('now');
-//        $max_date->sub(new \DateInterval('P' . $_SHOP_CONF['aff_delay_days'] . 'D'));
-        $max_date = $max_date->format('Y-m-d 23:59:59');
 
-        $min_pmt = (float)$_SHOP_CONF['aff_min_pmt'];
-        $statuses = OrderState::allAtLeast($_SHOP_CONF['aff_min_ordstatus']);
+        $max_date = new \Date('now');
+        $max_date->sub(new \DateInterval('P' . Config::get('aff_delay_days') . 'D'));
+
+        $min_pmt = (float)Config::get('aff_min_payment');
+        $statuses = OrderState::allAtLeast(Config::get('aff_min_ordstatus'));
         if (!empty($statuses)) {
             $statuses = "'" . implode("','", array_keys($statuses)) . "'";
             $status_where = " AND o.status IN ($statuses)";
@@ -209,7 +210,7 @@ class AffiliatePayment
         } else {
             $uid_where = '';
         }
-        $sql = "SELECT s.aff_sale_id, s.aff_sale_uid, s.aff_pmt_total,
+        $sql = "SELECT s.aff_sale_id, s.aff_sale_uid,
             sum(si.aff_item_pmt) as pmt_total
             FROM {$_TABLES['shop.affiliate_sales']} s
             LEFT JOIN {$_TABLES['shop.affiliate_saleitems']} si
@@ -249,7 +250,7 @@ class AffiliatePayment
                 $sale_ids = array();
             }
             $sale_ids[] = $A['aff_sale_id'];
-            $pmt_total += (float)$A['aff_pmt_total'];
+            $pmt_total += (float)$A['pmt_total'];
         }
         // Dropped out of the loop, ensure that the final affiliate is paid.
         if ($cbrk > 0) {

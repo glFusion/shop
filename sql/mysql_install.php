@@ -795,12 +795,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `aff_sale_uid` int(11) unsigned DEFAULT NULL,
       `aff_sale_date` datetime DEFAULT NULL,
       `aff_order_id` varchar(40) DEFAULT NULL,
-      `aff_order_total` decimal(12,4) DEFAULT NULL,
-      `aff_pmt_total` decimal(12,4) DEFAULT NULL,
-      `aff_percent` decimal(4,2) NOT NULL DEFAULT 0.00,
       `aff_pmt_id` int(11) unsigned NOT NULL DEFAULT 0,
       PRIMARY KEY (`aff_sale_id`),
-      UNIQUE KEY `aff_order_id` (`aff_order_id`),
       KEY `aff_uid` (`aff_sale_uid`),
       KEY `aff_sale_date` (`aff_sale_date`)
     ) ENGINE=MyISAM",
