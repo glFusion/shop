@@ -345,7 +345,7 @@ class Product
         $this->cancel_url = SHOP_URL . '/index.php';
 
         // Disable affiliate bonuses if the program is disabled.
-        if (!Config::get('aff_enables')) {
+        if (!Config::get('aff_enabled')) {
             $this->aff_apply_bonus = false;
         }
 
