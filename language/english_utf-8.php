@@ -973,7 +973,7 @@ $LANG_fs['shop'] = array(
     'fs_geo'    => 'Geolocation Settings',
     'fs_geo_ipgeo' => 'IPGeo',
     'fs_geo_ipstack' => 'IPStack',
-    'fs_aff_general' => 'Program Settings',
+    'fs_aff_general' => 'Affiliate Program Settings',
 );
 
 /**
