@@ -35,7 +35,7 @@ class Cache
      * @param   string  $key    Item key
      * @param   mixed   $data   Data, typically an array
      * @param   mixed   $tag    Tag, or array of tags
-     * @param   integer $cache_mins Cache minutes
+     * @param   integer $cache_mins Cache minutes, default = 24 hours
      * @return  boolean     True on success, False on error
      */
     public static function set($key, $data, $tags='', $cache_mins=1440)
@@ -109,8 +109,12 @@ class Cache
             foreach ($tags as $tag) {
                 $wheres[] = "tags LIKE '%" . DB_escapeString($tag) . "%'";
             }
-            $where = implode(' AND ', $wheres);
-            $sql = "DELETE FROM {$_TABLES['shop.cache']} WHERE ($where);";
+            if (!empty($wheres)) {
+                $where = '(' . implode(' AND ', $wheres) . ')';
+            } else {
+                $where = '';
+            }
+            $sql = "DELETE FROM {$_TABLES['shop.cache']} $where;";
             DB_query($sql);
             return;
         }
