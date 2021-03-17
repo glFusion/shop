@@ -12,6 +12,7 @@
  */
 namespace Shop\Upgrades;
 use Shop\Payment;
+use Shop\Config;
 
 
 class v1_3_0 extends Upgrade
