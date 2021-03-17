@@ -55,7 +55,7 @@ class v1_3_0 extends Upgrade
         }
         if ($upd_sup_logos) {
             // Update the suppliers table with the logo image filenames.
-            $img_path = Shop\Config::get('tmpdir') . '/images/brands/';
+            $img_path = Config::get('tmpdir') . '/images/brands/';
             $sql = "SELECT * FROM {$_TABLES['shop.suppliers']}";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
