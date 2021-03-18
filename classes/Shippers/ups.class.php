@@ -165,7 +165,7 @@ class ups extends \Shop\Shipper
      */
     public function getTracking($tracking)
     {
-        global $LANG_SHOP;
+        global $_CONF, $LANG_SHOP;
 
         // Attempt to get from cache
         $Tracking = \Shop\Tracking::getCache($this->key, $tracking);
@@ -277,13 +277,13 @@ class ups extends \Shop\Shipper
                     $Tracking->addStep($data);
                 }
             }
+            $Tracking->setCache($this->key, $tracking);
         } catch ( Exception $ex ) {
             SHOP_log(
                 __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
                 ' Error getting tracking info: ' . print_r($ex,true)
             );
         }
-        $Tracking->setCache($this->key, $tracking);
         return $Tracking;
     }
 
