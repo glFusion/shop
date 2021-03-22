@@ -67,6 +67,7 @@ class Upgrade
             self::$current_ver = self::$code_ver;
         }
         Cache::clear();
+        self::updateConfig();
         Gateway::UpgradeAll(self::$current_ver);
         self::removeOldFiles();
         CTL_clearCache();   // clear cache to ensure CSS updates come through
@@ -171,6 +172,7 @@ class Upgrade
      */
     public static function updateConfig()
     {
+        global $shopConfigData;
         USES_lib_install();
 
         require_once __DIR__ . '/../../install_defaults.php';
