@@ -736,13 +736,15 @@ class Customer
     {
         global $_TABLES, $_CONF;
 
-        $where = "affiliate_id ='" . DB_escapeString($affiliate_id) . "'";
-        $uid = (int)DB_getItem($_TABLES['shop.userinfo'], 'uid', $where);
-        if ($uid > 1) {
-            return new self($uid);
-        } else {
-            return false;
+        $retval = false;
+        if (!empty($affiliate_id)) {
+            $where = "affiliate_id ='" . DB_escapeString($affiliate_id) . "'";
+            $uid = (int)DB_getItem($_TABLES['shop.userinfo'], 'uid', $where);
+            if ($uid > 1) {
+                $retval = new self($uid);
+            }
         }
+        return $retval;
     }
 
 

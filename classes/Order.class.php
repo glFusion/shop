@@ -2348,25 +2348,27 @@ class Order
      */
     public function setReferralToken($ref_id, $save=false)
     {
-        $_uid = $this->referrer_uid;
-        $_token = $this->referral_token;
-        $Affiliate = Customer::findByAffiliate($ref_id);
-        if ($Affiliate) {
-            $this->referral_token = $ref_id;
-            $this->referrer_uid = $Affiliate->getUid();
-        } else {
-            $this->referral_token = '';
-            $this->referrer_uid = 0;
-        }
-        if (
-            $save &&
-            $_uid != $this->referrer_uid &&
-            $_token != $this->referral_token
-        ) {
-            $this->updateRecord(array(
-                "referral_token = '" . DB_escapeString($this->referral_token) . "'",
-                "referrer_uid = " . $this->referrer_uid,
-            ) );
+        if (!empty($ref_id)) {
+            $_uid = $this->referrer_uid;
+            $_token = $this->referral_token;
+            $Affiliate = Customer::findByAffiliate($ref_id);
+            if ($Affiliate) {
+                $this->referral_token = $ref_id;
+                $this->referrer_uid = $Affiliate->getUid();
+            } else {
+                $this->referral_token = '';
+                $this->referrer_uid = 0;
+            }
+            if (
+                $save &&
+                $_uid != $this->referrer_uid &&
+                $_token != $this->referral_token
+            ) {
+                $this->updateRecord(array(
+                    "referral_token = '" . DB_escapeString($this->referral_token) . "'",
+                    "referrer_uid = " . $this->referrer_uid,
+                ) );
+            }
         }
         return $this;
     }
