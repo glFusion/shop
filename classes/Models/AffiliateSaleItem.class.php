@@ -214,11 +214,11 @@ class AffiliateSaleItem
             $aff_pmt_total = round(($aff_pct / 100) * $item_total, 2);
             if ($aff_pmt_total > .0001) {
                 $AffSaleItem = new self;
-                $AffSaleItem = $AffSaleItem->withSaleId($sale_id)
-                        ->withOrderItemId($OrderItem->getID())
-                        ->withItemPayment($aff_pmt_total)
-                        ->withItemTotal($item_total)
-                        ->withPercent($aff_pct);
+                $AffSaleItem = $AffSaleItem
+                    ->withOrderItemId($OrderItem->getID())
+                    ->withItemPayment($aff_pmt_total)
+                    ->withItemTotal($item_total)
+                    ->withPercent($aff_pct);
             }
         }
         return $AffSaleItem;
