@@ -1737,15 +1737,17 @@ class Gateway
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $gw = self::create($A['id']);
-            $data_arr[] = array(
-                'id'    => $A['id'],
-                'orderby' => $A['orderby'],
-                'enabled' => $A['enabled'],
-                'description' => $A['description'],
-                'grp_name' => $A['grp_name'],
-                'version' => $A['version'],
-                'code_version' => $gw->getCodeVersion(),
-            );
+            if ($gw) {
+                $data_arr[] = array(
+                    'id'    => $A['id'],
+                    'orderby' => $A['orderby'],
+                    'enabled' => $A['enabled'],
+                    'description' => $A['description'],
+                    'grp_name' => $A['grp_name'],
+                    'version' => $A['version'],
+                    'code_version' => $gw->getCodeVersion(),
+                );
+            }
         }
     }
 
