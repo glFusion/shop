@@ -435,7 +435,7 @@ class Coupon extends \Shop\Product
         $T = new Template;
         $T->set_file('message', 'coupon_email_message.thtml');
         if ($exp < self::MAX_EXP) {
-            $dt = new \Date($exp,);
+            $dt = new \Date($exp);
             $exp = $dt->format(Dates::FMT_FULLDATE);
             $T->set_var('expires', $exp);
         }
