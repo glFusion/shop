@@ -57,15 +57,6 @@ class Customer
      * @var string */
     private $aff_pmt_method = '_coupon';
 
-    /** Referrer Expiration.
-     * @var object */
-    private $ref_expires = NULL;
-
-    /** Referrer token to be applied to orders.
-     * Saved with the customer record to survive login/logout events.
-     * @var string */
-    private $ref_token = '';
-
     /** Customer IDs created by payment gateways.
      * @var array */
     private $gw_ids = array();
@@ -146,15 +137,12 @@ class Customer
             $this->gw_ids = $this->getCustomerIds($uid);
             $this->affiliate_id = $A['affiliate_id'];
             $this->aff_pmt_method = $A['aff_pmt_method'];
-            $this->ref_expires = new \Date($A['ref_expires']);
-            $this->ref_token = $A['ref_token'];
         } else {
             $this->cart = array();
             $this->isNew = true;
             $this->addresses = array();
             $this->pref_gw = '';
             $this->saveUser();      // create a user record
-            $this->ref_expires = clone $_CONF['_now'];
         }
     }
 
@@ -341,42 +329,28 @@ class Customer
 
 
     /**
-     * Set the referral token value into the customer table.
-     *
-     * @param   string  $token      Referral token
-     * @return  object  $this
-     */
-    public function setReferralToken($token)
-    {
-        global $_SHOP_CONF;
-
-        if (!empty($token)) {
-            // Changing the referrer token, reset the expiration
-            if ($_SHOP_CONF['aff_ref_exp_days'] > 0) {
-                $this->ref_expires = new \Date('now');
-                $this->ref_expires->setTime(23, 59, 59);
-                $this->ref_expires->add(
-                    new \DateInterval('P' . (int)$_SHOP_CONF['aff_ref_exp_days'] . 'D')
-                );
-            } else {
-                $this->ref_expires = new \Date('9999-12-31 23:59:59');
-            }
-            $this->ref_token = $token;
-            //Token::set($token);
-            Cart::getInstance()->setReferralToken($token,true);
-        }
-        return $this;
-    }
-
-
-    /**
      * Get the referral token.
      *
      * @return  string      Token value
      */
     public function getReferralToken()
     {
-        return $this->ref_token;
+        return Token::get();
+    }
+
+
+    /**
+     * Get the customer's affiliate ID.
+     *
+     * @return  string      Affiliate ID, NULL if affiliate sales disabled
+     */
+    public function getAffiliateId()
+    {
+        if (Config::get('aff_enabled')) {
+            return $this->affiliate_id;
+        } else {
+            return NULL;
+        }
     }
 
 
@@ -436,16 +410,12 @@ class Customer
             uid = {$this->uid},
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart',
-            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
-            ref_expires = '" . $this->ref_expires->toMySQL(false) . "',
-            ref_token = '" . DB_escapeString($this->ref_token) . "'
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "'
             ON DUPLICATE KEY UPDATE
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart',
             affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
-            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "',
-            ref_expires = '" . $this->ref_expires->toMySQL(false) . "',
-            ref_token = '" . DB_escapeString($this->ref_token) . "'";
+            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         return DB_error() ? false : true;
@@ -714,12 +684,6 @@ class Customer
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
             self::$users[$uid] = new self($uid);
-        }
-        if ($uid == $_USER['uid']) {
-            $token = Token::get();
-            if (!empty($token)) {
-                self::$users[$uid]->setReferralToken($token);
-            }
         }
         return self::$users[$uid];
     }
