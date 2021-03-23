@@ -740,14 +740,9 @@ function plugin_getheadercode_shop()
 {
     global $_USER;
 
-    if (isset($_GET['shop_ref'])) {
-        if ($_USER['uid'] > 1) {
-            // Set in the customer table, also sets the session var
-            Shop\Customer::getInstance($_USER['uid'])
-                ->setReferralToken($_GET['shop_ref'])
-                ->saveUser();
-        } else {
-            // Only set the session var
+    if (isset($_GET['shop_ref']) && !empty($_GET['shop_ref'])) {
+        $Referrer = Shop\Customer::findByAffiliate($_GET['shop_ref']);
+        if ($Referrer->getUid() != $_USER['uid']) {
             Shop\Models\Token::set($_GET['shop_ref']);
         }
     }
@@ -1523,13 +1518,11 @@ function plugin_user_login_shop($uid)
     }
     $token = Shop\Models\Token::get();
     if (!empty($token)) {
-        // There's a token set in the session, save it in the DB for further use.
-        Shop\Customer::getInstance($uid)
-            ->setReferralToken($token)
-            ->saveUser();
+        $Referrer = Shop\Customer::findByAffiliate($token);
+        if ($Referrer->getUid() == $uid) {
+            Shop\Models\Token::unset();
+        }
     }
-    Shop\Models\Token::unset();
-    //var_dump($_SESSION);die;
 }
 
 
@@ -1905,6 +1898,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         }
         $ord_count = DB_count($_TABLES['shop.orders'], 'uid', $uid);
         $LT->set_var('orders', $ord_count);
+        $LT->set_var('affiliate_id', $U->getAffiliateId());
         $LT->parse('output', 'block');
         $retval .= $LT->finish($LT->get_var('output'));
     }

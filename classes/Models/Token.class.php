@@ -45,35 +45,25 @@ class Token
     }
 
 
+    /**
+     * Set the referral token.
+     *
+     * @param   string  $token  Referral token value
+     */
     public static function set($token)
     {
-        global $_USER;
-
-        //$_COOKIE[self::VAR_NAME] = $token;
         SESS_setVar(self::VAR_NAME, $token);
     }
 
 
+    /**
+     * Get the current referral token value.
+     *
+     * @return  string  Referral token
+     */
     public static function get()
     {
-        /*if (isset($_COOKIE[self::VAR_NAME])) {
-            return $_COOKIE[self::VAR_NAME];
-        } else {
-            return '';
-        }*/
-        global $_TABLES, $_USER, $_CONF;
-        if ($_USER['uid'] > 1) {
-            $where = "uid = " . (int)$_USER['uid'] .
-                " AND ref_expires > '" . $_CONF['_now']->toMySQL() . "'";
-            $retval = DB_getItem(
-                $_TABLES['shop.userinfo'],
-                'ref_token',
-                $where
-            );
-        } else {
-            $retval = SESS_getVar(self::VAR_NAME);
-        }
-        return $retval;
+        return SESS_getVar(self::VAR_NAME);
     }
 
 
