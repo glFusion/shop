@@ -392,9 +392,6 @@ class Cart extends Order
             if (isset($A['ref_token']) && !empty($A['ref_token'])) {
                 // Set the token and user ID in this order
                 $this->setReferralToken($this->referral_token);
-                // Save the token for this customer.
-                // Overrides prevous tokens.
-                Customer::getInstance($this->uid)->setReferralToken($A['ref_token']);
             }
         }
         $this->Save();  // Save cart vars, if changed, and update the timestamp
