@@ -25,6 +25,16 @@ another email message confirming your payment.
 {!if gw_msg}
 <p><b>Message:</b><br />{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+Refer a friend and get referral bonuses! Your affiliate link is {affiliate_link}.
+{!if affiliate_info}
+<br />Visit <a href="{affiliate_info}">{affiliate_info}</a> for details.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 You have a remaining gift card balance of {gc_bal_fmt}.

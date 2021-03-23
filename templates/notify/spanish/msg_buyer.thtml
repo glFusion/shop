@@ -25,6 +25,16 @@ otro mensaje de correo electrónico confirmando su pago.</p>
 {!if gw_msg}
 <p>{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+¡Recomiende a un amigo y obtenga bonificaciones por recomendación! Tu enlace de afiliado es {affiliate_link}.
+{!if affiliate_info}
+<br />Visite la <a href="{affiliate_info}">{affiliate_info}</a> para obtener más detalles.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 Tienes un saldo de tarjeta de regalo restante de {gc_bal_fmt}.

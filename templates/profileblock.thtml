@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <div id="pe_shop" class="jsenabled_hide">
-<fieldset data-uk-margin>
+<fieldset data-uk-margin class="uk-margin">
     <legend>{$LANG_SHOP['my_account']}</legend>
 {!if gc_bal}
     <div class="uk-form-row">
@@ -24,6 +24,12 @@
         </div>
     </div>
 {!endif}
+    <div class="uk-form-row">
+        <label class="uk-form-label">My Affiliate Url</label>
+        <div class="uk-form-controls">
+            <a href="{site_url}/?shop_ref={affiliate_id}">{site_url}/?shop_ref={affiliate_id}</a>
+        </div>
+    </div>
 </fieldset>
 </div>
 {# end {templatelocation} #}

@@ -25,6 +25,15 @@ toinen sähköpostiviesti, joka vahvistaa maksusi.
 {!jos gw_msg}
 <p><b>Viesti:</b><br />{gw_msg}</p>
 {!endif}
+{!if affiliate_id}
+<p>
+Kutsu ystäväsi ja saat viittausbonuksia! Kumppanilinkkisi on {affiliate_link}.
+{!if affiliate_info}
+<br />Lisätietoja on osoitteessa <a href="{affiliate_info}">{affiliate_info}</a>.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 Sinulla on jäljellä lahjakorttisaldo {gc_bal_fmt}.

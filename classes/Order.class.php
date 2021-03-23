@@ -443,7 +443,7 @@ class Order
         if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
             $token = Token::get();
             if ($token) {
-                $this->setReferralToken($token);
+                $this->setReferralToken($token, true);
             }
         }
 
@@ -1497,20 +1497,21 @@ class Order
             $this->status = $oldstatus;     // update in-memory object
             return $oldstatus;
         }
+
+        // Process affiliate bonus if the required status has been reached
+        if (
+            Config::get('aff_enabled') &&
+            $this->statusAtLeast(Config::get('aff_min_ordstatus'))
+        ) {
+            AffiliateSale::create($this);
+        }
+
         $msg = sprintf($LANG_SHOP['status_changed'], $oldstatus, $newstatus);
         if ($log) {
             $this->Log($msg, $log_user);
         }
         if ($notify) {
             $this->Notify($newstatus, $msg);
-        }
-
-        // Process affiliate bonus if the required status has been reached
-        if (
-            $_SHOP_CONF['aff_enabled'] &&
-            $this->statusAtLeast($_SHOP_CONF['aff_min_ordstatus'])
-        ) {
-            AffiliateSale::create($this);
         }
 
         $this->clearInstance();
@@ -1741,6 +1742,7 @@ class Order
         $item_total = 0;
         $dl_links = '';         // Start with empty download links
         $email_extras = array();
+        $U = Customer::getInstance($this->uid);
         $Cur = Currency::getInstance($this->currency);   // get currency object for formatting
         $Shop = new Company;
         if ($this->pmt_method != '') {
@@ -1856,6 +1858,15 @@ class Order
             ) );
         }
         //), '', false, false);
+
+        // Add the affiliate information, if enabled
+        if (Config::get('aff_enabled')) {
+            $T->set_var(array(
+                'affiliate_id' => $U->getAffiliateId(),
+                'affiliate_info' => Config::get('aff_info_url'),
+                'affiliate_link' => $_CONF['site_url'] . '/index.php?shop_ref=' . $U->getAffiliateId(),
+            ) );
+        }
 
         $this->_setAddressTemplate($T);
 
@@ -2349,21 +2360,13 @@ class Order
     public function setReferralToken($ref_id, $save=false)
     {
         if (!empty($ref_id)) {
-            $_uid = $this->referrer_uid;
-            $_token = $this->referral_token;
             $Affiliate = Customer::findByAffiliate($ref_id);
-            if ($Affiliate) {
+
+            if ($Affiliate && $Affiliate->getUid() != $this->uid) {
                 $this->referral_token = $ref_id;
                 $this->referrer_uid = $Affiliate->getUid();
-            } else {
-                $this->referral_token = '';
-                $this->referrer_uid = 0;
             }
-            if (
-                $save &&
-                $_uid != $this->referrer_uid &&
-                $_token != $this->referral_token
-            ) {
+            if ($save) {
                 $this->updateRecord(array(
                     "referral_token = '" . DB_escapeString($this->referral_token) . "'",
                     "referrer_uid = " . $this->referrer_uid,

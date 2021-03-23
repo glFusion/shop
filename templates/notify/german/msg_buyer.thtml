@@ -25,6 +25,16 @@ eine weitere E-Mail-Nachricht, die Ihre Zahlung bestätigt.
 {!if gw_msg}
 <p><b>Nachricht:</b><br />{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+Empfehlen Sie einen Freund und erhalten Sie Empfehlungsboni! Ihr Affiliate-Link ist {affiliate_link}.
+{!if affiliate_info}
+<br />Besuchen Sie die <a href="{affiliate_info}">{affiliate_info}</a> für Details.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 Sie haben ein verbleibendes Geschenkkartenguthaben von {gc_bal_fmt}.

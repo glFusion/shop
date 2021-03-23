@@ -25,6 +25,16 @@ další e-mailovou zprávu potvrzující vaši platbu.
 {!if gw_msg}
 <p><b>Zpráva:</b><br />{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+Doporučte přítele a získejte bonusy za doporučení! Váš partnerský odkaz je {affiliate_link}.
+{!if affiliate_info}
+<br />Podrobnosti najdete na adrese <a href="{affiliate_info}">{affiliate_info}</a>.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 Zbývající zůstatek na dárkové kartě je {gc_bal_fmt}.
