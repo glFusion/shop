@@ -3958,13 +3958,13 @@ class Product
             'msg'       => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
             'allowed'   => true,
             'is_oos'    => false,
-            'orig_price' => Currency::getInstance()->RoundVal($this->getPrice()),
-            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice($this->getPrice())),
+            'orig_price' => Currency::getInstance()->RoundVal($this->getBasePrice()),
+            'sale_price' => Currency::getInstance()->RoundVal($this->getPrice()),
             'onhand'    => $this->onhand,
             'weight'    => $this->getWeight(),
             'sku'       => $this->getName(),
             'leadtime'  => $this->onhand == 0 ? $this->getLeadTimeMessage() : '',
-            'images'    => array(),
+            'images'    => array_keys($this->Images),
         );
         if ($this->track_onhand) {
             if ($this->onhand < $opts['quantity']) {
