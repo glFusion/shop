@@ -149,7 +149,7 @@ class Gateway
      * This may be used for non-upfront payment terms such as check,
      * net 30 or COD.
      * @var integer */
-    protected $grp_access = 0;
+    protected $grp_access = 1;
 
     /** Flag to indicate if the gateway requires a billing address.
      * @var boolean */
@@ -584,7 +584,7 @@ class Gateway
                     config = '" . DB_escapeString($config) . "',
                     services = '" . DB_escapeString($services) . "',
                     version = '" . DB_escapeString($this->getCodeVersion()) . "',
-                    grp_access = 1";
+                    grp_access = {$this->grp_access}";
             DB_query($sql);
             Cache::clear('gateways');
             return DB_error() ? false : true;
@@ -1555,7 +1555,8 @@ class Gateway
         if (is_array($dirs)) {
             foreach ($dirs as $dir) {
                 if (
-                    $dir !== '.' && $dir != '..' &&
+                    $dir !== '.' && $dir !== '..' &&
+                    $dir[0] != '_' &&       // skip internal utility gateways
                     is_dir("{$base_path}/{$dir}") &&
                     is_file("{$base_path}/{$dir}/Gateway.class.php") &&
                     !array_key_exists($dir, $installed)
