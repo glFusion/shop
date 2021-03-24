@@ -23,7 +23,18 @@
 {!else}
         <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 {!endif}
-        <ul id="productThumbWrapper" class="shopProductThumbWrapper v2"></ul>
+        <ul id="productThumbWrapper" class="shopProductThumbWrapper v2">
+<!-- BEGIN Thumbnail -->
+            <li class="shopProductThumb v2">
+                <a href="{img_url}" data-uk-lightbox="{group:'product'}">
+                    <img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}"
+                        title="{$LANG_SHOP[click_to_enlarge]}"
+                        class="tooltip" style="border:0px;"
+                        onmouseover="javascript:SHOPupdateImage({img_id});" />
+                </a>
+            </li>
+<!-- END Thumbnail -->
+        </ul>
     </div>
 
     <div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">

@@ -111,7 +111,7 @@
     <div class="shopRatingBar detail v1">{rating_bar}</div>
 {!endif}
     <ul id="productThumbWrapper" class="shopProductThumbWrapper v1">
-<!-- BEGIN XThumbnail -->
+<!-- BEGIN Thumbnail -->
       <li class="shopProductThumb v1">
  {!if thumb_url}
         <a href="{img_url}" data-uk-lightbox="{group:'product'}">
@@ -119,11 +119,11 @@
               style="border:0;"
               alt="{$LANG_SHOP[click_to_enlarge]}"
               title="{$LANG_SHOP[click_to_enlarge]}"
-              data-uk-tooltip />
+              class="tooltip" />
         </a>
  {!endif}
       </li>
-<!-- END XThumbnail -->
+<!-- END Thumbnail -->
     </ul>
 
   </div>

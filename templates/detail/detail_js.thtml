@@ -43,6 +43,15 @@ function SHOP_changeImages(image_ids)
 <script type="text/javascript">
 function ProcessForm(form)
 {
+    // The form should be defined, but if there are no options then there
+    // is no need for the AJAX call.
+    if (
+        typeof(form) == 'undefined' ||
+        $('#' + form.id + ' input[name=has_options]').val() == 0
+    ) {
+        return;
+    }
+
     var msg = "";   // availability message text
     var dataS = {
         "action": "validateOpts",
