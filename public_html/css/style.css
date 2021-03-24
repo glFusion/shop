@@ -1096,3 +1096,7 @@ div.cart-item {
     border-color: rgba(45,112,145,.3);
 }*/
 
+.shop-overlay.v3 {
+    padding: 0px;
+    min-width:90%;
+}
