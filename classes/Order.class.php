@@ -1444,12 +1444,14 @@ class Order
     {
         global $_TABLES, $LANG_SHOP, $_SHOP_CONF;
 
+        //var_dump(debug_backtrace(0, 2));
         // When orders are paid by IPN, move the status to "processing"
         if ($newstatus == 'paid') {
             $newstatus = 'processing';
         }
 
         $oldstatus = $this->status;
+        //echo "updating order " . $this->order_id . " from $oldstatus to $newstatus<br />\n";
 
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
@@ -1473,7 +1475,7 @@ class Order
             $sql = "START TRANSACTION;
                 SELECT COALESCE(MAX(order_seq)+1,1) FROM {$_TABLES['shop.orders']} INTO @seqno FOR UPDATE;
                 UPDATE {$_TABLES['shop.orders']} SET
-                    status = '". DB_escapeString($newstatus) . "',
+                    status = '". DB_escapeString($this->status) . "',
                     order_seq = @seqno
                     $other_updates
                 WHERE order_id = '$db_order_id';
@@ -1491,7 +1493,6 @@ class Order
                 WHERE order_id = '$db_order_id';";
             DB_query($sql);
         }
-        //echo $sql;die;
         //SHOP_log($sql, SHOP_LOG_DEBUG);
         if (DB_error()) {
             $this->status = $oldstatus;     // update in-memory object
@@ -1513,7 +1514,8 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
-
+        //echo "Status is now {$this->status}<br />\n";
+        //die;
         $this->clearInstance();
         return $newstatus;
     }
@@ -1575,11 +1577,11 @@ class Order
         foreach ($this->getItems() as $Item) {
             $Item->getProduct()->handlePurchase($Item, $IPN);
         }
-        if ($this->hasPhysical()) {
+        /*if ($this->hasPhysical()) {
             $this->updateStatus(OrderState::PROCESSING);
         } else {
             $this->updateStatus(OrderState::SHIPPED);
-        }
+        }*/
         return $this;
     }
 
@@ -2365,6 +2367,9 @@ class Order
             if ($Affiliate && $Affiliate->getUid() != $this->uid) {
                 $this->referral_token = $ref_id;
                 $this->referrer_uid = $Affiliate->getUid();
+            } else {
+                $this->referral_token = '';
+                $this->referral_uid = 0;
             }
             if ($save) {
                 $this->updateRecord(array(
