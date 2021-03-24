@@ -34,12 +34,18 @@ SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), tr
 // Get the complete IPN message prior to any processing
 if (!empty($gw_name)) {
     $WH = Shop\Webhook::getInstance($gw_name);
-    if ($WH && $WH->Verify()) {
-        $WH->Dispatch();
+    if ($WH) {
+        if ($WH->Verify()) {
+            $WH->Dispatch();
+        } else {
+            SHOP_log("Webhook verification failed for $gw_name");
+        }
+        $WH->redirectAfterCompletion();
     } else {
-        SHOP_log("Webhook verification failed for $gw_name");
+        SHOP_log("Invalid gateway '$gw_name' requested for webhook");
+        header("HTTP/1.0 500 Internal Error");
+        echo "Webhook not found";
     }
 }
-echo "Completed.";
 exit;
 ?>
