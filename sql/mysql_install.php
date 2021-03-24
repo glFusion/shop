@@ -223,7 +223,7 @@ $_SQL = array(
   `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `shipping_method` varchar(20) DEFAULT NULL,
-  `shipping_dscp` varchar(120) DEFAULT NULL,
+  `shipping_dscp` varchar(128) DEFAULT NULL,
   `gw_order_ref` varchar(128) DEFAULT NULL,
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
@@ -777,8 +777,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `pmt_amount` decimal(12,4) DEFAULT NULL,
       `pmt_ref_id` varchar(255) DEFAULT NULL,
       `pmt_method` varchar(32) DEFAULT NULL,
-      `is_complete` tinyint(1) unsigned NOT NULL DEFAULT 1,
-      `pmt_status` varchar(40) NOT NULL DEFAULT 'COMPLETED',
+      'is_complete' tinyint(1) unsigned NOT NULL DEFAULT 1,
+      'pmt_status' varchar(40) NOT NULL DEFAULT 'COMPLETED',
       `pmt_comment` text,
       `pmt_uid` int(11) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`pmt_id`),
@@ -821,11 +821,32 @@ $SHOP_UPGRADE['1.3.0'] = array(
       KEY `aff_id` (`aff_pmt_uid`)
     ) ENGINE=MyISAM",
     $_SHOP_SAMPLEDATA['shop.packages'],
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
-    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipper_id` `shipper_id` int(3) DEFAULT -1",
-    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
-    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_dscp varchar(128) DEFAULT NULL AFTER shipping_method",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `phone` `shipto_phone` varchar(30)",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD gw_order_ref varchar(128) DEFAULT NULL AFTER shipping_dscp",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `shipper_id` `shipper_id` int(3) DEFAULT -1",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referral_token` varchar(40) NOT NULL DEFAULT '' AFTER `gw_order_ref`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0 AFTER `referral_token`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `pmt_dscp` varchar(255) DEFAULT '' AFTER `pmt_method`",
+    "ALTER TABLE {$_TABLES['shop.states']}
+        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
+    "ALTER TABLE {$_TABLES['shop.states']}
+        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE orderby orderby int(3) NOT NULL DEFAULT 999",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
@@ -844,16 +865,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
     "ALTER TABLE {$_TABLES['shop.tax_rates']}
         CHANGE region region varchar(128)",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD shipping_dscp varchar(20) DEFAULT NULL AFTER shipping_method",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        CHANGE `phone` `shipto_phone` varchar(30)",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD gw_order_ref varchar(128) DEFAULT NULL AFTER shipping_dscp",
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         ADD `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER shipping_units",
     "ALTER TABLE {$_TABLES['shop.shipping']}
@@ -887,8 +898,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `logo_image` varchar(128) NOT NULL DEFAULT '' AFTER `lead_time`",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `affiliate_id` varchar(40)",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `aff_pmt_method` varchar(20)",
-    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `ref_token` varchar(40)",
-    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `ref_expires` datetime",
     // Sync order totals
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
     // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.
