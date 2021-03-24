@@ -67,8 +67,6 @@ class Cart extends Order
     {
         global $_TABLES, $_USER;
 
-        static $carts = array();
-
         if ($uid == 0) {
             $uid = $_USER['uid'];
         }
@@ -80,20 +78,14 @@ class Cart extends Order
         } else {
             $cart_id = self::getCartID($uid);
         }
+        $Cart = new self($cart_id);
 
-        if (isset($carts[$cart_id])) {
-            $Cart = $carts[$cart_id];
-        } else {
-            $Cart = new self($cart_id);
-            $carts[$Cart->getOrderID()] = $Cart;
-        }
         // If the cart user ID doesn't match the requested one, then the
         // cookie may have gotten out of sync. This can happen when the
         // user leaves the browser and the glFusion session expires.
         if ($Cart->getUid() != $uid || $Cart->getStatus() != OrderState::CART) {
             self::_expireCookie();
             $Cart = new self();
-            $carts[$Cart->getOrderID()] = $Cart;
         }
         return $Cart;
     }
@@ -166,6 +158,9 @@ class Cart extends Order
             );
             $this->addItem($args);
         }
+        if (Config::get('aff_enabled')) {
+            $this->setReferralToken($anon_cart->getReferralToken());
+        }
 
         // Remove the anonymous cart and save this user's cart
         $AnonCart->Clear();
@@ -187,6 +182,7 @@ class Cart extends Order
     public function addItem($args)
     {
         global $_SHOP_CONF, $_USER;
+
         if (
             !isset($args['item_number'])
             ||
@@ -772,15 +768,7 @@ class Cart extends Order
      */
     public static function getAnonCartID()
     {
-        $cart_id = NULL;
-        if (
-            isset($_COOKIE[self::$session_var]) &&
-            !empty($_COOKIE[self::$session_var])
-        ) {
-            $cart_id = $_COOKIE[self::$session_var];
-        } else {
-            $cart_id = Session::get('cart_id');
-        }
+        $cart_id = Session::get('cart_id');
         return $cart_id;
     }
 
@@ -920,13 +908,10 @@ class Cart extends Order
 
     /**
      * Helper function to expire the cart ID cookie.
-     * Also removes from the $_COOKIE array for immediate effect.
      */
     private static function _expireCookie()
     {
-        //unset($_COOKIE[self::$session_var]);
         Session::clear();
-        //SEC_setCookie(self::$session_var, '', time()-3600);
     }
 
 
