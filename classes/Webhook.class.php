@@ -617,4 +617,14 @@ class Webhook
         return $this;
     }
 
+
+    /**
+     * Redirect or display output upon completion.
+     * Typical webhooks only display a message and return HTTP 200.
+     */
+    public function redirectAfterCompletion()
+    {
+        echo "Completed";
+    }
+
 }

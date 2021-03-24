@@ -2319,8 +2319,9 @@ class Order
             $gc_bal = \Shop\Products\Coupon::getUserBalance();
             $amt = min($gc_bal, \Shop\Products\Coupon::canPayByGC($this));
         }
+        $this->by_gc = (float)$amt;
         return $this->updateRecord(array(
-            "by_gc = $amt",
+            "by_gc = {$this->by_gc}",
         ) );
     }
 

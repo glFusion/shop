@@ -9,7 +9,7 @@
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
@@ -112,10 +112,20 @@ class Webhook extends \Shop\Webhook
             } else {
                 COM_setMsg($LANG_SHOP['pmt_error']);
             }
-            COM_refresh(SHOP_URL . '/index.php');
             break;
         }
         return true;
+    }
+
+
+    /**
+     * Redirect or display output upon completion.
+     * This webhook is called directly by the buyer, so redirect back to
+     * the Shop homepage.
+     */
+    public function redirectAfterCompletion()
+    {
+        COM_refresh(SHOP_URL . '/index.php');
     }
 
 }
