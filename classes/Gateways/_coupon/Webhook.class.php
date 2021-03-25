@@ -4,7 +4,7 @@
  * This gateway handles orders paid in full by gift card.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner
+ * @copyright   Copyright (c) 2020-2021 Lee Garner
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
@@ -80,12 +80,8 @@ class Webhook extends \Shop\Webhook
 
         if ($retval) {
             $this->setVerified(true);
-            // Log the message here to be sure it's logged.
-            $LogID = $this->logIPN();
             return $retval;
         } else {
-            // Log the message here to be sure it's logged.
-            $LogID = $this->logIPN();
             COM_refresh(Config::get('url'));
         }
     }
@@ -103,6 +99,9 @@ class Webhook extends \Shop\Webhook
     {
         global $LANG_SHOP;
 
+        // Log the message here to be sure it's logged.
+        $LogID = $this->logIPN();
+
         switch ($this->getEvent()) {
         case 'gc_payment':
             $status = false;
@@ -110,10 +109,26 @@ class Webhook extends \Shop\Webhook
             // can be paid by coupon (no excluded items).
             $bal_due = $this->Order->getBalanceDue();
             $this->Order->setGC($bal_due);
-            //var_dump($this->Order->getGC());die;
             if ($this->Order->getGC() < $bal_due) {
                 SHOP_log("Error, order {$this->getOrderId()} cannot be fully paid by coupon.");
                 $this->Order->setGC(0);
+                return false;
+            }
+            $status = Coupon::Apply($bal_due, $this->Order->getUid(), $this->Order);
+            if ($status !== false) {
+                $Pmt = Payment::getByReference($this->getID());
+                if ($Pmt->getPmtID() == 0) {
+                    $Pmt->setRefID($this->getID())
+                        ->setAmount($bal_due)
+                        ->setGateway($this->getSource())
+                        ->setMethod($this->GW->getDscp())
+                        ->setComment('Webhook ' . $this->getID())
+                        ->setComplete(1)
+                        ->setStatus('paid')
+                        ->setOrderID($this->getOrderID());
+                    $retval = $Pmt->Save();
+                }
+            } else {
                 return false;
             }
 
@@ -129,6 +144,7 @@ class Webhook extends \Shop\Webhook
                 COM_setMsg($LANG_SHOP['thanks_title']);
             } else {
                 COM_setMsg($LANG_SHOP['pmt_error']);
+                return false;
             }
             COM_refresh(SHOP_URL . '/index.php');
             break;
