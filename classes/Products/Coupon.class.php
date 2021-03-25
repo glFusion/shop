@@ -333,10 +333,12 @@ class Coupon extends \Shop\Product
             $sql = "UPDATE {$_TABLES['shop.coupons']}
                     SET balance = $bal
                     WHERE code = '$code';";
-            self::writeLog($code, $uid, $applied, 'gc_applied', $order_id);
             //echo $sql . "\n";
             DB_query($sql);
             if ($remain == 0) break;
+        }
+        if ($applied > 0) {
+            self::writeLog('', $uid, $applied, 'gc_applied', $order_id);
         }
 
         /*if ($applied > 0) {
