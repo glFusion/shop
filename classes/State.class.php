@@ -3,7 +3,7 @@
  * Class to handle State information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.1.0
@@ -609,11 +609,9 @@ class State extends RegionBase
                 SHOP_ADMIN_URL .
                 '/regions.php?states&amp;country_id=\'+' .
                 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.countries'], 'country_id,country_name', $country_id, 1
-            ) .
-            "</select>" . LB;
+                '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
+                self::countrySelection($country_id) .
+                "</select>" . LB;
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_statelist',
@@ -700,6 +698,34 @@ class State extends RegionBase
         return $retval;
     }
 
-}
 
-?>
+    /**
+     * Create a country selection dropdown showing only countries with states.
+     *
+     * @param   integer $sel    Selected country ID
+     * @return  string      Selection options
+     */
+    private static function countrySelection($sel = 0)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT DISTINCT(s.country_id), c.country_name
+            FROM {$_TABLES['shop.states']} s
+            LEFT JOIN {$_TABLES['shop.countries']} c
+            ON s.country_id = c.country_id
+            ORDER BY c.country_name ASC";
+        $res = DB_query($sql);
+        $retval = '';
+        while ($A = DB_fetchArray($res, false)) {
+            if ($A['country_id'] == $sel) {
+                $selected = 'selected="selected"';
+            } else {
+                $selected = '';
+            }
+            $retval .= '<option value="' . $A['country_id'] . '" ' . $selected . '>' .
+                $A['country_name'] . '</option>' . LB;
+        }
+        return $retval;
+    }
+
+}
