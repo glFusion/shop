@@ -94,26 +94,11 @@ class Menu
                 'text' => $LANG_SHOP['orders'],
                 'active' => $view == 'orders' || $view == 'shipments' ? true : false,
             ),
-            /*array(
-                'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
-                'text' => $LANG_SHOP['categories'],
-                'active' => $view == 'categories' ? true : false,
-            ),*/
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
-                'text' => $LANG_SHOP['options'],
-                'active' => $view == 'options' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
                 'text' => $LANG_SHOP['shipping'],
                 'active' => $view == 'shipping' ? true : false,
             ),
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
-                'text' => $LANG_SHOP['sale_prices'],
-                'active' => $view == 'sales' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/gateways.php',
                 'text' => $LANG_SHOP['gateways'],
@@ -125,11 +110,6 @@ class Menu
                 'active' => $view == 'wfadmin' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
-                'text' => $LANG_SHOP['other_func'],
-                'active' => $view == 'other' ? true : false,
-            ),
-            array(
                 'url'  => SHOP_ADMIN_URL . '/report.php',
                 'text' => $LANG_SHOP['reports'],
                 'active' => $view == 'reports' ? true : false,
@@ -138,6 +118,11 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/regions.php',
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
+                'text' => $LANG_SHOP['other_func'],
+                'active' => $view == 'other' ? true : false,
             ),
         );
         if (Config::get('aff_enabled')) {
