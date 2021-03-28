@@ -374,6 +374,7 @@ class Cart extends OrderBaseView
                         'opt_value' => $opt['value'],
                         'logo'  => $opt['logo'],
                         'sel'   => $opt['selected'],
+                        'highlight' => $opt['highlight'],
                     ) );
                     $T->parse('row', 'Radios', true);
                 }

@@ -137,6 +137,7 @@ class Gateway extends \Shop\Gateway
             // a different text message.
             $by_gc = min($gc_bal, $gc_can_apply);
         }
+        $retval['highlight'] = true;
         return $retval;
     }
 

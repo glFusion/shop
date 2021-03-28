@@ -533,6 +533,8 @@ class Gateway extends \Shop\Gateway
             $vars['no_shipping'] = '1';
         }
 
+        // TODO: Deprecate this check. Phyisical items are no longer supported
+        // for buy-now buttons since a shipping address is required.
         switch ($P->getShippingType()) {
         case 0:
             $vars['no_shipping'] = '1';

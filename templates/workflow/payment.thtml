@@ -2,7 +2,12 @@
 <div class="workflow_options" style="width:60%;margin:auto;">
     <h2>{$LANG_SHOP['select_payment']}</h2>
 <!-- BEGIN Radios -->
-    <div class="uk-grid workflow_option">
+{!if highlight}
+{!!set hl_cls 'highlight_gw' !!}
+{!else}
+{!!set hl_cls '' !!}
+{!endif}
+    <div class="uk-grid workflow_option {hl_cls}">
         <div class="uk-width-1-10" style="margin-top:auto;margin-bottom:auto;">
 {!!if {opt_type} == "checkbox" !!}
             <input type="checkbox" name="{opt_name}" value="{opt_value}" id="gw_{gw_id}" {sel}

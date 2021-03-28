@@ -30,6 +30,7 @@ class PaymentRadio implements \ArrayAccess
         'selected' => '',
         'dscp' => '',
         'logo' => '',
+        'highlight' => false,
     );
 
 
