@@ -18,7 +18,11 @@ Maksusi odottaa. Kun maksu on vastaanotettu, saat sen
 toinen sähköpostiviesti, joka vahvistaa maksusi.
 </p>
 {!endif}
-<p>Voit tarkastella tilaustasi osoitteessa {order_url}</p>
+<p>Voit tarkastella tilaustasi osoitteessa {order_url}
+{!if has_downloads}
+<br />Ladattavat ostoksesi voidaan ladata yllä olevasta linkistä.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

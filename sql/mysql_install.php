@@ -904,6 +904,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
     // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.
     "UPDATE {$_TABLES['shop.gateways']} SET version = '1.2.2' WHERE version IS NULL",
+    // Enable customer notification of closed orders
+    "UPDATE {$_TABLES['shop.orderstatus']} SET notify_buyer = 1 where name = 'closed'",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade

@@ -18,7 +18,12 @@ Your payment is pending.  Once your payment is received, you will receive
 another email message confirming your payment.
 </p>
 {!endif}
-<p>You may view your order at {order_url}</p>
+<p>
+You may view your order at {order_url}
+{!if has_downloads}
+<br />Your downloadable purchases may be downloaded from the above link.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

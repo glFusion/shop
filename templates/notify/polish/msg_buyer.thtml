@@ -18,7 +18,11 @@ Twoja płatność oczekuje. Po otrzymaniu płatności otrzymasz
 kolejna wiadomość e-mail potwierdzająca płatność.
 </p>
 {!endif}
-<p>Możesz zobaczyć swoje zamówienie pod adresem {order_url}</p>
+<p>Możesz zobaczyć swoje zamówienie pod adresem {order_url}
+{!if has_downloads}
+<br />Twoje zakupy do pobrania można pobrać z powyższego łącza.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

@@ -3,9 +3,9 @@
  * Default data installed when the Shop plugin is installed.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -28,20 +28,20 @@ $_SHOP_SAMPLEDATA = array(
     'shop.workflows' => "INSERT INTO {$_TABLES['shop.workflows']}
             (id, wf_name, orderby, enabled, can_disable)
         VALUES
-            (1, 'viewcart', 10, 3, 0),
-            (2, 'addresses', 20, 3, 0),
-            (3, 'shipping', 30, 3, 0),
-            (4, 'payment', 40, 3, 0),
-            (5, 'confirm', 50, 3, 0)",
+            (0, 'viewcart', 10, 3, 0),
+            (0, 'addresses', 20, 3, 0),
+            (0, 'shipping', 30, 3, 0),
+            (0, 'payment', 40, 3, 0),
+            (0, 'confirm', 50, 3, 0)",
     'shop.orderstatus' => "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer, notify_admin)
         VALUES
-            (1, 10, 1, 'pending', 0, 0),
-            (2, 20, 1, 'processing', 1, 0),
-            (3, 30, 1, 'shipped', 1, 0),
-            (4, 40, 1, 'closed', 0, 0),
-            (5, 50, 1, 'refunded', 0, 0)
-            (5, 60, 1, 'invoiced', 0, 0)",
+            (0, 10, 1, 'pending', 0, 0),
+            (0, 20, 1, 'processing', 1, 0),
+            (0, 30, 1, 'shipped', 1, 0),
+            (0, 40, 1, 'closed', 1, 0),
+            (0, 50, 1, 'refunded', 0, 0),
+            (0, 60, 1, 'invoiced', 0, 0)",
     'shop.currency' => "INSERT IGNORE INTO `{$_TABLES['shop.currency']}` (
             code, symbol,  name, numeric_code, symbol_placement, symbol_spacer, code_placement,
             decimals, rounding_step, thousands_sep, decimal_sep, major_unit, minor_unit,
@@ -824,5 +824,3 @@ $_SHOP_SAMPLEDATA = array(
         (7,51,5,3,2,14,'12-inch Knife Box','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"GROUND_HOME_DELIVERY\",\"rate\":\"0\"},\"ups\":{\"container\":\"02\",\"service\":\"03\",\"rate\":\"0\"},\"usps\":{\"container\":\"VARIABLE\",\"service\":\"PCL_GND\",\"rate\":\"0\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
         (8,4675,25,8.5,5.5,12,'Box-60','{\"dhl\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"14.75\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"GROUND_HOME_DELIVERY\",\"rate\":\"0\"},\"ups\":{\"container\":\"02\",\"service\":\"03\",\"rate\":\"0\"},\"usps\":{\"container\":\"VARIABLE\",\"service\":\"PCL_GND\",\"rate\":\"0\"},\"willcall\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"0\"}}')",
 );
-
-?>

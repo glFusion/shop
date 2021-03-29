@@ -18,7 +18,11 @@ Vaše platba čeká na vyřízení. Jakmile obdržíte platbu, obdržíte ji
 další e-mailovou zprávu potvrzující vaši platbu.
 </p>
 {!endif}
-<p>Objednávku si můžete prohlédnout na adrese {order_url}</p>
+<p>Objednávku si můžete prohlédnout na adrese {order_url}
+{!if has_downloads}
+<br />Vaše nákupy ke stažení lze stáhnout z výše uvedeného odkazu.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

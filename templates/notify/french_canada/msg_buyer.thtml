@@ -18,7 +18,11 @@ Votre paiement est en attente. Une fois votre paiement reçu, vous recevrez
 un autre e-mail confirmant votre paiement.
 </p>
 {!endif}
-<p>Vous pouvez consulter votre commande sur {order_url}</p>
+<p>Vous pouvez consulter votre commande sur {order_url}
+{!if has_downloads}
+<br />Vos achats téléchargeables peuvent être téléchargés à partir du lien ci-dessus.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

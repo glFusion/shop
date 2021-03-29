@@ -18,7 +18,11 @@ Uw betaling is in behandeling. Zodra uw betaling is ontvangen, ontvangt u
 een ander e-mailbericht ter bevestiging van uw betaling.
 </p>
 {!endif}
-<p>U kunt uw bestelling bekijken op {order_url}</p>
+<p>U kunt uw bestelling bekijken op {order_url}
+{!if has_downloads}
+<br />Uw downloadbare aankopen kunnen worden gedownload via de bovenstaande link.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

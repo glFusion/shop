@@ -18,7 +18,11 @@ Puedes descargar tus archivos comprados desde los siguientes enlaces:
 Su pago está pendiente. Una vez que se reciba su pago, recibirá
 otro mensaje de correo electrónico confirmando su pago.</p>
 {!endif}
-<p>Puedes ver tu pedido en {order_url}</p>
+<p>Puedes ver tu pedido en {order_url}
+{!if has_downloads}
+<br />Sus compras descargables se pueden descargar desde el enlace anterior.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}

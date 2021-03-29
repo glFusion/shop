@@ -1411,16 +1411,15 @@ class Order
             ) &&
             $this->isPaid()
         ) {
-            // Get the status to set. For non-physical items, the order is
-            // fullfilled so close it.
-            if ($this->hasPhysical()) {
-               if (!$this->statusAtLeast(OrderState::PROCESSING)) {
+            // Automatically set the order status after payment, unless it has
+            // already been set to Processing or higher.
+            if (!$this->statusAtLeast(OrderState::PROCESSING)) {
+                if ($this->hasPhysical()) {
                    $this->updateStatus(OrderState::PROCESSING);
-               }
-            } elseif (!$this->statusAtLeast(OrderState::SHIPPED)) {
-                // Update to shipped first, mainly to notify the buyer
-                $this->updateStatus(OrderState::SHIPPED);
-                //$this->updateStatus(OrderState::CLOSED);
+                } else {
+                    // No physical items, consider the order closed.
+                    $this->updateStatus(OrderState::CLOSED);
+                }
             }
         }
         return $this;
@@ -1741,6 +1740,7 @@ class Order
         // Add all the items to the message
         $total = (float)0;      // Track total purchase value
         $files = array();       // Array of filenames, for attachments
+        $has_downloads = false; // Assume no downloads
         $item_total = 0;
         $dl_links = '';         // Start with empty download links
         $email_extras = array();
@@ -1761,7 +1761,8 @@ class Order
             // links are only included if the order status is 'paid'
             $file = $P->getFilename();
             if (!empty($file) && $this->status == 'paid') {
-                $files[] = $file;
+                $has_downloads = true;
+                /*$files[] = $file;
                 $dl_url = SHOP_URL . '/download.php?';
                 // There should always be a token, but fall back to the
                 // product ID if there isn't
@@ -1771,7 +1772,7 @@ class Order
                 } else {
                     $dl_url .= 'id=' . $item->getProductId();
                 }
-                $dl_links .= "<a href=\"$dl_url\">$dl_url</a><br />";
+                $dl_links .= "<a href=\"$dl_url\">$dl_url</a><br />";*/
             }
 
             $ext = $item->getQuantity() * $item->getPrice();
@@ -1852,6 +1853,7 @@ class Order
             'email_extras'      => implode('<br />' . LB, $email_extras),
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_url'         => $this->buildUrl('view'),
+            'has_downloads'     => $has_downloads,
         ) );
         if ($this->_amt_paid > 0) {
             $T->set_var(array(
