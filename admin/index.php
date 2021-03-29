@@ -89,7 +89,10 @@ $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
 switch ($action) {
-case 'statcomment':         // update comment and status
+case 'statcomment':
+    // Update comment and status.
+    // Ignore the notify-buyer setting for the status and go by whether the
+    // checkbox is selected.
     $order_id = SHOP_getVar($_POST, 'order_id');
     $notify = SHOP_getVar($_POST, 'notify', 'integer', 0);
     $comment = SHOP_getVar($_POST, 'comment');
@@ -99,7 +102,7 @@ case 'statcomment':         // update comment and status
         $Ord->updateStatus($newstatus, true, false);
         $Ord->Log($comment);
         if ($notify) {
-            $Ord->Notify($newstatus, $comment, $notify, false);
+            $Ord->Notify($newstatus, $comment, true, false);
         }
     }
     COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $order_id);
