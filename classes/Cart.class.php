@@ -159,7 +159,7 @@ class Cart extends Order
             $this->addItem($args);
         }
         if (Config::get('aff_enabled')) {
-            $this->setReferralToken($anon_cart->getReferralToken());
+            $this->setReferralToken($AnonCart->getReferralToken());
         }
 
         // Remove the anonymous cart and save this user's cart
