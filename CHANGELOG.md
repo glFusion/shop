@@ -29,6 +29,8 @@ Release TBD
   * Enable plugin-style installation of payment gateways.
   * Fix: OrderItem was using default option price instead of variant price.
   * Fix: Updated supplier/brand logos not shown due to image caching.
+  * Feature: Add affiliate referrals
+  * Orders without physical items are set to "Closed" upon payment.
 
 ## v1.2.1
 Release 2020-03-02
