@@ -214,7 +214,7 @@ class Upgrade
 
         $paths = array(
             // private/plugins/shop
-            __DIR__ => array(
+            SHOP_PI_PATH => array(
                 // 0.7.1
                 'shop_functions.inc.php',
                 // 1.0.0
