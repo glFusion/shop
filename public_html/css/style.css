@@ -1100,3 +1100,9 @@ div.cart-item {
     padding: 0px;
     min-width:90%;
 }
+
+.highlight_gw {
+    border: solid 3px lightgrey;
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
