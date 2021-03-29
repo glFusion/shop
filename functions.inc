@@ -76,7 +76,7 @@ define('SHOP_LOG_WARNING',  300);
 define('SHOP_LOG_ERROR',    400);
 define('SHOP_LOG_CRITICAL', 500);
 define('SHOP_LOG_ALERT',    550);
-define('SHOP_LOG_EMERGEHCY', 600);
+define('SHOP_LOG_EMERGENCY', 600);
 
 // Session variables for TimThumb image url, if used
 // This needs to be an array var named for the plugin,
@@ -854,7 +854,6 @@ function plugin_autouninstall_shop()
             'shop.product_variants',
             'shop.variantXopt',
             'shop.suppliers',
-            'shop.discountcodes',
             'shop.regions',
             'shop.countries',
             'shop.states',
