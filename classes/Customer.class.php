@@ -786,4 +786,13 @@ class Customer
         return '_coupon';
     }
 
+    public function getAffiliateLink()
+    {
+        if (Config::get('aff_enabled')) {
+            return Config::get('url') . '/index.php?' . Config::get('aff_key') . '=' . $this->affiliate_id;
+        } else {
+            return '';
+        }
+    }
+
 }

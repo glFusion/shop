@@ -2,6 +2,7 @@
 <div id="pe_shop" class="jsenabled_hide">
 <fieldset data-uk-margin class="uk-margin">
     <legend>{$LANG_SHOP['my_account']}</legend>
+    <div class="uk-panel uk-panel-box uk-panel-box-primary uk-card uk-card-body">
 {!if gc_bal}
     <div class="uk-form-row">
         <label class="uk-form-label" style="margin-top:0px;">{$LANG_SHOP['gc_bal']}:</label>
@@ -24,11 +25,34 @@
         </div>
     </div>
 {!endif}
+{!if aff_link}
     <div class="uk-form-row">
-        <label class="uk-form-label">My Affiliate Url</label>
+        <label class="uk-form-label">{$LANG_SHOP['my_aff_link']}</label>
         <div class="uk-form-controls">
-            <a href="{site_url}/?shop_ref={affiliate_id}">{site_url}/?shop_ref={affiliate_id}</a>
+            {aff_link}&nbsp;<a class="cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">
+                <i class="uk-icon-clipboard uk-icon-hover"></i>
+            </a>
+            <script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+            <script>
+            var clipboard = new Clipboard('.cpybtn');
+            clipboard.on('success', function(e) {
+                e.clearSelection();
+                if (typeof UIkit.notify === 'function') {
+                    // uikit v2 theme
+                    UIkit.notify('{lang_copy_success}',{timeout: 300});
+                } else if (typeof UIkit.notification === 'function') {
+                    // uikit v3 theme
+                    UIkit.notification({
+                        message: '<span uk-icon="icon: check"></span> {lang_copy_success}',
+                        timeout: 1500,
+                        status: 'success',
+                    });
+                }
+            });
+            </script>
         </div>
+    </div>
+{!endif}
     </div>
 </fieldset>
 </div>

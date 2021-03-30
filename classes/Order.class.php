@@ -1868,7 +1868,8 @@ class Order
             $T->set_var(array(
                 'affiliate_id' => $U->getAffiliateId(),
                 'affiliate_info' => Config::get('aff_info_url'),
-                'affiliate_link' => $_CONF['site_url'] . '/index.php?shop_ref=' . $U->getAffiliateId(),
+                'affiliate_link' => $_CONF['site_url'] . '/index.php?' .
+                    Config::get('aff_key', 'shop_ref') . '=' . $U->getAffiliateId(),
             ) );
         }
 

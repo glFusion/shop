@@ -764,6 +764,9 @@ $LANG_SHOP = array (
 'payout' => 'Payout',
 'process' => 'Process',
 'pending_payout' => 'Pending Payout',
+'my_aff_link' => 'My Affiliate Link',
+'copy_cb' => 'Copy to Clipboard',
+'copy_cb_success' => 'Data was copied.',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

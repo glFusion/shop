@@ -740,10 +740,11 @@ function plugin_getheadercode_shop()
 {
     global $_USER;
 
-    if (isset($_GET['shop_ref']) && !empty($_GET['shop_ref'])) {
-        $Referrer = Shop\Customer::findByAffiliate($_GET['shop_ref']);
+    $aff_key = Config::get('aff_key', 'shop_ref');
+    if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
+        $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
         if ($Referrer->getUid() != $_USER['uid']) {
-            Shop\Models\Token::set($_GET['shop_ref']);
+            Shop\Models\Token::set($_GET[$aff_key]);
         }
     }
 }
@@ -1508,18 +1509,20 @@ function plugin_user_login_shop($uid)
 
     if ($uid < 2 /*|| $_SHOP_CONF['ena_cart'] == 0*/) return;
 
-    if ($_SHOP_CONF['ena_cart']) {
-        $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
-        if (!empty($anon_cart)) {
-            $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
-            $user_cart->Merge($anon_cart);
-        }
-    }
+    // Check that the user logging in isn't the same as the affiliate.
     $token = Shop\Models\Token::get();
     if (!empty($token)) {
         $Referrer = Shop\Customer::findByAffiliate($token);
         if ($Referrer->getUid() == $uid) {
             Shop\Models\Token::unset();
+        }
+    }
+
+    if ($_SHOP_CONF['ena_cart']) {
+        $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
+        if (!empty($anon_cart)) {
+            $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
+            $user_cart->Merge($anon_cart);
         }
     }
 }
@@ -1897,7 +1900,13 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         }
         $ord_count = DB_count($_TABLES['shop.orders'], 'uid', $uid);
         $LT->set_var('orders', $ord_count);
-        $LT->set_var('affiliate_id', $U->getAffiliateId());
+        if (Config::get('aff_enabled')) {
+            $LT->set_var(array(
+                'aff_link'  => $U->getAffiliateLink(),
+                'lang_copy_clipboard' => $LANG_SHOP['copy_cb'],
+                'lang_copy_success' => $LANG_SHOP['copy_cb_success'],
+            ) );
+        }
         $LT->parse('output', 'block');
         $retval .= $LT->finish($LT->get_var('output'));
     }

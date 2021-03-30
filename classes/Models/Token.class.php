@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Models;
+use Shop\Config;
 
 
 /**
@@ -52,7 +53,11 @@ class Token
      */
     public static function set($token)
     {
-        SESS_setVar(self::VAR_NAME, $token);
+        SEC_setCookie(
+            self::VAR_NAME,
+            $token,
+            time() + (Config::get('aff_ref_exp_days') * 86400)
+        );
     }
 
 
@@ -63,13 +68,22 @@ class Token
      */
     public static function get()
     {
-        return SESS_getVar(self::VAR_NAME);
+        if (isset($_COOKIE[self::VAR_NAME])) {
+            return $_COOKIE[self::VAR_NAME];
+        } else {
+            return '';
+        }
     }
 
 
     public static function unset()
     {
-        SESS_unSet(self::VAR_NAME);
+        SEC_setCookie(
+            self::VAR_NAME,
+            '',
+            time() -3600
+        );
+        unset($_COOKIE[self::VAR_NAME]);    // for immediate effect
     }
 
 

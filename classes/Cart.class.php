@@ -159,6 +159,8 @@ class Cart extends Order
             $this->addItem($args);
         }
         if (Config::get('aff_enabled')) {
+            // This will remove the affiliate ID if it belongs to the user
+            // logging in.
             $this->setReferralToken($AnonCart->getReferralToken());
         }
 
