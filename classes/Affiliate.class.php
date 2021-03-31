@@ -368,7 +368,7 @@ class Affiliate
             $retval = $extras['Currency']->formatValue($fieldvalue);
             break;
         case 'pending_payout':
-            $retval = $extras['Currenncy']->formatValue($A['total_payout'] - $A['sent_payout']);
+            $retval = $extras['Currency']->formatValue($A['total_payout'] - $A['sent_payout']);
             break;
         default:
             $retval = $fieldvalue;
