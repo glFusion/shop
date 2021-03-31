@@ -220,11 +220,17 @@ class Order
      * @var string */
     protected $shipping_dscp = '';
 
+    /** Referral tag value.
+     * @var string */
     protected $referral_token = '';
 
     /** Referring user's glFusion user ID.
      * @var integer */
     protected $referrer_uid = 0;
+
+    /** Expiration timestamp for the referral.
+     * @var integer */
+    protected $referral_exp = 0;
 
     /** Holder for custom information.
      * Used only by Cart, required here to create checkout button from orders.
@@ -662,12 +668,9 @@ class Order
         $this->shipping_dscp = $A['shipping_dscp'];
         $this->last_mod = $A['last_mod'];
         $this->gw_order_ref = SHOP_getVar($A, 'gw_order_ref', 'string', NULL);
-        if (isset($A['referrer_uid'])) {
-            $this->referrer_uid = (int)$A['referrer_uid'];
-        }
-        if (isset($A['referral_token'])) {
-            $this->referral_token = $A['referral_token'];
-        }
+        $this->referrer_uid = SHOP_getVar($A, 'referrer_uid', 'integer');
+        $this->referral_token = SHOP_getVar($A, 'referral_token');
+        $this->referral_exp = SHOP_getVar($A, 'referral_exp', 'integer');
         return $this;
     }
 
@@ -879,6 +882,7 @@ class Order
             "gw_order_ref = '" . DB_escapeString($this->gw_order_ref) . "'",
             "referral_token = '" . DB_escapeString($this->referral_token) . "'",
             "referrer_uid = {$this->referrer_uid}",
+            "referral_exp = {$this->referral_exp}",
         );
 
         $billto = $this->Billto->toArray();
@@ -1550,7 +1554,7 @@ class Order
      */
     public function verifyReferralTag()
     {
-        if ($this->refferal_exp > 0 && $this->referral_exp < time()) {
+        if ($this->referral_exp > 0 && $this->referral_exp < time()) {
             // Referral has expired, remove it and save to the DB.
             $this->referrer_uid = 0;
             $this->referral_token = '';
