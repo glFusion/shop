@@ -144,7 +144,7 @@ case 'addcartitem':
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
     $new_qty = $Cart->addItem($args);
-    COM_errorLog("Adding $item_number, qty $new_qty");
+    SHOP_log("Adding $item_number, qty $new_qty", SHOP_LOG_DEBUG);
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];
