@@ -61,6 +61,16 @@ class Menu
                 'link_admin' => plugin_ismoderator_shop(),
             );
         }
+
+        // Show the Affiliate Sales item only if enabled.
+        if (Config::get('aff_enabled')) {
+            $menu_arr[] = array(
+                'url' => COM_buildUrl(SHOP_URL . '/affiliate.php'),
+                'text' => $LANG_SHOP['affiliates'],
+                'active' => $view == 'affiliate' ? true : false,
+            );
+        }
+        
         return \ADMIN_createMenu($menu_arr, $hdr_txt);
     }
 

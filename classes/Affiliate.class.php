@@ -184,14 +184,155 @@ class Affiliate
             'chkactions' => $bulk_update,
         );
         $filter = '';
+        $extras = array(
+            'Currency' => Currency::getInstance(),
+        );
 
         return ADMIN_list(
             Config::PI_NAME . '_afflist_' . $sess_key,
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            $filter, '', $options, ''
+            $filter, $extras, $options, ''
         );
 
+    }
+
+
+    /**
+     * Display the affiliate sales information for a single affiliate.
+     *
+     * @param   integer $cat_id     Category ID to limit listing
+     * @return  string      Display HTML
+     */
+    public static function userList($uid = 0)
+    {
+        global $_TABLES, $LANG_SHOP, $_SHOP_CONF, $_USER, $_CONF;
+
+        USES_lib_admin();
+
+        $tz_offset = $_CONF['_now']->format('P', true);
+        $Cur = Currency::getInstance();
+        if ($uid == 0 || !plugin_ismoderator_shop()) {
+            $uid = (int)$_USER['uid'];
+            $uid = 4;       // TODO testing
+        } else {
+            // For administrator viewing
+            $uid = (int)$uid;
+        }
+
+        $comm_total = $comm_paid = $comm_due = 0;
+        $sql = "SELECT SUM(IF(aff_pmt_id = 0, 0, aff_item_pmt)) AS total_paid,
+            SUM(aff_item_pmt) AS total_payout,
+            u.fullname
+            FROM {$_TABLES['users']} u
+            LEFT JOIN {$_TABLES['shop.affiliate_sales']} sale
+                ON u.uid = sale.aff_sale_uid
+            LEFT JOIN {$_TABLES['shop.affiliate_saleitems']} item
+                ON sale.aff_sale_id = item.aff_sale_id
+            WHERE u.uid = $uid
+            GROUP BY u.uid";
+
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, false);
+            if ($A) {
+                $comm_total = (float)$A['total_payout'];
+                $comm_paid = (float)$A['total_paid'];
+                $comm_due = $comm_total - $comm_paid;
+            }
+        }
+
+        $sql = "SELECT item.*, sale.aff_pmt_id,
+            CONVERT_TZ(sale.aff_sale_date, '+00:00', '$tz_offset') as sale_date,
+            oi.sku, oi.description,oi.net_price,
+            (oi.net_price * oi.quantity) as item_sale_amount
+            FROM {$_TABLES['shop.affiliate_saleitems']} item
+            RIGHT JOIN {$_TABLES['shop.affiliate_sales']} sale
+            ON sale.aff_sale_id = item.aff_sale_id
+            RIGHT JOIN {$_TABLES['shop.orderitems']} oi
+            ON oi.id = item.aff_oi_id
+            WHERE sale.aff_sale_uid = $uid";
+
+        $header_arr = array(
+            array(
+                'text' => $LANG_SHOP['purch_date'],
+                'field' => 'sale_date',
+                'sort' => 'true',
+            ),
+            array(
+                'text' => $LANG_SHOP['name'],
+                'field' => 'sku',
+            ),
+            array(
+                'text' => $LANG_SHOP['amount'],
+                'field' => 'aff_item_total',
+                'sort' => true,
+                'align' => 'right',
+            ),
+            array(
+                'text' => 'Percent',
+                'field' => 'aff_percent',
+                'sort' => true,
+                'align' => 'right',
+            ),
+            array(
+                'text' => 'Commission',
+                'field' => 'aff_item_pmt',
+                'align' => 'right',
+                'sort' => true,
+            ),
+            array(
+                'text' => 'Due',
+                'field' => 'comm_due',
+                'align' => 'right',
+                'sort' => false,
+            ),
+        );
+
+        $defsort_arr = array(
+            'field' => 'aff_sale_date',
+            'direction' => 'DESC',
+        );
+
+        $query_arr = array(
+            'table' => 'shop.affiliate_sales',
+            'sql' => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => false,
+            'form_url' => SHOP_ADMIN_URL . '/affiliate.php?sales=x',
+        );
+        $extras = array(
+            'Currency' => $Cur,
+        );
+        $display = COM_startBlock(
+            '', '',
+            COM_getBlockTemplate('_admin_block', 'header')
+        );
+        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T->set_file('header', 'aff_header.thtml');
+        $T->set_var(array(
+            'comm_total' => $Cur->Format($comm_total),
+            'comm_paid' => $Cur->Format($comm_paid),
+            'comm_due' => $Cur->Format($comm_due),
+            'lang_commissions' => $LANG_SHOP['commissions'],
+            'lang_total' => $LANG_SHOP['total'],
+            'lang_paid' => $LANG_SHOP['paid'],
+            'lang_due' => $LANG_SHOP['bal_due'],
+        ) );
+        $T->parse('output', 'header');
+        $display .= $T->finish($T->get_var('output'));
+        $display .= ADMIN_list(
+            $_SHOP_CONF['pi_name'] . '_affsalelist',
+            array(__CLASS__, 'getAdminField'),
+            $header_arr, $text_arr, $query_arr, $defsort_arr,
+            '', $extras, '', ''
+        );
+        $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
+        return $display;
     }
 
 
@@ -202,22 +343,31 @@ class Affiliate
      * @param   mixed   $fieldvalue Value of the field
      * @param   array   $A          Array of all fields from the database
      * @param   array   $icon_arr   System icon array (not used)
+     * @param   array   $extras     Extra verbatim parameters
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extras)
     {
-        static $Cur = NULL;
-        if ($Cur === NULL) {
-            $Cur = Currency::getInstance();
-        }
-
         switch($fieldname) {
+        case 'uid':
+            $retval = COM_createLink(
+                $fieldvalue,
+                SHOP_ADMIN_URL . '/affiliates.php?uid=' . $fieldvalue
+            );
+            break;
+        case 'comm_due':
+            if ($A['aff_pmt_id'] > 0) {
+                $fieldvalue = 0;
+            } else {
+                $fieldvalue = $A['aff_item_pmt'];
+            }
         case 'total_sales':
         case 'total_payout':
-            $retval = $Cur->formatValue($fieldvalue);
+        case 'total_paid':
+            $retval = $extras['Currency']->formatValue($fieldvalue);
             break;
         case 'pending_payout':
-            $retval = $Cur->formatValue($A['total_payout'] - $A['sent_payout']);
+            $retval = $extras['Currenncy']->formatValue($A['total_payout'] - $A['sent_payout']);
             break;
         default:
             $retval = $fieldvalue;

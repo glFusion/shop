@@ -71,7 +71,12 @@ case 'payout':
 
 case 'affiliates':
 default:
-    $content .= Shop\Affiliate::adminList();
+    $uid = SHOP_getVar($_GET, 'uid', 0);
+    if ($uid > 0) {
+        $content .= Shop\Affiliate::userList($uid);
+    } else {
+        $content .= Shop\Affiliate::adminList();
+    }
     break;
 }
 
