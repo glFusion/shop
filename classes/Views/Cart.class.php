@@ -458,7 +458,7 @@ class Cart extends OrderBaseView
         $this->tplname = 'checkout';
         $this->TPL->set_file('checkout', 'checkout.thtml');
 
-        $this->Order->verifyReferrer();
+        $this->Order->verifyReferralTag();
         $this->Order->checkRules();
         $gw = Gateway::getInstance($this->Order->getPmtMethod());
         $this->TPL->set_var(array(
