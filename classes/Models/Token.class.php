@@ -21,8 +21,6 @@ use Shop\Config;
  */
 class Token
 {
-    const VAR_NAME = 'glShopReferrer';
-
     /**
      * Create a random token string.
      *
@@ -43,47 +41,6 @@ class Token
             }
         }
         return $retval;
-    }
-
-
-    /**
-     * Set the referral token.
-     *
-     * @param   string  $token  Referral token value
-     */
-    public static function set($token)
-    {
-        SEC_setCookie(
-            self::VAR_NAME,
-            $token,
-            time() + (Config::get('aff_ref_exp_days') * 86400)
-        );
-    }
-
-
-    /**
-     * Get the current referral token value.
-     *
-     * @return  string  Referral token
-     */
-    public static function get()
-    {
-        if (isset($_COOKIE[self::VAR_NAME])) {
-            return $_COOKIE[self::VAR_NAME];
-        } else {
-            return '';
-        }
-    }
-
-
-    public static function unset()
-    {
-        SEC_setCookie(
-            self::VAR_NAME,
-            '',
-            time() -3600
-        );
-        unset($_COOKIE[self::VAR_NAME]);    // for immediate effect
     }
 
 

@@ -12,7 +12,7 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Models\Token;
+use Shop\Models\ReferralTag;
 
 
 /**
@@ -331,11 +331,11 @@ class Customer
     /**
      * Get the referral token.
      *
-     * @return  string      Token value
+     * @return  string      Referral Token value
      */
     public function getReferralToken()
     {
-        return Token::get();
+        return ReferralTag::get();
     }
 
 
@@ -402,7 +402,7 @@ class Customer
 
         // Create a new referrer token if this one is expired.
         if ($this->affiliate_id == '') {
-            $this->affiliate_id = Token::create();
+            $this->affiliate_id = ReferralTag::create();
         }
 
         $cart = DB_escapeString(@serialize($this->cart));

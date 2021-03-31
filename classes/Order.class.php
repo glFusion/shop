@@ -16,6 +16,7 @@ use Shop\Models\OrderState;
 use Shop\Models\ShippingQuote;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
+use Shop\Models\ReferralTag;
 use Shop\Models\Session;
 use Shop\Models\AffiliateSale;
 
@@ -441,7 +442,7 @@ class Order
         if (!is_array($args)) return;
 
         if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
-            $token = Token::get();
+            $token = ReferralTag::get();
             if ($token) {
                 $this->setReferralToken($token, true);
             }
@@ -1464,7 +1465,7 @@ class Order
 
         // If promoting from a cart status to a real order, add the sequence number.
         if (!$this->isFinal($oldstatus) && $this->isFinal() && $this->order_seq < 1) {
-            if (!$this->verifyReferrer()) {
+            if (!$this->verifyReferralTag()) {
                 // If the referrer is invalid, remove from the order record
                 $other_updates = ", referrer_uid = {$this->referrer_uid},
                     info = '" . DB_escapeString((string)$this->m_info) . "'";
@@ -1521,48 +1522,60 @@ class Order
 
 
     /**
+     * Save the referral information with the order.
+     *
+     * @return  object  $this
+     */
+    public function saveReferral()
+    {
+        if ($this->referrer_uid > 0) {
+            $exp = (int)(time() + (Config::get('aff_cart_exp_days') * 86400));
+        } else {
+            $exp = 0;
+        }
+        $this->updateRecord(array(
+            "referral_token = '" . DB_escapeString($this->referral_token) . "'",
+            "referrer_uid = " . $this->referrer_uid,
+            "referral_exp = " . $exp,
+        ) );
+        return $this;
+    }
+
+
+    /**
      * Verify that the referrer token is valid, if present.
      * Also resets the token and referring user ID if the token is invalid.
      *
      * @return  boolean     True if valid or not present, False if invalid
      */
-    public function verifyReferrer()
+    public function verifyReferralTag()
     {
-        // Save the original values
-        $_uid = $this->referrer_uid;
-        $_token = $this->referral_token;
-
-        // Set the current value.
-        // This also validates the token and sets it to empty if invalid.
-        $this->setReferralToken($this->referral_token, true);
-
-        // Finally, check that the values are unchanged, indicating
-        // a valid token is already set.
-        if (
-            $this->referrer_uid != $_uid ||
-            $this->referral_token != $_token
-        ) {
+        if ($this->refferal_exp > 0 && $this->referral_exp < time()) {
+            // Referral has expired, remove it and save to the DB.
+            $this->referrer_uid = 0;
+            $this->referral_token = '';
+            $this->saveReferral();
             return false;
         } else {
-            return true;
-        }
+            // Save the original values to detect changes.
+            $_uid = $this->referrer_uid;
+            $_token = $this->referral_token;
 
-        /*if (empty($token)) {
-            return true;
-        } else {
-            $uid = Token::validate($token);
-            if ($uid != $this->referrer_uid) {
-                $update = true;
-            }
-            if ($uid > 1) {
-                $this->referrer_id = (int)$uid;
-                $retval = true;
+            // Set the current value.
+            // This also validates the token and sets it to empty if invalid.
+            $this->setReferralToken($this->referral_token, true);
+
+            // Finally, check that the values are unchanged, indicating
+            // a valid token is already set.
+            if (
+                $this->referrer_uid != $_uid ||
+                $this->referral_token != $_token
+            ) {
+                return false;
             } else {
-                $this->referrer_token = '';
-                $this->referrer_uid = 0;
-                $retval = false;
+                return true;
             }
-        }*/
+        }
     }
 
 
@@ -2376,10 +2389,7 @@ class Order
                 $this->referral_uid = 0;
             }
             if ($save) {
-                $this->updateRecord(array(
-                    "referral_token = '" . DB_escapeString($this->referral_token) . "'",
-                    "referrer_uid = " . $this->referrer_uid,
-                ) );
+                $this->saveReferral();
             }
         }
         return $this;

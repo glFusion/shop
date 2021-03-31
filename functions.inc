@@ -744,7 +744,7 @@ function plugin_getheadercode_shop()
     if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
         $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
         if ($Referrer->getUid() != $_USER['uid']) {
-            Shop\Models\Token::set($_GET[$aff_key]);
+            Shop\Models\ReferralTag::set($_GET[$aff_key]);
         }
     }
 }
@@ -1510,11 +1510,11 @@ function plugin_user_login_shop($uid)
     if ($uid < 2 /*|| $_SHOP_CONF['ena_cart'] == 0*/) return;
 
     // Check that the user logging in isn't the same as the affiliate.
-    $token = Shop\Models\Token::get();
+    $token = Shop\Models\ReferralTag::get();
     if (!empty($token)) {
         $Referrer = Shop\Customer::findByAffiliate($token);
         if ($Referrer->getUid() == $uid) {
-            Shop\Models\Token::unset();
+            Shop\Models\ReferralTag::remove();
         }
     }
 

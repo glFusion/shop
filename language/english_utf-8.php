@@ -767,6 +767,8 @@ $LANG_SHOP = array (
 'my_aff_link' => 'My Affiliate Link',
 'copy_cb' => 'Copy to Clipboard',
 'copy_cb_success' => 'Data was copied.',
+'aff_sales' => 'Affiliate Sales',
+'commissions' => 'Commissions',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -944,6 +946,9 @@ $LANG_confignames['shop'] = array(
     'aff_delay_days' => 'Days after order to wait before paying bonuses',
     'aff_min_payment' => 'Default minimum payout amount',
     'aff_min_ordstatus' => 'Minimum order status before paying bonuses',
+    'aff_key' => 'Affiliate URL Key',
+    'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
+    'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
 );
 
 /** Language strings for the subgroup names in the config section */

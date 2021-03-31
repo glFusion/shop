@@ -227,6 +227,7 @@ $_SQL = array(
   `gw_order_ref` varchar(128) DEFAULT NULL,
   `referral_token` varchar(40) NOT NULL DEFAULT '',
   `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0,
+  `referral_exp` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
   KEY `order_date` (`order_date`)
@@ -843,6 +844,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `referral_token` varchar(40) NOT NULL DEFAULT '' AFTER `gw_order_ref`",
     "ALTER TABLE {$_TABLES['shop.orders']}
         ADD `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0 AFTER `referral_token`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referral_exp` int(11) unsigned not null default 0",
     "ALTER TABLE {$_TABLES['shop.orders']}
         ADD `pmt_dscp` varchar(255) DEFAULT '' AFTER `pmt_method`",
     "ALTER TABLE {$_TABLES['shop.states']}

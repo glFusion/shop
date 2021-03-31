@@ -1138,6 +1138,7 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+
     // Affiliate Program SG
     array(
         'name' => 'sg_affiliate',
@@ -1173,7 +1174,7 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'aff_ref_exp_days',
+        'name' => 'aff_cookie_exp_days',
         'default_value' => '3',
         'type' => 'text',
         'subgroup' => 50,
@@ -1184,13 +1185,24 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
+        'name' => 'aff_cart_exp_days',
+        'default_value' => '90',
+        'type' => 'text',
+        'subgroup' => 50,
+        'fieldset' => 10,
+        'selection_array' => 0,
+        'sort' => 30,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
         'name' => 'aff_allow_entry',
         'default_value' => false,
         'type' => 'select',
         'subgroup' => 50,
         'fieldset' => 10,
         'selection_array' => 0,
-        'sort' => 30,
+        'sort' => 40,
         'set' => true,
         'group' => 'shop',
     ),
