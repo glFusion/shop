@@ -141,7 +141,7 @@ final class Config
      */
     public static function get($key=NULL, $default=NULL)
     {
-        return self::getInstance()->_get($key);
+        return self::getInstance()->_get($key, $default);
     }
 
 }
