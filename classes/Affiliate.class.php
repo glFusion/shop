@@ -364,6 +364,7 @@ class Affiliate
         case 'total_sales':
         case 'total_payout':
         case 'total_paid':
+        case 'aff_item_pmt':
             $retval = $extras['Currency']->formatValue($fieldvalue);
             break;
         case 'pending_payout':
