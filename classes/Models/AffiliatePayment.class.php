@@ -182,6 +182,8 @@ class AffiliatePayment
      * Collects all outstanding AffiliateSale records grouped by affiliate ID
      * and creates a single total AffiliatePayment record. Then the payment
      * record ID is stored with the AffiliateSale to mark it as processed.
+     *
+     * @param   array   $uids   Array of user IDs to process
      */
     public static function generate($uids=array())
     {
@@ -299,6 +301,9 @@ class AffiliatePayment
     }
 
 
+    /**
+     * Actually process all outstanding payments.
+     */
     public static function process()
     {
         global $_TABLES;

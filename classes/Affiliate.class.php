@@ -214,11 +214,11 @@ class Affiliate
         $Cur = Currency::getInstance();
         if ($uid == 0 || !plugin_ismoderator_shop()) {
             $uid = (int)$_USER['uid'];
-            $uid = 4;       // TODO testing
         } else {
             // For administrator viewing
             $uid = (int)$uid;
         }
+        $U = Customer::getInstance($uid);
 
         $comm_total = $comm_paid = $comm_due = 0;
         $sql = "SELECT SUM(IF(aff_pmt_id = 0, 0, aff_item_pmt)) AS total_paid,
@@ -322,6 +322,11 @@ class Affiliate
             'lang_total' => $LANG_SHOP['total'],
             'lang_paid' => $LANG_SHOP['paid'],
             'lang_due' => $LANG_SHOP['bal_due'],
+            'user_name' => COM_getDisplayName($uid),
+            'lang_my_link' => $LANG_SHOP['my_aff_link'],
+            'aff_link' => $U->getAffiliateLink(),
+            'lang_copy_clipboard' => $LANG_SHOP['copy_cb'],
+            'lang_copy_success' => $LANG_SHOP['copy_cb_success'],
         ) );
         $T->parse('output', 'header');
         $display .= $T->finish($T->get_var('output'));
