@@ -322,6 +322,7 @@ class Affiliate
             'lang_total' => $LANG_SHOP['total'],
             'lang_paid' => $LANG_SHOP['paid'],
             'lang_due' => $LANG_SHOP['bal_due'],
+            'lang_report_for' => $LANG_SHOP['aff_report_for'],
             'user_name' => COM_getDisplayName($uid),
             'lang_my_link' => $LANG_SHOP['my_aff_link'],
             'aff_link' => $U->getAffiliateLink(),

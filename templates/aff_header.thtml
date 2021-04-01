@@ -1,0 +1,41 @@
+{# begin {templatelocation} #}
+<h2>
+    {lang_report_for} {user_name}<br />
+    <ul class="uk-grid uk-grid-width-medium-1-4 uk-grid-width-small-1-2">
+        <li>{lang_commissions}:</li>
+        <li>{lang_total}: {comm_total}</li>
+        <li>{lang_paid}: {comm_paid}</li>
+        <li>{lang_due}: {comm_due}</li>
+    </ul>
+</h2>
+{!if aff_link}
+<h3>
+    <ul class="uk-grid">
+        <li class="uk-width-1-4">{lang_my_link}:</li>
+        <li class="uk-width-3-4">
+            {aff_link}&nbsp;<a class="cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">
+                <i class="uk-icon uk-icon-clipboard"></i>
+            </a>
+        </li>
+    </ul>
+</h3>
+<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+<script>
+var clipboard = new Clipboard('.cpybtn');
+clipboard.on('success', function(e) {
+    e.clearSelection();
+    if (typeof UIkit.notify === 'function') {
+            // uikit v2 theme
+            UIkit.notify('{lang_copy_success}',{timeout: 300});
+    } else if (typeof UIkit.notification === 'function') {
+        // uikit v3 theme
+        UIkit.notification({
+            message: '<span uk-icon="icon: check"></span> {lang_copy_success}',
+            timeout: 1500,
+            status: 'success',
+        });
+    }
+});
+</script>
+{!endif}
+{# end {templatelocation} #}
