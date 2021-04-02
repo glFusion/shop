@@ -501,7 +501,7 @@ class Customer
      * @param   integer $step   Current step number
      * @return  string          HTML for edit form
      */
-    public function AddressForm($type='billto', $A=array(), $step)
+    public function AddressForm($type='billto', $A=array(), $step=1)
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
         if ($type != 'billto') $type = 'shipto';
