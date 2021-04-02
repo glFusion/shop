@@ -126,8 +126,11 @@ class Plugin extends \Shop\Product
             if (array_key_exists('custom_price', $A) && $A['custom_price']) {
                 $this->custom_price = true;
             }
-            if (array_key_exists('aff_apply_bonus', $A) && $A['aff_apply_bonus']) {
-                $this->aff_apply_bonus = true;
+            $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
+            if ($this->aff_percent > 0) {
+                $this->aff_apply_bonus = SHOP_getVar($A, 'aff_apply_bonus', 'boolean', false);
+            } else {
+                $this->aff_apply_bonus = false;
             }
          } else {
             // probably an invalid product ID
