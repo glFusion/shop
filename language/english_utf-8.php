@@ -769,6 +769,7 @@ $LANG_SHOP = array (
 'copy_cb_success' => 'Data was copied.',
 'aff_sales' => 'Affiliate Sales',
 'commissions' => 'Commissions',
+'aff_report_for' => 'Affiliate Report for:',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
