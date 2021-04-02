@@ -244,7 +244,7 @@ class Affiliate
 
         $sql = "SELECT item.*, sale.aff_pmt_id,
             CONVERT_TZ(sale.aff_sale_date, '+00:00', '$tz_offset') as sale_date,
-            oi.sku, oi.description,oi.net_price,
+            oi.sku, oi.description, oi.net_price, oi.id AS oi_id,
             (oi.net_price * oi.quantity) as item_sale_amount
             FROM {$_TABLES['shop.affiliate_saleitems']} item
             RIGHT JOIN {$_TABLES['shop.affiliate_sales']} sale
@@ -260,29 +260,29 @@ class Affiliate
                 'sort' => 'true',
             ),
             array(
-                'text' => $LANG_SHOP['name'],
-                'field' => 'sku',
+                'text' => $LANG_SHOP['item_name'],
+                'field' => 'description',
             ),
             array(
-                'text' => $LANG_SHOP['amount'],
+                'text' => $LANG_SHOP['net_items'],
                 'field' => 'aff_item_total',
                 'sort' => true,
                 'align' => 'right',
             ),
             array(
-                'text' => 'Percent',
+                'text' => $LANG_SHOP['percent'],
                 'field' => 'aff_percent',
                 'sort' => true,
                 'align' => 'right',
             ),
             array(
-                'text' => 'Commission',
+                'text' => $LANG_SHOP['commission'],
                 'field' => 'aff_item_pmt',
                 'align' => 'right',
                 'sort' => true,
             ),
             array(
-                'text' => 'Due',
+                'text' => $LANG_SHOP['due'],
                 'field' => 'comm_due',
                 'align' => 'right',
                 'sort' => false,
@@ -375,6 +375,16 @@ class Affiliate
             break;
         case 'pending_payout':
             $retval = $extras['Currency']->formatValue($A['total_payout'] - $A['sent_payout']);
+            break;
+        case 'description':
+            $id = Config::get('use_sku') ? $A['sku'] : $A['product_id'];
+            $url = SHOP_URL . '/detail.php?id=' . $id;
+            $url .= '&oi_id=' . $A['oi_id'];
+            $url = COM_buildUrl($url);
+            $retval = COM_createLink(
+                $fieldvalue,
+                $url
+            );
             break;
         default:
             $retval = $fieldvalue;

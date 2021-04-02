@@ -764,12 +764,14 @@ $LANG_SHOP = array (
 'payout' => 'Payout',
 'process' => 'Process',
 'pending_payout' => 'Pending Payout',
-'my_aff_link' => 'My Affiliate Link',
+'my_aff_link' => 'Affiliate Referral Link',
 'copy_cb' => 'Copy to Clipboard',
 'copy_cb_success' => 'Data was copied.',
 'aff_sales' => 'Affiliate Sales',
 'commissions' => 'Commissions',
+'commission' => 'Commission',
 'aff_report_for' => 'Affiliate Report for:',
+'due' => 'Due',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
