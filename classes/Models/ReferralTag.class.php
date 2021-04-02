@@ -30,10 +30,11 @@ class ReferralTag extends Token
      */
     public static function set($token)
     {
+        $exp_days = max(Config::get('aff_cookie_exp_days'), .25);
         SEC_setCookie(
             self::VAR_NAME,
             $token,
-            time() + (Config::get('aff_ref_exp_days') * 86400)
+            time() + ($exp_days * 86400)
         );
         $_COOKIE[self::VAR_NAME] = $token;  // for immediate effect
     }

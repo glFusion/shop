@@ -327,6 +327,10 @@ class Product
      * @var boolean */
     protected $aff_apply_bonus = true;
 
+    /** Affiliate bonus percentage.
+     * @var float */
+    protected $aff_percent = 0;
+
 
     /**
      * Constructor.
@@ -345,7 +349,9 @@ class Product
         $this->cancel_url = SHOP_URL . '/index.php';
 
         // Disable affiliate bonuses if the program is disabled.
-        if (!Config::get('aff_enabled')) {
+        if (Config::get('aff_enabled')) {
+            $this->aff_percent = Config::get('aff_pct');
+        } else {
             $this->aff_apply_bonus = false;
         }
 
@@ -4504,7 +4510,7 @@ class Product
      */
     public function affApplyBonus()
     {
-        return $this->aff_apply_bonus;
+        return $this->aff_apply_bonus ? 1 : 0;
     }
 
 
@@ -4516,7 +4522,7 @@ class Product
     public function getAffiliatePercent()
     {
         if ($this->aff_apply_bonus) {
-            return (float)Config::get('aff_pct');
+            return (float)$this->aff_percent;
         } else {
             return 0;
         }
