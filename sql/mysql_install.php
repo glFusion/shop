@@ -256,8 +256,6 @@ $_SQL = array(
   `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
   `aff_token` varchar(40) DEFAULT NULL,
-  `ref_expires` datetime DEFAULT NULL,
-  `ref_token` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
