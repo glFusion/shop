@@ -609,6 +609,7 @@ class Menu
         $T->set_var(array(
             'wrap_form' => $step != 'confirm',
             'flow_count' => $flow_count,
+            'pi_url' => Config::get('url'),
         ) );
         $T->parse('output', 'menu');
         return $T->finish($T->get_var('output'));
