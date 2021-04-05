@@ -291,6 +291,7 @@ class Currency
         static $amounts = array();
 
         $key = $this->code . (string)$amount;
+        $amount = (float)$amount;
         if (!array_key_exists($key, $amounts)) {
             // Format the price as a number.
             $price = number_format(
