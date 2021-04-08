@@ -1,0 +1,9 @@
+{# begin {templatelocation} #}
+{!if msg_count}
+<ul>
+<!-- BEGIN msgRow -->
+	<li>{message}</li>
+<!-- END msgRow -->
+</ul>
+{!endif}
+{# end {templatelocation} #}

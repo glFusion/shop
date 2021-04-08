@@ -1,0 +1,3 @@
+{# begin {templatelocation} #}
+<input type="text" name="{fld_name}" value="{value}" size="60" />
+{# end {templatelocation} #}

@@ -3,9 +3,9 @@
  * Base class for Regions, Countries and States.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -127,9 +127,16 @@ class RegionBase
             if (empty($this->messages)) {
                 $retval = '';
             } else {
-                $retval = '<ul><li>';
-                $retval .= implode('</li><li>', $this->messages);
-                $retval .= '</li></ul>';
+                $T = new Template;
+                $T->set_file('messages', 'err_messages.thtml');
+                $T->set_block('messages', 'msgRow', 'msg');
+                $T->set_var('msg_count', count($this->messages));
+                foreach ($this->messages as $message) {
+                    $T->set_var('message', $message);
+                    $T->parse('msg', 'msgRow', true);
+                }
+                $T->parse('output', 'messages');
+                $retval = $T->finish($T->get_var('output'));
             }
         } else {
             $retval = $this->messages;
@@ -149,29 +156,22 @@ class RegionBase
     {
         global $LANG_ADMIN, $LANG_SHOP;
 
+        $T = new Template('admin');
+        $T->set_file('options', 'region_adminlist_opts.thtml');
+        $T->set_var(array(
+            'key' => static::$KEY,
+            'zone_options' => Rules\Zone::optionList(),
+        ) );
+        $T->parse('output', 'options');
+        $chkactions = $T->finish($T->get_var('output'));
+
         $options = array(
             'chkdelete' => 'true',
             'chkfield' => static::$KEY . '_id',
             'chkname' => static::$KEY. '_id',
-            'chkactions' => '<button type="submit" name="ena_' . static::$KEY . '" value="x" ' .
-                'class="uk-button uk-button-mini uk-button-success tooltip" ' .
-                'title="' . $LANG_ADMIN['enable'] . '" ' .
-                '><i class="uk-icon uk-icon-check"></i>' .
-                '</button>&nbsp;'.
-                '<button type="submit" name="disa_' . static::$KEY . '" value="x" ' .
-                'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-                'title="' . $LANG_ADMIN['disable'] . '" ' .
-                '><i class="uk-icon uk-icon-remove"></i>' .
-                '</button>&nbsp;' .
-                '<select name="rule_id">' . Rules\Zone::optionList() . '</select>' .
-                '<button type="submit" name="rule_add" value="' . static::$KEY . '" ' .
-                'class="uk-button uk-button-mini uk-button-primary tooltip" ' .
-                'title="' . $LANG_SHOP['add_to_rule'] . '">' . $LANG_SHOP['add_to_rule'] . 
-                '</button>',
+            'chkactions' => $chkactions,
             );
         return $options;
     }
 
 }
-
-?>

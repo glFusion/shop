@@ -615,18 +615,19 @@ class Gateway
     {
         global $LANG_SHOP;
 
-        $T = new Template;
-        $T->set_file('tpl', 'gw_servicechk.thtml');
-        $T->set_block('tpl', 'ServiceCheckbox', 'cBox');
+        $T = new Template('fields');
+        $T->set_file('field', 'multicheck.thtml');
+        $T->set_block('field', 'optionRow', 'opt');
         foreach ($this->services as $name => $value) {
             $T->set_var(array(
                 'text'      => $LANG_SHOP['buttons'][$name],
-                'name'      => $name,
-                'checked'   => $value == 1 ? 'checked="checked"' : '',
+                'varname'   => 'service',
+                'valname'   => $name,
+                'checked'   => $value == 1,
             ) );
-            $T->parse('cBox', 'ServiceCheckbox', true);
+            $T->parse('opt', 'optionRow', true);
         }
-        $T->parse('output', 'tpl');
+        $T->parse('output', 'field');
         return $T->finish($T->get_var('output'));
     }
 
@@ -1236,7 +1237,7 @@ class Gateway
 
 
     /**
-     * Get all the configuration fields specifiec to this gateway.
+     * Get all the configuration fields specific to this gateway.
      * Can be overridden by a specific gateway if necessary
      *
      * @param   string  $env    Environment (test, prod or global)
@@ -1249,28 +1250,31 @@ class Gateway
             return $fields;
         }
         foreach ($this->cfgFields[$env] as $name=>$type) {
+            $T = new Template('fields');
             $fld_name = "{$name}[{$env}]";
             switch ($type) {
             case 'checkbox':
-                $field = '<input type="checkbox" name="' . $fld_name .
-                    '" value="1" ';
-                if (
-                    isset($this->config[$env][$name]) &&
-                    $this->config[$env][$name] == 1
-                ) {
-                    $field .= 'checked="checked" ';
-                }
-                $field .= '/>';
+                $T->set_file('field', 'checkbox.thtml');
+                $T->set_var(array(
+                    'fld_name' => $fld_name,
+                    'checked' => (isset($this->config[$env][$name]) &&
+                    $this->config[$env][$name] == 1),
+                ) );
                 break;
             case 'select':
-                $field = '<select name="' . $fld_name . '">' . LB;
+                $T->set_file('field', 'select.thtml');
+                $T->set_var(array(
+                    'fld_name' => $fld_name,
+                ) );
+                $T->set_block('field', 'optionRow', 'opt');
                 foreach ($this->getConfigOptions($name, $env) as $opt) {
-                    $sel = $opt['selected'] ? 'selected="selected"' : '';
-                    $field .= '<option value="' . $opt['value'] .
-                        '" ' . $sel . '">' .
-                        $opt['name'] . '</option>' . LB;
+                    $T->set_var(array(
+                        'selected' => $opt['selected'],
+                        'opt_value' => $opt['value'],
+                        'opt_name' => $opt['name'],
+                    ) );
+                    $T->parse('opt', 'optionRow', true);
                 }
-                $field .= '</select>' . LB;
                 break;
             default:
                 if (isset($this->config[$env][$name])) {
@@ -1278,12 +1282,16 @@ class Gateway
                 } else {
                     $val = '';
                 }
-                $field = '<input type="text" name="' . $fld_name . '" value="' .
-                    $val . '" size="60" />';
+                $T->set_file('field', 'text.thtml');
+                $T->set_var(array(
+                    'fld_name' => $fld_name,
+                    'value' => $val,
+                ) );
                 break;
             }
+            $T->parse('output', 'field');
             $fields[$name] = array(
-                'param_field'   => $field,
+                'param_field' => $T->finish($T->get_var('output')),
                 //'other_label'   => '',
                 'doc_url'       => '',
             );
@@ -1486,12 +1494,6 @@ class Gateway
         $retval['value'] = $this->gw_name;
         $retval['selected'] = $selected ? 'checked="checked" ' : '';
         $retval['logo'] = $this->getLogo();
-/*
-        $radio = '<input required type="radio" name="gateway" value="' .
-            $this->gw_name . '" id="' . $this->gw_name . '" ' . $sel . '/>';
-        $radio .= '<label for="' . $this->gw_name . '">&nbsp;' . $this->getLogo() .
-            '</label>';
-        return $radio;*/
         return $retval;
     }
 

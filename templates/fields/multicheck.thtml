@@ -1,0 +1,5 @@
+{# begin {templatelocation} #}
+<!-- BEGIN optionRow -->
+<span class="nowrap"><input type="checkbox" name="{varname}[{valname}]" value="1" {!if checked}checked="checked"{!endif} />&nbsp;{text}</span>&nbsp;&nbsp;
+<!-- END optionRow -->
+{# end {templatelocation} #}
