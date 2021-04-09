@@ -164,7 +164,7 @@ var shopApplyGC = function(frm_id)
                     }
                 }
                 if (result.msg != '') {
-                    glShop.sotify(result.statusMessage, 'success');
+                    Shop.notify(result.statusMessage, 'success');
                 }
                 document.getElementById('enterGC').value = '';
             } catch(err) {
