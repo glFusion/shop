@@ -748,7 +748,7 @@ $(function(){
                 setTimeout(function(){
                     progressbar.addClass("uk-hidden");
                 }, 250);
-                $.UIkit.notify(response.statusMessage, {timeout: 2000,pos:'top-center'});
+                Shop.notify(response.statusMessage, "success");
             }
         };
 

@@ -2,21 +2,6 @@
  * Shop plugin javascript.
  */
 
-var SHOP_spinner = null;
-function SHOP_showSpinner()
-{
-    if (SHOP_spinner == null) {
-        SHOP_spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    }
-    SHOP_spinner.show();
-}
-
-function SHOP_hideSpinner()
-{
-    SHOP_spinner.hide();
-}
-
-
 /*
  * Add an item to the shopping cart.
  */
@@ -31,8 +16,7 @@ var shopAddToCart = function(frm_id, nonce)
         data = "item_number=" + frm_id + "&nonce=" + nonce;
     }
 
-    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    spinner.show();
+    Shop.spinner_show();
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -46,10 +30,7 @@ var shopAddToCart = function(frm_id, nonce)
                     if (result.unique) {
                         $("#"+frm_id+"_add_cart_btn").prop('disabled', true);
                     }
-                    $.UIkit.notify(
-                        "<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage,
-                        {timeout: 1000,pos:'top-center'}
-                    );
+                    Shop.notify(result.statusMessage, 'success');
                     // If a return URL is provided, redirect to that page
                     if (result.ret_url != '') {
                         window.location.href = result.ret_url;
@@ -57,11 +38,11 @@ var shopAddToCart = function(frm_id, nonce)
                 }
             } catch(err) {
             }
-            spinner.hide();
+            Shop.spinner_hide();
             blk_setvis_shop_cart(result.content == "" ? "none" : "block");
         },
         error: function() {
-            spinner.hide();
+            Shop.notify('An error occurred.', 'error');
         }
     });
     return false;
@@ -120,8 +101,7 @@ function finalizeCart(cart_id, uid, redirects=false)
         return false;
     }
 */
-    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    spinner.show();
+    Shop.spinner_show();
     var dataS = {
         "cart_id": cart_id,
         "uid": uid,
@@ -141,11 +121,11 @@ function finalizeCart(cart_id, uid, redirects=false)
                 } else {
                     stat = false;
                 }
+                if (!redirects) {
+                    Shop.spinner_hide();
+                }
             } catch(err) {
                 stat = false;
-            }
-            if (!redirects) {
-                spinner.hide();
             }
         },
         error: function(httpRequest, message, errorThrown) {
@@ -153,8 +133,8 @@ function finalizeCart(cart_id, uid, redirects=false)
             console.log(httpRequest);
             console.log(message);
             console.log(errorThrown);
+            Shop.spinner_hide();
             throw errorThrown + ': ' + message;
-            spinner.hide();
             return false;
         },
     });
@@ -184,7 +164,7 @@ var shopApplyGC = function(frm_id)
                     }
                 }
                 if (result.msg != '') {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                    glShop.sotify(result.statusMessage, 'success');
                 }
                 document.getElementById('enterGC').value = '';
             } catch(err) {

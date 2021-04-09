@@ -26,7 +26,7 @@ var SHOP_toggle = function(cbox, id, type, component) {
                 if (result.title != null) {
                     cbox.title = result.title;
                 }
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(result.statusMessage, 'success');
             }
             catch(err) {
                 alert(result.statusMessage);
@@ -56,7 +56,7 @@ var SHOPupdateSel = function(sel, id, type, component) {
         data: data,
         success: function(result) {
             try {
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(result.statusMessage, 'success');
             }
             catch(err) {
                 alert(result.statusMessage);
@@ -125,7 +125,7 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
                     btn.style.visibility = "hidden";
                 }
                 SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + jsonObj.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(jsonObj.statusMessage, 'success');
             }
             catch(err) {
                 alert("Error Updating");
@@ -193,7 +193,7 @@ function SHOP_voidItem(component, item_id, newval, elem)
                     elem.setAttribute('title', result.title);
                 }
                 if (result.msg != '') {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, 'success');
                 }
             } catch(err) {
             }

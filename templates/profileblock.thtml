@@ -37,17 +37,7 @@
             var clipboard = new Clipboard('.cpybtn');
             clipboard.on('success', function(e) {
                 e.clearSelection();
-                if (typeof UIkit.notify === 'function') {
-                    // uikit v2 theme
-                    UIkit.notify('{lang_copy_success}',{timeout: 300});
-                } else if (typeof UIkit.notification === 'function') {
-                    // uikit v3 theme
-                    UIkit.notification({
-                        message: '<span uk-icon="icon: check"></span> {lang_copy_success}',
-                        timeout: 1500,
-                        status: 'success',
-                    });
-                }
+				Shop.notify("{lang_copy_success}", "success");
             });
             </script>
         </div>

@@ -109,8 +109,7 @@ function updateCarrier(elem, row)
 }
 function addTrackingNumber()
 {
-    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    spinner.show();
+    Shop.spinner_show();
 
     var dataS = {
         "action": "add_tracking",
@@ -142,14 +141,14 @@ function addTrackingNumber()
                     $("#trackingTable tbody").append(newRowContent);
                     document.getElementById("trackingNum0").value = '';
                 } else {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, "error");
                 }
             } catch(err) {
             }
-            spinner.hide();
+            Shop.spinner_hide();
         },
         error: function() {
-            spinner.hide();
+            Shop.spinner_hide();
         }
     });
     return false;

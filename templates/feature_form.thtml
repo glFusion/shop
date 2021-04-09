@@ -79,7 +79,7 @@
 function delFV(fv_id)
 {
     if (fv_id < 1) {
-        $.UIkit.notify("Invalid object selected", {timeout: 2000,pos:'top-center'});
+        Shop.notify("Invalid object selected", "error");
         return;
     }
     if (!confirm('{$LANG_SHOP['q_del_item']}')) {
@@ -101,9 +101,9 @@ function delFV(fv_id)
                     row = document.getElementById("fv_row_"+fv_id);
                     row.remove();
                 }
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                Shop.notify(result.statusMessage, "success");
             } catch(err) {
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                Shop.notify("An unknown error occurred", "error");
             }
         },
         error: function(result) {
@@ -117,7 +117,7 @@ function addFV()
 {
     newfv = document.getElementById("newFV").value;
     if (newfv == "") {
-        $.UIkit.notify("No value given", {timeout: 2000,pos:'top-center'});
+        Shop.notify("No value given", "error");
         return;
     }
     var dataS = {
@@ -143,9 +143,9 @@ function addFV()
                     $("#fv_tbl tbody").append(newRowContent);
                     document.getElementById("newFV").value = '';
                 }
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                Shop.notify(result.statusMessage, "success");
             } catch(err) {
-                $.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                Shop.notify("An unknown error occurred", "error");
             }
         },
         error: function(result) {

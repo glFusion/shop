@@ -123,11 +123,11 @@ function validateAddress(form)
         success: function(result) {
             try {
                 if (result.status != true) {
-                    //$.UIkit.notify("An unknown error occurred", {timeout: 2000,pos:'top-center'});
+                    //Shop.notify("An unknown error occurred", "error");
                     modal = UIkit.modal.blockUI(result.form);
                     return false;
                 } else {
-                    $.UIkit.notify("Address is Valid", {timeout: 2000,pos:'top-center'});
+                    Shop.notify("Address is Valid", "success");
                     var input = document.createElement("input");
                     input.type = "hidden";
                     input.name = "saveaddr";

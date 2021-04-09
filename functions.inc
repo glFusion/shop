@@ -696,6 +696,7 @@ function plugin_getheaderjs_shop()
 {
     $files = array(
         //__DIR__ . '/js/toggleEnabled.js',
+        __DIR__ . '/js/util.js',  // uikit v2/v3 compatible notifications
         __DIR__ . '/js/addcart.js',
     );
     return $files;

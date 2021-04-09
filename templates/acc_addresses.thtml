@@ -17,14 +17,11 @@ function SHOP_setDefAddr(type, addr_id)
         success: function(result) {
             try {
                 if (result.status) {
-                    $.UIkit.notify(
-                        "<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage,
-                        {timeout: 1000,pos:'top-center'}
-                    );
+                    Shop.notify(result.statusMessage, "success");
                     $("."+type).prop("checked", false);
                     $("#"+type+"_"+addr_id).prop("checked", true);
                 } else {
-                    $.UIkit.notify(result.statusMessage, {timeout: 1000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, "error");
                 }
             }
             catch(err) {

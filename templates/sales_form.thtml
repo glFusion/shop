@@ -214,11 +214,11 @@ function SHOP_validateSalesForm()
 {
     form = document.getElementById("shopsalesform");
     if (form.item_type.value == 'product' && form.item_id.value == 0) {
-        $.UIkit.notify("<i class='uk-icon uk-icon-exclamation-triangle'></i>&nbsp;{$LANG_SHOP['msg_itemcat_req']}", {timeout: 3000,pos:'top-center'});
+        Shop.notify("{$LANG_SHOP['msg_itemcat_req']}", "warning");
         return false;
     }
     if (form.item_type.value == 'category' && form.cat_id.value == 0) {
-        $.UIkit.notify("<i class='uk-icon uk-icon-exclamation-triangle'></i>&nbsp;{$LANG_SHOP['msg_itemcat_req']}", {timeout: 3000,pos:'top-center'});
+        Shop.notify("{$LANG_SHOP['msg_itemcat_req']}", "warning");
         return false;
     }
     return true;

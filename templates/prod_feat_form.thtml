@@ -56,7 +56,7 @@ function delPXF(ft_id)
 {
     var idx = $.inArray(ft_id, ft_ids)
     if (ft_id < 1 || idx < 0) {
-        $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
+        Shop.notify("{$LANG_SHOP['invalid_form']}", "error");
         return;
     }
     ft_ids.splice(idx, 1);
@@ -71,7 +71,7 @@ function addPXF()
     if (fv_custom == "") {
         fv_custom = "";
         if (fv_id == "") {
-            $.UIkit.notify("{$LANG_SHOP['missing_fields']}", {timeout: 2000,pos:'top-center'});
+            Shop.notify("{$LANG_SHOP['missing_fields']}", "error");
             return;
         }
     }
@@ -79,7 +79,7 @@ function addPXF()
     if (ft_id == 0 || ($.inArray(ft_id, ft_ids) > -1)) {
         // Missing or more likely a duplicate feature.
         // A feature may be selected only once.
-        $.UIkit.notify("{$LANG_SHOP['dup_pxf']}", {timeout: 2000,pos:'top-center'});
+        Shop.notify("{$LANG_SHOP['dup_pxf']}", "error");
         return;
     }
 
@@ -115,11 +115,11 @@ function addPXF()
                     ft_ids.push(result.ft_val);
                     idx++;
                 } else {
-                    $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
+                    Shop.notify("{$LANG_SHOP['invalid_form']}", "error");
                 }
             } catch(err) {
                 console.log(err);
-                $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
+                Shop.notify("{$LANG_SHOP['invalid_form']}", "error");
             }
         },
         error: function(result) {
@@ -152,7 +152,7 @@ function updateFVsel()
                 }
             } catch(err) {
                 console.log(err);
-                $.UIkit.notify("{$LANG_SHOP['invalid_form']}", {timeout: 2000,pos:'top-center'});
+                Shop.notify("{$LANG_SHOP['invalid_form']}", "error");
             }
         },
         error: function(result) {
