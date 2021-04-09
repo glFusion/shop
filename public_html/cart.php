@@ -369,6 +369,14 @@ case 'shipping':
 
 case 'payment':
     $Cart = Shop\Cart::getInstance();
+    $addr_wf = Shop\Workflow::getInstance('addresses');
+    if (!$addr_wf->isSatisfied($Cart)) {
+        COM_refresh(SHOP_URL . '/cart.php?addresses');
+    }
+    $ship_wf = Shop\Workflow::getInstance('shipping');
+    if (!$ship_wf->isSatisfied($Cart)) {
+        COM_refresh(SHOP_URL . '/cart.php?shipping');
+    }
     if ($Cart->getPmtMethod() == '') {
         // Set the payment method to the customer's preferred method
         // if not already set.
