@@ -1,8 +1,12 @@
+/*
+ * Utility javascript functions to abstrace UI elements from the
+ * underlying framework. 
 /* Display a popup notification */
 var shop_spinner = null;
 
 var Shop = (function() {
 	return {
+		// Display a notification popup for a short time.
 		notify: function(message, status='', timeout=1500) {
 			if (status == 'success') {
 				var icon = "<i class='uk-icon uk-icon-check'></i>&nbsp;";
@@ -21,8 +25,11 @@ var Shop = (function() {
 				    timeout: timeout,
 		            status: status,
 				});
-		    }
+		    } else {
+				alert(message);
+			}
 		},
+		// Display a spinner in a modal dialog during processing.
 		spinner_show: function (message="") {
 			var content = '<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i>&nbsp;' + message + '</div>';
 			if (typeof(UIkit.modal.blockUI) == 'function') {
@@ -36,15 +43,13 @@ var Shop = (function() {
 				shop_spinner = UIkit.modal.dialog(content, {'bgClose':false});
 			}
 		},
+		// Hide the spinner dialog created above.
 		spinner_hide: function() {
 			if (shop_spinner != null) {
 				if (typeof(shop_spinner.hide) == 'function') {
 					shop_spinner.hide();
 				}
 			}
-		},
-		sleep: function(milliseconds) {
-			return new Promise(resolve => setTimeout(resolve, milliseconds));
 		}
 	};
 })();
