@@ -18,6 +18,7 @@
 namespace Shop;
 use Shop\Models\OrderState;
 use Shop\Models\Session;
+use Shop\Products\Coupon;
 
 
 /**
@@ -360,7 +361,7 @@ class Cart extends Order
         if ($_SHOP_CONF['gc_enabled']) {
             $gc = SHOP_getVar($A, 'gc_code');
             if (!empty($gc)) {
-                if (\Shop\Products\Coupon::Redeem($gc) == 0) {
+                if (Coupon::Redeem($gc) == 0) {
                     unset($this->m_info['apply_gc']);
                 }
             }
@@ -538,7 +539,7 @@ class Cart extends Order
             if ($_SHOP_CONF['gc_enabled']) {
                 $gateways['_coupon'] = Gateway::getInstance('_coupon');
             }
-            $gc_bal = $_SHOP_CONF['gc_enabled'] ? \Shop\Products\Coupon::getUserBalance() : 0;
+            $gc_bal = $_SHOP_CONF['gc_enabled'] ? Coupon::getUserBalance() : 0;
             if (empty($gateways)) {
                 return NULL;  // no available gateways
             }
@@ -1028,7 +1029,7 @@ class Cart extends Order
             DiscountCode::countCurrent() > 0 ||     // can't have active codes
             (
                 $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
-                count(Products\Coupon::getUserCoupons()) > 0
+                count(Coupon::getUserCoupons()) > 0
             )
         ) {
             return false;
