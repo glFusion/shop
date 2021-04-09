@@ -962,6 +962,13 @@ $LANG_configselects['shop'] = array(
     0 => array('Ja' => 1, 'Nein' => 0),
     2 => array('Ja' => 1, 'Nein' => 0),
     5 => array('Name' => 'name', 'Preis' => 'price', 'Produkt-ID' => 'id'),
+    11 => array(
+        '10 - Pending'   => 'pending',
+        '20 - Invoiced'  => 'invoiced',
+        '30 - Processing' => 'processing',
+        '40 - Shipped'   => 'shipped',
+        '50 - Closed'    => 'closed',
+    ),
     13 => array('Keine Blöcke' => 0, 'Linke Blöcke' => 1, 'Rechte Blöcke' => 2, 'Linke & Rechte Blöcke' => 3),
     14 => array('Nicht verfügbar' => 0, 'Optional' => 1, 'Erforderlich' => 2),
     15 => array('Pfund' => 'lbs', 'Kilogramm' => 'kgs'),
