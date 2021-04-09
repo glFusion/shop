@@ -83,7 +83,6 @@ class Webhook extends \Shop\Webhook
      * notifies the buyer and administrator
      *
      * @uses    self::Verify()
-     * @uses    BaseIPN::handlePurchase()
      */
     public function Dispatch()
     {
@@ -104,7 +103,7 @@ class Webhook extends \Shop\Webhook
                         ->setStatus($this->getEvent())
                         ->setOrderID($this->getOrderID())
                         ->Save();
-                    $status = $this->handlePurchase($this->Order);
+                    $status = $this->handlePurchase();
                 }
             }
             if ($status) {

@@ -144,7 +144,7 @@ class Webhook extends \Shop\Webhook
                 SHOP_log("Order " . $this->Order->getOrderId() . " was already invoiced and processed");
 //                return false;
             }
-            $retval = $this->handlePurchase($this->Order);
+            $retval = $this->handlePurchase();
             break;
         case 'invoice.payment_succeeded': 
             // Invoice payment notification
@@ -232,7 +232,7 @@ class Webhook extends \Shop\Webhook
                     $this->Payment->Save();
                     $retval = true;
                 }
-                $retval = $this->handlePurchase($this->Order);
+                $retval = $this->handlePurchase();
                 $this->logIPN();
             }
             break;

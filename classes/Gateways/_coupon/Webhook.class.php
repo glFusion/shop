@@ -93,7 +93,6 @@ class Webhook extends \Shop\Webhook
      * notifies the buyer and administrator
      *
      * @uses    self::Verify()
-     * @uses    BaseIPN::handlePurchase()
      */
     public function Dispatch()
     {
@@ -132,7 +131,7 @@ class Webhook extends \Shop\Webhook
                 return false;
             }
 
-            $status = $this->handlePurchase($this->Order);
+            $status = $this->handlePurchase();
             if ($status) {
                 $this->Order->updatePmtStatus()
                     ->Log(

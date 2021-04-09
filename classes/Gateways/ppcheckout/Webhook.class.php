@@ -115,6 +115,7 @@ class Webhook extends \Shop\Webhook
         case 'PAYMENT.CAPTURE.COMPLETED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
                 $this->setOrderID($resource->custom_id);
+                $this->Order = Order::getInstance($this->getOrderID());
                 $this->setPayment($resource->amount->value);
                 $this->setCurrency($resource->amount->currency_code);
                 $ref_id = $resource->id;
@@ -170,6 +171,7 @@ class Webhook extends \Shop\Webhook
                     $unit = $purchase_units[0];
                     if (isset($unit->custom_id)) {
                         $this->setOrderID($unit->custom_id);
+                        $this->Order = Order::getInstance($this->getOrderID());
                     }
                     if (
                         isset($unit->payments) &&
@@ -271,14 +273,14 @@ class Webhook extends \Shop\Webhook
                     }
                 }
                 SHOP_log("Invoice created for {$this->getOrderID()}", SHOP_LOG_DEBUG);
-                $Order = Order::getInstance($this->getOrderID());
-                if (!$Order->isNew()) {
-                    $terms_gw = \Shop\Gateway::create($Order->getPmtMethod());
-                    $Order->setInfo('gw_pmt_url', $invoice->detail->metadata->recipient_view_url);
-                    $Order->setGatewayRef($invoice->id)
+                $this->Order = Order::getInstance($this->getOrderID());
+                if (!$this->Order->isNew()) {
+                    $terms_gw = \Shop\Gateway::create($this->Order->getPmtMethod());
+                    $this->Order->setInfo('gw_pmt_url', $invoice->detail->metadata->recipient_view_url);
+                    $this->Order->setGatewayRef($invoice->id)
                           ->setInfo('terms_gw', $this->GW->getName())
                           ->Save();
-                    $Order->updateStatus($terms_gw->getConfig('after_inv_status'));
+                    $this->Order->updateStatus($terms_gw->getConfig('after_inv_status'));
                 }
             }
             if (!$status) {

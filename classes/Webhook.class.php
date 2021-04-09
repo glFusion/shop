@@ -5,10 +5,10 @@
  * own class based on this one.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
- * @since       vTBD
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -541,31 +541,28 @@ class Webhook
      *
      * @return  boolean     True if processed successfully, False if not
      */
-    public function handlePurchase($Order = NULL)
+    public function handlePurchase()
     {
-        if ($Order === NULL) {
-            $Order = Order::getInstance($this->getOrderID());
+        if (is_null($this->Order)) {
+            $this->Order = Order::getInstance($this->getOrderID());
         }
-        $GW = Gateway::create($Order->getPmtMethod());
+        if ($this->Order->isNew()) {
+            SHOP_log("Error: Order {$this->getOrderID()} is not valid", SHOP_LOG_ERROR);
+            return false;
+        }
+
+        $GW = Gateway::create($this->Order->getPmtMethod());
         if (
-            $GW->okToProcess($Order)
+            $GW->okToProcess($this->Order)
             //&& !$Order->statusAtLeast(OrderState::PROCESSING)
         ) {
-            $this->IPN->setUid($Order->getUid());
+            $this->IPN->setUid($this->Order->getUid());
             // Handle the purchase for each order item
             $this->Order->handlePurchase($this->IPN);
-            /*foreach ($Order->getItems() as $Item) {
-                $Item->getProduct()->handlePurchase($Item, $this->IPN);
-            }
-            if ($Order->hasPhysical()) {
-                $Order->updateStatus(OrderState::PROCESSING);
-            } else {
-                $Order->updateStatus(OrderState::SHIPPED);
-            }*/
         } else {
             SHOP_log('Cannot process order ' . $this->getOrderID(), SHOP_LOG_ERROR);
-            SHOP_log('canprocess? ' . var_export($GW->okToProcess($Order),true), SHOP_LOG_DEBUG);
-            SHOP_log('status ' . $Order->getStatus(), SHOP_LOG_DEBUG);
+            SHOP_log('canprocess? ' . var_export($GW->okToProcess($this->Order),true), SHOP_LOG_DEBUG);
+            SHOP_log('status ' . $this->Order->getStatus(), SHOP_LOG_DEBUG);
             return false;
         }
         return true;
