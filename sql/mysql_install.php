@@ -255,7 +255,8 @@ $_SQL = array(
   `uid` int(11) unsigned NOT NULL,
   `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
-  `aff_token` varchar(40) DEFAULT NULL,
+  `affiliate_id` varchar(40) DEFAULT NULL,
+  `aff_pmt_method` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -823,6 +824,10 @@ $SHOP_UPGRADE['1.3.0'] = array(
     ) ENGINE=MyISAM",
     $_SHOP_SAMPLEDATA['shop.packages'],
     "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
         ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
     "ALTER TABLE {$_TABLES['shop.orders']}
         ADD shipping_dscp varchar(128) DEFAULT NULL AFTER shipping_method",
@@ -832,10 +837,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `billto_phone` varchar(30) AFTER `billto_zip`",
     "ALTER TABLE {$_TABLES['shop.orders']}
         ADD gw_order_ref varchar(128) DEFAULT NULL AFTER shipping_dscp",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
-    "ALTER TABLE {$_TABLES['shop.orders']}
-        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orders']}
         CHANGE `shipper_id` `shipper_id` int(3) DEFAULT -1",
     "ALTER TABLE {$_TABLES['shop.orders']}
@@ -883,6 +884,8 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
         CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.product_option_groups']}
+        CHANGE `pog_orderby` `pog_orderby` SMALLINT(3) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orderitems']}
         DROP `dc_price`",
     "ALTER TABLE {$_TABLES['shop.categories']}
