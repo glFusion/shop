@@ -347,7 +347,7 @@ class Workflow
      * @param   string  $currview   Current view
      * @return  string              Next view in line
      */
-    public static function getNextView($currview = '', $Cart)
+    public static function getNextView($currview, $Cart)
     {
         global $_SHOP_CONF;
 
