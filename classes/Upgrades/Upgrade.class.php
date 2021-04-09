@@ -184,20 +184,21 @@ class Upgrade
      *
      * @param   string  $dir    Directory name
      */
-    public static function rmDir($dir)
+    public static function delPath($dir)
     {
         if (is_dir($dir)) {
             $objects = scandir($dir);
             foreach ($objects as $object) {
                 if ($object != "." && $object != "..") {
                     if (is_dir($dir . '/' . $object)) {
-                        SHOP_rmdir($dir . '/' . $object);
+                        self::delPath($dir . '/' . $object);
+                        @rmdir($dir . '/' . $object);
                     } else {
                         @unlink($dir . '/' . $object);
                     }
                 }
             }
-            @self::rmDir($dir);
+            @rmdir($dir);
         } elseif (is_file($dir)) {
             @unlink($dir);
         }
@@ -249,7 +250,7 @@ class Upgrade
         foreach ($paths as $path=>$files) {
             foreach ($files as $file) {
                 SHOP_log("removing $path/$file");
-                self::rmDir("$path/$file");
+                self::delPath("$path/$file");
             }
         }
     }
