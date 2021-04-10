@@ -242,7 +242,7 @@ class Affiliate
             }
         }
 
-        $sql = "SELECT item.*, sale.aff_pmt_id,
+        $sql = "SELECT item.*, sale.aff_pmt_id, sale.aff_order_id,
             CONVERT_TZ(sale.aff_sale_date, '+00:00', '$tz_offset') as sale_date,
             oi.sku, oi.description, oi.net_price, oi.id AS oi_id,
             (oi.net_price * oi.quantity) as item_sale_amount
@@ -288,6 +288,16 @@ class Affiliate
                 'sort' => false,
             ),
         );
+        if (plugin_ismoderator_shop()) {
+            array_unshift(
+                $header_arr,
+                array(
+                    'text' => $LANG_SHOP['order'],
+                    'field' => 'aff_order_id',
+                    'sort' => true,
+                )
+            );
+        }
 
         $defsort_arr = array(
             'field' => 'aff_sale_date',
@@ -356,9 +366,10 @@ class Affiliate
     {
         switch($fieldname) {
         case 'uid':
+        case 'fullname':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/affiliates.php?uid=' . $fieldvalue
+                SHOP_ADMIN_URL . '/affiliates.php?uid=' . $A['uid']
             );
             break;
         case 'comm_due':
@@ -384,6 +395,12 @@ class Affiliate
             $retval = COM_createLink(
                 $fieldvalue,
                 $url
+            );
+            break;
+        case 'aff_order_id':
+            $retval = COM_createLink(
+                $fieldvalue,
+                Config::get('admin_url') . '/orders.php?order=' . $fieldvalue
             );
             break;
         default:
