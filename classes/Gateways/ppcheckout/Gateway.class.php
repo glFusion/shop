@@ -184,7 +184,7 @@ class Gateway extends \Shop\Gateway
             'shop_url' => SHOP_URL,
             'gw_name' => $this->gw_name,
             'cur_code' => $Cart->getCurrency()->getCode(),
-            'order_total' => $Cart->getTotal(),
+            'order_total' => $Cart->getBalanceDue(),
             'order_id' => $Cart->getOrderId(),
             'uid' => $Cart->getUid(),
             'success_url' => SHOP_URL . '/index.php',

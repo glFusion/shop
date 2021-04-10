@@ -472,7 +472,7 @@ class Cart extends Order
     {
         global $_SHOP_CONF, $_USER;
 
-        $by_gc = (float)$this->getInfo('apply_gc');
+        $by_gc = (float)$this->getGC();
         $net_total = $this->order_total - $by_gc;
         if ($gw->Supports('checkout')) {
             // Else, if amount > 0, regular checkout button

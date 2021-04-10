@@ -186,7 +186,7 @@ class Gateway extends \Shop\Gateway
         $tax = 0;
         $lineItems = array();
         $orderTaxes = array();
-        $by_gc = $Ord->getInfo('apply_gc');
+        $by_gc = $Ord->getGC();
         if ($by_gc > 0) {
             $total_amount = $Ord->getTotal() - $by_gc;
             $PriceMoney = new \Square\Models\Money;
