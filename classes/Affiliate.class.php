@@ -70,7 +70,7 @@ class Affiliate
         $display = '';
         $pending_where = '';
         if ($pending_payout) {
-            $pending_sql = ", '_coupon' AS payout_method,
+            $pending_sql = ", aff_pmt_method AS payout_method,
                 (SELECT sum(aff_pmt_amount)
                 FROM {$_TABLES['shop.affiliate_payments']}
                 WHERE aff_pmt_uid = u.uid) as sent_payout";

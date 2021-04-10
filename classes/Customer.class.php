@@ -116,7 +116,6 @@ class Customer
         if ($uid < 2) {     // Anon information is not saved
             return;
         }
-
         $res = DB_query(
             "SELECT u.username, u.fullname, u.email, u.language, ui.*
                 FROM {$_TABLES['users']} u
@@ -126,23 +125,29 @@ class Customer
         );
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
-            $this->setCart($A['cart']);
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
             $this->language = str_replace('_' . COM_getCharset(), '', $A['language']);
-            $this->isNew = false;
+            $this->setCart($A['cart']);
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
             $this->gw_ids = $this->getCustomerIds($uid);
-            $this->affiliate_id = $A['affiliate_id'];
-            $this->aff_pmt_method = $A['aff_pmt_method'];
+            if ($A['uid'] > 0) {
+                // The returned uid value will be null if the user record was
+                // found but there is no customer record created yet.
+                $this->affiliate_id = $A['affiliate_id'];
+                $this->aff_pmt_method = $A['aff_pmt_method'];
+                $this->isNew = false;
+            } else {
+                $this->saveUser();
+            }
         } else {
             $this->cart = array();
             $this->isNew = true;
             $this->addresses = array();
             $this->pref_gw = '';
-            $this->saveUser();      // create a user record
+            //$this->saveUser();      // create a user record
         }
     }
 
@@ -410,7 +415,8 @@ class Customer
             uid = {$this->uid},
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart',
-            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "'
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
+            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'
             ON DUPLICATE KEY UPDATE
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
             cart = '$cart',
