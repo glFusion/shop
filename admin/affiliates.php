@@ -80,7 +80,7 @@ default:
     break;
 }
 
-$display = COM_siteHeader();
+$display = \Shop\Menu::siteHeader($LANG_SHOP['affiliates']);
 $display .= \Shop\Menu::Admin('affiliates');
 $display .= \Shop\Menu::adminAffiliates($action);
 if (!empty($msg)) {
@@ -88,7 +88,7 @@ if (!empty($msg)) {
     $display .= COM_showMessageText($messages);
 }
 $display .= $content;
-$display .= COM_siteFooter();
+$display .= \Shop\Menu::siteFooter();
 echo $display;
 exit;
 
