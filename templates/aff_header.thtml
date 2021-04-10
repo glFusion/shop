@@ -1,13 +1,15 @@
 {# begin {templatelocation} #}
 <h2>
     {lang_report_for} {user_name}<br />
+</h2>
+<h3>
     <ul class="uk-grid uk-grid-width-medium-1-4 uk-grid-width-small-1-2">
         <li>{lang_commissions}:</li>
         <li>{lang_total}: {comm_total}</li>
         <li>{lang_paid}: {comm_paid}</li>
         <li>{lang_due}: {comm_due}</li>
     </ul>
-</h2>
+</h3>
 {!if aff_link}
 <h3>
     <ul class="uk-grid">
