@@ -57,14 +57,14 @@ class Webhook extends \Shop\Webhook
     {
         // Be optimistic. Also causes a synthetic 200 return for unhandled events.
         $retval = true;
-
         $object = $this->getData()->data->object;
         if (!$object) {
             return false;
         }
-        $this->GW = Gateway::getInstance($this->getSource());
-        if (!$this->GW) {
-            return false;
+
+        // If not unique, return true since it's doesn't need to be resent
+        if (!$this->isUniqueTxnId()) {
+            return true;
         }
 
         switch ($this->getEvent()) {
@@ -114,9 +114,8 @@ class Webhook extends \Shop\Webhook
         case 'payment':
         case 'payment.created':
             $payment = $object->payment;
-            $this->setID($payment->id);
+            $ref_id = $payment->id;
             if ($payment) {
-                $this->logIPN();
                 $amount_money = $payment->amount_money->amount;
                 if (
                     $amount_money > 0 &&
@@ -129,32 +128,34 @@ class Webhook extends \Shop\Webhook
                     $this->setOrderID($sqOrder->getResult()->getOrder()->getReferenceId());
                     $Order = Order::getInstance($this->getOrderID());
                     if (!$Order->isNew()) {
-                        $Pmt = Payment::getByReference($this->getID());
+                        $Pmt = Payment::getByReference($ref_id);
                         if ($Pmt->getPmtID() == 0) {
-                            $Pmt->setRefID($this->getID())
+                            $Pmt->setRefID($ref_id)
                                 ->setAmount($this_pmt)
                                 ->setGateway($this->getSource())
                                 ->setMethod($this->GW->getDscp())
-                                ->setComment('Webhook ' . $this->getData()->event_id)
+                                ->setComment('Webhook ' . $this->getID())
                                 ->setComplete($payment->status == 'COMPLETED')
                                 ->setStatus($payment->status)
                                 ->setOrderID($this->getOrderID())
                                 ->Save();
                         }
-                        $retval = $this->handlePurchase();    // process if fully paid
+                        if ($Pmt->isComplete()) {
+                            // Process if fully paid. May be "Approved" so
+                            // wait for a payment.update before processing.
+                            $retval = $this->handlePurchase();
+                            $this->setVerified(true);
+                        }
                     }
                 }
+                $this->logIPN();
             }
             break;
 
         case 'payment.updated':
-            $data = $this->getData()->data;
-            $payment = $data->object->payment;
-            $this->setID($payment->id);
-            $ref_id = $payment->id;
+            $payment = $object->payment;
             if ($payment->id) {
-                $this->setID($payment->id);
-                $this->logIPN();
+                $ref_id = $payment->id;
                 if (
                     $payment->status == 'COMPLETED' ||
                     $payment->status == 'CAPTURED'
@@ -167,10 +168,14 @@ class Webhook extends \Shop\Webhook
                         $payment->total_money->amount == $Cur->toInt($Pmt->getAmount())
                     ) {
                         $Pmt->setComplete(1)->setStatus($payment->status)->Save();
+                        $this->Order = Order::getInstance($Pmt->getOrderID());
+                        $this->handlePurchase();    // process if fully paid
+                        $this->setVerified(true);
+                        $this->setOrderID($Pmt->getOrderID());
                     }
-                    $this->handlePurchase();    // process if fully paid
-                    $retval = true; 
+                    $retval = true;
                 }
+                $this->logIPN();
             }
             break;
 
@@ -191,7 +196,7 @@ class Webhook extends \Shop\Webhook
                     } else {
                         SHOP_log("Order number '$inv_num' not found for Square invoice");
                     }
-                } 
+                }
             }
             break;
         }
@@ -214,8 +219,13 @@ class Webhook extends \Shop\Webhook
         if (!is_object($data) || !$data->event_id) {
             return false;
         }
+        $this->setID($data->event_id);
         $this->setEvent($data->type);
-        //return true;      // used during testing to bypass verification
+        $this->GW = Gateway::getInstance($this->getSource());
+        if (!$this->GW) {
+            return false;
+        }
+        return true;      // used during testing to bypass verification
 
         $gw = \Shop\Gateway::create($this->getSource());
         $notificationSignature = $this->getHeader('X-Square-Signature');
