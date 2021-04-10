@@ -416,8 +416,14 @@ class Payment
     {
         global $_TABLES, $LANG_SHOP;
 
-        $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
-            pmt_ts = {$this->getTS()},
+        if ($this->pmt_id == 0) {
+            $sql1 = "INSERT INTO {$_TABLES['shop.payments']} SET ";
+            $sql3 = '';
+        } else {
+            $sql1 = "UPDATE {$_TABLES['shop.payments']} SET ";
+            $sql3 = " WHERE pmt_id = " . $this->pmt_id;
+        }
+        $sql2 = "pmt_ts = {$this->getTS()},
             is_money = {$this->isMoney()},
             pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
             pmt_amount = '" . $this->getAmount() . "',
@@ -428,9 +434,10 @@ class Payment
             pmt_status = '" . DB_escapeString($this->getStatus()) . "',
             is_complete = {$this->isComplete()},
             pmt_uid = " . (int)$this->uid;
+        $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         $res = DB_query($sql);
-        if (!DB_error()) {
+        if (!DB_error() && $this->isComplete()) {
             $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
             $this->setPmtId(DB_insertID());
             $Order = Order::getInstance($this->getOrderID());
