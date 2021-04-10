@@ -617,11 +617,12 @@ class Webhook
 
     /**
      * Redirect or display output upon completion.
-     * Typical webhooks only display a message and return HTTP 200.
+     * Typical webhooks only display a message and return HTTP 200, which is
+     * done in webhook.php.
      */
     public function redirectAfterCompletion()
     {
-        echo "Completed";
+        return;
     }
 
 }

@@ -119,7 +119,7 @@ class Webhook extends \Shop\Webhook
      */
     public function Dispatch()
     {
-        $retval = false;
+        $retval = true;
 
         // Log the IPN.  Verified is 'true' if we got this far.
         $LogID = $this->logIPN();

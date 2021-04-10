@@ -55,7 +55,8 @@ class Webhook extends \Shop\Webhook
      */
     public function Dispatch()
     {
-        $retval = false;        // be pessimistic
+        // Be optimistic. Also causes a synthetic 200 return for unhandled events.
+        $retval = true;
 
         $object = $this->getData()->data->object;
         if (!$object) {
@@ -124,8 +125,8 @@ class Webhook extends \Shop\Webhook
                     $currency = $payment->amount_money->currency;
                     $this_pmt = Currency::getInstance($currency)->fromInt($amount_money);
                     $order_id = $payment->order_id;
+                    $sqOrder = $this->GW->getOrder($order_id);
                     $this->setOrderID($sqOrder->getResult()->getOrder()->getReferenceId());
-                    //$sqOrder = $this->GW->getOrder($order_id);
                     $Order = Order::getInstance($this->getOrderID());
                     if (!$Order->isNew()) {
                         $Pmt = Payment::getByReference($this->getID());
@@ -135,9 +136,10 @@ class Webhook extends \Shop\Webhook
                                 ->setGateway($this->getSource())
                                 ->setMethod($this->GW->getDscp())
                                 ->setComment('Webhook ' . $this->getData()->event_id)
-                                ->setComplete(0)
+                                ->setComplete($payment->status == 'COMPLETED')
                                 ->setStatus($payment->status)
-                                ->setOrderID($this->getOrderID());
+                                ->setOrderID($this->getOrderID())
+                                ->Save();
                         }
                         $retval = $this->handlePurchase();    // process if fully paid
                     }
@@ -213,6 +215,7 @@ class Webhook extends \Shop\Webhook
             return false;
         }
         $this->setEvent($data->type);
+        //return true;      // used during testing to bypass verification
 
         $gw = \Shop\Gateway::create($this->getSource());
         $notificationSignature = $this->getHeader('X-Square-Signature');

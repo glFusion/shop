@@ -144,7 +144,7 @@ class Webhook extends \Shop\Webhook
                 SHOP_log("Order " . $this->Order->getOrderId() . " was already invoiced and processed");
 //                return false;
             }
-            $retval = $this->handlePurchase();
+            $retval = $this->handlePurchase($this->Order);
             break;
         case 'invoice.payment_succeeded': 
             // Invoice payment notification
@@ -232,13 +232,13 @@ class Webhook extends \Shop\Webhook
                     $this->Payment->Save();
                     $retval = true;
                 }
-                $retval = $this->handlePurchase();
+                $retval = $this->handlePurchase($this->Order);
                 $this->logIPN();
             }
             break;
         default:
             SHOP_log("Unhandled Stripe event {$this->getData()->type} received", SHOP_LOG_DEBUG);
-            return $retval;
+            $retval = true;     // OK, just some other event received
             break;
         }
         return $retval;

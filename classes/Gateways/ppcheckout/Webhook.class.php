@@ -59,6 +59,8 @@ class Webhook extends \Shop\Webhook
      */
     public function Dispatch()
     {
+        $retval = true;
+
         if (isset($this->getData()->resource)) {
             $resource = $this->getData()->resource;
         } else {
@@ -251,7 +253,7 @@ class Webhook extends \Shop\Webhook
                                     ->setComment('Webhook ' . $this->getID())
                                     ->setStatus($invoice->status)
                                     ->setOrderID($this->getOrderID());
-                                return $Pmt->Save();
+                                $retval = $Pmt->Save();
                             }
                         }
                         $this->setID($ref_id);  // use the payment ID
@@ -303,18 +305,18 @@ class Webhook extends \Shop\Webhook
                         ->setMethod($this->getSource())
                         ->setComment('Webhook ' . $this->getID())
                         ->setOrderID($this->getOrderID());
-                    $Pmt->Save();
+                    $retval = $Pmt->Save();
                 }
                 $this->setID($ref_id);  // use the payment ID
                 $this->logIPN();
-                return true;
             } else {
                 SHOP_log("Order number not found for refund");
+                $retval = false;
                 break;
             }
             break;
         }
-        return false;
+        return $retval;;
     }
 
 
