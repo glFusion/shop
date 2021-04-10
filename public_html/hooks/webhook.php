@@ -1,10 +1,9 @@
 <?php
 /**
- * Webhook endpoint.
- * Expects a GET parameter named `_gw` containing the gateway name.
+ * Webhook endpoint
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
@@ -39,20 +38,17 @@ if (!empty($gw_name)) {
     if ($WH) {
         if ($WH->Verify()) {
             $status = $WH->Dispatch();
-            if ($status) {
-                $WH->redirectAfterCompletion();
-            }
         } else {
             SHOP_log("Webhook verification failed for $gw_name");
             $status = false;
         }
+        $WH->redirectAfterCompletion();
     } else {
         SHOP_log("Invalid gateway '$gw_name' requested for webhook");
         $status = false;
     }
 }
 if ($status) {
-    // Most likely handled by redirectAfterCompletion above, but just in case.
     header("HTTP/1.0 200 OK");
     echo "Completed.";
 } else {
@@ -60,3 +56,4 @@ if ($status) {
     echo "An error occurred";
 }
 exit;
+?>
