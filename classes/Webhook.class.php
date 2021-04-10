@@ -5,10 +5,10 @@
  * own class based on this one.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
- * @since       v1.3.0
+ * @since       vTBD
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -551,9 +551,8 @@ class Webhook
             return false;
         }
 
-        $GW = Gateway::create($this->Order->getPmtMethod());
         if (
-            $GW->okToProcess($this->Order)
+            $this->GW->okToProcess($this->Order)
             //&& !$Order->statusAtLeast(OrderState::PROCESSING)
         ) {
             $this->IPN->setUid($this->Order->getUid());
