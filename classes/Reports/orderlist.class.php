@@ -364,8 +364,13 @@ class orderlist extends \Shop\Report
             $retval .= '</span>';
             break;
         case 'balance':
-            $bal = $A['order_total'] - $A['paid'];
+            $bal = $A['order_total'] - $A['paid'] - $A['by_gc'];;
             $retval = self::formatMoney($bal);
+            if ($A['by_gc'] > .0001) {
+                $by_gc = self::formatMoney($A['by_gc']);
+                $retval = '<span class="tooltip" title="' . $by_gc . ' paid by gift card">' .
+                    $retval . '</span>';
+            }
             break;
         case 'order_date':
             $dt->setTimestamp($fieldvalue);
