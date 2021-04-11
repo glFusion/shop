@@ -13,6 +13,7 @@
 namespace Shop\Upgrades;
 use Shop\Payment;
 use Shop\Config;
+use Shop\OrderItem;
 
 
 class v1_3_0 extends Upgrade
@@ -49,7 +50,7 @@ class v1_3_0 extends Upgrade
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $OI = new Shop\OrderItem($A);
+                $OI = new OrderItem($A);
                 $OI->setSKU()->Save();
             }
         }
@@ -108,11 +109,11 @@ class v1_3_0 extends Upgrade
     {
         global $_TABLES, $LANG_SHOP;
 
+        SHOP_log("Loading payments from IPN log", SHOP_LOG_INFO);
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']}
             ORDER BY ts ASC";
             //WHERE id = 860
         $res = DB_query($sql);
-        $Pmt = new Payment;
         $done = array();        // Avoid duplicates
         while ($A = DB_fetchArray($res, false)) {
             if (empty($A['gateway'])) {
@@ -121,10 +122,16 @@ class v1_3_0 extends Upgrade
 
             $ipn_data = @unserialize($A['ipn_data']);
             if ($ipn_data === false) {
-                continue;
+                $ipn_data = @json_decode($A['ipn_data'], true);
+                if ($ipn_data === NULL) {
+                    SHOP_log("Invalid IPN data found: " . var_export($A['ipn_data']), SHOP_LOG_ERROR);
+                    continue;
+                }
             }
+
             $cls = 'Shop\\ipn\\' . $A['gateway'];
             if (!class_exists($cls)) {
+                SHOP_log("Class $cls does not exist", SHOP_LOG_ERROR);
                 continue;
             }
             $ipn = new $cls($ipn_data);
@@ -151,6 +158,7 @@ class v1_3_0 extends Upgrade
                 $order_id = '';
             }
             if (!array_key_exists($A['txn_id'], $done)) {
+                $Pmt = new Payment;
                 $Pmt->setRefID($A['txn_id'])
                     ->setAmount($pmt_gross)
                     ->setTS($A['ts'])
@@ -169,7 +177,7 @@ class v1_3_0 extends Upgrade
             WHERE msg = 'gc_applied'";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
-            $Pmt = new self;
+            $Pmt = new Payment;
             $Pmt->setRefID(uniqid())
                 ->setAmount($A['amount'])
                 ->setTS($A['ts'])
