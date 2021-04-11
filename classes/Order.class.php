@@ -2531,6 +2531,20 @@ class Order
 
 
     /**
+     * Check if the order has been shipped complete.
+     *
+     * @return  boolean     True if shipped, False if not
+     */
+    public function isShipped()
+    {
+        return (
+            $this->status == OrderState::SHIPPED ||
+            $this->status == OrderState::CLOSED
+        );
+    }
+
+
+    /**
      * Get shipping information for the items to use when selecting a shipper.
      *
      * @return  array   Array('units'=>unit_count, 'amount'=> fixed per-item amount)
@@ -3747,7 +3761,6 @@ class Order
     }
 
 
-
     /**
      * Apply a discount code to the order and all items.
      * The discount code and discount percent must be set in the order first.
@@ -4017,12 +4030,16 @@ class Order
      */
     public function requiresShipto()
     {
-        if (
-            // Shippers normally need an address, but "will call" doesn't.
-            Shipper::getInstance($this->shipper_id)->requiresShipto() &&
+       if (
             (
-                $this->hasPhysical() ||
-                ( $this->hasTaxable() && $this->getTotal() > 0 )
+                // Shippers normally need an address, but "will call" doesn't.
+                Shipper::getInstance($this->shipper_id)->requiresShipto() &&
+                $this->hasPhysical()
+            )
+            ||
+            (
+                $this->hasTaxable() &&
+                $this->getTotal() > 0
             )
         ) {
             return true;
