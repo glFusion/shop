@@ -250,6 +250,7 @@ class Gateway
             }
         }
 
+        // Set the environment (sandbox vs. production)
         $this->setEnv();
 
         // The user ID is usually required, and doesn't hurt to add it here.
@@ -1237,8 +1238,8 @@ class Gateway
 
 
     /**
-     * Get all the configuration fields specific to this gateway.
-     * Can be overridden by a specific gateway if necessary
+     * Create the fields for the configuration form.
+     * Can be overridden by a specific gateway if necessary.
      *
      * @param   string  $env    Environment (test, prod or global)
      * @return  array   Array of fields (name=>field_info)

@@ -5,7 +5,7 @@
  * calls the configured gateway (e.g. "paypal") to process the invoice.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.3.0
@@ -37,10 +37,6 @@ class Gateway extends \Shop\Gateway
      * @var integer */
     protected $bundled = 1;
 
-    /** Number of days for net terms, default = "Net 30"
-     * @var integer */
-    private $net_days = 30;
-
 
     /**
      * Constructor.
@@ -70,6 +66,7 @@ class Gateway extends \Shop\Gateway
             'global' => array(
                 'gateway'   => 'select',
                 'net_days'  => 'string',
+                'after_inv_status' => 'select',
             ),
         );
         $this->services = array(
@@ -103,7 +100,7 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get all the configuration fields specifiec to this gateway.
+     * Create the fields for the gateway configuration form.
      *
      * @param   string  $env    Environment (test, prod or global)
      * @return  array   Array of fields (name=>field_info)
@@ -230,7 +227,7 @@ class Gateway extends \Shop\Gateway
     {
         global $LANG_SHOP;
 
-        return sprintf($LANG_SHOP['net_x_days'], $this->net_days);
+        return sprintf($LANG_SHOP['net_x_days'], $this->getConfig('net_days'));
     }
 
 
