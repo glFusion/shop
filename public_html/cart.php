@@ -418,6 +418,7 @@ default:
     SHOP_setUrl($_SERVER['REQUEST_URI']);
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
+    $Cart->calcTotal();
     if ($view != 'viewcart' && $Cart->canFastCheckout()) {
         $V = new Shop\Views\Cart;
         $content .= Shop\Menu::checkoutFlow($Cart, 'confirm');
