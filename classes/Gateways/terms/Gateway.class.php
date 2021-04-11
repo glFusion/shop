@@ -126,15 +126,16 @@ class Gateway extends \Shop\Gateway
                 $field .= '<option value=""' . $sel . '>-- ' .
                     $LANG_SHOP['none'] . ' --</option>' . LB;
                 foreach (self::getAll() as $gw) {
-                    if ($gw->gw_name == $this->getConfig('gateway')) {
+                    if (!$gw->Supports($this->gw_name)) {
+                        continue;
+                    }
+                    if ($gw->getName() == $this->getConfig('gateway')) {
                         $sel = 'selected="selected"';
                     } else {
                         $sel = '';
                     }
-                    if ($gw->Supports($this->gw_name)) {
-                        $field .= '<option value="' . $gw->gw_name . '" ' . $sel . '>' .
-                            $gw->gw_desc . '</option>' . LB;
-                    }
+                    $field .= '<option value="' . $gw->getName(). '" ' . $sel . '>' .
+                        $gw->getDscp() . '</option>' . LB;
                 }
                 $field .= '</select>' . LB;
                 break;
