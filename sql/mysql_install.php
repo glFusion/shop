@@ -862,7 +862,6 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(128) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
     "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `key_name` (`wf_name`)",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
