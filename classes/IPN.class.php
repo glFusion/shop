@@ -44,6 +44,12 @@ if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
  */
 class IPN
 {
+    // Deprecated constants required for upgrades.
+    const PAID = 'paid';
+    const PENDING = 'pending';
+    const REFUNDED = 'refunded';
+    const CLOSED = 'closed';
+
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
     const FAILURE_COMPLETED = 2;
