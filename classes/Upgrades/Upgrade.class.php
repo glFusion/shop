@@ -233,7 +233,8 @@ class Upgrade
                 'classes/CacheDB.class.php',
                 'classes/DBO.class.php',
                 'classes/Webhooks',
-                'classes/ipn',
+                // 1.3.x    Future, these may be needed for a bit
+                //'classes/ipn',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
