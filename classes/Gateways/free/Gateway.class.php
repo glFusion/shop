@@ -98,18 +98,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * No config fields for the free gateway.
-     *
-     * @param   string  $env    Environment (not used here)
-     * @return  array   Empty array
-     */
-    public function getConfigFields($env='global')
-    {
-        return array();
-    }
-
-
-    /**
      * Get a buy-now button for a catalog product.
      * Checks the button table to see if a button exists, and if not
      * a new button will be created.

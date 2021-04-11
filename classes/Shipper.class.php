@@ -1742,14 +1742,26 @@ class Shipper
         ), false, false);
         $T->set_block('tpl', 'ItemRow', 'IRow');
         foreach ($this->cfgFields as $name=>$type) {
+            $F = new Template('fields');
             switch ($type) {
             case 'checkbox':
-                $chk = $this->getConfig($name) ? 'checked="checked"' : '';
-                $fld = '<input type="checkbox" value="1" name="' . $name . '" ' . $chk . '/>';
+                $F->set_file('field', 'checkbox.thtml');
+                $F->set_var(array(
+                    'fld_name' => $name,
+                    'checked' => $this->getConfig($name),
+                ) );
+                $F->parse('output', 'field');
+                $fld = $F->finish($F->get_var('output'));
                 break;
             case 'text':
             case 'password':
-                $fld = '<input type="text" size="80" name="' . $name . '" value="' . $this->getConfig($name) . '" />';
+                $F->set_file('field', 'text.thtml');
+                $F->set_var(array(
+                    'fld_name' => $name,
+                    'value' => $this->getConfig($name),
+                ) );
+                $F->parse('output', 'field');
+                $fld = $F->finish($F->get_var('output'));
                 break;
             default:
                 continue 2;

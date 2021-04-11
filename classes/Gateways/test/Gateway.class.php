@@ -103,17 +103,6 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    /**
-     * No config fields for the test gateway.
-     *
-     * @param   string  $env    Environment (not used here)
-     * @return  array   Empty array
-     */
-    protected function getConfigFields($env='global')
-    {
-        return array();
-    }
-
 
     /**
      * Get a buy-now button for a catalog product.

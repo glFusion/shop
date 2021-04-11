@@ -142,8 +142,9 @@ class Webhook extends \Shop\Webhook
                         ->Save();
             if ($this->Order->statusAtLeast(OrderState::PROCESSING)) {
                 SHOP_log("Order " . $this->Order->getOrderId() . " was already invoiced and processed");
-//                return false;
             }
+
+            // Invoice created successfully
             $retval = $this->handlePurchase($this->Order);
             break;
         case 'invoice.payment_succeeded': 

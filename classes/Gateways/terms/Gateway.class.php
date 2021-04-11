@@ -60,6 +60,7 @@ class Gateway extends \Shop\Gateway
                 'gateway'   => '',
                 'net_days'  => 30,
                 'after_inv_status' => OrderState::PROCESSING,
+                //'email_invoice' => 0,
             ),
         );
         $this->cfgFields= array(
@@ -67,6 +68,7 @@ class Gateway extends \Shop\Gateway
                 'gateway'   => 'select',
                 'net_days'  => 'string',
                 'after_inv_status' => 'select',
+                //'email_invoice' => 'checkbox',
             ),
         );
         $this->services = array(
@@ -99,67 +101,37 @@ class Gateway extends \Shop\Gateway
     }
 
 
-    /**
-     * Create the fields for the gateway configuration form.
-     *
-     * @param   string  $env    Environment (test, prod or global)
-     * @return  array   Array of fields (name=>field_info)
-     */
-    public function getConfigFields($env='global')
+    protected function getConfigOptions($name, $env='global')
     {
         global $LANG_SHOP;
 
-        $fields = array();
-        foreach($this->config[$env] as $name=>$value) {
-            $other_label = '';
-            switch ($name) {
-            case 'gateway':
-                $field = '<select name="' . $name . '[global]">' . LB;
-                if ($this->gw_name == '') {
-                    $sel = 'selected="selected"';
-                } else {
-                    $sel = '';
+        $opts = array();
+        switch ($name) {
+        case 'gateway':
+            foreach (self::getAll() as $gw) {
+                if (!$gw->Supports($this->gw_name)) {
+                    continue;
                 }
-                $field .= '<option value=""' . $sel . '>-- ' .
-                    $LANG_SHOP['none'] . ' --</option>' . LB;
-                foreach (self::getAll() as $gw) {
-                    if (!$gw->Supports($this->gw_name)) {
-                        continue;
-                    }
-                    if ($gw->getName() == $this->getConfig('gateway')) {
-                        $sel = 'selected="selected"';
-                    } else {
-                        $sel = '';
-                    }
-                    $field .= '<option value="' . $gw->getName(). '" ' . $sel . '>' .
-                        $gw->getDscp() . '</option>' . LB;
-                }
-                $field .= '</select>' . LB;
-                break;
-            case 'after_inv_status':
-                $field = '<select name="' . $name . '[global]">' . LB;
-                foreach (array(
-                    OrderState::INVOICED, OrderState::PROCESSING
-                ) as $status) {
-                    $sel = $status == $this->getConfig($name) ? 'selected="selected"' : '';
-                    $field .= '<option value="' . $status . '" ' . $sel . '>' .
-                        $LANG_SHOP['orderstatus'][$status] . '</option>' . LB;
-                }
-                $field .= '</select>' . LB;
-                break;
-
-            default:
-                $field = '<input type="text" name="' . $name . '[global]" value="' .
-                    $value . '" size="60" />';
-                break;
+                $opts[] = array(
+                    'name' => $gw->getDscp(),
+                    'value' => $gw->getName(),
+                    'selected' => ($gw->getName() == $this->getConfig('gateway')),
+                );
             }
-            $fields[$name] = array(
-                'param_field'   => $field,
-                'other_label'   => $other_label,
-                'doc_url'       => '',
-            );
+            break;
+        case 'after_inv_status':
+            foreach (array(
+                OrderState::INVOICED, OrderState::PROCESSING
+            ) as $status) {
+                $opts[] = array(
+                    'name' => $LANG_SHOP['orderstatus'][$status],
+                    'value' => $status,
+                    'selected' => ($status == $this->getConfig($name)),
+                );
+            }
+            break;
         }
-        return $fields;
+        return $opts;
     }
 
 
