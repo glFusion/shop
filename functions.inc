@@ -865,6 +865,7 @@ function plugin_autouninstall_shop()
             'shop.prodXfeat',
             'shop.zone_rules',
             // v1.3.0
+            'shop.packages',
             'shop.payments',
             'shop.cust_gw',
             'shop.affiliate_sales',
