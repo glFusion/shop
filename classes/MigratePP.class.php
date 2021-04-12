@@ -38,13 +38,17 @@ class MigratePP
             return false;
         }
 
-        // Perform the migration. Don't migrate the button cache.
+        // Always make sure the cache is cleared
+        Cache::clear();
+
+        // Perform the migration.
+        // Don't migrate the button cache or workflows table.
         // Clear out the Shop tables and insert data from Paypal.
         // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
             'coupon_log',
             'order_log', 'orderstatus',
-            'workflows', 'currency',
+            'currency',
         );
         foreach ($tables as $table) {
             if (!self::migrateTable($table)) {
@@ -270,22 +274,27 @@ class MigratePP
         $sql = array(
             "TRUNCATE {$_TABLES['shop.orders']}",
             "INSERT INTO {$_TABLES['shop.orders']} (
-                order_id, uid, order_date, last_mod, billto_id,
-                billto_name, billto_company, billto_address1, billto_address2,
-                billto_city, billto_state, billto_country, billto_zip,
-                shipto_id, shipto_name, shipto_company, shipto_address1,
-                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
-                phone, buyer_email, gross_items, net_nontax, net_taxable, order_total,
+                order_id, uid, order_date, last_mod,
+                billto_id, billto_name, billto_company,
+                billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip, billto_phone,
+                shipto_id, shipto_name, shipto_company,
+                shipto_address1, shipto_address2,
+                shipto_city, shipto_state, shipto_country, shipto_zip, shipto_phone,
+                buyer_email,
+                gross_items, net_nontax, net_taxable, order_total,
                 tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
                 instructions, token, tax_rate, info, currency, order_seq,
                 shipper_id, discount_code, discount_pct
             ) SELECT
-                order_id, uid, order_date, last_mod, billto_id,
-                billto_name, billto_company, billto_address1, billto_address2,
-                billto_city, billto_state, billto_country, billto_zip,
-                shipto_id, shipto_name, shipto_company, shipto_address1,
-                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
-                phone, buyer_email,
+                order_id, uid, order_date, last_mod,
+                billto_id, billto_name, billto_company,
+                billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip, phone,
+                shipto_id, shipto_name, shipto_company,
+                shipto_address1, shipto_address2,
+                shipto_city, shipto_state, shipto_country, shipto_zip, phone,
+                buyer_email,
                 0 as gross_items, 0 as net_nontax, 0 as net_taxable, 0 as order_total,
                 tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
                 instructions, token, tax_rate, info, $currency, $order_seq,
@@ -587,7 +596,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.gateways']}",
             "INSERT INTO {$_TABLES['shop.gateways']}
-                SELECT *, 2 as grp_access
+                SELECT *, 2 as grp_access, '1.3.0' as version
                 FROM {$_TABLES['paypal.gateways']}",
         ) );
     }
