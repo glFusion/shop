@@ -263,7 +263,7 @@
     {!if is_paid}
             <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
     {!endif}
-            <form action="{site_admin_url}/plugins/shop/index.php" method="post">
+            <form class="uk-form" action="{site_admin_url}/plugins/shop/index.php" method="post">
                 <input type="hidden" name="order_id" value="{order_number}" />
                 <input type="hidden" name="oldstatus" value="{oldstatus}" />
                 {$LANG_SHOP['status']}: <select name="newstatus">
