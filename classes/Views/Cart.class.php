@@ -380,7 +380,7 @@ class Cart extends OrderBaseView
                 }
             }
         }
-
+        $T->set_var('wrap_form', true);
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
@@ -434,6 +434,7 @@ class Cart extends OrderBaseView
             'buyer_email'   => $this->Order->getBuyerEmail(),
             'billto_id'     => $this->Order->getBillto()->getID(),
             'shipto_id'     => $this->Order->getShipto()->getID(),
+            'wrap_form'     => true,
         ) );
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
