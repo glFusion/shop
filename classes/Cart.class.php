@@ -436,7 +436,7 @@ class Cart extends Order
                 "shipper_id = 0",
                 "discount_code = ''",
                 "discount_pct = 0",
-                "instructions = 0",
+                "instructions = ''",
                 "tax_shipping = 0",
                 "tax_handling = 0",
             );
