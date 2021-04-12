@@ -296,12 +296,9 @@ case 'setDefAddr':
         break;
     }
     $type = SHOP_getVar($_POST, 'addr_type');
-    $status = Shop\Customer::getInstance($uid)
-        ->setDefaultAddress($type, $addr_id)
-        ->saveUser();
-    /*$status = Shop\Address::getInstance($addr_id)
+    $status = Shop\Address::getInstance($addr_id)
         ->setDefault($type)
-        ->Save();*/
+        ->Save();
     $output = array(
         'status' => $status,
         'statusMessage' => $status ? 'Address Updated' : 'An error occurred',

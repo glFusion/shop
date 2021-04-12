@@ -4,70 +4,73 @@
 // Used for customer and supplier addresses
 function SHOP_setDefAddr(type, addr_id)
 {
-    var dataS = {
-        "addr_type": type,
-        "addr_id": addr_id,
-    };
-    data = $.param(dataS);
-    $.ajax({
-        type: "POST",
-        dataType: "json",
-        url: glfusionSiteUrl + "/shop/ajax.php?action=setDefAddr",
-        data: data,
-        success: function(result) {
-            try {
-                if (result.status) {
-                    Shop.notify(result.statusMessage, "success");
-                    $("."+type).prop("checked", false);
-                    $("#"+type+"_"+addr_id).prop("checked", true);
-                } else {
-                    Shop.notify(result.statusMessage, "error");
-                }
-            }
-            catch(err) {
-            }
-        }
-    });
-    return;
+	var dataS = {
+		"addr_type": type,
+		"addr_id": addr_id,
+		"uid": "{uid}",
+	};
+	data = $.param(dataS);
+	$.ajax({
+		type: "POST",
+		dataType: "json",
+		url: glfusionSiteUrl + "/shop/ajax.php?action=setDefAddr",
+		data: data,
+		success: function(result) {
+			try {
+				if (result.status) {
+					Shop.notify(result.statusMessage, "success");
+					$("."+type).prop("checked", false);
+					$("#"+type+"_"+addr_id).prop("checked", true);
+				} else {
+					Shop.notify(result.statusMessage, "error");
+				}
+			}
+			catch(err) {
+			}
+		}
+	});
+	return;
 }
 </script>
 <a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id=0">
-    <button class="uk-button uk-button-success">{$LANG_SHOP['new_address']}</button>
+	<button class="uk-button uk-button-success">{$LANG_SHOP['new_address']}</button>
 </a>
 <table class="uk-table uk-text-center">
-    <thead>
-    <tr>
-        <th class="uk-text-center">{$LANG_ADMIN['edit']}</th>
-        <th class="uk-text-center">{$LANG_SHOP['hdr_def_billto']}</th>
-        <th class="uk-text-center">{$LANG_SHOP['hdr_def_shipto']}</th>
-        <th class="uk-text-center">{$LANG_SHOP['address']}</th>
-        <th class="uk-text-center">{$LANG_ADMIN['delete']}</th>
-    </tr>
-    </thead>
+	<thead>
+	<tr>
+		<th class="uk-text-center">{$LANG_ADMIN['edit']}</th>
+		<th class="uk-text-center">{$LANG_SHOP['hdr_def_billto']}</th>
+		<th class="uk-text-center">{$LANG_SHOP['hdr_def_shipto']}</th>
+		<th class="uk-text-center">{$LANG_SHOP['address']}</th>
+		<th class="uk-text-center">{$LANG_ADMIN['delete']}</th>
+	</tr>
+	</thead>
 <!-- BEGIN Addresses -->
-    <tr>
-        <td>
-            <a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id={addr_id}">
-                <i class="uk-icon uk-icon-edit"></i>
-            </a>
-        <td>
-            <input type="radio" class="billto" id="billto_{addr_id}" name="def_billto" value="{addr_id" {def_billto}
-                onclick="SHOP_setDefAddr('billto', {addr_id});return false;" />
-        </td>
-        <td>
-            <input type="radio" class="shipto" id="shipto_{addr_id}" name="def_shipto" value="{addr_id}" {def_shipto} 
-                onclick="SHOP_setDefAddr('shipto', {addr_id});return false;" />
-        </td>
-        <td class="uk-text-left">
-            {address}
-        </td>
-        <td>
-            <a href="{site_url}/shop/account.php?mode=deladdr&id={addr_id}"
-                onclick="return confirm('{$LANG_SHOP['q_del_item']}');">
-                <i class="uk-icon uk-icon-remove uk-text-danger"></i>
-            </a>
-        </td>
-    </tr>
+	<tr>
+		<td>
+			<a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id={addr_id}">
+				<i class="uk-icon uk-icon-edit"></i>
+			</a>
+		<td>
+			<input type="radio" class="billto" id="billto_{addr_id}" name="def_billto" value="{addr_id}"
+				{!if def_billto}checked="checked"{!endif}
+				onclick="SHOP_setDefAddr('billto', {addr_id});return false;" />
+		</td>
+		<td>
+			<input type="radio" class="shipto" id="shipto_{addr_id}" name="def_shipto" value="{addr_id}"
+				{!if def_shipto}checked="checked"{!endif}
+				onclick="SHOP_setDefAddr('shipto', {addr_id});return false;" />
+		</td>
+		<td class="uk-text-left">
+			{address}
+		</td>
+		<td>
+			<a href="{site_url}/shop/account.php?mode=deladdr&id={addr_id}"
+				onclick="return confirm('{$LANG_SHOP['q_del_item']}');">
+				<i class="uk-icon uk-icon-remove uk-text-danger"></i>
+			</a>
+		</td>
+	</tr>
 <!-- END Addresses -->
 </table>
 {# end {templatelocation} #}

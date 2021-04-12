@@ -188,13 +188,14 @@ case 'addresses':
     $A = Shop\Customer::getInstance()->getAddresses();
     $T = new Template;
     $T->set_file('list', 'acc_addresses.thtml');
+    $T->set_var('uid', $_USER['uid']);
     $T->set_block('list', 'Addresses', 'aRow');
     foreach ($A as $Addr) {
         $T->set_var(array(
             'addr_id' => $Addr->getID(),
-            'address' => $Addr->toText('all', ','),
-            'def_billto' => $Addr->isDefaultBillto() ? 'checked="checked"' : '',
-            'def_shipto' => $Addr->isDefaultShipto() ? 'checked="checked"' : '',
+            'address' => $Addr->toText('all', ', '),
+            'def_billto' => $Addr->isDefaultBillto(),
+            'def_shipto' => $Addr->isDefaultShipto(),
         ) );
         $T->parse('aRow', 'Addresses', true);
     }
