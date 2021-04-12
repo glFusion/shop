@@ -175,7 +175,7 @@ class Workflow
             $retval = $Cart->requiresBillto() || $Cart->requiresShipto();
             break;
         case 'shipping':
-            $retval = $Cart->requiresShipto();
+            $retval = $Cart->requiresShipto() && $Cart->hasPhysical();
             break;
         case 'viewcart':
         case 'payment':
