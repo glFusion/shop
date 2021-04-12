@@ -186,6 +186,7 @@
       </div>
 {!endif}
 </div>
+</form>
 <div height="200px"></div>
 {footer}
 
