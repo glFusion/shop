@@ -262,7 +262,9 @@ class orderlist extends \Shop\Report
                 $total_shipping = $A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
-            $filter = '<select name="period">' . $this->getPeriodSelection($this->period, false) . '</select>';
+            $filter = '<select class="uk-form-small" name="period">' .
+                $this->getPeriodSelection($this->period, false) .
+                '</select>';
             $T->set_var(
                 'output',
                 ADMIN_list(
