@@ -145,28 +145,17 @@ class Cart extends Order
         }
         // Merge the items into the user cart
         foreach ($AnonCart->getItems() as $Item) {
-            $opts = array();
-            foreach ($Item->getOptions() as $Opt) {
-                $opts[] = $Opt->getOptionID();
-            }
-            $args = array(
-                'item_number'   => $Item->getProductID(),
-                'variant'       => $Item->getVariantId(),
-                'attributes'    => $opts,
-                'extras'        => $Item->getExtras(),
-                'description'   => $Item->getDscp(),
-                'quantity'      => $Item->getQuantity(),
-            );
-            $this->addItem($args);
+            $Item->setOrderID($this->order_id)->Save();
         }
         if (Config::get('aff_enabled')) {
             // This will remove the affiliate ID if it belongs to the user
             // logging in.
             $this->setReferralToken($AnonCart->getReferralToken());
         }
-
-        // Remove the anonymous cart and save this user's cart
-        $AnonCart->Clear();
+        // Remove the anonymous cart and save this user's cart.
+        // Delete only the order, the orderitems have already been updated.
+        DB_delete($_TABLES['shop.orders'], 'order_id', $AnonCart->getOrderID());
+        $this->calcTotal();
         $this->Save();
     }
 
@@ -744,20 +733,24 @@ class Cart extends Order
     /**
      * Delete the anonymous user's cart.
      * This is done after merging the cart during login to prevent it from
-     * being left behind and possibly re-merged during a subsequent login
+     * being left behind and possibly re-merged during a subsequent login.
+     *
+     * @param   string  $cart_id    Optional cart ID to delete a specific cart.
      */
-    public static function delAnonCart()
+    public static function delAnonCart($cart_id='')
     {
         global $_TABLES;
 
-        $cart_id = self::getAnonCartID();
+        if ($cart_id == '') {
+            $cart_id = self::getAnonCartID();
+        }
         if ($cart_id) {
             // Remove the cookie - always
             self::_expireCookie();
             // And delete the cart record - only if it's anonymous
             //$C = new self($cart_id);
             $C = new self();
-            if (!$C->isNew && $C->uid == 1) {
+            if (!$C->isNew() && $C->getUid() == 1) {
                 Order::Delete($cart_id);
             }
         }

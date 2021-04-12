@@ -97,6 +97,10 @@ class OrderItem
      * @var float */
     private $tax_rate = 0;
 
+    /** Quantity that has been shipped/fulfilled.
+     * @var integer */
+    private $qty_shipped = 0;
+
     /** Flag indicating the item failed a zone rule.
      * Not saved to the database.
      * @var boolean;
@@ -260,6 +264,7 @@ class OrderItem
         $this->tax = SHOP_getVar($A, 'tax', 'float');
         $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float');
         $this->variant_id = SHOP_getVar($A, 'variant_id', 'integer');
+        $this->setQtyShipped(SHOP_getVar($A, 'qty_shipped', 'integer'));
         return $this;
     }
 
@@ -523,6 +528,21 @@ class OrderItem
 
 
     /**
+     * Set the order ID.
+     * This is used when merging the cart from anonymous to simply update
+     * the order ID value.
+     *
+     * @param   string  $order_id   Order ID
+     * @return  object  $this
+     */
+    public function setOrderID($order_id)
+    {
+        $this->order_id = $order_id;
+        return $this;
+    }
+
+
+    /**
      * Update the quantity for a cart item.
      * Does not save the item since Order::Save() must be called
      * anyway to update shipping, tax, etc.
@@ -648,6 +668,30 @@ class OrderItem
     public function getHandling()
     {
         return (float)$this->handling;
+    }
+
+
+    /**
+     * Set the quantity shipped/fulfilled.
+     *
+     * @param   integer $qty    Item quantity
+     * @return  object  $this
+     */
+    public function setQtyShipped($qty)
+    {
+        $this->qty_shipped = (int)$qty;
+        return $this;
+    }
+
+
+    /**
+     * Get the quantity shipped/fulfilled.
+     *
+     * @return  integer     Item quantity
+     */
+    public function getQtyShipped()
+    {
+        return (int)$this->qty_shipped;
     }
 
 
