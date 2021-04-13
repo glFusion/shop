@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<script type="text/javascript">
+<script>
 function updateForm(id)
 {
     if (id == 0) {
@@ -230,7 +230,7 @@ function removeAddress(addr_id)
   </div>
 {hiddenvars}
 </form>
-<script type="text/javascript">
+<script>
 {!if addr_id}
 updateForm({addr_id});
 {!endif}

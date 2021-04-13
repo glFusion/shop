@@ -542,7 +542,7 @@
 
 </form>
 
-<script type="text/javascript">
+<script>
 $(document).ready(function() {
   SHOP_changeProdType('{prod_type}');
   //SHOP_changeShippingType('{shipping_type}');

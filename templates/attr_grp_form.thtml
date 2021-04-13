@@ -47,7 +47,7 @@
   </div>
 
 </form>
-<script type="text/javascript">
+<script>
 var ConfigDocUrl = '{doc_url}';
 $(document).ready(function() {
     $('.tooltip_cfg').tooltipster({

@@ -50,7 +50,7 @@
     <button class="uk-button" onclick="addTrackingRow();return false;">{$LANG_SHOP['add_tracking']}</button>
 {!endif}
 
-<script type="text/javascript">
+<script>
 var i = 1;
 function addTrackingRow()
 {

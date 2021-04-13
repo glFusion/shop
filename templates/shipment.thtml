@@ -101,7 +101,7 @@
         onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
     </div>
 </form>
-<script type="text/javascript">
+<script>
 function delIfNothingShipped()
 {
     flds = document.getElementsByClassName("ship_qty");

@@ -95,7 +95,7 @@
   </div>
 </form>
 
-<script type="text/javascript">
+<script>
 showhideCustDates("{period}");
 function showhideCustDates(sel)
 {

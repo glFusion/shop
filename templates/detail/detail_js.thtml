@@ -2,7 +2,7 @@
 <noscript>
   <span class="alert">{$LANG_SHOP['no_javascript']}</span>
 </noscript>
-<script type="text/javascript">
+<script>
 var img_json = {img_json};
 var all_image_ids = {all_image_ids};
 function SHOPupdateImage(img_id)
@@ -40,7 +40,7 @@ function SHOP_changeImages(image_ids)
 }
 
 </script>
-<script type="text/javascript">
+<script>
 function ProcessForm(form)
 {
     // The form should be defined, but if there are no options then there

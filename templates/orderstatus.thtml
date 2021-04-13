@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<script type="text/javascript">
+<script>
 SHOP_setStatus("{order_id}", "{oldvalue}");
 </script>
 <select id="statSelect_{order_id}" name="newstatus[{order_id}]"
