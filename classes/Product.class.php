@@ -2102,7 +2102,7 @@ class Product
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
-                'frm_id'        => COM_sanitizeID($this->id, false),
+                'frm_id'        => uniqid(),    // to separate multiple blocks
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
