@@ -439,6 +439,7 @@ $_SQL = array(
   UNIQUE KEY `country_state` (`country_id`,`iso_code`),
   KEY `state_enabled` (`state_enabled`)
 ) ENGINE=MyISAM",
+
 'shop.tax_rates' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
   `code` varchar(25) NOT NULL,
   `country` varchar(3) DEFAULT NULL,
@@ -919,7 +920,6 @@ $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
-$_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
@@ -931,7 +931,6 @@ $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 $_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
 $_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
-$_SQL['shop.cust_gw'] = $SHOP_UPGRADE['1.3.0'][2];
 $_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
 $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
