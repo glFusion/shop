@@ -468,11 +468,12 @@ class table extends \Shop\Tax
                         $failures++;
                         continue;
                     }
-                    $country = 'US';
-                    $code = DB_escapeString($country . $data[0] . $data[1]);
-                    $state = DB_escapeString($data[0]);
-                    $zip = DB_escapeString($data[1]);
-                    $region = DB_escapeString($data[2]);
+                    // Set the field values. Limit length based on schema
+                    $country = 'US';    // only US supported
+                    $code = substr(DB_escapeString($country . $data[0] . $data[1]), 25);
+                    $state = substr(DB_escapeString($data[0]), 10);
+                    $zip = substr(DB_escapeString($data[1]), 10);
+                    $region = substr(DB_escapeString($data[2]), 128);
                     $state_rate = (float)$data[3];
                     $combined_rate = (float)$data[4];
                     $county_rate = (float)$data[5];
