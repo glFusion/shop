@@ -867,7 +867,7 @@ function plugin_autouninstall_shop()
             // v1.3.0
             'shop.packages',
             'shop.payments',
-            'shop.cust_gw',
+            'shop.customerXgateway',
             'shop.affiliate_sales',
             'shop.affiliate_saleitems',
             'shop.affiliate_payments',

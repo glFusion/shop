@@ -164,7 +164,7 @@ class Customer
         global $_TABLES;
 
         $retval = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.cust_gw']}
+        $sql = "SELECT * FROM {$_TABLES['shop.customerXgateway']}
             WHERE uid = {$this->uid}";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -189,7 +189,7 @@ class Customer
 
         $gw_id = DB_escapeString($gw_id);
         $cust_id = DB_escapeString($cust_id);
-        $sql = "INSERT INTO {$_TABLES['shop.cust_gw']} SET
+        $sql = "INSERT INTO {$_TABLES['shop.customerXgateway']} SET
             uid = {$this->uid},
             gw_id = '$gw_id',
             cust_id = '$cust_id'

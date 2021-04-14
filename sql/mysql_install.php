@@ -468,7 +468,7 @@ $_SQL = array(
   KEY (`expires`)
 ) ENGINE=MyISAM",
 
-'shop.cust_gw' => "CREATE TABLE `{$_TABLES['shop.cust_gw']}` (
+'shop.customerXgateway' => "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
   `uid` int(11) unsigned NOT NULL,
   `gw_id` varchar(40) NOT NULL,
   `cust_id` varchar(128) DEFAULT NULL,
@@ -787,7 +787,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
       PRIMARY KEY (`pmt_id`),
       KEY `order_id` (`pmt_order_id`)
     ) ENGINE=MyISAM",
-    "CREATE TABLE `{$_TABLES['shop.cust_gw']}` (
+    "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
       `uid` int(11) unsigned NOT NULL,
       `gw_id` varchar(40) NOT NULL,
       `cust_id` varchar(128) DEFAULT NULL,

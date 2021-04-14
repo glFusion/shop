@@ -151,7 +151,7 @@ $tables = array(
     // v1.2.0
     'features', 'features_values', 'prodXfeat', 'zone_rules',
     // v1.3.0
-    'packages', 'payments', 'cust_gw',
+    'packages', 'payments', 'customerXgateway',
     'affiliate_sales', 'affiliate_saleitems', 'affiliate_payments',
 );
 foreach ($tables as $table) {
