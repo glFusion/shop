@@ -54,7 +54,7 @@ default:
     break;
 }
 
-$display = \Shop\Menu::siteHeader();
+$display = \Shop\Menu::siteHeader($LANG_SHOP['aff_sales']);
 $display .= \Shop\Menu::PageTitle($LANG_SHOP['aff_sales']);
 $display .= \Shop\Menu::User('affiliate');
 $display .= $content;

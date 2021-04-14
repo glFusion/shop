@@ -531,6 +531,9 @@ class Menu
         global $LANG_SHOP;
 
         $retval = '';
+        if ($title == '') {
+            $title = $LANG_SHOP['main_title'];
+        }
 
         switch(Config::get('displayblocks')) {
         case 2:     // right only

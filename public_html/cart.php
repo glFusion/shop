@@ -25,7 +25,7 @@ if (
     exit;
 }
 
-$display = \Shop\Menu::siteHeader();
+$display = \Shop\Menu::siteHeader($LANG_SHOP['cart_blocktitle']);
 $content = '';
 $action = '';
 $actionval = '';

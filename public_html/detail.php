@@ -76,7 +76,7 @@ if (empty($breadcrumbs)) {
 }
 
 SHOP_setUrl();
-$display = \Shop\Menu::siteHeader();
+$display = \Shop\Menu::siteHeader($P->getShortDscp());
 $display .= \Shop\Menu::pageTitle();
 if (!empty($msg)) {
     //msg block

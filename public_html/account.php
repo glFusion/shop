@@ -225,7 +225,7 @@ default:
     break;
 }
 
-$display = \Shop\Menu::siteHeader();
+$display = \Shop\Menu::siteHeader($LANG_SHOP['my_account']);
 $display .= \Shop\Menu::pageTitle($LANG_SHOP['my_account'], 'account');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
