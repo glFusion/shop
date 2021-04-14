@@ -1905,7 +1905,7 @@ class Product
             $T->parse('SF', 'SpecialFields', true);
         }
 
-        $buttons = $this->PurchaseLinks(Views::DETAIL);
+        $buttons = $this->PurchaseLinks(Views::DETAIL, $prod_id);
         $T->set_block('product', 'BtnBlock', 'Btn');
         foreach ($buttons as $name=>$html) {
             if ($name == 'add_cart') {
@@ -2020,9 +2020,10 @@ class Product
      * May be Shop buttons, login-required link, or download button.
      *
      * @param   string  $type   View type where the button will be shown
+     * @param   string  $frm_id Form ID, NULL to create a random form
      * @return  array   Array of buttons as name=>html.
      */
-    public function PurchaseLinks($type=Views::DETAIL)
+    public function PurchaseLinks($type=Views::DETAIL, $frm_id=NULL)
     {
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
@@ -2098,11 +2099,14 @@ class Product
                 }
             }
 
+            if ($frm_id === NULL) {
+                $frm_id = uniqid();
+            }
             $add_form_url = in_array($type, array(Views::BLOCK, Views::LIST));
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
-                'frm_id'        => uniqid(),    // to separate multiple blocks
+                'frm_id'        => $frm_id,     // to separate multiple blocks
                 'short_description' => htmlspecialchars($this->short_description),
                 'amount'        => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
