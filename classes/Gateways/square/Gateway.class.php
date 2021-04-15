@@ -375,17 +375,6 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get the custom string properly formatted for the gateway.
-     *
-     * @return  string      Formatted custom string
-     */
-    protected function PrepareCustom()
-    {
-        return str_replace('"', '\'', serialize($this->custom));
-    }
-
-
-    /**
      * Get the variables to display with the IPN log.
      * This gateway does not have any particular log values of interest.
      *

@@ -109,7 +109,6 @@ class Gateway extends \Shop\Gateway
      * Checks the button table to see if a button exists, and if not
      * a new button will be created.
      *
-     * @uses    PrepareCustom()
      * @uses    Gateway::_ReadButton()
      * @uses    Gateway::_SaveButton()
      * @param   object  $P      Product Item object
@@ -134,7 +133,7 @@ class Gateway extends \Shop\Gateway
             $vars['item_number'] = htmlspecialchars($P->getID());
             $vars['item_name'] = htmlspecialchars($P->getShortDscp());
             $vars['currency_code'] = $this->currency_code;
-            $vars['custom'] = $this->PrepareCustom();
+            $vars['custom'] = $this->custom->encode();
             $vars['return'] = SHOP_URL . '/index.php?thanks=shop';
             $vars['cancel_return'] = SHOP_URL;
             $vars['amount'] = $P->getPrice();

@@ -80,30 +80,11 @@ class Gateway extends \Shop\Gateway
 
 
     /**
-     * Get the custom string, properly formatted for the gateway.
-     *
-     * @return  string      Formatted custom string
-     */
-    protected function PrepareCustom()
-    {
-        if (is_array($this->custom)) {
-            $tmp = array();
-            foreach ($this->custom as $key => $value) {
-                $tmp[] = $key . ':' . $value;
-            }
-            return implode(';', $tmp);
-         }else
-            return '';
-    }
-
-
-    /**
      * Get a purchase button.
      * This takes separate parameters so it can be called directly or via
      * ExternalButton or ProductButton
      *
      * @uses    PaymentGw::AddCustom()
-     * @uses    PrepareCustom()
      * @param   string  $btn_type       Button Type (optional)
      * @return  string                  HTML for button code
      */
@@ -120,7 +101,7 @@ class Gateway extends \Shop\Gateway
         }
 
         $this->AddCustom('transtype', $btn_type);
-        $custom = $this->PrepareCustom();
+        $custom = $this->custom->encode();
 
         $vars = array(
             'accessKey'         => $this->access_key,

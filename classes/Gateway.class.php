@@ -107,11 +107,9 @@ class Gateway
     private $envconfig = array();
 
     /**
-     * This is an array of custom data to be passed to the gateway.
-     * How it is passed is up to the gateway, which uses the PrepareCustom()
-     * function to get the array data into the desired format. AddCustom()
-     * can be used to add items to the array.
-     * @var array
+     * This is a CustomInfo object containing custom data to be passed to the
+     * gateway and returned verbatim.
+     * @var object
      */
     protected $custom = NULL;
 
@@ -1044,6 +1042,7 @@ class Gateway
      */
     public function AddCustom($key, $value)
     {
+        // The CustomInfo object implements ArrayAccess
         $this->custom[$key] = $value;
         return $this;
     }
@@ -1107,20 +1106,6 @@ class Gateway
             //'gateway_name'  => self::getDscp(),
         );
         return $R;
-    }
-
-
-    /**
-     * Function to return the "custom" string.
-     * Depends on the gateway to define this.  This default simply
-     * returns an HTML-safe version of the serialized $custom array.
-     *
-     * @return  string  Custom string to pass to gateway
-     */
-    protected function PrepareCustom()
-    {
-        return (string)$this->custom;
-        //return str_replace('"', '\'', serialize($this->custom));
     }
 
 
