@@ -495,9 +495,10 @@ class Gateway extends \Shop\Gateway
         $btn_type = $P->getBtnType();
         if (empty($btn_type)) return '';
 
-        // Make sure we want to create a buy_now-type button
-        if ($P->isPhysical()) {
-            return '';    // Not for items that require shipping
+        // Make sure we want to create a buy_now-type button.
+        // Not for items that require shipping or free products.
+        if ($P->isPhysical() || $P->getPrice() < .01) {
+            return '';
         }
 
         $U = Customer::getInstance();
