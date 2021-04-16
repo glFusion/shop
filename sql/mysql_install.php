@@ -884,7 +884,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']}
         CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
         CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.product_option_groups']}
+    "ALTER TABLE {$_TABLES['shop.prod_opt_grps']}
         CHANGE `pog_orderby` `pog_orderby` SMALLINT(3) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orderitems']}
         DROP `dc_price`",
