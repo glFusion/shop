@@ -48,6 +48,7 @@ spl_autoload_register(function ($class)
     }
 });
 use Shop\Models\Views;
+use Shop\Upgrades;
 use Shop\Config;
 Config::getInstance();      // to load $_SHOP_CONF
 global $_SHOP_CONF;
@@ -147,7 +148,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
  */
 function plugin_upgrade_shop($dvlp = false)
 {
-    return \Shop\Upgrades\Upgrade::doUpgrade($dvlp);
+    return Upgrades\Upgrade::doUpgrade($dvlp);
 }
 
 
