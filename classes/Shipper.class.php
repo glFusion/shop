@@ -1949,6 +1949,7 @@ class Shipper
             $retval = array(
                 (new ShippingQuote)
                     ->setID($this->id)
+                    ->setShipperID($this->id)
                     ->setCarrierCode($this->key)
                     ->setCarrierTitle($this->getCarrierName())
                     ->setServiceCode('free')
