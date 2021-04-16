@@ -226,7 +226,7 @@ class Workflow
             $status = !$Cart->requiresShipto() || $Cart->getShipto()->isValid() == '';
             break;
         case 'shipping':
-            $status = !$Cart->requiresShipto() || $Cart->getShipperID() > 0;
+            $status = !$Cart->requiresShipto() || $Cart->getShipperID() > -1;
             break;
         case 'payment':
             $GW = Gateway::getInstance($Cart->getPmtMethod());

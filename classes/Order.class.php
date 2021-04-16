@@ -2590,7 +2590,7 @@ class Order
     {
         global $_TABLES;
         if ($shipper_id === NULL) {
-            $this->shipper_id = 0;
+            $this->shipper_id = -1;
             $this->shipping = 0;
             $this->shipping_method = '';
             $this->shipping_dscp = '';
