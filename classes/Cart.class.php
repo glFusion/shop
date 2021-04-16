@@ -313,9 +313,6 @@ class Cart extends Order
             return $this;
         }
 
-        // Flag to reset shipping info if the qty of a physical item changes.
-        $reset_shipping = false;
-
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
             // cart has been finalized and the user updates it from another
@@ -340,27 +337,19 @@ class Cart extends Order
                     // Re-apply qty discounts in case there are other items
                     // with the same base ID
                     $this->applyQtyDiscounts($item_id);
-                    if ($Product->isPhysical()) {
-                        $reset_shipping = true;
-                    }
                 } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
                     $this->items[$id]->setQuantity($qty);
                     $this->applyQtyDiscounts($item_id);
                     $this->items[$id]->Save();
-                    if ($Product->isPhysical()) {
-                        $reset_shipping = true;
-                    }
                 }
             }
         }
 
-        if ($reset_shipping) {
-            // Some physical items were changed, reset the shipping info
-            // to force a new calculation during checkout.
-            $this->setShipper(NULL);
-        }
+        // Assume that some physical items were changed, or at least the order
+        // total has changed, to force a new calculation during checkout.
+        $this->setShipper(NULL);
 
         $this->calcItemTotals();
 
