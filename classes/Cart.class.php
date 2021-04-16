@@ -312,6 +312,10 @@ class Cart extends Order
             // No items in the cart?
             return $this;
         }
+
+        // Flag to reset shipping info if the qty of a physical item changes.
+        $reset_shipping = false;
+
         foreach ($items as $id=>$qty) {
             // Make sure the item object exists. This can get out of sync if a
             // cart has been finalized and the user updates it from another
@@ -320,8 +324,9 @@ class Cart extends Order
                 $qty = (float)$qty;
                 $item_id = $this->items[$id]->getProductId();
                 $old_qty = $this->items[$id]->getQuantity();
+                $Product = Product::getById($item_id);
                 // Check that the order hasn't exceeded the max allowed qty.
-                $max = Product::getById($item_id)
+                $max = $Product
                     ->setVariant($this->items[$id]->getVariantID())
                     ->getMaxOrderQty();
                 if ($qty > $max) {
@@ -335,15 +340,28 @@ class Cart extends Order
                     // Re-apply qty discounts in case there are other items
                     // with the same base ID
                     $this->applyQtyDiscounts($item_id);
+                    if ($Product->isPhysical()) {
+                        $reset_shipping = true;
+                    }
                 } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
                     $this->items[$id]->setQuantity($qty);
                     $this->applyQtyDiscounts($item_id);
                     $this->items[$id]->Save();
+                    if ($Product->isPhysical()) {
+                        $reset_shipping = true;
+                    }
                 }
             }
         }
+
+        if ($reset_shipping) {
+            // Some physical items were changed, reset the shipping info
+            // to force a new calculation during checkout.
+            $this->setShipper(NULL);
+        }
+
         $this->calcItemTotals();
 
         // Now look for a coupon code to redeem against the user's account.
