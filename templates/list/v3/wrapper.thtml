@@ -1,24 +1,24 @@
 {# begin {templatelocation} #}
 <div class="shopProductListOuter {tpl_ver}">
 {!!if {table_columns} == 6 !!}
-  <ul class="uk-grid uk-grid-width-small-1-4 uk-grid-width-medium-1-5 uk-grid-width-large-1-6 uk-text-center">
+	<ul class="uk-grid uk-grid-width-small-1-4 uk-grid-width-medium-1-5 uk-grid-width-large-1-6 uk-text-center">
 {!else}
 {!!if {table_columns} == 5 !!}
-  <ul class="uk-grid uk-grid-width-small-1-3 uk-grid-width-medium-1-4 uk-grid-width-large-1-5 uk-text-center uk-margin-right">
+	<ul class="uk-grid uk-grid-width-small-1-3 uk-grid-width-medium-1-4 uk-grid-width-large-1-5 uk-text-center uk-margin-right">
 {!else}
 {!!if {table_columns} == 4 !!}
-  <ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right">
+	<ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-4 uk-text-center uk-margin-right">
 {!else}
 {!!if {table_columns} == 3 !!}
-  <ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-3 uk-text-center uk-margin-right">
+	<ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-3 uk-text-center uk-margin-right">
 {!else}
 {!!if {table_columns} == 2 !!}
-  <ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-2 uk-grid-width-large-1-2 uk-text-center uk-margin-right">
+	<ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-2 uk-grid-width-large-1-2 uk-text-center uk-margin-right">
 {!else}
 {!!if {table_columns} == 1 !!}
-  <ul class="uk-grid uk-grid-width-1-1" data-uk-grid-margin>
+	<ul class="uk-grid uk-grid-width-1-1" data-uk-grid-margin>
 {!else}
-  <ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-3 uk-text-center uk-margin-right">
+	<ul class="uk-grid uk-grid-width-small-1-2 uk-grid-width-medium-1-3 uk-grid-width-large-1-3 uk-text-center uk-margin-right">
 {!endif}
 {!endif}
 {!endif}
@@ -26,57 +26,57 @@
 {!endif}
 {!endif}
 <!-- BEGIN ProductItems -->
-    <li class="uk-vertical-align-top shopListItemBlock v3 uk-margin-bottom">
-      <a href="{item_url}">
-        <div class="shopProductListItem v3">
-                <ul class="product-flags">
+		<li class="uk-vertical-align-top shopListItemBlock v3 uk-margin-bottom">
+			<a href="{item_url}">
+				<div class="shopProductListItem v3">
+					<ul class="product-flags">
 {!if on_sale}
-                    <li>{$LANG_SHOP['on_sale']}</li>
+						<li>{$LANG_SHOP['on_sale']}</li>
 {!endif}
-                </ul>
-          <figure class="uk-overlay uk-overlay-hover" style="width:100%">
+					</ul>
+					<figure class="uk-overlay uk-overlay-hover" style="width:100%">
 {!if small_pic}
-            <div class="ItemImage">
-              <img src="{small_pic}" alt="{name}" />
+						<div class="ItemImage">
+							<img src="{small_pic}" alt="{name}" />
 {!else}
-            <div class="ItemImage noimage">
+							<div class="ItemImage noimage">
 {!endif}
-            </div>
-            <div class="ItemUrl">
-              <div class="shortdescription">{short_description}</div>
+						</div>
+						<div class="ItemUrl">
+							<div class="shortdescription">{short_description}</div>
 {!if price}
-              <div class="shopPrice list normal v3">
+							<div class="shopPrice list normal v3">
 {!if on_sale}
-                <span class="shopPrice list was v3">{orig_price}</span>
-                <span class="shopPrice list sale v3" id="price" name="price">{price}</span>
+								<span class="shopPrice list was v3">{orig_price}</span>
+								<span class="shopPrice list sale v3" id="price" name="price">{price}</span>
 {!else}
-                {price}
+								{price}
 {!endif}
-              </div>
+							</div>
 {!endif}
-            </div>
-            <figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
-              {$LANG_SHOP['see_details']}
+						</div>
+						<figcaption class="uk-overlay-panel uk-overlay-background uk-overlay-bottom uk-overlay-slide-bottom">
+							{$LANG_SHOP['see_details']}
 {!if can_add_cart}
-            <br /><button id="{item_id}_add_cart_btn" type="button"
-                class="tooltip uk-button uk-button-primary uk-button-mini"
-                title="{$LANG_SHOP['add_to_cart']}"
-                onclick='shopAddToCart("{item_id}", "{nonce}");return false;' value="">
-                {$LANG_SHOP['add_to_cart']}
-            </button>
+							<br /><button id="{item_id}_add_cart_btn" type="button"
+								class="tooltip uk-button uk-button-primary uk-button-mini"
+								title="{$LANG_SHOP['add_to_cart']}"
+								onclick='shopAddToCart("{item_id}", "{nonce}");return false;' value="">
+								{$LANG_SHOP['add_to_cart']}
+							</button>
 {!endif}
-            </figcaption>
-          </figure>
+						</figcaption>
+					</figure>
 {!if oos}
-          <span class="shopOnhand sm v3">({$LANG_SHOP['oos_short']})</span>
+					<span class="shopOnhand sm v3">({$LANG_SHOP['oos_short']})</span>
 {!endif}
 {!if rating_bar}
-          <div class="shopRatingBar list v3">{rating_bar}</div>
+					<div class="shopRatingBar list v3">{rating_bar}</div>
 {!endif}
-        </div>
-      </a>
-    </li>
+				</div>
+			</a>
+		</li>
 <!-- END ProductItems -->
-  </ul>
+	</ul>
 </div>
 {# end {templatelocation} #}
