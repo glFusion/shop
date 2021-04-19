@@ -67,7 +67,7 @@ class Gateway extends \Shop\Gateway
         );
 
         parent::__construct($A);
-        $this->gw_url = SHOP_URL . '/hooks/webhook.php?_gw=_internal';
+        $this->gw_url = SHOP_URL . '/ipn/ipn.php?_gw=_internal';
     }
 
 
@@ -139,16 +139,8 @@ class Gateway extends \Shop\Gateway
             $vars['amount'] = $P->getPrice();
             $vars['pmt_gross'] = $P->getPrice();
             $vars['ipn_type'] = 'buy_now';  // force type for IPN processor.
-
-            // Get the allowed buy-now quantity. If not defined, set
-            // undefined_quantity.
-            $qty = $P->getFixedQuantity();
-            if ($qty < 1) {
-                $vars['undefined_quantity'] = '1';
-            } else {
-                $vars['quantity'] = $qty;
-            }
-
+            $vars['txn_id'] = uniqid();     // Bogus transaction ID.
+            $vars['quantity'] = 1;
             $vars['notify_url'] = $this->ipn_url;
 
             if ($P->getWeight() > 0) {
