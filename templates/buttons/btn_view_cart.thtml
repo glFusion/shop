@@ -1,0 +1,7 @@
+{# begin {templatelocation} #}
+<span class="shop_cart_vis" style="display:{init_display};">
+<a href="{site_url}/shop/cart.php" class="uk-button uk-button-primary">
+	<i class="uk-icon uk-icon-shopping-cart"></i>&nbsp;{$LANG_SHOP['viewcart']}
+</a>
+</span>
+{# end {templatelocation} #}

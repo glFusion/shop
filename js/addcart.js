@@ -39,7 +39,7 @@ var shopAddToCart = function(frm_id, nonce)
             } catch(err) {
             }
             Shop.spinner_hide();
-            blk_setvis_shop_cart(result.content == "" ? "none" : "block");
+            all_setvis_cart_links(result.content == "" ? false : true);
         },
         error: function() {
             Shop.notify('An error occurred.', 'error');
@@ -67,7 +67,7 @@ function SHOP_delFromCart(oi_id)
                 }
             } catch(err) {
             }
-            blk_setvis_shop_cart(result.content == "" ? "none" : "block");
+            all_setvis_cart_links(result.content == "" ? false : true);
         },
         error: function() {
         }
@@ -77,7 +77,8 @@ function SHOP_delFromCart(oi_id)
 
 
 /**
- * Set the visibility of the cart block so it only appears if there are items
+ * Set the visibility of the cart block so it only appears if there are items.
+ * @todo: deprecate in favor of all_setvis_cart_links()
  */
 function blk_setvis_shop_cart(newvis)
 {
@@ -90,6 +91,23 @@ function blk_setvis_shop_cart(newvis)
         btn.style.display = newvis == "block" ? "" : "none";
     }
 }
+
+/**
+ * Set the visibility for all cart-view buttons, blocks, links, etc.
+ * Need to set the shop_cart ID to show/hide the PHP block, which doesn't
+ * have a CSS class.
+ */
+function all_setvis_cart_links(newvis)
+{
+	if (newvis) {
+		$(".shop_cart_vis").show();
+		$("#shop_cart").show();
+	} else {
+		$(".shop_cart_vis").hide();
+		$("#shop_cart").hide();
+	}
+}
+
 
 /**
  * Finalize the cart.

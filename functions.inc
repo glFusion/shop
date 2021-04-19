@@ -1004,60 +1004,68 @@ function phpblock_shop_cart_contents()
 {
     global $_SHOP_CONF, $LANG_SHOP;
 
-    if (!SHOP_access_check()) return '';
+    // Cache since it may be called multiple times
+    static $contents = NULL;
 
-    // If the cart is not enabled, or there is no cart, return
-    if ($_SHOP_CONF['ena_cart'] == 0) {
-        return '';
-    }
-    $cart_id = Shop\Cart::getCartID();
-    if (!Shop\Cart::exists($cart_id)) {
-        return '';
-    }
-
-    $cart = Shop\Cart::getInstance();
-    if (!$cart->canView()) {
-        Shop\Cart::delAnonCart();
-        return '';
-    }
-    // If the cart is empty, the block isn't shown
-    if (!$cart->hasItems()) {
-        return '';
-    }
-
-    $T = new Shop\Template;
-    $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
-    $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
-    $total = 0;
-    $Cur = $cart->getCurrency();
-    foreach ($cart->getItems() as $id=>$item) {
-        $item_id = $item->getProductID();
-        $optid_str = $item->getOptionIdString();
-        if (!empty($optid_str)) {
-            $item_id .= '|' . $optid_str;
+    if ($contents === NULL) {
+        $contents = '';
+        if (
+            !SHOP_access_check() ||
+            $_SHOP_CONF['ena_cart'] == 0
+        ) {
+            return $contents;
         }
-        $P = Shop\Product::getByID($item_id);
+        $cart_id = Shop\Cart::getCartID();
+        if (!Shop\Cart::exists($cart_id)) {
+            return $contents;
+        }
 
-        $item_total = (float)$item->getPrice() * $item->getQuantity();
+        $cart = Shop\Cart::getInstance();
+        if (!$cart->canView()) {
+            Shop\Cart::delAnonCart();
+            return $contents;
+        }
+        // If the cart is empty, the block isn't shown
+        if (!$cart->hasItems()) {
+            return $contents;
+        }
+
+        // Passed all the checks, have at least one item to display,
+        // so construct the cart template.
+        $T = new Shop\Template;
+        $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
+        $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
+        $total = 0;
+        $Cur = $cart->getCurrency();
+        foreach ($cart->getItems() as $id=>$item) {
+            $item_id = $item->getProductID();
+            $optid_str = $item->getOptionIdString();
+            if (!empty($optid_str)) {
+                $item_id .= '|' . $optid_str;
+            }
+            $P = Shop\Product::getByID($item_id);
+
+            $item_total = (float)$item->getPrice() * $item->getQuantity();
+            $T->set_var(array(
+                'item_id'       => $item_id,
+                'oi_id'         => $item->getID(),
+                //'del_link'      => SHOP_URL . '/cart.php?action=delete&id=' . $item_id,
+                'item_name'     => $item->getDscp(),
+                'price'         => $Cur->FormatValue($item->getPrice()),
+                'quantity'      => $item->getQuantity(),
+                'item_total'    => $Cur->FormatValue($item_total),
+                'item_link'     => $P->getLink($item->getID(), $cart->token),
+            ) );
+            $T->parse('cRow', 'CartRow', true);
+            $total += $item_total;
+        }
         $T->set_var(array(
-            'item_id'       => $item_id,
-            'oi_id'         => $item->getID(),
-            //'del_link'      => SHOP_URL . '/cart.php?action=delete&id=' . $item_id,
-            'item_name'     => $item->getDscp(),
-            'price'         => $Cur->FormatValue($item->getPrice()),
-            'quantity'      => $item->getQuantity(),
-            'item_total'    => $Cur->FormatValue($item_total),
-//            'pi_url'        => SHOP_URL,
-            'item_link'     => $P->getLink($item->getID(), $cart->token),
+            'grand_total' => $Cur->Format($total),
         ) );
-        $T->parse('cRow', 'CartRow', true);
-        $total += $item_total;
+        $T->parse('output', 'shopping_cart_contents');
+        $contents = $T->finish ($T->get_var('output'));
     }
-    $T->set_var(array(
-        'grand_total' => $Cur->Format($total),
-    ) );
-    $T->parse('output', 'shopping_cart_contents');
-    return $T->finish ($T->get_var('output'));
+    return $contents;
 }
 
 
@@ -2264,6 +2272,30 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
     $sql = "DELETE FROM {$_TABLES['shop.buttons']}
             WHERE pi_name = '$type' AND item_id = '{$id}'";
     DB_query($sql);
+}
+
+
+/**
+ * Set template variables.
+ * - Display the "View Cart" button, visibile if the cart has contents.
+ *
+ * @param   string  $templatename   Name of template, e.g. 'header'
+ * @param   ref     $template       Reference to actual template
+ */
+function plugin_templateSetVars_shop($templatename, &$template)
+{
+    // Cache the output since this gets called multiple times per page load.
+    static $output = NULL;
+
+    if ($output === NULL) {
+        $contents = phpblock_shop_cart_contents();
+        $T = new Shop\Template('/buttons');
+        $T->set_file('btn', 'btn_view_cart.thtml');
+        $T->set_var('init_display', empty($contents) ? 'none' : '');
+        $T->parse('output', 'btn');
+        $output = $T->finish($T->get_var('output'));
+    }
+    $template->set_var('shop_cart_button', $output);
 }
 
 
