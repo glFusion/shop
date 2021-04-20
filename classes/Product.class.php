@@ -1822,10 +1822,13 @@ class Product
             $shipping_txt = '';
         }
 
+        // Create a good form ID
+        $frm_id = COM_sanitizeID($prod_id, false);
+
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->getCode(),   // USD, etc.
-            'frm_id'            => COM_sanitizeID($prod_id, false),
+            'frm_id'            => $frm_id,
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_dscp,
@@ -1949,6 +1952,7 @@ class Product
         $JT->set_var(array(
             'have_attributes'   => $T->get_var('have_attributes'),
             'price'             => $T->get_var('price'),
+            'frm_id'            => $T->get_var('frm_id'),
             'id'                => $T->get_var('id'),
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
@@ -2101,6 +2105,8 @@ class Product
 
             if ($frm_id === NULL) {
                 $frm_id = uniqid();
+            } else {
+                $frm_id = COM_sanitizeID($frm_id, false);
             }
             $add_form_url = in_array($type, array(Views::BLOCK, Views::LIST));
             $T->set_var(array(

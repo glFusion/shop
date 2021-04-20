@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <noscript>
-  <span class="alert">{$LANG_SHOP['no_javascript']}</span>
+	<span class="alert">{$LANG_SHOP['no_javascript']}</span>
 </noscript>
 <script>
 var img_json = {img_json};
@@ -41,22 +41,23 @@ function SHOP_changeImages(image_ids)
 
 </script>
 <script>
-function ProcessForm(form)
+function ProcessForm(form_id)
 {
     // The form should be defined, but if there are no options then there
     // is no need for the AJAX call.
+	var form = $("#"+form_id);
     if (
         typeof(form) == 'undefined' ||
-        $('#' + form.id + ' input[name=has_options]').val() == 0
+		typeof(form) == 'null'
+        //$('#' + form_id + ' input[name=has_options]').val() == 0
     ) {
         return;
     }
-
     var msg = "";   // availability message text
     var dataS = {
         "action": "validateOpts",
     };
-    data = $("#" + form.id).serialize() + '&' + $.param(dataS);
+    data = form.serialize() + '&' + $.param(dataS);
     $.ajax({
         type: "GET",
         dataType: "json",
@@ -118,7 +119,7 @@ function checkForJavascript()
 
 $(document).ready(function() {
     checkForJavascript();
-    ProcessForm(document.getElementById("add_cart_{id}"));
+	ProcessForm("add_cart_{frm_id}");
 });
 </script>
 {# end {templatelocation} #}
