@@ -95,6 +95,7 @@ class Plugin extends \Shop\Product
             $A,
             $svc_msg
         );
+
         if ($status == PLG_RET_OK) {
             $this->price = SHOP_getVar($A, 'price', 'float', 0);
             $this->name = SHOP_getVar($A, 'name');
@@ -120,10 +121,10 @@ class Plugin extends \Shop\Product
             // Set enabled flag, assume true unless set
             $this->enabled = SHOP_getVar($A, 'enabled', 'boolean', true);
             $this->cancel_url = SHOP_getVar($A, 'cancel_url', 'string', SHOP_URL . '/index.php');
-            if (array_key_exists('canApplyDC', $A) && !$A['canApplyDC']) {
+            if (isset($A['canApplyDC']) && !$A['canApplyDC']) {
                 $this->canApplyDC = false;
             }
-            if (array_key_exists('custom_price', $A) && $A['custom_price']) {
+            if (isset($A['custom_price']) && $A['custom_price']) {
                 $this->custom_price = true;
             }
             $this->aff_percent = SHOP_getVar($A, 'aff_percent', 'float', 0);
