@@ -131,6 +131,12 @@ case 'addcartitem':
     $unique = SHOP_getVar($_POST, '_unique', 'integer', $P->isUnique());
     if ($unique && $Cart->Contains($_POST['item_number']) !== false) {
         // Do nothing if only one item instance may be added
+        $output = array(
+            'content' => phpblock_shop_cart_contents(),
+            'statusMessage' => 'Only one instance of this item may be added.',
+            'ret_url' => SHOP_getVar($_POST, '_ret_url', 'string', ''),
+            'unique' => true,
+        );
         break;
     }
     $args = array(
