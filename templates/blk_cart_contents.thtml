@@ -1,21 +1,21 @@
 {# begin {templatelocation} #}
 <!-- BEGIN CartRow -->
-    <div class="CartItem">
-        {quantity} x
+	<div class="CartItem">
+		{quantity} x
 {!if item_link}
-        <a href="{item_link}">{item_name}</a>
+		<a href="{item_link}">{item_name}</a>
 {!else}
-        {item_name}
+		{item_name}
 {!endif}
-        <i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_SHOP['remove_item']}"
-            onclick="SHOP_delFromCart({oi_id});"></i>
+		<i class="uk-icon uk-icon-remove uk-text-danger tooltip" title="{$LANG_SHOP['remove_item']}"
+			onclick="SHOP_delFromCart({oi_id});"></i>
 {!if options}
-        {options}
+		{options}
 {!endif}
-  </div>
+	</div>
 <!-- END CartRow -->
-  <div id="CartTotal">
-    {$LANG_SHOP['total']}:
-    <span id="CartTotalAmount">{grand_total}</span>
-  </div>
+	<div id="CartTotal">
+		{$LANG_SHOP['total']}:
+		<span id="CartTotalAmount">{grand_total}</span>
+	</div>
 {# begin {templatelocation} #}
