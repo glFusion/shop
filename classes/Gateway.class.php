@@ -32,7 +32,7 @@ class Gateway
 
     /** Gateway version.
      * @const string */
-    protected const VERSION = '1.3.0';
+    public const VERSION = '1.3.0';
 
     /** Gateway logo width, in pixels.
      * @const integer */
@@ -1754,6 +1754,9 @@ class Gateway
         $data_arr = array();
         self::getInstalled($data_arr);
         self::getUninstalled($data_arr);
+        // Future - check versions of pluggable gateways
+        //self::_checkAvailableVersions($data_arr);
+
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['edit'],
@@ -1818,14 +1821,12 @@ class Gateway
             'has_extras' => false,
             'form_url' => SHOP_ADMIN_URL . '/gateways.php?gwadmin',
         );
-        $display .= '<form action="' . SHOP_ADMIN_URL . '/gateways.php" method="post" enctype="multipart/form-data">
-		<input placeholder="Selected File" disabled="disabled" />
-		<div class="tm-fileUpload uk-button uk-button-small uk-button-primary">
-			<span>Select File</span>
-			<input type="file" name="gw_file" id="gw_file" class="tm-upload">
-		</div>
-		<button class="uk-button uk-button-success uk-button-small" type="submit" name="gwupload" value="Upload">Upload</button>
-	</form>';
+        $T = new Template('admin');
+        $T->set_file('form', 'gw_adminlist_form.thtml');
+        $T->set_var('lang_select_file', $LANG_SHOP['select_file']);
+        $T->set_var('lang_upload', $LANG_SHOP['upload']);
+        $T->parse('output', 'form');
+        $display .= $T->finish($T->get_var('output'));
         $display .= ADMIN_listArray(
             $_SHOP_CONF['pi_name'] . '_gwlist',
             array(__CLASS__,  'getAdminField'),
@@ -2375,6 +2376,49 @@ class Gateway
         SHOP_LOG("Payouts not implemented for gateway {$this->gw_name}", SHOP_LOG_ERROR);
         foreach ($Payouts as $Payout) {
             $Payout['txn_id'] = 'n/a';
+        }
+    }
+
+
+    /**
+     * Check available versions for all pluggable gateways and add to data_arr.
+     * Bundled gateways always use '0.0.0' as the version to avoid indicating
+     * that an update is available.
+     * Versions are added to the $data_arr array to be used in the admin list.
+     *
+     * @param   array   $data_arr   Reference to data array
+     */
+    private static function _checkAvailableVersions(&$data_arr)
+    {
+        global $_VARS;
+
+        // Only check in sync with other update checks.
+        $last_check = SHOP_getVar($_VARS, 'updatecheck', 'integer');
+        $versions = NULL;
+        if ($last_check < time() - 7200) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, 'https://raw.githubusercontent.com/leegarner-glfusion/versions/master/shop_gateways.json');
+            curl_setopt($ch, CURLOPT_HEADER, 0);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+            $result = curl_exec($ch);
+            curl_close($ch);
+            if ($result) {
+                $versions = json_decode($result, true);
+            }
+        }
+        if (!$versions) {
+            // In case of a curl error
+            $versions = array();
+        }
+
+        $retval = array();
+        foreach ($data_arr as $key=>$gw) {
+            if (array_key_exists($gw['id'], $versions)) {
+                $data_arr[$key]['available'] = $versions[$gw['id']]['version'];
+            } else {
+                // Bundled or no version available
+                $data_arr[$key]['available'] = '0.0.0';
+            }
         }
     }
 
