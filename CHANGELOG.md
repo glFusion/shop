@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.3.0
-Release TBD
+Release 2021-04-20
   * Discount codes may be blocked for some products, e.g. gift cards.
   * Remove `paid` as an order status, check total paid instead.
   * Update Stripe API to 7.65.0 - 2020-11-19.
