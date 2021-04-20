@@ -2,7 +2,7 @@
 
 ## v1.3.0
 Release TBD
-  * Discounts may not be applied to all products, e.g. gift cards.
+  * Discount codes may be blocked for some products, e.g. gift cards.
   * Remove `paid` as an order status, check total paid instead.
   * Update Stripe API to 7.65.0 - 2020-11-19.
   * Update Square API to 3.20200325.0.
@@ -31,6 +31,10 @@ Release TBD
   * Fix: Updated supplier/brand logos not shown due to image caching.
   * Feature: Add affiliate referrals
   * Orders without physical items are set to "Closed" upon payment.
+
+## v1.2.2
+Release 2020-09-25
+  * Fix SQL error in standard glFusion search.
 
 ## v1.2.1
 Release 2020-03-02
