@@ -537,6 +537,7 @@ class Order
         global $_TABLES;
 
         $have_address = false;
+        $addr_id = 0;
         if ($A === NULL) {
             $this->Shipto = new Address;
             $have_address = true;
