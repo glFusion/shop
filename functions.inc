@@ -2356,7 +2356,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
 /**
  * Check that the currently installed version matches the code version.
  * This is to disable functions that might not work due to a mismatch.
- * Just check the major.minor.revision values.  Any fourth element is ignored.
+ * Just check the major.minor.revision values. Any fourth element is ignored.
  *
  * @param   string  $required   Required version, default to code version
  * @return  boolean     True if current >= installed version, False if not
@@ -2374,6 +2374,14 @@ function SHOP_isMinVersion($required = '')
     if ($required == '') {
         $required = $_SHOP_CONF['pi_version'];
     }
+
+    // Check for a patchlevel and remove if present.
+    $parts = explode('.', $required);
+    if (isset($parts[3])) {
+        unset($parts[3]);
+        $required = implode('.', $parts);
+    }
+
     $pi_name = $_SHOP_CONF['pi_name'];
     if (isset($_PLUGIN_INFO[$pi_name])) {
         if (is_array($_PLUGIN_INFO[$pi_name])) {
