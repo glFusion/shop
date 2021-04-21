@@ -1,5 +1,12 @@
 # Shop plugin for glFusion - Changelog
 
+## v1.3.1
+Release TBD
+  * Fix error if a referrer is not found at login. (May happen if the plugin is reinstalled.)
+  * Use checkbox field name for gateway service config if the language string is not defined.
+  * Make sure the update-needed message is shown only once.
+  * Migrate Square and Stripe gateways to uploadable modules.
+
 ## v1.3.0
 Release 2021-04-20
   * Discount codes may be blocked for some products, e.g. gift cards.
