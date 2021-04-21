@@ -618,8 +618,10 @@ class Gateway
         $T->set_file('field', 'multicheck.thtml');
         $T->set_block('field', 'optionRow', 'opt');
         foreach ($this->services as $name => $value) {
+            $text = isset($LANG_SHOP['buttons'][$name]) ?
+                $LANG_SHOP['buttons'][$name] : $name;
             $T->set_var(array(
-                'text'      => $LANG_SHOP['buttons'][$name],
+                'text'      => $text,
                 'varname'   => 'service',
                 'valname'   => $name,
                 'checked'   => $value == 1,
