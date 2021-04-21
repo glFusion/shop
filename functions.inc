@@ -745,7 +745,7 @@ function plugin_getheadercode_shop()
     $aff_key = Config::get('aff_key', 'shop_ref');
     if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
         $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
-        if ($Referrer->getUid() != $_USER['uid']) {
+        if ($Referrer && $Referrer->getUid() != $_USER['uid']) {
             Shop\Models\ReferralTag::set($_GET[$aff_key]);
         }
     }
@@ -1524,7 +1524,7 @@ function plugin_user_login_shop($uid)
     $token = Shop\Models\ReferralTag::get();
     if (!empty($token)) {
         $Referrer = Shop\Customer::findByAffiliate($token);
-        if ($Referrer->getUid() == $uid) {
+        if ($Referrer && $Referrer->getUid() == $uid) {
             Shop\Models\ReferralTag::remove();
         }
     }
@@ -2365,9 +2365,15 @@ function SHOP_isMinVersion($required = '')
 {
     global $_SHOP_CONF, $_PLUGIN_INFO, $LANG_SHOP;
 
-    // If not specified, use the current code version as required.
-    if ($required == '') $required = $_SHOP_CONF['pi_version'];
+    static $isMinVer = NULL;
+    if ($isMinVer !== NULL) {
+        return $isMinVer;
+    }
 
+    // If not specified, use the current code version as required.
+    if ($required == '') {
+        $required = $_SHOP_CONF['pi_version'];
+    }
     $pi_name = $_SHOP_CONF['pi_name'];
     if (isset($_PLUGIN_INFO[$pi_name])) {
         if (is_array($_PLUGIN_INFO[$pi_name])) {
@@ -2383,9 +2389,9 @@ function SHOP_isMinVersion($required = '')
             COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
         $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
-        return false;
+        $isMinVer = false;
     } else {
-        return true;
+        $isMinVer = true;
     }
 }
 
