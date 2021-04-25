@@ -20,6 +20,9 @@ namespace Shop;
  */
 abstract class Tax
 {
+    const TAX_DESTINATION = 0;
+    const TAX_ORIGIN = 1;
+
     /** Address object used for rate lookup.
      * @var object */
     protected $Address;

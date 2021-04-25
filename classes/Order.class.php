@@ -973,11 +973,7 @@ class Order
         case 'checkout':
             $this->isFinalView = true;
             $this->checkRules();
-            $this->setTaxRate(
-                Tax::getProvider()
-                    ->withOrder($this)
-                    ->getRate()
-                )
+            $this->setTaxRate(NULL)
                 ->calcTotalCharges()
                 ->Save(true);
             $tplname = 'order';
@@ -3540,8 +3536,14 @@ class Order
         global $_TABLES;
 
         if ($new_rate === NULL) {
-            if (
-                Shipper::getInstance($this->getShipperID())->getTaxLocation() == Shipper::TAX_ORIGIN
+            if (!$this->hasPhysical()) {
+                if (Config::get('tax_nexus_virt') == Tax::TAX_ORIGIN) {
+                    $tax_addr = new Company;
+                } else {
+                    $tax_addr = Address::fromGeoLocation();
+                }
+            } elseif (
+                Shipper::getInstance($this->getShipperID())->getTaxLocation() == TAX::TAX_ORIGIN
             ) {
                 $tax_addr = new Company;
             } else {
@@ -4031,21 +4033,40 @@ class Order
      */
     public function requiresShipto()
     {
-       if (
+        if ($this->hasPhysical() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
+            // Have to have a physical shipping address for physical products.
+            return true;
+        }
+
+        // May need a shipping address for sales tax if there are physical items.
+        if (
+            $this->hasTaxable() &&
+            $this->getTotal() > 0 &&
             (
-                // Shippers normally need an address, but "will call" doesn't.
-                Shipper::getInstance($this->shipper_id)->requiresShipto() &&
-                $this->hasPhysical()
-            )
-            ||
-            (
-                $this->hasTaxable() &&
-                $this->getTotal() > 0
+                $this->hasPhysical()// || Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
             )
         ) {
             return true;
         }
         return false;
+
+        /*if (!$this->hasPhysical()) {
+            return false;
+        }
+        if (
+            (
+                // Shippers normally need an address, but "will call" doesn't.
+                Shipper::getInstance($this->shipper_id)->requiresShipto()
+            )
+            ||
+            (
+                $this->hasTaxable()
+                $this->getTotal() > 0
+            )
+        ) {
+            return true;
+        }
+        return false;*/
     }
 
 

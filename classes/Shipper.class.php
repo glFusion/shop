@@ -25,8 +25,6 @@ class Shipper
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    const TAX_DESTINATION = 0;
-    const TAX_ORIGIN = 1;
     const QUOTE_TABLE = 1;
     const QUOTE_API = 2;
 
