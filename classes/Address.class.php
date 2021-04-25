@@ -1117,6 +1117,33 @@ class Address
         return $retval;
     }
 
-}
 
-?>
+    /**
+     * Create an address from IP Geolocation information.
+     * The full address is not created, only city, state, country and zip.
+     *
+     * @param   string  $ip     IP address, current remote address if empty
+     * @return  object      Address object
+     */
+    public static function fromGeoLocation($ip=NULL)
+    {
+        if ($ip === NULL) {
+            $ip = $_SERVER['REAL_ADDR'];
+        }
+        $addr = GeoLocator::getProvider()
+            ->withIP($ip)
+            ->geoLocate();
+        if ($addr['status']) {
+            $retval = new self(array(
+                'city' => $addr['city_name'],
+                'state' => $addr['state_code'],
+                'country' => $addr['country_code'],
+                'zip' => $addr['zip'],
+            ) );
+        } else {
+            $retval = new self;
+        }
+        return $retval;
+    }
+
+}
