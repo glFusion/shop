@@ -575,15 +575,24 @@ class Catalog
             }
 
             foreach ($plugin_data as $A) {
+                // Skip items that can't be shown
+                if (isset($A['canDisplay']) && !$A['canDisplay']) {
+                    continue;
+                }
+
                 // Reset button values
                 $buttons = '';
                 if (!isset($A['buttons'])) {
                     $A['buttons'] = array();
                 }
-                if (isset($A['add_cart']) && !$A['add_cart']) {
-                    $can_add_cart = false;
-                } else {
-                    $can_add_cart = true;
+                if (
+                    (isset($A['add_cart']) && !$A['add_cart']) ||
+                    (isset($A['canPurchase']) && !$A['canPurchase'])
+                ) {
+                    $P->enablePurchase(false);
+                    //$can_add_cart = false;
+                //} else {
+                  //  $can_add_cart = true;
                 }
 
                 $P = \Shop\Product::getByID($A['id']);
@@ -603,7 +612,7 @@ class Catalog
                     'small_pic' => $P->getImage()['url'],
                     'on_sale'   => '',
                     'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
-                    'can_add_cart'  => $can_add_cart,
+                    'can_add_cart'  => $P->canPurchase(),
                     'rating_bar' => $P->ratingBar(true),
                 ) );
                 if ($price > 0) {
@@ -612,20 +621,23 @@ class Catalog
                     $T->clear_var('price');
                 }
 
-                if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
-                    $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
-                /*} elseif (
-                    (!isset($A['prod_type']) || $A['prod_type'] > ProductType::PHYSICAL) &&
-                    $A['price'] == 0
-                ) {
-                    // Free items or items purchased and not expired, allow download.
-                    $buttons .= $T->set_var('', 'download') . '&nbsp;';*/
-                } elseif (is_array($A['buttons'])) {
-                    // Buttons for everyone else
-                    $T->set_block('wrapper', 'BtnBlock', 'Btn');
-                    foreach ($A['buttons'] as $type=>$html) {
-                        $T->set_var('button', $html);
-                        $T->parse('Btn', 'BtnBlock', true);
+                // Skip button display if the item can't be purchased
+                if (!isset($A['canPurchase']) || $A['canPurchase']) {
+                    if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
+                        $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
+                    /*} elseif (
+                        (!isset($A['prod_type']) || $A['prod_type'] > ProductType::PHYSICAL) &&
+                        $A['price'] == 0
+                    ) {
+                        // Free items or items purchased and not expired, allow download.
+                        $buttons .= $T->set_var('', 'download') . '&nbsp;';*/
+                    } elseif (is_array($A['buttons'])) {
+                        // Buttons for everyone else
+                        $T->set_block('wrapper', 'BtnBlock', 'Btn');
+                        foreach ($A['buttons'] as $type=>$html) {
+                            $T->set_var('button', $html);
+                            $T->parse('Btn', 'BtnBlock', true);
+                        }
                     }
                 }
                 $T->clear_var('Btn');
