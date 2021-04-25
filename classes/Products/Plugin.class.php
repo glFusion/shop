@@ -133,6 +133,9 @@ class Plugin extends \Shop\Product
             } else {
                 $this->aff_apply_bonus = false;
             }
+            if (isset($A['canPurchase'])) {
+                $this->enablePurchase($A['canPurchase']);
+            }
          } else {
             // probably an invalid product ID
             $this->price = 0;
