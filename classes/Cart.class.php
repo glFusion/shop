@@ -1021,16 +1021,25 @@ class Cart extends Order
     {
         global $_SHOP_CONF;
 
+        if (
+            !Config::get('ena_fast_checkout') ||
+            COM_isAnonUser()    // can't be anonymous, need email addr
+        ) {
+            return false;       // no need to check anything else
+        }
+
+        // Now make sure there's only one payment option and nothnig
+        // else that would require user entry before checkout
         $Gateways = Gateway::getEnabled();
         if (
-            !$_SHOP_CONF['ena_fast_checkout'] ||    // not allowed
-            COM_isAnonUser() ||         // can't be anonymous, need email addr
+            isset($Gateways['_coupon']) &&
+            (!Config::get('gc_enabled') || count(Coupon::getUserCoupons()) == 0)
+        ) {
+            unset($Gateways['_coupon']);
+        }
+        if (
             count($Gateways) != 1 ||    // must have only one gateway
-            DiscountCode::countCurrent() > 0 ||     // can't have active codes
-            (
-                $_SHOP_CONF['gc_enabled'] &&    // gift cards enabled
-                count(Coupon::getUserCoupons()) > 0
-            )
+            DiscountCode::countCurrent() > 0        // can't have active codes
         ) {
             return false;
         }
