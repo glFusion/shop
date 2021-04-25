@@ -331,6 +331,10 @@ class Product
      * @var float */
     protected $aff_percent = 0;
 
+    /** Flag to indicate that the product cannot be purchased.
+     * @var boolean */
+    protected $canPurchase = true;
+
 
     /**
      * Constructor.
@@ -2032,6 +2036,10 @@ class Product
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
         $buttons = array();
+
+        if (!$this->canPurchase()) {
+            return $buttons;
+        }
 
         // Don't show any buttons for downloads that aren't available
         // in the buyer's location.
@@ -4410,6 +4418,33 @@ class Product
     public function getDefVariantID()
     {
         return (int)$this->def_pv_id;
+    }
+
+
+    /**
+     * Enable or disable purchasing this product.
+     * Normal used to display the product, but not allow purchasing, since
+     * the default for canPurchase is true.
+     *
+     * @param   boolean $flag   True to allow purchases, False to disallow
+     * @return  object  $this
+     */
+    public function enablePurchase($flag=true)
+    {
+        $this->canPurchase = $flag ? true : false;
+        return $this;
+    }
+
+
+    /**
+     * Check if the product can be purchased.
+     * Used to show add-cart and other buttons to the catalog and detail views.
+     *
+     * @return  boolean     True if purchase allowed, False if not
+     */
+    public function canPurchase()
+    {
+        return $this->canPurchase;
     }
 
 
