@@ -242,7 +242,7 @@ class Product
 
     /** Product image objects.
      * @var array */
-    protected $Images = array();
+    protected $Images = NULL;
 
     /** Selected attributes.
      * Using a property to pass between functions.
@@ -412,6 +412,7 @@ class Product
         } else {
             // A single product ID
             $id = $A;
+            $idx = COM_sanitizeId($A);
         }
         if (!$id) {
             // Missing product ID
@@ -657,7 +658,7 @@ class Product
         $this->enabled = isset($row['enabled']) ? $row['enabled'] : 0;
         $this->featured = isset($row['featured']) ? $row['featured'] : 0;
         $this->name = $row['name'];
-        $this->old_sku = SHOP_getVar($row, 'old_sku');
+        //$this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->short_description = $row['short_description'];
         $this->price = (float)$row['price'];
         $this->filename = $row['file'];
@@ -968,7 +969,7 @@ class Product
 
         // See if the name changed. If so, then the Variant skus need to be
         // updated.
-        $old_sku = $this->name;
+        $this->old_sku = $this->name;
 
         if (is_array($A)) {
             $this->setVars($A);
@@ -977,8 +978,7 @@ class Product
         $nonce = SHOP_getVar($A, 'nonce');
         $this->Errors = $this->_Validate();
         if (!empty($errs)) {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             return false;
         }
 
@@ -1010,8 +1010,7 @@ class Product
         // Check for errors during validation and file upload,
         // and abort before any real DB action is taken.
         if (!empty($this->Errors)) {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             return false;
         }
 
@@ -1037,10 +1036,12 @@ class Product
         }
 
         // Serialize the quantity discount array
-        $qty_discounts = DB_escapeString(@serialize($this->qty_discounts));
+        //$qty_discounts = DB_escapeString(@serialize($this->qty_discounts));
+
+        $status = $this->saveToDB();
 
         // Insert or update the record, as appropriate
-        if ($this->id > 0) {
+        /*if ($this->id > 0) {
             SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
@@ -1100,9 +1101,10 @@ class Product
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
-        if (!DB_error()) {
+        if (!DB_error()) {*/
+        if ($status && $this->id > 0) {
             if ($this->isNew) {
-                $this->id = DB_insertID();
+                //$this->id = DB_insertID();
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
@@ -1126,7 +1128,7 @@ class Product
                 }
             }
 
-            $this->updateCategories($A['selected_cats']);
+            $this->updateCategories();
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
@@ -1152,10 +1154,10 @@ class Product
             }
 
             //SHOP_log($sql, SHOP_LOG_DEBUG);
-            $status = true;
-        } else {
+            //$status = true;
+        /*} else {
             SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
-            $status = false;
+            $status = false;*/
         }
 
         // Clear all product caches since this save may affect availablity
@@ -1180,16 +1182,92 @@ class Product
 
         // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
-            COM_setMsg($LANG_SHOP['msg_updated']);
+            SHOP_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
             COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
+        }
+    }
+    
+
+    public function saveToDB()
+    {
+        global $_TABLES;
+
+        // Insert or update the record, as appropriate
+        if ($this->id > 0) {
+            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
+            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
+            $sql3 = " WHERE id='{$this->id}'";
+            // While we're here, change the existing Variant SKUs if the
+            // product SKU has changed.
+            if (empty($this->Errors) && !empty($this->old_sku) && $this->old_sku != $this->name) {
+                foreach ($this->getVariants() as $Variant) {
+                    $Variant->updateSKU($this->old_sku, $this->name);
+                }
+            }
+        } else {
+            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
+            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
+                dt_add = UTC_TIMESTAMP(), ";
+            $sql3 = '';
+        }
+
+        //$options = DB_escapeString(@serialize($this->options));
+        $sql2 = "name='" . DB_escapeString($this->name) . "',
+                short_description='" . DB_escapeString($this->short_description) . "',
+                description='" . DB_escapeString($this->description) . "',
+                keywords='" . DB_escapeString($this->keywords) . "',
+                price='" . number_format($this->price, 2, '.', '') . "',
+                prod_type='" . (int)$this->prod_type. "',
+                weight='" . number_format($this->weight, 2, '.', '') . "',
+                file='" . DB_escapeString($this->filename) . "',
+                expiration='" . (int)$this->expiration. "',
+                enabled='" . (int)$this->enabled. "',
+                featured='" . (int)$this->featured. "',
+                views='" . (int)$this->views. "',
+                taxable='" . (int)$this->taxable . "',
+                shipping_type='" . (int)$this->shipping_type . "',
+                shipping_amt = '{$this->shipping_amt}',
+                shipping_units = '{$this->shipping_units}',
+                comments_enabled='" . (int)$this->comments_enabled . "',
+                rating_enabled='" . (int)$this->rating_enabled . "',
+                show_random='" . (int)$this->show_random . "',
+                show_popular='" . (int)$this->show_popular . "',
+                onhand='{$this->onhand}',
+                reorder = '{$this->reorder}',
+                track_onhand='{$this->track_onhand}',
+                oversell = '{$this->oversell}',
+                qty_discounts = '" . DB_escapeString(@serialize($this->qty_discounts)) . "',
+                custom='" . DB_escapeString($this->custom) . "',
+                avail_beg='" . DB_escapeString($this->avail_beg) . "',
+                avail_end='" . DB_escapeString($this->avail_end) . "',
+                brand_id ='" . $this->getBrandID() . "',
+                supplier_id ='" . $this->getSupplierID() . "',
+                supplier_ref = '{$this->getSupplierRef()}',
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                def_pv_id = {$this->getDefVariantID()},
+                zone_rule = {$this->getZoneRuleID()},
+                buttons= '" . DB_escapeString($this->btn_type) . "',
+                min_ord_qty = '" . (int)$this->min_ord_qty . "',
+                max_ord_qty = '" . (int)$this->max_ord_qty . "'";
+        //options='$options',
+        $sql = $sql1 . $sql2 . $sql3;
+        //echo $sql;die;
+        DB_query($sql, 1);
+        if (DB_error()) {
+            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
+            return false;
+        } else {
+            if ($this->isNew) {
+                $this->id = DB_insertId();
+            }
+            return true;
         }
     }
 
@@ -1217,11 +1295,15 @@ class Product
         foreach ($this->Images as $prow) {
             $this->deleteImage($prow['img_id']);
         }
-        DB_delete($_TABLES['shop.products'], 'id', $this->id);
+        // Make sure all related image records are deleted, in case some
+        // image files are missing and not reflected in the Images array.
+        DB_delete($_TABLES['shop.images'], 'product_id', $this->id);
+
         ProductVariant::deleteByProduct($this->id);
         Category::deleteProduct($this->id);
         Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
+        DB_delete($_TABLES['shop.products'], 'id', $this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
@@ -1256,18 +1338,11 @@ class Product
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1) {
+        if ($img_id < 1 || !isset($this->Images[$img_id])) {
             return;
         }
 
-        $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $this->Images[$img_id]['filename'];
-        if (is_file($filespec)) {
-            // Ignore errors due to file permissions, etc. Worst case is
-            // that an image gets left behind on disk
-            @unlink($filespec);
-        }
-
-        DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
+        Images\Product::deleteById($img_id);
         Cache::delete(self::_makeCacheKey($this->id));
         Cache::delete(self::_makeCacheKey($this->id, 'img'));
     }
@@ -2625,8 +2700,8 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . uniqid();
-        $this->Save();
+        $this->name = $this->name . '_' . uniqid();
+        $this->saveToDB();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
             return false;
@@ -3230,7 +3305,7 @@ class Product
         global $_TABLES;
 
         $cache_key = self::_makeCacheKey($this->id, 'img');
-        $this->Images = Cache::get($cache_key);
+        //$this->Images = Cache::get($cache_key);
         if ($this->Images === NULL) {
             $this->Images = array();
             $sql = "SELECT img_id, filename, orderby
@@ -3484,7 +3559,7 @@ class Product
         global $LANG_SHOP, $_SHOP_CONF;
 
         if (empty($ids)) {
-            COM_setMsg("No products selected");
+            SHOP_setMsg("No products selected");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
         $ids = implode(',', $ids);
@@ -4166,28 +4241,26 @@ class Product
      * Update the category cross-reference table.
      * TODO: update in-memory categories property.
      *
-     * @param   array|string    $cats   String from form or array of cat IDs
      * @return  object  $this
      */
-    private function updateCategories($cats)
+    private function updateCategories()
     {
         global $_TABLES;
 
-        if (empty($cats)) {
+        if (empty($this->Categories)) {
             // If no categories specified, use root category automatically
-            $cats = array(Category::getRoot()->getID());
-        } elseif (is_string($cats)) {
-            $cats = explode('|', $cats);
+            $this->Categories = array(Category::getRoot());
         }
         $add = array();
         $rem = array();
-        foreach ($cats as $cat_id) {
-            if (!array_key_exists($cat_id, $this->getCategories())) {
+        $Existing = Category::getByProductId($this->id);
+        foreach ($this->Categories as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $Existing)) {
                 $add[] = "({$this->id}, $cat_id)";
             }
         }
-        foreach ($this->getCategories() as $cat_id=>$cat) {
-            if (!in_array($cat_id, $cats)) {
+        foreach ($Existing as $cat_id=>$Cat) {
+            if (!array_key_exists($cat_id, $this->Categories)) {
                 $rem[] = $cat_id;
             }
         }

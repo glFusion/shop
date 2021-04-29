@@ -3,9 +3,9 @@
  * Class to handle product images.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -81,6 +81,20 @@ class Product extends \Shop\Image
         }
         self::reOrder($this->record_id);
         return $filenames;
+    }
+
+
+    /**
+     * Check if an image file exists on the filesystem.
+     *
+     * @param   string  $filename   Image filename, no path
+     * @return  boolean     True if image file exists, False if not
+     */
+    public static function imageExists($filename)
+    {
+        global $_SHOP_CONF;
+
+        return is_file($_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename);
     }
 
 
@@ -256,7 +270,10 @@ class Product extends \Shop\Image
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $A['filename'];
-            if (is_file($filespec)) {
+            if (
+                is_file($filespec) &&
+                DB_count($_TABLES['shop.images'], 'filename', $A['filename']) == 1
+            ) {
                 // Ignore errors due to file permissions, etc. Worst case is
                 // that an image gets left behind on disk
                 @unlink($filespec);
@@ -288,5 +305,3 @@ class Product extends \Shop\Image
     }
 
 }
-
-?>

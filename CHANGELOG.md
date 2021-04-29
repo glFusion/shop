@@ -6,6 +6,8 @@ Release TBD
   * Use checkbox field name for gateway service config if the language string is not defined.
   * Make sure the update-needed message is shown only once.
   * Migrate Square and Stripe gateways to uploadable modules.
+  * Allow products to be shown in the catalog but not purchased, e.g. current memberships.
+  * Fix product cloning and SKU changes
 
 ## v1.3.0
 Release 2021-04-20
