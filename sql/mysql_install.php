@@ -911,6 +911,9 @@ $SHOP_UPGRADE['1.3.0'] = array(
     // Enable customer notification of closed orders
     "UPDATE {$_TABLES['shop.orderstatus']} SET notify_buyer = 1 where name = 'closed'",
 );
+$SHOP_UPGRADE['1.3.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
+);
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
