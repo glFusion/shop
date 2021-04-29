@@ -1004,6 +1004,11 @@ $LANG_configselects['shop'] = array(
         '40 - Shipped'   => 'shipped',
         '50 - Closed'    => 'closed',
     ),
+    12 => array(
+        'Origin' => 0,
+        'Destination, Customer-Entered' => 1,
+        'Destination, IP Geolocation' => 3,
+    ),
     13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
     14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),
     15 => array('Pounds' => 'lbs', 'Kilograms' => 'kgs'),

@@ -979,6 +979,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'tax_nexus_virt',
+        'default_value' => '0',
+        'type' => 'select',
+        'subgroup' => 30,
+        'fieldset' => 10,
+        'selection_array' => 12,
+        'sort' => 50,
+        'set' => true,
+        'group' => 'shop',
+    ),
     // Avatax configuration
     array(
         'name' => 'fs_tax_avatax',

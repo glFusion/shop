@@ -956,7 +956,7 @@ class Order
         // This is for administrators, the canView() function will trap this
         // for regular users.
         if ($this->isNew) {
-            COM_setMsg($LANG_SHOP['item_not_found']);
+            SHOP_setMsg($LANG_SHOP['item_not_found']);
             return '';
         }
 
@@ -3537,13 +3537,18 @@ class Order
 
         if ($new_rate === NULL) {
             if (!$this->hasPhysical()) {
-                if (Config::get('tax_nexus_virt') == Tax::TAX_ORIGIN) {
+                switch(Config::get('tax_nexus_virt')) {
+                case Tax::TAX_ORIGIN:
                     $tax_addr = new Company;
-                } else {
+                    break;
+                case Tax::TAX_DESTINATION:
+                    $tax_addr = $this->Shipto;
+                    break;
+                default:
                     $tax_addr = Address::fromGeoLocation();
                 }
             } elseif (
-                Shipper::getInstance($this->getShipperID())->getTaxLocation() == TAX::TAX_ORIGIN
+                Shipper::getInstance($this->getShipperID())->getTaxLocation() == Tax::TAX_ORIGIN
             ) {
                 $tax_addr = new Company;
             } else {
@@ -3844,7 +3849,7 @@ class Order
             $status = false;
         }
         $this->applyDiscountCode();      // apply code to order and items
-        COM_setMsg($msg, $status ? 'info' : 'error', $status);
+        SHOP_setMsg($msg, $status ? 'info' : 'error', $status);
         return $status;
     }
 
@@ -4043,7 +4048,7 @@ class Order
             $this->hasTaxable() &&
             $this->getTotal() > 0 &&
             (
-                $this->hasPhysical()// || Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
+                $this->hasPhysical() || Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
             )
         ) {
             return true;

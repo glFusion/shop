@@ -196,4 +196,25 @@ class GeoLocator
         return $this->provider;
     }
 
+
+    /**
+     * Check if the IP address is an RFC1918 private address.
+     *
+     * @param   string  $ip     IP address
+     * @return  boolean     True if RFC1918
+     */
+    public static function isRFC1918($ip)
+    {
+        $parts = explode('.', $ip);
+        if ($parts[0] == '10') {
+            return true;
+        } elseif ($parts[0] == '172' && $parts[1] >= '16' && $parts[1] <= '31') {
+            return true;
+        } elseif ($parts[0] == '192' && $parts[1] == '168') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

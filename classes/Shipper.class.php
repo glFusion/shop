@@ -139,10 +139,10 @@ class Shipper
     protected $free_method = '';
 
     /** Flag to indicate where sales tax is calculated.
-     * 1 = origin (shop address), 0 = destination (customer address).
+     * 0 = origin (shop address), 1 = destination (customer address).
      * Default to origin for any taxable virtual items.
      * @var integer */
-    protected $tax_loc = 1;
+    protected $tax_loc = 0;
 
     /** Supported services.
      * @var array */
@@ -201,6 +201,7 @@ class Shipper
             $this->setValidTo(NULL);
             $this->min_units = self::MIN_UNITS;
             $this->max_units = 1000000;
+            $this->tax_loc = Config::get('tax_nexus_virt');
             $this->rates = array(
                 (object)array(
                     'dscp'  => 'Rate 1',

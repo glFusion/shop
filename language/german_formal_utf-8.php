@@ -754,6 +754,19 @@ $LANG_SHOP = array (
 'upgrade' => 'Upgrade',
 'upgrade_ok' => 'Upgrade Successful',
 'version' => 'Version',
+'ref_token' => 'Referral ID',
+'affiliates' => 'Affiliates',
+'payout' => 'Payout',
+'process' => 'Process',
+'pending_payout' => 'Pending Payout',
+'my_aff_link' => 'Affiliate Referral Link',
+'copy_cb' => 'Copy to Clipboard',
+'copy_cb_success' => 'Data was copied.',
+'aff_sales' => 'Affiliate Sales',
+'commissions' => 'Commissions',
+'commission' => 'Commission',
+'aff_report_for' => 'Affiliate Report for:',
+'due' => 'Due',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -924,6 +937,16 @@ $LANG_confignames['shop'] = array(
 'ipgeo_provider' => 'Geolocation Provider',
 'inv_start_num' => 'Invoice starting number/format',
 'uom_size' => 'Unit of Size Measurement',
+'aff_enabled' => 'Affiliate Referrals Enabled',
+'aff_ref_exp_days' => 'Referral Expiration (Days)',
+'aff_allow_entry' => 'Allow referral code entry during checkout',
+'aff_pct' => 'Default referral percentage',
+'aff_delay_days' => 'Days after order to wait before paying bonuses',
+'aff_min_payment' => 'Default minimum payout amount',
+'aff_min_ordstatus' => 'Minimum order status before paying bonuses',
+'aff_key' => 'Affiliate URL Key',
+'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
+'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -954,6 +977,7 @@ $LANG_fs['shop'] = array(
 'fs_geo' => 'Geolocation Settings',
 'fs_geo_ipgeo' => 'IPGeo',
 'fs_geo_ipstack' => 'IPStack',
+'fs_aff_general' => 'Affiliate Program Settings',
 );
 
 /**
@@ -971,6 +995,11 @@ $LANG_configselects['shop'] = array(
         '30 - Processing' => 'processing',
         '40 - Shipped'   => 'shipped',
         '50 - Closed'    => 'closed',
+    ),
+    12 => array(
+        'Origin' => 0,
+        'Destination, Customer-Entered' => 1,
+        'Destination, IP Geolocation' => 3,
     ),
     13 => array('Keine Blöcke' => 0, 'Linke Blöcke' => 1, 'Rechte Blöcke' => 2, 'Linke & Rechte Blöcke' => 3),
     14 => array('Nicht verfügbar' => 0, 'Optional' => 1, 'Erforderlich' => 2),
