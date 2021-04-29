@@ -1863,7 +1863,7 @@ function plugin_configmanager_use_sku_shop_validate($val)
             '1=1'
         );
         if ($uniq_skus < $all_skus) {
-            COM_setMsg($LANG_SHOP_HELP['err_sku_nonuniq'], 'error');
+            SHOP_setMsg($LANG_SHOP_HELP['err_sku_nonuniq'], 'error');
             return 0;
         }
     }
@@ -2394,7 +2394,7 @@ function SHOP_isMinVersion($required = '')
 
     if (!COM_checkVersion($installed, $required)) {
         if (plugin_ismoderator_shop()) {
-            COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
+            SHOP_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
         $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
         $isMinVer = false;
@@ -2506,6 +2506,23 @@ function SHOP_getRatedIds($pi_name)
     return $retval[$pi_name];
 }
 
-require_once __DIR__ . '/services.inc.php';
 
-?>
+/**
+ * Set an error message using COM_setMsg(), wrapped in list tags.
+ *
+ * @param   string|array    $msgs   Error message(s)
+ * @param   string      $severity   Message severity (info, error, etc.)
+ */
+function SHOP_setMsg($msgs, $severity='info')
+{
+    if (!is_array($msgs)) {
+        $msg = $msgs;
+    } elseif (count($msgs) == 1) {
+        $msg = $msgs[0];
+    } else {
+        $msg = '<ul><li>' . implode('</li><li>', $msgs) . '</li></ul>';
+    }
+    COM_setMsg($msg, $severity);
+}
+
+require_once __DIR__ . '/services.inc.php';
