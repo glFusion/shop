@@ -669,17 +669,20 @@ class Country extends RegionBase
             'form_url' => SHOP_ADMIN_URL . '/regions.php?countries=x&region_id=' . $region_id,
         );
 
-        $filter = $LANG_SHOP['region'] . ': <select name="region_id"
-            onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/regions.php?countries&amp;region_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
+        $T = new Template('admin');
+        $T->set_file(array(
+            'filter' => 'sel_region.thtml',
+        ) );
+        $T->set_var(array(
+            'lang_regiontype' => $LANG_SHOP['region'],
+            'fld_name' => 'region_id',
+            'onchange_url' => SHOP_ADMIN_URL . '/regions.php?countries&amp;region_id=',
+            'option_list' => COM_optionList(
                 $_TABLES['shop.regions'], 'region_id,region_name', $region_id, 1
-            ) .
-            "</select>" . LB;
-
+            ),
+        ) );
+        $T->parse('output', 'filter');
+        $filter = $T->finish($T->get_var('output'));
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_countrylist',
             array(__CLASS__,  'getAdminField'),

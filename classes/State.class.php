@@ -604,14 +604,26 @@ class State extends RegionBase
             'chkactions' => self::getBulkActionButtons(),
         );*/
 
-        $filter = $LANG_SHOP['country'] . ': <select name="country_id"
-            onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/regions.php?states&amp;country_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
-                '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-                self::countrySelection($country_id) .
-                "</select>" . LB;
+        $T = new Template('admin');
+        $T->set_file(array(
+            'filter' => 'sel_region.thtml',
+        ) );
+        $T->set_var(array(
+            'lang_regiontype' => $LANG_SHOP['country'],
+            'fld_name' => 'country_id',
+            'onchange_url' => SHOP_ADMIN_URL . '/regions.php?states&amp;country_id=',
+        ) );
+        $T->set_block('filter', 'regionOptions', 'rOpts');
+        foreach (self::countrySelection($country_id) as $c_id=>$c_data) {
+            $T->set_var(array(
+                'opt_value' => $c_id,
+                'opt_name' => $c_data['country_name'],
+                'selected' => $c_id == $country_id,
+            ) );
+            $T->parse('rOpts', 'regionOptions', true);
+        }
+        $T->parse('output', 'filter');
+        $filter = $T->finish($T->get_var('output'));
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_statelist',
@@ -703,7 +715,7 @@ class State extends RegionBase
      * Create a country selection dropdown showing only countries with states.
      *
      * @param   integer $sel    Selected country ID
-     * @return  string      Selection options
+     * @return  array       Array of country_id=>array(country_name, selected)
      */
     private static function countrySelection($sel = 0)
     {
@@ -715,15 +727,12 @@ class State extends RegionBase
             ON s.country_id = c.country_id
             ORDER BY c.country_name ASC";
         $res = DB_query($sql);
-        $retval = '';
+        $retval = array();
         while ($A = DB_fetchArray($res, false)) {
-            if ($A['country_id'] == $sel) {
-                $selected = 'selected="selected"';
-            } else {
-                $selected = '';
-            }
-            $retval .= '<option value="' . $A['country_id'] . '" ' . $selected . '>' .
-                $A['country_name'] . '</option>' . LB;
+            $retval[$A['country_id']] = array(
+                'country_name' => $A['country_name'],
+                'selected' => $A['country_id'] == $sel,
+            );
         }
         return $retval;
     }

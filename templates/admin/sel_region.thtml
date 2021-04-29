@@ -1,0 +1,10 @@
+{# begin {templatelocation} #}
+{lang_regiontype}: <select name="{fld_name}"
+	onchange="javascript: document.location.href='{onchange_url}'+this.options[this.selectedIndex].value">
+	<option value="0">{$LANG_SHOP['all']}</option>';
+<!-- BEGIN regionOptions -->
+	<option value="{opt_value}" {!if selected}selected="selected"{!endif}>{opt_name}</option>
+<!-- END regionOptions -->
+	{option_list}
+</select>
+{# end {templatelocation} #}
