@@ -446,6 +446,26 @@ class Cart extends Order
                 "instructions = ''",
                 "tax_shipping = 0",
                 "tax_handling = 0",
+                "billto_id = 0",
+                "billto_name = ''",
+                "billto_company = ''",
+                "billto_address1 = ''",
+                "billto_address2 = ''",
+                "billto_city = ''",
+                "billto_state = ''",
+                "billto_country = ''",
+                "billto_zip = ''",
+                "billto_phone = ''",
+                "shipto_id = 0",
+                "shipto_name = ''",
+                "shipto_company = ''",
+                "shipto_address1 = ''",
+                "shipto_address2 = ''",
+                "shipto_city = ''",
+                "shipto_state = ''",
+                "shipto_country = ''",
+                "shipto_zip = ''",
+                "shipto_phone = ''",
             );
             $this->updateRecord($vals);
             /*if ($del_order) {
@@ -961,7 +981,7 @@ class Cart extends Order
         if (!empty($msg)) {
             $msg = '<ul><li>' . implode('</li><li>', $msg) . '</li></ul>';
             $msg = $LANG_SHOP['msg_cart_invalid'] . $msg;
-            COM_setMsg($msg, 'info');
+            SHOP_setMsg($msg, 'info');
         }
         return $invalid;
     }
@@ -983,6 +1003,7 @@ class Cart extends Order
             if ($this->buyer_email == '') {
                 SESS_setVar('shop_focus_field', 'payer_email');
                 $errors['payer_email'] = $LANG_SHOP['err_missing_email'];
+                $new_wf = 'viewcart';
             }
         }
 
@@ -990,6 +1011,9 @@ class Cart extends Order
             $Addr = new Address($this->Shipto->toArray());
             if ($Addr->isValid(true) != '') {
                 $errors['shipto'] = $LANG_SHOP['req_shipto'];
+                if ($new_wf == '') {
+                    $new_wf = 'addresses';
+                }
             }
         }
 
@@ -997,13 +1021,15 @@ class Cart extends Order
             $Addr = new Address($this->Billto->toArray());
             if ($Addr->isValid(true) != '') {
                 $errors['billtoto'] = $LANG_SHOP['req_billto'];
-                $new_wf = 'addresses';
+                if ($new_wf == '') {
+                    $new_wf = 'addresses';
+                }
             }
         }
 
         if (!empty($errors)) {
             $msg = '<ul><li>' . implode('</li><li>', $errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($msg, 'error');
         }
         return $new_wf;
     }
@@ -1071,7 +1097,8 @@ class Cart extends Order
             ->setByGC(0)
             ->setEmail($Customer->getEmail())
             ->setShipper(0)
-            ->setInstructions('');
+            ->setInstructions('')
+            ->Save();
 
         SHOP_setUrl(SHOP_URL . '/index.php');
         return true;
