@@ -329,6 +329,9 @@ class Cart extends Order
                 if ($qty > $max) {
                     $qty = $max;
                 }
+                if ($qty != $old_qty) {
+                    $this->Taint();
+                }
                 if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
                     // Save the item ID to update any affected qty-based
@@ -344,12 +347,16 @@ class Cart extends Order
                     $this->applyQtyDiscounts($item_id);
                     $this->items[$id]->Save();
                 }
+            } else {
+                $this->Taint();
             }
         }
 
         // Assume that some physical items were changed, or at least the order
         // total has changed, to force a new calculation during checkout.
-        $this->setShipper(NULL);
+        if ($this->isTainted()) {
+            $this->setShipper(NULL);
+        }
 
         $this->calcItemTotals();
 
@@ -1054,8 +1061,9 @@ class Cart extends Order
             return false;       // no need to check anything else
         }
 
-        // Now make sure there's only one payment option and nothnig
-        // else that would require user entry before checkout
+        // Now make sure there's only one payment option and nothing
+        // else that would require user entry before checkout.
+        // If the _coupon gateway is available but no coupons exist, remove it.
         $Gateways = Gateway::getEnabled();
         if (
             isset($Gateways['_coupon']) &&
@@ -1082,10 +1090,8 @@ class Cart extends Order
             $this->setShipto($Customer->getDefaultAddress('shipto'));
         }
         if ($this->hasPhysical()) {
-            if ($this->billto_id == 0 || $this->shipto_id == 0) {
-                // No address found
-                return false;
-            }
+            // Shipping selection required
+            return false;
         }
 
         // Go ahead and save the gateway as preferred for future use
