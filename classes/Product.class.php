@@ -870,23 +870,19 @@ class Product
      */
     public function getEffectiveRuleID($incl_prod=true)
     {
-        static $retval = NULL;
-
-        if ($retval !== NULL) {
-            return $retval;     // already got the rule this session.
-        }
+        $retval = 0;
         if ($this->zone_rule > 0 && $incl_prod) {
             $retval = $this->zone_rule;
         } else {
             $cache_key = 'prod_eff_rule_id_' . $this->id;
             $retval = Cache::get($cache_key);
             if ($retval === NULL) {
-                $retval = 0;
                 $Cats = $this->getCategories();
                 $Cats = array_reverse($Cats, true);
                 foreach ($Cats as $Cat) {
                     $retval = $Cat->getEffectiveZoneRule();
                     if ($retval > 0) {
+                        // Found a rule, no need to look further
                         break;
                     }
                 }
