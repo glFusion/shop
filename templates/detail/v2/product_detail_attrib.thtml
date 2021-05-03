@@ -39,7 +39,7 @@
 
 	<div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">
 		<div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
-			<form class="uk-form uk-form-horizontal" method="post" id="add_cart_{frm_id}" action="javascript:void()">
+			<form class="uk-form uk-form-horizontal" method="post" id="{frm_id}" action="javascript:void()">
 				<input type="hidden" name="item_number" value="{id}" />
 				<input type="hidden" name="has_options" value="{have_attributes}" />
 				<div class="shopDetailPrice v2">
@@ -76,18 +76,18 @@
 					<label class="uk-form-label" for="options{og_id}">{og_name}:</label>
 					<div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-						<select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm(this.form);">
+						<select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm('{frm_id}');">
 <!-- BEGIN Optionselect -->
 							<option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
 						</select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-						<input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
+						<input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm('{frm_id}');"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
-						<input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm(this.form);">&nbsp;{opt_str}<br />
+						<input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm('{frm_id}');">&nbsp;{opt_str}<br />
 <!-- END Optionradio -->
 {!endif}
 					</div>

@@ -3,9 +3,9 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -1031,73 +1031,7 @@ class Product
             RATING_resetRating($_SHOP_CONF['pi_name'], $this->id);
         }
 
-        // Serialize the quantity discount array
-        //$qty_discounts = DB_escapeString(@serialize($this->qty_discounts));
-
         $status = $this->saveToDB();
-
-        // Insert or update the record, as appropriate
-        /*if ($this->id > 0) {
-            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
-            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
-            $sql3 = " WHERE id='{$this->id}'";
-            // While we're here, change the existing Variant SKUs if the
-            // product SKU has changed.
-            if (empty($this->Errors) && $old_sku != $this->name) {
-                foreach ($this->getVariants() as $Variant) {
-                    $Variant->updateSKU($old_sku, $this->name);
-                }
-            }
-        } else {
-            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
-            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
-                dt_add = UTC_TIMESTAMP(), ";
-            $sql3 = '';
-        }
-
-        //$options = DB_escapeString(@serialize($this->options));
-        $sql2 = "name='" . DB_escapeString($this->name) . "',
-                short_description='" . DB_escapeString($this->short_description) . "',
-                description='" . DB_escapeString($this->description) . "',
-                keywords='" . DB_escapeString($this->keywords) . "',
-                price='" . number_format($this->price, 2, '.', '') . "',
-                prod_type='" . (int)$this->prod_type. "',
-                weight='" . number_format($this->weight, 2, '.', '') . "',
-                file='" . DB_escapeString($this->filename) . "',
-                expiration='" . (int)$this->expiration. "',
-                enabled='" . (int)$this->enabled. "',
-                featured='" . (int)$this->featured. "',
-                views='" . (int)$this->views. "',
-                taxable='" . (int)$this->taxable . "',
-                shipping_type='" . (int)$this->shipping_type . "',
-                shipping_amt = '{$this->shipping_amt}',
-                shipping_units = '{$this->shipping_units}',
-                comments_enabled='" . (int)$this->comments_enabled . "',
-                rating_enabled='" . (int)$this->rating_enabled . "',
-                show_random='" . (int)$this->show_random . "',
-                show_popular='" . (int)$this->show_popular . "',
-                onhand='{$this->onhand}',
-                reorder = '{$this->reorder}',
-                track_onhand='{$this->track_onhand}',
-                oversell = '{$this->oversell}',
-                qty_discounts = '{$qty_discounts}',
-                custom='" . DB_escapeString($this->custom) . "',
-                avail_beg='" . DB_escapeString($this->avail_beg) . "',
-                avail_end='" . DB_escapeString($this->avail_end) . "',
-                brand_id ='" . $this->getBrandID() . "',
-                supplier_id ='" . $this->getSupplierID() . "',
-                supplier_ref = '{$this->getSupplierRef()}',
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
-                def_pv_id = {$this->getDefVariantID()},
-                zone_rule = {$this->getZoneRuleID()},
-                buttons= '" . DB_escapeString($this->btn_type) . "',
-                min_ord_qty = '" . (int)$this->min_ord_qty . "',
-                max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-        //options='$options',
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {*/
         if ($status && $this->id > 0) {
             if ($this->isNew) {
                 //$this->id = DB_insertID();
@@ -1148,12 +1082,6 @@ class Product
                     Feature::deleteProduct($this->id, $ft_id);
                 }
             }
-
-            //SHOP_log($sql, SHOP_LOG_DEBUG);
-            //$status = true;
-        /*} else {
-            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
-            $status = false;*/
         }
 
         // Clear all product caches since this save may affect availablity
@@ -1189,8 +1117,13 @@ class Product
             return false;
         }
     }
-    
 
+
+    /**
+     * Saves the product record to the database without updating anything else.
+     *
+     * @return  boolean     True on success, False on error
+     */
     public function saveToDB()
     {
         global $_TABLES;
@@ -1669,6 +1602,9 @@ class Product
             return $retval;
         }
 
+        // Create a good form ID
+        $frm_id = 'add_cart_' . COM_sanitizeID($prod_id . uniqid(), false);
+
         // Get the currency object which is used repeatedly
         $Cur = Currency::getInstance();
 
@@ -1805,10 +1741,11 @@ class Product
                 }
                 foreach ($ogOpts as $Opt) {
                     $T->set_var(array(
-                        'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()),
-                        'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
-                        'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
+                        'frm_id' => $frm_id,
+                        'opt_id' => $Opt->getID(),
+                        'opt_str' => htmlspecialchars($Opt->getValue()),
+                        'radio_selected' => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
+                        'select_selected' => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
@@ -1897,9 +1834,6 @@ class Product
             $shipping_txt = '';
         }
 
-        // Create a good form ID
-        $frm_id = COM_sanitizeID($prod_id, false);
-
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->getCode(),   // USD, etc.
@@ -1983,7 +1917,7 @@ class Product
             $T->parse('SF', 'SpecialFields', true);
         }
 
-        $buttons = $this->PurchaseLinks(Views::DETAIL, $prod_id);
+        $buttons = $this->PurchaseLinks(Views::DETAIL, $frm_id);
         $T->set_block('product', 'BtnBlock', 'Btn');
         foreach ($buttons as $name=>$html) {
             if ($name == 'add_cart') {

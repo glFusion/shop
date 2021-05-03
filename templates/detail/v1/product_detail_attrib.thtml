@@ -8,7 +8,7 @@
 	</a>
 </div>
 {!endif}
-<form id="add_cart_{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
+<form id="{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
 	<input type="hidden" name="item_number" value="{id}" />
 	<input type="hidden" name="has_options" value="{have_attributes}" />
 
@@ -40,7 +40,7 @@
 			<label class="uk-form-label" for="options{og_id}">{og_name}:</label>
 				<div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-					<select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm(this.form);">
+					<select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm('{frm_id}');">
 <!-- BEGIN Optionselect -->
 						<option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
