@@ -15,6 +15,8 @@ namespace Shop;
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Models\Views;
+use Shop\Models\Stock;
+
 
 /**
  * Class for products.
@@ -67,10 +69,6 @@ class Product
     /** Type of shipping available for this product.
      * @var integer */
     protected $shipping_type = 0;
-
-    /** Quantity currently on hand.
-     * @var integer */
-    protected $onhand = 0;
 
     /** Flag indicating how to display out-of-stock items.
      * @var integer */
@@ -265,10 +263,6 @@ class Product
      * @var integer */
     protected $max_ord_qty = 0;
 
-    /** Reorder quantity. Overridden by variants if any exist.
-     * @var integer */
-    protected $reorder = 0;
-
     /** Custom text input fields solicited on the order form.
      * @var string */
     protected $custom = '';
@@ -334,6 +328,11 @@ class Product
     /** Flag to indicate that the product cannot be purchased.
      * @var boolean */
     protected $canPurchase = true;
+
+    /** Stock level object for products without variants.
+     * Variants have their own related Stock objects.
+     * @var object */
+    protected $Stock = NULL;
 
 
     /**
@@ -673,7 +672,6 @@ class Product
         $this->show_random = isset($row['show_random']) ? $row['show_random'] : 0;
         $this->show_popular = isset($row['show_popular']) ? $row['show_popular'] : 0;
         $this->track_onhand = isset($row['track_onhand']) ? $row['track_onhand'] : 0;
-        $this->onhand = $row['onhand'];
         $this->oversell = isset($row['oversell']) ? $row['oversell'] : 0;
         $this->custom = $row['custom'];
         $this->setAvailBegin($row['avail_beg']);
@@ -683,7 +681,10 @@ class Product
         }
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
-        $this->reorder = (int)$row['reorder'];
+        if (!$this->hasVariants()) {
+            // Get the stock count from the base Stock record
+            $this->Stock = Stock::getByItem($this->id);
+        }
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -792,6 +793,17 @@ class Product
             $this->Variants = ProductVariant::getByProduct($this->id);
         }
         return $this->Variants;
+    }
+
+
+    /**
+     * Get the currently-active product variant.
+     *
+     * @return  object      ProductVariant object
+     */
+    public function getVariant()
+    {
+        return $this->Variant;
     }
 
 
@@ -1066,6 +1078,20 @@ class Product
                 ProductVariant::saveNew($A);
             }
 
+            // Save the stock levels.
+            // The product form will have one "quantities" array with index "0"
+            // to represent the base product, while the variants form will have
+            // multiple quantities.
+            if (isset($A['quantities']) && is_array($A['quantities'])) {
+                foreach($A['quantities'] as $pv_id=>$data) {
+                    Stock::getByItem($this->id, $pv_id)
+                        ->withOnhand($data['qty_onhand'])
+                        ->withReserved($data['qty_reserved'])
+                        ->withReorder($data['qty_reorder'])
+                        ->Save();
+                }
+            }
+
             // Add any new features
             if (array_key_exists('new_ft', $A)) {
                 foreach ($A['new_ft'] as $idx=>$ft_id) {
@@ -1168,8 +1194,6 @@ class Product
                 rating_enabled='" . (int)$this->rating_enabled . "',
                 show_random='" . (int)$this->show_random . "',
                 show_popular='" . (int)$this->show_popular . "',
-                onhand='{$this->onhand}',
-                reorder = '{$this->reorder}',
                 track_onhand='{$this->track_onhand}',
                 oversell = '{$this->oversell}',
                 qty_discounts = '" . DB_escapeString(@serialize($this->qty_discounts)) . "',
@@ -1185,7 +1209,6 @@ class Product
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
                 max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-        //options='$options',
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -1229,6 +1252,7 @@ class Product
         DB_delete($_TABLES['shop.images'], 'product_id', $this->id);
 
         ProductVariant::deleteByProduct($this->id);
+        Stock::deleteByProduct($this->id);
         Category::deleteProduct($this->id);
         Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
@@ -1391,7 +1415,6 @@ class Product
                                     'checked="checked"' : '',
             'trk_onhand_chk' => $this->track_onhand== 1 ?
                                     'checked="checked"' : '',
-            'onhand'        => $this->onhand,
             "oversell_sel{$this->oversell}" => 'selected="selected"',
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
@@ -1405,7 +1428,6 @@ class Product
             'available_cats' => $allcats_sel,
             'selected_cats' => $selcats_sel,
             'tabactive_' . $tab => 'class="uk-active"',
-            'reorder'       => $this->reorder,
             'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
             'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
@@ -1415,6 +1437,16 @@ class Product
             'ph_lead_time'  => $ph_lead_time,
             'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
         ) );
+        if (!$this->hasVariants()) {
+            $T->set_var(array(
+                'have_variants' => false,
+                'qty_onhand' => $this->getOnhand(),
+                'qty_reorder' => $this->getReorder(),
+                'qty_reserved' => $this->getReserved(),
+            ) );
+        } else {
+            $T->set_var('has_variants', true);
+        }
 
         // Create the button type selections. New products get the default
         // button selected, existing products get the saved button selected
@@ -2494,9 +2526,10 @@ class Product
 
         // update the qty on hand, if tracking and not already zero
         if ($this->track_onhand && $this->getOnhand() > 0) {
-            $sql = "UPDATE {$_TABLES['shop.products']} SET
+            /*$sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->getQuantity()})
-                    WHERE id = '{$this->id}'";
+                    WHERE id = '{$this->id}'";*/
+            Stock::recordPurchase($this->id, $Item->getVariantId(), $qty);
             Cache::clear('products');
             Cache::clear('sitemap');
             DB_query($sql, 1);
@@ -2553,7 +2586,7 @@ class Product
      * Get all the options for this product.
      *
      * @todo determine if this still works
-     * @deprecate
+     * @deprecated
      * @return  array       Array of options
      */
     public function getOptions()
@@ -2789,7 +2822,7 @@ class Product
     public function getQuantityBO($qty)
     {
         if ($this->track_onhand) {
-            $avail = $this->hasVariant() ? $this->Variant->getOnhand() : $this->onhand;
+            $avail = $this->getOnhand();
             return max($qty - $avail, 0);
         } else {
             return 0;
@@ -2807,12 +2840,7 @@ class Product
     public function getMaxOrderQty()
     {
         $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
-        if ($this->hasVariant()) {
-            $onhand = $this->Variant->getOnhand();
-        } else {
-            $onhand = $this->onhand;
-        }
-
+        $onhand = $this->getOnhand();
         if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
             return $max;
         } else {
@@ -3021,7 +3049,13 @@ class Product
      */
     public function getReorder()
     {
-        return (float)$this->reorder;
+        return $this->getStock()->getReorder();
+    }
+
+
+    public function getReserved()
+    {
+        return $this->getStock()->getReserved();
     }
 
 
@@ -3163,20 +3197,10 @@ class Product
      */
     private function _OutOfStock()
     {
-        if ($this->track_onhand != 0) {
-            if ($this->hasVariants()) {
-                // Return the oversell setting for the caller to act accordingly
-                // when out of stock
-                foreach ($this->getVariants() as $Var) {
-                    if ($Var->getOnhand() >  0) {
-                        return 0;
-                        break;
-                    }
-                }
-                return $this->oversell;
-            } elseif ($this->onhand == 0) {
-                return $this->oversell;
-            }
+        if ($this->getOnhand() > 0) {
+            return self::OVERSELL_ALLOW;
+        } else {
+            return $this->oversell;
         }
         return 0;
     }
@@ -3984,19 +4008,19 @@ class Product
         }
         $retval = array(
             'status'    => 0,
-            'msg'       => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
+            'msg'       => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
             'allowed'   => true,
             'is_oos'    => false,
             'orig_price' => Currency::getInstance()->RoundVal($this->getBasePrice()),
             'sale_price' => Currency::getInstance()->RoundVal($this->getPrice()),
-            'onhand'    => $this->onhand,
+            'onhand'    => $this->getOnhand(),
             'weight'    => $this->getWeight(),
             'sku'       => $this->getName(),
-            'leadtime'  => $this->onhand == 0 ? $this->getLeadTimeMessage() : '',
+            'leadtime'  => $this->getOnhand() == 0 ? $this->getLeadTimeMessage() : '',
             'images'    => array_keys($this->Images),
         );
         if ($this->track_onhand) {
-            if ($this->onhand < $opts['quantity']) {
+            if ($this->getOnhand() < $opts['quantity']) {
                 $retval['is_oos'] = true;
                 if ($this->getOversell() == self::OVERSELL_HIDE) {
                     $retval['status'] = 2;
@@ -4286,6 +4310,27 @@ class Product
 
 
     /**
+     * Get the Stock object for this product.
+     * If there are variants then the current variant Stock object is used,
+     * otherwise the object attached to the Product is used.
+     *
+     * @return  object      Stock object
+     */
+    public function getStock()
+    {
+        if ($this->trackOnhand()) {
+            if ($this->hasVariant()) {
+                return $this->Variant->getStock();
+            } elseif (is_object($this->Stock)) {
+                return $this->Stock;
+            }
+        }
+        // fallback if neither condition is satisfied
+        return new Stock;
+    }
+
+
+    /**
      * Get the quantity on hand.
      * If there are variants, get the variant onhand value, otherwise use the
      * product's value.
@@ -4294,11 +4339,7 @@ class Product
      */
     public function getOnhand()
     {
-        if ($this->hasVariant() && $this->Variant->getTrackOnhand()) {
-            return $this->Variant->getOnhand();
-        } else {
-            return $this->onhand;
-        }
+        return $this->getStock()->getOnhand();
     }
 
 
@@ -4574,6 +4615,24 @@ class Product
         } else {
             return 0;
         }
+    }
+
+
+    /**
+     * Reserve a quantity of this item when it's added to a cart.
+     *
+     * @param   float   $qty    Quantity to reserve
+     */
+    public function reserveStock($qty)
+    {
+        $this->getVariants();
+        $PV = $this->getVariant();
+        if ($PV === NULL) {
+            $pv_id = 0;
+        } else {
+            $pv_id = $PV->getID();
+        }
+        Stock::reserve($this->id, $pv_id, $qty);
     }
 
 }

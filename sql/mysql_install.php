@@ -65,8 +65,6 @@ $_SQL = array(
   `show_popular` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `options` text,
   `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `onhand` int(10) unsigned NOT NULL DEFAULT '0',
-  `reorder` int(10) unsigned NOT NULL DEFAULT '0',
   `oversell` tinyint(1) NOT NULL DEFAULT '0',
   `qty_discounts` text,
   `custom` varchar(255) NOT NULL DEFAULT '',
@@ -913,6 +911,16 @@ $SHOP_UPGRADE['1.3.0'] = array(
 );
 $SHOP_UPGRADE['1.3.1'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
+    "CREATE TABLE `{$_TABLES['shop.stock']}` (
+      `stk_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `item_id` int(11) unsigned NOT NULL,
+      `pv_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `qty_onhand` decimal(10,2) DEFAULT NULL,
+      `qty_reserved` decimal(10,2) DEFAULT NULL,
+      `qty_reorder` decimal(10,2) DEFAULT 0.00,
+      PRIMARY KEY (`stk_id`),
+      UNIQUE KEY `item_variant` (`item_id`,`pv_id`)
+    ) ENGINE=MyISAM",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
@@ -937,5 +945,4 @@ $_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
 $_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
 $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
-
-?>
+$_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][1];

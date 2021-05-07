@@ -441,13 +441,11 @@ class Catalog
                 'item_url'      => $P->getLink(0, $this->query_str),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
-                'qty_onhand'    => $P->getOnhand(),
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
                 'price'         => $P->getDisplayPrice(),
                 'orig_price'    => $P->getDisplayPrice($P->getBasePrice()),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
-                'onhand'        => $P->trackOnhand() ? $P->getOnhand() : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
                 'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes

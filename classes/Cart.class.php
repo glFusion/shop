@@ -6,9 +6,9 @@
  * by Josh Pendergrass <cendent AT syndicate-gaming DOT com>
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,6 +18,7 @@
 namespace Shop;
 use Shop\Models\OrderState;
 use Shop\Models\Session;
+use Shop\Models\Stock;
 use Shop\Products\Coupon;
 
 
@@ -127,9 +128,8 @@ class Cart extends Order
 
     /**
      * Merge the saved cart for Anonymous into the current user's cart.
-     * Calls addItem() for each item rather than changing the cart ID for each
-     * item in order to combine duplicate line items.
-     * Saves the updated cart to the database.
+     * Changes all the items order_id value to the new cart and deletes
+     * the original cart.
      *
      * @param   string  $cart_id    ID of cart being merged into this one
      */
@@ -262,6 +262,7 @@ class Cart extends Order
             // If discount pricing was recalculated, save the new item prices
             $need_save = true;
         }
+        $P->reserveStock($quantity);
 
         // If an update was done that requires re-saving the cart, do it now
         if ($need_save) {
@@ -331,6 +332,8 @@ class Cart extends Order
                 }
                 if ($qty != $old_qty) {
                     $this->Taint();
+                    // Change the reservation by the difference in quantity.
+                    $Product->reserveStock($qty - $old_qty);
                 }
                 if ($qty == 0) {
                     // If zero is entered for qty, delete the item.
@@ -413,7 +416,7 @@ class Cart extends Order
         global $_TABLES;
 
         if (isset($this->items[$id])) {
-            OrderItem::Delete($id);
+            $this->items[$id]->Delete();
             unset($this->items[$id]);
             $this->Save();
         }
@@ -434,7 +437,7 @@ class Cart extends Order
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == OrderState::CART) {
             foreach ($this->items as $Item) {
-                OrderItem::Delete($Item->getID());
+                $Item->Delete();
             }
             $this->items = array();
             $vals = array(

@@ -228,27 +228,40 @@
       </div>
     </div>
 
-    <div class="uk-form-row">
-      <label class="uk-form-label">{$LANG_SHOP['track_onhand']}
-        <span id="track_onhand" class="tooltip_cfg tooltipstered"></span>
-      </label>
-      <div class="uk-form-controls">
-        <input type="checkbox" id="track_onhand" name="track_onhand" value="1" {trk_onhand_chk}
-            onclick="SHOP_showOversell(this.checked);"/>&nbsp;&nbsp;
-        <span id="oversell">
-        {$LANG_SHOP['onhand']}:
-        <input type="text" name="onhand" value="{onhand}" size="4"/>
-        &nbsp;&nbsp;{$LANG_SHOP['reorder']}:
-        <input type="text" name="reorder" value="{reorder}" size="4"/>
-        <br />{$LANG_SHOP['oversell_action']}:
-        <select name="oversell">
-          <option value="0" {oversell_sel0} >{$LANG_SHOP['oversell_allow']}</option>
-          <option value="1" {oversell_sel1} >{$LANG_SHOP['oversell_deny']}</option>
-         <option value="2" {oversell_sel2} >{$LANG_SHOP['oversell_hide']}</option>
-        </select>
-        </span>
-      </div>
-    </div>
+		<div class="uk-form-row">
+			<label class="uk-form-label">{$LANG_SHOP['track_onhand']}
+				<span id="track_onhand" class="tooltip_cfg tooltipstered"></span>
+			</label>
+			<div class="uk-form-controls">
+				<input type="checkbox" id="track_onhand" name="track_onhand" value="1" {trk_onhand_chk} />
+			</div>
+		</div>
+
+{!if has_variants}
+{# Use the quantity fields on the variant list #}
+{!else}
+		<div class="uk-form-row">
+			<label class="uk-form-label">{$LANG_SHOP['quantities']}
+				<span id="track_onhand" class="tooltip_cfg tooltipstered"></span>
+			</label>
+			<div class="uk-form-controls">
+				<span id="oversell">
+					{$LANG_SHOP['onhand']}:
+					<input type="text" name="quantities[0][qty_onhand]" value="{qty_onhand}" size="4"/>
+					&nbsp;&nbsp;{$LANG_SHOP['reorder']}:
+					<input type="text" name="quantities[0][qty_reorder]" value="{qty_reorder}" size="4"/>
+					&nbsp;&nbsp;{$LANG_SHOP['reserved']}:
+					<input type="text" name="quantities[0][qty_reserved]" value="{qty_reserved}" size="4"/>
+					<br />{$LANG_SHOP['oversell_action']}:
+					<select name="oversell">
+						<option value="0" {oversell_sel0} >{$LANG_SHOP['oversell_allow']}</option>
+						<option value="1" {oversell_sel1} >{$LANG_SHOP['oversell_deny']}</option>
+						<option value="2" {oversell_sel2} >{$LANG_SHOP['oversell_hide']}</option>
+					</select>
+				</span>
+			</div>
+		</div>
+{!endif}
 
 {!if 0}
     <div class="uk-form-row" id="oversell" style="display:none;">

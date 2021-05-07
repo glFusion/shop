@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Stock;
 
 
 /**
@@ -24,11 +25,11 @@ class ProductVariant
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Key field name.
+    /** Table name, for DBO operations.
      * @var string */
     protected static $TABLE = 'shop.product_variants';
 
-    /** Key field name.
+    /** Key field name, for DBO operations.
      * @var string */
     protected static $F_ID = 'pv_id';
 
@@ -69,8 +70,16 @@ class ProductVariant
     private $track_onhand = 0;
 
     /** Quantity on hand.
-     * @var float */
+     * @var integer */
     private $onhand = 0;
+
+    /** Quantity on hand (from Stock table).
+     * @var integer */
+    private $qty_onhand = 0;
+
+    /** Quantity reserved in carts (from Stock table).
+     * @var integer */
+    private $qty_reserved = 0;
 
     /** Reorder quantity. Overrides the product reorder setting.
      * @var integer */
@@ -88,6 +97,10 @@ class ProductVariant
     /** Image IDs associated with this Variant.
      * @var array */
     private $images = array();
+
+    /** Stock level object.
+     * @var object */
+    private $Stock = NULL;
 
     /** Cache tag used for ProductOptions.
      * @var string */
@@ -112,6 +125,7 @@ class ProductVariant
         } elseif (is_array($pv_id) && isset($pv_id['pv_id'])) {
             // Got an item record, just set the variables
             $this->setVars($pv_id);
+            $this->Stock = new Stock($pv_id);
         }
     }
 
@@ -149,16 +163,22 @@ class ProductVariant
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.product_variants']}
-                WHERE pv_id = $rec_id";
-        //echo $sql;die;
+        $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reorder, stk.qty_reserved
+            FROM {$_TABLES['shop.product_variants']} pv
+            LEFT JOIN {$_TABLES['shop.stock']} stk
+                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id
+            WHERE pv.pv_id = $rec_id";
         $res = DB_query($sql);
         if ($res) {
-            $this->setVars(DB_fetchArray($res, false));
+            $A = DB_fetchArray($res, false);
+            $this->setVars($A);
             $this->loadOptions();
             $this->makeDscp();
+            $this->Stock = new Stock($A);
             return true;
         } else {
+            // Create a dummy Stock object to avoid errors with NULL.
+            $this->Stock = new Stock;
             return false;
         }
     }
@@ -184,8 +204,9 @@ class ProductVariant
                 ->setSku(SHOP_getVar($A, $pfx.'sku'))
                 ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
                 ->setTrackOnhand(SHOP_getVar($A, $pfx.'track_onhand', 'integer'))
-                ->setOnhand(SHOP_getVar($A, $pfx.'onhand', 'float'))
-                ->setReorder(SHOP_getVar($A, $pfx.'reorder', 'float'))
+                ->setOnhand(SHOP_getVar($A, $pfx.'qty_onhand', 'float'))
+                ->setReserved(SHOP_getVar($A, $pfx.'qty_onhand', 'float'))
+                ->setReorder(SHOP_getVar($A, $pfx.'qty_reorder', 'float'))
                 ->setImageIDs(SHOP_getVar($A, $pfx.'img_ids', 'mixed'))
                 ->setEnabled(SHOP_getVar($A, $pfx.'enabled', 'integer', 1));
             if (isset($A['dscp'])) {        // won't be set from the edit form
@@ -213,9 +234,12 @@ class ProductVariant
         }
         $count = count($attribs);
         $attr_sql = implode(',', $attribs);
-        $sql = "SELECT pv.* FROM {$_TABLES['shop.variantXopt']} vxo
+        $sql = "SELECT pv.*, stk.*
+            FROM {$_TABLES['shop.variantXopt']} vxo
             INNER JOIN {$_TABLES['shop.product_variants']} pv
                 ON vxo.pv_id = pv.pv_id
+            LEFT JOIN {$_TABLES['shop.stock']} stk
+                ON stk.pv_id = pv.pv_id
             WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
             GROUP BY vxo.pv_id
             HAVING COUNT(pv.item_id) = $count
@@ -406,12 +430,12 @@ class ProductVariant
     /**
      * Set the quantity on hand.
      *
-     * @param   float   $onhand     Number of units on hand
+     * @param   float   $qty    Number of units on hand
      * @return  object  $this
      */
-    public function setOnhand($onhand)
+    public function setOnhand($qty)
     {
-        $this->onhand = (float)$onhand;
+        $this->qty_onhand = (float)$qty;
         return $this;
     }
 
@@ -423,7 +447,36 @@ class ProductVariant
      */
     public function getOnhand()
     {
-        return (float)$this->onhand;
+        if (is_object($this->Stock)) {
+            return $this->Stock->getOnhand();
+        } else {
+            return 0;
+        }
+        //return (float)$this->qty_onhand;
+    }
+
+
+    /**
+     * Set the quantity reserved.
+     *
+     * @param   float   $qty    Quantity reserved.
+     * @return  object  $this
+     */
+    public function setReserved($qty)
+    {
+        $this->qty_reserved = (float)$qty;
+        return $this;
+    }
+
+
+    /**
+     * Get the quantity on hand for this variant.
+     *
+     * @return  float       Quantity onhand
+     */
+    public function getReserved()
+    {
+        return (float)$this->qty_reserved;
     }
 
 
@@ -540,8 +593,11 @@ class ProductVariant
 
         $retval = array();
         $product_id = (int)$product_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.product_variants']}
-            WHERE item_id = '$product_id'";
+        $sql = "SELECT pv.*, stk.*
+            FROM {$_TABLES['shop.product_variants']} pv
+            LEFT JOIN {$_TABLES['shop.stock']} stk
+                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id
+            WHERE pv.item_id = '$product_id'";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $retval[] = self::getInstance($A);
@@ -986,10 +1042,10 @@ class ProductVariant
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
             track_onhand = '{$this->getTrackOnhand()}',
-            onhand = " . (float)$this->onhand . ",
             img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
-            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "',
-            reorder = " . (float)$this->reorder;
+            dscp = '" . DB_escapeString(json_encode($this->dscp)) . "'";
+            //reorder = " . (float)$this->reorder;
+            //onhand = " . (float)$this->onhand . ",
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         SHOP_log($sql, SHOP_LOG_DEBUG);
@@ -998,6 +1054,10 @@ class ProductVariant
             if ($this->pv_id == 0) {
                 $this->pv_id = DB_insertID();
             }
+            Stock::getByItem($this->item_id, $this->pv_id)
+                ->withOnhand($this->getOnhand())
+                ->withReserved($this->getReserved())
+                ->Save();
             $retval = true;
         } else {
             $retval = false;;
@@ -1051,6 +1111,7 @@ class ProductVariant
         $id = (int)$id;
         DB_delete($_TABLES['shop.product_variants'], 'pv_id', $id);
         DB_delete($_TABLES['shop.variantXopt'], 'pv_id', $id);
+        Stock::deleteByVariant($id);
         Cache::clear(self::TAG);
     }
 
@@ -1167,6 +1228,12 @@ class ProductVariant
     {
         $this->net_price = $price;
         return $this;
+    }
+
+
+    public function getStock()
+    {
+        return $this->Stock;
     }
 
 
@@ -1295,12 +1362,17 @@ class ProductVariant
             ),
             array(
                 'text' => $LANG_SHOP['onhand'],
-                'field' => 'onhand',
+                'field' => 'qty_onhand',
+                'align' => 'right',
+            ),
+            array(
+                'text' => $LANG_SHOP['reserved'],
+                'field' => 'qty_reserved',
                 'align' => 'right',
             ),
             array(
                 'text' => $LANG_SHOP['reorder'],
-                'field' => 'reorder',
+                'field' => 'qty_reorder',
                 'align' => 'right',
             ),
             array(
@@ -1396,13 +1468,17 @@ class ProductVariant
                 );
             }
         }
+        $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reserved, stk.qty_reorder
+            FROM {$_TABLES['shop.product_variants']} pv
+            LEFT JOIN {$_TABLES['shop.stock']} stk
+                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id";
         $query_arr = array(
             'table' => 'shop.product_variants',
             'query_fields' => array('sku'),
-            'sql' => "SELECT * FROM {$_TABLES['shop.product_variants']}",
+            'sql' => $sql,
         );
         if ($prod_id > 0) {
-            $query_arr['default_filter'] = "WHERE item_id = '$prod_id'";
+            $query_arr['default_filter'] = "WHERE pv.item_id = '$prod_id'";
         } else {
             $query_arr['default_filter'] = 'WHERE 1=1';
         }
@@ -1519,12 +1595,22 @@ class ProductVariant
             $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
             break;
 
-        case 'reorder':
         case 'onhand':
             $retval = (float)$fieldvalue;
             if ((float)$A['onhand'] <= (float)$A['reorder']) {
                 $retval = '<span class="uk-text-danger">' . $retval . '</span>';
             }
+            break;
+
+        case 'qty_reorder':
+        case 'qty_onhand':
+        case 'qty_reserved':
+            $retval = Field::text(array(
+                'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
+                'value' => (float)$fieldvalue,
+                'size' => 4,
+                'style' => 'text-align:right',
+            ) );
             break;
 
         case 'def_pv_id':
@@ -1576,19 +1662,19 @@ class ProductVariant
         } else {
             $price = ($P->getBasePrice() + $this->getPrice());
             $price = $price * (100 - $P->getDiscount($opts['quantity'])) / 100;
-            if ($this->onhand == 0) {
+            if ($this->Stock->getOnhand() == 0) {
                 $lt_msg = $P->getLeadTimeMessage();
             } else {
                 $lt_msg = '';
             }
             $retval = array(
                 'status'    => 0,
-                'msg'       => $this->onhand . ' ' . $LANG_SHOP['available'],
+                'msg'       => $this->Stock->getOnhand() . ' ' . $LANG_SHOP['available'],
                 'allowed'   => true,
                 'is_oos'    => false,
                 'orig_price' => Currency::getInstance()->RoundVal($price),
                 'sale_price' => Currency::getInstance()->RoundVal($P->getSalePrice($price)),
-                'onhand'    => $this->onhand,
+                'onhand'    => $this->Stock->getOnhand(),
                 'weight'    => $P->getWeight() + $this->weight,
                 'sku'       => empty($this->getSku()) ? $P->getName() : $this->getSku(),
                 'leadtime'  => $lt_msg,
@@ -1596,7 +1682,7 @@ class ProductVariant
             );
         }
         if ($P->getTrackOnhand()) {
-            if ($this->onhand < $opts['quantity']) {
+            if ($this->Stock->getOnhand() < $opts['quantity']) {
                 $retval['is_oos'] = true;
                 if ($P->getOversell() > Product::OVERSELL_ALLOW) {
                     // Can't be sold
@@ -1660,7 +1746,7 @@ class ProductVariant
 
 
     /**
-     * Delete the variants related to a specific product.
+     * Delete all the variants related to a specific product.
      * Called when deleting the product.
      *
      * @param   integer $item_id    Product ID
@@ -1674,9 +1760,8 @@ class ProductVariant
             WHERE item_id = $item_id";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
-            DB_delete($_TABLES['shop.variantXopt'], 'pv_id', (int)$A['pv_id']);
+            self::Delete($A['pv_id']);
         }
-        DB_delete($_TABLES['shop.product_variants'], 'item_id', $item_id);
     }
 
 

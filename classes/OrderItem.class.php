@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Stock;
 
 
 /**
@@ -938,14 +939,16 @@ class OrderItem
      * Delete an order item and related options from the database.
      *
      * @see     Cart::Remove()
-     * @param   integer $id     Order item record ID
      */
-    public static function Delete($id)
+    public function Delete()
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.orderitems'], 'id', (int)$id);
-        OrderItemOption::deleteItem($id);
+        $P = $this->getProduct();
+        $P->setVariant($this->Variant)
+          ->reserveStock($this->getQuantity() * -1);
+        DB_delete($_TABLES['shop.orderitems'], 'id', $this->getID());
+        OrderItemOption::deleteItem($this->getID());
     }
 
 
