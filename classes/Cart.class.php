@@ -143,9 +143,13 @@ class Cart extends Order
         if (empty($AnonCart->getItems())) {
             return;
         }
+
         // Merge the items into the user cart
+        $tax_rate = $this->getTaxRate();
         foreach ($AnonCart->getItems() as $Item) {
-            $Item->setOrderID($this->order_id)->Save();
+            $Item->setOrderID($this->order_id)
+                 ->setTaxRate($tax_rate)    // set tax rate based on new order
+                 ->Save();
         }
         if (Config::get('aff_enabled')) {
             // This will remove the affiliate ID if it belongs to the user
