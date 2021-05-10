@@ -36,6 +36,15 @@ class v1_3_1 extends Upgrade
             // the product table.
             $SHOP_UPGRADE[self::$ver][] = "ALTER TABLE {$_TABLES['shop.products']}
                 DROP onhand, DROP reorder";
+
+            // Using this as a key to figure out if this is the first time.
+            // Swap the tax_loc field values for shippers.
+            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.shipping']}
+                SET tax_loc = 2 WHERE tax_loc = 1";
+            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.shipping']}
+                SET tax_loc = 1 WHERE tax_loc = 0";
+            $SHOP_UPGRADE[self::$ver][] = "UPDATE {$_TABLES['shop.shipping']}
+                SET tax_loc = 0 WHERE tax_loc = 2";
         }
 
         if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
