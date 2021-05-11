@@ -112,6 +112,13 @@ class Cart extends OrderBaseView
      */
     public function Render()
     {
+        // Make sure there's a valid address object for the Shipto address
+        // instead of NULL
+        if (!$this->Order->getShipto()) {
+            $this->Order->setShipto(
+                Customer::getInstance($this->Order->getUid())->getDefaultAddress('shipto')
+            );
+        }
         $this->Order->checkRules();
         $output = $this->createHTML2();
         return $output;
