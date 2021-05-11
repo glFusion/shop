@@ -3,9 +3,9 @@
  * Manage orders.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner
+ * @copyright   Copyright (c) 2020-2021 Lee Garner
  * @package     shop
- * @version     v1.2.3
+ * @version     v1.3.1
  * @since       v1.2.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -125,7 +125,7 @@ default:
     break;
 }
 $display = COM_siteHeader();
-$display .= \Shop\Menu::Admin('orders');
+$display .= \Shop\Menu::Admin($view);
 if (!empty($msg)) {
     $messages = implode('<br />', $msg);
     $display .= COM_showMessageText($messages);
@@ -133,5 +133,3 @@ if (!empty($msg)) {
 $display .= $content;
 $display .= COM_siteFooter();
 echo $display;
-
-?>
