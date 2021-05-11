@@ -2,12 +2,14 @@
 
 ## v1.3.1
 Release TBD
+  * Add sales tax location configuration setting for virtual items.
   * Fix error if a referrer is not found at login. (May happen if the plugin is reinstalled.)
   * Use checkbox field name for gateway service config if the language string is not defined.
   * Make sure the update-needed message is shown only once.
   * Migrate Square and Stripe gateways to uploadable modules.
   * Allow products to be shown in the catalog but not purchased, e.g. current memberships.
-  * Fix product cloning and SKU changes
+  * Fix product cloning and SKU changes.
+  * Move quantity tracking to Stock table, reserve items as they go into carts.
 
 ## v1.3.0
 Release 2021-04-20
