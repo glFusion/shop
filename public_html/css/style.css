@@ -672,10 +672,11 @@ div.ItemOptions {
 }
 
 div.shopProductSort {
-    float: left;
+    /*float: left;*/
 }
 div.shopProductSearch {
-    float: right;
+    /*float: right;*/
+	text-align: right;
 }
 div.orderInstructions {
     clear: both;
@@ -823,6 +824,12 @@ table#trackingTable {
     width: 100%;
     table-layout:fixed;
 }
+/*@media screen and (max-width: 600px) {
+	table#trackingTable select,input {
+		width: 50%;
+	}
+}*/
+
 table#trackingTable td.aligncenter {
     width: 10%;
 }
@@ -830,9 +837,9 @@ table#trackingTable td {
     background: #ccc;
     padding: 2px;
 }
-table#trackingTable select,input {
+/*table#trackingTable select,input {
     max-width:90%;
-}
+}*/
 div#orderShipmentBlock {
     width:70%;
     background:#ccc;
@@ -1105,4 +1112,8 @@ div.cart-item {
     border: solid 3px lightgrey;
     padding-top: 5px;
     padding-bottom: 5px;
+}
+
+.shopOrderNoteIcon {
+	cursor: pointer;
 }

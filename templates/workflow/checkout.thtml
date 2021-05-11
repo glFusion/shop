@@ -61,7 +61,7 @@
                         </div>
                         <div class="cart-item-total">
 {!if taxable}
-                            <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+                            <span class="shopOrderNoteIcon tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
 {!if discount_icon}
                             <span class="tooltip" title="{discount_tooltip}"">{discount_icon}</span>
