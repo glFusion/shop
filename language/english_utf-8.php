@@ -933,6 +933,7 @@ $LANG_confignames['shop'] = array(
     'tax_taxjar_token' => 'TaxJar API Token',
     'tax_taxjar_nexus' => 'Use TaxJar Nexus API?',
     'tax_nexuses'   => 'Tax Nexuses',
+    'tax_nexus_virt' => 'Tax location for virtual items',
     'address_validator' => 'Address Validator',
     'smartystreets_id' => 'SmartyStreets ID',
     'smartystreets_token' => 'SmartyStreets Token',
