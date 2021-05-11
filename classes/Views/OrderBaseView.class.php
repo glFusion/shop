@@ -454,6 +454,7 @@ class OrderBaseView
             'subtotal'      => $subtotal == $total ? '' : $this->Currency->Format($subtotal),
             'total'         => $this->Currency->Format($total),
             'cart_tax'      => $this->Order->getTax() > 0 ? $this->Currency->FormatValue($this->Order->getTax()) : 0,
+            'tax_pct'       => $this->Order->getTaxRate() * 100,
         ) );
         $this->TPL->set_var(array(
             'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
