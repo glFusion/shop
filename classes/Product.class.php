@@ -3770,50 +3770,61 @@ class Product
             'chkname' => 'prod_bulk',
             'chkactions' => $bulk_update,
         );
-        $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
-            onchange="javascript: document.location.href=\'' .
-            SHOP_ADMIN_URL . '/index.php?products' .
-            '&amp;brand_id=' . $brand_id .
-            '&amp;supplier_id=' . $supplier_id .
-            '&amp;cat_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
                 $_TABLES['shop.categories'],
                 'cat_id,cat_name',
                 $cat_id,
                 1
-            ) .
-            "</select>" . LB;
-        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ': <select name="brand_id"
-            onchange="javascript: document.location.href=\'' .
+        );
+        $filter = $LANG_SHOP['category'] . ': ';
+        $filter .= Field::select(array(
+            'name' => 'cat_id',
+            'onchange' => "javascript: document.location.href='" .
+                SHOP_ADMIN_URL . "/index.php?products" .
+                "&amp;brand_id=$brand_id" .
+                "&amp;supplier_id=$supplier_id" .
+                "&amp;cat_id='+this.options[this.selectedIndex].value",
+            'option_list' => $sel_options,
+        ) );
+
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
+            $_TABLES['shop.suppliers'],
+            'sup_id,company',
+            $brand_id,
+            1,
+            "is_brand=1"
+        );
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ':';
+        $filter .= Field::select(array(
+            'name' => 'brand_id',
+            'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . '/index.php?products' .
-                '&amp;cat_id=' . $cat_id .
-                '&amp;supplier_id=' . $supplier_id .
-                '&amp;brand_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.suppliers'],
-                'sup_id,company',
-                $brand_id,
-                1,
-                "is_brand=1"
-            ) .
-            "</select>" . LB;
-        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': <select name="supplier_id"
-            onchange="javascript: document.location.href=\'' .
-            SHOP_ADMIN_URL . '/index.php?products' .
-            '&amp;brand_id=' . $brand_id .
-            '&amp;cat_id=' . $cat_id .
-            '&amp;supplier_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.suppliers'],
-                'sup_id,company',
-                $supplier_id,
-                1,
-                "is_supplier=1"
-            ) .
-            "</select>" . LB;
+                "&amp;cat_id=$cat_id" .
+                "&amp;supplier_id=$supplier_id" .
+                "&amp;brand_id='+this.options[this.selectedIndex].value",
+            'option_list' => $sel_options,
+        ) );
+
+        $options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $options .= COM_optionList(
+            $_TABLES['shop.suppliers'],
+            'sup_id,company',
+            $supplier_id,
+            1,
+            "is_supplier=1"
+        );
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': ';
+        $filter .= Field::select(array(
+            'name' => 'supplier_id',
+            'onchange' => "javascript: document.location.href='" .
+                SHOP_ADMIN_URL . '/index.php?products' .
+                "&amp;brand_id=$brand_id" .
+                "&amp;cat_id=$cat_id" .
+                "&amp;supplier_id='+this.options[this.selectedIndex].value",
+            'option_list' => $options,
+        ) );
         $filter .= '<br />' . LB;
 
         $display .= ADMIN_list(
@@ -3878,17 +3889,13 @@ class Product
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
-                    "\"product\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','enabled','product');",
+                'value' => 1,
+            ) );
             break;
 
         case 'availability':
@@ -3909,17 +3916,13 @@ class Product
             break;
 
         case 'featured':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togfeatured{$A['id']}\"
-                onclick='SHOP_toggle(this,\"{$A['id']}\",\"featured\",".
-                "\"product\");' />" . LB;
+            $retval = Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togfeatured{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'value' => 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','featured','product');",
+            ) );
             break;
 
         case 'name':

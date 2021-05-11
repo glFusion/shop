@@ -3,9 +3,9 @@
  * Class to handle addresses for suppliers and brands.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -383,6 +383,9 @@ class Supplier extends Address
         }
         if (is_array($A)) {
             $this->setAddress($A);
+            if (isset($A['del_logo']) && !empty($this->getLogoImage())) {
+                $this->deleteImage();
+            }
         }
         if ($this->getID() > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.suppliers']} SET ";
@@ -657,12 +660,12 @@ class Supplier extends Address
 
         case 'is_supplier':
         case 'is_brand':
-            $chk = $fieldvalue == 1 ? 'checked="checked"' : '';
-            $retval .= "<input type=\"checkbox\" $chk value=\"1\" name=\"{$fieldname}_check\"
-                    id=\"tog{$fieldname}{$A['sup_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['sup_id']}\",\"$fieldname\",".
-                    "\"supplier\");' />" . LB;
-//            $retval .= '<input type="checkbox" id="' . $fieldname . '_' . $A['sup_id'] . '" ' . $chk . '/>';
+            $retval .= Field::checkbox(array(
+                'name' => $fieldname . '_check',
+                'checked' => $fieldvalue == 1,
+                'id' => "tog{$fieldname}{$A['sup_id']}",
+                'onclick' => "SHOP_toggle(this,'{$A['sup_id']}','$fieldname','supplier');",
+            ) );
             break;
 
         default:
@@ -672,6 +675,4 @@ class Supplier extends Address
         return $retval;
     }
 
-}   // class Supplier 
-
-?>
+}
