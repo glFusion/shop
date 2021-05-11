@@ -308,6 +308,11 @@ class Customer
      */
     public function getDefaultAddress($type='billto')
     {
+        if ($this->uid < 2) {
+            // Anonymous has no saved address
+            return Address::fromGeoLocation();
+        }
+
         if ($type != 'billto') $type = 'shipto';
         foreach ($this->addresses as $Addr) {
             if ($Addr->isDefault($type)) {
