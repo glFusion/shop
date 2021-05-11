@@ -20,8 +20,9 @@
 			{$LANG_SHOP['qty']}: {quantity}
 {!else}
 			<input name="quantity" type="number" min="{min_ord_qty}" onchange="ProcessForm(this.form);"
-				value="{min_ord_qty}" style="width:80px;"/>&nbsp;&nbsp;
-			<button id="btn_add_cart_{frm_id}" type="submit" class="{btn_cls}"
+				value="{min_ord_qty}" style="width:80px;"/>
+{!endif}
+			&nbsp;&nbsp;<button id="btn_add_cart_{frm_id}" type="submit" class="{btn_cls}"
 				onclick='shopAddToCart("{frm_id}");return false;'>
 				<i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
 			</button>
