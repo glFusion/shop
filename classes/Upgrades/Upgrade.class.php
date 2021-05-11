@@ -27,11 +27,30 @@ require_once __DIR__ . "/../../sql/mysql_install.php";
  */
 class Upgrade
 {
+    /** Plugin name, for consistency.
+     * @var string */
     protected static $pi_name = 'shop';
+
+    /** Deployed code version, or target upgrade version.
+     * @var string */
     protected static $code_ver;
+
+    /** Currently-installed version.
+     * @var string */
     protected static $current_ver;
+
+    /** Flag to indicate a development upgrade.
+     * Causes SQL errors to be ignored.
+     * @var boolean */
     protected static $dvlp = false;
 
+
+    /**
+     * Perform all upgrades to get from $current_ver to $code_ver.
+     *
+     * @param   boolean $dvlp   True for a development upgrade
+     * @return  boolean     True on success, False on first error
+     */
     public static function doUpgrade($dvlp = false)
     {
         global $_PLUGIN_INFO;
@@ -56,6 +75,10 @@ class Upgrade
             if (!v1_3_0::upgrade()) return false;
         }
 
+        if (!COM_checkVersion(self::$current_ver, '1.3.1')) {
+            if (!v1_3_1::upgrade()) return false;
+        }
+
         // Make sure paths and images are created.
         require_once __DIR__ . '/../../autoinstall.php';
         plugin_postinstall_shop(true);
@@ -66,6 +89,8 @@ class Upgrade
             if (!self::setVersion(self::$code_ver)) return false;
             self::$current_ver = self::$code_ver;
         }
+
+        // Clear caches, update the configuration options, delete old files.
         Cache::clear();
         self::updateConfig();
         Gateway::UpgradeAll(self::$current_ver);
@@ -73,7 +98,7 @@ class Upgrade
         CTL_clearCache();   // clear cache to ensure CSS updates come through
         SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);
         // Set a message in the session to replace the "has not been upgraded" message
-        COM_setMsg("Shop Plugin has been updated to " . self::$current_ver, 'info', 1);
+        SHOP_setMsg("Shop Plugin has been updated to " . self::$current_ver, 'info', 1);
         return true;
     }
 
@@ -99,6 +124,7 @@ class Upgrade
             return true;
         }
 
+        // Figure out if we need to change MyISAM to InnoDB in the statements.
         if (
             $_DB_dbms == 'mysql' &&
             isset($_VARS['database_engine']) &&
@@ -113,6 +139,7 @@ class Upgrade
         SHOP_log("--- Updating Shop to version $version", SHOP_LOG_INFO);
         foreach($SHOP_UPGRADE[$version] as $sql) {
             if ($use_innodb) {
+                // If using InnoDB, change the Engine in the statement.
                 $sql = str_replace('MyISAM', 'InnoDB', $sql);
             }
 
@@ -206,8 +233,9 @@ class Upgrade
 
 
     /**
-     * Remove deprecated files
+     * Remove deprecated files.
      * Errors in unlink() and rmdir() are ignored.
+     * @todo: the arrays should probably be moved to version classes.
      */
     public static function removeOldFiles()
     {
