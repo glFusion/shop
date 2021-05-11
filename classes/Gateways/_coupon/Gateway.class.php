@@ -192,12 +192,12 @@ class Gateway extends \Shop\Gateway
         // Check that the user has sufficient coupon balance.
         $gc_bal = Coupon::getUserBalance($Order->getUid());
         if ($gc_bal < $Order->getTotal()) {
-            COM_setMsg($this->getLang('insuf_bal'));
+            SHOP_setMsg($this->getLang('insuf_bal'));
         } else {
             $Order->setByGC($Order->getTotal());
             $Order->Save();
             $coupons = Coupon::Apply($Order->getTotal(), $Order->getUid());
-            COM_setMsg($this->getLang('pd_by_coupon', 'Paid by Coupon'));
+            SHOP_setMsg($this->getLang('pd_by_coupon', 'Paid by Coupon'));
 
             // Create the webhook object and add some data.
             // This is mostly to initialize the IPN property which gets
@@ -210,7 +210,7 @@ class Gateway extends \Shop\Gateway
             $WH->setOrderId($Order->getOrderId());
             $status = $WH->handlePurchase($Order);
             if (!$status) {
-                COM_setMsg($this->getLang('error', 'An Error Occurred'));
+                SHOP_setMsg($this->getLang('error', 'An Error Occurred'));
             }
         }
         return SHOP_URL . '/index.php';

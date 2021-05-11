@@ -182,9 +182,9 @@ class Gateway extends \Shop\Gateway
     {
         $status = $this->processOrder($Order);
         if ($status) {
-            COM_setMsg($this->getLang('invoice_created'));
+            SHOP_setMsg($this->getLang('invoice_created'));
         } else {
-            COM_setMsg($this->getLang('invoice_error'));
+            SHOP_setMsg($this->getLang('invoice_error'));
         }
         return SHOP_URL . '/index.php';
      }

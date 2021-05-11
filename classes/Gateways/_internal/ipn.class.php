@@ -141,7 +141,7 @@ class ipn extends \Shop\IPN
         SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
         $this->handlePurchase();
         $this->Log(true);
-        COM_setMsg('Thank youi for your order.');
+        SHOP_setMsg('Thank youi for your order.');
         COM_refresh(SHOP_URL . '/index.php');
         return true;
     }

@@ -347,7 +347,7 @@ class DiscountCode
         if ($err == '') {
             return true;
         } else {
-            COM_setMsg($err);
+            SHOP_setMsg($err);
             return false;
         }
     }
@@ -550,12 +550,6 @@ class DiscountCode
                 'sort' => true,
             ),
             array(
-                'text' => $LANG_SHOP['percent'],
-                'field' => 'percent',
-                'align' => 'right',
-                'sort' => true,
-            ),
-            array(
                 'text' => $LANG_SHOP['start'],
                 'field' => 'start',
                 'align' => 'center',
@@ -565,6 +559,12 @@ class DiscountCode
                 'text' => $LANG_SHOP['end'],
                 'field' => 'end',
                 'align' => 'center',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['percent'],
+                'field' => 'percent',
+                'align' => 'right',
                 'sort' => true,
             ),
             array(

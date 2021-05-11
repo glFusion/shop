@@ -31,7 +31,7 @@ if (
 // Put up a message indicating that they need to log in.
 if (COM_isAnonUser()) {
     SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
-    COM_setMsg($LANG_SHOP['gc_need_acct']);
+    SHOP_setMsg($LANG_SHOP['gc_need_acct']);
     COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
     exit;
 }
@@ -124,7 +124,7 @@ case 'redeem':
         $type = 'info';
     }
     // Redirect back to the provided view, or to the default page
-    COM_setMsg($msg, $type, $persist);
+    SHOP_setMsg($msg, $type, $persist);
     COM_refresh(COM_buildUrl(
         SHOP_URL . '/account.php?mode=couponlog'
     ) );
@@ -166,9 +166,9 @@ case 'saveaddr':
     }
     $status = $Addr->Save();
     if ($status > 0) {
-        COM_setMsg("Address saved");
+        SHOP_setMsg("Address saved");
     } else {
-        COM_setMsg("Saving address failed");
+        SHOP_setMsg("Saving address failed");
     }
     COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
     break;

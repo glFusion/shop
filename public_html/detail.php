@@ -36,6 +36,7 @@ if (isset($_GET['item_id'])) {
 } else {
     $id = COM_getArgument('id');
 }
+
 if (isset($_GET['oi_id'])) {
     $oi_id = (int)$_GET['oi_id'];
 } else {
@@ -59,7 +60,7 @@ if (!empty($id)) {
     }
 }
 if (empty($content)) {
-    COM_setMsg($LANG_SHOP['item_not_found']);
+    SHOP_setMsg($LANG_SHOP['item_not_found']);
     COM_refresh(SHOP_URL);
 }
 if (empty($breadcrumbs)) {

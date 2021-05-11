@@ -186,7 +186,7 @@ case 'delcartitem':
 case 'emptycart':
     echo "depreacated";die;
     \Shop\Cart::getInstance()->Clear();
-    COM_setMsg($LANG_SHOP['cart_empty']);
+    SHOP_setMsg($LANG_SHOP['cart_empty']);
     echo COM_refresh(SHOP_URL . '/index.php');
     break;
 
@@ -364,7 +364,7 @@ case 'viewcart':
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= $Cart->getView(0);
     } else {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
@@ -405,5 +405,3 @@ $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
 exit;
-
-?>

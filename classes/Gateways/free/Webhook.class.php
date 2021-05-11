@@ -103,9 +103,9 @@ class Webhook extends \Shop\Webhook
                             $this->getSource()
                         )
                 );
-                COM_setMsg($LANG_SHOP['thanks_title']);
+                SHOP_setMsg($LANG_SHOP['thanks_title']);
             } else {
-                COM_setMsg($LANG_SHOP['pmt_error']);
+                SHOP_setMsg($LANG_SHOP['pmt_error']);
             }
             COM_refresh(SHOP_URL . '/index.php');
             break;

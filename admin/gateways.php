@@ -57,7 +57,7 @@ switch ($action) {
 case 'gwupgrade':
     $GW = Shop\Gateway::getInstance($actionval);
     if ($GW->doUpgrade()) {
-        COM_setMsg($LANG_SHOP['upgrade_ok']);
+        SHOP_setMsg($LANG_SHOP['upgrade_ok']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
@@ -65,9 +65,9 @@ case 'gwupgrade':
 case 'gwupload':
     $status = Shop\Gateway::upload();
     if ($status) {
-        COM_setMsg("The gateway was successfully uploaded");
+        SHOP_setMsg("The gateway was successfully uploaded");
     } else {
-        COM_setMsg("The gateway could not be uploaded");
+        SHOP_setMsg("The gateway could not be uploaded");
     }
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;

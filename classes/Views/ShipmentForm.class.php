@@ -74,7 +74,7 @@ class ShipmentForm
 
         // Safety valve if order is invalid
         if ($this->Order === NULL) {
-            COM_setMsg($LANG_SHOP['item_not_found']);
+            SHOP_setMsg($LANG_SHOP['item_not_found']);
             return '';
         }
 

@@ -119,16 +119,16 @@ case 'deleteproduct':
     if (!\Shop\Product::isUsed($_REQUEST['id'])) {
         $P->Delete();
     } else {
-        COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
+        SHOP_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'delshipping':
     if (Shop\Shipper::Delete($actionval)) {
-        COM_setMsg($LANG_SHOP['msg_deleted']);
+        SHOP_setMsg($LANG_SHOP['msg_deleted']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?shipping');
     break;
@@ -148,9 +148,9 @@ case 'deletecatimage':
 case 'deletecat':
     $C = \Shop\Category::getInstance($_REQUEST['cat_id']);
     if ($C->getParentID() == 0) {
-        COM_setMsg($LANG_SHOP['dscp_root_cat'], 'error');
+        SHOP_setMsg($LANG_SHOP['dscp_root_cat'], 'error');
     } elseif (\Shop\Category::isUsed($_REQUEST['cat_id'])) {
-        COM_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->getName()), 'error');
+        SHOP_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->getName()), 'error');
     } else {
         $C->Delete();
     }
@@ -162,7 +162,7 @@ case 'saveproduct':
     if (!$P->Save($_POST)) {
         $msg = $P->PrintErrors();
         if ($msg != '') {
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($msg, 'error');
         }
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
@@ -277,7 +277,7 @@ case 'pov_del':
 
 case 'resetbuttons':
     DB_query("TRUNCATE {$_TABLES['shop.buttons']}");
-    COM_setMsg($LANG_SHOP['buttons_purged']);
+    SHOP_setMsg($LANG_SHOP['buttons_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
@@ -298,15 +298,15 @@ case 'updcartcurrency':
         }
         $updated++;
     }
-    COM_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
+    SHOP_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'migrate_pp':
     if (Shop\MigratePP::doMigration()) {
-        COM_setMsg($LANG_SHOP['migrate_pp_ok']);
+        SHOP_setMsg($LANG_SHOP['migrate_pp_ok']);
     } else {
-        COM_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
+        SHOP_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
@@ -321,14 +321,14 @@ case 'purge_trans':
         \Shop\Products\Coupon::Purge();
         \Shop\Shipment::Purge();
         \Shop\Cache::clear();
-        COM_setMsg($LANG_SHOP['trans_purged']);
+        SHOP_setMsg($LANG_SHOP['trans_purged']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'purgecarts':
     \Shop\Cart::Purge();
-    COM_setMsg($LANG_SHOP['carts_purged']);
+    SHOP_setMsg($LANG_SHOP['carts_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
@@ -347,9 +347,9 @@ case 'carrier_save':
         $status = $Shipper->saveConfig($_POST);
     }
     if ($status) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['err_msg'], 'error');
+        SHOP_setMsg($LANG_SHOP['err_msg'], 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?carriers');
     break;
@@ -469,27 +469,27 @@ case 'sendcards':
     );
 
     if (empty($errs)) {
-        COM_setMsg(count($output) . ' coupons sent');
+        SHOP_setMsg(count($output) . ' coupons sent');
     } else {
         $msg = '<ul><li>' . implode('</li><li>', $errs) . '</li></ul>';
-        COM_setMsg($msg, 'error', true);
+        SHOP_setMsg($msg, 'error', true);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?sendcards_form=x');
     break;
 
 case 'purgecache':
     \Shop\Cache::clear();
-    COM_setMsg($LANG_SHOP['cache_purged']);
+    SHOP_setMsg($LANG_SHOP['cache_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'savesale':
     $D = new \Shop\Sales($_POST['id']);
     if (!$D->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
+        SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editsale&id=' . $D->id);
     } else {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
     }
     exit;
@@ -499,7 +499,7 @@ case 'save_sup':
     // Save a supplier/brand record
     $Sup = new Shop\Supplier($_POST['sup_id']);
     if ($Sup->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?suppliers');
     } else {
         $msg = '';
@@ -511,7 +511,7 @@ case 'save_sup':
         } else {
             $msg = $LANG_SHOP['msg_nochange'];
         }
-        COM_setMsg($msg, 'error', true);
+        SHOP_setMsg($msg, 'error', true);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup=' . $Sup->getID());
     }
     break;
@@ -519,10 +519,10 @@ case 'save_sup':
 case 'savecode':
     $C = new Shop\DiscountCode($_POST['code_id']);
     if (!$C->Save($_POST)) {
-        //COM_setMsg($LANG_SHOP['msg_nochange']);
+        //SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $C->getCodeID());
     } else {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
     }
     exit;
@@ -566,7 +566,7 @@ case 'addshipment':
     if ($S->Save($_POST)) {
         COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $_POST['order_id']);
     } else {
-        COM_setMsg("Error Adding Shipment, see the error log");
+        SHOP_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
     }
     break;
@@ -580,7 +580,7 @@ case 'savetaxrate':
     $code = $_POST['old_code'];
     $status = Shop\Tax\table::Save($_POST);
     if (!$status) {
-        COM_setMsg("Error Saving tax", true);
+        SHOP_setMsg("Error Saving tax", true);
     }
     if (empty($_POST['old_code'])) {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?edittaxrate');
@@ -597,9 +597,9 @@ case 'deltaxrate':
 
 case 'prod_bulk_save':
     if (Shop\Product::BulkUpdateDo($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
@@ -612,7 +612,7 @@ case 'prod_bulk_del':
             $msg = $LANG_SHOP['msg_some_not_del'];
         }
     }
-    COM_setMsg($msg);
+    SHOP_setMsg($msg);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
@@ -622,15 +622,15 @@ case 'prod_bulk_reset':
     foreach ($prod_ids as $id) {
         RATING_resetRating(Shop\Config::PI_NAME, $id);
     }
-    COM_setMsg($msg);
+    SHOP_setMsg($msg);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'pv_bulk_save':
     if (Shop\ProductVariant::BulkUpdateDo($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;

@@ -93,9 +93,9 @@ class RegionBase
 
         $newval = self::Toggle($oldval, $varname, $id);
         if ($newval != $oldval) {
-            COM_setMsg($LANG_SHOP['msg_updated']);
+            SHOP_setMsg($LANG_SHOP['msg_updated']);
         } else {
-            COM_setMsg($LANG_SHOP['msg_nochange']);
+            SHOP_setMsg($LANG_SHOP['msg_nochange']);
         }
     }
 

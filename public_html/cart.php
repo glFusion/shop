@@ -66,7 +66,7 @@ case 'save_viewcart':
     $Cart = Shop\Cart::getInstance();
     $Cart->Update($_POST);
     if (empty($Cart->getBuyerEmail())) {
-        COM_setMsg($LANG_SHOP['err_missing_email'], 'error');
+        SHOP_setMsg($LANG_SHOP['err_missing_email'], 'error');
         COM_refresh(SHOP_URL . '/cart.php');
     }
     $wf = Shop\Workflow::getNextView('viewcart', $Cart);
@@ -92,7 +92,7 @@ case 'delete':
 case 'empty':
     // Remove all items from the cart
     \Shop\Cart::getInstance()->Clear();
-    COM_setMsg($LANG_SHOP['cart_empty']);
+    SHOP_setMsg($LANG_SHOP['cart_empty']);
     echo COM_refresh(SHOP_URL . '/index.php');
     break;
 
@@ -111,7 +111,7 @@ case 'save_payment':
     // Check that the cart has items. Could be empty if the session or login
     // has expired.
     if (!$Cart->hasItems()) {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
@@ -151,7 +151,7 @@ case 'checkout':
     // Check that the cart has items. Could be empty if the session or login
     // has expired.
     if (!$Cart->hasItems()) {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
@@ -326,7 +326,7 @@ case 'none':
 case 'addresses':
     $Cart = Shop\Cart::getInstance();
     if (!$Cart->hasItems() || !$Cart->canView()) {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
     }
     $V = new Shop\Views\Cart;
@@ -355,7 +355,7 @@ case 'shipto':
 case 'shipping':
     $Cart = Shop\Cart::getInstance();
     if (!$Cart->hasItems() || !$Cart->canView()) {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
     }
     $addr_wf = Shop\Workflow::getInstance('addresses');
@@ -436,7 +436,7 @@ default:
         $content .= Shop\Menu::checkoutFlow($Cart, 'viewcart');
         $content .= $Cart->getView(0);
     } else {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
@@ -446,5 +446,3 @@ $display .= \Shop\Menu::pageTitle('', 'cart');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
-
-?>

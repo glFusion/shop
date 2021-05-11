@@ -3642,6 +3642,12 @@ class Order
     }
 
 
+    /**
+     * Set the shipping amount and recalculate the order totals.
+     *
+     * @param   float   $amt    Shipping amount.
+     * @return  object  $this
+     */
     public function setShipping($amt)
     {
         $this->shipping = (float)$amt;

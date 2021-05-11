@@ -205,15 +205,13 @@ class Plugin extends \Shop\Product
                 'ref_token' => $Item->getOrder()->getReferralToken(),
             ),
         );
-        //if ($ipn_data['status'] == 'paid') {
-            $status = LGLIB_invokeService(
-                $this->pi_name,
-                'handlePurchase',
-                $args,
-                $output,
-                $svc_msg
-            );
-        //}
+        $status = LGLIB_invokeService(
+            $this->pi_name,
+            'handlePurchase',
+            $args,
+            $output,
+            $svc_msg
+        );
         return $status == PLG_RET_OK ? true : false;
     }
 
@@ -468,6 +466,4 @@ class Plugin extends \Shop\Product
     }
 
 
-}   // class Plugin
-
-?>
+}

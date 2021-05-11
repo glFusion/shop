@@ -46,8 +46,6 @@ if (!empty($order_id)) {
         }
     }
 } else {
-    COM_setMsg("There was an error processing your order");
+    SHOP_setMsg("There was an error processing your order");
     COM_refresh(Shop\Config::get('url') . '/cart.php');
 }
-
-?>

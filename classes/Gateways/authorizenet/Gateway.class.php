@@ -240,7 +240,7 @@ class Gateway extends \Shop\Gateway
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         if ($code != 200) {             // Check for a 200 code before anything else
-            COM_setMsg("Error checking out");
+            SHOP_setMsg("Error checking out");
             SHOP_log('Bad response from token request: ' . print_r($result,true), SHOP_LOG_ERROR);
             return false;
         }
@@ -252,7 +252,7 @@ class Gateway extends \Shop\Gateway
             foreach ($result->messages->message as $msg) {
                 COM_errorlog($this->gw_provider . ' error: ' . $msg->code . ' - ' . $msg->text);
             }
-            COM_setMsg("Error checking out");
+            SHOP_setMsg("Error checking out");
             return false;
         }
 
