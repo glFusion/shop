@@ -3,9 +3,9 @@
  * Class to present an view of an order
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -80,10 +80,16 @@ class OrderBaseView
      * @var boolean */
     protected $with_shop_info = false;
 
+    /** Template object in use.
+     * @var object */
     protected $TPL = NULL;
 
+    /** Order currency.
+     * @var object */
     protected $Currency = NULL;
 
+    /** Flag to indicate this is an invoiced (not cart) order.
+     * @var boolean */
     protected $is_invoice = true;
 
 
@@ -120,6 +126,12 @@ class OrderBaseView
     }
 
 
+    /**
+     * Set the order object to display.
+     *
+     * @param   object  $Order  Order object
+     * @return  object  $this
+     */
     public function withOrder($Order)
     {
         $this->Order = $Order;
@@ -128,6 +140,13 @@ class OrderBaseView
     }
 
 
+    /**
+     * Set the authorization token being used to view the order.
+     * Allows for anonymous buyers to view their order.
+     *
+     * @param   string  $token  Token string
+     * @return  object  $this
+     */
     public function withToken($token)
     {
         $this->token = $token;
@@ -135,6 +154,12 @@ class OrderBaseView
     }
 
 
+    /**
+     * Set the flag to indicate that this is an administrative view.
+     *
+     * @param   boolean $flag   True for administration, False for normal view
+     * @return  object  $this
+     */
     public function setAdmin($flag)
     {
         $this->isAdmin = $flag ? true : false;
@@ -142,6 +167,12 @@ class OrderBaseView
     }
 
 
+    /**
+     * Set the desired output type, either on-screen HTML or a PDF file.
+     *
+     * @param   string  $out_type   `html` or `pdf`
+     * @return  object  $this
+     */
     public function withOutput($out_type)
     {
         $this->output_type = $out_type;
@@ -152,12 +183,23 @@ class OrderBaseView
     }
 
 
+    /**
+     * Set the view type as "packing list" to exclude pricing fields.
+     *
+     * @return  object  $this
+     */
     public function asPackingList()
     {
         $this->type = 'packinglist';
         return $this;
     }
 
+
+    /**
+     * Set the view type as "invoice" to include pricing fields.
+     *
+     * @return  object  $this
+     */
     public function asInvoice()
     {
         $this->type = 'order';
@@ -172,11 +214,22 @@ class OrderBaseView
     }
 
 
+    /**
+     * Check if the output format is on-screen HTML.
+     *
+     * @return  boolean     True if html, False if not
+     */
     protected function isHTML()
     {
         return $this->output_type == 'html';
     }
 
+
+    /**
+     * Check if the output format is a PDF file.
+     *
+     * @return  boolean     True if pdf, False if not
+     */
     protected function isPDF()
     {
         return $this->output_type == 'pdf';
@@ -199,6 +252,13 @@ class OrderBaseView
     }
 
 
+    /**
+     * Render multiple orders, normally as PDF.
+     * Called when multiple orders are checked for printing.
+     *
+     * @param   array   $order_ids  Array of order IDs
+     * @return  mixed   HTML or PDF output
+     */
     public function RenderMulti($order_ids)
     {
         if ($this->output_type == 'pdf') {
@@ -225,6 +285,12 @@ class OrderBaseView
         }
     }
 
+
+    /**
+     * Render a single order.
+     *
+     * @return  string      HTML for order display
+     */
     public function Render()
     {
         if ($this->output_type == 'pdf') {
@@ -262,6 +328,11 @@ class OrderBaseView
     }
 
 
+    /**
+     * Render common data elements for multiple views.
+     *
+     * @return  string      HTML for common elements in the order view
+     */
     protected function _renderCommon()
     {
         global $_SHOP_CONF;
@@ -783,6 +854,11 @@ class OrderBaseView
     }
 
 
+    /**
+     * Display all the log entries for an order.
+     *
+     * @return  string      HTML for log display
+     */
     public function _renderLog()
     {
         global $_SHOP_CONF, $_USER;
