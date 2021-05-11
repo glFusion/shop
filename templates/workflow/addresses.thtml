@@ -1,6 +1,6 @@
 {# begin {templatelocation} #}
 <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
-    <div>
+    <div class="uk-form">
         <h2>{$LANG_SHOP['select_shipto']}:</h2>
         <select id="shipto_id" name="shipto_id" onchange="SHOP_updateAddress(this.value, 'shipto',true);">
             {shipto_opts}
@@ -10,7 +10,7 @@
             onclick="SHOP_showhideBillto();" /><label for="ShiptoIsBillto">&nbsp;{$LANG_SHOP['billto_is_shipto']}</label>
         </p>
     </div>
-    <div>
+    <div class="uk-form">
         <div id="selectBillto">
         <h2>{$LANG_SHOP['select_billto']}:</h2>
         <select id="billto_id" name="billto_id" onchange="SHOP_updateAddress(this.value, 'billto',true);">
