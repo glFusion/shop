@@ -473,7 +473,7 @@ class OrderBaseView
                     'tax_tooltip' => sprintf(
                         '%s%% %s',
                         $Item->getTaxRate() * 100,
-                        $LANG_SHOP['tax']
+                        $LANG_SHOP['sales_tax']
                     ),
                 ) );
             } else {
