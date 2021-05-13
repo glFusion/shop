@@ -64,10 +64,10 @@
                             <span class="shopOrderNoteIcon tooltip" title="{tax_tooltip}">{tax_icon}</span>
 {!endif}
 {!if discount_icon}
-                            <span class="tooltip" title="{discount_tooltip}"">{discount_icon}</span>
+                            <span class="shopOrderNoteIcon tooltip" title="{discount_tooltip}"">{discount_icon}</span>
 {!endif}
 {!if dc_icon}
-                            <span class="tooltip" title="{dc_tip}"">{dc_icon}</span>
+                            <span class="shopOrderNoteIcon tooltip" title="{dc_tip}"">{dc_icon}</span>
 {!endif}
                         </div>
                     </div>
