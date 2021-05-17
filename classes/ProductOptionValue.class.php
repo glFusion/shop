@@ -562,17 +562,12 @@ class ProductOptionValue
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['pov_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['pov_id']}\",\"enabled\",".
-                "\"option\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['pov_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['pov_id']}','enabled','option);",
+            ) );
             break;
 
         case 'delete':

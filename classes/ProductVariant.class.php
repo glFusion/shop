@@ -1538,17 +1538,12 @@ class ProductVariant
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['pv_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['pv_id']}\",\"enabled\",".
-                    "\"variant\");' />" . LB;
+            $retval = Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['pv_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['pv_id']}','enabled','variant');",
+            ) );
             break;
 
         case 'orderby':
@@ -1615,8 +1610,11 @@ class ProductVariant
 
         case 'def_pv_id':
             $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
-            $retval = '<input type="radio" name="def_pv_id" value="' . $A['pv_id'] .
-                '" ' . $sel . ' />';
+            $retval = Field::radio(array(
+                'name' => 'def_pv_id',
+                'value' => $A['pv_id'],
+                'checked' => $A['pv_id'] == $extra['def_pv_id'],
+            ) );
             break;
 
         default:

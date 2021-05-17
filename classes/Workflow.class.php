@@ -469,13 +469,17 @@ class Workflow
         case 'wf_enabled':
             $fieldvalue = $A['enabled'];
             if ($A['can_disable'] == 1) {
-                $retval = "<select id=\"sel{$fieldname}{$A['id']}\" name=\"{$fieldname}_sel\" " .
-                    "onchange='SHOPupdateSel(this,\"{$A['id']}\",\"enabled\", \"workflow\");'>" . LB;
+                $options = '';
                 foreach ($LANG_SHOP['wf_statuses'] as $val=>$str) {
                     $sel = $fieldvalue == $val ? 'selected="selected"' : '';
-                    $retval .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
+                    $options .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
                 }
-                $retval .= '</select>' . LB;
+                $retval = Field::select(array(
+                    'id' => "sel{$fieldname}{$A['id']}",
+                    'name' => "{$fieldname}_sel",
+                    'onchange' => "SHOPupdateSel(this,'{$A['id']}','enabled', 'workflow');",
+                    'option_list' => $options,
+                ) );
             } else {
                 $retval = $LANG_SHOP['required'];
             }
@@ -498,5 +502,3 @@ class Workflow
     }
 
 }
-
-?>

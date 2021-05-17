@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\Session;
+use Shop\Field;
 
 
 /**
@@ -1052,12 +1053,15 @@ class Report
             '><i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
             '</button>';
         $statuses = OrderStatus::getAll();
-        $upd_stat = '<select name="newstatus" onchange="SHOP_enaBtn(bulk_stat_upd, \'\', this.value);">';
-        $upd_stat .= '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>';
+        $upd_opts = '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>' . LB;
         foreach ($statuses as $name=>$obj) {
-            $upd_stat .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>';
+            $upd_opts .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>' . LB;
         }
-        $upd_stat .= '</select>';
+        $upd_stat = Field::select(array(
+            'name' => 'newstatus',
+            'onchange' => "SHOP_enaBtn(bulk_stat_upd, '', this.value);",
+            'option_list' => $upd_opts,
+        ) );
         $upd_stat .= '<button type="submit" name="updstatus" value="x" ' .
             'id="bulk_stat_upd" ' .
             'class="uk-button uk-button-mini tooltip" ' .

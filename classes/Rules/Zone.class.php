@@ -19,6 +19,7 @@ use Shop\Icon;      // for the admin list
 use Shop\Template;
 use Shop\Config;
 use Shop\GeoLocator;
+use Shop\Field;
 
 
 /**
@@ -507,21 +508,14 @@ class Zone
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-                $tip = $LANG_SHOP['ck_to_disable'];
-            } else {
-                $switch = '';
-                $enabled = 0;
-                $tip = $LANG_SHOP['ck_to_enable'];
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                data-uk-tooltip
-                id=\"togenabled{$A['rule_id']}\"
-                title=\"$tip\"
-                onclick='SHOP_toggle(this,\"{$A['rule_id']}\",\"{$fieldname}\",".
-                "\"zone_rule\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['rule_id']}",
+                'checked' => $fieldvalue == 1,
+                'data-uk-tooltip' => '',
+                'title' => $tip,
+                'onclick' => "SHOP_toggle(this,'{$A['rule_id']}','{$fieldname}','zone_rule');",
+            ) );
             break;
 
         default:

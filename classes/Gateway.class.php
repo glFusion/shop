@@ -1885,12 +1885,14 @@ class Gateway
                 $enabled = 0;
                 $tip = $LANG_SHOP['ck_to_enable'];
             }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                data-uk-tooltip
-                id=\"togenabled{$A['id']}\"
-                title=\"$tip\"
-                onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
-                "\"gateway\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'data-uk-tooltip' => '',
+                'title' => $tip,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','{$fieldname}','gateway');",
+            ) );
             break;
 
         case 'version':

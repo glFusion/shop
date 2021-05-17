@@ -664,17 +664,12 @@ class State extends RegionBase
         case 'state_enabled':
         case 'tax_shipping':
         case 'tax_handling':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['state_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['state_id']}\",\"{$fieldname}\",".
-                    "\"state\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['state_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['state_id']}','{$fieldname}','state');",
+            ) );
             break;
         default:
             $retval = $fieldvalue;

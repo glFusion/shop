@@ -1328,17 +1328,12 @@ class Shipper
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['id']}\"
-                onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
-                "\"shipping\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','enabled','shipping');",
+            ) );
             break;
 
         case 'delete':

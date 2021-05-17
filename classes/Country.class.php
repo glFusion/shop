@@ -720,17 +720,12 @@ class Country extends RegionBase
             break;
 
         case 'country_enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['country_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['country_id']}\",\"country_enabled\",".
-                    "\"country\");' />" . LB;
+            $retval .= Field::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['country_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['country_id']}','country_enabled','country');",
+            ) );
             break;
 
         case 'country_name':
@@ -755,5 +750,3 @@ class Country extends RegionBase
     }
 
 }
-
-?>

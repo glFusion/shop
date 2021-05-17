@@ -59,6 +59,45 @@ class Field
 
 
     /**
+     * Create a radio field.
+     *
+     * @param   array   $args   Array of argument names=>values
+     * @return  string      HTML for checkbox field
+     */
+    public static function radio($args=array())
+    {
+        static $T = NULL;
+        if ($T === NULL) {
+            $T = new \Template(__DIR__ . '/../templates/fields');
+            $T->set_file('field', 'radio.thtml');
+        }
+
+        // Go through the required or special options
+        $T->set_block('field', 'Attr', 'attribs');
+        foreach ($args as $name=>$value) {
+            switch ($name) {
+            case 'checked':
+            case 'disabled':
+                if ($value) {
+                    $value = $name;
+                } else {
+                    continue 2;
+                }
+                break;
+            }
+            $T->set_var(array(
+                'name' => $name,
+                'value' => $value,
+            ) );
+            $T->parse('attribs', 'Attr', true);
+        }
+        $T->parse('output', 'field');
+        $T->clear_var('attribs');
+        return $T->finish($T->get_var('output'));
+    }
+
+
+    /**
      * Create a text input field.
      *
      * @param   array   $args   Array of argument names=>values
@@ -86,6 +125,10 @@ class Field
 
 
     /**
+     * Create a select checkbox.
+     * Options can be in a string named `option_list` or an array of
+     * separate properties.
+     *
      *  $opts = array(
      *      'name' => 'testoption',
      *      'onchange' => "alert('here');",
@@ -104,6 +147,9 @@ class Field
      *          ),
      *      )
      *  );
+     *
+     *  @param  array   $args   Array of properties to use
+     *  @return string      HTML for select element
      */
     public static function select($args=array())
     {
