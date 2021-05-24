@@ -16,6 +16,7 @@ use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
+//use glFusion\FieldList;
 
 
 /**
@@ -2518,7 +2519,7 @@ class Product
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $ipn_data=array())
+    public function handlePurchase(&$Item, $IPN=array())
     {
         global $_TABLES;
 
@@ -2529,14 +2530,15 @@ class Product
             /*$sql = "UPDATE {$_TABLES['shop.products']} SET
                     onhand = GREATEST(0, onhand - {$Item->getQuantity()})
                     WHERE id = '{$this->id}'";*/
-            Stock::recordPurchase($this->id, $Item->getVariantId(), $qty);
+            $reserved = isset($IPN) && $IPN['reserved_stock'] ? true : false;
+            Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity(), $reserved);
             Cache::clear('products');
             Cache::clear('sitemap');
-            DB_query($sql, 1);
-            if (DB_error()) {
+            //DB_query($sql, 1);
+            /*if (DB_error()) {
                 SHOP_log("SQL errror: $sql", SHOP_LOG_ERROR);
                 $status = 1;
-            }
+            }*/
         }
         return $status;
     }
@@ -3744,6 +3746,42 @@ class Product
             'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
+        /*$bulk_update = FieldList::button(array(
+            'name' => 'prod_bulk_frm',
+            'text' => $LANG_SHOP['update'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_update'],
+            ),
+        ) );
+        $bulk_update .= FieldList::button(array(
+            'name' => 'prod_bulk_del',
+            'text' => $LANG_SHOP['delete'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'style' => 'danger',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_delete'],
+                'onclick' => "return confirm('" . $LANG_SHOP['q_del_items'] . "');",
+            ),
+        ) );
+        $bulk_update .= FieldList::button(array(
+            'name' => 'prod_bulk_reset',
+            'text' => $LANG_SHOP['reset_ratings'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'style' => 'primary',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_reset'],
+                'onclick' => "return confirm'" . $LANG_SHOP['q_reset_ratings'] . "');",
+            ),
+        ) );
+         */
+
         // Update certain product properties in bulk
         $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
             'class="uk-button uk-button-mini tooltip" ' .
@@ -3778,7 +3816,8 @@ class Product
                 1
         );
         $filter = $LANG_SHOP['category'] . ': ';
-        $filter .= Field::select(array(
+        //$filter .= Field::select(array(
+        $filter .= FieldList::select(array(
             'name' => 'cat_id',
             'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . "/index.php?products" .
@@ -3807,8 +3846,8 @@ class Product
             'option_list' => $sel_options,
         ) );
 
-        $options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
-        $options .= COM_optionList(
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
             $_TABLES['shop.suppliers'],
             'sup_id,company',
             $supplier_id,
@@ -3823,7 +3862,7 @@ class Product
                 "&amp;brand_id=$brand_id" .
                 "&amp;cat_id=$cat_id" .
                 "&amp;supplier_id='+this.options[this.selectedIndex].value",
-            'option_list' => $options,
+            'option_list' => $sel_options,
         ) );
         $filter .= '<br />' . LB;
 
@@ -3964,7 +4003,7 @@ class Product
             break;
 
         case 'price':
-            $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
+            $retval = Currency::getInstance()->FormatValue($fieldvalue);
             break;
 
         default:

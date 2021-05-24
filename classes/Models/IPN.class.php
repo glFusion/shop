@@ -39,6 +39,7 @@ class IPN implements \ArrayAccess
             'uid' => 0,
         ),
         'data' => array(),
+        'reserved_stock' => false,
     );
 
 

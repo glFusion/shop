@@ -261,7 +261,7 @@ class Stock
      * @param   float   $qty        Quantity sold
      * @return  boolean     True on success, False on DB error
      */
-    public static function recordPurchase($item_id, $pv_id, $qty)
+    public static function recordPurchase($item_id, $pv_id, $qty, $reserved=true)
     {
         global $_TABLES;
 
@@ -270,11 +270,14 @@ class Stock
         $sql = "INSERT INTO {$_TABLES['shop.stock']} SET
             item_id = '" . DB_escapeString($item_id) . "',
             pv_id = {$pv_id},
-            qty_reserved = 0,
-            qty_reserved = 0,
+            qty_onhand = 0,
+            qty_reserved = 0
             ON DUPLICATE KEY UPDATE
-            qty_onhand = GREATEST(0, qty_onhand - $qty),
-            qty_reserved = GREATEST(0, qty_reserved - $qty)";
+            qty_onhand = GREATEST(0, qty_onhand - $qty)";
+        if ($reserved) {
+            // reduce the reserved amount
+            $sql .= ", qty_reserved = GREATEST(0, qty_reserved - $qty)";
+        }
         $res = DB_query($sql);
         if (!DB_error()) {
             return true;
