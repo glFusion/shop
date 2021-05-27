@@ -61,14 +61,9 @@ class Customer
      * @var array */
     private $gw_ids = array();
 
-    /**  Flag to indicate that this is a new record.
-     * @var boolean */
-    private $isNew = true;
-
     /** Shopping cart information.
      * @var array */
     private $cart = array();
-
 
     /** Form action URL when saving profile information.
      * @var string */
@@ -117,7 +112,8 @@ class Customer
             return;
         }
         $res = DB_query(
-            "SELECT u.username, u.fullname, u.email, u.language, ui.*
+            "SELECT u.username, u.fullname, u.email, u.language,
+                ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
                 FROM {$_TABLES['users']} u
                 LEFT JOIN {$_TABLES['shop.userinfo']} ui
                     ON u.uid = ui.uid
@@ -133,21 +129,20 @@ class Customer
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
             $this->gw_ids = $this->getCustomerIds($uid);
+            $this->setCreationDate($A['created_ts']);
             if ($A['uid'] > 0) {
                 // The returned uid value will be null if the user record was
                 // found but there is no customer record created yet.
                 $this->affiliate_id = $A['affiliate_id'];
                 $this->aff_pmt_method = $A['aff_pmt_method'];
-                $this->isNew = false;
             } else {
                 $this->saveUser();
             }
         } else {
+            // Not even a valid user ID
             $this->cart = array();
-            $this->isNew = true;
             $this->addresses = array();
             $this->pref_gw = '';
-            //$this->saveUser();      // create a user record
         }
     }
 
@@ -365,6 +360,73 @@ class Customer
 
 
     /**
+     * Create an affiliate ID for this customer.
+     *
+     * @return  object  $this
+     */
+    public function createAffiliateId()
+    {
+        if (
+            $this->affiliate_id == 'pending' ||
+            $this->affiliate_id == ''
+        ) {
+            $this->affiliate_id = ReferralTag::create();
+        }
+        return $this;
+    }
+
+
+    public function withAffiliateId($aff_id)
+    {
+        $this->affiliate_id = $aff_id;
+        return $this;
+    }
+
+
+    /**
+     * Set the creation date object from a unix timestamp.
+     *
+     * @param   integer $ts     Timestamp, NULL for now.
+     * @return  object  $this
+     */
+    public function setCreationDate($ts=NULL)
+    {
+        global $_CONF;
+
+        if ($ts === NULL) {
+            $ts = time();
+        } else {
+            $ts = (int)$ts;
+        }
+        $this->created = new \Date($ts, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the creation date for a customer.
+     *
+     * @return  object      Date object
+     */
+    public function getCreationDate()
+    {
+        return $this->created;
+    }
+
+
+    /**
+     * Delete the affiliate ID for this customer.
+     *
+     * @return  object  $this
+     */
+    public function resetAffiliateId()
+    {
+        $this->affiliate_id = '';
+        return $this;
+    }
+
+
+    /**
      * Save the current values to the database.
      * The $A parameter must contain the addr_id value if updating.
      *
@@ -411,7 +473,8 @@ class Customer
         }
 
         // Create a new referrer token if this one is expired.
-        if ($this->affiliate_id == '') {
+        // If auto_enroll is set then at least all customers are enrolled.
+        if ($this->affiliate_id == '' && $_SHOP_CONF['aff_auto_enroll']) {
             $this->affiliate_id = ReferralTag::create();
         }
 
@@ -690,7 +753,9 @@ class Customer
     {
         global $_USER;
 
-        if ($uid == 0) $uid = $_USER['uid'];
+        if ($uid == 0) {
+            $uid = $_USER['uid'];
+        }
         $uid = (int)$uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {

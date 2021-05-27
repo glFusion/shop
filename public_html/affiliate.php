@@ -35,7 +35,7 @@ if (COM_isAnonUser()) {
 $content = '';
 
 // Retrieve and sanitize input variables.  Typically _GET, but may be _POSTed.
-COM_setArgNames(array('mode', 'id'));
+COM_setArgNames(array('mode', 'id', 'register'));
 foreach (array('mode', 'id') as $varname) {
     if (isset($_GET[$varname])) {
         $$varname = COM_applyFilter($_GET[$varname]);
@@ -48,6 +48,14 @@ if (empty($mode)) {
 }
 
 switch ($mode) {
+case 'register':
+    if (COM_isAnonUser()) {
+        COM_404();  // todo, redirect to login?
+    }
+    $Aff = new Shop\Affiliate();
+    $content .= $Aff->getRegistrationForm();
+    break;
+
 case 'sales':
 default:
     $content .= Shop\Affiliate::userList();

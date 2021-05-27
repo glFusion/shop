@@ -254,7 +254,8 @@ $_SQL = array(
   `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
   `affiliate_id` varchar(40) DEFAULT NULL,
-  `aff_pmt_method` varchar(20) DEFAULT NULL,
+  `aff_pmt_method` varchar(20) NOT NULL DEFAULT '_coupon',
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -911,6 +912,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
 );
 $SHOP_UPGRADE['1.3.1'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP()",
     "CREATE TABLE `{$_TABLES['shop.stock']}` (
       `stk_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `item_id` int(11) unsigned NOT NULL,

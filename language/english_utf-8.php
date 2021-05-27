@@ -424,7 +424,7 @@ $LANG_SHOP = array (
 'update' => 'Update',
 'apply_gc_title' => 'Apply a Gift Card to Your Account',
 'apply_gc_help' => 'Enter the gift card code below and click the &quot;Update&quot; button to apply to your account.',
-'apply_gc_email' => 'You may apply the gift card to your account by clicking <a href="%s">here</a>, or by visiting <a href="%s">%s</a> and entering the coupon code manually.<br />' . LB . 'NOTE: Do not apply this code to your account if this is a gift or the recipient will not be able to apply it.',
+'apply_gc_email' => 'You may apply the gift card to your account by clicking <a href="%s">here</a>, or by visiting <a href="%s">%s</a> and entering the coupon code manually.<br />NOTE: Do not apply this code to your account if this is a gift or the recipient will not be able to apply it.',
 'subj_email_admin' => $_CONF['site_name'] . ': Order Notification',
 'subj_email_user' => array(
     'paid'  => 'Order Update from %s',
@@ -773,6 +773,8 @@ $LANG_SHOP = array (
 'commission' => 'Commission',
 'aff_report_for' => 'Affiliate Report for:',
 'due' => 'Due',
+'msg_aff_signup_updated' => 'Thanks for updating your information',
+'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -954,6 +956,9 @@ $LANG_confignames['shop'] = array(
     'aff_key' => 'Affiliate URL Key',
     'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
     'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
+    'aff_eligible' => 'Group eligible to become affiliates',
+    'aff_auto_enroll' => 'Auto-enroll eligible users?',
+    'aff_form_id' => 'Affiliate registration form',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1059,6 +1064,8 @@ $LANG_configselects['shop'] = array(
         'Inches' => 'IN',
         'Centimetres' => 'CM',
     ),
+    24 => array(
+        'All Users' => 'allusers',
+        'Customers' => 'customers',
+    ),
 );
-
-?>

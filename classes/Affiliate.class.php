@@ -410,4 +410,62 @@ class Affiliate
         return $retval;
     }
 
+
+    /**
+     * Get the rendered registration form for affiliate sign-ups.
+     * Form is created in the Forms plugin and should be set as single-entry
+     * with editing allowed.
+     *
+     * @return  string      HTML for rendered form, empty string if none found.
+     */
+    public function getRegistrationForm()
+    {
+        global $LANG_SHOP;
+
+        $Cust = new Customer($this->uid);
+        $args = array(
+            'frm_id' => Config::get('aff_form_id'),
+            'res_id' => 0,
+            'show_buttons' => true,
+            'redirect_success' => Config::get('url') . '/index.php',
+            'instance_id' => array(
+                'affiliate',
+                $this->uid,
+            ),
+            'pi_name' => 'shop',
+        );
+        $hidden = array(
+            'affiliate_id' => $Cust->getAffiliateId(),
+            'aff_uid' => $this->uid,
+        );
+        if ($hidden['affiliate_id'] != '') {
+            $hidden['success_msg'] = $LANG_SHOP['msg_aff_signup_updated'];
+        } else {
+            $hidden['success_msg'] = $LANG_SHOP['msg_aff_signup_created'];
+        }
+        $args['hidden'] = $hidden;
+        $status = LGLIB_invokeService(
+            'forms',
+            'renderForm',
+            $args,
+            $output,
+            $svc_msg
+        );
+        return $status == PLG_RET_OK ? $output['content'] : '';
+    }
+
+
+    /**
+     * Approve an affiliate application.
+     *
+     * @param   boolean $moderated  True if moderated, False if automatic
+     */
+    public function Approve($moderated=false)
+    {
+        $this->Customer->createAffiliateId()->saveUser();
+        if ($moderated) {
+            // Send welcome email
+        }
+    }
+
 }

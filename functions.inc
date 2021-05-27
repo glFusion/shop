@@ -319,7 +319,7 @@ function plugin_deletecomment_shop($cid, $id)
  */
 function plugin_editcomment_shop($cid, $id)
 {
-    echo COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
+    COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
     exit;
 }
 
@@ -1871,6 +1871,32 @@ function plugin_configmanager_use_sku_shop_validate($val)
     // caches.
     Shop\Cache::clear();
     return $val;
+}
+
+
+/**
+ * Select the form to use for affiliate registrations.
+ *
+ * @return  array   Form Name => Form ID
+ */
+function plugin_configmanager_select_aff_form_id_shop()
+{
+    $retval = array();
+    $status = LGLIB_invokeService(
+        'forms',
+        'getMyForms',
+        array(
+            'basename' => '',
+        ),
+        $A,
+        $svc_msg
+    );
+    if ($status == PLG_RET_OK) {
+        foreach ($A as $id=>$name) {
+            $retval[$name] = $id;
+        }
+    }
+    return $retval;
 }
 
 

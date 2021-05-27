@@ -411,6 +411,63 @@ function plugin_formatAmount_shop($amount)
     return Shop\Currency::getInstance()->Format((float)$amount);
 }
 
+
+/**
+ * Approve a submission from another plugin.
+ * Currently supported is form approval for affiliate registrations.
+ * Recommended to add a hidden or admin-only field `uid` to the form so that
+ * admins can fill out on behalf of other users. If not present, the submitting
+ * user ID is used.
+ *
+ * @param   array   $args   Array of arguments - amount, users, expiration
+ * @param   mixed   &$output    Output data
+ * @param   mixed   &$svc_msg   Service message
+ * @return  integer     Status code
+ */
+function service_approvesubmission_shop($args, &$output, &$svc_msg)
+{
+    if (isset($args['source'])) {
+        // Currently need to know the source
+        switch ($args['source']) {
+        case 'forms':
+            // Form submission, e.g. affiliate registration
+            $data = explode(':', $args['pi_info']);
+            switch ($data[0]) {
+            case 'affiliate':
+                // Verify that the correct form is being used.
+                if (
+                    !isset($args['source_id']) ||
+                    $args['source_id'] != Shop\Config::get('aff_form_id')
+                ) {
+                    return false;
+                }
+
+                // Get the user ID from the form field if set, otherwise use
+                // the submitter's ID
+                if (isset($args['uid'])) {
+                    $uid = (int)$args['uid'];
+                } else {
+                    $uid = 0;
+                }
+                if ($uid < 2) {
+                    // Invalid affiliate user ID, nothing to do
+                    return false;
+                }
+
+                // Create the affiliate ID and do whatever else is needed for
+                // approved applications such as sending welcom emails (TODO).
+                $moderated = isset($args['moderated']) ? $args['moderated'] : false;
+                $Affiliate = new Shop\Affiliate($uid);
+                $Affiliate->Approve($moderated);
+                break;
+            }
+            break;
+        }
+    }
+    return true;
+}
+
+
 if (
     isset($_SHOP_CONF['enable_svc_funcs']) &&
     $_SHOP_CONF['enable_svc_funcs'] &&
