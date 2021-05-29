@@ -254,7 +254,7 @@ class Product
 
     /** OrderItem ID to get previously-ordered options.
      * @var integer */
-    protected $oi_id;
+    protected $oi_id = 0;
 
     /** Minimum allowed quantity per order.
      * @var integer */
@@ -1900,6 +1900,9 @@ class Product
             'sku'               => $this->getName(),
             //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
             'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->LeadTime()) . ')' : '',
+            'aff_link'          => $this->getAffiliateLink(),
+            'lang_copy_clipboard' => $LANG_SHOP['copy_cb'],
+            'lang_copy_success' => $LANG_SHOP['copy_cb_success'],
         ) );
 
         if (!empty($this->Categories)) {
@@ -3055,6 +3058,11 @@ class Product
     }
 
 
+    /**
+     * Get the quantity of stock items currently reserved for cards.
+     *
+     * @return  float       Quantity of items reserved
+     */
     public function getReserved()
     {
         return $this->getStock()->getReserved();
@@ -3073,22 +3081,32 @@ class Product
 
 
     /**
+     * Get the affiliate referral link for the product.
+     * Does not use COM_buildUrl().
+     *
+     * @return  string      Affiliate referral URL
+     */
+    public function getAffiliateLink()
+    {
+        return Customer::getInstance()->getAffiliateLink($this->id);
+    }
+
+
+    /**
      * Get the URL to the item detail page.
      *
      * @param   integer $oi_id  Order Item ID
      * @param   string  $q      Query string. Should be url-encoded already
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0, $q='')
+    public function getLink()
     {
-        global $_SHOP_CONF;
-
-        $id = $_SHOP_CONF['use_sku'] ? $this->name : $this->id;
+        $id = Config::get('use_sku') ? $this->name : $this->id;
         $url = SHOP_URL . '/detail.php?id=' . $id;
-        if ($oi_id > 0 || $q != '') {
-            $url .= '&oi_id=' . (int)$oi_id;
-            if ($q != '') {
-                $url .= '&query=' . $q;
+        if ($this->oi_id > 0 || $this->query != '') {
+            $url .= '&oi_id=' . (int)$this->oi_id;
+            if ($this->query != '') {
+                $url .= '&query=' . $this->query;
             }
         }
         return COM_buildUrl($url);
@@ -4504,6 +4522,32 @@ class Product
     public function getDefVariantID()
     {
         return (int)$this->def_pv_id;
+    }
+
+
+    /**
+     * Set the query string to be passed to detail pages, etc.
+     *
+     * @param   string  $query_str  Query string
+     * @return  object  $this
+     */
+    public function withQuery($query_str='')
+    {
+        $this->query = $query_str;
+        return $this;
+    }
+
+
+    /**
+     * Set the order item ID, to show the correct variant.
+     *
+     * @param   integer $oi_id      OrderItem record ID
+     * @return  object  $this
+     */
+    public function withOrderItem($oi_id=0)
+    {
+        $this->oi_id = (int)$oi_id;
+        return $this;
     }
 
 

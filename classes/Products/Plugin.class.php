@@ -333,14 +333,14 @@ class Plugin extends \Shop\Product
      * @param   string  $q      Query string. Should be url-encoded already
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0, $q='')
+    public function getLink()
     {
         if ($this->_have_detail_svc) {
             $url = SHOP_URL . '/detail.php?id=' . $this->item_id;
-            if ($oi_id > 0 || $q != '') {
-                $url .= '&oi_id=' . (int)$oi_id;
-                if ($q != '') {
-                    $url .= '&query=' . $q;
+            if ($this->oi_id > 0 || $this->query != '') {
+                $url .= '&oi_id=' . (int)$this->oi_id;
+                if ($this->query != '') {
+                    $url .= '&query=' . $this->query;
                 }
             }
             return $url;
