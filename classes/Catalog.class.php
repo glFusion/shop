@@ -430,7 +430,7 @@ class Catalog
                 continue;
             }
             $P->setVariant();
-
+            $link = $P->withQuery($this->query_str)->getLink();
             $prodrows++;
             $T->set_var(array(
                 'item_id'       => $P->getID(),
@@ -438,7 +438,8 @@ class Catalog
                 'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => $P->getLink(0, $this->query_str),
+                'item_url'      => $link,
+                'aff_link'      => $P->getAffiliateLink(),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
@@ -598,6 +599,7 @@ class Catalog
                     // An error in getting the plugin product
                     continue;
                 }
+                $link = $P->withQuery($this->query_str)->getLink();
                 $price = $P->getPrice();
                 $T->set_var(array(
                     'id'        => $P->getID(),     // required
@@ -605,7 +607,7 @@ class Catalog
                     'name'      => $P->getDscp(),
                     'short_description' => $P->getDscp(),
                     'encrypted' => '',
-                    'item_url'  => $P->getLink(0, $this->query_str),
+                    'item_url'  => $link,
                     'track_onhand' => '',   // not available for plugins
                     'small_pic' => $P->getImage()['url'],
                     'on_sale'   => '',

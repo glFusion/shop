@@ -284,7 +284,7 @@ class Order
                 //'item_options'  => $P->getOptionDisplay($item),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $P->getSKU($item),
-                'item_link'     => $P->getLink($item->getID()),
+                'item_link'     => $P->withOrderItem($item->getID())->getLink(),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$item->getID()}"),

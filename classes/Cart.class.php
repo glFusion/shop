@@ -1089,12 +1089,11 @@ class Cart extends Order
         $gateway = array_shift($Gateways);
 
         // Get the customer information to set addresses and email addr
-        $Customer = Customer::getInstance($this->uid);
         if ($this->billto_id < 1) {
-            $this->setBillto($Customer->getDefaultAddress('billto'));
+            $this->setBillto($this->Customer->getDefaultAddress('billto'));
         }
         if ($this->shipto_id < 1) {
-            $this->setShipto($Customer->getDefaultAddress('shipto'));
+            $this->setShipto($this->Customer->getDefaultAddress('shipto'));
         }
         if ($this->hasPhysical()) {
             // Shipping selection required
@@ -1102,13 +1101,13 @@ class Cart extends Order
         }
 
         // Go ahead and save the gateway as preferred for future use
-        $Customer->setPrefGW($gateway->getName())
+        $this->Customer->setPrefGW($gateway->getName())
             ->saveUser();
 
         // Populate required elements of this order
         $this->setGateway($gateway->getName())
             ->setByGC(0)
-            ->setEmail($Customer->getEmail())
+            ->setEmail($this->Customer->getEmail())
             ->setShipper(0)
             ->setInstructions('')
             ->Save();
