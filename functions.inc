@@ -1054,7 +1054,7 @@ function phpblock_shop_cart_contents()
                 'price'         => $Cur->FormatValue($item->getPrice()),
                 'quantity'      => $item->getQuantity(),
                 'item_total'    => $Cur->FormatValue($item_total),
-                'item_link'     => $P->getLink($item->getID(), $cart->token),
+                'item_link'     => $P->withOrderItem($item->getID())->getLink(),
             ) );
             $T->parse('cRow', 'CartRow', true);
             $total += $item_total;
@@ -1540,18 +1540,21 @@ function plugin_user_login_shop($uid)
 
 
 /**
- * Handle actions needed when the current user logs out.
+ * Actions to perform when a user account is created.
+ * If configured to automatically enroll all users as affiliates,
+ * do that here.
  *
- * @param   integer $uid    User ID
+ * @param   integer $uid    ID of new user
  */
-function plugin_user_logout_shop($uid)
+function plugin_user_create_shop($uid)
 {
-//    Shop\Models\Session::clear();
-/*    global $_SHOP_CONF;
-
-    $C = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
-    Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
-*/
+    if (
+        Config::get('aff_auto_enroll') &&
+        Config::get('aff_eligible') == 'allusers'
+    ) {
+        $Affiliate = new Shop\Affiliate($uid);
+        $Affiliate->Approve(false);
+    }
 }
 
 

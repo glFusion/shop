@@ -241,6 +241,10 @@ class Order
      * @var string */
     private $gw_order_ref = '';
 
+    /** Object for customer info.
+     * @var object */
+    private $Customer = NULL;
+
 
     /**
      * Set internal variables and read the existing order if an id is provided.
@@ -249,10 +253,10 @@ class Order
      */
     public function __construct($id='')
     {
-        global $_USER, $_SHOP_CONF;
+        global $_USER;
 
         $this->uid = (int)$_USER['uid'];
-        $this->currency = $_SHOP_CONF['currency'];
+        $this->currency = Config::get('currency');
         if (!empty($id)) {
             $this->order_id = $id;
             if (!$this->Load($id)) {
@@ -262,6 +266,7 @@ class Order
                 $this->isNew = false;
             }
         }
+        $this->Customer = Customer::getInstance($this->uid);
         if ($this->isNew) {
             if (empty($id)) {
                 // Only create a new ID if one wasn't supplied.
@@ -1120,7 +1125,7 @@ class Order
                 'token'         => $item->getToken(),
                 'item_options'  => $item->getOptionDisplay(),
                 'sku'           => $item->getSKU(),
-                'item_link'     => $P->getLink($item->getID()),
+                'item_link'     => $P->withOrderItem($item->getID())->getLink(),
                 'pi_url'        => SHOP_URL,
                 'is_invoice'    => $is_invoice,
                 'del_item_url'  => COM_buildUrl(
@@ -1600,6 +1605,32 @@ class Order
 
 
     /**
+     * Get a count of active orders by user ID.
+     * Used to determine if a customer is active.
+     *
+     * @return  integer     Count of actual orders
+     */
+    public static function countActiveByUser($uid)
+    {
+        global $_TABLES;
+
+        static $count = array();
+        $uid = (int)$uid;
+        if (isset($count[$uid])) {
+            echo "1";
+            return $count[$uid];
+        } else {
+            $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
+                WHERE uid = {$uid}
+                AND status NOT IN ('cart', 'pending', 'cancelled', 'refunded')";
+            $res = DB_query($sql);
+            $count[$uid] = DB_numRows($res);
+        }
+        return $count[$uid];
+    }
+
+
+    /**
      * Log a message related to this order.
      * Typically used to log status changes.  If this is called for an
      * order object, the local "log_user" variable can be preset to the
@@ -1654,16 +1685,15 @@ class Order
         }
 
         $Shop = new Company;
-        $Cust = Customer::getInstance($this->uid);
         if ($force || $notify_buyer) {
             $save_language = $LANG_SHOP;    // save the site language
             $save_userlang = $_CONF['language'];
-            $_CONF['language'] = $Cust->getLanguage(true);
+            $_CONF['language'] = $this->Customer->getLanguage(true);
             $LANG_SHOP = self::loadLanguage($_CONF['language']);
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
             $T = new Template(array(
-                'notify/' . $Cust->getLanguage(),
+                'notify/' . $this->Customer->getLanguage(),
                 'notify/' . COM_getLanguageName(),
                 'notify/english',
                 'notify', // catch templates using language strings
@@ -1703,7 +1733,6 @@ class Order
             // Set up templates, using language-specific ones if available.
             // Fall back to English if no others available.
             // This uses the site default language.
-            $Cust = Customer::getInstance($this->uid);
             $T = new Template(array(
                 'notify/' . COM_getLanguageName(),
                 'notify/english',
@@ -2964,8 +2993,7 @@ class Order
      */
     private function _getLangName($fullname = false)
     {
-        $Cust = Customer::getInstance($this->uid);
-        return $Cust->getLanguage($fullname);
+        return $this->Customer->getLanguage($fullname);
     }
 
 

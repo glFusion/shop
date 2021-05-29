@@ -111,14 +111,13 @@ class Customer
         if ($uid < 2) {     // Anon information is not saved
             return;
         }
-        $res = DB_query(
-            "SELECT u.username, u.fullname, u.email, u.language,
-                ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
-                FROM {$_TABLES['users']} u
-                LEFT JOIN {$_TABLES['shop.userinfo']} ui
-                    ON u.uid = ui.uid
-                WHERE u.uid = $uid"
-        );
+        $sql = "SELECT u.username, u.fullname, u.email, u.language,
+            ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
+            FROM {$_TABLES['users']} u
+            LEFT JOIN {$_TABLES['shop.userinfo']} ui
+                ON u.uid = ui.uid
+            WHERE u.uid = $uid";
+        $res = DB_query($sql);
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $this->username = $A['username'];
@@ -136,6 +135,7 @@ class Customer
                 $this->affiliate_id = $A['affiliate_id'];
                 $this->aff_pmt_method = $A['aff_pmt_method'];
             } else {
+                // Create a record
                 $this->saveUser();
             }
         } else {
@@ -345,6 +345,18 @@ class Customer
 
 
     /**
+     * Get the customer user ID.
+     * Used to determine if a customer record was actually found.
+     *
+     * @return  integer     Record ID from userinfo table
+     */
+    public function countOrders()
+    {
+        return Order::countActiveByUser($this->uid);
+    }
+
+
+    /**
      * Get the customer's affiliate ID.
      *
      * @return  string      Affiliate ID, NULL if affiliate sales disabled
@@ -465,16 +477,23 @@ class Customer
      */
     public function saveUser()
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF;
+        global $_TABLES, $_CONF;
 
         if ($this->uid < 2) {
             // Act as if saving was successful but do nothing.
             return true;
         }
 
-        // Create a new referrer token if this one is expired.
-        // If auto_enroll is set then at least all customers are enrolled.
-        if ($this->affiliate_id == '' && $_SHOP_CONF['aff_auto_enroll']) {
+        // Create a new referrer token if not present.
+        // If auto_enroll is set then check the order count unless all
+        // uses are auto-enrolled.
+        if (
+            $this->affiliate_id == '' &&
+            Config::get('aff_auto_enroll') && (
+                Config::get('aff_eligible') == 'allusers' ||
+                $this->countOrders() > 0
+            )
+        ) {
             $this->affiliate_id = ReferralTag::create();
         }
 
@@ -543,7 +562,7 @@ class Customer
      */
     public static function isValidAddress($A)
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP;
 
         $invalid = array();
         $retval = '';
@@ -577,7 +596,7 @@ class Customer
      */
     public function AddressForm($type='billto', $A=array(), $step=1)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
@@ -862,10 +881,14 @@ class Customer
         return '_coupon';
     }
 
-    public function getAffiliateLink()
+    public function getAffiliateLink($item_id='')
     {
-        if (Config::get('aff_enabled')) {
-            return Config::get('url') . '/index.php?' . Config::get('aff_key') . '=' . $this->affiliate_id;
+        if (Config::get('aff_enabled') && !empty($this->affiliate_id)) {
+            $url = Config::get('url') . '/index.php?' . Config::get('aff_key') . '=' . $this->affiliate_id;
+            if ($item_id != '') {
+                $url .= '&id=' . $item_id;
+            }
+            return $url;
         } else {
             return '';
         }

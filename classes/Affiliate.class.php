@@ -57,6 +57,28 @@ class Affiliate
 
 
     /**
+     * Verify that the customer is active and not just created as a user.
+     *
+     * @return  boolean     True if the customer has placed orders
+     */
+    public function isActiveCustomer()
+    {
+        return $this->Customer->countOrders() > 0;
+    }
+
+
+    /**
+     * Return the customer object.
+     *
+     * @return  object      Customer object
+     */
+    public function getCustomer()
+    {
+        return $this->Customer;
+    }
+
+
+    /**
      * Display a list of all affiliates.
      * Only includes those buyers in the Shop "userinfo" table.
      *
