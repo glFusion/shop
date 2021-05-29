@@ -60,7 +60,8 @@ $INSTALL_plugin['shop'] = array(
         'desc' => 'Ability to view Shop products',
         'variable' => 'view_feature_id',
     ),
-    array('type' => 'mapping',
+    array(
+        'type' => 'mapping',
         'findgroup' => 'Root',
         'feature' => 'admin_feature_id',
         'log' => 'Adding Admin feature to the Root group',

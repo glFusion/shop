@@ -62,7 +62,7 @@ class Field
      * Create a radio field.
      *
      * @param   array   $args   Array of argument names=>values
-     * @return  string      HTML for checkbox field
+     * @return  string      HTML for radio button field
      */
     public static function radio($args=array())
     {
