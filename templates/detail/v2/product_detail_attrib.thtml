@@ -11,7 +11,20 @@
 	</a>
 </div>
 {!endif}
-
+{!if aff_link}
+<div class="floatright">
+	<a class="uk-button uk-button-mini cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">{$LANG_SHOP['my_aff_link']}
+	</a>
+	<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+	<script>
+		var clipboard = new Clipboard('.cpybtn');
+		clipboard.on('success', function(e) {
+			e.clearSelection();
+			Shop.notify("{lang_copy_success}", "success");
+		});
+	</script>
+</div>
+{!endif}
 <div class="uk-grid" style="clear:both;margin-top:20px;">
 	<div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
 {!if main_img}

@@ -8,7 +8,20 @@
 	</a>
 </div>
 {!endif}
-<form id="{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
++{!if aff_link}
+<div class="floatright">
+	<a class="uk-button uk-button-mini cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">{$LANG_SHOP['my_aff_link']}
+	</a>
+	<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+	<script>
+		var clipboard = new Clipboard('.cpybtn');
+		clipboard.on('success', function(e) {
+			e.clearSelection();
+			Shop.notify("{lang_copy_success}", "success");
+		});
+	</script>
+</div>
+{!endif}<form id="{frm_id}" class="uk-form uk-form-horizontal" action="{site_url}/shop/index.php" method="post">
 	<input type="hidden" name="item_number" value="{id}" />
 	<input type="hidden" name="has_options" value="{have_attributes}" />
 
