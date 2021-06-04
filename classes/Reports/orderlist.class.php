@@ -55,7 +55,7 @@ class orderlist extends \Shop\Report
             $cust_hdr = array(
                 'text'  => $LANG_SHOP['customer'],
                 'field' => 'customer',
-                'sort'  => true,
+                'sort'  => false,
             );
         } else {
             $cust_hdr = array();
