@@ -490,4 +490,19 @@ class Affiliate
         }
     }
 
+
+    /**
+     * Check if this customer is eligible to be an affiliate.
+     *
+     * @return  boolean     True if eligible, False if not.
+     */
+    public function isEligible()
+    {
+        if (Config::get('aff_eligible') == 'customers' && COM_isAnonUser()) {
+            return false;
+        } else {
+            return $this->isActiveCustomer();
+        }
+    }
+
 }

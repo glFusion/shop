@@ -53,10 +53,7 @@ case 'register':
         COM_404();  // todo, redirect to login?
     }
     $Aff = new Shop\Affiliate();
-    if (
-        Shop\Config::get('aff_eligible') == 'allusers' ||
-        $Aff->isActiveCustomer()
-    ) {
+    if ($Aff->isEligible()) {
         $content .= $Aff->getRegistrationForm();
     } else {
         // Registration only open to all users, or customers
