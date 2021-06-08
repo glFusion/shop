@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<input type="checkbox"
+<input class="uk-checkbox" type="checkbox"
 <!-- BEGIN Attr -->
   {name}="{value}"
 <!-- END Attr -->

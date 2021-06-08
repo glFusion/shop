@@ -5,7 +5,7 @@
 <button type="submit" name="disa_{key}" value="x"
 	class="uk-button uk-button-mini uk-button-danger tooltip"
 	title="{$LANG_ADMIN['disable']}"><i class="uk-icon uk-icon-remove"></i></button>&nbsp;
-<select name="rule_id">
+<select class="uk-select uk-form-small uk-form-width-medium" name="rule_id">
 	{zone_options}
 </select>
 <button type="submit" name="rule_add" value="{key}"

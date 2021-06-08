@@ -3,47 +3,50 @@
 {!if cat_desc}
 <p>
 {!if cat_img_url}
-  <img src="{cat_img_url}" style="max-width:140px;max-height:140px" class="shopCatHeaderImage" />
+	<img src="{cat_img_url}" style="max-width:140px;max-height:140px" class="shopCatHeaderImage" />
 {!endif}
 {cat_desc}
 </p>
 {!endif}
+
 <div class="shopListSeparator">
 {!if brand_id}
 {!if brand_logo_url}
-    <div style="margin-right:30px;float:left;">
-        <img class="shopLogoImage medium" src="{brand_logo_url}" />
-    </div>
-    <div class="shopListBrandDscp">
-        {brand_dscp}
-    </div>
+	<div style="margin-right:30px;float:left;">
+		<img class="shopLogoImage medium" src="{brand_logo_url}" />
+	</div>
+	<div class="shopListBrandDscp">
+		{brand_dscp}
+	</div>
 {!else}
-    <h2>{products_by_brand}</h2>
+	<h2>{products_by_brand}</h2>
 {!endif}
 {!endif}
-<hr style="clear:both;"/>
+
+	<hr style="clear:both;"/>
 </div>
 <div>
-  <form method="get" class="uk-form" action="{pi_url}/index.php">
-    <input type="hidden" name="category" value="{cat_id}" />
-    <input type="hidden" name="brand" value="{brand_id}" />
-  <div class="shopProductSort uk-form">
+	<form method="get" class="uk-form" action="{pi_url}/index.php">
+		<input type="hidden" name="category" value="{cat_id}" />
+		<input type="hidden" name="brand" value="{brand_id}" />
+		<div uk-grid class="uk-grid uk-child-width-1-1@s uk-child-width-1-2@m uk-grid-width-small-1-1 uk-grid-width-medium-1-2">
+			<div class="shopProductSort uk-form">
 {!if have_sortby}
-  {$LANG_SHOP['sortby']}:&nbsp;
-  <select name="sortby" onchange="$(this).closest('form').submit();">
-    {sortby_options}
-  </select>
+				{$LANG_SHOP['sortby']}:&nbsp;
+				<select name="sortby" onchange="$(this).closest('form').submit();">
+					{sortby_options}
+				</select>
 {!endif}
-  </div>
-  <div class="shopProductSearch">
-      <fieldset data-uk-margin>
-        <input type="search" id="query" name="query" value="{search_text}" placeholder="{$LANG_SHOP['search_catalog']}" />
-        <button type="submit" class="uk-button uk-button-success" name="dosearch">{$LANG09[10]}</button>
-        <button type="submit" class="uk-button" name="clearsearch" ><i class="uk-icon-remove"></i></button>
-      </fieldset>
-  </div>
-  </form>
+			</div>
+			<div class="shopProductSearch">
+				<input type="search" id="query" name="query" value="{search_text}" placeholder="{$LANG_SHOP['search_catalog']}" />
+				<button type="submit" class="uk-button uk-button-success" name="dosearch">{$LANG09[10]}</button>
+				<button type="submit" class="uk-button" name="clearsearch" ><i class="uk-icon-remove"></i></button>
+			</div>
+		</div>
+	</form>
 </div>
+
 {!if anon_and_empty}
 <span class="info">{$LANG_SHOP['anon_and_empty']}</span>
 {!endif}

@@ -1,13 +1,16 @@
 {# begin {templatelocation} #}
+<script src="{site_url}/javascript/addons/datetime/jquery.datetimepicker.full.min.js" type="text/javascript"></script>
+<link rel="stylesheet" type="text/css" href="{site_url}/javascript/addons/datetime/jquery.datetimepicker.min.css"/ >
+<script src="{site_url}/javascript/addons/datetime/datetimepicker.js" type="text/javascript"></script>
 <form class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
 	<input type="hidden" name="id" value="{id}" />
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['carrier']}:
 			<span id="module_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select id="carrierCode" name="module_code">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" id="carrierCode" name="module_code">
 				<option value="">--{$LANG_SHOP['other']}--</option>
 <!-- BEGIN shipperCodes -->
 				<option value="{module_code}" {selected}>{module_name} ({module_code})</option>
@@ -16,101 +19,101 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['name']}:
 			<span id="name" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input required type="text" name="name" value="{name}" size="40" maxlength="40" />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" name="name" value="{name}" maxlength="40" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['enabled']}:
 			<span id="enabled" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="checkbox" name="enabled" value="1" {ena_sel} />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="enabled" value="1" {ena_sel} />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['req_shipto']}:
 			<span id="req_shipto" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="checkbox" name="req_shipto" value="1" {req_shipto_sel} />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="req_shipto" value="1" {req_shipto_sel} />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['tax_loc']}:
 			<span id="tax_loc" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select name="tax_loc">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" name="tax_loc">
 				<option value="0" {tax_loc_0}>{$LANG_SHOP['origin']}</option>
 				<option value="1" {tax_loc_1}>{$LANG_SHOP['destination']}</option>
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['use_fixed']}:
 			<span id="use_fixed" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="checkbox" name="use_fixed" value="1" {fixed_sel} />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="use_fixed" value="1" {fixed_sel} />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['min_ship_units']}:
 			<span id="min_units" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="text" name="min_units" value="{min_units}" size="40" maxlength="40" />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="min_units" value="{min_units}" maxlength="40" />
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="prod_sel">
+	<div class="uk-form-row uk-margin" id="prod_sel">
 		<label class="uk-form-label">{$LANG_SHOP['max_ship_units']}:
 			<span id="max_units" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="text" name="max_units" value="{max_units}" size="40" maxlength="40" />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="max_units" value="{max_units}" maxlength="40" />
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="prod_sel">
+	<div class="uk-form-row uk-margin" id="prod_sel">
 		<label class="uk-form-label">{$LANG_SHOP['free_threshold']}
 			<span id="ena_free" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<input type="checkbox" id="ena_free" name="ena_free" value="1" {ena_free_chk} onclick="toggleFreeThreshold(this);" />
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" id="ena_free" name="ena_free" value="1" {ena_free_chk} onclick="toggleFreeThreshold(this);" />
 			<span id="span_free_threshold" style="display:{span_free_vis}">&nbsp;&nbsp;{$LANG_SHOP['value']}:
-				<input type="text" name="free_threshold" size="5" value="{free_threshold}" />
+				<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" name="free_threshold" value="{free_threshold}" />
 			</span>
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="prod_sel">
+	<div class="uk-form-row uk-margin" id="prod_sel">
 		<label class="uk-form-label">{$LANG_SHOP['rate_method']}
 			<span id="rate_method" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select name="quote_method">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" name="quote_method">
 				<option value="1" {chk_qm_1}>{$LANG_SHOP['rate_table']}</option>
 				<option value="2" {chk_qm_2}>{$LANG_SHOP['pkg_rates']}</option>
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="selvalues">
+	<div class="uk-form-row uk-margin" id="selvalues">
 		<label class="uk-form-label">{$LANG_SHOP['rate_table']}
 			<span id="rate_table" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
+		<div class="uk-form-controls uk-form-controls-text">
 			<table id="rateList">
 			<tbody>
 				<tr>
@@ -125,9 +128,9 @@
 				</tr>
 <!-- BEGIN rateTable -->
 				<tr>
-					<td><input type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
-					<td><input type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
-					<td><input type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
+					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateDscp[]" value="{rate_dscp}" /></td>
+					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateUnits[]" value="{rate_units}" style="text-align:right" /></td>
+					<td><input class="uk-input uk-form-small uk-form-width-medium" type="text" name="rateRate[]" value="{rate_price}" style="text-align:right" /></td>
 					<td><i class="uk-icon uk-icon-remove uk-text-danger" data-uk-tooltip
 						title="{$LANG_SHOP['rem_row']}"
 						onclick="javascript:return removeRow(this);"></i>
@@ -140,12 +143,12 @@
 	</div>
 
 {!if 0}
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">Package Code
 			<span id="hlp_pkg_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select id="pkg_code_select" name="pkg_code">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" id="pkg_code_select" name="pkg_code">
 				<option value="" {sel_none}>-- None -- </option>
 <!-- BEGIN PkgCodes -->
 				<option value="{pkg_code}" {sel}>{pkg_dscp}</option>
@@ -154,12 +157,12 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">Service Code
 			<span id="hlp_svc_code" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select id="svc_code_select" name="svc_code">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" id="svc_code_select" name="svc_code">
 				<option value="_na" {sel_none}>-- None --</option>
 <!-- BEGIN SvcCodes -->
 				<option value="{svc_code}" {sel}>{svc_dscp}</option>
@@ -169,52 +172,40 @@
 	</div>
 {!endif}
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['grp_access']}:
 			<span id="grp_access" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<select id="grp_access" name="grp_access">
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" id="grp_access" name="grp_access">
 				{grp_sel}
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['start']}:
 			<span id="start" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<div class="uk-form-icon">
-				<i class="uk-icon-calendar"></i>
-				<input type="text" id="valid_from" name="valid_from" value="{valid_from}" size="12" maxlength="12"
-					data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-					placeholder="1970-01-01"
-					data-uk-tooltip />
-			</div>
-			<i class="uk-icon uk-icon-remove-o uk-text-danger"
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-medium popupcal" type="text" id="valid_from" name="valid_from" value="{valid_from}"/>
+			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_from");'></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['end']}:
 			<span id="end" class="tooltip_cfg tooltipstered"></span>
 		</label>
-		<div class="uk-form-controls">
-			<div class="uk-form-icon">
-				<i class="uk-icon-calendar"></i>
-				<input type="text" id="valid_to" name="valid_to" value="{valid_to}" size="12" maxlength="12"
-					data-uk-datepicker="{format:'YYYY-MM-DD'}" title="{$LANG_SHOP['datepicker']}"
-					placeholder="2037-12-31"
-					data-uk-tooltip />
-			</div>
-			<i class="uk-icon uk-icon-remove-o uk-text-danger"
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-medium popupcal" type="text" id="valid_to" name="valid_to" value="{valid_to}" />
+			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_to");'></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row" align="center">
+	<div class="uk-form-row uk-margin" align="center">
 		<button class="uk-button uk-button-success" type="submit" name="saveshipper" value="{$LANG_ADMIN['save']}">{$LANG_ADMIN['save']}</button>
 		<button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
 		<button class="uk-button uk-button-primary" type="reset" name="shipping" value="{$LANG_ADMIN['cancel']}"

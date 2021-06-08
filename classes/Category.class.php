@@ -431,6 +431,7 @@ class Category
         }
 
         $T->set_var(array(
+            'framework'     => $_SYSTEM['framework'],
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'cat_name'      => $this->cat_name,
