@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+//use glFusion\FieldList;
+
 
 /**
  * Class for order processing workflow items.
@@ -121,12 +123,29 @@ class OrderStatus extends Workflow
     {
         global $LANG_SHOP;
 
+        /* TODO - glFusion 2.0
+        $options = array();
+        foreach (self::getAll() as $key => $data) {
+            if (!$data->enabled) continue;
+            $options[self::getDscp($key)] = array(
+                'selected' => $key == $selected,
+                'value' => $key,
+            );
+        }
+        $status_selection = FieldList::select(array(
+            'name' => 'newstatus[' . $order_id . ']',
+            'id' => 'statSelect_' . $order_id,
+            'onchange' => "SHOP_ordShowStatSubmit('{$order_id}', SHOP_getStatus('{$order_id}'), this.value);",
+            'options' => $options,
+        ) );*/
+
         $T = new Template;
         $T->set_file('ordstat', 'orderstatus.thtml');
         $T->set_var(array(
             'order_id'  => $order_id,
             'oldvalue'  => $selected,
             'showlog'   => $showlog == 1 ? 1 : 0,
+            //'status_select' => $status_selection,
         ) );
         $T->set_block('ordstat', 'StatusSelect', 'Sel');
         foreach (self::getAll() as $key => $data) {

@@ -3764,7 +3764,8 @@ class Product
             'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
-        /*$bulk_update = FieldList::button(array(
+        /* TODO: glFusion 2.0
+        $bulk_update = FieldList::button(array(
             'name' => 'prod_bulk_frm',
             'text' => $LANG_SHOP['update'],
             'value' => 'x',
@@ -3826,6 +3827,8 @@ class Product
             'chkname' => 'prod_bulk',
             'chkactions' => $bulk_update,
         );
+
+        // Create the filter by category option
         $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
         $sel_options .= COM_optionList(
                 $_TABLES['shop.categories'],
@@ -3834,8 +3837,8 @@ class Product
                 1
         );
         $filter = $LANG_SHOP['category'] . ': ';
-        //$filter .= Field::select(array(
-        $filter .= FieldList::select(array(
+        $filter .= Field::select(array(
+        //$filter .= FieldList::select(array(
             'name' => 'cat_id',
             'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . "/index.php?products" .
@@ -3845,6 +3848,7 @@ class Product
             'option_list' => $sel_options,
         ) );
 
+        // Create the filter by brand option
         $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
         $sel_options .= COM_optionList(
             $_TABLES['shop.suppliers'],
@@ -3864,6 +3868,7 @@ class Product
             'option_list' => $sel_options,
         ) );
 
+        // Create the filter by supplier option
         $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
         $sel_options .= COM_optionList(
             $_TABLES['shop.suppliers'],
