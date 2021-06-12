@@ -579,6 +579,8 @@ class Catalog
                     continue;
                 }
 
+                $P = Product::getByID($A['id']);
+
                 // Reset button values
                 $buttons = '';
                 if (!isset($A['buttons'])) {
@@ -589,12 +591,8 @@ class Catalog
                     (isset($A['canPurchase']) && !$A['canPurchase'])
                 ) {
                     $P->enablePurchase(false);
-                    //$can_add_cart = false;
-                //} else {
-                  //  $can_add_cart = true;
                 }
 
-                $P = \Shop\Product::getByID($A['id']);
                 if ($P->isNew()) {
                     // An error in getting the plugin product
                     continue;
@@ -641,7 +639,6 @@ class Catalog
                     }
                 }
                 $T->clear_var('Btn');
-                //$prodrows++;
                 $T->parse('PI', 'ProductItems', true);
             }   // foreach plugin_data
 
