@@ -102,14 +102,14 @@
 			<span id="rate_method" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" name="quote_method">
+			<select onchange="toggleRateTable(this.value);" class="uk-select uk-form-small uk-form-width-medium" name="quote_method">
 				<option value="1" {chk_qm_1}>{$LANG_SHOP['rate_table']}</option>
 				<option value="2" {chk_qm_2}>{$LANG_SHOP['pkg_rates']}</option>
 			</select>
 		</div>
 	</div>
 
-	<div class="uk-form-row uk-margin" id="selvalues">
+	<div class="uk-form-row uk-margin" id="rateTableOuter">
 		<label class="uk-form-label">{$LANG_SHOP['rate_table']}
 			<span id="rate_table" class="tooltip_cfg tooltipstered"></span>
 		</label>
@@ -245,6 +245,7 @@ $(document).ready(function() {
 			});
 		}
 	});
+	toggleRateTable({rate_type});
 });
 function insertRow()
 {
@@ -272,11 +273,14 @@ function SHOP_resetShipperDates(type)
 function toggleFreeThreshold(cb)
 {
 	$('#span_free_threshold').toggle(cb.checked);
-/*	$('#ena_free').on('change', function() {
-alert("HERE");
-		$('#span_free_threshold').toggle(!this.checked);
-	});*/
-//});
+}
+function toggleRateTable(val)
+{
+	if (val == 1) {
+		$("#rateTableOuter").toggle(true);
+	} else {
+		$("#rateTableOuter").toggle(false);
+	}
 }
 </script>
 {# end {templatelocation} #}
