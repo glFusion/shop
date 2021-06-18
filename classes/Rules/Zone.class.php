@@ -512,8 +512,6 @@ class Zone
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['rule_id']}",
                 'checked' => $fieldvalue == 1,
-                'data-uk-tooltip' => '',
-                'title' => $tip,
                 'onclick' => "SHOP_toggle(this,'{$A['rule_id']}','{$fieldname}','zone_rule');",
             ) );
             break;
