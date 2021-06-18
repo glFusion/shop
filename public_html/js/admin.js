@@ -1,10 +1,10 @@
 /**
-*   Toggle field for Shop products
-*
-*   @param  object  cbox    Checkbox
-*   @param  string  id      Sitemap ID, e.g. plugin name
-*   @param  string  type    Type of sitemap (XML or HTML)
-*/
+ *   Toggle field for Shop products
+ *
+ *   @param  object  cbox    Checkbox
+ *   @param  string  id      Sitemap ID, e.g. plugin name
+ *   @param  string  type    Type of sitemap (XML or HTML)
+ */
 var SHOP_toggle = function(cbox, id, type, component) {
     oldval = cbox.checked ? 0 : 1;
     var dataS = {
@@ -77,7 +77,6 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
         "comment": comment,
     };
     data = $.param(dataS);
-    console.log(data);
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -151,6 +150,10 @@ function SHOP_ordShowStatSubmit(order_id, oldvalue, newvalue)
     }
 }
 
+
+/**
+ * Set the order status value in the dropdown on the admin list.
+ */
 function SHOP_setStatus(order_id, newstatus)
 {
     SHOP_status[order_id] = newstatus;
@@ -160,6 +163,10 @@ function SHOP_setStatus(order_id, newstatus)
     }
 }
 
+/**
+ * Get the current order status.
+ * Just returns the value previusly set in the status array for the admin list.
+ */
 function SHOP_getStatus(order_id)
 {
     return SHOP_status[order_id];
