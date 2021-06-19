@@ -32,14 +32,6 @@ class Shipper
      * @var string */
     protected static $TABLE = 'shop.shipping';
 
-    /** Minimim possible effective date/time.
-     * @const string */
-    const MIN_DATETIME = '1970-01-01 00:00:00';
-
-    /** Maximum possible effective date/time.
-     * @const string */
-    const MAX_DATETIME = '2037-12-31 23:59:59';
-
     /** Minimum units. Used since zero indicates free.
      * @const float */
     const MIN_UNITS = .0001;
@@ -272,6 +264,7 @@ class Shipper
             ->setQuoteMethod(SHOP_getVar($A, 'quote_method', 'integer', 1))
             ->setGrpAccess(SHOP_getVar($A, 'grp_access', 'integer', 2));
         if (!$fromDB) {
+            $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE));
             $this->free_threshold = isset($A['ena_free']) ? (float)$A['free_threshold'] : 0;
             $rates = array();
             foreach ($A['rateRate'] as $id=>$txt) {
@@ -288,17 +281,20 @@ class Shipper
                 );
             }
             $this->rates = $rates;
-            // convert valid dates to full date/time strings
+            // convert valid dates to full date/time strings.
+            // The form does not supply times.
             if (empty($A['valid_from'])) {
-                $A['valid_from'] = self::MIN_DATETIME;
+                $A['valid_from'] = Dates::MIN_DATE;
             } else {
-                $A['valid_from'] = trim($A['valid_from']) . '00:00:00';
+                $A['valid_from'] = trim($A['valid_from']);
             }
+            $A['valid_from'] .=  ' ' . Dates::MIN_TIME;
             if (empty($A['valid_to'])) {
-                $A['valid_to'] = self::MAX_DATETIME;
+                $A['valid_to'] = Dates::MAX_UNIXDATE;
             } else {
-                $A['valid_to'] = trim($A['valid_to']) . ' 23:59:59';
+                $A['valid_to'] = trim($A['valid_to']);
             }
+            $A['valid_to'] .=  ' ' . Dates::MAX_TIME;
         } else {
             $rates = array();
             if (isset($A['rates'])) {
@@ -308,8 +304,8 @@ class Shipper
             $this->rates = $rates;
             $this->free_threshold = (float)$A['free_threshold'];
         }
-        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE));
-        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', Dates::MAX_DATE));
+        $this->setValidFrom(SHOP_getVar($A, 'valid_from', 'string', Dates::MIN_DATE . ' ' . Dates::MIN_TIME));
+        $this->setValidTo(SHOP_getVar($A, 'valid_to', 'string', Dates::MAX_UNIXDATE . ' ' . Dates::MAX_TIME));
     }
 
 
@@ -521,7 +517,7 @@ class Shipper
         global $_CONF;
 
         if (empty($value)) {
-            $value = self::MIN_DATETIME;
+            $value = Dates::MIN_DATE;
         }
         $this->valid_from = new \Date($value, $_CONF['timezone']);
         return $this;
@@ -539,7 +535,7 @@ class Shipper
         global $_CONF;
 
         if (empty($value)) {
-            $value = self::MAX_DATETIME;
+            $value = Dates::MAX_UNIXDATE;
         }
         $this->valid_to = new \Date($value, $_CONF['timezone']);
         return $this;
@@ -1073,6 +1069,7 @@ class Shipper
             'free_threshold' => $this->free_threshold,
             'span_free_vis' => $this->free_threshold > 0 ? '' : 'none',
             'chk_qm_' . $this->quote_method => 'selected="selected"',
+            'rate_type'     => $this->quote_method,     // for initial toggle
         ) );
 
         // Construct the dropdown selection of defined carrier modules
@@ -1411,8 +1408,8 @@ class Shipper
         if ($ena_only) {
             $now = time();
             $where = "enabled = 1
-                AND valid_from < '$now'
-                AND valid_to > '$now'";
+                AND valid_from < UNIX_TIMESTAMP()
+                AND valid_to > UNIX_TIMESTAMP()";
         } else {
             $where = '';
         }
@@ -1773,6 +1770,10 @@ class Shipper
             $T->set_var('has_services', true);
             $T->set_block('tpl', 'Services', 'Svcs');
             foreach ($services as $key=>$dscp) {
+                if ($key == '_na') {
+                    // N/A service is a special case in the default svc_codes
+                    continue;
+                }
                 $T->set_var(array(
                     'svc_chk' => $this->supportsService($key) ? 'checked="checked"' : '',
                     'svc_key' => $key,
