@@ -699,6 +699,7 @@ function plugin_getheaderjs_shop()
         //__DIR__ . '/js/toggleEnabled.js',
         __DIR__ . '/js/util.js',  // uikit v2/v3 compatible notifications
         __DIR__ . '/js/addcart.js',
+        __DIR__ . '/js/datetimepicker.js',
     );
     return $files;
 }

@@ -188,7 +188,7 @@
 			<span id="start" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium popupcal" type="text" id="valid_from" name="valid_from" value="{valid_from}"/>
+			<input class="uk-input uk-form-small uk-form-width-medium shop_datepicker" type="text" id="valid_from" name="valid_from" value="{valid_from}"/>
 			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_from");'></i>
 		</div>
@@ -199,7 +199,7 @@
 			<span id="end" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium popupcal" type="text" id="valid_to" name="valid_to" value="{valid_to}" />
+			<input class="uk-input uk-form-small uk-form-width-medium shop_datepicker" type="text" id="valid_to" name="valid_to" value="{valid_to}" />
 			<i class="uk-icon uk-icon-remove uk-text-danger"
 				onclick='SHOP_resetShipperDates("valid_to");'></i>
 		</div>
