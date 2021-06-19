@@ -25,8 +25,8 @@
 	</script>
 </div>
 {!endif}
-<div class="uk-grid" style="clear:both;margin-top:20px;">
-	<div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
+<div uk-grid class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-small-1-1 uk-child-width-1-2@m uk-child-width-1-1@s" style="clear:both;margin-top:20px;">
+	<div class="shopProductDetail v2" id="product-image">
 {!if main_img}
 		<div class="main_img uk-hidden-small">
 			<img id="disp_img" class="uk-responsive-width uk-responsive-height"
@@ -50,7 +50,7 @@
 		</ul>
 	</div>
 
-	<div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">
+	<div class="shopDetailAttrib v2">
 		<div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
 			<form class="uk-form uk-form-horizontal" method="post" id="{frm_id}" action="javascript:void()">
 				<input type="hidden" name="item_number" value="{id}" />
