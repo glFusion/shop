@@ -320,7 +320,7 @@ class Catalog
                     OR c.enabled IS NULL
                 ) AND
                 p.avail_beg <= '$today' AND
-                p.avail_end >= '$today' ";
+                p.avail_end >= '$today' $cat_sql";
         //echo $sql;die;
         //
         // Add search query, if any
@@ -661,7 +661,6 @@ class Catalog
         global $_SHOP_CONF;
 
         $display = '';
-        $cat_sql = '';
 
         $RootCat = Category::getRoot();
         // If showing only top-level categories then get the children of Root,
