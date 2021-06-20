@@ -1043,7 +1043,6 @@ class Product
         if ($old_rating_ena && !$this->rating_enabled) {
             RATING_resetRating($_SHOP_CONF['pi_name'], $this->id);
         }
-
         $status = $this->saveToDB();
         if ($status && $this->id > 0) {
             if ($this->isNew) {
@@ -1071,7 +1070,10 @@ class Product
                 }
             }
 
-            $this->updateCategories();
+            if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
+                $this->updateCategories($A['selected_cats']);
+            }
+
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
@@ -1493,15 +1495,17 @@ class Product
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize image counter
         $imgorder = array();     // string to contain image order
-        foreach ($this->Images as $id=>$prow) {
-            $imgorder[] = $prow['img_id'];
-            $T->set_var(array(
-                'img_url'   => $this->getImage($prow['filename'])['url'],
-                'thumb_url' => $this->getThumb($prow['filename'])['url'],
-                'img_id'    => $prow['img_id'],
-                'img_cnt'   => $i++,
-            ) );
-            $T->parse('PRow', 'PhotoRow', true);
+        if ($this->Images) {
+            foreach ($this->Images as $id=>$prow) {
+                $imgorder[] = $prow['img_id'];
+                $T->set_var(array(
+                    'img_url'   => $this->getImage($prow['filename'])['url'],
+                    'thumb_url' => $this->getThumb($prow['filename'])['url'],
+                    'img_id'    => $prow['img_id'],
+                    'img_cnt'   => $i++,
+                ) );
+                $T->parse('PRow', 'PhotoRow', true);
+            }
         }
         $imgorder = implode(',', $imgorder);
         $T->set_var('imgorder', $imgorder);
@@ -3644,7 +3648,7 @@ class Product
         $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
-                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell
+                p.avail_beg, p.avail_end, p.track_onhand, p.oversell
             FROM {$_TABLES['shop.products']} p";
         if ($cat_id > 0) {
             $sql .= " LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
@@ -4260,40 +4264,33 @@ class Product
      * Update the category cross-reference table.
      * TODO: update in-memory categories property.
      *
+     * @param   string|array    $cat_ids    Category IDs
      * @return  object  $this
      */
-    private function updateCategories()
+    private function updateCategories($cat_ids)
     {
         global $_TABLES;
 
-        if (empty($this->Categories)) {
-            // If no categories specified, use root category automatically
-            $this->Categories = array(Category::getRoot());
+        if (is_string($cat_ids)) {
+            $cat_ids = explode('|', $cat_ids);
+        } elseif (!is_array($cat_ids)) {
+            return $this;
         }
-        $add = array();
-        $rem = array();
-        $Existing = Category::getByProductId($this->id);
-        foreach ($this->Categories as $cat_id=>$Cat) {
-            if (!array_key_exists($cat_id, $Existing)) {
-                $add[] = "({$this->id}, $cat_id)";
+
+        $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
+                product_id = '{$this->id}'";
+        DB_query($sql);
+
+        foreach ($cat_ids as $cat_id) {
+            $cat_id = (int)$cat_id;
+            if ($cat_id > 0) {
+                $vals[] = "({$this->id}, $cat_id)";
             }
         }
-        foreach ($Existing as $cat_id=>$Cat) {
-            if (!array_key_exists($cat_id, $this->Categories)) {
-                $rem[] = $cat_id;
-            }
-        }
-        if (!empty($add)) {
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} VALUES " .
-                implode(',', $add);
-            DB_query($sql);
-        }
-        if (!empty($rem)) {
-            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
-                product_id = '{$this->id}' AND
-                cat_id in (" . implode(',', $rem) . ')';
-            DB_query($sql);
-        }
+        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+            (product_id, cat_id) VALUES " . implode(',', $vals);
+        DB_query($sql, 1);
+
         return $this;
     }
 
