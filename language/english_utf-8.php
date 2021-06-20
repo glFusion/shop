@@ -45,6 +45,7 @@ $LANG_SHOP = array (
 'price'             => 'Price',
 'sale_price'        => 'Sale Price',
 'quantity'          => 'Quantity',
+'quantities'        => 'Quantities',
 'item_total'        => 'Item Total',
 'total'             => 'Total',
 'pmt_total'         => 'Payment Total',

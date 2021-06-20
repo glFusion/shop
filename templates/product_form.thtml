@@ -231,24 +231,32 @@
       </div>
     </div>
 
-		<div class="uk-form-row">
+		<div class="uk-form-row uk-margin">
 			<label class="uk-form-label">{$LANG_SHOP['track_onhand']}
 				<span id="track_onhand" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<input type="checkbox" id="track_onhand" name="track_onhand" value="1" {trk_onhand_chk} />
+				<input type="checkbox" id="track_onhand" name="track_onhand" value="1" {trk_onhand_chk}  onchange="SHOP_showOversell(this.checked);" />
+				<span id="oversell_action">
+					<select name="oversell">
+						<option value="0" {oversell_sel0} >{$LANG_SHOP['oversell_allow']}</option>
+						<option value="1" {oversell_sel1} >{$LANG_SHOP['oversell_deny']}</option>
+						<option value="2" {oversell_sel2} >{$LANG_SHOP['oversell_hide']}</option>
+					</select>
+					&nbsp;{$LANG_SHOP['oversell_action']}
+				</span>
 			</div>
 		</div>
 
 {!if has_variants}
 {# Use the quantity fields on the variant list #}
+				<span id="oversell"></span>
 {!else}
-		<div class="uk-form-row">
+		<div class="uk-form-row uk-margin" id="oversell">
 			<label class="uk-form-label">{$LANG_SHOP['quantities']}
-				<span id="track_onhand" class="tooltip_cfg tooltipstered"></span>
+				<span id="quantities" class="tooltip_cfg tooltipstered"></span>
 			</label>
 			<div class="uk-form-controls">
-				<span id="oversell">
 					{$LANG_SHOP['onhand']}:
 					<input type="text" name="quantities[0][qty_onhand]" value="{qty_onhand}" size="4"/>
 					&nbsp;&nbsp;{$LANG_SHOP['reorder']}:
@@ -261,7 +269,6 @@
 						<option value="1" {oversell_sel1} >{$LANG_SHOP['oversell_deny']}</option>
 						<option value="2" {oversell_sel2} >{$LANG_SHOP['oversell_hide']}</option>
 					</select>
-				</span>
 			</div>
 		</div>
 {!endif}
@@ -567,11 +574,13 @@ $(document).ready(function() {
 
 function SHOP_showOversell(show)
 {
-  if (show) {
-    document.getElementById('oversell').style.display = '';
-  } else {
-    document.getElementById('oversell').style.display = 'none';
-  }
+	if (show) {
+		document.getElementById('oversell').style.display = '';
+		document.getElementById('oversell_action').style.display = '';
+	} else {
+		document.getElementById('oversell').style.display = 'none';
+		document.getElementById('oversell_action').style.display = 'none';
+	}
 }
 
 function SHOP_changeProdType(value)
