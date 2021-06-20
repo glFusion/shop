@@ -13,6 +13,7 @@
  */
 namespace Shop\Autotags;
 use Shop\Template;
+use Shop\Cache;
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
@@ -47,7 +48,8 @@ class headlines
         // template - the template name
 
         $cacheID = md5($p1 . $fulltag);
-        $retval = \Shop\Cache::get($cacheID);
+        $retval = Cache::get($cacheID);
+        $retval = NULL;
         if ($retval !== NULL) {
             return $retval;
         } else {
@@ -127,7 +129,10 @@ class headlines
 
         // The "c.enabled IS NULL" is to allow products which have
         // no category record, as long as the product is enabled.
-        $sql = "SELECT id
+        $sql = "SELECT p.id, p.track_onhand, p.oversell, (
+                SELECT sum(stk.qty_onhand) FROM {$_TABLES['shop.stock']} stk
+                WHERE stk.item_id = p.id
+            ) as qty_onhand
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
                 ON p.id = pxc.product_id
@@ -136,13 +141,16 @@ class headlines
             WHERE
                 p.enabled=1 AND
                 (c.enabled=1 OR c.enabled IS NULL) AND
-                (p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2) AND
                 p.avail_beg <= '$today' AND
                 p.avail_end >= '$today'
-                $where " .
-            SEC_buildAccessSql('AND', 'c.grp_access') . "
+                $where " . //AND " .
+                SEC_buildAccessSql('AND', 'c.grp_access') . "
+            GROUP BY p.id
+            HAVING p.track_onhand = 0 OR p.oversell < 2 OR qty_onhand > 0
             ORDER BY $sortby $orderby
             $limit";
+                //"(p.track_onhand = 0 OR qty_onhand > 0 OR p.oversell < 2) " .
+        //echo $sql;die;
         $res = DB_query($sql);
         $allItems = DB_fetchAll($res, false);
         $numRows = @count($allItems);
@@ -175,6 +183,9 @@ class headlines
                     'text'      => $P->getText(),
                     'title'     => $P->getDscp(),
                     'thumb_url' => $image,
+                    'tn_url'    => $tn['url'],
+                    'tn_width'  => $tn['width'],
+                    'tn_height' => $tn['height'],
                     'large_url' => $P->getImage('', 1024, 1024)['url'],
                     'autoplay'  => $autoplay,
                     'autoplay_interval' => $interval,
@@ -182,7 +193,7 @@ class headlines
                 $T->parse('hl', 'headlines', true);
             }
             $retval = $T->finish($T->parse('output', 'page'));
-            \Shop\Cache::set($cacheID, $retval, array('products', 'categories'));
+            Cache::set($cacheID, $retval, array('products', 'categories'));
         }
         return $retval;
     }
