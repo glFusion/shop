@@ -1,3 +1,3 @@
 {# begin {templatelocation} #}
-<input class="uk-input uk-form-small uk-form-width-large" type="text" {!if style}style="{style}"{!endif} name="{name}" value="{value}" size="{!if size}{size}{!else}60{!endif}" />
+<input class="uk-input uk-form-small {!if width}uk-form-width-{width}{!endif}" type="text" {!if style}style="{style}"{!endif} name="{name}" value="{value}" size="{!if size}{size}{!else}60{!endif}" />
 {# end {templatelocation} #}

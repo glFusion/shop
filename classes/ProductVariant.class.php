@@ -1401,6 +1401,9 @@ class ProductVariant
                 'MAX(orderby)',
                 "item_id = $prod_id"
             );
+            $extra['prod_id'] = $prod_id;
+        } else {
+            $extra['prod_id'] = 0;
         }
 
         $defsort_arr = array(
@@ -1600,12 +1603,18 @@ class ProductVariant
         case 'qty_reorder':
         case 'qty_onhand':
         case 'qty_reserved':
-            $retval = Field::text(array(
-                'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
-                'value' => (float)$fieldvalue,
-                'size' => 4,
-                'style' => 'text-align:right',
-            ) );
+            if ($extra['prod_id'] > 0) {
+                // For a specific product, values may be saved with the product.
+                $retval = Field::text(array(
+                    'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
+                    'value' => (float)$fieldvalue,
+                    'size' => 4,
+                    'style' => 'text-align:right',
+                ) );
+            } else {
+                // Showing all product variants, no editing from the list.
+                $retval = '<span style="align:right;">' . $fieldvalue . '</span>';
+            }
             break;
 
         case 'def_pv_id':
