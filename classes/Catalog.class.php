@@ -304,23 +304,27 @@ class Catalog
         // Get products from database. "c.enabled is null" is to allow products
         // with no category defined
         $today = $_CONF['_now']->format('Y-m-d', true);
-        $sql = " FROM {$_TABLES['shop.categories']} c
-            INNER JOIN {$_TABLES['shop.prodXcat']} x
-                ON x.cat_id = c.cat_id
-            INNER JOIN {$_TABLES['shop.products']} p
-                ON p.id = x.product_id
-                WHERE p.enabled=1
-                AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
-                AND (
+        $sql = "SELECT p.id, p.track_onhand, p.oversell, (
+                SELECT sum(stk.qty_onhand) FROM {$_TABLES['shop.stock']} stk
+                WHERE stk.item_id = p.id
+            ) as qty_onhand
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id
+            LEFT JOIN {$_TABLES['shop.categories']} c
+                ON pxc.cat_id=c.cat_id
+            WHERE
+                p.enabled=1 AND
+                (
                     (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
                     OR c.enabled IS NULL
-                    )
-                AND (
-                    p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
-                    ) $cat_sql";
-
-        $search = '';
+                ) AND
+                p.avail_beg <= '$today' AND
+                p.avail_end >= '$today' ";
+        //echo $sql;die;
+        //
         // Add search query, if any
+        $search = '';
         if (!empty($this->query_str)) {
             $search = DB_escapeString($this->query_str);
             $fields = array(
@@ -334,21 +338,22 @@ class Catalog
             $srch = ' AND (' . implode(' OR ', $srches) . ')';
             $sql .= $srch;
         }
+
         $pagenav_args = array();
         if ($this->cat_id > 0) {
             $pagenav_args[] = 'category=' . $this->cat_id;
         }
 
-        // If applicable, order by
-        $sql .= " ORDER BY $sql_sortby";
-        $sql_key = md5($sql);
-        //echo $sql;die;
+        $sql .= " GROUP BY p.id
+            HAVING p.track_onhand = 0 OR p.oversell < 2 OR qty_onhand > 0
+            ORDER BY $sql_sortby ";
 
         // Count products from database
+        $sql_key = md5($sql);
         $cache_key = Cache::makeKey('prod_cnt_' . $sql_key);
         $count = Cache::get($cache_key);
         if ($count === NULL) {
-            $res = DB_query('SELECT DISTINCT p.id ' . $sql);
+            $res = DB_query($sql);
             $count = DB_numRows($res);
             Cache::set($cache_key, $count, array('products', 'categories'));
         }
@@ -376,7 +381,7 @@ class Catalog
         $cache_key = Cache::makeKey('prod_list_' . $sql_key);
         $Products = Cache::get($cache_key);
         if ($Products === NULL) {
-            $res = DB_query('SELECT DISTINCT p.id, p.short_description ' . $sql);
+            $res = DB_query($sql);
             $Products = array();
             while ($A = DB_fetchArray($res, false)) {
                 $Products[] = Product::getById($A['id']);
