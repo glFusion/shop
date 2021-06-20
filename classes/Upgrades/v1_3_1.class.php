@@ -25,7 +25,7 @@ class v1_3_1 extends Upgrade
             // ... Add stock levels for products with no variants
             $SHOP_UPGRADE[self::$ver][] = "INSERT INTO {$_TABLES['shop.stock']} (
                 SELECT 0, p.id, 0, p.onhand, 0, p.reorder FROM {$_TABLES['shop.products']} p
-                LEFT OUTER JOIN {$_TABLES['shop.products']} pv
+                LEFT OUTER JOIN {$_TABLES['shop.product_variants']} pv
                     ON p.id = pv.item_id
                 WHERE pv.pv_id IS NULL
                 GROUP BY p.id)";
