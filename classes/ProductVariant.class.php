@@ -1024,6 +1024,19 @@ class ProductVariant
         if (is_array($A)) {
             $this->setVars($A, false);
         }
+
+        // Create the variant SKU from product & options if empty.
+        if (empty($this->sku) && !empty($A['pv_item_id'])) {
+            $P = Product::getInstance($A['pv_item_id']);
+            $this->sku = $P->getName();
+            foreach ($this->Options as $PVO) {
+                $pvo_sku = $PVO->getSku();
+                if (!empty($pvo_sku)) {
+                    $this->sku .= '-' . $pvo_sku;
+                }
+            }
+        }
+
         if ($this->pv_id == 0) {
            if (isset($A['groups'])) {
                return self::saveNew($A);
