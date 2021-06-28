@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -153,6 +153,7 @@ abstract class Tax
     /**
      * Determine if the shop has a nexus in the destination state/province.
      * Uses a statically-configured array of state,country values.
+     * Requires a valid Address object being used for tax determination.
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
@@ -160,11 +161,13 @@ abstract class Tax
     {
         global $_SHOP_CONF;
 
-        if (empty($_SHOP_CONF['tax_nexuses'])) {
-            // No nexus locations configured
+        $nexuses = Config::get('tax_nexuses');
+        if (empty($nexuses) || !is_array($nexuses)) {
+            // Return true if no nexus locations configured
             return true;
         }
-        foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
+
+        foreach ($nexuses as $str) {
             $parts = explode('-', strtoupper($str));
             $country = $parts[0];
             $state = isset($parts[1]) ? $parts[1] : '';
@@ -230,5 +233,3 @@ abstract class Tax
     }
 
 }
-
-?>
