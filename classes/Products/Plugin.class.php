@@ -466,4 +466,15 @@ class Plugin extends \Shop\Product
     }
 
 
+    /**
+     * Dummy function to reserve stock.
+     * Stock level tracking is not available for plugins.
+     *
+     * @param   float   $qty    Qty to reserve (not used)
+     */
+    public function reserveStock($qty)
+    {
+        return;
+    }
+
 }
