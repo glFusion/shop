@@ -65,7 +65,8 @@ class ProductVariant
      * @var string */
     private $supplier_ref = '';
 
-    /** Flag to indicate whether quantity onhand is tracked by variant.
+    /** Flag to indicate whether quantity onhand is tracked.
+     * This is just a holder for the product's setting.
      * @var boolean */
     private $track_onhand = 0;
 
@@ -127,6 +128,11 @@ class ProductVariant
             $this->setVars($pv_id);
             $this->Stock = new Stock($pv_id);
         }
+        if (!is_object($this->Stock)) {
+            // Create a Stock object for later use, if not created above
+            // or in Read()
+            $this->Stock = new Stock;
+        }
     }
 
 
@@ -163,10 +169,12 @@ class ProductVariant
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reorder, stk.qty_reserved
+        $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reorder, stk.qty_reserved, p.track_onhand
             FROM {$_TABLES['shop.product_variants']} pv
             LEFT JOIN {$_TABLES['shop.stock']} stk
                 ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id
+            LEFT JOIN {$_TABLES['shop.products']} p
+                ON p.id = pv.item_id
             WHERE pv.pv_id = $rec_id";
         $res = DB_query($sql);
         if ($res) {
@@ -205,7 +213,7 @@ class ProductVariant
                 ->setSupplierRef(SHOP_getVar($A, $pfx.'supplier_ref'))
                 ->setTrackOnhand(SHOP_getVar($A, $pfx.'track_onhand', 'integer'))
                 ->setOnhand(SHOP_getVar($A, $pfx.'qty_onhand', 'float'))
-                ->setReserved(SHOP_getVar($A, $pfx.'qty_onhand', 'float'))
+                ->setReserved(SHOP_getVar($A, $pfx.'qty_reserved', 'float'))
                 ->setReorder(SHOP_getVar($A, $pfx.'qty_reorder', 'float'))
                 ->setImageIDs(SHOP_getVar($A, $pfx.'img_ids', 'mixed'))
                 ->setEnabled(SHOP_getVar($A, $pfx.'enabled', 'integer', 1));
@@ -296,7 +304,11 @@ class ProductVariant
                 while ($A = DB_fetchArray($res, false)) {
                     $this->Options[$A['pog_name']] = new ProductOptionValue($A);
                 }
-                Cache::set($cache_key, $this->Options, array(self::TAG, $this->getID()));
+                Cache::set(
+                    $cache_key,
+                    $this->Options,
+                    array(self::TAG, 'products', 'options', $this->getID())
+                );
             }
         }
         return $this;
@@ -435,7 +447,10 @@ class ProductVariant
      */
     public function setOnhand($qty)
     {
-        $this->qty_onhand = (float)$qty;
+        if (is_object($this->Stock)) {
+            $this->Stock->withOnhand($qty);
+        }
+        //$this->qty_onhand = (float)$qty;
         return $this;
     }
 
@@ -464,7 +479,10 @@ class ProductVariant
      */
     public function setReserved($qty)
     {
-        $this->qty_reserved = (float)$qty;
+        if (is_object($this->Stock)) {
+            $this->Stock->withReserved($qty);
+        }
+        //$this->qty_reserved = (float)$qty;
         return $this;
     }
 
@@ -476,7 +494,11 @@ class ProductVariant
      */
     public function getReserved()
     {
-        return (float)$this->qty_reserved;
+        if (is_object($this->Stock)) {
+            return $this->Stock->getReserved();
+        } else {
+            return 0;
+        }
     }
 
 
@@ -488,7 +510,10 @@ class ProductVariant
      */
     public function setReorder($reorder)
     {
-        $this->reorder = (float)$reorder;
+        if (is_object($this->Stock)) {
+            $this->Stock->withReorder($reorder);
+        }
+        //$this->reorder = (float)$reorder;
         return $this;
     }
 
@@ -500,7 +525,11 @@ class ProductVariant
      */
     public function getReorder()
     {
-        return (float)$this->reorder;
+        if (is_object($this->Stock)) {
+            return $this->Stock->getReorder();
+        } else {
+            return 0;
+        }
     }
 
 
@@ -746,7 +775,8 @@ class ProductVariant
             'doc_url'       => SHOP_getDocURL('variant_form', $_CONF['language']),
             'title'         => $this->pv_id == 0 ? $LANG_SHOP['new_variant'] : $LANG_SHOP['edit_variant'],
             'ena_chk'       => $this->enabled == 0 ? '' : 'checked="checked"',
-            'trk_onhand_chk' => $this->track_onhand ? 'checked="checked"' : '',
+            //'trk_onhand_chk' => $this->track_onhand ? 'checked="checked"' : '',
+            'track_onhand'  => $this->getTrackOnhand(),
             'onhand_vis'    => $this->track_onhand ? '' : 'none',
             'item_id'       => $this->getItemId(),
             'item_name'     => $Product->getName(),
@@ -1054,9 +1084,9 @@ class ProductVariant
             price = '" . (float)$this->price . "',
             weight = '" . (float)$this->weight . "',
             shipping_units = '" . (float)$this->shipping_units . "',
-            track_onhand = '{$this->getTrackOnhand()}',
             img_ids = '" . DB_escapeString(implode(',', $this->images)) . "',
             dscp = '" . DB_escapeString(json_encode($this->dscp)) . "'";
+            //track_onhand = '{$this->getTrackOnhand()}',
             //reorder = " . (float)$this->reorder;
             //onhand = " . (float)$this->onhand . ",
         $sql = $sql1 . $sql2 . $sql3;
