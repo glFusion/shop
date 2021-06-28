@@ -612,8 +612,6 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
       `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
-      `onhand` int(10) NOT NULL DEFAULT '0',
-      `reorder` int(10) NOT NULL DEFAULT '0',
       `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       PRIMARY KEY (`pv_id`),
       KEY `prod_id` (`item_id`)
@@ -913,6 +911,9 @@ $SHOP_UPGRADE['1.3.0'] = array(
 $SHOP_UPGRADE['1.3.1'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT CURRENT_TIMESTAMP()",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
+    // Note, do not drop reorder or onhand from variant table here, they're
+    // needed to populate vars in the new stock table.
     "CREATE TABLE `{$_TABLES['shop.stock']}` (
       `stk_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `item_id` int(11) unsigned NOT NULL,
