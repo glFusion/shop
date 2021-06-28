@@ -10,6 +10,7 @@ Release TBD
   * Allow products to be shown in the catalog but not purchased, e.g. current memberships.
   * Fix product cloning and SKU changes.
   * Move quantity tracking to Stock table, reserve items as they go into carts.
+  * Fix `No Product` message showing even if plugin products are displayed.
 
 ## v1.3.0
 Release 2021-04-20
