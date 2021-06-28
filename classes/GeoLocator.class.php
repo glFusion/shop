@@ -58,7 +58,7 @@ class GeoLocator
     {
         global $_CONF;
 
-        $this->ip = $_SERVER['REAL_ADDR'];
+        $this->withIP();
         $this->default_data['timezone'] = $_CONF['timezone'];
     }
 
@@ -91,10 +91,15 @@ class GeoLocator
      * @param   string  $ip     IP address
      * @return  object  $this
      */
-    public function withIP($ip = '')
+    public function withIP($ip = NULL)
     {
         if (empty($ip)) {
-            $this->ip = $_SERVER['REAL_ADDR'];
+            $spoof = Config::get('spoof_address');
+            if (!empty($spoof)) {
+                $this->ip = $spoof;
+            } else {
+                $this->ip = $_SERVER['REAL_ADDR'];
+            }
         } else {
             $this->ip = $ip;
         }

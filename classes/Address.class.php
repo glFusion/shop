@@ -1127,12 +1127,11 @@ class Address
      */
     public static function fromGeoLocation($ip=NULL)
     {
+        $Geo = GeoLocator::getProvider();
         if ($ip === NULL) {
-            $ip = $_SERVER['REAL_ADDR'];
+            $Geo->withIP($ip);
         }
-        $addr = GeoLocator::getProvider()
-            ->withIP($ip)
-            ->geoLocate();
+        $addr = $Geo->geoLocate();
         if ($addr['status']) {
             $retval = new self(array(
                 'city' => $addr['city_name'],
