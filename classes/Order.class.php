@@ -491,7 +491,10 @@ class Order
         global $_TABLES;
 
         $have_address = false;
-        if (is_object($A)) {
+        if ($A === NULL) {
+            $have_address = true;
+            $this->Billto = new Address();
+        } elseif (is_object($A)) {
             $this->Billto = $A;
             $have_address = true;
         } elseif (is_array($A)) {
@@ -4082,7 +4085,8 @@ class Order
             $this->hasTaxable() &&
             $this->getTotal() > 0 &&
             (
-                $this->hasPhysical() || Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
+                $this->hasPhysical() ||
+                Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
             )
         ) {
             return true;
