@@ -3,9 +3,9 @@
  * Class to render the catalog view.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner
+ * @copyright   Copyright (c) 2009-2021 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -504,7 +504,7 @@ class Catalog
         ) {
             // Clear out-of-stock flag which doesn't appply to plugins
             $T->clear_var('oos');
-            $this->getPluginProducts($T);
+            $prodrows += $this->getPluginProducts($T);
         }
 
         //$T->parse('output', 'wrapper');
@@ -545,16 +545,19 @@ class Catalog
      *
      * @param   object  $T      Template object
      * @param   string  $pi_name    Plugin name, empty for all plugins
+     * @return  integer     Number of plugin products added to the template
      */
     private function getPluginProducts(&$T, $pi_name='')
     {
         global $_SHOP_CONF, $_PLUGINS, $_USER;
 
+        $num_products = 0;
+
         // Get products from plugins.
         // For now, this hack shows plugins only on the first page, since
         // they're not included in the page calculation.
         if (!$_SHOP_CONF['show_plugins']) {
-            return;
+            return $num_products;
         }
 
         // Get the currency class for formatting prices
@@ -645,9 +648,11 @@ class Catalog
                 }
                 $T->clear_var('Btn');
                 $T->parse('PI', 'ProductItems', true);
+                $num_products++;
             }   // foreach plugin_data
 
         }   // foreach $plugins
+        return $num_products;
     }
 
 
@@ -712,5 +717,3 @@ class Catalog
     }
 
 }
-
-?>
