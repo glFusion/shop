@@ -30,7 +30,7 @@ if (isset($_GET['item_id'])) {
     // Force reading the item by it's record ID regardless of the use_sku setting.
     // Set $_SHOP_CONF['use_sku'] to false to get the Product class to use the ID.
     $id = $_GET['item_id'];
-    $_SHOP_CONF['use_sku'] = false;
+    Shop\Config::set('use_sku', false);
 } elseif (isset($_GET['id'])) {
     $id = $_GET['id'];
 } else {
