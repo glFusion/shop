@@ -51,8 +51,8 @@
 	</div>
 
 	<div class="shopDetailAttrib v2">
-		<div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
-			<form class="uk-form uk-form-horizontal" method="post" id="{frm_id}" action="javascript:void()">
+		<div class="uk-width-1-1">
+			<form class="uk-form uk-form-stacked" method="post" id="{frm_id}" action="javascript:void()">
 				<input type="hidden" name="item_number" value="{id}" />
 				<input type="hidden" name="has_options" value="{have_attributes}" />
 				<div class="shopDetailPrice v2">
@@ -111,7 +111,7 @@
 				<div class=uk-form-row>
 					<label class="uk-form-label" for="{fld_id}">{fld_name}:</label>
 					<div class="uk-form-controls">
-						<input type="text" class="shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" size="40" />
+						<input type="text" class="uk-width-1-1 shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" />
 					</div>
 				</div>
 <!-- END CustAttrib -->
@@ -128,7 +128,7 @@
 						<textarea name="extras[special][{sf_name}]" id="{sf_name}"
 							style="width:100%;height:100px;"></textarea>
 {!else}
-						<input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
+						<input type="text" class="uk-width-1-1 {sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" />
 {!endif}
 					</div>
 				</div>
