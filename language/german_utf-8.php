@@ -761,7 +761,7 @@ $LANG_SHOP = array (
 'aff_sales' => 'Affiliate Sales',
 'commissions' => 'Commissions',
 'commission' => 'Commission',
-'aff_report_for' => 'Affiliate Report for:',
+'aff_report_for' => 'Affiliate Report for',
 'due' => 'Due',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
