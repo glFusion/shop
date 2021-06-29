@@ -343,7 +343,7 @@ class Plugin extends \Shop\Product
                     $url .= '&query=' . $this->query;
                 }
             }
-            return $url;
+            return COM_buildUrl($url);
         } else {
             return $this->url;
         }
