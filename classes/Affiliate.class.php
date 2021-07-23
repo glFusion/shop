@@ -344,7 +344,7 @@ class Affiliate
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('header', 'aff_header.thtml');
         $T->set_var(array(
             'comm_total' => $Cur->Format($comm_total),

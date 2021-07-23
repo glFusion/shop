@@ -858,7 +858,7 @@ class OrderItem
         $retval = '';
 
         if (!empty($this->options)) {
-            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T = new Template;
             $T->set_file('options', 'view_options.thtml');
             $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->options as $Opt) {

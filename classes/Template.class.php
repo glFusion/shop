@@ -28,7 +28,7 @@ class Template extends \Template
      */
     public function __construct($root = '', $unknowns = "remove")
     {
-        $pfx = SHOP_PI_PATH . '/templates/';
+        $pfx = Config::path_template();
         if (is_array($root)) {
             foreach ($root as &$path) {
                 $path = $pfx . $path;
