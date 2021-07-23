@@ -178,13 +178,13 @@ class GeoLocator
      *
      * @param   string  $data       Data to set in cache
      * @param   string  $key        Additional cache key for data type
-     * @param   integer $exp        Seconds for cache timeout
+     * @param   integer $exp        Minutes for cache timeout
      */
     protected function setCache($data, $key, $exp=0)
     {
         global $_TABLES;
         if ($exp <= 0) {
-            $exp = 1440 * 14;   // 14 days
+            $exp = 1440;        // 1 day
         }
         $key = $this->_makeCacheKey($key);
         Cache::set($key, $data, '', $exp);
@@ -213,9 +213,9 @@ class GeoLocator
         $parts = explode('.', $ip);
         if ($parts[0] == '10') {
             return true;
-        } elseif ($parts[0] == '172' && $parts[1] >= '16' && $parts[1] <= '31') {
-            return true;
         } elseif ($parts[0] == '192' && $parts[1] == '168') {
+            return true;
+        } elseif ($parts[0] == '172' && $parts[1] >= '16' && $parts[1] <= '31') {
             return true;
         } else {
             return false;
