@@ -690,6 +690,10 @@ class State extends RegionBase
     {
         global $_TABLES;
 
+        if (empty($state_name)) {
+            return '';
+        }
+
         $retval = '';
         $alpha2 = DB_escapeString($alpha2);
         $state_name = DB_escapeString($state_name);
@@ -698,7 +702,7 @@ class State extends RegionBase
                 ON c.country_id = s.country_id
             WHERE c.alpha2='$alpha2' AND  s.state_name='$state_name'";
         $res = DB_query($sql);
-        if ($res) {
+        if ($res && DB_numRows($res) > 0) {
             $A = DB_fetchArray($res, false);
             $retval = $A['iso_code'];
         }
