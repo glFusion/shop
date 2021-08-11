@@ -195,8 +195,14 @@ class Cart extends Order
         $extras     = SHOP_getVar($args, 'extras', 'array');
         $options    = SHOP_getVar($args, 'options', 'array');
         $item_name  = SHOP_getVar($args, 'item_name');
-        $item_dscp  = SHOP_getVar($args, 'description');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
+        if (isset($args['description'])) {
+            $item_dscp  = $args['description'];
+        } elseif (isset($args['short_dscp'])) {
+            $item_dscp  = $args['short_dscp'];
+        } else {
+            $item_dscp = '';
+        }
         if (isset($args['variant'])) {
             $PV = ProductVariant::getInstance($args['variant']);
         } else {
@@ -233,12 +239,11 @@ class Cart extends Order
         } else {
             $have_id = false;
         }
-
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
             $new_quantity = $this->items[$have_id]->getQuantity();
             $new_quantity += $quantity;
-            $this->items[$have_id]->setQuantity($new_quantity);
+            $this->items[$have_id]->setQuantity($new_quantity, $override);
             $this->items[$have_id]->Save();
         } elseif ($quantity == 0) {
             return false;
@@ -247,11 +252,12 @@ class Cart extends Order
                 'item_id'   => $item_id,
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
-                'description'   => $P->getDscp($item_dscp),
+                'description' => $P->getDscp($item_dscp),
                 'variant'   => $PV->getID(),
                 'options'   => $opts,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
+                'override'  => $override,
             );
             if (
                 Product::isPluginItem($item_id) &&

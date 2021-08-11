@@ -237,7 +237,7 @@ class ProductVariant
         global $_TABLES;
 
         $item_id = (int)$item_id;
-        if (!is_array($attribs) || empty($attribs)) {
+        if ($item_id < 1 || !is_array($attribs) || empty($attribs)) {
             return new self;
         }
         $count = count($attribs);

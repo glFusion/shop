@@ -3,7 +3,7 @@
  * Class to manage order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v0.7.0
@@ -365,6 +365,19 @@ class OrderItem
 
 
     /**
+     * Set the item description.
+     *
+     * @param   string  $dscp   Item description
+     * @return  object  $this
+     */
+    public function setDscp($dscp)
+    {
+        $this->dscp = $dscp;
+        return $this;
+    }
+
+
+    /**
      * Get the item long description.
      *
      * @return  string      Item description
@@ -549,15 +562,21 @@ class OrderItem
      * anyway to update shipping, tax, etc.
      *
      * @param   integer $newqty New quantity
+     * @param   float|null  $price  Null to calculate price, float to fix price
      * @return  object  $this
      */
-    public function setQuantity($newqty)
+    public function setQuantity($newqty, $price=NULL)
     {
-        if ($newqty >- 0) {
+        if ($newqty >= 0) {
             $this->quantity = (float)$newqty;
             $this->handling = $this->Product->getHandling($newqty);
-            $this->price = $this->getItemPrice();
+            if ($price === NULL) {
+                $this->price = $this->getItemPrice($this->price);
+            } else {
+                $this->setPrice($price);
+            }
             $this->setTax($this->price * $this->quantity * $this->tax_rate);
+            //echo $this->price;die;
         }
         return $this;
     }
@@ -874,6 +893,20 @@ class OrderItem
     }
 
 
+    public function getExtraDisplay()
+    {
+        $retval = '';
+        if (is_array($this->extras) && isset($this->extras['special'])) {
+            foreach ($this->extras['special'] as $name=>$val) {
+                if (!empty($val)) {
+                    $retval = '<br />' . $name . ': ' . $val;
+                }
+            }
+        }
+        return $retval;
+    }
+
+
     /**
      * Set the Extra values into the private array.
      *
@@ -975,7 +1008,13 @@ class OrderItem
      */
     public function getOptionsPrice()
     {
-        return $this->getVariant()->getPrice();
+        $PV = $this->getVariant();
+        if ($PV->getID() > 0) {
+            $retval = $this->getVariant()->getPrice();
+        } else {
+            $retval =  $this->price;
+        }
+        return $retval;
     }
 
 
@@ -988,7 +1027,12 @@ class OrderItem
      */
     public function getItemPrice()
     {
-        return $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
+        if (!$this->Product->isPluginItem($this->product_id)) {
+            $retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
+        } else {
+            $retval = $this->price;
+        }
+        return $retval;
     }
 
 

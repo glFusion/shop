@@ -471,8 +471,9 @@ class Order
         if (isset($args['price'])) {
             $OI->setPrice($args['price']);
         }
-        $OI->setQuantity($args['quantity'])
-            ->applyDiscountPct($this->getDiscountPct())
+        $override_price = isset($args['override']) ? $args['price'] : NULL;
+        $OI->setQuantity($args['quantity'], $override_price);
+        $OI->applyDiscountPct($this->getDiscountPct())
             ->setTaxRate($this->tax_rate)
             ->Save();
         $this->items[] = $OI;
@@ -1823,16 +1824,15 @@ class Order
 
             $ext = $item->getQuantity() * $item->getPrice();
             $item_total += $ext;
-            $item_descr = $item->getDscp();
-            $options_text = $item->getOptionDisplay();
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
                 'qty'   => $item->getQuantity(),
                 'price' => $Cur->FormatValue($item->getPrice()),
                 'ext'   => $Cur->FormatValue($ext),
-                'name'  => $item_descr,
-                'options_text' => $options_text,
+                'name'  => $item->getDscp(),
+                'options_text' => $item->getOptionDisplay(),
+                'extras_text' => $item->getExtraDisplay(),
             ) );
             //), '', false, false);
             $T->parse('List', 'ItemList', true);
