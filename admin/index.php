@@ -70,6 +70,7 @@ $expected = array(
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
+    'pi_products', 'pi_edit', 'pi_save', 'pi_del',
     'products',
     // deprecated
     'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts', 'ipndetail',
@@ -176,6 +177,11 @@ case 'savecat':
     } else {
         $view = 'categories';
     }
+    break;
+
+case 'pi_save':
+    Shop\Products\Plugin::saveConfig($_POST);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pi_products');
     break;
 
 case 'ft_save':
@@ -751,6 +757,10 @@ case 'editcat':
     $content .= $C->showForm();
     break;
 
+case 'pi_edit':
+    $content .= Shop\Products\Plugin::edit($actionval);
+    break;
+
 case 'categories':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Category::adminList();
@@ -1136,6 +1146,11 @@ case 'products':
 
 case 'none':
     // Content provided by an action above, don't show anything here
+    break;
+
+case 'pi_products':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Products\Plugin::adminList();
     break;
 
 default:

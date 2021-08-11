@@ -153,13 +153,24 @@ class OrderItem
                 $this->price = $this->base_price;   // default if no variant
                 if (isset($oi_id['variant'])) {
                     $this->variant_id = (int)$oi_id['variant'];
-                    $this->setOptions($this->getVariant()->getOptions());
+                    if ($this->variant_id > 0) {
+                        $this->setOptions($this->getVariant()->getOptions());
+                    }
                     $this->price = $this->getItemPrice();
                 } elseif (isset($oi_id['options'])) {       // deprecated
                     $this->setOptions($oi_id['options']);
                 } elseif (isset($oi_id['attributes'])) {    // deprecated
                     SHOP_log("Old attributes val used in OrdeItem::__construct", SHOP_LOG_DEBUG);
                     $this->setOptions($oi_id['attributes']);
+                }
+
+                // Set the text options description.
+                if (isset($oi_id['options_text']) && is_array($oi_id['options_text'])) {
+                    foreach ($oi_id['options_text'] as $name=>$val) {
+                        $OIO = new OrderItemOption;
+                        $OIO->setOpt(0, $name, $val);
+                        $this->options[] = $OIO;
+                    }
                 }
                 if (
                     is_array($oi_id['extras']) &&
@@ -255,7 +266,6 @@ class OrderItem
         $this->setDiscount(SHOP_getVar($A, 'qty_discount', 'float'));
         $this->token = SHOP_getVar($A, 'token');
         $this->net_price = SHOP_getVar($A, 'net_price', 'float');
-        $this->setOptionsText(SHOP_getVar($A, 'options_text', 'array'));
         if (array_key_exists('extras', $A)) {
             $this->setExtras($A['extras']);
         }
@@ -409,6 +419,9 @@ class OrderItem
                     $this->Product->Options[$opt_id]['attr_value'];
             }*/
         }
+        foreach ($this->options_text as $key=>$val) {
+            $retval[] = $key . ': ' . $val;
+        }
 
         // Add custom text strings
         /*$cust = explode('|', $this->Product->custom);
@@ -485,7 +498,6 @@ class OrderItem
         //$shipping = $this->Product->getShipping($this->quantity);
         $shipping = 0;
         $handling = $this->Product->getHandling($this->quantity);
-        $this->options_text = $this->getOptionsText();
 
         if ($this->id > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
@@ -875,7 +887,19 @@ class OrderItem
     public function getOptionDisplay()
     {
         $retval = '';
-
+        if (!empty($this->options_text)) {
+            $T = new Template;
+            $T->set_file('options', 'view_options.thtml');
+            $T->set_block('options', 'ItemOptions', 'ORow');
+            foreach ($this->options_text as $key=>$val) {
+                $T->set_var(array(
+                    'opt_name'  => strip_tags($key),
+                    'opt_value' => strip_tags($val),
+                ) );
+                $T->parse('ORow', 'ItemOptions', true);
+            }
+            $retval .= $T->parse('output', 'options');
+        }
         if (!empty($this->options)) {
             $T = new Template;
             $T->set_file('options', 'view_options.thtml');
@@ -957,7 +981,7 @@ class OrderItem
      * @param   string|array    $value  Text values array or json string
      * @return  object  $this
      */
-    public function setOptionsText($value)
+    public function setOptionsText($value=array())
     {
         if (is_string($value)) {    // convert to array
             $value = @json_decode($value, true);

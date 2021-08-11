@@ -3478,6 +3478,17 @@ class Product
 
 
     /**
+     * Check if the product is enabled for purchase.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
+    public function isEnabled()
+    {
+        return $this->enabled ? 1 : 0;
+    }
+
+
+    /**
      * Get the rating bar, if supported.
      *
      * @param   boolean $force_static   True to force static display.
@@ -3715,7 +3726,8 @@ class Product
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
                 Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
-                'field' => 'delete', 'sort' => false,
+                'field' => 'delete',
+                'sort' => false,
                 'align' => 'center',
             ),
         );
@@ -3913,7 +3925,7 @@ class Product
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
         static $today = NULL;

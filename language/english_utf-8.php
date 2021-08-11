@@ -776,6 +776,9 @@ $LANG_SHOP = array (
 'due' => 'Due',
 'msg_aff_signup_updated' => 'Thanks for updating your information',
 'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
+'pi_name' => 'Plugin',
+'new_pi' => 'New Plugin',
+'plugins' => 'Plugins',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -827,12 +830,14 @@ $LANG_SHOP_HELP = array(
 'discount_codes' => 'Discount codes are reusable codes for the buyer to enter at checkout to obtain a discount. Codes can be valid during a date range and can set to require a minimum order value.',
 'suppliers' => 'Suppliers and Brands can be specified for products. Suppliers are used for the re-order report while Brands are shown to the buyers and allow searching by brand name.',
 'features' => 'Features are static items that you wish to highlight for a product, such as Material or Finish. Features apply to all variatiosn of a product and are not selectable by the buyer.<br />Create and edit feature sets here, then apply the appropriate features with specific values to the Products.',
+'pi_products' => 'Plugins that supply products to the Shop can have default settings where values are not provided by the plugin itself.',
 'coupons' => 'Coupons or Gift Cards can be sent to buyers or buyer groups as loyalty rewards. Coupons are applied to the buyer&apos;s balance and can be used for later purchases.',
 'gw_enabled' => 'Check this box to indicate that this gateway is enabled for use. If not checked, the  gateway will not be available for checkout.' ,
 'gw_services' => 'Select the buttons that are supported by this gateway. This is primarily meant to reduce clutter in blocks and product lists, where you may want only one gateway handling immediate purchases. In some cases, a gateway may not be able to handle a type of service, such as donations.',
 'gw_grp_access' => 'Select the glFusion group that is allowed to use this gateway. You may wish to restrict access to some gateways sucn as terms or C.O.D.',
 'gw_order' => 'Enter a number to represent the order in which this gateway will appear in the payment options list (lower number means higher).',
 'msg_no_virt_delivery' => 'There is no delivery information required for virtual products.',
+'hlp_pi_products' => 'Enter the plugin name and set the default values for its products. These values will be used unless the plugin supplies its own values for these settings.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';

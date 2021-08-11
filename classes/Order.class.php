@@ -2193,9 +2193,10 @@ class Order
      *
      * @param   string  $item_id    Item ID to check, e.g. "1|2,3,4"
      * @param   array   $extras     Option custom values, e.g. text fields
+     * @param   array   $options_text   Ad-hoc options added from plugins
      * @return  integer|boolean Item cart record ID if item exists in cart, False if not
      */
-    public function Contains($item_id, $extras=array())
+    public function Contains($item_id, $extras=array(), $options_text=array())
     {
         $id_parts = SHOP_explode_opts($item_id, true);
 
@@ -2204,7 +2205,9 @@ class Order
             'product_id'    => $id_parts[0],
             'variant'       => $id_parts[1],
             'extras'        => $extras,
+            'options_text'  => $options_text,
         );
+
         $Item2 = new OrderItem($args);
         foreach ($this->items as $id=>$Item1) {
             if ($Item1->Matches($Item2)) {

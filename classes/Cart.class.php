@@ -196,6 +196,9 @@ class Cart extends Order
         $options    = SHOP_getVar($args, 'options', 'array');
         $item_name  = SHOP_getVar($args, 'item_name');
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
+        $taxable    = SHOP_getVar($args, 'taxable', 'int');
+        $options_text = SHOP_getVar($args, 'options_text', 'array');
+
         if (isset($args['description'])) {
             $item_dscp  = $args['description'];
         } elseif (isset($args['short_dscp'])) {
@@ -235,10 +238,11 @@ class Cart extends Order
         // Look for identical items, including options (to catch
         // attributes). If found, just update the quantity.
         if ($P->cartCanAccumulate()) {
-            $have_id = $this->Contains($item_id, $extras);
+            $have_id = $this->Contains($item_id, $extras, $options_text);
         } else {
             $have_id = false;
         }
+
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
             $new_quantity = $this->items[$have_id]->getQuantity();
@@ -255,6 +259,7 @@ class Cart extends Order
                 'description' => $P->getDscp($item_dscp),
                 'variant'   => $PV->getID(),
                 'options'   => $opts,
+                'options_text' => $options_text,
                 'extras'    => $extras,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
                 'override'  => $override,

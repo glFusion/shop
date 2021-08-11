@@ -1,6 +1,6 @@
 <?php
 /**
- * Interface to add a cart item from another plugin link
+ * Interface to add a cart item from another plugin link or form.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2021 Lee Garner <lee@leegarner.com>
@@ -15,36 +15,57 @@
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
 
-$ret_url = isset($_GET['ret']) ? $_GET['ret'] : $_SERVER['HTTP_REFERER'];
-$uid = (int)$_USER['uid'];
-if (!isset($_GET['item'])) {
-    SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
-    COM_refresh($ret_url);
-    exit;
+if (isset($_POST['ret'])) {
+    $ret_url = $_POST['ret'];
+} elseif (isset($_GET['ret'])) {
+    $ret_url = $_GET['ret'];
+} else {
+    $ret_url = $_SERVER['HTTP_REFERER'];
 }
 
-$item_number = SHOP_getVar($_GET, 'item', 'string', '');   // isset ensured above
+if (isset($_POST['item'])) {
+    $opts = $_POST;
+} elseif (isset($_GET['item'])) {
+    $opts = $_GET;
+} else {
+    SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
+    COM_refresh($ret_url);
+}
+
+$uid = (int)$_USER['uid'];
+if (isset($opts['selopt'])) {
+    // Get values from form fields.
+    parse_str($opts['selopt'],$x);
+    $opts = array_merge($opts, $x);
+}
+
+$item_number = SHOP_getVar($opts, 'item', 'string', '');   // isset ensured above
 if (empty($item_number)) {
     COM_setMsg('Missing item number', 'error');
     COM_refresh($ret_url);
 }
-$sku = SHOP_getVar($_GET, 'sku', 'string');
+$sku = SHOP_getVar($opts, 'sku', 'string');
+$qty = SHOP_getVar($opts, 'q', 'integer', 1);
+$price = SHOP_getVar($opts, 'p', 'float', NULL);
 $Cart = Shop\Cart::getInstance();
-$qty = SHOP_getVar($_GET, 'q', 'integer', 1);
-$price = SHOP_getVar($_GET, 'p', 'float', NULL);
+$options = SHOP_getVar($opts, 'o', 'array', array());
 
 $args = array(
     'item_number'   => $item_number,     // isset ensured above
     'item_name'     => $sku,
-    'short_dscp'    => SHOP_getVar($_GET, 'd', 'string', ''),
+    'short_dscp'    => SHOP_getVar($opts, 'd', 'string', ''),
     'quantity'      => $qty,
-    'options'       => SHOP_getVar($_GET, 'o', 'array', array()),
+    'options'       => array(),
     'extras'        => array(
-        'special' => SHOP_getVar($_GET, 'e', 'array', array())
+        'special' => SHOP_getVar($opts, 'e', 'array', array())
     ),
-    'tax'           => SHOP_getVar($_GET, 'tax', 'float', 0),
+    'options_text'  => $options,
 );
+if (isset($opts['t'])) {
+    $args['taxable'] = $args['taxable'] ? 1 : 0;
+}
 if ($price !== NULL) {
+    // Only override the price if supplied, do not use "0"
     $args['price'] = $price;
     $args['override'] = true;
 }
@@ -54,7 +75,6 @@ $msg = $LANG_SHOP['msg_item_added'];
 if ($new_qty === false) {
     $msg = $LANG_SHOP['out_of_stock'];
 } elseif ($new_qty < $qty) {
-    // TODO: better handling of adjustments.
     // This really only handles changes to the initial qty.
     $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
 }
