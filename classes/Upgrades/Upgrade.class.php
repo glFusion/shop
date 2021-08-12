@@ -206,6 +206,7 @@ class Upgrade
         _update_config('shop', $shopConfigData);
     }
 
+
     /**
      * Remove a file, or recursively remove a directory.
      *
@@ -261,6 +262,17 @@ class Upgrade
                 'classes/CacheDB.class.php',
                 'classes/DBO.class.php',
                 'classes/Webhooks',
+                'templates/region.thtml',
+                'templates/country.thtml',
+                'templates/state.thtml',
+                'templates/rule_edit.thtml',
+                'templates/feature_form.thtml',
+                'templates/supplier_form.thtml',
+                'templates/discount_code.thtml',
+                'templates/category_form.thtml',
+                'templates/sales_form.thtml',
+                'templates/option_grp_form.thtml',
+                'templates/option_val_form.thtml',
                 // 1.3.x    Future, these may be needed for a bit
                 //'classes/ipn',
             ),
@@ -269,7 +281,7 @@ class Upgrade
                 // 1.2.0
                 'js/country_state.js',
                 'docs/english/attribute_form.html',
-    	    'js/toggleEnabled.js',
+                'js/toggleEnabled.js',
             ),
             // admin/plugins/shop
             $_CONF['path_html'] . 'admin/plugins/shop' => array(

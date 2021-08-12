@@ -287,15 +287,15 @@ class Feature
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('form', 'feature_form.thtml');
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($this->ft_id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_ft'] . ': ' . $this->ft_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->ft_name);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_ft']);
+            $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['features']);
         }
 
         $T->set_var(array(
@@ -375,7 +375,7 @@ class Feature
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_ft'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?ft_edit=0',
             array(
                 'style' => 'float:left;',

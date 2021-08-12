@@ -308,16 +308,16 @@ class ProductOptionGroup
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('form', 'option_grp_form.thtml');
         $id = $this->pog_id;
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->pog_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->pog_name);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_og']);
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
         }
 
         $orderby_sel = $this->pog_orderby - 10;
@@ -408,7 +408,7 @@ class ProductOptionGroup
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_og'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?pog_edit=0',
             array(
                 'style' => 'float:left;',
@@ -461,7 +461,7 @@ class ProductOptionGroup
         case 'edit':
             $retval .= COM_createLink(
                 Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;og_id={$A['pog_id']}"
+                SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;pog_id={$A['pog_id']}"
             );
             break;
 

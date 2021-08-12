@@ -19,6 +19,7 @@ use Shop\Config;
 use Shop\Icon;
 use Shop\Field;
 use Shop\Template;
+use Shop\Tooltipster;
 
 
 /**
@@ -626,8 +627,7 @@ class Plugin extends \Shop\Product
                 'align' => 'center',
             ),
             array(
-                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                \Shop\Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
+                'text'  => $LANG_ADMIN['delete'],
                 'field' => 'delete',
                 'sort' => false,
                 'align' => 'center',
@@ -643,7 +643,7 @@ class Plugin extends \Shop\Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_pi'],
+        $display .= COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?pi_edit=0',
             array(
                 'class' => 'uk-button uk-button-success',
@@ -745,7 +745,7 @@ class Plugin extends \Shop\Product
         case 'delete':
             $retval .= COM_createLink(
                 Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?del_pi_productg=x&amp;id=' . $A['id'],
+                SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
@@ -784,6 +784,12 @@ class Plugin extends \Shop\Product
             }
         }
 
+        if ($id > 0) {
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $pi_name);
+        } else {
+            $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['pi_name']);
+        }
+
         $T = new Template('admin');
         $T->set_file('form', 'pi_form.thtml');
         $T->set_var(array(
@@ -792,12 +798,33 @@ class Plugin extends \Shop\Product
             'taxable' => $taxable,
             'prod_type' => $prod_type,
             'price' => COM_numberFormat($price,2),
+            'tooltipster_js' => Tooltipster::get('pi_form'),
         ) );
-        $retval = $T->parse('output', 'form');
+        $retval .= $T->parse('output', 'form');
+        $retval .= COM_endBlock();
         return $retval;
     }
 
 
+    /**
+     * Delete a plugin configuration.
+     *
+     * @param   integer $id     DB record ID of plugin info
+     */
+    public static function deleteConfig($id)
+    {
+        global $_TABLES;
+
+        DB_delete($_TABLES[self::$TABLE], 'id', (int)$id);
+    }
+
+
+    /**
+     * Save a plugin configuration.
+     *
+     * @param   array   $A      Array of values from form or DB
+     * @return  boolean     True on success, False on error
+     */
     public static function saveConfig($A)
     {
         global $_TABLES;

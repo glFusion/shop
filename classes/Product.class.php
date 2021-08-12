@@ -1368,12 +1368,12 @@ class Product
         // Add the current product ID to the form if it's an existing product.
         if ($id > 0) {
             $retval = COM_startBlock(
-                $LANG_SHOP['edit'] . ': ' . $this->short_description
+                $LANG_SHOP['edit_item'] . ': ' . $this->short_description
             );
 
         } else {
             $T->set_var('id', '');
-            $retval = COM_startBlock($LANG_SHOP['new_product']);
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
 
         }
 
@@ -3741,7 +3741,7 @@ class Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_product'],
+        $display .= COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?editproduct=x',
             array(
                 'class' => 'uk-button uk-button-success',

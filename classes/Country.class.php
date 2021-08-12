@@ -484,10 +484,9 @@ class Country extends RegionBase
         if (is_array($A)) {
             $this->setVars($A);
         }
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'country.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
         $T->set_var(array(
             'country_id'    => $this->getID(),
@@ -499,9 +498,8 @@ class Country extends RegionBase
             'dial_code'     => $this->getDialCode(),
             'region_options' => Region::optionLIst($this->region_id, false),
             'ena_chk'       => $this->country_enabled ? 'checked="checked"' : '',
-            'doc_url'       => SHOP_getDocUrl('country_form'),
+            'tooltipster_js' => Tooltipster::get('country_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
     }
@@ -649,7 +647,7 @@ class Country extends RegionBase
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_country'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/regions.php?editcountry=0',
             array(
                 'class' => 'uk-button uk-button-success',

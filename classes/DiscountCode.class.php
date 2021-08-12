@@ -489,7 +489,7 @@ class DiscountCode
             $start_date = $this->start->format('Y-m-d', true);
             $start_time = $this->start->format('H:i', true);
         }
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('form', 'discount_code.thtml');
         $retval = '';
         $T->set_var(array(
@@ -509,6 +509,7 @@ class DiscountCode
             'max_date'      => Dates::MAX_DATE,
             'max_time'      => '23:59',
             'min_order'     => $this->min_order,
+            'lang_new_or_edit' => $this->code_id == 0 ? $LANG_SHOP['new_item'] : $LANG_SHOP['edit_item'],
         ) );
         if ($this->end->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
@@ -602,7 +603,7 @@ class DiscountCode
             'form_url' => SHOP_ADMIN_URL . '/index.php?discountcodes',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_discount'],
+        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?editcode=x',
             array('class' => 'uk-button uk-button-success')
         ) . '</div>';

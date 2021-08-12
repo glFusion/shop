@@ -430,10 +430,9 @@ class State extends RegionBase
      */
     public function Edit()
     {
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'state.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
 
         $T->set_var(array(
@@ -444,9 +443,8 @@ class State extends RegionBase
             'tx_shp_chk'    => $this->tax_shipping ? 'checked="checked"' : '',
             'tx_hdl_chk'    => $this->tax_handling ? 'checked="checked"' : '',
             'country_options' => Country::optionLIst($this->country_iso, false),
-            'doc_url'       => SHOP_getDocUrl('state_form'),
+            'tooltipster_js' => Tooltipster::get('state_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         return $T->finish($T->get_var('output'));
     }
@@ -577,7 +575,7 @@ class State extends RegionBase
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_state'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/regions.php?editstate=0',
             array(
                 'class' => 'uk-button uk-button-success',

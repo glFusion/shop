@@ -463,7 +463,7 @@ class Sales
             $st_dt = $this->StartDate->format('Y-m-d', true);
             $st_tm = $this->StartDate->format('H:i', true);
         }
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('form', 'sales_form.thtml');
         $retval = '';
         $T->set_var(array(
@@ -488,6 +488,7 @@ class Sales
             'min_time'      => Dates::MIN_TIME,
             'max_date'      => Dates::MAX_DATE,
             'max_time'      => Dates::MAX_TIME,
+            'lang_new_or_edit' => $this->sale_id == 0 ? $LANG_SHOP['new_item'] : $LANG_SHOP['edit_item'],
         ) );
         if ($this->EndDate->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
@@ -622,7 +623,7 @@ class Sales
             'form_url' => SHOP_ADMIN_URL . '/index.php',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
+        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?editsale=x',
             array('class' => 'uk-button uk-button-success')
         ) . '</div>';

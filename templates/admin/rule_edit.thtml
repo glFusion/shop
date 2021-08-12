@@ -2,9 +2,9 @@
 <form action="{site_admin_url}/plugins/shop/rules.php" class="uk-form uk-form-horizontal" method="post">
     <input type="hidden" name="rule_id" value="{rule_id}" />
 {!if rule_id}
-    <h1>{$LANG_SHOP['edit_rule']}: {rule_name}</h1>
+    <h1>{$LANG_SHOP['edit_item']}: {rule_name}</h1>
 {!else}
-    <h1>{$LANG_SHOP['new_rule']}</h1>
+    <h1>{$LANG_SHOP['new_item']}: {$LANG_SHOP['zone_rule']}</h1>
     <div class="uk-alert">{$LANG_SHOP_HELP['hlp_new_rule']}</div>
 {!endif}
 

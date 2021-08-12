@@ -2,11 +2,11 @@
 <form action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal"
 	enctype="multipart/form-data">
 
-	<input type="hidden" name="id" value="{pi_id}" />
+<input type="hidden" name="id" value="{pi_id}" />
 <div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
 
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="cat_name">{$LANG_SHOP['pi_name']}:
+		<label class="uk-form-label" for="pi_name">{$LANG_SHOP['pi_name']}:
 			<span id="hlp_pi_name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
@@ -60,31 +60,5 @@
 		</div>
 	</div>
 </form>
-<script>
-var ConfigDocUrl = '{doc_url}';
-$(document).ready(function() {
-	$('.tooltip_cfg').tooltipster({
-		contentAsHTML: true,
-		animation: 'fade',
-		trigger: 'click',
-		iconDesktop: true,
-		iconTouch: true,
-		functionBefore: function(origin, continueTooltip) {
-			var attrHref = ConfigDocUrl;
-			var ajobj = $(this);
-			$.get(attrHref, function(data) {
-				var confVar = ajobj.attr('id');
-				if (data.indexOf(confVar) > 0) {
-					var desc = $(data).find('#desc_' + confVar + ' dd:first').text();
-					origin.tooltipster('content', desc);
-				} else {
-					origin.tooltipster('content', 'No Help Text Found');
-					console.log('Unable to find help text for desc_%s',confVar);
-				}
-				continueTooltip();
-			});
-		}
-	});
-});
-</script>
+{tooltipster_js}
 {# end {templatelocation} #}
