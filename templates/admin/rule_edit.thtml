@@ -22,8 +22,7 @@
         <span id="hlp_rule_dscp" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <textarea class="uk-textarea name="rule_dscp" 
-          rows="3">{rule_dscp}</textarea>
+        <textarea class="uk-textarea uk-width-large" name="rule_dscp">{rule_dscp}</textarea>
       </div>
     </div>
 

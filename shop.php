@@ -72,6 +72,7 @@ $_TABLES['shop.affiliate_sales'] = $_SHOP_table_prefix . 'affiliate_sales';
 $_TABLES['shop.affiliate_saleitems'] = $_SHOP_table_prefix . 'affiliate_saleitems';
 $_TABLES['shop.affiliate_payments'] = $_SHOP_table_prefix . 'affiliate_payments';
 $_TABLES['shop.stock'] = $_SHOP_table_prefix . 'stock';
+$_TABLES['shop.plugin_products'] = $_SHOP_table_prefix . 'plugin_products';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';
