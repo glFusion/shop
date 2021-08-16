@@ -1,5 +1,7 @@
 {# begin {templatelocation} #}
-<ul class="justified uk-nav checkout_menu uk-grid uk-grid-collapse uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}"
+<ul class="justified uk-nav checkout_menu uk-grid uk-grid-collapse
+	uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}
+	uk-child-width-1-1@s uk-child-width-1-{flow_count}@m"
     style="margin:auto;margin-bottom:20px;margin-top:20px;">
 <!-- BEGIN Flows -->
 {!if is_active}
