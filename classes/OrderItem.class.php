@@ -602,7 +602,8 @@ class OrderItem
      */
     public function setPrice($newprice)
     {
-        $this->price = $newprice;
+        $this->price = (float)$newprice;
+        $this->net_price = (float)$newprice;
         return $this;
     }
 
@@ -688,7 +689,7 @@ class OrderItem
      */
     public function getShipping()
     {
-        return $this->Product->getShipping($this->quantity);
+        return $this->shipping;
     }
 
 
