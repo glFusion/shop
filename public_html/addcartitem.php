@@ -31,12 +31,34 @@ if (isset($_POST['item'])) {
     SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
     COM_refresh($ret_url);
 }
-
+$price = SHOP_getVar($opts, 'p', 'float', 0);
 $uid = (int)$_USER['uid'];
-if (isset($opts['selopt'])) {
+
+// Get product options. May come from a form field, or from GET vars
+$options = array();
+if (isset($opts['options'])) {
     // Get values from form fields.
-    parse_str($opts['selopt'],$x);
-    $opts = array_merge($opts, $x);
+    if (!is_array($opts['options'])) {
+        $opts['options'] = array($opts['options']);
+    }
+    foreach ($opts['options'] as $option) {
+        parse_str($option, $x);
+        if (isset($x['p'])) {
+            // get incremental price for the option
+            $price += (float)$x['p'];
+        }
+        if (isset($x['o']) && is_array($x['o'])) {
+            // get option names and descriptions
+            foreach ($x['o'] as $name=>$val) {
+                $options[$name] = $val;
+            }
+        }
+    }
+} elseif (isset($opts['o']) && is_array($opts['o'])) {
+    // Received 'o' arguments via URL
+    foreach ($opts['o'] as $name=>$val) {
+        $options[$name] = $val;
+    }
 }
 
 $item_number = SHOP_getVar($opts, 'item', 'string', '');   // isset ensured above
@@ -46,9 +68,7 @@ if (empty($item_number)) {
 }
 $sku = SHOP_getVar($opts, 'sku', 'string');
 $qty = SHOP_getVar($opts, 'q', 'integer', 1);
-$price = SHOP_getVar($opts, 'p', 'float', NULL);
 $Cart = Shop\Cart::getInstance();
-$options = SHOP_getVar($opts, 'o', 'array', array());
 
 $args = array(
     'item_number'   => $item_number,     // isset ensured above
