@@ -924,6 +924,15 @@ $SHOP_UPGRADE['1.3.1'] = array(
       PRIMARY KEY (`stk_id`),
       UNIQUE KEY `item_variant` (`item_id`,`pv_id`)
     ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.plugin_products']}` (
+      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `pi_name` varchar(127) NOT NULL,
+      `taxable` tinyint(1) unsigned NOT NULL DEFAULT 0,
+      `prod_type` tinyint(1) unsigned NOT NULL DEFAULT 4,
+      `price` decimal(11,4) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `pi_name` (`pi_name`)
+    ) ENGINE=MyISAM",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
@@ -949,3 +958,4 @@ $_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
 $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
 $_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][1];
+$_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][2];
