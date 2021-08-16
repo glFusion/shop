@@ -270,6 +270,11 @@ case 'ft_del':
     $view = 'features';
     break;
 
+case 'pi_del':
+    $content .= Shop\Products\Plugin::deleteConfig($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pi_products');
+    break;
+
 case 'pog_del':
     Shop\ProductOptionGroup::Delete($_REQUEST['pog_id']);
     $view = 'opt_grp';
