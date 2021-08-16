@@ -169,6 +169,8 @@ class Shipper
         'kgs'   => 'KG',
     );
 
+    protected $item_shipping = array('units' => 0, 'amount' => 0);
+
 
     /**
      * Constructor. Sets variables from the provided array.
@@ -1859,7 +1861,7 @@ class Shipper
      * @param   array   $Packages   Array of Package objects
      * @return  object      Single ShippingQuote object
      */
-    public function getPackageQuote($Packages)
+    public function getPackageQuote($Packages, $Order)
     {
         if (empty($Packages)) {
             $error = true;
@@ -1871,6 +1873,9 @@ class Shipper
                 $cost += (float)$container['rate'];
             }
             $error = false;
+        }
+        if ($this->use_fixed) {
+            $cost += (float)$this->item_shipping['amount'];
         }
         $retval = (new ShippingQuote)
             ->setID($this->id)
@@ -1894,7 +1899,6 @@ class Shipper
      */
     public function getUnitQuote($Order)
     {
-        $info = $Order->getItemShipping();
         $quote = (new ShippingQuote)
             ->setID($this->id)
             ->setShipperID($this->id)
@@ -1903,14 +1907,13 @@ class Shipper
             ->setServiceTitle($this->name)
             ->setServiceCode('units.' . $this->id)
             ->setServiceID($this->key . '.' . $this->id);
-
         $found = false;
         if (
-            $info['units'] <= $this->max_units &&
-            $info['units'] >= $this->min_units
+            $this->item_shipping['units'] <= $this->max_units &&
+            $this->item_shipping['units'] >= $this->min_units
         ) {
             foreach ($this->rates as $rate) {
-                if ($rate->units > $info['units']) {
+                if ($rate->units > $this->item_shipping['units']) {
                     $found = true;
                     $quote['cost'] = $rate->rate;
                     break;
@@ -1919,7 +1922,7 @@ class Shipper
         }
         if ($found) {
             if ($this->use_fixed) {
-                $quote['cost'] += $info['amount'];
+                $quote['cost'] += (float)$this->item_shipping['amount'];
             }
             return $quote;
         } else {
@@ -1934,9 +1937,10 @@ class Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote(\Shop\Order $Order)
+    public function getQuote(\Shop\Order $Order, $item_shipping)
     {
         $retval = array();
+        $this->item_shipping = $item_shipping;
         if (
             $this->free_threshold > 0 &&
             $Order->getItemTotal() > $this->free_threshold
@@ -1994,7 +1998,7 @@ class Shipper
         // Otherwise, get a quote based on units.
         if ($this->key != '') {
             $Packages = Package::packOrder($Order, $this);
-            $retval = array($this->getPackageQuote($Packages));
+            $retval = array($this->getPackageQuote($Packages, $Order));
         } else {
             $retval = array($this->getUnitQuote($Order));
         }
