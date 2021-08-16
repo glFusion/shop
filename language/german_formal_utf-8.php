@@ -44,13 +44,14 @@ $LANG_SHOP = array (
 'price'             => 'Preis',
 'sale_price'        => 'Verkaufspreis',
 'quantity'          => 'Stückzahl',
+'quantities'        => 'Quantities',
 'item_total'        => 'Artikel Gesamt',
 'total'             => 'Gesamt',
 'cart_empty'        => 'Ihr Warenkorb ist leer',
 'purchase_history'  => 'Bestellungen',
 'ipnlog'            => 'IPN-Protokoll',
-'new_product'       => 'Neues Produkt',
-'new_category'      => 'Neue Kategorie',
+'new_item' => 'New Item',
+'edit_item' => 'Edit Item',
 'category_list'     => 'Kategorien',
 'admin_hdr'         => '<ul><li>Erstellen, löschen und ändern Sie hier Ihre Produkte aus Ihrem Shop.</li><li>Durch anklicken des Produkt-Namen gelangen Sie zur Verkaufs-Statistik</li></ul>',
 'admin_hdr_editattr' => '<ul><li>Erstellen oder aktualisieren Sie hier Produk-Optionen wie z.B. Farb-, oder Größen-Optionen.</li></ul>',
@@ -242,6 +243,7 @@ $LANG_SHOP = array (
 'notify' => 'Benachrichtigen',
 'updated_x_orders' => '%d Bestellungen aktualisiert',
 'onhand' => 'Aktueller Lagebestand',
+'reserved' => 'Reserved',
 'available' => 'Verfügbar',
 'track_onhand' => 'Lagerbestand anzeigen',
 'continue_shopping' => 'Weiter einkaufen',
@@ -767,6 +769,10 @@ $LANG_SHOP = array (
 'commission' => 'Commission',
 'aff_report_for' => 'Affiliate Report for',
 'due' => 'Due',
+'msg_aff_signup_updated' => 'Thanks for updating your information',
+'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
+'pi_name' => 'Plugin',
+'plugins' => 'Plugins',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -824,6 +830,8 @@ $LANG_SHOP_HELP = array(
 'gw_grp_access' => 'Select the glFusion group that is allowed to use this gateway. You may wish to restrict access to some gateways sucn as terms or C.O.D.',
 'gw_order' => 'Enter a number to represent the order in which this gateway will appear in the payment options list (lower number means higher).',
 'msg_no_virt_delivery' => 'There is no delivery information required for virtual products.',
+'pi_products' => 'Plugins that supply products to the Shop can have default settings where values are not provided by the plugin itself.',
+'hlp_pi_products' => 'Enter the plugin name and set the default values for its products. These values will be used unless the plugin supplies its own values for these settings.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -947,6 +955,10 @@ $LANG_confignames['shop'] = array(
 'aff_key' => 'Affiliate URL Key',
 'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
 'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
+'tax_nexus_virt' => 'Tax location for virtual items',
+'aff_eligible' => 'Group eligible to become affiliates',
+'aff_auto_enroll' => 'Auto-enroll eligible users?',
+'aff_form_id' => 'Affiliate registration form',
 );
 
 /** Language strings for the subgroup names in the config section */
