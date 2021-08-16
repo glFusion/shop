@@ -15,6 +15,11 @@
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
 
+// Make sure this is called via Ajax
+if (!COM_isAjax()) {
+    COM_404();
+}
+
 $uid = (int)$_USER['uid'];
 $action = SHOP_getVar($_GET, 'action');
 $output = NULL;
@@ -329,5 +334,3 @@ if (is_array($output)) {
 } else {
     echo $output;
 }
-
-?>
