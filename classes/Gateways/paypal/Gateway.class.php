@@ -284,11 +284,6 @@ class Gateway extends \Shop\Gateway
                     }
                 }
                 $fields['quantity_' . $i] = $item->getQuantity();
-
-                if ($item->getShipping() > 0) {
-                    $fields['shipping_' . $i] = $item->getShipping();
-                    $shipping += $item->getShipping();
-                }
                 $i++;
             }
 
