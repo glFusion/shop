@@ -1,6 +1,6 @@
 # Shop plugin for glFusion - Changelog
 
-## v1.3.1
+## v1.4.0
 Release TBD
   * Add sales tax location configuration setting for virtual items.
   * Fix error if a referrer is not found at login. (May happen if the plugin is reinstalled.)
@@ -11,6 +11,7 @@ Release TBD
   * Fix product cloning and SKU changes.
   * Move quantity tracking to Stock table, reserve items as they go into carts.
   * Fix `No Product` message showing even if plugin products are displayed.
+  * Add interface for plugin products to be sold where the plugin doesn't support Shop.
 
 ## v1.3.0
 Release 2021-04-20
