@@ -27,10 +27,6 @@ use Shop\Models\AffiliateSale;
  */
 class Order
 {
-    /** Array of order objects used by getInstance().
-     * @var array */
-    private static $orders = array();
-
     /** Flag to indicate that administrative actions are being done.
      * @var boolean */
     private $isAdmin = false;
@@ -304,31 +300,12 @@ class Order
             if (!is_string($id)) {
                 var_dump(debug_backtrace(0));die;
             }
-            if (!array_key_exists($id, self::$orders)) {
-                self::$orders[$id] = new self($id);
-                //$retval = new self($id);
-            }
+            $retval = new self($id);
         } else {
             $retval = new self;
             $id = $retval->getOrderId();
-            self::$orders[$id] = $retval;
         }
-        return self::$orders[$id];
-    }
-
-
-    /**
-     * Clear a cached instance of an order.
-     * Called when the order table is updated to force getInstance() to
-     * re-read the order.
-     *
-     * @return  object  $this
-     */
-    private function clearInstance()
-    {
-        if (isset(self::$orders[$this->order_id])) {
-            unset(self::$orders[$this->order_id]);
-        }
+        return $retval;
     }
 
 
@@ -909,7 +886,6 @@ class Order
         //echo $sql;die;
         //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        $this->clearInstance();
         $this->isNew = false;
         $this->tainted = false;
         return $this->order_id;
@@ -933,7 +909,6 @@ class Order
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET $vals
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        //$this->clearInstance();
         DB_query($sql);
         /*echo $sql;
         var_dump(debug_backtrace(0));die;
@@ -1526,7 +1501,6 @@ class Order
         }
         //echo "Status is now {$this->status}<br />\n";
         //die;
-        $this->clearInstance();
         return $newstatus;
     }
 
@@ -2093,6 +2067,7 @@ class Order
             $this->handling += $P->getHandling($item->getQuantity());
         }
         $this->calcTax();   // Tax calculation is slightly more complex
+        $this->Save();
         return $this;
     }
 
@@ -2662,8 +2637,9 @@ class Order
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
         $methods = array();
+        $item_info = $this->getItemShipping();
         foreach ($Shippers as $code=>$Shipper) {
-            $quote = $Shipper->getQuote($this);
+            $quote = $Shipper->getQuote($this, $item_info);
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
             } else {
@@ -3701,12 +3677,23 @@ class Order
     }
 
 
+    /**
+     * Get the description of the shipping method.
+     *
+     * @return  string      Shipping method description
+     */
     public function getShipperDscp()
     {
         return $this->shipping_dscp;
     }
 
 
+    /**
+     * Set the order-wide handling amount.
+     *
+     * @param   float   $amt    Handling amount
+     * @return  object  $this
+     */
     public function setHandling($amt)
     {
         $this->handling = (float)$amt;
