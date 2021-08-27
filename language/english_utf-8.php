@@ -935,6 +935,7 @@ $LANG_confignames['shop'] = array(
     'address_validator' => 'Address Validator',
     'smartystreets_id' => 'SmartyStreets ID',
     'smartystreets_token' => 'SmartyStreets Token',
+    'smartystreets_license' => 'SmartyStreets License',
     'tax_taxcloud_id' => 'TaxCloud Login ID',
     'tax_taxcloud_key' => 'TaxCloud API Key',
     'ena_fast_checkout' => 'Enable fast-checkout if possible',
