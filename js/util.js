@@ -29,6 +29,14 @@ var Shop = (function() {
 				alert(message);
 			}
 		},
+		modal: function(content="") {
+			if (typeof(UIkit.modal.blockUI) == 'function') {
+				var modal = UIkit.modal.blockUI(content);
+			} else if (typeof(UIkit.modal.dialog) == 'function') {
+				content = '<div class="uk-modal-body uk-text-large uk-text-center">' + content + '&nbsp;&nbsp;</div>';
+				var modal = UIkit.modal.dialog(content, {'bgClose':false});
+			}
+		},
 		// Display a spinner in a modal dialog during processing.
 		spinner_show: function (message="") {
 			var content = '<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i>&nbsp;' + message + '</div>';
