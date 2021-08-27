@@ -63,7 +63,7 @@
                             <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
                             {item_quantity}
 {!else}
-                            <input type="number" style="width:60px;text-align:right;" id="f_qty_{cart_item_id}"
+                            <input style="width:70%" class="uk-input uk-form-small" type="number" id="f_qty_{cart_item_id}"
                                 onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
                                 max="{max_ord_qty}"
@@ -154,8 +154,8 @@
 {!endif}
                 <div class="orderInstructions">
                     {$LANG_SHOP['enter_email']}:
-                    <input id="buyer_email" type="text"
-                        name="buyer_email" size="40" value="{buyer_email}"/>
+                    <input class="uk-input uk-form-small uk-form-width-medium" id="buyer_email" type="text"
+                        name="buyer_email" value="{buyer_email}"/>
                     <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
                 </div>
 

@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
+<div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
     <div class="uk-form">
         <h2>{$LANG_SHOP['select_shipto']}:</h2>
         <select id="shipto_id" name="shipto_id" onchange="SHOP_updateAddress(this.value, 'shipto',true);">
@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
+<div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;margin-top:0px;">
     <div style="padding-top:20px;">
         <span class="header">{$LANG_SHOP['ship_to']}:</span><br />
         <span id="shipto_addr">{shipto_addr}</span>
