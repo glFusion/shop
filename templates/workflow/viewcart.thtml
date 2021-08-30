@@ -216,7 +216,6 @@ function incrementItemQty(oi_id, val)
             try {
 console.log(result);
                 $("#"+elem+"_addr").html(result);
-                //UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
             } catch(err) {
             }
         }
