@@ -961,6 +961,7 @@ $LANG_confignames['shop'] = array(
 'aff_eligible' => 'Group eligible to become affiliates',
 'aff_auto_enroll' => 'Auto-enroll eligible users?',
 'aff_form_id' => 'Affiliate registration form',
+'smartystreets_license' => 'SmartyStreets License',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -995,55 +996,77 @@ $LANG_fs['shop'] = array(
 );
 
 /**
-*   Language strings for the selection option names in the config section.
-*
-*   Item 4 is also used in functions.inc to provide a currency selector.
-*/
-$LANG_configselects['shop'] = array(
-    0 => array('True' => 1, 'False' => 0),
-    2 => array('Yes' => 1, 'No' => 0),
-    5 => array('Nombre' => 'name', 'Pricio' => 'price', 'Product ID' => 'id'),
+ * Language strings for the selection option names in the config section.
+ */
+$LANG_configSelect['shop'] = array(
+    0 => array(
+        1 => 'True' => 1,
+        0 => 'False' => 0,
+    ),
+    5 => array(
+        'name' => 'Nombre',
+        'price' => 'Pricio',
+        'id' => 'Product ID',
+    ),
     11 => array(
-        '10 - Pending'   => 'pending',
-        '20 - Invoiced'  => 'invoiced',
-        '30 - Processing' => 'processing',
-        '40 - Shipped'   => 'shipped',
-        '50 - Closed'    => 'closed',
+        'pending' => 'Pending',
+        'invliced' => 'Invoiced',
+        'processed' => 'Processing',
+        'shipped' => 'Shipped',
+        'closed' => 'Closed',
     ),
     12 => array(
-        'Origin' => 0,
-        'Destination, Customer-Entered' => 1,
-        'Destination, IP Geolocation' => 3,
+        0 => 'Origin',
+        1 => 'Destination, Customer-Entered',
+        3 => 'Destination, IP Geolocation',
     ),
-    13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
-    14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),
-    15 => array('Pounds' => 'lbs', 'Kilograms' => 'kgs'),
-    16 => array('Allow Backordering' => 0,
-            'Show in Catalog, Prevent Sales' => 1,
-            'Hide from Catalog' => 2),
-    17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    13 => array(
+        0 => 'None',
+        1 => 'Left',
+        2 => 'Right',
+        3 => 'Both',
+    ),
+    14 => array(
+        0 => 'Not Available',
+        1 => 'Optional',
+        2 => 'Required',
+    ),
+    15 => array(
+        'lbs' => 'Pounds',
+        'kgs' => 'Kilograms',
+    ),
+    16 => array(
+        0 => 'Allow Backordering',
+        1 => 'Show in Catalog, Prevent Sales',
+        2 => 'Hide from Catalog',
+    ),
+    17 => array(
+        1 => 'Upper-case',
+        2 => 'Lower-case',
+        3 => 'Mixed-case',
+        0 => 'None',
+    ),
     18 => array(
-        '100 - DEBUG' => 100,
-        '200 - INFO'  => 200,
-        '250 - NOTICE' => 250,
-        '300 - WARNING' => 300,
-        '400 - ERROR' => 400,
-        '500 - CRITICAL' => 500,
-        '550 - ALERT' => 550,
-        '600 - EMERGENCY' => 600,
+        100 => 'DEBUG',
+        200 => 'INFO',
+        250 => 'NOTICE',
+        300 => 'WARNING',
+        400 => 'ERROR',
+        500 => 'CRITICAL',
+        550 => 'ALERT',
+        600 => 'EMERGENCY',
     ),
     19 => array(
-        'Product List' => 1,
-        'Category List' => 2,
-        'Category List (incl. Home)' => 6,
-        'Category List (top-level)' => 10,
-        'Category List (top, incl. Home)' => 14,
+        1 => 'Product List',
+        2 => 'Category List',
+        6 => 'Category List (incl. Home)',
+        10 => 'Category List (top-level)',
+        14 => 'Category List (top, incl. Home)',
     ),
     20 => array(
-        'Product List' => 'products',
-        'Category List' => 'categories',
-        'Order List' => 'orders',
+        'products' => 'Product List',
+        'categories' => 'Category List',
+        'orders' => 'Order List',
     ),
 );
 
-?>

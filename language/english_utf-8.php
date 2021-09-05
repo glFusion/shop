@@ -993,11 +993,9 @@ $LANG_fs['shop'] = array(
 );
 
 /**
-*   Language strings for the selection option names in the config section.
-*
-*   Item 4 is also used in functions.inc to provide a currency selector.
-*/
-$LANG_configselects['shop'] = array(
+ * Language strings for the selection option names in the config section.
+ */
+$LANG_configSelect['shop'] = array(
     0 => array('True' => 1, 'False' => 0),
     2 => array('Yes' => 1, 'No' => 0),
     5 => array('Name' => 'name', 'Price' => 'price', 'Product ID' => 'id'),
