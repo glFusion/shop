@@ -446,7 +446,7 @@ function SHOP_do_upgrade($dvlp = false)
     CTL_clearCache();   // clear cache to ensure CSS updates come through
     SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);
     // Set a message in the session to replace the "has not been upgraded" message
-    COM_setMsg("Shop Plugin has been updated to $current_ver", 'info', 1);
+    SHOP_setMsg("Shop Plugin has been updated to $current_ver", 'info', 1);
     return true;
 }
 
