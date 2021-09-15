@@ -1037,7 +1037,7 @@ class OrderItem
         if ($PV->getID() > 0) {
             $retval = $this->getVariant()->getPrice();
         } else {
-            $retval =  $this->price;
+            $retval = 0;
         }
         return $retval;
     }
