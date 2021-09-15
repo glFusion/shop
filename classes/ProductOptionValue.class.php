@@ -245,8 +245,10 @@ class ProductOptionValue
         $sql = "SELECT pov_id FROM {$_TABLES['shop.prod_opt_vals']}
             WHERE pog_id = " . (int)$og_id;
         $res = DB_query($sql);
-        while ($A = DB_fetchArray($sql, false)) {
-            self::Delete($A['pov_id']);
+        if (DB_numRows($res) > 0) {
+            while ($A = DB_fetchArray($sql, false)) {
+                self::Delete($A['pov_id']);
+            }
         }
     }
 

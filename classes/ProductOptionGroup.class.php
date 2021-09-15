@@ -271,8 +271,6 @@ class ProductOptionGroup
     {
         global $_TABLES;
 
-        return true;        // stub until function works properly or is removed
-
         if ($og_id <= 0) {
             return false;
         }
