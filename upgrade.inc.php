@@ -605,13 +605,15 @@ function SHOP_remove_old_files()
             'classes/DBO.class.php',
             'classes/Webhooks',
             'classes/ipn',
+            // 1.4.0
+            'language/german_formal_utf-8.php',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
             // 1.2.0
             'js/country_state.js',
             'docs/english/attribute_form.html',
-	    'js/toggleEnabled.js',
+            'js/toggleEnabled.js',
         ),
         // admin/plugins/shop
         $_CONF['path_html'] . 'admin/plugins/shop' => array(
