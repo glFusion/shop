@@ -489,7 +489,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `pog_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pog_type` varchar(11) NOT NULL DEFAULT 'select',
       `pog_name` varchar(40) NOT NULL DEFAULT '',
-      `pog_orderby` tinyint(2) DEFAULT '0',
+      `pog_orderby` smallint(3) DEFAULT '0',
       PRIMARY KEY (`pog_id`),
       UNIQUE KEY `pog_name` (`pog_name`),
       KEY `orderby` (`pog_orderby`,`pog_name`)
