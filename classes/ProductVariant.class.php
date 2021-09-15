@@ -172,7 +172,7 @@ class ProductVariant
         $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reorder, stk.qty_reserved, p.track_onhand
             FROM {$_TABLES['shop.product_variants']} pv
             LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id
+                ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
             LEFT JOIN {$_TABLES['shop.products']} p
                 ON p.id = pv.item_id
             WHERE pv.pv_id = $rec_id";
@@ -247,7 +247,7 @@ class ProductVariant
             INNER JOIN {$_TABLES['shop.product_variants']} pv
                 ON vxo.pv_id = pv.pv_id
             LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.pv_id = pv.pv_id
+                ON stk.stk_pv_id = pv.pv_id
             WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
             GROUP BY vxo.pv_id
             HAVING COUNT(pv.item_id) = $count
@@ -625,7 +625,7 @@ class ProductVariant
         $sql = "SELECT pv.*, stk.*
             FROM {$_TABLES['shop.product_variants']} pv
             LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id
+                ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
             WHERE pv.item_id = '$product_id'";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
@@ -1517,7 +1517,7 @@ class ProductVariant
         $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reserved, stk.qty_reorder
             FROM {$_TABLES['shop.product_variants']} pv
             LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.item_id = pv.item_id AND stk.pv_id = pv.pv_id";
+                ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id";
         $query_arr = array(
             'table' => 'shop.product_variants',
             'query_fields' => array('sku'),

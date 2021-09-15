@@ -933,6 +933,8 @@ $SHOP_UPGRADE['1.3.1'] = array(
       PRIMARY KEY (`id`),
       UNIQUE KEY `pi_name` (`pi_name`)
     ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.stock']} CHANGE pv_id stk_pv_id int(11) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.stock']} CHANGE item_id stk_item_id int(11) unsigned not null default 0",
 );
 
 // These tables were added as part of upgrades and can reference the upgrade
