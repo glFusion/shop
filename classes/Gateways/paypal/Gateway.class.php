@@ -66,8 +66,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_USER;
-
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN',
