@@ -169,7 +169,7 @@ class ProductVariant
         global $_SHOP_CONF, $_TABLES;
 
         $rec_id = (int)$rec_id;
-        $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reorder, stk.qty_reserved, p.track_onhand
+        $sql = "SELECT pv.*, stk.*, p.track_onhand
             FROM {$_TABLES['shop.product_variants']} pv
             LEFT JOIN {$_TABLES['shop.stock']} stk
                 ON stk.stk_item_id = pv.item_id AND stk.stk_pv_id = pv.pv_id
