@@ -298,7 +298,7 @@ class Stock
 
         $sql = "INSERT INTO {$_TABLES['shop.stock']} SET
             stk_item_id = '" . DB_escapeString($this->item_id) . "',
-            stk)pv_id = {$this->pv_id},
+            stk_pv_id = {$this->pv_id},
             qty_onhand = {$this->qty_onhand},
             qty_reserved = {$this->qty_reserved},
             qty_reorder = {$this->qty_reorder}

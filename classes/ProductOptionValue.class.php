@@ -166,7 +166,7 @@ class ProductOptionValue
                 $POG->setName($_POST['pog_name']);
                 $POG->Save();
             }
-            $this->pog_id = $POG->pog_id;
+            $this->pog_id = $POG->getID();
         }
 
         // Make sure the necessary fields are filled in
