@@ -126,7 +126,11 @@ class ProductVariant
         } elseif (is_array($pv_id) && isset($pv_id['pv_id'])) {
             // Got an item record, just set the variables
             $this->setVars($pv_id);
-            $this->Stock = new Stock($pv_id);
+            if (isset($pv_id['stk_id'])) {
+                $this->Stock = new Stock($pv_id);
+            } else {
+                $this->Stock = new Stock($this->item_id, $this->pv_id);
+            }
         }
         if (!is_object($this->Stock)) {
             // Create a Stock object for later use, if not created above
@@ -242,24 +246,23 @@ class ProductVariant
         }
         $count = count($attribs);
         $attr_sql = implode(',', $attribs);
-        $sql = "SELECT pv.*, stk.*
+        $sql = "SELECT pv.*
             FROM {$_TABLES['shop.variantXopt']} vxo
             INNER JOIN {$_TABLES['shop.product_variants']} pv
                 ON vxo.pv_id = pv.pv_id
-            LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON stk.stk_pv_id = pv.pv_id
             WHERE vxo.pov_id IN ($attr_sql) AND pv.item_id = $item_id
             GROUP BY vxo.pv_id
-            HAVING COUNT(pv.item_id) = $count
-            LIMIT 1";
-        //echo $sql;
+            HAVING COUNT(pv.item_id) = $count";
+            //LIMIT 1";
+        //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
             $A = DB_fetchArray($res, false);
-            return self::getInstance($A);
+            $retval = self::getInstance($A);
         } else {
-            return new Self;
+            $retval = new Self;
         }
+        return $retval;
     }
 
 
