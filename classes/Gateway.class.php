@@ -422,7 +422,7 @@ class Gateway
      * @param   array   $A      Array of config items, e.g. $_POST
      * @return  boolean         True if saved successfully, False if not
      */
-    public function SaveConfig($A = NULL)
+    public function saveConfig($A = NULL)
     {
         global $_TABLES;
 
@@ -430,7 +430,6 @@ class Gateway
             $this->enabled = isset($A['enabled']) ? 1 : 0;
             $this->orderby = (int)$A['orderby'];
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
-            $this->test_mode = SHOP_getVar($A, 'test_mode', 'integer');
             $services = SHOP_getVar($A, 'service', 'array');
             // Only update config if provided from form
             foreach ($this->cfgFields as $env=>$flds) {
@@ -1238,31 +1237,28 @@ class Gateway
             return $fields;
         }
         foreach ($this->cfgFields[$env] as $name=>$type) {
-            $T = new Template('fields');
             $fld_name = "{$name}[{$env}]";
             switch ($type) {
             case 'checkbox':
-                $T->set_file('field', 'checkbox.thtml');
-                $T->set_var(array(
-                    'fld_name' => $fld_name,
+                $field = Field::checkbox(array(
+                    'name' => $fld_name,
                     'checked' => (isset($this->config[$env][$name]) &&
-                    $this->config[$env][$name] == 1),
+                        $this->config[$env][$name] == 1),
                 ) );
                 break;
             case 'select':
-                $T->set_file('field', 'select.thtml');
-                $T->set_var(array(
-                    'fld_name' => $fld_name,
-                ) );
-                $T->set_block('field', 'optionRow', 'opt');
-                foreach ($this->getConfigOptions($name, $env) as $opt) {
-                    $T->set_var(array(
+                $opts = $this->getConfigOptions($name, $env);
+                $options = array();
+                foreach ($opts as $opt) {
+                    $options[$opt['name']] = array(
+                        'value' => $opt['value'],
                         'selected' => $opt['selected'],
-                        'opt_value' => $opt['value'],
-                        'opt_name' => $opt['name'],
-                    ) );
-                    $T->parse('opt', 'optionRow', true);
+                    );
                 }
+                $field = Field::select(array(
+                    'name' => $fld_name,
+                    'options' => $options,
+                ) );
                 break;
             default:
                 if (isset($this->config[$env][$name])) {
@@ -1270,17 +1266,14 @@ class Gateway
                 } else {
                     $val = '';
                 }
-                $T->set_file('field', 'text.thtml');
-                $T->set_var(array(
-                    'fld_name' => $fld_name,
+                $field = Field::text(array(
+                    'name' => $fld_name,
                     'value' => $val,
                 ) );
                 break;
             }
-            $T->parse('output', 'field');
             $fields[$name] = array(
-                'param_field' => $T->finish($T->get_var('output')),
-                //'other_label'   => '',
+                'param_field' => $field,
                 'doc_url'       => '',
             );
         }
@@ -1915,6 +1908,7 @@ class Gateway
             break;
 
         case 'orderby':
+            $fieldvalue = (int)$fieldvalue;
             if ($fieldvalue == 999) {
                 return '';
             } elseif ($fieldvalue > 10) {
