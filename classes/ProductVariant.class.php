@@ -939,19 +939,19 @@ class ProductVariant
         global $_TABLES;
 
         // Clean out any zero (not selected) options for groups
-        foreach ($A['groups'] as $id=>&$grp) {
+        foreach ($A['pv_groups'] as $id=>&$grp) {
             foreach ($grp as $gid=>$val) {
                 if ($val == 0) {
                     unset($grp[$gid]);
                 }
             }
             if (empty($grp)) {
-                unset($A['groups'][$id]);
+                unset($A['pv_groups'][$id]);
             }
         }
 
         $item_id = (int)$A['pv_item_id'];
-        if ($item_id < 1 || empty($A['groups'])) {
+        if ($item_id < 1 || empty($A['pv_groups'])) {
             return false;
         }
         $P = Product::getById($item_id);
@@ -962,7 +962,7 @@ class ProductVariant
         $price = 0;
         $weight = SHOP_getVar($A, 'weight', 'float', 0);
         $shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
-        $matrix = self::_cartesian($A['groups']);
+        $matrix = self::_cartesian($A['pv_groups']);
         foreach ($matrix as $groups) {
             if ($A['pv_price'] !== '') {
                 $price = (float)$A['pv_price'];
@@ -998,16 +998,11 @@ class ProductVariant
             } else {
                 $sku = $A['pv_sku'];
             }
-            if ($A['pv_onhand'] === '') {
-                $onhand = $P->getOnhand();
-            } else {
-                $onhand = (float)$A['pv_onhand'];
-            }
-            if ($A['pv_reorder'] === '') {
-                $reorder = $P->getReorder();
-            } else {
-                $reorder = (float)$A['pv_reorder'];
-            }
+
+            // Use the product stock values as defalts, don't set reserved.
+            $onhand = $P->getOnhand();
+            $reorder = $P->getReorder();
+
             if ($A['pv_supplier_ref'] === '') {
                 $sup_ref = $P->getSupplierRef();
             } else {
@@ -1021,9 +1016,7 @@ class ProductVariant
                 price = " . (float)$price . ",
                 weight = $weight,
                 shipping_units = $shipping_units,
-                reorder = $reorder,
-                dscp = '" . DB_escapeString(json_encode($dscp)) . "',
-                onhand = $onhand";
+                dscp = '" . DB_escapeString(json_encode($dscp)) . "'";
             //echo $sql;die;
             SHOP_log($sql, SHOP_LOG_DEBUG);
             DB_query($sql);
@@ -1032,6 +1025,11 @@ class ProductVariant
                 foreach ($opt_ids as $opt_id) {
                     $vals[] = '(' . $pv_id . ',' . $opt_id . ')';
                 }
+                Stock::getByItem($A['pv_item_id'], $pv_id)
+                    ->withOnhand($onhand)
+                    ->withReorder($reorder)
+                    ->withReserved(0)
+                    ->Save();
             }
         }
         if (!empty($vals)) {
@@ -1062,7 +1060,7 @@ class ProductVariant
         if (empty($this->sku) && !empty($A['pv_item_id'])) {
             $P = Product::getInstance($A['pv_item_id']);
             $this->sku = $P->getName();
-            foreach ($this->Options as $PVO) {
+            foreach ($this->getOptions() as $PVO) {
                 $pvo_sku = $PVO->getSku();
                 if (!empty($pvo_sku)) {
                     $this->sku .= '-' . $pvo_sku;
@@ -1071,10 +1069,10 @@ class ProductVariant
         }
 
         if ($this->pv_id == 0) {
-           if (isset($A['groups'])) {
+           if (isset($A['pv_groups'])) {
                return self::saveNew($A);
            } else {
-               $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
+                $sql1 = "INSERT INTO {$_TABLES['shop.product_variants']} SET ";
                 $sql3 = '';
            }
         } else {
@@ -1114,7 +1112,7 @@ class ProductVariant
         if (isset($A['groups'])) {
             $old_opts = array();
             $new_opts = array();
-            foreach ($this->Options as $Opt) {
+            foreach ($this->getOptions() as $Opt) {
                 $old_opts[] = $Opt->getID();
             }
             foreach ($A['groups'] as $opt) {
