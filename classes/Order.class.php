@@ -3948,19 +3948,6 @@ class Order
 
 
     /**
-     * Get the net total for line items.
-     *
-     * @deprecated
-     * @see     self::getNetItems()
-     * @return  float       Item subtotal
-     */
-    public function getItemTotal()
-    {
-        return (float)($this->net_nontax + $this->net_taxable);
-    }
-
-
-    /**
      * Check if the order has any invalid items excluded by rules.
      *
      * @return  boolean     True if any items cannot be orderd

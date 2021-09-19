@@ -340,7 +340,7 @@ class ups extends \Shop\Shipper
 
         if (
             $this->free_threshold > 0 &&
-            $Order->getItemTotal() > $this->free_threshold
+            $Order->getNetItems() > $this->free_threshold
         ) {
             $retval = array(
                 (new ShippingQuote)

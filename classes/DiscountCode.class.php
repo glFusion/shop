@@ -411,16 +411,16 @@ class DiscountCode
 
         // Get the item total from the order, excluding products that
         // do not allow discount codes
-        $gross_items = $Cart->getItemTotal();
+        $gross_items = $Cart->getGrossItems();
         foreach($Cart->getItems() as $Item) {
             if (!$Item->getProduct()->canApplyDiscountCode()) {
                 $gross_items -= $Item->getGrossExtension();
             }
         }
-        if ($gross_items < $Cart->getItemTotal()) {
+        if ($gross_items < $Cart->getGrossItems()) {
             $this->messages[] = $LANG_SHOP['dc_items_excluded'];
         }
-        if ($this->min_order > (float)$gross_items) {  // order doesn't meet minimum
+        if ($this->min_order > (float)$gross_items + .0001) {  // order doesn't meet minimum
             $this->messages[] = sprintf(
                 $LANG_SHOP['min_order_not_met'],
                 Currency::getInstance()->Format($this->min_order)

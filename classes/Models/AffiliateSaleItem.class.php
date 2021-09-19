@@ -143,6 +143,11 @@ class AffiliateSaleItem
     }
 
 
+    /**
+     * Get the extended amount for this item.
+     *
+     * @return  float       Extension amount (price * quantity)
+     */
     public function getItemTotal()
     {
         return (float)$this->aff_item_total;

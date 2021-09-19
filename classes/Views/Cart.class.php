@@ -218,7 +218,7 @@ class Cart extends OrderBaseView
             'dc_row_vis'    => $this->Order->getDiscountCode(),
             'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
             'dc_pct'        => $this->Order->getDiscountPct() . '%',
-            'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
+            'net_items'     => $this->Currency->Format($this->Order->getNetItems()),
             'buyer_email'   => $payer_email,
         ) );
         if (!$final) {

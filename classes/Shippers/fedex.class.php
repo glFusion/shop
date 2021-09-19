@@ -336,7 +336,7 @@ class fedex extends \Shop\Shipper
         $request['RequestedShipment']['PackagingType'] = 'YOUR_PACKAGING';
         
         $request['RequestedShipment']['TotalInsuredValue']=array(
-            'Ammount'=> $Order->getItemTotal(),
+            'Ammount'=> $Order->getGrossItems(),
             'Currency'=> Currency::getInstance()->getCode(),
         );
 
