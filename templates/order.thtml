@@ -18,7 +18,7 @@
     <div class="shopOrderButtons">
         {gateway_vars}
     </div>
-{!!elseif {checkout} == 0 !!}
+{!else}
     <div class="floatright">
         {linkPrint}
   {!if is_admin}
