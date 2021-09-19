@@ -381,7 +381,7 @@ class Cart extends Order
         // These elements may or may not be present in the submitted form,
         // depending on the buyer's progress through the workflow.
         //
-        if ($_SHOP_CONF['gc_enabled'] && isset($A['gc_code']) {
+        if ($_SHOP_CONF['gc_enabled'] && isset($A['gc_code'])) {
             // Redeem the supplied gift card code, if provided
             $gc = SHOP_getVar($A, 'gc_code');
             if (!empty($gc)) {
