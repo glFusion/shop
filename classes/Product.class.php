@@ -1077,7 +1077,8 @@ class Product
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
-            if (is_array($A) && isset($A['groups'])) {
+            if (is_array($A) && isset($A['pv_groups'])) {
+                $A['pv_item_id'] = $this->id;
                 ProductVariant::saveNew($A);
             }
 
@@ -2378,9 +2379,10 @@ class Product
     public function getDiscountedPrice($qty=1, $opts_price=0)
     {
         $price = $this->getSale()->calcPrice($this->price + $opts_price);
-        return Currency::getInstance()->RoundVal(
+        $disc_price = Currency::getInstance()->RoundVal(
             $price * (1 - ($this->getDiscount($qty) / 100))
         );
+        return $disc_price;
     }
 
 
@@ -2396,36 +2398,25 @@ class Product
      */
     public function getPrice($opts = array(), $quantity = 1, $override = array())
     {
-        if (!is_array($opts)) {
-            $opts= explode(',', $opts);
-        }
         if ($this->override_price && isset($override['price'])) {
             // If an override price is specified, just return it.
             $this->price = (float)$override['price'];
             return round($this->price, Currency::getInstance()->Decimals());
-        } else {
-            // Otherwise start with the effective sale price
-            $price = $this->getSalePrice();
+        }
+
+        // Otherwise start with the effective sale price
+        $price = $this->getBasePrice();
+
+        if (!empty($opts)) {
+            if (!is_array($opts)) {
+                $opts = explode(',', $opts);
+            }
+            $PV = ProductVariant::getByAttributes($this->id, $opts);
+            $price += $PV->getPrice();
         }
 
         // Calculate the discount factor if a quantity discount is in play
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
-
-        // Add attribute prices to base price.
-        // $Option could be an OrderItemOption or ProductOptionValue key
-        foreach ($opts as $Option) {
-            $key = 0;
-            // Allow for $opts to be an array of attribute IDs, or ProductOption objects.
-            if (is_object($Option)) {
-                $price += $Option->getPrice();
-            } else {
-                // Option is a ProductOptionValue record key
-                $POV = $this->getOption($Option);
-                if ($POV !== false) {
-                    $price += (float)$POV->getPrice();
-                }
-            }
-        }
 
         // Discount the price, including attributes
         $price *= $discount_factor;
@@ -4181,8 +4172,7 @@ class Product
     public function setVariant($variant = 0)
     {
         if (
-            is_numeric($variant) &&
-            $variant == 0 &&
+            $variant === 0 &&
             $this->def_pv_id > 0
         ) {
             $this->Variant = ProductVariant::getInstance($this->def_pv_id);

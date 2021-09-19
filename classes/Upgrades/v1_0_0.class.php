@@ -73,7 +73,7 @@ class v1_0_0 extends Upgrade
                 // Transfer the option info from numbered options.
                 if (!empty($A['options'])) {
                     $opt_ids = explode(',', $A['options']);
-                    $Item = new OrderItem($A);
+                    $Item = OrderItem::fromArray($A);
                     foreach ($opt_ids as $opt_id) {
                         $OIO = new OrderItemOption();
                         $OIO->oi_id = $A['id'];

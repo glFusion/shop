@@ -3,9 +3,9 @@
  * Class to manage options/attributes associated with order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -125,6 +125,23 @@ class OrderItemOption
         $this->oio_name = $A['oio_name'];
         $this->oio_value = $A['oio_value'];
         $this->oio_price = $A['oio_price'];
+        return $this;
+    }
+
+
+    /**
+     * Create an OrderItemOption record from a ProductOptionValue.
+     *
+     * @param   object  $POV        ProductOptionValue object
+     * @return  object  $this
+     */
+    public function fromProductOptionValue(object $POV) : object
+    {
+        $this->pog_id = $POV->getGroupID();
+        $this->pov_id = $POV->getID();
+        $this->oio_name = ProductOptionGroup::getInstance($POV->getGroupID())->getName();
+        $this->oio_value = $POV->getValue();
+        $this->oio_price = $POV->getPrice();
         return $this;
     }
 
@@ -358,5 +375,3 @@ class OrderItemOption
     }
 
 }
-
-?>

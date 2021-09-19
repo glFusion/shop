@@ -257,7 +257,7 @@ class Cart extends Order
                 'quantity'  => $quantity,
                 'name'      => $P->getName($item_name),
                 'description' => $P->getDscp($item_dscp),
-                'variant'   => $PV->getID(),
+                'variant_id' => $PV->getID(),
                 'options'   => $opts,
                 'options_text' => $options_text,
                 'extras'    => $extras,
@@ -378,8 +378,11 @@ class Cart extends Order
 
         $this->calcItemTotals();
 
-        // Now look for a coupon code to redeem against the user's account.
-        if ($_SHOP_CONF['gc_enabled']) {
+        // These elements may or may not be present in the submitted form,
+        // depending on the buyer's progress through the workflow.
+        //
+        if ($_SHOP_CONF['gc_enabled'] && isset($A['gc_code']) {
+            // Redeem the supplied gift card code, if provided
             $gc = SHOP_getVar($A, 'gc_code');
             if (!empty($gc)) {
                 if (Coupon::Redeem($gc) == 0) {
@@ -387,15 +390,15 @@ class Cart extends Order
                 }
             }
         }
-        /*if (isset($A['gateway'])) {
+        if (isset($A['gateway'])) {
             $this->setGateway($A['gateway']);
         }
         if (isset($A['by_gc'])) {
             $this->setGC($A['by_gc']);
-        }*/
-        /*if (isset($_POST['shipper_id'])) {
+        }
+        if (isset($_POST['shipper_id'])) {
             $this->setShipper($_POST['shipper_id']);
-        }*/
+        }
         if (isset($A['buyer_email']) && COM_isEmail($A['buyer_email'])) {
             $this->buyer_email = $A['buyer_email'];
         }
@@ -707,7 +710,7 @@ class Cart extends Order
         if (!SHOP_isMinVersion()) return NULL;
 
         $uid = $uid > 0 ? (int)$uid : (int)$_USER['uid'];
-        if (COM_isAnonUser()) {
+        if ($uid < 2) {
             $cart_id = self::getAnonCartID();
             if (!empty($cart_id)) {
                 // Check if the order exists but is not a cart.

@@ -365,19 +365,7 @@ class Order
         }
 
         // Now load the items
-        $items = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE order_id = '{$this->order_id}'";
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $items[$A['id']] = $A;
-            }
-        }
-        // Now load the arrays into objects
-        foreach ($items as $item) {
-            $this->items[$item['id']] = new OrderItem($item);
-        }
+        $this->items = OrderItem::getByOrder($this->order_id);
         $this->tainted = false;
         return true;
     }
@@ -442,9 +430,17 @@ class Order
             $item_id = explode('|', $args['item_id']);  // TODO: DEPRECATE
             $args['product_id'] = $item_id[0];
         }
+        $pov_ids = array();
+        if (isset($args['options']) && is_array($args['options'])) {
+            foreach ($args['options'] as $pov) {
+                $pov_ids[] = $pov->getID();
+            }
+        }
+        $PV = ProductVariant::getByAttributes($args['product_id'], $pov_ids);
+        $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
-        $OI = new OrderItem($args);
+        $OI = OrderItem::fromArray($args);
         if (isset($args['price'])) {
             $OI->setPrice($args['price']);
         }
@@ -455,7 +451,6 @@ class Order
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
-        //$this->Save();
     }
 
 
@@ -1436,7 +1431,6 @@ class Order
         }
 
         $oldstatus = $this->status;
-        //echo "updating order " . $this->order_id . " from $oldstatus to $newstatus<br />\n";
 
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
@@ -1499,8 +1493,6 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
-        //echo "Status is now {$this->status}<br />\n";
-        //die;
         return $newstatus;
     }
 
@@ -1595,7 +1587,6 @@ class Order
         static $count = array();
         $uid = (int)$uid;
         if (isset($count[$uid])) {
-            echo "1";
             return $count[$uid];
         } else {
             $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
@@ -2175,15 +2166,15 @@ class Order
     {
         $id_parts = SHOP_explode_opts($item_id, true);
 
-        if (!isset($id_parts[1])) $id_parts[1] = '';
+        if (!isset($id_parts[1])) $id_parts[1] = 0;
         $args = array(
             'product_id'    => $id_parts[0],
-            'variant'       => $id_parts[1],
+            'variant_id'    => $id_parts[1],
             'extras'        => $extras,
             'options_text'  => $options_text,
+            'quantity'      => 1,
         );
-
-        $Item2 = new OrderItem($args);
+        $Item2 = OrderItem::fromArray($args);
         foreach ($this->items as $id=>$Item1) {
             if ($Item1->Matches($Item2)) {
                 return $id;
@@ -2282,11 +2273,13 @@ class Order
      * Get a single OrderItem object from this order.
      * Returns an empty OrderItem object if the product is not found.
      *
+     * @deprecate
      * @param   mixed   $item_id    OrderItem product ID
      * @return  object      OrderItem object
      */
     public function getItem($item_id)
     {
+        return NULL;
         foreach ($this->items as $Item) {
             if ($Item->product_id == $item_id) {
                 return $Item;
@@ -3092,6 +3085,7 @@ class Order
             ) {
                 // only update and save if changed
                 $OI->setPrice($new_price);
+                $OI->setNetPrice($new_price);
                 $OI->setDiscount($new_discount);
                 $OI->Save(true);
             }
@@ -3806,15 +3800,16 @@ class Order
     {
         global $_TABLES;
 
+        //if (!DB_error()) {
+            foreach ($this->items as $id=>$Item) {
+                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+                $this->items[$id]->Save();
+            }
+        //}
         $this->updateRecord(array(
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
             "discount_pct = '" . (float)$this->discount_pct . "'"
         ) );
-        if (!DB_error()) {
-            foreach ($this->items as $id=>$Item) {
-                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
-            }
-        }
         return $this;
     }
 
@@ -3855,7 +3850,7 @@ class Order
         // If the code and percentage have not changed, just return true.
         // Otherwise update the discount in the order and items.
         if ($pct == $have_pct && $code == $have_code) {
-            return true;
+//            return true;
         }
 
         if ($pct > 0) {
@@ -3931,8 +3926,32 @@ class Order
 
 
     /**
+     * Get the gross total for line items.
+     *
+     * @return  float       Item subtotal
+     */
+    public function getGrossItems()
+    {
+        return (float)$this->gross_items;
+    }
+
+
+    /**
      * Get the net total for line items.
      *
+     * @return  float       Item subtotal
+     */
+    public function getNetItems()
+    {
+        return (float)($this->net_nontax + $this->net_taxable);
+    }
+
+
+    /**
+     * Get the net total for line items.
+     *
+     * @deprecated
+     * @see     self::getNetItems()
      * @return  float       Item subtotal
      */
     public function getItemTotal()
