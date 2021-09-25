@@ -2333,6 +2333,70 @@ function plugin_templateSetVars_shop($templatename, &$template)
 
 
 /**
+ * Get the names of RSS feeds that are provided.
+ * For evList this is a list of topics
+ *
+ * @return  array   Array of ID=>Name pairs
+ */
+function plugin_getfeednames_shop()
+{
+    return array(
+        array(
+            'id' => 'facebook',
+            'name' => 'Facebook',
+        ),
+    );
+
+    return Shop\Feeds\Catalog::getFeedNames();
+}
+
+
+/**
+ * Get content for the syndication feeds.
+ *
+ * @param   string  $feed       Feed ID to get
+ * @param   string  $link       Pointer to header link value
+ * @param   array   $update_data    Pointer to array of updated item IDs
+ * @param   string  $feedType   Feed type (RSS, ICS, etc.) We only do ICS.
+ * @return  array               Array of event data
+ */
+function plugin_getfeedcontent_shop(
+    $feed, &$link, &$update_data, $feedType, $feedVersion, $A=array()
+) {
+    $content = Shop\Models\Syndication::getFeedContent(
+        $feed, $link, $update_data, $feedType, $feedVersion, $A=array()
+    );
+    return $content;
+}
+
+
+function plugin_getfeedtopic_shop($tid)
+{
+    return Evlist\Calendar::getInstance($tid)->getName();
+}
+
+
+/**
+ * Checks to see if the RSS feed is up-to-date.
+ *
+ * @param   integer $feed   Feed ID from the RSS configuration
+ * @param   integer $topic  Topic ID being requested
+ * @param   string  $update_data    Comma-separated string of current item IDs
+ * @param   integer $limit  Configured limit on item count for this feed
+ * @return  boolean         True if feed needs updating, False otherwise
+ */
+function plugin_feedupdatecheck_shop(
+    $feed, $topic, $update_data, $limit,
+    $updated_type = '', $updated_topic = '', $updated_id = ''
+) {
+    return Shop\Models\Syndication::feedUpdateCheck(
+        $feed, $topic, $update_data, $limit,
+        $updated_type, $updated_topic, $updated_id
+    );
+}
+
+
+/**
  * Get an array variable, first checking whether it's set.
  * If `$emptyok` is set then the default value is returned when the variable
  * is found but is empty. Otherwise as long as that variable is found it is
