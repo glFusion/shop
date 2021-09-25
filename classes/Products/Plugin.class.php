@@ -182,7 +182,7 @@ class Plugin extends \Shop\Product
                     4 => $this->pi_info,
                 )
             );
-            if (is_array($A)) {
+            if (is_array($A) && !empty($A)) {
                 $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
                 $this->name = SHOP_getVar($A, 'title');
                 $this->item_name = SHOP_getVar($A, 'title');
@@ -795,6 +795,7 @@ class Plugin extends \Shop\Product
         $T->set_var(array(
             'id' => $id,
             'pi_name' => $pi_name,
+            'pi_options' => COM_optionList($_TABLES['plugins'], 'pi_name,pi_name', $pi_name, 1, 'pi_enabled=1'),
             'taxable' => $taxable,
             'prod_type' => $prod_type,
             'price' => COM_numberFormat($price,2),
@@ -844,6 +845,24 @@ class Plugin extends \Shop\Product
             prod_type = $prod_type,
             taxable = $taxable";
         DB_query($sql);
+    }
+
+
+    /**
+     * Verify that the order quantity is valid.
+     * For plugins, the item_id will be null if it is not a valid item, so
+     * return zero.
+     *
+     * @param   float   $qty    Desired quantity
+     * @return  float   Valid quantity that may be ordered.
+     */
+    public function validateOrderQty($qty) : float
+    {
+        if (!$this->item_id) {
+            return 0;
+        } else {
+            return parent::validateOrderQty($qty);
+        }
     }
 
 }

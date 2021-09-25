@@ -2866,9 +2866,9 @@ class Product
      * Returns the adjusted quantity if the requested value is not allowed.
      *
      * @param   integer $qty    Requested quantity
-     * @return  integer         Max allowed quantity
+     * @return  float       Max allowed quantity
      */
-    public function validateOrderQty($qty)
+    public function validateOrderQty($qty) : float
     {
         $max = $this->getMaxOrderQty();
         $min = $this->getMinOrderQty();
