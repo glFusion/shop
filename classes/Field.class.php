@@ -68,7 +68,7 @@ class Field
     {
         static $T = NULL;
         if ($T === NULL) {
-            $T = new \Template(__DIR__ . '/../templates/fields');
+            $T = new Template('fields');
             $T->set_file('field', 'radio.thtml');
         }
 

@@ -3,9 +3,9 @@
  * Class to manage options/attributes associated with order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -130,6 +130,23 @@ class OrderItemOption
 
 
     /**
+     * Create an OrderItemOption record from a ProductOptionValue.
+     *
+     * @param   object  $POV        ProductOptionValue object
+     * @return  object  $this
+     */
+    public function fromProductOptionValue(object $POV) : object
+    {
+        $this->pog_id = $POV->getGroupID();
+        $this->pov_id = $POV->getID();
+        $this->oio_name = ProductOptionGroup::getInstance($POV->getGroupID())->getName();
+        $this->oio_value = $POV->getValue();
+        $this->oio_price = $POV->getPrice();
+        return $this;
+    }
+
+
+    /**
      * Set the OrderItem record ID property.
      *
      * @param   integer $id     OrderItem record ID
@@ -219,6 +236,7 @@ class OrderItemOption
      * @param   integer $pov_id     Product Option Value ID, zero to use name/value
      * @param   string  $name       Name of custom field
      * @param   string  $value      Value of custom field
+     * @return  object  $this
      */
     public function setOpt($pov_id, $name='', $value='')
     {
@@ -240,6 +258,7 @@ class OrderItemOption
             $this->oio_value = $value;
             $this->oio_price = 0;
         }
+        return $this;
     }
 
 
@@ -356,5 +375,3 @@ class OrderItemOption
     }
 
 }
-
-?>

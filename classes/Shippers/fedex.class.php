@@ -254,30 +254,38 @@ class fedex extends \Shop\Shipper
             return $Tracking;
         } elseif ($response->HighestSeverity == 'SUCCESS') {
             $TrackDetails = $response->CompletedTrackDetails->TrackDetails;
-            if ($TrackDetails->Service) {
-                $Tracking->addMeta(
-                    'Service',
-                    $TrackDetails->Service->Description
-                );
-            }
-            $StatusDetail = $TrackDetails->StatusDetail;
-            $Tracking->addMeta('Status', $StatusDetail->Description);
-            if ($StatusDetail->Code == 'DL') {   // Delivered
-                $Tracking->addMeta('Delivered to', $TrackDetails->DeliveryLocationDescription);
-                $Tracking->addMeta('Signed By', $TrackDetails->DeliverySignatureName);
-            }
-            $Events = $TrackDetails->Events;
-            foreach ($Events as $Event) {
-                $loc = $this->_makeTrackLocation($Event->Address);
-                $Tracking->addStep(
-                    array(
-                        'location' => $loc,
-                        //'datetime' => $Event->Timestamp,
-                        'date'  => substr($Event->Timestamp, 0, 10),
-                        'time'  => substr($Event->Timestamp, 11),
-                        'message' => (string)$Event->EventDescription,
-                    )
-                );
+            if (
+                isset($TrackDetails->Notification->Severity)
+                &&
+                $TrackDetails->Notification->Severity != 'SUCCESS'
+            ) {
+                $Tracking->addMeta('Error', $TrackDetails->Notification->LocalizedMessage);
+            } else {
+                if ($TrackDetails->Service) {
+                    $Tracking->addMeta(
+                        'Service',
+                        $TrackDetails->Service->Description
+                    );
+                }
+                $StatusDetail = $TrackDetails->StatusDetail;
+                $Tracking->addMeta('Status', $StatusDetail->Description);
+                if ($StatusDetail->Code == 'DL') {   // Delivered
+                    $Tracking->addMeta('Delivered to', $TrackDetails->DeliveryLocationDescription);
+                    $Tracking->addMeta('Signed By', $TrackDetails->DeliverySignatureName);
+                }
+                $Events = $TrackDetails->Events;
+                foreach ($Events as $Event) {
+                    $loc = $this->_makeTrackLocation($Event->Address);
+                    $Tracking->addStep(
+                        array(
+                            'location' => $loc,
+                            //'datetime' => $Event->Timestamp,
+                            'date'  => substr($Event->Timestamp, 0, 10),
+                            'time'  => substr($Event->Timestamp, 11),
+                            'message' => (string)$Event->EventDescription,
+                        )
+                    );
+                }
             }
         } else {
             SHOP_log(
@@ -336,7 +344,7 @@ class fedex extends \Shop\Shipper
         $request['RequestedShipment']['PackagingType'] = 'YOUR_PACKAGING';
         
         $request['RequestedShipment']['TotalInsuredValue']=array(
-            'Ammount'=> $Order->getItemTotal(),
+            'Ammount'=> $Order->getGrossItems(),
             'Currency'=> Currency::getInstance()->getCode(),
         );
 

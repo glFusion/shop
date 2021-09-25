@@ -3,9 +3,9 @@
  * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -881,12 +881,25 @@ class Customer
         return '_coupon';
     }
 
+
+    /**
+     * Get this affiliate's link to be shared.
+     *
+     * @param   mixed   $item_id    Product ID (not SKU) to add to the link
+     * @return  string      URL to product with affiliate ID parameter.
+     */
     public function getAffiliateLink($item_id='')
     {
         if (Config::get('aff_enabled') && !empty($this->affiliate_id)) {
-            $url = Config::get('url') . '/index.php?' . Config::get('aff_key') . '=' . $this->affiliate_id;
             if ($item_id != '') {
-                $url .= '&id=' . $item_id;
+                // Direct to the product detail page
+                $url = Config::get('url') . '/detail.php?' .
+                    Config::get('aff_key') . '=' . $this->affiliate_id .
+                    '&item_id=' . $item_id;
+            } else {
+                // Go to the catalog homepage
+                $url = Config::get('url') . '/index.php?' .
+                    Config::get('aff_key') . '=' . $this->affiliate_id;
             }
             return $url;
         } else {

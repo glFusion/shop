@@ -8,7 +8,7 @@
         <input type="hidden" name="order_id" value="{order_number}" />
 
 {!if final_checkout}
-    <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
+    <div uk-grid class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1 uk-width-1-1@s uk-width-1-2@m" style="text-align:left;">
         <div class="orderAddress">
             <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
                 <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
@@ -26,16 +26,16 @@
 
         <div class="cart">
             <div class="cart-items">
-                <div class="uk-grid uk-margin uk-hidden-small">
-                    <div class="uk-width-medium-3-6">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-6">{$LANG_SHOP['price']}</div>
-                    <div class="uk-width-medium-1-6">{$LANG_SHOP['quantity']}</div>
-                    <div class="uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
+                <div uk-grid class="uk-grid uk-margin uk-hidden-small">
+                    <div class="uk-width-1-2@m uk-width-medium-3-6">{$LANG_SHOP['description']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6">{$LANG_SHOP['price']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6">{$LANG_SHOP['quantity']}</div>
+                    <div class="uk-width-1-6@m uk-width-medium-1-6 cart-item-total">{$LANG_SHOP['total']}</div>
                 </div>
 <!-- BEGIN ItemRow -->
                 <div class="cart-item {!if embargoed}embargo{!endif}">
-                    <div class="uk-grid uk-margin">
-                        <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
+                    <div uk-grid class="uk-grid uk-margin">
+                        <div class="uk-width-medium-1-2 uk-width-1-1 uk-width-1-2@m cart-item-product">
                             <div class="cart-item-image">
 {!if item_link}
                                 <a href="{item_link}">{img_url}</a>
@@ -50,17 +50,20 @@
                                 {item_dscp}
 {!endif}
                                 {item_options}
+{!if item_extras}
+                                <br />{item_extras}
+{!endif}
                             </div>
                         </div>
-                        <div class="uk-width-medium-1-6 uk-width-1-2 cart-item-price">
+                        <div class="uk-width-medium-1-6 uk-width-1-2 uk-width-1-6@m cart-item-price">
                             {item_price}
                         </div>
-                        <div class="uk-width-medium-1-6 uk-width-1-2 cart-item-quantity">
+                        <div class="uk-width-medium-1-6 uk-width-1-2 uk-width-1-6@m cart-item-quantity">
 {!if fixed_q}
                             <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
                             {item_quantity}
 {!else}
-                            <input type="number" style="width:60px;text-align:right;" id="f_qty_{cart_item_id}"
+                            <input style="width:70%" class="uk-input uk-form-small" type="number" id="f_qty_{cart_item_id}"
                                 onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
                                 max="{max_ord_qty}"
@@ -85,7 +88,7 @@
 {!endif}
 
                         </div>
-                        <div class="uk-width-medium-1-6 uk-width-1-1 cart-item-total money">
+                        <div class="uk-width-medium-1-6 uk-width-1-1 uk-width-1-6@m cart-item-total money">
                             <div class="mobile-label">{$LANG_SHOP['total']}</div>{item_total}
                         </div>
                     </div>
@@ -95,45 +98,45 @@
 
             <div class="cart-total">
 {!if subtotal}
-                <div class="uk-grid">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['item_total']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{subtotal}</div>
+                <div uk-grid class="uk-grid">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info subtotal">{$LANG_SHOP['item_total']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">{subtotal}</div>
                 </div>
 {!endif}
 
 {!if dc_row_vis}
-                <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code} {dc_pct})</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{dc_amt}</div>
+                <div uk-grid class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code} {dc_pct})</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">{dc_amt}</div>
                 </div>
 {!endif}
 
 {!if cart_tax}
-                <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
-                    <div id="ord_tax_span" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
+                <div uk-grid class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info">{$LANG_SHOP['sales_tax']}</div>
+                    <div id="ord_tax_span" class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">{cart_tax}</div>
                 </div>
 {!endif}
 
 {!if shipping}
-                <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['shipping']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping}</div>
+                <div uk-grid class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info">{$LANG_SHOP['shipping']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">{shipping}</div>
                 </div>
 {!endif}
 
 {!if handling}
-                <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['handling']}</div
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{handling}</div>
+                <div uk-grid class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info">{$LANG_SHOP['handling']}</div
+                    <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">{handling}</div>
                 </div>
 {!if tax_handling}
                 <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
 {!endif}
 {!endif}
-                <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['total']}</div>
-                    <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">
+                <div uk-grid class="uk-grid" style="margin-top:5px;">
+                    <div class="uk-width-1-2 uk-width-medium-5-6 uk-width-5-6@m cart-total-info subtotal">{$LANG_SHOP['total']}</div>
+                    <div class="uk-width-1-2 uk-width-medium-1-6 uk-width-1-6@m cart-item-total money">
                         {total_prefix}<span id="ord_total_span">{total_num}</span>{total_postfix}
                     </div>
                 </div>
@@ -143,16 +146,18 @@
             <div>
 {!if discount_code_fld}
                 <div>
-                    {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
+                    {$LANG_SHOP['disc_code']}:
+					<input id="discount_code" type="text" name="discount_code"
+						class="uk-input uk-form-small uk-form-width-medium"
                         oninput="updateDCButton();return false;" />
                     <button id="dc_validate" name="update"
                         class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
                 </div>
 {!endif}
                 <div class="orderInstructions">
-                    {$LANG_SHOP['enter_email']}: {buyer_email}
-                    <input id="buyer_email" type="text"
-                        name="buyer_email" size="40" value="{buyer_email}"/>
+                    {$LANG_SHOP['enter_email']}:
+                    <input class="uk-input uk-form-small uk-form-width-medium" id="buyer_email" type="text"
+                        name="buyer_email" value="{buyer_email}"/>
                     <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
                 </div>
 
@@ -213,7 +218,6 @@ function incrementItemQty(oi_id, val)
             try {
 console.log(result);
                 $("#"+elem+"_addr").html(result);
-                //UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-spin"></i></div>', {center:true});
             } catch(err) {
             }
         }

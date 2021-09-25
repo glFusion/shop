@@ -15,6 +15,11 @@
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
 
+// Make sure this is called via Ajax
+if (!COM_isAjax()) {
+    COM_404();
+}
+
 $uid = (int)$_USER['uid'];
 $action = SHOP_getVar($_GET, 'action');
 $output = NULL;
@@ -264,6 +269,7 @@ case 'validateAddress':
         $A2 = $A1->Validate();
         if (!$A1->Matches($A2)) {
             $save_url = SHOP_getVar($_POST, 'save_url', 'string,', SHOP_URL . '/cart.php');
+            $return_url = SHOP_getVar($_POST, 'return', 'string,', SHOP_URL . '/cart.php');
             $T = new Shop\Template;
             $T->set_file('popup', 'address_select.thtml');
             $T->set_var(array(
@@ -274,6 +280,7 @@ case 'validateAddress':
                 'ad_type'       => $_POST['ad_type'],
 //                'next_step'     => $_POST['next_step'],
                 'save_url'      => $save_url,
+                'return'        => $return_url,
                 'save_btn_name' => SHOP_getVar($_POST, 'save_btn_name', 'string,', 'save'),
             ) );
             $output['status']  = false;
@@ -329,5 +336,3 @@ if (is_array($output)) {
 } else {
     echo $output;
 }
-
-?>

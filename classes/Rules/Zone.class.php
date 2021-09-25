@@ -20,6 +20,7 @@ use Shop\Template;
 use Shop\Config;
 use Shop\GeoLocator;
 use Shop\Field;
+use Shop\Tooltipster;
 
 
 /**
@@ -428,7 +429,7 @@ class Zone
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_rule'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
             array(
                 'style' => 'float:left;',
@@ -535,10 +536,9 @@ class Zone
     {
         global $LANG_SHOP;
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file(array(
             'form'  => 'rule_edit.thtml',
-            'tips'  => 'tooltipster.thtml',
         ) );
         $T->set_var(array(
             'rule_id'   => $this->rule_id,
@@ -590,6 +590,7 @@ class Zone
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
+                'tooltipster_js' => Tooltipster::get('zone_rules'),
             ) );
             $T->parse('SB', 'stateBlk', true);
         }

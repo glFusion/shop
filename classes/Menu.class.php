@@ -218,7 +218,7 @@ class Menu
      */
     public static function adminCatalog($view='')
     {
-        global $LANG_SHOP, $LANG_SHOP_HELP;
+        global $LANG_SHOP, $LANG_SHOP_HELP, $LANG01;
 
         $menu_arr = array(
             array(
@@ -272,6 +272,12 @@ class Menu
                 'text' => $LANG_SHOP['features'],
                 'active' => $view == 'features' ? true : false,
                 'help' => $LANG_SHOP_HELP['features'],
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?pi_products',
+                'text' => $LANG01[77],
+                'active' => $view == 'pi_products' ? true : false,
+                'help' => $LANG_SHOP_HELP['pi_products'],
             ),
         );
         if (Config::get('gc_enabled')) {

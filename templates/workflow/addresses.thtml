@@ -1,8 +1,8 @@
 {# begin {templatelocation} #}
-<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
+<div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left">
     <div class="uk-form">
         <h2>{$LANG_SHOP['select_shipto']}:</h2>
-        <select id="shipto_id" name="shipto_id" onchange="SHOP_updateAddress(this.value, 'shipto',true);">
+        <select class="uk-select" id="shipto_id" name="shipto_id" onchange="SHOP_updateAddress(this.value, 'shipto',true);">
             {shipto_opts}
         </select>
         <p>
@@ -13,14 +13,14 @@
     <div class="uk-form">
         <div id="selectBillto">
         <h2>{$LANG_SHOP['select_billto']}:</h2>
-        <select id="billto_id" name="billto_id" onchange="SHOP_updateAddress(this.value, 'billto',true);">
+        <select class="uk-select" id="billto_id" name="billto_id" onchange="SHOP_updateAddress(this.value, 'billto',true);">
             {billto_opts}
         </select>
         </div>
     </div>
 </div>
 
-<div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;">
+<div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1" style="text-align:left;margin-top:0px;">
     <div style="padding-top:20px;">
         <span class="header">{$LANG_SHOP['ship_to']}:</span><br />
         <span id="shipto_addr">{shipto_addr}</span>
@@ -42,13 +42,13 @@
 
 <div class="orderInstructions">
     {$LANG_SHOP['enter_email']}:
-    <input required id="buyer_email" type="text"
-        name="buyer_email" size="40" value="{buyer_email}"/>
+    <input class="uk-input uk-form-width-large required" required id="buyer_email" type="text"
+        name="buyer_email" value="{buyer_email}"/>
     <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
 </div>
 <div class="orderInstructions">
     {$LANG_SHOP['order_instr']}:<br />
-    <textarea name="order_instr" rows="4" style="width:100%">{order_instr}</textarea>
+    <textarea class="uk-textarea uk-width-1-1" name="order_instr" rows="5">{order_instr}</textarea>
 </div>
 
 {form_footer}

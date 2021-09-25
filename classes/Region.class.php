@@ -250,10 +250,9 @@ class Region extends RegionBase
      */
     public function Edit()
     {
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'region.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
 
         $T->set_var(array(
@@ -261,9 +260,8 @@ class Region extends RegionBase
             'region_code'   => $this->getCode(),
             'region_name'   => $this->getName(),
             'ena_chk'       => $this->region_enabled ? 'checked="checked"' : '',
-            'doc_url'       => SHOP_getDocUrl('region_form'),
+            'tooltipster_js' => Tooltipster::get('region_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
     }
@@ -356,7 +354,7 @@ class Region extends RegionBase
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_region'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/regions.php?editregion=x',
             array(
                 'class' => 'uk-button uk-button-success',

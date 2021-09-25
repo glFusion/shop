@@ -132,7 +132,8 @@ class ipn extends \Shop\IPN
             $this->GW->isSandbox()
             && (
                 isset($this->ipn_data['test_ipn'])      // added by Paypal
-                || isset($this->ipn_data['x_test_ipn']) // added by local test page
+                ||
+                isset($this->ipn_data['x_test_ipn']) // added by local test page
             )
         ) {
             return true;

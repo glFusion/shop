@@ -166,7 +166,7 @@ class ProductOptionValue
                 $POG->setName($_POST['pog_name']);
                 $POG->Save();
             }
-            $this->pog_id = $POG->pog_id;
+            $this->pog_id = $POG->getID();
         }
 
         // Make sure the necessary fields are filled in
@@ -245,8 +245,10 @@ class ProductOptionValue
         $sql = "SELECT pov_id FROM {$_TABLES['shop.prod_opt_vals']}
             WHERE pog_id = " . (int)$og_id;
         $res = DB_query($sql);
-        while ($A = DB_fetchArray($sql, false)) {
-            self::Delete($A['pov_id']);
+        if (DB_numRows($res) > 0) {
+            while ($A = DB_fetchArray($sql, false)) {
+                self::Delete($A['pov_id']);
+            }
         }
     }
 
@@ -279,7 +281,7 @@ class ProductOptionValue
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('optform', 'option_val_form.thtml');
         $id = $this->pov_id;
 
@@ -287,10 +289,10 @@ class ProductOptionValue
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_opt'] . ': ' . $this->pov_value);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->pov_value);
             $T->set_var('pov_id', $id);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_option']);
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
             $T->set_var('pov_id', '');
             if ($this->pog_id == 0) {
                 $this->pog_id = ProductOptionGroup::getFirst()->getID();
@@ -478,7 +480,7 @@ class ProductOptionValue
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink($LANG_SHOP['new_opt'],
+        $display .= COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?pov_edit=0',
             array(
                 'style' => 'float:left;',

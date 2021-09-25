@@ -20,8 +20,8 @@ if (!defined ('GVERSION')) {
 
 global $_DB_table_prefix, $_TABLES;
 
-Shop\Config::set('pi_version', '1.3.0.1');
-Shop\Config::set('gl_version', '1.7.8');
+Shop\Config::set('pi_version', '1.3.1');
+Shop\Config::set('gl_version', '1.7.9');
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
 
@@ -72,6 +72,7 @@ $_TABLES['shop.affiliate_sales'] = $_SHOP_table_prefix . 'affiliate_sales';
 $_TABLES['shop.affiliate_saleitems'] = $_SHOP_table_prefix . 'affiliate_saleitems';
 $_TABLES['shop.affiliate_payments'] = $_SHOP_table_prefix . 'affiliate_payments';
 $_TABLES['shop.stock'] = $_SHOP_table_prefix . 'stock';
+$_TABLES['shop.plugin_products'] = $_SHOP_table_prefix . 'plugin_products';
 
 // Deprecate eventually
 $_TABLES['shop.prod_attr']    = $_SHOP_table_prefix . 'product_attributes';

@@ -50,7 +50,7 @@ class v1_3_0 extends Upgrade
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $OI = new OrderItem($A);
+                $OI = OrderItem::fromArray($A);
                 $OI->setSKU()->Save();
             }
         }

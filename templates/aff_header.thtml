@@ -2,6 +2,26 @@
 <h2>
     {lang_report_for} {user_name}<br />
 </h2>
+{!if aff_link}
+<h3>
+    <ul class="uk-grid">
+        <li class="uk-width-1-4">{lang_my_link}:</li>
+        <li class="uk-width-3-4">
+            {aff_link}&nbsp;<a id="cpylink" class="tooltip" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">
+                <i class="uk-icon uk-icon-clipboard"></i>
+            </a>
+        </li>
+    </ul>
+</h3>
+<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+<script>
+var clipboard = new Clipboard('#cpylink');
+clipboard.on('success', function(e) {
+    e.clearSelection();
+    Shop.notify("{lang_copy_success}", "success");
+});
+</script>
+{!endif}
 <h3>
     <ul class="uk-grid uk-grid-width-medium-1-4 uk-grid-width-small-1-2">
         <li>{lang_commissions}:</li>
@@ -10,24 +30,4 @@
         <li>{lang_due}: {comm_due}</li>
     </ul>
 </h3>
-{!if aff_link}
-<h3>
-    <ul class="uk-grid">
-        <li class="uk-width-1-4">{lang_my_link}:</li>
-        <li class="uk-width-3-4">
-            {aff_link}&nbsp;<a class="cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">
-                <i class="uk-icon uk-icon-clipboard"></i>
-            </a>
-        </li>
-    </ul>
-</h3>
-<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
-<script>
-var clipboard = new Clipboard('.cpybtn');
-clipboard.on('success', function(e) {
-    e.clearSelection();
-    Shop.notify("{lang_copy_success}", "success");
-});
-</script>
-{!endif}
 {# end {templatelocation} #}

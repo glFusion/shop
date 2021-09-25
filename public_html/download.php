@@ -77,7 +77,7 @@ if (is_array($A) && !empty($A['file'])) {
         $DL->setLogFile($_CONF['path'] . 'logs/error.log');
         $DL->setLogging(true);
     } else {
-        $DL->setLogginf(false);
+        $DL->setLogging(false);
     }
     //$DL->setAllowedExtensions($_SHOP_CONF['allowedextensions']);
     $DL->setPath($_SHOP_CONF['download_path']);

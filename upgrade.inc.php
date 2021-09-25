@@ -446,7 +446,7 @@ function SHOP_do_upgrade($dvlp = false)
     CTL_clearCache();   // clear cache to ensure CSS updates come through
     SHOP_log("Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin", SHOP_LOG_INFO);
     // Set a message in the session to replace the "has not been upgraded" message
-    COM_setMsg("Shop Plugin has been updated to $current_ver", 'info', 1);
+    SHOP_setMsg("Shop Plugin has been updated to $current_ver", 'info', 1);
     return true;
 }
 
@@ -605,13 +605,15 @@ function SHOP_remove_old_files()
             'classes/DBO.class.php',
             'classes/Webhooks',
             'classes/ipn',
+            // 1.4.0
+            'language/german_formal_utf-8.php',
         ),
         // public_html/shop
         $_CONF['path_html'] . 'shop' => array(
             // 1.2.0
             'js/country_state.js',
             'docs/english/attribute_form.html',
-	    'js/toggleEnabled.js',
+            'js/toggleEnabled.js',
         ),
         // admin/plugins/shop
         $_CONF['path_html'] . 'admin/plugins/shop' => array(

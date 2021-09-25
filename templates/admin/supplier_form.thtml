@@ -4,10 +4,11 @@
 {!endif}
 <h2>
 {!if entry_id}
-	{$LANG_SHOP['edit_supplier']}
+	{$LANG_SHOP['edit_item']}
 {!else}
-	{$LANG_SHOP['new_supplier']}
+	{$LANG_SHOP['new_item']}
 {!endif}
+: {$LANG_SHOP['supplier']}
 </h2>
 <form action="{site_admin_url}/plugins/shop/index.php" method="post"
 	enctype="multipart/form-data"

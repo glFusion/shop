@@ -96,9 +96,9 @@
 		<label class="uk-form-label">{pog_name}:</label>
 		<div class="uk-form-controls">
 {!if pv_id}
-			<select name="groups[{pog_id}]">
+			<select name="pv_groups[{pog_id}]">
 {!else}
-			<select multiple name="groups[{pog_id}][]">
+			<select multiple name="pv_groups[{pog_id}][]">
 {!endif}
 				<option value="0">-- n/a --</option>
 <!-- BEGIN OptionValues -->

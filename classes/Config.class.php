@@ -74,6 +74,7 @@ final class Config
             'donation'  => 0,   // disabled by default
         );
         $this->properties['datetime_fmt'] = 'Y-m-d H:i:s T';
+        $this->properties['path'] = $_CONF['path'] . 'plugins/' . self::PI_NAME . '/';
 
         $_SHOP_CONF = $this->properties;
     }
@@ -142,6 +143,28 @@ final class Config
     public static function get($key=NULL, $default=NULL)
     {
         return self::getInstance()->_get($key, $default);
+    }
+
+
+    /**
+     * Convenience function to get the base plugin path.
+     *
+     * @return  string      Path to main plugin directory.
+     */
+    public static function path()
+    {
+        return self::_get('path');
+    }
+
+
+    /**
+     * Convenience function to get the path to plugin templates.
+     *
+     * @return  string      Template path
+     */
+    public static function path_template()
+    {
+        return self::get('path') . 'templates/';
     }
 
 }

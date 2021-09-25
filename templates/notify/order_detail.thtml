@@ -77,6 +77,9 @@
   {!if options_text}
     {options_text}
   {!endif}
+{!if extras_text}
+	<br />{extras_text}
+{!endif}
   </td>
   <td style="vertical-align:top;width:80px;text-align:right;">{price}</td>
   <td style="vertical-align:top;width:80px;text-align:right;">{ext}</td>

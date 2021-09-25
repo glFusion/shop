@@ -60,9 +60,9 @@ class reorder extends \Shop\Report
             s.sup_id as supplier_id, s.company as supplier
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.stock']} stk
-                ON p.id = stk.item_id
+                ON p.id = stk.stk_item_id
             LEFT JOIN {$_TABLES['shop.product_variants']} pv
-                ON p.id = pv.item_id AND stk.pv_id = pv.pv_id
+                ON p.id = pv.item_id AND stk.stk_pv_id = pv.pv_id
             LEFT JOIN {$_TABLES['shop.suppliers']} s
                 ON s.sup_id = p.supplier_id";
 

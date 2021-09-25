@@ -496,6 +496,7 @@ class OrderBaseView
                 'taxable'       => $this->Order->getTaxRate() > 0 ? $Item->isTaxable() : 0,
                 'token'         => $Item->getToken(),
                 'item_options'  => $Item->getOptionDisplay(),
+                'item_extras'   => $Item->getExtraDisplay(),
                 'sku'           => $Item->getSKU(),
                 'item_link'     => $P->withOrderItem($Item->getID())->getLink(),
                 'pi_url'        => SHOP_URL,
@@ -543,7 +544,7 @@ class OrderBaseView
             'dc_row_vis'    => $this->Order->getDiscountCode(),
             'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
             'dc_pct'        => $this->Order->getDiscountPct() . '%',
-            'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
+            'net_items'     => $this->Currency->Format($this->Order->getNetItems()),
             'pmt_status'    => $this->Order->getPaymentStatus(),
         ) );
         return $this;

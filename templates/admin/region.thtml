@@ -3,7 +3,7 @@
 {!if region_id}
     {$LANG_SHOP['edit']}: {$LANG_SHOP['region']}
 {!else}
-    {$LANG_SHOP['new_region']}
+    {$LANG_SHOP['new_item']}: {$LANG_SHOP['region']}
 {!endif}
 </h2>
 <form action="{site_admin_url}/plugins/shop/regions.php" method="post"

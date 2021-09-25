@@ -66,8 +66,6 @@ class Gateway extends \Shop\Gateway
      */
     public function __construct($A=array())
     {
-        global $_USER;
-
         $supported_currency = array(
             'USD', 'AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'NZD', 'CHF', 'HKD',
             'SGD', 'SEK', 'DKK', 'PLN', 'NOK', 'HUF', 'CZK', 'ILS', 'MXN',
@@ -284,11 +282,6 @@ class Gateway extends \Shop\Gateway
                     }
                 }
                 $fields['quantity_' . $i] = $item->getQuantity();
-
-                if ($item->getShipping() > 0) {
-                    $fields['shipping_' . $i] = $item->getShipping();
-                    $shipping += $item->getShipping();
-                }
                 $i++;
             }
 

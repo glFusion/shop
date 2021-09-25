@@ -70,6 +70,7 @@ class orderlist extends \Shop\Report
                 'text'  => '',
                 'field' => 'action',
                 'sort'  => false,
+                'align' => 'center',
             ),
             array(
                 'text'  => $LANG_SHOP['order_date'],
@@ -219,6 +220,7 @@ class orderlist extends \Shop\Report
             'table' => 'shop.orders',
             'sql' => $sql,
             'query_fields' => array(
+                'order_id',
                 'billto_name', 'billto_company', 'billto_address1',
                 'billto_address2','billto_city', 'billto_state',
                 'billto_country', 'billto_zip',

@@ -465,7 +465,7 @@ class Supplier extends Address
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('form', 'supplier_form.thtml');
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {
@@ -601,7 +601,7 @@ class Supplier extends Address
             'form_url' => SHOP_ADMIN_URL . '/index.php?suppliers',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_supplier'],
+        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?edit_sup=0',
             array('class' => 'uk-button uk-button-success')
         ) . '</div>';

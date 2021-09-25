@@ -404,7 +404,7 @@ class Category
         // Clean up old upload images that never got assigned to a category
         Images\Category::cleanUnassigned();
 
-        $T = new Template;
+        $T = new Template('admin');
         $T->set_file('category', 'category_form.thtml');
         $id = $this->cat_id;
 
@@ -412,12 +412,12 @@ class Category
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->cat_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->cat_name);
             $T->set_var('cat_id', $id);
             //$not = 'NOT';
             //$items = $id;
         } else {
-            $retval = COM_startBlock($LANG_SHOP['create_category']);
+            $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['category']);
             $T->set_var('cat_id', '');
             //$not = '';
             //$items = '';
@@ -1023,7 +1023,7 @@ class Category
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
         $display .= COM_createLink(
-            $LANG_SHOP['new_category'],
+            $LANG_SHOP['new_item'],
             SHOP_ADMIN_URL . '/index.php?editcat=x',
             array(
                 'class' => 'uk-button uk-button-success',

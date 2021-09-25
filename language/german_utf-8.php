@@ -761,8 +761,16 @@ $LANG_SHOP = array (
 'aff_sales' => 'Affiliate Sales',
 'commissions' => 'Commissions',
 'commission' => 'Commission',
-'aff_report_for' => 'Affiliate Report for:',
+'aff_report_for' => 'Affiliate Report for',
 'due' => 'Due',
+'quantities' => 'Quantities',
+'reserved' => 'Reserved',
+'new_item' => 'New Item',
+'edit_item' => 'Edit Item',
+'msg_aff_signup_updated' => 'Thanks for updating your information',
+'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
+'pi_name' => 'Plugin',
+'plugins' => 'Plugins',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
@@ -821,6 +829,8 @@ EstimatedSpecialRate,RiskLevel</pre>',
 'gw_grp_access' => 'Select the glFusion group that is allowed to use this gateway. You may wish to restrict access to some gateways sucn as terms or C.O.D.',
 'gw_order' => 'Enter a number to represent the order in which this gateway will appear in the payment options list (lower number means higher).',
 'msg_no_virt_delivery' => 'There is no delivery information required for virtual products.',
+'pi_products' => 'Plugins that supply products to the Shop can have default settings where values are not provided by the plugin itself.',
+'hlp_pi_products' => 'Enter the plugin name and set the default values for its products. These values will be used unless the plugin supplies its own values for these settings.',
 );
 
 $LANG_MYACCOUNT['pe_shop'] = 'Shopping';
@@ -944,6 +954,11 @@ $LANG_confignames['shop'] = array(
 'aff_key' => 'Affiliate URL Key',
 'aff_cookie_exp_days' => 'Affiliate cookie expiration (days)',
 'aff_cart_exp_days' => 'Affiliate cart expiration (days)',
+'tax_nexus_virt' => 'Tax location for virtual items',
+'aff_eligible' => 'Group eligible to become affiliates',
+'aff_auto_enroll' => 'Auto-enroll eligible users?',
+'aff_form_id' => 'Affiliate registration form',
+'smartystreets_license' => 'SmartyStreets License',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -978,53 +993,76 @@ $LANG_fs['shop'] = array(
 );
 
 /**
-*   Language strings for the selection option names in the config section.
-*
-*   Item 4 is also used in functions.inc to provide a currency selector.
-*/
-$LANG_configselects['shop'] = array(
-    0 => array('Ja' => 1, 'Nein' => 0),
-    2 => array('Ja' => 1, 'Nein' => 0),
-    5 => array('Name' => 'name', 'Preis' => 'price', 'Produkt-ID' => 'id'),
+ * Language strings for the selection option names in the config section.
+ */
+$LANG_configSelect['shop'] = array(
+    0 => array(
+        1 => 'Ja',
+        0 => 'Nein',
+    ),
+    5 => array(
+        'name' => 'Name',
+        'price' => 'Preis',
+        'id' => 'Produkt-ID' => 'id',
+    ),
     11 => array(
-        '10 - Pending'   => 'pending',
-        '20 - Invoiced'  => 'invoiced',
-        '30 - Processing' => 'processing',
-        '40 - Shipped'   => 'shipped',
-        '50 - Closed'    => 'closed',
+        'pending' => 'Pending',
+        'invoiced' => 'Invoiced',
+        'processing' => 'Processing',
+        'shipped' => 'Shipped',
+        'closed' => 'Closed',
     ),
     12 => array(
-        'Origin' => 0,
-        'Destination, Customer-Entered' => 1,
-        'Destination, IP Geolocation' => 3,
+        0 => 'Origin',
+        1 => 'Destination, Customer-Entered',
+        3 => 'Destination, IP Geolocation',
     ),
-    13 => array('Keine Blöcke' => 0, 'Linke Blöcke' => 1, 'Rechte Blöcke' => 2, 'Linke & Rechte Blöcke' => 3),
-    14 => array('Nicht verfügbar' => 0, 'Optional' => 1, 'Erforderlich' => 2),
-    15 => array('Pfund' => 'lbs', 'Kilogramm' => 'kgs'),
-    16 => array('Anzeigen mit Bestellmöglichkeit' => 0, 'Anzeigen ohne Bestellmöglichkeit' => 1, 'Nicht mehr anzeigen' => 2),
-    17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    13 => array(
+        0 => 'Keine Blöcke',
+        1 => 'Linke Blöcke',
+        2 => 'Rechte Blöcke',
+        3 => 'Linke & Rechte Blöcke',
+    ),
+    14 => array(
+        0 => 'Nicht verfügbar',
+        1 => 'Optional',
+        2 => 'Erforderlich',
+    ),
+    15 => array(
+        'lbs' => 'Pfund',
+        'kgs' => 'Kilogramm',
+    ),
+    16 => array(
+        0 => 'Anzeigen mit Bestellmöglichkeit',
+        1 => 'Anzeigen ohne Bestellmöglichkeit',
+        2 => 'Nicht mehr anzeigen',
+    ),
+    17 => array(
+        1 => 'Upper-case',
+        2 => 'Lower-case',
+        3 => 'Mixed-case',
+        0 => 'None',
+    ),
     18 => array(
-        '100 - DEBUG' => 100,
-        '200 - INFO'  => 200,
-        '250 - NOTICE' => 250,
-        '300 - WARNING' => 300,
-        '400 - ERROR' => 400,
-        '500 - CRITICAL' => 500,
-        '550 - ALERT' => 550,
-        '600 - EMERGENCY' => 600,
+        100 => 'DEBUG',
+        200 => 'INFO',
+        250 => 'NOTICE',
+        300 => 'WARNING',
+        400 => 'ERROR',
+        500 => 'CRITICAL',
+        550 => 'ALERT',
+        600 => 'EMERGENCY',
     ),
     19 => array(
-        'Product List' => 1,
-        'Category List' => 2,
-        'Category List (incl. Home)' => 6,
-        'Category List (top-level)' => 10,
-        'Category List (top, incl. Home)' => 14,
+        1 => 'Product List',
+        2 => 'Category List',
+        6 => 'Category List (incl. Home)',
+        10 => 'Category List (top-level)',
+        14 => 'Category List (top, incl. Home)',
     ),
     20 => array(
-        'Product List' => 'products',
-        'Category List' => 'categories',
-        'Order List' => 'orders',
+        'products' => 'Product List',
+        'categories' => 'Category List',
+        'orders' => 'Order List',
     ),
 );
-
-?>

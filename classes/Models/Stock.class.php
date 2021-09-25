@@ -66,7 +66,7 @@ class Stock
             $this->item_id = DB_escapeString($item_id);
             $this->pv_id = (int)$pv_id;
             $sql = "SELECT * FROM {$_TABLES['shop.stock']} WHERE
-                item_id = '{$this->item_id}' AND pv_id = {$this->pv_id}";
+                stk_item_id = '{$this->item_id}' AND stk_pv_id = {$this->pv_id}";
             $res = DB_query($sql,1);
             if (!DB_error()) {
                 if ($A = DB_fetchArray($res, false)) {
@@ -89,8 +89,8 @@ class Stock
             $this->withStockId($A['stk_id']);
         }
         // The rest should be present always
-        $this->withItemId($A['item_id'])
-             ->withVariantId($A['pv_id'])
+        $this->withItemId($A['stk_item_id'])
+             ->withVariantId($A['stk_pv_id'])
              ->withOnhand($A['qty_onhand'])
              ->withReserved($A['qty_reserved'])
              ->withReorder($A['qty_reorder']);
@@ -238,8 +238,8 @@ class Stock
         $qty = (int)$qty;
         $pv_id = (int)$pv_id;
         $sql = "INSERT INTO {$_TABLES['shop.stock']} SET
-            item_id = '" . DB_escapeString($item_id) . "',
-            pv_id = {$pv_id},
+            stk_item_id = '" . DB_escapeString($item_id) . "',
+            stk_pv_id = {$pv_id},
             qty_reserved = $qty
             ON DUPLICATE KEY UPDATE
             qty_reserved = GREATEST(0, qty_reserved + $qty)";
@@ -268,8 +268,8 @@ class Stock
         $qty = (int)$qty;
         $pv_id = (int)$pv_id;
         $sql = "INSERT INTO {$_TABLES['shop.stock']} SET
-            item_id = '" . DB_escapeString($item_id) . "',
-            pv_id = {$pv_id},
+            stk_item_id = '" . DB_escapeString($item_id) . "',
+            stk_pv_id = {$pv_id},
             qty_onhand = 0,
             qty_reserved = 0
             ON DUPLICATE KEY UPDATE
@@ -297,8 +297,8 @@ class Stock
         global $_TABLES;
 
         $sql = "INSERT INTO {$_TABLES['shop.stock']} SET
-            item_id = '" . DB_escapeString($this->item_id) . "',
-            pv_id = {$this->pv_id},
+            stk_item_id = '" . DB_escapeString($this->item_id) . "',
+            stk_pv_id = {$this->pv_id},
             qty_onhand = {$this->qty_onhand},
             qty_reserved = {$this->qty_reserved},
             qty_reorder = {$this->qty_reorder}
@@ -319,7 +319,7 @@ class Stock
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.stock'], 'pv_id', (int)$pv_id);
+        DB_delete($_TABLES['shop.stock'], 'stk_pv_id', (int)$pv_id);
     }
 
 
@@ -332,7 +332,7 @@ class Stock
     {
         global $_TABLES;
 
-        DB_delete($_TABLES['shop.stock'], 'item_id', (int)$item_id);
+        DB_delete($_TABLES['shop.stock'], 'stk_item_id', (int)$item_id);
     }
 
 }

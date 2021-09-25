@@ -319,7 +319,6 @@ case 'add_tracking':
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
-            COM_errorlog(print_r($retval,true));
         } else {
             $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
         }
@@ -514,6 +513,10 @@ case 'toggle':
         $newval = \Shop\State::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
+    case 'pi_product':
+        $newval = \Shop\Products\Plugin::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
     default:
         exit;
     }
@@ -528,6 +531,30 @@ case 'toggle':
             $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
         'title' => $title,
     );
+    break;
+
+case 'getCarrierPkgInfo':
+    $retval = array(
+        'carrier_id' => '',
+        'pkg_codes' => array(),
+        'svc_codes' => array(),
+        'status' => false,
+    );
+    $carrier_id = $_POST['carrier_id'];
+    if ($carrier_id != '') {
+        $Carrier = Shop\Shipper::getByCode($carrier_id);
+        if ($Carrier) {
+            foreach ($Carrier->getPackageCodes() as $key=>$dscp) {
+                $retval['pkg_codes'][$key] = $dscp;
+            }
+            foreach ($Carrier->getServiceCodes() as $key=>$dscp) {
+                $retval['svc_codes'][$key] = $dscp;
+            }
+            $retval['carrier_id'] = $carrier_id;
+            $retval['status'] = true;
+        }
+    }
+    break;
 }
 
 // Return the $retval array as a JSON string

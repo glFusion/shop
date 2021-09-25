@@ -7,40 +7,40 @@
 	<input type="hidden" name="uid" value="{uid}" />
 	<input type="hidden" name="return" value="{return}" />
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
+			<input required class="uk-input required" type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="company">{$LANG_SHOP['company']}</label>
 		<div class="uk-form-controls">
-			<input type="text" id="company" name="company" size="60" value="{company}" />
+			<input class="uk-input" type="text" id="company" name="company" size="60" value="{company}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="address1" name="address1" size="60" value="{address1}" />
+			<input required class="uk-input required" type="text" id="address1" name="address1" size="60" value="{address1}" />
 			  <i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}</label>
 		<div class="uk-form-controls">
-			<input type="text" id="address2" name="address2" size="60" value="{address2}" />
+			<input class="uk-input" type="text" id="address2" name="address2" size="60" value="{address2}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}</label>
 		<div class="uk-form-controls">
-			<select required id="countrySelect" name="country"
+			<select required class="uk-select required" id="countrySelect" name="country"
 					onchange='chgCountrySel(this.value)' class="shopStateSelect">
 				{country_options}
 			</select>
@@ -48,59 +48,59 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row" id="stateSelectDiv" style="display:{state_sel_vis};">
+	<div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
 		<label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
 		<div class="uk-form-controls">
-			<select id="stateSelect" name="state" class="shopStateSelect">
+			<select class="uk-select" id="stateSelect" name="state" class="shopStateSelect">
 				{state_options}
 			</select>
 			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="city">{$LANG_SHOP['city']}</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="city" name="city" size="60" value="{city}" />
+			<input required class="uk-input required" type="text" id="city" name="city" size="60" value="{city}" />
 				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="zip" name="zip" size="60" value="{zip}" />
+			<input required class="uk-input" type="text" id="zip" name="zip" size="60" value="{zip}" />
 				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}</label>
 		<div class="uk-form-controls">
-			<input required type="text" id="phone" name="phone" size="60" value="{phone}" />
+			<input required class="uk-input required" type="text" id="phone" name="phone" size="60" value="{phone}" />
 				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['def_billto']}</label>
 		<div class="uk-form-controls">
-			<input type="checkbox" name="billto_def" value="1" {def_billto_chk} />
+			<input class="uk-checkbox" type="checkbox" name="billto_def" value="1" {def_billto_chk} />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['def_shipto']}</label>
 		<div class="uk-form-controls">
-			<input type="checkbox" name="shipto_def" value="1" {def_shipto_chk} />
+			<input class="uk-checkbox" type="checkbox" name="shipto_def" value="1" {def_shipto_chk} />
 		</div>
 	</div>
 
-	<div class="uk-form-row" style="margin-top:10px;">
+	<div class="uk-form-row uk-margin" style="margin-top:10px;">
 		<label class="uk-form-label">&nbsp;</label>
 		<div class="uk-form-controls" style="text-align:center;">
 			<button class="uk-button uk-button-success" type="submit" name="saveaddr"
-				onsubmit="validateAddress(this.form);return true;"
+				onclick="return validateAddress(this.form);"
 			>{$LANG_ADMIN['submit']}</button>
 			<button class="uk-button" type="reset">{$LANG_ADMIN['reset']}</button>
 			<a href="{cancel_url}" class="uk-button uk-button-primary">{$LANG_ADMIN['cancel']}</a>
@@ -124,7 +124,7 @@ function validateAddress(form)
 			try {
 				if (result.status != true) {
 					//Shop.notify("An unknown error occurred", "error");
-					modal = UIkit.modal.blockUI(result.form);
+					modal = Shop.modal(result.form);
 					return false;
 				} else {
 					Shop.notify("Address is Valid", "success");

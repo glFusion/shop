@@ -131,7 +131,7 @@ class headlines
         // no category record, as long as the product is enabled.
         $sql = "SELECT p.id, p.track_onhand, p.oversell, (
                 SELECT sum(stk.qty_onhand) FROM {$_TABLES['shop.stock']} stk
-                WHERE stk.item_id = p.id
+                WHERE stk.stk_item_id = p.id
             ) as qty_onhand
             FROM {$_TABLES['shop.products']} p
             LEFT JOIN {$_TABLES['shop.prodXcat']} pxc

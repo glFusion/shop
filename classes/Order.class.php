@@ -27,10 +27,6 @@ use Shop\Models\AffiliateSale;
  */
 class Order
 {
-    /** Array of order objects used by getInstance().
-     * @var array */
-    private static $orders = array();
-
     /** Flag to indicate that administrative actions are being done.
      * @var boolean */
     private $isAdmin = false;
@@ -304,31 +300,12 @@ class Order
             if (!is_string($id)) {
                 var_dump(debug_backtrace(0));die;
             }
-            if (!array_key_exists($id, self::$orders)) {
-                self::$orders[$id] = new self($id);
-                //$retval = new self($id);
-            }
+            $retval = new self($id);
         } else {
             $retval = new self;
             $id = $retval->getOrderId();
-            self::$orders[$id] = $retval;
         }
-        return self::$orders[$id];
-    }
-
-
-    /**
-     * Clear a cached instance of an order.
-     * Called when the order table is updated to force getInstance() to
-     * re-read the order.
-     *
-     * @return  object  $this
-     */
-    private function clearInstance()
-    {
-        if (isset(self::$orders[$this->order_id])) {
-            unset(self::$orders[$this->order_id]);
-        }
+        return $retval;
     }
 
 
@@ -388,19 +365,7 @@ class Order
         }
 
         // Now load the items
-        $items = array();
-        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}
-                WHERE order_id = '{$this->order_id}'";
-        $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $items[$A['id']] = $A;
-            }
-        }
-        // Now load the arrays into objects
-        foreach ($items as $item) {
-            $this->items[$item['id']] = new OrderItem($item);
-        }
+        $this->items = OrderItem::getByOrder($this->order_id);
         $this->tainted = false;
         return true;
     }
@@ -465,19 +430,27 @@ class Order
             $item_id = explode('|', $args['item_id']);  // TODO: DEPRECATE
             $args['product_id'] = $item_id[0];
         }
+        $pov_ids = array();
+        if (isset($args['options']) && is_array($args['options'])) {
+            foreach ($args['options'] as $pov) {
+                $pov_ids[] = $pov->getID();
+            }
+        }
+        $PV = ProductVariant::getByAttributes($args['product_id'], $pov_ids);
+        $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
-        $OI = new OrderItem($args);
+        $OI = OrderItem::fromArray($args);
         if (isset($args['price'])) {
             $OI->setPrice($args['price']);
         }
-        $OI->setQuantity($args['quantity'])
-            ->applyDiscountPct($this->getDiscountPct())
+        $override_price = isset($args['override']) ? $args['price'] : NULL;
+        $OI->setQuantity($args['quantity'], $override_price);
+        $OI->applyDiscountPct($this->getDiscountPct())
             ->setTaxRate($this->tax_rate)
             ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
-        //$this->Save();
     }
 
 
@@ -491,7 +464,10 @@ class Order
         global $_TABLES;
 
         $have_address = false;
-        if (is_object($A)) {
+        if ($A === NULL) {
+            $have_address = true;
+            $this->Billto = new Address();
+        } elseif (is_object($A)) {
             $this->Billto = $A;
             $have_address = true;
         } elseif (is_array($A)) {
@@ -905,7 +881,6 @@ class Order
         //echo $sql;die;
         //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        $this->clearInstance();
         $this->isNew = false;
         $this->tainted = false;
         return $this->order_id;
@@ -929,7 +904,6 @@ class Order
         }
         $sql = "UPDATE {$_TABLES['shop.orders']} SET $vals
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
-        //$this->clearInstance();
         DB_query($sql);
         /*echo $sql;
         var_dump(debug_backtrace(0));die;
@@ -952,444 +926,6 @@ class Order
     {
         $V = new \Shop\Views\Invoice;
         return $V->withOrder($this)->Render();
-
-        global $_SHOP_CONF, $_USER, $LANG_SHOP, $LANG_SHOP_HELP;
-        var_dump(debug_backtrace(0));die;
-        echo __CLASS__ . '::' . __FUNCTION__ . ' deprecated'; die;
-
-        // Safety valve in case an invalid order is requested.
-        // This is for administrators, the canView() function will trap this
-        // for regular users.
-        if ($this->isNew) {
-            SHOP_setMsg($LANG_SHOP['item_not_found']);
-            return '';
-        }
-
-        $this->isFinalView = false;
-        $is_invoice = true;    // normal view/printing view
-        $icon_tooltips = array();
-
-        switch ($view) {
-        case 'adminview':
-        case 'order':
-            $this->isFinalView = true;
-            $tplname = 'order';
-            break;
-        case 'checkout':
-            $this->isFinalView = true;
-            $this->checkRules();
-            $this->setTaxRate(NULL)
-                ->calcTotalCharges()
-                ->Save(true);
-            $tplname = 'order';
-            break;
-        case 'viewcart':
-            $this->checkRules();
-            $this->tax_rate = 0;
-            // Call selectShipper() here to get the shipping amount into the local var.
-            $shipper_select = $this->selectShipper();
-            $tplname = 'viewcart';
-            break;
-        case 'packinglist':
-            // Print a packing list. Same as print view but no prices or fees shown.
-            $tplname = 'packinglist';
-            $is_invoice = false;
-            $this->isFinalView = true;
-            break;
-        case 'print':
-        case 'printorder':
-            $this->isFinalView = true;
-            $tplname = 'order.print';
-            break;
-        case 'pdfpl':
-            $is_invoice = false;
-        case 'pdforder':
-            $this->isFinalView = true;
-            $tplname = 'order.pdf';
-            break;
-        case 'shipment':
-            $this->isFinalView = true;
-            $tplname = 'shipment';
-            break;
-        }
-        $step = (int)$step;
-
-        $T = new Template;
-        $T->set_file('order', $tplname . '.thtml');
-        $billto = $this->Billto->toArray();
-        $shipto = $this->Shipto->toArray();
-        foreach (array('billto', 'shipto') as $type) {
-            foreach ($this->_addr_fields as $name) {
-                $fldname = $type . '_' . $name;
-                $T->set_var($fldname, $$type[$name]);
-            }
-        }
-        $Shipper = Shipper::getInstance($this->shipper_id);
-
-        // Set flags in the template to indicate which address blocks are
-        // to be shown.
-        foreach (Workflow::getAll($this) as $key => $wf) {
-            $T->set_var('have_' . $wf->getName(), 'true');
-        }
-
-        $T->set_block('order', 'ItemRow', 'iRow');
-
-        $Currency = Currency::getInstance($this->currency);
-        $this->no_shipping = 1;   // no shipping unless physical item ordered
-        $this->gross_items = 0;
-        $this->net_items = 0;
-        $this->net_nontax = 0;
-        $this->net_taxable = 0;
-        $item_qty = array();        // array to track quantity by base item ID
-        $have_images = false;
-        $has_sale_items = false;
-        $item_net = 0;
-        $good_items = 0;        // Count non-embargoed items
-        $discount_items = 0;
-        foreach ($this->items as $item) {
-            $P = $item->getProduct();
-            $P->setVariant($item->getVariantID());
-            if ($is_invoice) {
-                $img = $P->getImage('', $_SHOP_CONF['order_tn_size']);
-                if (!empty($img['url'])) {
-                    $img_url = COM_createImage(
-                        $img['url'],
-                        '',
-                        array(
-                            'width' => $img['width'],
-                            'height' => $img['height'],
-                        )
-                    );
-                    $T->set_var('img_url', $img_url);
-                    $have_images = true;
-                } else {
-                    $T->clear_var('img_url');
-                }
-            }
-
-            //$item_discount = $P->getDiscount($item->quantity);
-            /*if (!isset($item_qty[$item->product_id])) {
-                $total_item_q = $this->getTotalBaseItems($item->product_id);
-                $item_qty[$item->product_id] = array(
-                    'qty'   => $total_item_q,
-                    'discount' => $P->getDiscount($total_item_q),
-                );
-            }*/
-            //if ($item_qty[$item->product_id]['discount'] > 0) {
-            if ($item->getDiscount() > 0) {
-                $discount_items ++;
-                $price_tooltip = sprintf(
-                    $LANG_SHOP['reflects_disc'],
-                    ($item->getDiscount() * 100)
-                );
-            } else {
-                $price_tooltip = '';
-            }
-            if ($item->getProduct()->isOnSale()) {
-                $has_sale_items = true;
-                $sale_tooltip = $LANG_SHOP['sale_price'] . ': ' .
-                    $item->getProduct()->getSale()->getName();
-            } else {
-                $sale_tooltip = '';
-            }
-
-            if (!$item->getInvalid()) {
-                $good_items++;
-            }
-            $item_total = $item->getPrice() * $item->getQuantity();
-            $item_net = $item->getNetPrice() * $item->getQuantity();
-            $this->gross_items += $item_total;
-            if ($P->isTaxable()) {
-                $this->net_taxable += $item_net;
-            } else {
-                $this->net_nontax += $item_net;
-            }
-
-            $this->net_items += $item_net;
-            $T->set_var(array(
-                'cart_item_id'  => $item->getID(),
-                'fixed_q'       => $P->getFixedQuantity(),
-                'item_id'       => htmlspecialchars($item->getProductId()),
-                'item_dscp'     => htmlspecialchars($item->getDscp()),
-                'item_price'    => $Currency->FormatValue($item->getPrice()),
-                'item_quantity' => $item->getQuantity(),
-                'item_total'    => $Currency->FormatValue($item_total),
-                'is_admin'      => $this->isAdmin,
-                'is_file'       => $item->canDownload(),
-                'taxable'       => $P->isTaxable(),
-                'tax_icon'      => $LANG_SHOP['tax'][0],
-                'sale_icon'     => $LANG_SHOP['sale_price'][0],
-                'discount_icon' => $LANG_SHOP['discount'][0],
-                'discount_tooltip' => $price_tooltip,
-                'sale_tooltip'  => $sale_tooltip,
-                'token'         => $item->getToken(),
-                'item_options'  => $item->getOptionDisplay(),
-                'sku'           => $item->getSKU(),
-                'item_link'     => $P->withOrderItem($item->getID())->getLink(),
-                'pi_url'        => SHOP_URL,
-                'is_invoice'    => $is_invoice,
-                'del_item_url'  => COM_buildUrl(
-                    SHOP_URL . '/cart.php?action=delete&id=' . $item->getID()
-                ),
-                'embargoed'     => $item->getInvalid(),
-                'newship' => true,
-                'can_ship' => 'true',
-                'toship' => $item->getQuantity(),
-            ) );
-            if ($P->isPhysical()) {
-                $this->no_shipping = 0;
-            }
-            $qty_bo = 0;
-            if ($this->status == 'cart') {      // TODO, divorce cart from order
-                $qty_bo = $P->getQuantityBO($item->getQuantity());
-                if ($qty_bo > 0) {
-                    $T->set_var(array(
-                        'msg_bo' => sprintf($LANG_SHOP['qty_bo'], $qty_bo),
-                        'bo_icon' => $LANG_SHOP['backordered'][0],
-                    ) );
-                }
-                $T->set_var(array(
-                    'min_ord_qty' => $P->getMinOrderQty(),
-                    'max_ord_qty' => $P->getMaxOrderQty(),
-                ) );
-            }
-            $T->parse('iRow', 'ItemRow', true);
-            $T->clear_var('iOpts');
-        }
-
-        // Reload the address objects in case the addresses were updated
-        $ShopAddr = new Company;
-        //$this->Billto = new Address($this->getAddressArray('billto'));
-        //$this->Shipto = new Address($this->getAddressArray('shipto'));
-
-        // Call selectShipper() here to get the shipping amount into the local var.
-        //$shipper_select = $this->selectShipper();
-
-        //$this->total = $this->getTotal();     // also calls calcTax()
-        /*if ($this->shipto_id == 0) {
-            $this->setTaxRate(
-                Tax::getProvider()
-                    ->withAddress($ShopAddr)
-                    ->withOrder($this)
-                    ->getRate()
-            );
-        }*/
-
-        $this->order_total = $this->calcOrderTotal();     // also calls calcTax()
-        $by_gc = (float)$this->getGC();
-        // Only show the icon descriptions when the invoice amounts are shown
-        if ($is_invoice) {
-            if ($discount_items > 0) {
-                $icon_tooltips[] = $LANG_SHOP['discount'][0] . ' = ' . $LANG_SHOP['price_incl_disc'];
-            }
-            if ($this->tax_items > 0) {
-                $icon_tooltips[] = $LANG_SHOP['taxable'][0] . ' = ' . $LANG_SHOP['taxable'];
-            }
-            if ($has_sale_items) {
-                $icon_tooltips[] = $LANG_SHOP['sale_price'][0] . ' = ' . $LANG_SHOP['sale_price'];
-            }
-            if ($qty_bo) {
-                $icon_tooltips[] = $LANG_SHOP['backordered'][0] . ' = ' . $LANG_SHOP['backordered'];
-            }
-            $icon_tooltips = implode('<br />', $icon_tooltips);
-        }
-        /*if ($this->tax_rate > 0) {
-            $lang_tax_on_items = $LANG_SHOP['sales_tax'];
-            //$lang_tax_on_items = sprintf($LANG_SHOP['tax_on_x_items'], $this->tax_rate * 100, $this->tax_items);
-        } else {
-            $lang_tax_on_items = $LANG_SHOP['sales_tax'];*/
-        /*if ($view == 'viewcart') {
-            // Back out sales tax if tax is not charged. This happens when viewing the cart
-            // and a tax amount gets set, but shouldn't be shown in the order yet.
-            $this->total -= $this->tax;
-        }*/
-
-        $T->set_var(array(
-            'pi_url'        => SHOP_URL,
-            'account_url'   => COM_buildUrl(SHOP_URL . '/account.php'),
-            'pi_admin_url'  => SHOP_ADMIN_URL,
-            'not_final'     => !$this->isFinalView,
-            'order_date'    => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
-            'order_date_tip' => $this->order_date->format($_SHOP_CONF['datetime_fmt'], false),
-            'order_number'  => $this->order_id,
-            'invoice_number'  => $this->getInvoiceNumber(),
-            'order_instr'   => htmlspecialchars($this->instructions),
-            'shop_name'     => $ShopAddr->toHTML('company'),
-            'shop_addr'     => $ShopAddr->toHTML('address'),
-            'shop_phone'    => $ShopAddr->getPhone(),
-            'shop_email'    => $ShopAddr->getEmail(),
-            'apply_gc'      => $by_gc > 0 ? $Currency->FormatValue($by_gc) : 0,
-            'net_total'     => $Currency->Format($this->order_total - $by_gc),
-            'status'        => $this->status,
-            'token'         => $this->token,
-            'allow_gc'      => $_SHOP_CONF['gc_enabled']  && !COM_isAnonUser() ? true : false,
-            'next_step'     => $step + 1,
-            'not_anon'      => !COM_isAnonUser(),
-            'total_prefix'  => $Currency->Pre(),
-            'total_postfix' => $Currency->Post(),
-            'total_num'     => $Currency->FormatValue($this->order_total),
-            'cur_decimals'  => $Currency->Decimals(),
-            'item_subtotal' => $Currency->FormatValue($this->gross_items),
-            'return_url'    => SHOP_getUrl(),
-            'is_invoice'    => $is_invoice,
-            'icon_dscp'     => $icon_tooltips,
-            'print_url'     => $this->buildUrl('print'),
-            'have_images'   => $is_invoice ? $have_images : false,
-            'linkPackingList' => self::linkPackingList($this->order_id),
-            'linkPrint'     => self::linkPrint($this->order_id, $this->token),
-            'billto_addr'   => $this->Billto->toHTML(),
-            'shipto_addr'   => $this->Shipto->toHTML(),
-            'billto_required' => $this->requiresBillto(),
-            'shipto_required' => $this->requiresShipto(),
-            'shipment_block' => $this->getShipmentBlock(),
-            'itemsToShip'   => $this->itemsToShip(),
-            'ret_url'       => urlencode($_SERVER['REQUEST_URI']),
-            'tax_items'     => $this->tax_items,
-            'discount_code_fld' => $this->canShowDiscountEntry(),
-            'discount_code' => $this->getDiscountCode(),
-            'dc_row_vis'    => $this->getDiscountCode(),
-            'dc_amt'        => $Currency->FormatValue($this->getDiscountAmount() * -1),
-            'dc_pct'        => $this->getDiscountPct() . '%',
-            'net_items'     => $Currency->Format($this->net_items),
-            'good_items'    => $good_items,
-            'cart_tax'      => $this->tax > 0 ? $Currency->FormatValue($this->tax) : 0,
-            'lang_tax_on_items'  => $LANG_SHOP['sales_tax'],
-            'total'     => $Currency->Format($this->order_total),
-            'handling'  => $this->handling > 0 ? $Currency->FormatValue($this->handling) : 0,
-            'subtotal'  => $Currency->Format($this->gross_items),
-            'tax_icon'  => $LANG_SHOP['tax'][0],
-            'tax_shipping' => $this->getTaxShipping(),
-            'tax_handling' => $this->getTaxHandling(),
-            'amt_paid_fmt' => $Currency->Format($this->_amt_paid),
-            'is_paid' => $this->isPaid(),
-            'pmt_status' => $this->getPaymentStatus(),
-        ) );
-
-        if ($tplname == 'shipping') {
-            $T->set_block('order', 'trackingPackages', 'TP');
-            foreach ($Shp->Packages as $Pkg) {
-                $T->set_var(array(
-                    'shipper_code'  => $Pkg->getShipper()->getCode(),
-                    'shipper_name'  => $Pkg->getShipperInfo(),
-                    'tracking_num'  => $Pkg->getTrackingNumber(),
-                    'pkg_id'        => $Pkg->getID(),
-                    'tracking_url'  => \Shop\Shipper::getInstance($Pkg->getShipperID())->getTrackingUrl($Pkg->getTrackingNumber()),
-                ) );
-                $T->parse('TP', 'trackingPackages', true);
-            }
-        }
-
-        if ($this->_amt_paid > 0) {
-            $paid = $this->_amt_paid * -1;
-            $T->set_var(array(
-                'amt_paid_num' => $Currency->formatValue($this->_amt_paid),
-                'due_amount' => $Currency->formatValue($this->order_total - $this->_amt_paid),
-            ) );
-        }
-
-        if (!$this->no_shipping) {
-            $T->set_var(array(
-                'shipper_id'    => $this->shipper_id,
-                'ship_method'   => $this->shipping_dscp,
-                'ship_select'   => $this->isFinalView ? NULL : $shipper_select,
-                'shipping'      => $Currency->FormatValue($this->shipping),
-            ) );
-        }
-        if ($this->isAdmin) {
-            $T->set_var(array(
-                'is_admin'      => true,
-                'purch_name'    => COM_getDisplayName($this->uid),
-                'purch_uid'     => $this->uid,
-                //'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->status),
-                'order_status'  => $this->status,
-            ) );
-            $T->set_block('ordstat', 'StatusSelect', 'Sel');
-            foreach (OrderStatus::getAll() as $key => $data) {
-                if (!$data->enabled) continue;
-                $T->set_var(array(
-                    'selected' => $key == $this->status ? 'selected="selected"' : '',
-                    'stat_key' => $key,
-                    'stat_descr' => OrderStatus::getDscp($key),
-                ) );
-                $T->parse('Sel', 'StatusSelect', true);
-            }
-        }
-
-        // Instantiate a date object to handle formatting of log timestamps
-        $dt = new \Date('now', $_USER['tzid']);
-        $log = $this->getLog();
-        $T->set_block('order', 'LogMessages', 'Log');
-        foreach ($log as $L) {
-            $dt->setTimestamp($L['ts']);
-            $T->set_var(array(
-                'log_username'  => $L['username'],
-                'log_msg'       => $L['message'],
-                'log_ts'        => $dt->format($_SHOP_CONF['datetime_fmt'], true),
-                'log_ts_tip'    => $dt->format($_SHOP_CONF['datetime_fmt'], false),
-            ) );
-            $T->parse('Log', 'LogMessages', true);
-        }
-
-        $payer_email = $this->buyer_email;
-        if ($payer_email == '' && !COM_isAnonUser()) {
-            $payer_email = $_USER['email'];
-        }
-        $focus_fld = SESS_getVar('shop_focus_field');
-        if ($focus_fld) {
-            $T->set_var('focus_element', $focus_fld);
-            SESS_unSet('shop_focus_field');
-        }
-        $T->set_var('payer_email', $payer_email);
-
-        switch ($view) {
-        case 'viewcart':
-            $T->set_var('gateway_radios', $this->getCheckoutRadios());
-            if ($this->hasInvalid) {
-                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
-            }
-            break;
-        case 'checkout':
-            $T->set_var('checkout', true);
-            if ($this->hasInvalid) {
-                $T->set_var('rules_msg', $LANG_SHOP_HELP['hlp_rules_noitems']);
-            } else {
-                $gw = Gateway::getInstance($this->pmt_method);
-                if ($gw) {
-                    $T->set_var(array(
-                        'gateway_vars'  => $this->checkoutButton($gw),
-                        'pmt_method'    => $this->pmt_method,
-                        'pmt_dscp'    => $this->pmt_dscp,
-                    ) );
-                }
-            }
-        default:
-            break;
-        }
-        $status = $this->status;
-        $Payments = $this->getPayments();
-        if ($this->pmt_method != '') {
-            $T->set_var(array(
-                'pmt_method' => $this->pmt_method,
-                'pmt_dscp' => $this->pmt_dscp,
-                //'pmt_txn_id' => $this->pmt_txn_id,
-                //'ipn_det_url' => IPN::getDetailUrl($this->pmt_txn_id, 'txn_id'),
-            ) );
-        }
-        $T->set_block('order', 'Payments', 'pmtRow');
-        foreach ($Payments as $Payment) {
-            $T->set_var(array(
-                'gw_name' => Gateway::getInstance($Payment->getGateway())->getDscp(),
-                'ipn_det_url' => IPN::getDetailUrl($Payment->getRefID(), 'txn_id'),
-                'pmt_txn_id' => $Payment->getRefID(),
-                'pmt_amount' => $Currency->formatValue($Payment->getAmount()),
-                'pmt_date' => $Payment->getDt()->toMySQL(true),
-            ) );
-            $T->parse('pmtRow', 'Payments', true);
-        }
-
-        $T->parse('output', 'order');
-        $form = $T->finish($T->get_var('output'));
-        return $form;
     }
 
 
@@ -1457,7 +993,6 @@ class Order
         }
 
         $oldstatus = $this->status;
-        //echo "updating order " . $this->order_id . " from $oldstatus to $newstatus<br />\n";
 
         // If the status isn't really changed, don't bother updating anything
         // and just treat it as successful
@@ -1520,9 +1055,6 @@ class Order
         if ($notify) {
             $this->Notify($newstatus, $msg);
         }
-        //echo "Status is now {$this->status}<br />\n";
-        //die;
-        $this->clearInstance();
         return $newstatus;
     }
 
@@ -1617,7 +1149,6 @@ class Order
         static $count = array();
         $uid = (int)$uid;
         if (isset($count[$uid])) {
-            echo "1";
             return $count[$uid];
         } else {
             $sql = "SELECT order_id FROM {$_TABLES['shop.orders']}
@@ -1820,16 +1351,15 @@ class Order
 
             $ext = $item->getQuantity() * $item->getPrice();
             $item_total += $ext;
-            $item_descr = $item->getDscp();
-            $options_text = $item->getOptionDisplay();
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
                 'qty'   => $item->getQuantity(),
                 'price' => $Cur->FormatValue($item->getPrice()),
                 'ext'   => $Cur->FormatValue($ext),
-                'name'  => $item_descr,
-                'options_text' => $options_text,
+                'name'  => $item->getDscp(),
+                'options_text' => $item->getOptionDisplay(),
+                'extras_text' => $item->getExtraDisplay(),
             ) );
             //), '', false, false);
             $T->parse('List', 'ItemList', true);
@@ -2090,6 +1620,7 @@ class Order
             $this->handling += $P->getHandling($item->getQuantity());
         }
         $this->calcTax();   // Tax calculation is slightly more complex
+        $this->Save();
         return $this;
     }
 
@@ -2190,19 +1721,22 @@ class Order
      *
      * @param   string  $item_id    Item ID to check, e.g. "1|2,3,4"
      * @param   array   $extras     Option custom values, e.g. text fields
+     * @param   array   $options_text   Ad-hoc options added from plugins
      * @return  integer|boolean Item cart record ID if item exists in cart, False if not
      */
-    public function Contains($item_id, $extras=array())
+    public function Contains($item_id, $extras=array(), $options_text=array())
     {
         $id_parts = SHOP_explode_opts($item_id, true);
 
-        if (!isset($id_parts[1])) $id_parts[1] = '';
+        if (!isset($id_parts[1])) $id_parts[1] = 0;
         $args = array(
             'product_id'    => $id_parts[0],
-            'variant'       => $id_parts[1],
+            'variant_id'    => $id_parts[1],
             'extras'        => $extras,
+            'options_text'  => $options_text,
+            'quantity'      => 1,
         );
-        $Item2 = new OrderItem($args);
+        $Item2 = OrderItem::fromArray($args);
         foreach ($this->items as $id=>$Item1) {
             if ($Item1->Matches($Item2)) {
                 return $id;
@@ -2301,11 +1835,13 @@ class Order
      * Get a single OrderItem object from this order.
      * Returns an empty OrderItem object if the product is not found.
      *
+     * @deprecate
      * @param   mixed   $item_id    OrderItem product ID
      * @return  object      OrderItem object
      */
     public function getItem($item_id)
     {
+        return NULL;
         foreach ($this->items as $Item) {
             if ($Item->product_id == $item_id) {
                 return $Item;
@@ -2656,8 +2192,9 @@ class Order
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
         $methods = array();
+        $item_info = $this->getItemShipping();
         foreach ($Shippers as $code=>$Shipper) {
-            $quote = $Shipper->getQuote($this);
+            $quote = $Shipper->getQuote($this, $item_info);
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
             } else {
@@ -3110,6 +2647,7 @@ class Order
             ) {
                 // only update and save if changed
                 $OI->setPrice($new_price);
+                $OI->setNetPrice($new_price);
                 $OI->setDiscount($new_discount);
                 $OI->Save(true);
             }
@@ -3695,12 +3233,23 @@ class Order
     }
 
 
+    /**
+     * Get the description of the shipping method.
+     *
+     * @return  string      Shipping method description
+     */
     public function getShipperDscp()
     {
         return $this->shipping_dscp;
     }
 
 
+    /**
+     * Set the order-wide handling amount.
+     *
+     * @param   float   $amt    Handling amount
+     * @return  object  $this
+     */
     public function setHandling($amt)
     {
         $this->handling = (float)$amt;
@@ -3813,15 +3362,16 @@ class Order
     {
         global $_TABLES;
 
+        //if (!DB_error()) {
+            foreach ($this->items as $id=>$Item) {
+                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+                $this->items[$id]->Save();
+            }
+        //}
         $this->updateRecord(array(
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
             "discount_pct = '" . (float)$this->discount_pct . "'"
         ) );
-        if (!DB_error()) {
-            foreach ($this->items as $id=>$Item) {
-                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
-            }
-        }
         return $this;
     }
 
@@ -3862,7 +3412,7 @@ class Order
         // If the code and percentage have not changed, just return true.
         // Otherwise update the discount in the order and items.
         if ($pct == $have_pct && $code == $have_code) {
-            return true;
+//            return true;
         }
 
         if ($pct > 0) {
@@ -3938,11 +3488,22 @@ class Order
 
 
     /**
+     * Get the gross total for line items.
+     *
+     * @return  float       Item subtotal
+     */
+    public function getGrossItems()
+    {
+        return (float)$this->gross_items;
+    }
+
+
+    /**
      * Get the net total for line items.
      *
      * @return  float       Item subtotal
      */
-    public function getItemTotal()
+    public function getNetItems()
     {
         return (float)($this->net_nontax + $this->net_taxable);
     }
@@ -4082,7 +3643,8 @@ class Order
             $this->hasTaxable() &&
             $this->getTotal() > 0 &&
             (
-                $this->hasPhysical() || Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
+                $this->hasPhysical() ||
+                Config::get('tax_nexus_virt') == Tax::TAX_DESTINATION
             )
         ) {
             return true;

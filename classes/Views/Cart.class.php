@@ -145,9 +145,14 @@ class Cart extends OrderBaseView
             $this->TPL->set_var('have_' . $wf->getName(), 'true');
         }
 
-        if (!$this->Order->hasPhysical()) {
+        if (!$this->Order->requiresShipto()) {
             $this->Order->setShipper(NULL);
+            $this->Order->setShipto(NULL);
         }
+        if (!$this->Order->requiresBillto()) {
+            $this->Order->setBillto(NULL);
+        }
+
         $this->Order->calcTotal();
         $this->TPL->set_var('final_checkout', $final);
         /*if ($this->tplname == 'viewcart') {
@@ -213,7 +218,7 @@ class Cart extends OrderBaseView
             'dc_row_vis'    => $this->Order->getDiscountCode(),
             'dc_amt'        => $this->Currency->FormatValue($this->Order->getDiscountAmount() * -1),
             'dc_pct'        => $this->Order->getDiscountPct() . '%',
-            'net_items'     => $this->Currency->Format($this->Order->getItemTotal()),
+            'net_items'     => $this->Currency->Format($this->Order->getNetItems()),
             'buyer_email'   => $payer_email,
         ) );
         if (!$final) {

@@ -18,7 +18,7 @@
     <div class="shopOrderButtons">
         {gateway_vars}
     </div>
-{!!elseif {checkout} == 0 !!}
+{!else}
     <div class="floatright">
         {linkPrint}
   {!if is_admin}
@@ -37,8 +37,7 @@
 {!if rules_msg}
         <div class="uk-alert uk-alert-danger">{rules_msg}</div>
 {!endif}
-
-        <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1">
+        <div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1">
             <div class="orderAddress">
                 <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
                 <br />{billto_addr}
@@ -104,6 +103,9 @@
                                 <br />{sku}
 {!endif}
                                 {item_options}
+{!if item_extras}
+                                <br />{item_extras}
+{!endif}
                             </div>
                         </div>
                         <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-price">

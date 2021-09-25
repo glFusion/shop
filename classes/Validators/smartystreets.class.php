@@ -3,9 +3,9 @@
  * Class to validate addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -28,6 +28,10 @@ class smartystreets
      * @var string */
     private $auth_token;
 
+    /** License. Default is core, suitable for free usage.
+     * @var string */
+    private $license = 'us-core-cloud';
+
     /** Internal address object, a clone of the provided object.
      * @var object */
     private $Address;
@@ -45,6 +49,7 @@ class smartystreets
 
         $this->auth_id = $_SHOP_CONF['smartystreets_id'];
         $this->auth_token = $_SHOP_CONF['smartystreets_token'];
+        $this->license = $_SHOP_CONF['smartystreets_license'];
         $this->Address = clone $Address;
     }
 
@@ -92,8 +97,12 @@ class smartystreets
         }
 
         $url_params = implode('&', $url_params);
+        if (!empty($this->license)) {
+            $url_params .= '&license=' . urlencode($this->license);
+        }
         $cache_key = 'av.smarty.' . md5($url_params);
         $decoded = \Shop\Cache::get($cache_key);
+        //$decoded=NULL;    // for direct testing
         if ($decoded === NULL) {
             // Set up curl options and make the API call
             $ch = curl_init();
@@ -109,10 +118,11 @@ class smartystreets
             ) );
             $resp = curl_exec($ch);
             $http_code = curl_getinfo($ch);
-             if ($http_code['http_code'] != 200) {
+            if ($http_code['http_code'] != 200) {
+                SHOP_log("SmartyStreets Validator: " . $resp, SHOP_LOG_ERROR);
                 // Assume address is ok to avoid interrupting checkout flow
                 return false;
-            }
+             }
             $decoded = json_decode($resp, true);
             if (empty($decoded)) {
                 return false;
@@ -171,5 +181,3 @@ class smartystreets
     }
 
 }
-
-?>
