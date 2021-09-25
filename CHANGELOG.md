@@ -1,7 +1,7 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.4.0
-Release TBD
+Release 2021-09-25
   * Add sales tax location configuration setting for virtual items.
   * Fix error if a referrer is not found at login. (May happen if the plugin is reinstalled.)
   * Use checkbox field name for gateway service config if the language string is not defined.
