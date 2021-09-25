@@ -1000,8 +1000,8 @@ $LANG_fs['shop'] = array(
  */
 $LANG_configSelect['shop'] = array(
     0 => array(
-        1 => 'True' => 1,
-        0 => 'False' => 0,
+        1 => 'True',
+        0 => 'False',
     ),
     5 => array(
         'name' => 'Nombre',
