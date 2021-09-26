@@ -408,7 +408,7 @@ class OrderItemOption
      *
      * @return  boolean     True if tainted and needs to be saved
      */
-    public function isTainted() : boolean
+    public function isTainted() : bool
     {
         return $this->_tainted;
     }
