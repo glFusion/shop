@@ -110,7 +110,7 @@ $_SQL = array(
   `handling` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `tax` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `tax_rate` decimal(6,4) NOT NULL DEFAULT 0.0000,
-  `qty_shipped` int(11) unsigned NOT NULL DEFAULT 0,
+  `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`),
@@ -935,6 +935,10 @@ $SHOP_UPGRADE['1.3.1'] = array(
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT current_timestamp()",
     "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
 );
+$SHOP_UPGRADE['1.4.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
+);
+
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.

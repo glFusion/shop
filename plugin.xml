@@ -2,7 +2,7 @@
     <id>shop</id>
     <name>Shop</name>
     <description>Provides a storefront for selling physical and virtual products.</description>
-    <version>1.4.0</version>
+    <version>1.4.0.1</version>
     <glfusionversion>1.7.9</glfusionversion>
     <phpversion>7.3.0</phpversion>
     <url>http://www.glfusion.org</url>

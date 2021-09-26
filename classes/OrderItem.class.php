@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -62,6 +62,10 @@ class OrderItem
      * @var float */
     private $shipping = 0;
 
+    /** Total number of shipping units for the line item.
+     * @var float */
+    private $shipping_units = 0;
+
     /** Handling charge for the line item.
      * @var float */
     private $handling = 0;
@@ -111,6 +115,10 @@ class OrderItem
     /** ProductVariant object related to this line item.
      * @var object */
     private $Variant = NULL;
+
+    /** Flag to indicate the object has changed and needs to be saved.
+     * @var boolean */
+    private $_tainted = true;
 
 
     /**
@@ -173,11 +181,13 @@ class OrderItem
             $overrides['price'] = $A['price'];
         }
         $OI->setVars($A);
-        $OI->setBasePrice(
-            $OI->getProduct()
-               ->setVariant($OI->getVariantId())
-               ->getPrice(array(), 1, $overrides)
-        );
+        if (!isset($A['base_price'])) {
+            $OI->setBasePrice(
+                $OI->getProduct()
+                   ->setVariant($OI->getVariantId())
+                   ->getPrice(array(), 1, $overrides)
+            );
+        }
         if ($OI->getID() == 0) {
             // New item, add options from the supplied arguments.
             $OI->setPrice($OI->getBasePrice());   // default if no variant
@@ -234,6 +244,7 @@ class OrderItem
         if ($res && DB_numRows($res) > 0) {
             while ($A = DB_fetchArray($res, false)) {
                 $items[$A['id']] = self::fromArray($A);
+                $items[$A['id']]->unTaint();
             }
         }
         return $items;
@@ -295,6 +306,7 @@ class OrderItem
         }
         $this->taxable = SHOP_getVar($A, 'taxable', 'integer') ? 1 : 0;
         $this->shipping = SHOP_getVar($A, 'shipping', 'float', 0);
+        $this->shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
         $this->handling = SHOP_getVar($A, 'handling', 'float', 0);
         $this->tax = SHOP_getVar($A, 'tax', 'float', 0);
         $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float', 0);
@@ -309,7 +321,7 @@ class OrderItem
      *
      * @return  integer     Product Variant ID
      */
-    public function getVariantId()
+    public function getVariantId() : int
     {
         return (int)$this->variant_id;
     }
@@ -320,7 +332,7 @@ class OrderItem
      *
      * return   object      ProductVariant object.
      */
-    public function getVariant()
+    public function getVariant() : object
     {
         static $PVs = array();
         $pov_id = $this->getVariantId();
@@ -472,7 +484,7 @@ class OrderItem
     {
         $this->options[] = $OIO;
         if ($this->id > 0) {
-            $OIO->Save();
+            $OIO->setOrderItemID($this->id)->saveIfTainted();
         }
         return $this;
     }
@@ -498,7 +510,7 @@ class OrderItem
         // Update the Options table now if this is an existing item,
         // othewise it might not get saved.
         if ($this->id > 0) {
-            $OIO->Save();
+            $OIO->setOrderItemID($this->id)->saveIfTainted();
         }
         return $this;
     }
@@ -539,7 +551,7 @@ class OrderItem
         $purchase_ts = SHOP_now()->toUnix();
         //$shipping = $this->Product->getShipping($this->quantity);
         $shipping = 0;
-        $handling = $this->Product->getHandling($this->quantity);
+        $handling = $this->getProduct()->getHandling($this->quantity);
 
         if ($this->id > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.orderitems']} ";
@@ -549,7 +561,7 @@ class OrderItem
             $sql3 = '';
         }
         $dc_pct = $this->getOrder()->getDiscountPct() / 100;
-        if ($dc_pct > 0 && $this->Product->canApplyDiscountCode()) {
+        if ($dc_pct > 0 && $this->getProduct()->canApplyDiscountCode()) {
             $this->applyDiscountPct($dc_pct);
         }
         $sql2 = "SET order_id = '" . DB_escapeString($this->order_id) . "',
@@ -568,26 +580,29 @@ class OrderItem
                 token = '" . DB_escapeString($this->token) . "',
                 options_text = '" . DB_escapeString(@json_encode($this->options_text)) . "',
                 extras = '" . DB_escapeString(json_encode($this->extras)) . "',
+                shipping = {$this->shipping},
+                shipping_units = {$this->shipping_units},
                 tax = {$this->getTax()},
                 tax_rate = {$this->getTaxRate()}";
                 //options = '" . DB_escapeString($this->options) . "',
-                //shipping = {$shipping},
                 //handling = {$handling},
             // add an expiration date if appropriate
-        if ($this->Product->getExpiration() > 0) {
+        if ($this->getProduct()->getExpiration() > 0) {
             $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
         SHOP_log($sql, SHOP_LOG_DEBUG);
-        DB_query($sql);
+        DB_query($sql, 1);
         if (!DB_error()) {
             //Cache::deleteOrder($this->order_id);
             if ($this->id == 0) {
                 $this->id = DB_insertID();
                 return $this->saveOptions();
             }
+            $this->_tainted = false;
             return true;
         } else {
+            SHOP_log('SQL Error: ' . $sql, SHOP_LOG_ERROR);
             return false;
         }
     }
@@ -603,6 +618,9 @@ class OrderItem
      */
     public function setOrderID(string $order_id) : object
     {
+        if ($this->order_id != $order_id) {
+            $this->Taint();
+        }
         $this->order_id = $order_id;
         return $this;
     }
@@ -621,7 +639,7 @@ class OrderItem
     {
         if ($newqty >= 0) {
             $this->quantity = (float)$newqty;
-            $this->handling = $this->Product->getHandling($newqty);
+            $this->handling = $this->getProduct()->getHandling($newqty);
             if ($price === NULL) {
                 $this->setPrice($this->getItemPrice());
                 $this->setNetPrice($this->price);
@@ -631,6 +649,7 @@ class OrderItem
             }
             $this->setTax($this->net_price * $this->quantity * $this->tax_rate);
         }
+        $this->Taint();
         return $this;
     }
 
@@ -643,6 +662,9 @@ class OrderItem
      */
     public function setPrice(float $newprice) : object
     {
+        if ($this->price != $newprice) {
+            $this->Taint();
+        }
         $this->price = (float)$newprice;
         return $this;
     }
@@ -657,6 +679,9 @@ class OrderItem
      */
     public function setBasePrice(float $newprice) : object
     {
+        if ($this->base_price != $newprice) {
+            $this->Taint();
+        }
         $this->base_price = (float)$newprice;
         return $this;
     }
@@ -670,6 +695,9 @@ class OrderItem
      */
     public function setDiscount($disc)
     {
+        if ($this->qty_discount != $disc) {
+            $this->Taint();
+        }
         $this->qty_discount = (float)$disc;
         return $this;
     }
@@ -738,7 +766,19 @@ class OrderItem
      *
      * @return  float       Total shipping units (per-product * quantity)
      */
-    public function getShippingUnits()
+    public function getShippingUnits() : float
+    {
+        return (float)$this->shipping_units;
+    }
+
+
+    public function getTotalShippingUnits() : float
+    {
+        return (float)$this->shipping_units * (float)$this->quantity;
+    }
+
+
+    public function productShippingUnits()
     {
         $units = $this->Product->getShippingUnits();
         if ($this->variant_id > 0) {
@@ -750,6 +790,19 @@ class OrderItem
 
 
     /**
+     * Set the total shipping amount for this item.
+     *
+     * @param   float   $amt    Total shipping amount
+     * @return  object  $this
+     */
+    public function setShipping($amt)
+    {
+        $this->shipping = (float)$amt;
+        return $this;
+    }
+
+
+    /**
      * Get the total of all per-item shipping costs for this item
      *
      * @return  float       Total fixed shipping cost (per-product * quantity)
@@ -757,6 +810,20 @@ class OrderItem
     public function getShipping()
     {
         return $this->shipping;
+    }
+
+
+    /**
+     * Set the total number of shipping units related to this line item.
+     * Quantity x units_per_unit
+     *
+     * @param   float   $units      Total shipping units
+     * @return  object  $this
+     */
+    public function setShippingUnits(float $units) : object
+    {
+        $this->shipping_units = (float)$units;
+        return $this;
     }
 
 
@@ -821,6 +888,7 @@ class OrderItem
 
     /**
      * Convert from one currency to another.
+     * Also saves the item.
      *
      * @param   string  $old    Original currency
      * @param   string  $new    New currency
@@ -1149,7 +1217,7 @@ class OrderItem
      */
     public function getItemPrice()
     {
-        if (!$this->Product->isPluginItem($this->product_id)) {
+        if (!$Product::isPluginItem($this->product_id)) {
             //$retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
             $retval = $this->Product->setVariant($this->getVariant())->getPrice(array(), $this->quantity);
         } else {
@@ -1314,7 +1382,11 @@ class OrderItem
      */
     public function setTax($tax)
     {
-        $this->tax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
+        $newtax = (float)$this->getOrder()->getCurrency()->RoundVal($tax);
+        if ($this->tax != $newtax) {
+            $this->Taint();
+        }
+        $this->tax = $newtax;
         return $this;
     }
 
@@ -1338,6 +1410,9 @@ class OrderItem
      */
     public function setTaxRate($rate)
     {
+        if ($this->tax_rate != $rate) {
+            $this->Taint();
+        }
         $this->tax_rate = (float)$rate;
         if ($this->taxable) {
             $this->setTax($this->quantity * $this->net_price * $this->tax_rate);
@@ -1409,7 +1484,59 @@ class OrderItem
                 $sku = Product::getInstance($this->product_id)->getName();
             }
         }
+        if ($this->sku != $sku) {
+            $this->Taint();
+        }
         $this->sku = $sku;
+        return $this;
+    }
+
+
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted() : bool
+    {
+        return $this->_tainted;
+    }
+
+
+    /**
+     * Taint this object, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint() : object
+    {
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Remove the taint flag.
+     *
+     * @return  object  $this
+     */
+    public function unTaint() : object
+    {
+        $this->_tainted = false;
         return $this;
     }
 

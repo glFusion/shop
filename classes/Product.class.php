@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -4215,6 +4215,22 @@ class Product
     public function getShippingUnits()
     {
         return $this->shipping_units;
+    }
+
+
+    /**
+     * Get the total shipping units related to this product, including variant.
+     *
+     * @param   integer $pv_id  ProductVariant ID
+     * @return  float       Total shipping units for the product variant
+     */
+    public function getTotalShippingUnits(int $pv_id=0) : float
+    {
+        $units = $this->getShippingUnits();
+        if ($pv_id > 0) {
+            $units += ProductVariant::getInstance($pv_id)->getShippingUnits();
+        }
+        return $units;
     }
 
 

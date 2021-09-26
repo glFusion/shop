@@ -3,9 +3,9 @@
  * Class to interface with plugins for product information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -186,10 +186,10 @@ class Plugin extends \Shop\Product
                 $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
                 $this->name = SHOP_getVar($A, 'title');
                 $this->item_name = SHOP_getVar($A, 'title');
-                $this->short_description = SHOP_getVar($A, 'excerpt', 'string', '');
-                if (empty($this->short_description)) {
+                $this->short_description = $this->name;
+                /*if (empty($this->short_description)) {
                     $this->short_description = SHOP_getVar($A, 'title', 'string', '');
-                }
+                }*/
                 $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
                 if (isset($A['taxable']) && is_integer($A['taxable'])) {
                     $this->taxable = $A['taxable'] ? 1 : 0;

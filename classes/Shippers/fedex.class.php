@@ -3,9 +3,9 @@
  * US Postal Service shipper class to get shipping rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -397,7 +397,7 @@ class fedex extends \Shop\Shipper
                 'SequenceNumber'=> ++$seq_no,
                 'GroupPackageCount'=> 1,
                 'Weight' => array(
-                        'Value' => $Package->getWeight(),
+                        'Value' => max($Package->getWeight(), 0.5),
                         'Units' => $this->getWeightUOM(),
                 ),
                 'Dimensions' => array(
@@ -437,7 +437,7 @@ class fedex extends \Shop\Shipper
                     ->setServiceCode($svc_code)
                     ->setServiceID($svc_id)
                     ->setServiceTitle($svc_dscp)
-                    ->setCost($cost + $fixed_cost)
+                    ->setCost($cost + $fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount(count($Packages));
             } else {
                 SHOP_log(
@@ -455,7 +455,7 @@ class fedex extends \Shop\Shipper
                 ->setServiceCode('_fixed')
                 ->setServiceID('_fixed')
                 ->setServiceTitle($this->getCarrierName())
-                ->setCost($fixed_cost)
+                ->setCost($fixed_cost + $this->item_shipping['amount'])
                 ->setPackageCount(count($Packages));
         }
         return $retval;

@@ -56,6 +56,11 @@ class OrderItemOption
      * @var float */
     private $oio_price = 0;
 
+    /** Flag to indicate the object has been changed and needs saving.
+     * @var boolean */
+    private $_tainted = true;
+
+
     /**
      * Constructor.
      * Initializes the order item
@@ -103,7 +108,11 @@ class OrderItemOption
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
-            return $this->setVars(DB_fetchArray($res, false));
+            $status = $this->setVars(DB_fetchArray($res, false));
+            if ($status) {
+                $this->unTaint();
+            }
+            return $status;
         } else {
             return false;
         }
@@ -142,6 +151,7 @@ class OrderItemOption
         $this->oio_name = ProductOptionGroup::getInstance($POV->getGroupID())->getName();
         $this->oio_value = $POV->getValue();
         $this->oio_price = $POV->getPrice();
+        $this->Taint();
         return $this;
     }
 
@@ -154,6 +164,9 @@ class OrderItemOption
      */
     public function setOrderItemID($id)
     {
+        if ($this->oi_id != $id) {
+            $this->Taint();
+        }
         $this->oi_id = (int)$id;
         return $this;
     }
@@ -258,6 +271,7 @@ class OrderItemOption
             $this->oio_value = $value;
             $this->oio_price = 0;
         }
+        $this->Taint();
         return $this;
     }
 
@@ -372,6 +386,55 @@ class OrderItemOption
     public function getOptionID()
     {
         return $this->pov_id;
+    }
+
+
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted() : boolean
+    {
+        return $this->_tainted;
+    }
+
+
+    /**
+     * Taint this object, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint() : object
+    {
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Remove the taint flag.
+     *
+     * @return  object  $this
+     */
+    public function unTaint() : object
+    {
+        $this->_tainted = false;
+        return $this;
     }
 
 }

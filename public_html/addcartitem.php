@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.0
+ * @version     v1.4.1
  * @since       v1.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -43,9 +43,12 @@ if (isset($_POST['item'])) {
 
 // Set other fixed parameters.
 $item_number = SHOP_getVar($opts, 'item', 'string', '');   // isset ensured above
-$price = SHOP_getVar($opts, 'p', 'float', 0);
+$price = SHOP_getVar($opts, 'p', 'float');      // may be NULL
 $sku = SHOP_getVar($opts, 'sku', 'string', '');
 $qty = SHOP_getVar($opts, 'q', 'integer', 1);
+$shipping = SHOP_getVar($opts, 'ship', 'float', 0);
+$shipping_units = SHOP_getVar($opts, 'su', 'float', 0);
+$taxable = SHOP_getVar($opts, 'tax', 'integer', 0);
 $uid = (int)$_USER['uid'];
 
 // Get product options. May come from a form field, or from GET vars.
@@ -93,10 +96,10 @@ $args = array(
         'special' => SHOP_getVar($opts, 'e', 'array', array())
     ),
     'options_text'  => $options,
+    'taxable'       => $taxable ? 1 : 0,
+    'shipping'      => $shipping,
+    'shipping_units' => $shipping_units,
 );
-if (isset($opts['t'])) {
-    $args['taxable'] = $args['taxable'] ? 1 : 0;
-}
 if ($price !== NULL) {
     // Only override the price if supplied, do not use "0"
     $args['price'] = $price;
@@ -111,5 +114,6 @@ if ($new_qty === false) {
     // This really only handles changes to the initial qty.
     $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
 }
+$Cart->saveIfTainted();
 COM_setMsg($msg);
 COM_refresh($ret_url);
