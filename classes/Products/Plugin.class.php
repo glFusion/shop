@@ -148,7 +148,7 @@ class Plugin extends \Shop\Product
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
             $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-            $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+            $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
             //$this->rating_enabled = true;   // TODO testing
             $this->votes = SHOP_getVar($A, 'votes', 'integer');
             $this->rating = SHOP_getVar($A, 'rating', 'float');
@@ -205,7 +205,7 @@ class Plugin extends \Shop\Product
                 // Plugins normally can't allow more than one purchase,
                 // so default to "true"
                 $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-                $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+                $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
                 //$this->rating_enabled = true;   // TODO testing
                 $this->votes = SHOP_getVar($A, 'votes', 'integer');
                 $this->rating = SHOP_getVar($A, 'rating', 'float');
