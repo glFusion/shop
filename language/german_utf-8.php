@@ -328,6 +328,7 @@ $LANG_SHOP = array (
 'msg_nochange' => 'Item is unchanged',
 'msg_item_added' => 'Item has been added to your cart',
 'all' => 'All',
+'all_categories' => 'All Categories',
 'print' => 'Print',
 'print_sel_pl' => 'Print Selected Packing Lists',
 'print_sel_ord' => 'Print Selected Orders',
@@ -959,6 +960,7 @@ $LANG_confignames['shop'] = array(
 'aff_auto_enroll' => 'Auto-enroll eligible users?',
 'aff_form_id' => 'Affiliate registration form',
 'smartystreets_license' => 'SmartyStreets License',
+'def_google_category' => 'Default Google Category',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1003,7 +1005,7 @@ $LANG_configSelect['shop'] = array(
     5 => array(
         'name' => 'Name',
         'price' => 'Preis',
-        'id' => 'Produkt-ID' => 'id',
+        'id' => 'Produkt-ID',
     ),
     11 => array(
         'pending' => 'Pending',

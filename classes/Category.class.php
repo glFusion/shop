@@ -1144,11 +1144,14 @@ class Category
     /**
      * Get the google taxonomy for this category.
      * If none defined, search for one in the parent categories.
+     * As a last resort, return the configured default category ID.
      *
-     * @return  string  Google taxonomy, empty string if none found
+     * @return  string  Google taxonomy, default value if none found
      */
-    public function getGoogleTaxonomy()
+    public function getGoogleTaxonomy() : string
     {
+        global $_SHOP_CONF;
+
         $Paths = $this->getPath();
         $Paths = array_reverse($Paths);
         foreach ($Paths as $Path) {
@@ -1156,7 +1159,7 @@ class Category
                 return $Path->google_taxonomy;
             }
         }
-        return '';
+        return $_SHOP_CONF['def_google_category'];
     }
 
 
@@ -1230,7 +1233,7 @@ class Category
      *
      * @return  integer     Category DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return $this->cat_id;
     }
@@ -1241,7 +1244,7 @@ class Category
      *
      * @return  string  Category name
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->cat_name;
     }
@@ -1252,7 +1255,7 @@ class Category
      *
      * @return  integer     Parent ID
      */
-    public function getParentID()
+    public function getParentID() : int
     {
         return (int)$this->parent_id;
     }
@@ -1263,7 +1266,7 @@ class Category
      *
      * @return  string      Category description
      */
-    public function getDscp()
+    public function getDscp() : string
     {
         return $this->dscp;
     }
@@ -1274,7 +1277,7 @@ class Category
      *
      * @param   integer $prod_id    Product record ID
      */
-    public static function deleteProduct($prod_id)
+    public static function deleteProduct($prod_id) : void
     {
         global $_TABLES;
 
@@ -1290,7 +1293,7 @@ class Category
      * @param   integer $dst    Destination product ID
      * @return  boolean     True on success, False on error
      */
-    public static function cloneProduct($src, $dst)
+    public static function cloneProduct($src, $dst) : bool
     {
         global $_TABLES;
 
@@ -1311,7 +1314,7 @@ class Category
      *
      * @return  integer     Applicable rule ID
      */
-    public function getRuleID()
+    public function getRuleID() : int
     {
         return (int)$this->zone_rule;
     }
@@ -1323,7 +1326,7 @@ class Category
      *
      * @return  integer     Zone rule ID
      */
-    public function getEffectiveZoneRule()
+    public function getEffectiveZoneRule() : int
     {
         $retval = 0;
         if ($this->getRuleID() > 0) {

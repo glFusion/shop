@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <rss xmlns:g="http://base.google.com/ns/1.0" version="2.0">
 <channel>
-<title>{site_name}</title>
-<link>{site_url}/shop/index.php</link>{lb}
+<title>{feed_title}</title>
+<link>{site_url}/shop/index.php</link>
+<description>{feed_dscp}</description>
 <!-- BEGIN itemRow -->
-<description>{short_dscp}</description>
 <item>
 <g:id>{product_id}</g:id>
 <g:title>{short_dscp}</g:title>

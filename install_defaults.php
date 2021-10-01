@@ -643,6 +643,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
+    array(
+        'name' => 'def_google_category',
+        'default_value' => '988',
+        'type' => 'text',
+        'subgroup' => 0,
+        'fieldset' => 60,
+        'selection_array' => 0,
+        'sort' => 20,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     // Shop Information SG
     array(
