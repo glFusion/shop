@@ -13,7 +13,6 @@
  */
 namespace Shop;
 use Shop\Models\OrderState;
-use Shop\Models\ShippingQuote;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
 use Shop\Models\ReferralTag;
@@ -3357,12 +3356,10 @@ class Order
     {
         global $_TABLES;
 
-        //if (!DB_error()) {
-            foreach ($this->items as $id=>$Item) {
-                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
-                $this->items[$id]->Save();
-            }
-        //}
+        foreach ($this->items as $id=>$Item) {
+            $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+            $this->items[$id]->Save();
+        }
         $this->updateRecord(array(
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
             "discount_pct = '" . (float)$this->discount_pct . "'"
@@ -3392,42 +3389,41 @@ class Order
             $code = $have_code;
         }
 
-        // Still empty? Then the order has no code.
         if (empty($code)) {
+            // Still empty? Then the order has no code.
+            // Not an error, just return.
             return true;
-        }
-
-        // Now check that the code is valid. It may have expired, or the order
-        // total may have changed.
-        if (!empty($code)) {
+        } else {
+            // Now check that the code is valid. It may have expired, or the
+            // order total may have changed.
             $DC = DiscountCode::getInstance($code);
             $pct = $DC->Validate($this);
         }
 
-        // If the code and percentage have not changed, just return true.
-        // Otherwise update the discount in the order and items.
         if ($pct == $have_pct && $code == $have_code) {
-//            return true;
-        }
-
-        if ($pct > 0) {
+            // If the code and percentage have not changed, nothing to do.
+            return true;
+        } elseif ($pct > 0) {
             // Valid code, set the new values.
             $this->setDiscountCode($code);
             $this->setDiscountPct($pct);
             $msg = $DC->getMessage();
             $status = true;
         } else {
-            // Invalid code, remove it from the order.
+            // Percent is zero, invalid code, remove it from the order.
             $this->setDiscountCode('');
             $this->setDiscountPct(0);
             $msg = $DC->getMessage();
             if ($have_code) {
-                // If there was a valid code, indicate that it has been removed
+                // If there was a valid code, indicate that it has been removed.
                 $msg .= ' ' . $LANG_SHOP['dc_removed'];
             }
             $status = false;
         }
-        $this->applyDiscountCode();      // apply code to order and items
+        // Apply the code to the order and items.
+        // This also handles resetting the discount to zero if an invalid code
+        // was entered.
+        $this->applyDiscountCode();
         SHOP_setMsg($msg, $status ? 'info' : 'error', $status);
         return $status;
     }
