@@ -1365,7 +1365,7 @@ class OrderItem
         if ($pct > 1) {
             $pct = $pct / 100;
         }
-        if ($this->Product->canApplyDiscountCode()) {
+        if ($this->getProduct()->canApplyDiscountCode()) {
             $price = $this->getPrice() * (1 - $pct);
             $this->setNetPrice(Currency::getInstance()->RoundVal($price));
             $this->setTax($this->net_price * $this->quantity * $this->tax_rate);
