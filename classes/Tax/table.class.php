@@ -338,7 +338,7 @@ class table extends \Shop\Tax
     {
         global $_TABLES;
 
-        if (empty($code)) {
+        if (is_array($code) && empty($code)) {
             return;
         }
         if (is_array($code)) {
@@ -347,7 +347,7 @@ class table extends \Shop\Tax
             }
             $code_str = implode(',', $code);
         } else {
-            $code_str = DB_escapeString($code);
+            $code_str = "'" . DB_escapeString($code) . "'";
         }
         $sql = "DELETE FROM {$_TABLES['shop.tax_rates']} WHERE code IN ($code_str)";
         //echo $sql;die;
