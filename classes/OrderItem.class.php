@@ -1217,7 +1217,7 @@ class OrderItem
      */
     public function getItemPrice()
     {
-        if (!$Product::isPluginItem($this->product_id)) {
+        if (!Product::isPluginItem($this->product_id)) {
             //$retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
             $retval = $this->Product->setVariant($this->getVariant())->getPrice(array(), $this->quantity);
         } else {
