@@ -35,7 +35,7 @@ class v1_4_1 extends Upgrade
             $res = DB_query($sql, 1);
             if ($res && DB_numRows($res) > 0) {
                 while ($A = DB_fetchArray($res, false)) {
-                    $OI = Shop\OrderItem::fromArray($A);
+                    $OI = OrderItem::fromArray($A);
                     $OI->setShippingUnits(
                         $OI->getProduct()->getTotalShippingUnits($OI->getVariantId())
                     )->Save();

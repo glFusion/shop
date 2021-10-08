@@ -78,7 +78,7 @@ class Upgrade
         if (!COM_checkVersion(self::$current_ver, '1.3.1')) {
             if (!v1_3_1::upgrade()) return false;
         }
-        
+
         if (!COM_checkVersion(self::$current_ver, '1.4.1')) {
             if (!v1_4_1::upgrade()) return false;
         }
