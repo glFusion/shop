@@ -1070,5 +1070,94 @@ $LANG_configSelect['shop'] = array(
         'categories' => 'Category List',
         'orders' => 'Order List',
     ),
+    21 => array(
+        'internal' => 'Configured Rate',
+        'table' => 'Internal Tax Table',
+        'avatax' => 'Avalara Free Api',
+        'taxjar' => 'TaxJar SmartCalcs',
+        'taxcloud' => 'TaxCloud API',
+    ),
+    22 => array(
+        0 => '-- None --',
+        'smartystreets' => 'SmartyStreets',
+        'usps' => 'USPS',
+        'taxcloud' => 'TaxCoud',
+    ),
+    23 => array(
+        'IN' => 'Inches',
+        'CM' => 'Centimetres',
+    ),
+    24 => array(
+        'allusers' => 'All Users',
+        'customers' => 'Customers',
+    ),
 );
 
+
+$LANG_configselects['shop'] = array(
+    0 => array('True' => 1, 'False' => 0),
+    2 => array('Yes' => 1, 'No' => 0),
+    5 => array('Nombre' => 'name', 'Pricio' => 'price', 'Product ID' => 'id'),
+    11 => array(
+        '10 - Pending'   => 'pending',
+        '20 - Invoiced'  => 'invoiced',
+        '30 - Processing' => 'processing',
+        '40 - Shipped'   => 'shipped',
+        '50 - Closed'    => 'closed',
+    ),
+    12 => array(
+        'Origin' => 0,
+        'Destination, Customer-Entered' => 1,
+        'Destination, IP Geolocation' => 3,
+    ),
+    13 => array('None' => 0, 'Left' => 1, 'Right' => 2, 'Both' => 3),
+    14 => array('Not Available' => 0, 'Optional' => 1, 'Required' => 2),
+    15 => array('Pounds' => 'lbs', 'Kilograms' => 'kgs'),
+    16 => array('Allow Backordering' => 0,
+            'Show in Catalog, Prevent Sales' => 1,
+            'Hide from Catalog' => 2),
+    17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    18 => array(
+        '100 - DEBUG' => 100,
+        '200 - INFO'  => 200,
+        '250 - NOTICE' => 250,
+        '300 - WARNING' => 300,
+        '400 - ERROR' => 400,
+        '500 - CRITICAL' => 500,
+        '550 - ALERT' => 550,
+        '600 - EMERGENCY' => 600,
+    ),
+    19 => array(
+        'Product List' => 1,
+        'Category List' => 2,
+        'Category List (incl. Home)' => 6,
+        'Category List (top-level)' => 10,
+        'Category List (top, incl. Home)' => 14,
+    ),
+    20 => array(
+        'Product List' => 'products',
+        'Category List' => 'categories',
+        'Order List' => 'orders',
+    ),
+    21 => array(
+        'Configured Rate' => 'internal',
+        'Internal Tax Table' => 'table',
+        'Avalara Free Api' => 'avatax',
+        'TaxJar SmartCalcs' => 'taxjar',
+        'TaxCloud API' => 'taxcloud',
+    ),
+    22 => array(
+        '-- None --' => 0,
+        'SmartyStreets' => 'smartystreets',
+        'USPS' => 'usps',
+        'TaxCoud' => 'taxcloud',
+    ),
+    23 => array(
+        'Inches' => 'IN',
+        'Centimetres' => 'CM',
+    ),
+    24 => array(
+        'All Users' => 'allusers',
+        'Customers' => 'customers',
+    ),
+);
