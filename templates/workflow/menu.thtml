@@ -1,4 +1,5 @@
 {# begin {templatelocation} #}
+<nav>
 <ul class="justified uk-nav checkout_menu uk-grid uk-grid-collapse
 	uk-grid-width-1-1 uk-grid-width-medium-1-{flow_count}
 	uk-child-width-1-1@s uk-child-width-1-{flow_count}@m"
@@ -25,6 +26,7 @@
     </li>
 <!-- END Flows -->
 </ul>
+</nav>
 <div style="clear:both;">
 <a href="{pi_url}/index.php" class="uk-button uk-button-primary uk-button-large" style="float:left">
     <i class="uk-icon uk-icon-backward"></i>&nbsp;&nbsp;{$LANG_SHOP['continue_shopping']}
