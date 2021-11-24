@@ -20,6 +20,8 @@ use Shop\Icon;
 use Shop\Field;
 use Shop\Template;
 use Shop\Tooltipster;
+use Shop\OrderItem;
+use Shop\Models\IPN;
 
 
 /**
@@ -276,7 +278,7 @@ class Plugin extends \Shop\Product
      * @param   array   $ipn_data   IPN data
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $ipn_data = array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing

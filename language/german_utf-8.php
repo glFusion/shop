@@ -792,6 +792,8 @@ $LANG_SHOP_HELP = array(
 'recipient_email' => 'The gift card will be emailed to this address. If left blank, the gift card will be emailed to you.',
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
+'gc_code' => 'Gift Card Code',
+'gc_message' => 'Message',
 'gw_ipn_url_is' => 'Your IPN URL is %s.',
 'gw_bb2_wl_needed' => 'Be sure to whitelist %s (no query parameters) in your Bad Behavior plugin configuration.',
 'gw_bb2_wl_done' => 'Bad Behavior whitelisting is done <i class="uk-icon uk-icon-check uk-text-success"></i>',

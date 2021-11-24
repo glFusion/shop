@@ -17,6 +17,9 @@ use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Template;
+use Shop\OrderItem;
+use Shop\Order;
+use Shop\Models\IPN;
 
 
 /**
@@ -384,29 +387,33 @@ class Coupon extends \Shop\Product
     /**
      * Handle the purchase of this item.
      *
-     * @param  object  $Item       Item object, to get options, etc.
-     * @param  object  $Order      Order object
-     * @param  array   $ipn_data   Shop IPN data
+     * @param  object  $Item    OrderItem object, to get options, etc.
+     * @param  object  $IPN     IPN model object
      * @return integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         global $LANG_SHOP;
 
+        $Order = $Item->getOrder();
         $status = 0;
         $amount = (float)$Item->getPrice();
         $special = SHOP_getVar($Item->getExtras(), 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
-        $sender_name = SHOP_getVar($special, 'sender_name', 'string');
+        if (empty($recip_email)) {
+            $recip_email = $Order->getBuyerEmail();
+            $Item->addSpecial('recipient_email', $recip_email);
+        }
+        $sender_name = SHOP_getVar($IPN, 'payer_name', 'string');
         $msg = SHOP_getVar($special, 'message', 'string');
         $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial
-        $Item->addOptionText($LANG_SHOP['code'], $gc_code);
+        //$Item->addOptionText($LANG_SHOP['code'], $gc_code);
         $Item->addSpecial('gc_code', $gc_code);
-
-        parent::handlePurchase($Item, $Order);
+        $Item->Save();
+        parent::handlePurchase($Item, $IPN);
         self::Notify($gc_code, $recip_email, $amount, $sender_name, $msg);
         return $status;
     }

@@ -16,6 +16,7 @@ use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
+use Shop\Models\IPN;
 //use glFusion\FieldList;
 
 
@@ -2517,7 +2518,7 @@ class Product
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $IPN=array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         global $_TABLES;
 
