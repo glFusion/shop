@@ -348,7 +348,7 @@ class OrderItem
      *
      * @return  object  Order Object
      */
-    public function getOrder()
+    public function getOrder() : Order
     {
         return Order::getInstance($this->order_id);
     }
@@ -525,12 +525,13 @@ class OrderItem
      * @param   string  $value  Value of element
      * @param   boolean $save   True to immediately save the item
      */
-    public function addSpecial($name, $value, $save=true)
+    public function addSpecial(string $name, string $value, bool $save=true) : self
     {
         $this->extras['special'][$name] = strip_tags($value);
         if ($save) {
             $this->Save();
         }
+        return $this;
     }
 
 
@@ -1085,13 +1086,21 @@ class OrderItem
 
     public function getExtraDisplay()
     {
+        global $LANG_SHOP;
+
         $retval = '';
         if (is_array($this->extras) && isset($this->extras['special'])) {
+            $T = new Template;
+            $T->set_file('options', 'view_options.thtml');
+            $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->extras['special'] as $name=>$val) {
-                if (!empty($val)) {
-                    $retval = '<br />' . $name . ': ' . $val;
-                }
+                $T->set_var(array(
+                    'opt_name'  => isset($LANG_SHOP[$name]) ? $LANG_SHOP[$name] : $name,
+                    'opt_value' => strip_tags($val),
+                ) );
+                $T->parse('ORow', 'ItemOptions', true);
             }
+            $retval .= $T->parse('output', 'options');
         }
         return $retval;
     }
