@@ -2333,25 +2333,6 @@ function plugin_templateSetVars_shop($templatename, &$template)
 
 
 /**
- * Get the names of RSS feeds that are provided.
- * For evList this is a list of topics
- *
- * @return  array   Array of ID=>Name pairs
- */
-function plugin_getfeednames_shop()
-{
-    return array(
-        array(
-            'id' => 'facebook',
-            'name' => 'Facebook',
-        ),
-    );
-
-    return Shop\Feeds\Catalog::getFeedNames();
-}
-
-
-/**
  * Get content for the syndication feeds.
  *
  * @param   string  $feed       Feed ID to get
@@ -2361,18 +2342,25 @@ function plugin_getfeednames_shop()
  * @return  array               Array of event data
  */
 function plugin_getfeedcontent_shop(
-    $feed, &$link, &$update_data, $feedType, $feedVersion, $A=array()
+    $feed, &$link, &$update_data, $feedType, $feedVersion
 ) {
-    $content = Shop\Models\Syndication::getFeedContent(
-        $feed, $link, $update_data, $feedType, $feedVersion, $A=array()
+    //$Feed = Shop\Models\Syndication::create($feed);
+    //return $Feed->getFeedContent();
+    return Shop\Models\Syndication::getFeedcontent(
+        $feed, $link, $update_data, $feedType, $feedVersion
     );
-    return $content;
 }
 
 
-function plugin_getfeedtopic_shop($tid)
+/**
+ * Get the names of RSS feeds that are provided.
+ * For evList this is a list of topics
+ *
+ * @return  array   Array of ID=>Name pairs
+ */
+function plugin_getfeednames_shop()
 {
-    return Evlist\Calendar::getInstance($tid)->getName();
+    return Shop\Models\Syndication::getFeedNames();
 }
 
 
@@ -2393,6 +2381,22 @@ function plugin_feedupdatecheck_shop(
         $feed, $topic, $update_data, $limit,
         $updated_type, $updated_topic, $updated_id
     );
+}
+
+function plugin_getfeedformats_shop()
+{
+    return Shop\Models\Syndication::getFormats();
+}
+
+
+function plugin_getfeedprovider_shop($format, $A=array())
+{
+    $cls = '\\Shop\\Models\\Feeds\\' . $format;
+    if (class_exists($cls)) {
+        return new $cls($A);
+    } else {
+        return NULL;
+    }
 }
 
 
