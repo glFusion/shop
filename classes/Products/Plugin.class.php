@@ -471,10 +471,10 @@ class Plugin extends \Shop\Product
      * Determine if a product can be shown in the catalog.
      * For plugin items, just return true for now.
      *
-     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean True if on sale, false if not
      */
-    public function canDisplay($isadmin = false)
+    public function canDisplay(?int $uid = NULL) : bool
     {
         return true;
     }

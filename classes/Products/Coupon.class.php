@@ -713,16 +713,17 @@ class Coupon extends \Shop\Product
      * Checks that gift cards are enabled in the configuration, then
      * checks the general product hasAccess() function.
      *
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess()
+    public function hasAccess(?int $uid = NULL) : bool
     {
         global $_SHOP_CONF;
 
         if (!$_SHOP_CONF['gc_enabled']) {
             return false;
         } else {
-            return parent::hasAccess();
+            return parent::hasAccess($uid);
         }
     }
 
