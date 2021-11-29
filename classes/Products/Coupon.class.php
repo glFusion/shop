@@ -259,6 +259,9 @@ class Coupon extends \Shop\Product
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
                 SHOP_log("Coupon code $code was already redeemed", SHOP_LOG_ERROR);
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
+            } elseif ($A['status'] != self::VALID) {
+                SHOP_log("Coupon $code status is not valid");
+                return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
         }
         $amount = (float)$A['amount'];
@@ -637,18 +640,23 @@ class Coupon extends \Shop\Product
      */
     public static function writeLog($code, $uid, $amount, $msg, $order_id = '')
     {
-        global $_TABLES;
+        global $_TABLES, $_USER;
 
         $msg = DB_escapeString($msg);
         $order_id = DB_escapeString($order_id);
         $code = DB_escapeString($code);
         $amount = (float)$amount;
         $uid = (int)$uid;
+        $done_by = (int)$_USER['uid'];
 
-        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']}
-                (code, uid, order_id, ts, amount, msg)
-                VALUES
-                ('{$code}', '{$uid}', '{$order_id}', UNIX_TIMESTAMP(), '$amount', '{$msg}');";
+        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']} SET
+            code = '{$code}',
+            uid = {$uid},
+            done_by = {$done_by},
+            order_id = '{$order_id}',
+            ts = UNIX_TIMESTAMP(),
+            amount = {$amount},
+            msg = '{$msg}'";
         DB_query($sql);
     }
 
@@ -762,7 +770,7 @@ class Coupon extends \Shop\Product
      * @param   string  $newstatus  New status to set
      * @return  boolean     True on success, False on failure
      */
-    public static function Void($code, $newstatus=self::VOID)
+    public static function Void(string $code, string $newstatus=self::VOID) : bool
     {
         global $_TABLES, $_USER;;
 
@@ -795,7 +803,7 @@ class Coupon extends \Shop\Product
         }
         DB_query($sql);
         if (!DB_error()) {
-            self::writeLog($code, $_USER['uid'], $balance, $log_code);
+            self::writeLog($code, $A['redeemer'], $balance, $log_code);
             return true;
         } else {
             return false;

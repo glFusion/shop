@@ -346,6 +346,7 @@ $_SQL = array(
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '0',
+  `done_by` int(11) unsigned NOT NULL DEFAULT '0',
   `code` varchar(128) NOT NULL,
   `ts` int(11) unsigned DEFAULT NULL,
   `order_id` varchar(50) DEFAULT NULL,
@@ -937,6 +938,7 @@ $SHOP_UPGRADE['1.3.1'] = array(
 );
 $SHOP_UPGRADE['1.4.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
+    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`;"
 );
 
 
