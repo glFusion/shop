@@ -873,8 +873,8 @@ function plugin_autouninstall_shop()
             'shop.affiliate_sales',
             'shop.affiliate_saleitems',
             'shop.affiliate_payments',
-            'shop.stock',
             // v1.4.0
+            'shop.stock',
             'shop.plugin_products',
         ),
         // Give the full name of the group, as in the db

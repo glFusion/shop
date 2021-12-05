@@ -3,9 +3,9 @@
  * US Postal Service shipper class to get shipping rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -227,7 +227,7 @@ class usps extends \Shop\Shipper
         $Packages = Package::packOrder($Order, $this);
 
         if (!$this->hasQuoteAPI()) {
-            return parent::getQuote($Addr, $Packages);
+            return parent::getUnitQuote($Order);
         }
 
         //$method_data = array();
@@ -335,7 +335,7 @@ class usps extends \Shop\Shipper
                     ->setServiceCode($svc_code)
                     ->setServiceID('_fixed')
                     ->setServiceTitle($this->getCarrierName())
-                    ->setCost($fixed_cost)
+                    ->setCost($fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount($fixed_pkgs),
             );
             $num_packages = $fixed_pkgs;
@@ -393,7 +393,7 @@ class usps extends \Shop\Shipper
                                         ->setServiceCode($key)
                                         ->setServiceID($classid)
                                         ->setServiceTitle(strtoupper($this->key) . ' ' . $title)
-                                        ->setCost($cost)
+                                        ->setCost($cost + $this->item_shipping['amount'])
                                         ->setPackageCount(1);
                                 } else {
                                     $quote_data[$key]['cost'] += $cost;
@@ -430,7 +430,7 @@ class usps extends \Shop\Shipper
                                     ->setServiceCode($key)
                                     ->setServiceID($svc_id)
                                     ->setServiceTitle(strtoupper($this->key) . ' ' . $title)
-                                    ->setCost($cost)
+                                    ->setCost($cost + $this->item_shipping['amount'])
                                     ->setPackageCount(1);
                             } else {
                                 $quote_data[$key]['cost'] += $cost;

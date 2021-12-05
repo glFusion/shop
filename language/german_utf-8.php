@@ -328,6 +328,7 @@ $LANG_SHOP = array (
 'msg_nochange' => 'Item is unchanged',
 'msg_item_added' => 'Item has been added to your cart',
 'all' => 'All',
+'all_categories' => 'All Categories',
 'print' => 'Print',
 'print_sel_pl' => 'Print Selected Packing Lists',
 'print_sel_ord' => 'Print Selected Orders',
@@ -791,6 +792,8 @@ $LANG_SHOP_HELP = array(
 'recipient_email' => 'The gift card will be emailed to this address. If left blank, the gift card will be emailed to you.',
 'orderlist_total' => 'This is the total of items on the order, excluding taxes and fees. Hover over an amount to see all charges.',
 'sender_name' => 'Optionally enter your name to be shown to the recipient.',
+'gc_code' => 'Gift Card Code',
+'gc_message' => 'Message',
 'gw_ipn_url_is' => 'Your IPN URL is %s.',
 'gw_bb2_wl_needed' => 'Be sure to whitelist %s (no query parameters) in your Bad Behavior plugin configuration.',
 'gw_bb2_wl_done' => 'Bad Behavior whitelisting is done <i class="uk-icon uk-icon-check uk-text-success"></i>',
@@ -959,6 +962,7 @@ $LANG_confignames['shop'] = array(
 'aff_auto_enroll' => 'Auto-enroll eligible users?',
 'aff_form_id' => 'Affiliate registration form',
 'smartystreets_license' => 'SmartyStreets License',
+'def_google_category' => 'Default Google Category',
 );
 
 /** Language strings for the subgroup names in the config section */
@@ -1003,7 +1007,7 @@ $LANG_configSelect['shop'] = array(
     5 => array(
         'name' => 'Name',
         'price' => 'Preis',
-        'id' => 'Produkt-ID' => 'id',
+        'id' => 'Produkt-ID',
     ),
     11 => array(
         'pending' => 'Pending',
@@ -1064,5 +1068,92 @@ $LANG_configSelect['shop'] = array(
         'products' => 'Product List',
         'categories' => 'Category List',
         'orders' => 'Order List',
+    ),
+    21 => array(
+        'internal' => 'Configured Rate',
+        'table' => 'Internal Tax Table',
+        'avatax' => 'Avalara Free Api',
+        'taxjar' => 'TaxJar SmartCalcs',
+        'taxcloud' => 'TaxCloud API',
+    ),
+    22 => array(
+        0 => '-- None --',
+        'smartystreets' => 'SmartyStreets',
+        'usps' => 'USPS',
+        'taxcloud' => 'TaxCoud',
+    ),
+    23 => array(
+        'IN' => 'Inches',
+        'CM' => 'Centimetres',
+    ),
+    24 => array(
+        'allusers' => 'All Users',
+        'customers' => 'Customers',
+    ),
+);
+
+$LANG_configselects['shop'] = array(
+    0 => array('Ja' => 1, 'Nein' => 0),
+    2 => array('Ja' => 1, 'Nein' => 0),
+    5 => array('Name' => 'name', 'Preis' => 'price', 'Produkt-ID' => 'id'),
+    11 => array(
+        '10 - Pending'   => 'pending',
+        '20 - Invoiced'  => 'invoiced',
+        '30 - Processing' => 'processing',
+        '40 - Shipped'   => 'shipped',
+        '50 - Closed'    => 'closed',
+    ),
+    12 => array(
+        'Origin' => 0,
+        'Destination, Customer-Entered' => 1,
+        'Destination, IP Geolocation' => 3,
+    ),
+    13 => array('Keine Blöcke' => 0, 'Linke Blöcke' => 1, 'Rechte Blöcke' => 2, 'Linke & Rechte Blöcke' => 3),
+    14 => array('Nicht verfügbar' => 0, 'Optional' => 1, 'Erforderlich' => 2),
+    15 => array('Pfund' => 'lbs', 'Kilogramm' => 'kgs'),
+    16 => array('Anzeigen mit Bestellmöglichkeit' => 0, 'Anzeigen ohne Bestellmöglichkeit' => 1, 'Nicht mehr anzeigen' => 2),
+    17 => array('Upper-case' => 1, 'Lower-case' => 2, 'Mixed-case' => 3, 'None' => 0),
+    18 => array(
+        '100 - DEBUG' => 100,
+        '200 - INFO'  => 200,
+        '250 - NOTICE' => 250,
+        '300 - WARNING' => 300,
+        '400 - ERROR' => 400,
+        '500 - CRITICAL' => 500,
+        '550 - ALERT' => 550,
+        '600 - EMERGENCY' => 600,
+    ),
+    19 => array(
+        'Product List' => 1,
+        'Category List' => 2,
+        'Category List (incl. Home)' => 6,
+        'Category List (top-level)' => 10,
+        'Category List (top, incl. Home)' => 14,
+    ),
+    20 => array(
+        'Product List' => 'products',
+        'Category List' => 'categories',
+        'Order List' => 'orders',
+    ),
+    21 => array(
+        'Configured Rate' => 'internal',
+        'Internal Tax Table' => 'table',
+        'Avalara Free Api' => 'avatax',
+        'TaxJar SmartCalcs' => 'taxjar',
+        'TaxCloud API' => 'taxcloud',
+    ),
+    22 => array(
+        '-- None --' => 0,
+        'SmartyStreets' => 'smartystreets',
+        'USPS' => 'usps',
+        'TaxCoud' => 'taxcloud',
+    ),
+    23 => array(
+        'Inches' => 'IN',
+        'Centimetres' => 'CM',
+    ),
+    24 => array(
+        'All Users' => 'allusers',
+        'Customers' => 'customers',
     ),
 );

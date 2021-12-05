@@ -3,9 +3,9 @@
  * Class to handle shipping costs based on quantity, total weight and class.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -257,8 +257,8 @@ class Shipper
         $this->setID(SHOP_getVar($A, 'id', 'integer'))
             ->setModuleCode(SHOP_getVar($A, 'module_code'))
             ->setName(SHOP_getVar($A, 'name'))
-            ->setMinUnits(SHOP_getVar($A, 'min_units', 'integer'))
-            ->setMaxUnits(SHOP_getVar($A, 'max_units', 'integer'))
+            ->setMinUnits(SHOP_getVar($A, 'min_units', 'float', 0))
+            ->setMaxUnits(SHOP_getVar($A, 'max_units', 'float', 0))
             ->setEnabled(SHOP_getVar($A, 'enabled', 'integer'))
             ->setReqShipto(SHOP_getVar($A, 'req_shipto', 'integer'))
             ->setTaxLocation(SHOP_getVar($A, 'tax_loc', 'integer'))
@@ -389,7 +389,7 @@ class Shipper
      * @param   float   $units  Shipping units
      * @return  object  $this
      */
-    private function setMinUnits($units)
+    private function setMinUnits(float $units) : self
     {
         $this->min_units = (float)$units;
         return $this;
@@ -401,7 +401,7 @@ class Shipper
      * @param   float   $units  Shipping units
      * @return  object  $this
      */
-    private function setMaxUnits($units)
+    private function setMaxUnits(float $units) : self
     {
         $this->max_units = (float)$units;
         return $this;
@@ -760,12 +760,14 @@ class Shipper
      * If no qualified shippers are found, then only the total charge is
      * included and the package count is set to zero.
      *
+     * @deprecated
      * @param   object  $Order  Order being shipped
      * @return  array       Array of shipper objects, with rates and packages
      */
     public static function getShippersForOrder($Order)
     {
         global $LANG_SHOP;
+        var_dump($Order->getShippingUnits());die;
 
         $cache_key = 'shipping_order_' . $Order->getOrderID() .
             '_' . $Order->getShippingUnits();
@@ -1909,6 +1911,7 @@ class Shipper
             ->setServiceID($this->key . '.' . $this->id);
         $found = false;
         if (
+            $this->item_shipping['units'] > 0 &&
             $this->item_shipping['units'] <= $this->max_units &&
             $this->item_shipping['units'] >= $this->min_units
         ) {
@@ -1937,10 +1940,10 @@ class Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    public function getQuote(\Shop\Order $Order, $item_shipping)
+    public function getQuote(\Shop\Order $Order) : array
     {
         $retval = array();
-        $this->item_shipping = $item_shipping;
+        $this->item_shipping = $Order->getItemShipping();
         if (
             $this->free_threshold > 0 &&
             $Order->getNetItems() > $this->free_threshold
@@ -1957,10 +1960,30 @@ class Shipper
                     ->setCost(0)
                     ->setPackageCount(1),
             );
+        } elseif (
+            $this->item_shipping['units'] == 0 &&
+            $this->item_shipping['amount'] > 0
+        ) {
+            // No shipping to be calculated, just use the fixed shipping amount
+            $retval = array(
+                (new ShippingQuote)
+                    ->setID($this->id)
+                    ->setShipperID($this->id)
+                    ->setCarrierCode($this->key)
+                    ->setCarrierTitle($this->getCarrierName())
+                    ->setServiceCode('free')
+                    ->setServiceID('free')
+                    ->setServiceTitle($this->getName() . ' Fixed Shipping')
+                    ->setCost($this->item_shipping['amount'])
+                    ->setPackageCount(1),
+            );
         } else {
-            $cache_key = $this->getID() . '.' . $Order->totalShippingUnits() .
-                '.' . $Order->getShipto()->toHash();
+            // Calculate shipping based on the shipping units and fixed shipping.
+            // cache based on order, units, fixed amt and shipping addr
+            $cache_key = $this->getID() . '.' . $this->item_shipping['units'] .
+                '.' . $this->item_shipping['amount'] . '.' . $Order->getShipto()->toHash();
             $retval = Cache::get($cache_key);
+            //$retval = NULL;           // debugging
             if ($retval === NULL) {
                 switch ($this->quote_method) {
                 case self::QUOTE_API:
@@ -1968,9 +1991,9 @@ class Shipper
                     break;
                 case self::QUOTE_TABLE:
                 default:
-                    $quote = $this->getUnitQuote($Order);
-                    if (is_object($quote)) {
-                        $retval = array($quote);
+                    $retval = $this->getUnitQuote($Order);
+                    if (is_object($retval)) {
+                        $retval = array($retval);
                     }
                     break;
                 }
@@ -1994,6 +2017,20 @@ class Shipper
      */
     protected function _getQuote($Order)
     {
+        if ($Order->totalShippingUnits() == 0) {
+            // Return the fixed shipping cost, if any.
+            $quote = (new ShippingQuote)
+                ->setID($this->id)
+                ->setShipperID($this->id)
+                ->setCarrierCode($this->key)
+                ->setCarrierTitle($this->name)
+                ->setServiceTitle($this->name)
+                ->setServiceCode('units.' . $this->id)
+                ->setServiceID($this->key . '.' . $this->id)
+                ->setCost($this->item_shipping['amount']);
+            return $quote;
+        }
+
         // If a shipper module is used, use the configured packages.
         // Otherwise, get a quote based on units.
         if ($this->key != '') {

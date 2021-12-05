@@ -8,7 +8,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -198,6 +198,8 @@ class Cart extends Order
         $uid        = SHOP_getVar($args, 'uid', 'int', 1);
         $taxable    = SHOP_getVar($args, 'taxable', 'int');
         $options_text = SHOP_getVar($args, 'options_text', 'array');
+        $shipping   = SHOP_getVar($args, 'shipping', 'float', 0);
+        $shipping_units = SHOP_getVar($args, 'shipping_units', 'float', $P->getShippingUnits());
 
         if (isset($args['description'])) {
             $item_dscp  = $args['description'];
@@ -248,7 +250,7 @@ class Cart extends Order
             $new_quantity = $this->items[$have_id]->getQuantity();
             $new_quantity += $quantity;
             $this->items[$have_id]->setQuantity($new_quantity, $override);
-            $this->items[$have_id]->Save();
+            $this->items[$have_id]->Save();     // to save updated order value
         } elseif ($quantity == 0) {
             return false;
         } else {
@@ -261,28 +263,31 @@ class Cart extends Order
                 'options'   => $opts,
                 'options_text' => $options_text,
                 'extras'    => $extras,
-                'taxable'   => $P->isTaxable() ? 1 : 0,
                 'override'  => $override,
+                'shipping'  => $shipping,
+                'shipping_units' => $shipping_units,
+                'taxable'   => $P->isTaxable() ? 1 : 0,
             );
-            if (
-                Product::isPluginItem($item_id) &&
-                isset($args['price'])
-            ) {
-                $tmp['price'] = (float)$args['price'];
+            if (Product::isPluginItem($item_id)) {
+                if (isset($args['price'])) {
+                    $tmp['price'] = (float)$args['price'];
+                }
+                if (isset($args['taxable'])) {
+                    $tmp['taxable'] = $args['taxable'] ? 1 : 0;
+                }
             }
             parent::addItem($tmp);
+            $this->Taint();
             $new_quantity = $quantity;
         }
         if ($this->applyQtyDiscounts($item_id)) {
             // If discount pricing was recalculated, save the new item prices
-            $need_save = true;
+            $this->Taint();
         }
         $P->reserveStock($quantity);
 
         // If an update was done that requires re-saving the cart, do it now
-        if ($need_save) {
-            $this->Save();
-        }
+        $this->saveIfTainted(true);
         return $new_quantity;
     }
 

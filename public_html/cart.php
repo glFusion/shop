@@ -25,7 +25,6 @@ if (
     exit;
 }
 
-$display = \Shop\Menu::siteHeader($LANG_SHOP['cart_blocktitle']);
 $content = '';
 $action = '';
 $actionval = '';
@@ -442,6 +441,7 @@ default:
     }
     break;
 }
+$display = \Shop\Menu::siteHeader($LANG_SHOP['cart_blocktitle']);
 $display .= \Shop\Menu::pageTitle('', 'cart');
 $display .= $content;
 $display .= \Shop\Menu::siteFooter();

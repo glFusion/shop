@@ -48,9 +48,7 @@
 								{item_dscp}
 {!endif}
 								{item_options}
-{!if item_extras}
-                                <br />{item_extras}
-{!endif}
+                                {item_extras}
 							</div>
 						</div>
 						<div class="uk-width-1-2@s uk-width-1-10@m uk-width-medium-1-10 uk-width-1-2 cart-item-price">

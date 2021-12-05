@@ -17,6 +17,9 @@ use Shop\Payment;   // to record application of coupon amounts
 use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Template;
+use Shop\OrderItem;
+use Shop\Order;
+use Shop\Models\IPN;
 
 
 /**
@@ -256,6 +259,9 @@ class Coupon extends \Shop\Product
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
                 SHOP_log("Coupon code $code was already redeemed", SHOP_LOG_ERROR);
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
+            } elseif ($A['status'] != self::VALID) {
+                SHOP_log("Coupon $code status is not valid");
+                return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
         }
         $amount = (float)$A['amount'];
@@ -384,29 +390,33 @@ class Coupon extends \Shop\Product
     /**
      * Handle the purchase of this item.
      *
-     * @param  object  $Item       Item object, to get options, etc.
-     * @param  object  $Order      Order object
-     * @param  array   $ipn_data   Shop IPN data
+     * @param  object  $Item    OrderItem object, to get options, etc.
+     * @param  object  $IPN     IPN model object
      * @return integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $Order=NULL, $ipn_data=array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         global $LANG_SHOP;
 
+        $Order = $Item->getOrder();
         $status = 0;
         $amount = (float)$Item->getPrice();
         $special = SHOP_getVar($Item->getExtras(), 'special', 'array');
         $recip_email = SHOP_getVar($special, 'recipient_email', 'string');
-        $sender_name = SHOP_getVar($special, 'sender_name', 'string');
+        if (empty($recip_email)) {
+            $recip_email = $Order->getBuyerEmail();
+            $Item->addSpecial('recipient_email', $recip_email);
+        }
+        $sender_name = SHOP_getVar($IPN, 'payer_name', 'string');
         $msg = SHOP_getVar($special, 'message', 'string');
         $uid = $Item->getOrder()->getUid();
         $gc_code = self::Purchase($amount, $uid);
         // Add the code to the options text. Saving the item will happen
         // next during addSpecial
-        $Item->addOptionText($LANG_SHOP['code'], $gc_code);
+        //$Item->addOptionText($LANG_SHOP['code'], $gc_code);
         $Item->addSpecial('gc_code', $gc_code);
-
-        parent::handlePurchase($Item, $Order);
+        $Item->Save();
+        parent::handlePurchase($Item, $IPN);
         self::Notify($gc_code, $recip_email, $amount, $sender_name, $msg);
         return $status;
     }
@@ -630,18 +640,23 @@ class Coupon extends \Shop\Product
      */
     public static function writeLog($code, $uid, $amount, $msg, $order_id = '')
     {
-        global $_TABLES;
+        global $_TABLES, $_USER;
 
         $msg = DB_escapeString($msg);
         $order_id = DB_escapeString($order_id);
         $code = DB_escapeString($code);
         $amount = (float)$amount;
         $uid = (int)$uid;
+        $done_by = (int)$_USER['uid'];
 
-        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']}
-                (code, uid, order_id, ts, amount, msg)
-                VALUES
-                ('{$code}', '{$uid}', '{$order_id}', UNIX_TIMESTAMP(), '$amount', '{$msg}');";
+        $sql = "INSERT INTO {$_TABLES['shop.coupon_log']} SET
+            code = '{$code}',
+            uid = {$uid},
+            done_by = {$done_by},
+            order_id = '{$order_id}',
+            ts = UNIX_TIMESTAMP(),
+            amount = {$amount},
+            msg = '{$msg}'";
         DB_query($sql);
     }
 
@@ -706,16 +721,17 @@ class Coupon extends \Shop\Product
      * Checks that gift cards are enabled in the configuration, then
      * checks the general product hasAccess() function.
      *
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess()
+    public function hasAccess(?int $uid = NULL) : bool
     {
         global $_SHOP_CONF;
 
         if (!$_SHOP_CONF['gc_enabled']) {
             return false;
         } else {
-            return parent::hasAccess();
+            return parent::hasAccess($uid);
         }
     }
 
@@ -754,7 +770,7 @@ class Coupon extends \Shop\Product
      * @param   string  $newstatus  New status to set
      * @return  boolean     True on success, False on failure
      */
-    public static function Void($code, $newstatus=self::VOID)
+    public static function Void(string $code, string $newstatus=self::VOID) : bool
     {
         global $_TABLES, $_USER;;
 
@@ -787,7 +803,7 @@ class Coupon extends \Shop\Product
         }
         DB_query($sql);
         if (!DB_error()) {
-            self::writeLog($code, $_USER['uid'], $balance, $log_code);
+            self::writeLog($code, $A['redeemer'], $balance, $log_code);
             return true;
         } else {
             return false;

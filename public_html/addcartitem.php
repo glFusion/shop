@@ -5,8 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
- * @since       v1.3.0
+ * @version     v1.4.1
+ * @since       v1.4.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -15,6 +15,9 @@
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
 
+// Figure out where to redirect after adding to cart.
+// Look for a parameter, then the referrer page, and finally back to
+// the Shop homepage if nothing else is defined.
 if (isset($_POST['ret'])) {
     $ret_url = $_POST['ret'];
 } elseif (isset($_GET['ret'])) {
@@ -22,7 +25,13 @@ if (isset($_POST['ret'])) {
 } else {
     $ret_url = $_SERVER['HTTP_REFERER'];
 }
+if (empty($ret_url)) {
+    $ret_url = SHOP_URL . '/index.php';
+}
 
+// Get the parameters from the form or URL.
+// Item ID is required so check that it's present, and log an error and redirect
+// if not supplied.
 if (isset($_POST['item'])) {
     $opts = $_POST;
 } elseif (isset($_GET['item'])) {
@@ -31,10 +40,20 @@ if (isset($_POST['item'])) {
     SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
     COM_refresh($ret_url);
 }
-$price = SHOP_getVar($opts, 'p', 'float', 0);
+
+// Set other fixed parameters.
+$item_number = SHOP_getVar($opts, 'item', 'string', '');   // isset ensured above
+$price = SHOP_getVar($opts, 'p', 'float');      // may be NULL
+$sku = SHOP_getVar($opts, 'sku', 'string', '');
+$qty = SHOP_getVar($opts, 'q', 'integer', 1);
+$shipping = SHOP_getVar($opts, 'ship', 'float', 0);
+$shipping_units = SHOP_getVar($opts, 'su', 'float', 0);
+$taxable = SHOP_getVar($opts, 'tax', 'integer', 0);
 $uid = (int)$_USER['uid'];
 
-// Get product options. May come from a form field, or from GET vars
+// Get product options. May come from a form field, or from GET vars.
+// Form field will have an "options" variable with "o" for text and "p" for price.
+// Parameters will have only one "p" for price and multiple "o" for text.
 $options = array();
 if (isset($opts['options'])) {
     // Get values from form fields.
@@ -61,13 +80,10 @@ if (isset($opts['options'])) {
     }
 }
 
-$item_number = SHOP_getVar($opts, 'item', 'string', '');   // isset ensured above
 if (empty($item_number)) {
     COM_setMsg('Missing item number', 'error');
     COM_refresh($ret_url);
 }
-$sku = SHOP_getVar($opts, 'sku', 'string');
-$qty = SHOP_getVar($opts, 'q', 'integer', 1);
 $Cart = Shop\Cart::getInstance();
 
 $args = array(
@@ -80,10 +96,10 @@ $args = array(
         'special' => SHOP_getVar($opts, 'e', 'array', array())
     ),
     'options_text'  => $options,
+    'taxable'       => $taxable ? 1 : 0,
+    'shipping'      => $shipping,
+    'shipping_units' => $shipping_units,
 );
-if (isset($opts['t'])) {
-    $args['taxable'] = $args['taxable'] ? 1 : 0;
-}
 if ($price !== NULL) {
     // Only override the price if supplied, do not use "0"
     $args['price'] = $price;
@@ -98,5 +114,6 @@ if ($new_qty === false) {
     // This really only handles changes to the initial qty.
     $msg .= ' ' . $LANG_SHOP['qty_adjusted'];
 }
+$Cart->saveIfTainted();
 COM_setMsg($msg);
 COM_refresh($ret_url);

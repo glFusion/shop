@@ -103,9 +103,7 @@
                                 <br />{sku}
 {!endif}
                                 {item_options}
-{!if item_extras}
-                                <br />{item_extras}
-{!endif}
+                                {item_extras}
                             </div>
                         </div>
                         <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-price">

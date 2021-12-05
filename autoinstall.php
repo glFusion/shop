@@ -154,6 +154,8 @@ $tables = array(
     // v1.3.0
     'packages', 'payments', 'customerXgateway',
     'affiliate_sales', 'affiliate_saleitems', 'affiliate_payments',
+    // v1.4.0
+    'stock', 'plugin_products',
 );
 foreach ($tables as $table) {
     $INSTALL_plugin['shop'][] = array(

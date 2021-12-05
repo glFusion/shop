@@ -3,9 +3,9 @@
  * Class to interface with plugins for product information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,6 +20,8 @@ use Shop\Icon;
 use Shop\Field;
 use Shop\Template;
 use Shop\Tooltipster;
+use Shop\OrderItem;
+use Shop\Models\IPN;
 
 
 /**
@@ -148,7 +150,7 @@ class Plugin extends \Shop\Product
             // Plugins normally can't allow more than one purchase,
             // so default to "true"
             $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-            $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+            $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
             //$this->rating_enabled = true;   // TODO testing
             $this->votes = SHOP_getVar($A, 'votes', 'integer');
             $this->rating = SHOP_getVar($A, 'rating', 'float');
@@ -182,14 +184,14 @@ class Plugin extends \Shop\Product
                     4 => $this->pi_info,
                 )
             );
-            if (is_array($A)) {
+            if (is_array($A) && !empty($A)) {
                 $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
                 $this->name = SHOP_getVar($A, 'title');
                 $this->item_name = SHOP_getVar($A, 'title');
-                $this->short_description = SHOP_getVar($A, 'excerpt', 'string', '');
-                if (empty($this->short_description)) {
+                $this->short_description = $this->name;
+                /*if (empty($this->short_description)) {
                     $this->short_description = SHOP_getVar($A, 'title', 'string', '');
-                }
+                }*/
                 $this->description = SHOP_getVar($A, 'description', 'string', $this->short_description);
                 if (isset($A['taxable']) && is_integer($A['taxable'])) {
                     $this->taxable = $A['taxable'] ? 1 : 0;
@@ -205,7 +207,7 @@ class Plugin extends \Shop\Product
                 // Plugins normally can't allow more than one purchase,
                 // so default to "true"
                 $this->isUnique = SHOP_getVar($A, 'isUnique', 'boolean', true);
-                $this->rating_enabled = SHOP_getVar($A, 'supportsRatings', 'boolean', false);
+                $this->rating_enabled = (bool)SHOP_getVar($A, 'supportsRatings', 'boolean', false);
                 //$this->rating_enabled = true;   // TODO testing
                 $this->votes = SHOP_getVar($A, 'votes', 'integer');
                 $this->rating = SHOP_getVar($A, 'rating', 'float');
@@ -276,7 +278,7 @@ class Plugin extends \Shop\Product
      * @param   array   $ipn_data   IPN data
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $ipn_data = array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
@@ -469,10 +471,10 @@ class Plugin extends \Shop\Product
      * Determine if a product can be shown in the catalog.
      * For plugin items, just return true for now.
      *
-     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean True if on sale, false if not
      */
-    public function canDisplay($isadmin = false)
+    public function canDisplay(?int $uid = NULL) : bool
     {
         return true;
     }
@@ -795,6 +797,7 @@ class Plugin extends \Shop\Product
         $T->set_var(array(
             'id' => $id,
             'pi_name' => $pi_name,
+            'pi_options' => COM_optionList($_TABLES['plugins'], 'pi_name,pi_name', $pi_name, 1, 'pi_enabled=1'),
             'taxable' => $taxable,
             'prod_type' => $prod_type,
             'price' => COM_numberFormat($price,2),
@@ -844,6 +847,24 @@ class Plugin extends \Shop\Product
             prod_type = $prod_type,
             taxable = $taxable";
         DB_query($sql);
+    }
+
+
+    /**
+     * Verify that the order quantity is valid.
+     * For plugins, the item_id will be null if it is not a valid item, so
+     * return zero.
+     *
+     * @param   float   $qty    Desired quantity
+     * @return  float   Valid quantity that may be ordered.
+     */
+    public function validateOrderQty($qty) : float
+    {
+        if (!$this->item_id) {
+            return 0;
+        } else {
+            return parent::validateOrderQty($qty);
+        }
     }
 
 }

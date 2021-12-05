@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,7 +13,6 @@
  */
 namespace Shop;
 use Shop\Models\OrderState;
-use Shop\Models\ShippingQuote;
 use Shop\Models\CustomInfo;
 use Shop\Models\Token;
 use Shop\Models\ReferralTag;
@@ -179,7 +178,7 @@ class Order
 
     /** Experimental flag to mark whether an order needs to be saved.
      * @var boolean */
-    protected $tainted = true;
+    private $_tainted = true;
 
     /** Flag to indicate that there are invalid items on the order.
      * @var boolean */
@@ -366,7 +365,7 @@ class Order
 
         // Now load the items
         $this->items = OrderItem::getByOrder($this->order_id);
-        $this->tainted = false;
+        $this->unTaint();
         return true;
     }
 
@@ -440,15 +439,20 @@ class Order
         $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
+        if (!isset($args['shipping_units'])) {
+            $args['shipping_units'] = $this->getShippingUnits() + $PV->getShippingUnits();
+        }
         $OI = OrderItem::fromArray($args);
         if (isset($args['price'])) {
+            $OI->setBasePrice($args['price']);
             $OI->setPrice($args['price']);
         }
         $override_price = isset($args['override']) ? $args['price'] : NULL;
         $OI->setQuantity($args['quantity'], $override_price);
         $OI->applyDiscountPct($this->getDiscountPct())
-            ->setTaxRate($this->tax_rate)
-            ->Save();
+           ->setTaxRate($this->tax_rate)
+           ->setShipping($args['shipping'])
+           ->Save();
         $this->items[] = $OI;
         $this->calcTotalCharges();
     }
@@ -811,8 +815,8 @@ class Order
 
         // Save all the order items
         if ($save_items) {
-            foreach ($this->items as $item) {
-                $item->Save();
+            foreach ($this->items as $Item) {
+                $Item->saveIfTainted();
             }
         }
         $order_total = $this->calcOrderTotal();
@@ -882,7 +886,7 @@ class Order
         //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $this->isNew = false;
-        $this->tainted = false;
+        $this->unTaint();
         return $this->order_id;
     }
 
@@ -905,10 +909,6 @@ class Order
         $sql = "UPDATE {$_TABLES['shop.orders']} SET $vals
             WHERE order_id = '" . DB_escapeString($this->order_id) . "'";
         DB_query($sql);
-        /*echo $sql;
-        var_dump(debug_backtrace(0));die;
-        echo $this->order_id;die;
-        exit;*/
         return $this;
     }
 
@@ -1328,8 +1328,8 @@ class Order
             $gw_dscp = '';
         }
 
-        foreach ($this->items as $id=>$item) {
-            $P = $item->getProduct();
+        foreach ($this->items as $id=>$OI) {
+            $P = $OI->getProduct();
 
             // Add the file to the filename array, if any. Download
             // links are only included if the order status is 'paid'
@@ -1340,26 +1340,26 @@ class Order
                 $dl_url = SHOP_URL . '/download.php?';
                 // There should always be a token, but fall back to the
                 // product ID if there isn't
-                if ($item->getToken() != '') {
-                    $dl_url .= 'token=' . urlencode($item->getToken());
-                    $dl_url .= '&i=' . $item->getID();
+                if ($OI->getToken() != '') {
+                    $dl_url .= 'token=' . urlencode($OI->getToken());
+                    $dl_url .= '&i=' . $OI->getID();
                 } else {
-                    $dl_url .= 'id=' . $item->getProductId();
+                    $dl_url .= 'id=' . $OI->getProductId();
                 }
                 $dl_links .= "<a href=\"$dl_url\">$dl_url</a><br />";*/
             }
 
-            $ext = $item->getQuantity() * $item->getPrice();
+            $ext = $Item->getQuantity() * $Item->getPrice();
             $item_total += $ext;
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
-                'qty'   => $item->getQuantity(),
-                'price' => $Cur->FormatValue($item->getPrice()),
+                'qty'   => $OI->getQuantity(),
+                'price' => $Cur->FormatValue($Item->getPrice()),
                 'ext'   => $Cur->FormatValue($ext),
-                'name'  => $item->getDscp(),
-                'options_text' => $item->getOptionDisplay(),
-                'extras_text' => $item->getExtraDisplay(),
+                'name'  => $OI->getDscp(),
+                'options_text' => $OI->getOptionDisplay(),
+                'extras_text' => $OI->getExtraDisplay(),
             ) );
             //), '', false, false);
             $T->parse('List', 'ItemList', true);
@@ -1615,9 +1615,9 @@ class Order
         global $_SHOP_CONF;
 
         $this->handling = 0;
-        foreach ($this->items as $item) {
-            $P = $item->getProduct();
-            $this->handling += $P->getHandling($item->getQuantity());
+        foreach ($this->items as $OI) {
+            $P = $OI->getProduct();
+            $this->handling += $P->getHandling($OI->getQuantity());
         }
         $this->calcTax();   // Tax calculation is slightly more complex
         $this->Save();
@@ -1655,8 +1655,8 @@ class Order
         global $_TABLES;
 
         $total = 0;
-        foreach ($this->items as $id => $item) {
-            $total += ($item->getPrice() * $item->getQuantity());
+        foreach ($this->items as $id => $OI) {
+            $total += ($OI->getPrice() * $OI->getQuantity());
         }
         // Remove any discount amount.
         $total -= $this->getDiscountAmount();
@@ -2006,9 +2006,9 @@ class Order
     public function hasPhysical()
     {
         $retval = 0;
-        foreach ($this->items as $id=>$item) {
-            if ($item->getProduct()->isPhysical()) {
-                $retval += $item->getQuantity();
+        foreach ($this->items as $id=>$OI) {
+            if ($OI->getProduct()->isPhysical()) {
+                $retval += $OI->getQuantity();
             }
         }
         return $retval;
@@ -2023,9 +2023,9 @@ class Order
     public function hasTaxable()
     {
         $retval = 0;
-        foreach ($this->items as $id=>$item) {
-            if ($item->getProduct()->isTaxable()) {
-                $retval += $item->getQuantity();
+        foreach ($this->items as $id=>$OI) {
+            if ($OI->getProduct()->isTaxable()) {
+                $retval += $OI->getQuantity();
             }
         }
         return $retval;
@@ -2039,8 +2039,8 @@ class Order
      */
     public function isDownloadOnly()
     {
-        foreach ($this->items as $id=>$item) {
-            if (!$item->getProduct()->isDownload(true)) {
+        foreach ($this->items as $id=>$OI) {
+            if (!$OI->getProduct()->isDownload(true)) {
                 return false;
             }
         }
@@ -2115,9 +2115,9 @@ class Order
     {
         $shipping_amt = 0;
         $shipping_units = 0;
-        foreach ($this->items as $item) {
-            $shipping_amt += $item->getShipping();
-            $shipping_units += $item->getShippingUnits();
+        foreach ($this->items as $OI) {
+            $shipping_amt += $OI->getShipping() * $OI->getQuantity();
+            $shipping_units += $OI->getTotalShippingUnits();
         }
         return array(
             'units' => $shipping_units,
@@ -2188,13 +2188,11 @@ class Order
         // Get all the shippers and rates for the selection
         // Save the base charge (total items and handling, exclude tax if present)
         $base_chg = $this->gross_items + $this->handling + $this->tax;
-
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
         $methods = array();
-        $item_info = $this->getItemShipping();
         foreach ($Shippers as $code=>$Shipper) {
-            $quote = $Shipper->getQuote($this, $item_info);
+            $quote = $Shipper->getQuote($this);
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
             } else {
@@ -2296,7 +2294,6 @@ class Order
         // Get all the shippers and rates for the selection
         // Save the base charge (total items and handling, exclude tax if present)
         $base_chg = $this->gross_items + $this->handling + $this->tax;
-
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
         $methods = array();
@@ -2601,9 +2598,9 @@ class Order
         $item_id = $x[0];
         if (!isset($qty[$item_id])) {
             $qty[$item_id] = 0;
-            foreach ($this->items as $item) {
-                if ($item->getProductId() == $item_id) {
-                    $qty[$item_id] += $item->getQuantity();
+            foreach ($this->items as $OI) {
+                if ($OI->getProductId() == $item_id) {
+                    $qty[$item_id] += $OI->getQuantity();
                 }
             }
         }
@@ -2730,11 +2727,8 @@ class Order
     public function totalShippingUnits()
     {
         $units = 0;
-        foreach ($this->items as $item) {
-            $P = $item->getProduct();
-            if ($P->isPhysical()) {
-                $units += $P->getShippingUnits() * $item->getQuantity();
-            }
+        foreach ($this->items as $OI) {
+            $units += $OI->getTotalShippingUnits();
         }
         return $units;
     }
@@ -3137,7 +3131,7 @@ class Order
                 } else {
                     $Item->setTaxRate(0);
                 }
-                $Item->Save();
+                $Item->saveIfTainted();
             }
             $this->calcTax();
             // See if tax is charged on shipping and handling.
@@ -3362,12 +3356,10 @@ class Order
     {
         global $_TABLES;
 
-        //if (!DB_error()) {
-            foreach ($this->items as $id=>$Item) {
-                $this->items[$id]->applyDiscountPct($this->getDiscountPct());
-                $this->items[$id]->Save();
-            }
-        //}
+        foreach ($this->items as $id=>$Item) {
+            $this->items[$id]->applyDiscountPct($this->getDiscountPct());
+            $this->items[$id]->Save();
+        }
         $this->updateRecord(array(
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
             "discount_pct = '" . (float)$this->discount_pct . "'"
@@ -3397,42 +3389,41 @@ class Order
             $code = $have_code;
         }
 
-        // Still empty? Then the order has no code.
         if (empty($code)) {
+            // Still empty? Then the order has no code.
+            // Not an error, just return.
             return true;
-        }
-
-        // Now check that the code is valid. It may have expired, or the order
-        // total may have changed.
-        if (!empty($code)) {
+        } else {
+            // Now check that the code is valid. It may have expired, or the
+            // order total may have changed.
             $DC = DiscountCode::getInstance($code);
             $pct = $DC->Validate($this);
         }
 
-        // If the code and percentage have not changed, just return true.
-        // Otherwise update the discount in the order and items.
         if ($pct == $have_pct && $code == $have_code) {
-//            return true;
-        }
-
-        if ($pct > 0) {
+            // If the code and percentage have not changed, nothing to do.
+            return true;
+        } elseif ($pct > 0) {
             // Valid code, set the new values.
             $this->setDiscountCode($code);
             $this->setDiscountPct($pct);
             $msg = $DC->getMessage();
             $status = true;
         } else {
-            // Invalid code, remove it from the order.
+            // Percent is zero, invalid code, remove it from the order.
             $this->setDiscountCode('');
             $this->setDiscountPct(0);
             $msg = $DC->getMessage();
             if ($have_code) {
-                // If there was a valid code, indicate that it has been removed
+                // If there was a valid code, indicate that it has been removed.
                 $msg .= ' ' . $LANG_SHOP['dc_removed'];
             }
             $status = false;
         }
-        $this->applyDiscountCode();      // apply code to order and items
+        // Apply the code to the order and items.
+        // This also handles resetting the discount to zero if an invalid code
+        // was entered.
+        $this->applyDiscountCode();
         SHOP_setMsg($msg, $status ? 'info' : 'error', $status);
         return $status;
     }
@@ -3445,7 +3436,6 @@ class Order
     {
         $this->net_nontax = $this->net_taxable = $this->gross_items = $this->net_items = 0;
         foreach ($this->items as $Item) {
-            //$Item->Save();
             $item_gross = $Item->getPrice() * $Item->getQuantity();
             $item_net = $Item->getNetPrice() * $Item->getQuantity();
             $this->gross_items += $item_gross;
@@ -3678,7 +3668,7 @@ class Order
      */
     public function isTainted()
     {
-        return $this->tainted;
+        return $this->_tainted;
     }
 
 
@@ -3689,7 +3679,19 @@ class Order
      */
     public function Taint()
     {
-        $this->tainted = true;
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Un-Taint this order, indicating that nothing has changed since last save.
+     *
+     * @return  object  $this
+     */
+    public function unTaint()
+    {
+        $this->_tainted = false;
         return $this;
     }
 
@@ -3912,6 +3914,20 @@ class Order
         default:
             return false;
         }
+    }
+
+
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
     }
 
 }

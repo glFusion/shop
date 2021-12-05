@@ -50,9 +50,7 @@
                                 {item_dscp}
 {!endif}
                                 {item_options}
-{!if item_extras}
-                                <br />{item_extras}
-{!endif}
+                                {item_extras}
                             </div>
                         </div>
                         <div class="uk-width-medium-1-6 uk-width-1-2 uk-width-1-6@m cart-item-price">
@@ -146,7 +144,9 @@
             <div>
 {!if discount_code_fld}
                 <div>
-                    {$LANG_SHOP['disc_code']}: <input id="discount_code" type="text" name="discount_code"
+                    {$LANG_SHOP['disc_code']}:
+					<input id="discount_code" type="text" name="discount_code"
+						class="uk-input uk-form-small uk-form-width-medium"
                         oninput="updateDCButton();return false;" />
                     <button id="dc_validate" name="update"
                         class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>

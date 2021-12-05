@@ -51,6 +51,10 @@ class DiscountCode
      * @var float */
     private $min_order = 0;
 
+    /** Indicator that a valid code was found.
+     * @var bool */
+    private $isValid = false;
+
     /** Message text regarding application of a code.
      * @var string */
     private $messages = array();
@@ -100,9 +104,10 @@ class DiscountCode
             $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
                 WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
             $res = DB_query($sql);
-            if ($res) {
+            if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);
                 $retval[$code] = new self($A);
+                $retval[$code]->setValid(true);
             } else {
                 $retval[$code] = new self;
             }
@@ -125,9 +130,10 @@ class DiscountCode
         $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
                 WHERE code_id = $id";
         $res = DB_query($sql);
-        if ($res) {
+        if ($res && DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $this->setVars($A);
+            $this->setValid(true);
             return true;
         }
         return false;
@@ -309,6 +315,29 @@ class DiscountCode
     {
         $this->min_order = (float)$amt;
         return $this;
+    }
+
+
+    /**
+     * Set the Valid status.
+     *
+     * @param   bool    $isValid    True or false to set, empty to check
+     * @return  self
+     */
+    public function setValid($isValid=true)
+    {
+        $this->isValid = $isValid ? true : false;
+    }
+
+
+    /**
+     * Check if the code is valid.
+     *
+     * @return  bool    True if valid, False if not
+     */
+    public function isValid()
+    {
+        return $this->isValid ? true : false;
     }
 
 

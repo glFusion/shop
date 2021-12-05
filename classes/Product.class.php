@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,6 +16,7 @@ use Shop\Models\ProductType;
 use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
+use Shop\Models\IPN;
 //use glFusion\FieldList;
 
 
@@ -2517,7 +2518,7 @@ class Product
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $IPN=array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         global $_TABLES;
 
@@ -2780,20 +2781,24 @@ class Product
      * Determine if a product can be displayed in the catalog.
      * Default availability dates are from 1900-01-01 to 9999-12-31.
      *
-     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean True if on sale, false if not
      */
-    public function canDisplay($isadmin = false)
+    public function canDisplay(?int $uid = NULL) : bool
     {
+        global $_USER;
+
+        if ($uid === NULL) {
+            $uid = (int)$_USER['uid'];
+        }
+
         // If the product is disabled, return false now
         if ($this->id < 1 || !$this->enabled) {
             return false;
         }
 
-        if ($isadmin) return true;  // Admin can always view and order
-
         // Check the user's permission, if not admin
-        if (!$this->hasAccess()) {
+        if (!$this->hasAccess($uid)) {
             return false;
         }
 
@@ -2866,9 +2871,9 @@ class Product
      * Returns the adjusted quantity if the requested value is not allowed.
      *
      * @param   integer $qty    Requested quantity
-     * @return  integer         Max allowed quantity
+     * @return  float       Max allowed quantity
      */
-    public function validateOrderQty($qty)
+    public function validateOrderQty($qty) : float
     {
         $max = $this->getMaxOrderQty();
         $min = $this->getMinOrderQty();
@@ -2987,18 +2992,25 @@ class Product
      * Determine if the current user has access to view this product.
      * If the user has access to at least one parent category, return true.
      *
+     * @param   int     $uid    User ID, null = current user
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess()
+    public function hasAccess(?int $uid = NULL) : bool
     {
         global $_GROUPS;
+
+        if ($uid === NULL) {
+            $groups = $_GROUPS;
+        } else {
+            $groups = SEC_getUserGroups($uid);
+        }
 
         if (self::isPluginItem($this->item_id)) {
             return true;
         }
         $Cats = $this->getCategories();
         foreach ($this->getCategories() as $Cat) {
-            if ($Cat->hasAccess($_GROUPS)) {
+            if ($Cat->hasAccess($groups)) {
                 return true;
             }
         }
@@ -4215,6 +4227,22 @@ class Product
     public function getShippingUnits()
     {
         return $this->shipping_units;
+    }
+
+
+    /**
+     * Get the total shipping units related to this product, including variant.
+     *
+     * @param   integer $pv_id  ProductVariant ID
+     * @return  float       Total shipping units for the product variant
+     */
+    public function getTotalShippingUnits(int $pv_id=0) : float
+    {
+        $units = $this->getShippingUnits();
+        if ($pv_id > 0) {
+            $units += ProductVariant::getInstance($pv_id)->getShippingUnits();
+        }
+        return $units;
     }
 
 

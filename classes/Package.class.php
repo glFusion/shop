@@ -3,9 +3,9 @@
  * Class for physical packages.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -754,9 +754,9 @@ class Package
         foreach ($Order->getItems() as $id=>$Item) {
             $P = $Item->getProduct();
             $qty = $Item->getQuantity();
-            $single_units = $P->getShippingUnits();
+            $single_units = $Item->getShippingUnits();
             $item_units = $single_units * $qty;
-            $fixed_shipping += $P->getShipping($qty);
+            $fixed_shipping += $Item->getShipping() * $qty;
             $total_units += $item_units;
             $total_weight += $qty * $P->getWeight();
             for ($i = 0; $i < $qty; $i++) {

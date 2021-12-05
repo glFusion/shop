@@ -110,7 +110,7 @@ $_SQL = array(
   `handling` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `tax` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `tax_rate` decimal(6,4) NOT NULL DEFAULT 0.0000,
-  `qty_shipped` int(11) unsigned NOT NULL DEFAULT 0,
+  `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`),
@@ -346,6 +346,7 @@ $_SQL = array(
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '0',
+  `done_by` int(11) unsigned NOT NULL DEFAULT '0',
   `code` varchar(128) NOT NULL,
   `ts` int(11) unsigned DEFAULT NULL,
   `order_id` varchar(50) DEFAULT NULL,
@@ -910,20 +911,17 @@ $SHOP_UPGRADE['1.3.0'] = array(
     "UPDATE {$_TABLES['shop.orderstatus']} SET notify_buyer = 1 where name = 'closed'",
 );
 $SHOP_UPGRADE['1.3.1'] = array(
-    "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
-    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT current_timestamp()",
-    "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
     // Note, do not drop reorder or onhand from variant table here, they're
     // needed to populate vars in the new stock table.
     "CREATE TABLE `{$_TABLES['shop.stock']}` (
       `stk_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-      `item_id` int(11) unsigned NOT NULL,
-      `pv_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `stk_item_id` int(11) unsigned NOT NULL,
+      `stk_pv_id` int(11) unsigned NOT NULL DEFAULT 0,
       `qty_onhand` decimal(10,2) DEFAULT NULL,
       `qty_reserved` decimal(10,2) DEFAULT NULL,
       `qty_reorder` decimal(10,2) DEFAULT 0.00,
       PRIMARY KEY (`stk_id`),
-      UNIQUE KEY `item_variant` (`item_id`,`pv_id`)
+      UNIQUE KEY `item_variant` (`stk_item_id`,`stk_pv_id`)
     ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.plugin_products']}` (
       `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -934,9 +932,15 @@ $SHOP_UPGRADE['1.3.1'] = array(
       PRIMARY KEY (`id`),
       UNIQUE KEY `pi_name` (`pi_name`)
     ) ENGINE=MyISAM",
-    "ALTER TABLE {$_TABLES['shop.stock']} CHANGE pv_id stk_pv_id int(11) unsigned not null default 0",
-    "ALTER TABLE {$_TABLES['shop.stock']} CHANGE item_id stk_item_id int(11) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT current_timestamp()",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
 );
+$SHOP_UPGRADE['1.4.1'] = array(
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
+    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`;"
+);
+
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -960,5 +964,5 @@ $_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
 $_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
 $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
-$_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][1];
-$_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][2];
+$_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][0];
+$_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][1];

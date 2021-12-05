@@ -61,7 +61,7 @@ class Catalog
      */
     private function _Render($feed)
     {
-        global $_CONF;
+        global $_CONF, $LANG_SHOP;
 
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', $feed . '.thtml');
@@ -69,6 +69,11 @@ class Catalog
             SHOP_log("Missing catalog feed template for $feed");
             return false;
         }
+        $T->set_var(array(
+            'feed_title' => $_CONF['site_name'],
+            'feed_dscp' => $_CONF['site_name'] . ' ' . $LANG_SHOP['catalog'],
+            'lb' => "\n",
+        ) );
         $Cur = \Shop\Currency::getInstance();
         $Products = \Shop\Product::getAll();
         $T->set_var('newline', "\n");
