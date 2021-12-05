@@ -21,9 +21,9 @@ use glFusion\Database\Database;
  * Class for product feeds.
  * @package shop
  */
-class Syndication
+class Syndication extends \glFusion\Syndication\Feed
 {
-    private $type = '';
+    protected $type = '';
 
 
     /**
@@ -34,13 +34,37 @@ class Syndication
     public function __construct($type)
     {
         $this->type = $type;
+        echo $this->type;die;
     }
 
 
-    public function withFormat($format)
+    /**
+     * Accessor to set the format.
+     *
+     * @param   string  $format     Feed format
+     * @return  object  $this
+     */
+    public function withFormat(string $format) : self
     {
         $this->type = $format;
         return $this;
+    }
+
+
+    /**
+     * Get the available feed formats.
+     * Only Google catalog is supporteb by Shop.
+     *
+     * @return  array   Array of name & version arrays
+     */
+    public static function getFormats() : array
+    {
+        return array(
+            array(
+                'name' => 'Google',
+                'version' => '2.0',
+            ),
+        );
     }
 
 
