@@ -915,6 +915,7 @@ $LANG_confignames['shop'] = array(
     'catalog_columns' => 'Catalog Columns',
     'enable_svc_funcs' => 'Enable Service Functions',
     'shop_enabled'  => 'Enable public access?',
+    'catalog_enabled'  => 'Enable Catalog?',
     'hp_layout'     => 'Homepage Layout',
     'ipn_url'       => 'IPN URL Override',
     'use_sku'       => 'Use SKU as Product ID?',
@@ -978,6 +979,7 @@ $LANG_configsubgroups['shop'] = array(
 /** Language strings for the field set names in the config section */
 $LANG_fs['shop'] = array(
     'fs_main'   => 'General Settings',
+    'fs_features' => 'Enabled Features',
     'fs_images' => 'Image Settings',
     'fs_paths'  => 'Images and Files',
     'fs_encbtn' => 'Working Area',

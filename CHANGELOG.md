@@ -3,6 +3,8 @@
 ## v1.4.1
   * Save shipping units with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use fixed only if present.
+  * Add flag to disable catalog if used only to support plugins.
+  * Move feature-enablement configs under a separate header.
 
 ## v1.4.0
 Release 2021-09-25
