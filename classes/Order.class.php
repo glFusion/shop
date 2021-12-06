@@ -1397,6 +1397,7 @@ class Order
         }
 
         $T->set_var(array(
+            'site_name'         => $_CONF['site_name'],
             'payment_gross'     => $Cur->Format($total_amount),
             'payment_items'     => $Cur->Format($item_total),
             'tax'               => $Cur->FormatValue($this->tax),
