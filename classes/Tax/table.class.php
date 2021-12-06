@@ -374,10 +374,10 @@ class table extends \Shop\Tax
             $A['combined_rate'] = $A['state_rate'] + $A['county_rate'] + $A['city_rate'] + $A['special_rate'];
         }
         $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
-            code = '" . DB_escapeString($A['code']) . "',
+            code = '" . DB_escapeString(substr($A['code'], 0, 25)) . "',
             country = '" . DB_escapeString($A['country']) . "',
             state = '" . DB_escapeString($A['state']) . "',
-            region = '" . DB_escapeString(substr($A['region'],0,128)) . "',
+            region = '" . DB_escapeString(($A['region'],0,128)) . "',
             zip_from = '" . DB_escapeString($A['zip_from']) . "',
             zip_to = '" . DB_escapeString($A['zip_to']) . "',
             combined_rate = {$A['combined_rate']},
@@ -470,10 +470,10 @@ class table extends \Shop\Tax
                     }
                     // Set the field values. Limit length based on schema
                     $country = 'US';    // only US supported
-                    $code = substr(DB_escapeString($country . $data[0] . $data[1]), 25);
-                    $state = substr(DB_escapeString($data[0]), 10);
-                    $zip = substr(DB_escapeString($data[1]), 10);
-                    $region = substr(DB_escapeString($data[2]), 128);
+                    $code = substr(DB_escapeString($country . $data[0] . $data[1]), 0, 25);
+                    $state = substr(DB_escapeString($data[0]), 0, 10);
+                    $zip = substr(DB_escapeString($data[1]), 0, 10);
+                    $region = substr(DB_escapeString($data[2]), 0, 128);
                     $state_rate = (float)$data[3];
                     $combined_rate = (float)$data[4];
                     $county_rate = (float)$data[5];
