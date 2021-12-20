@@ -3123,9 +3123,9 @@ class Product
     /**
      * Get additional text to add to the buyer's receipt for a product.
      *
-     * @param   object  $orderitem  Line item to check.
+     * @param   object  $OI     OrderItem object to check, not used by default
      */
-    public function EmailExtra($orderitem)
+    public function EmailExtra(OrderItem $OI) : string
     {
         return '';
     }

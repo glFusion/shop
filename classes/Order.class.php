@@ -439,10 +439,10 @@ class Order
         $args['variant_id'] = $PV->getID();
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
-        if (!isset($args['shipping_units'])) {
-            $args['shipping_units'] = $this->getShippingUnits() + $PV->getShippingUnits();
-        }
         $OI = OrderItem::fromArray($args);
+        if (!isset($args['shipping_units'])) {
+            $args['shipping_units'] = $OI->getShippingUnits() + $PV->getShippingUnits();
+        }
         if (isset($args['price'])) {
             $OI->setBasePrice($args['price']);
             $OI->setPrice($args['price']);
@@ -1230,6 +1230,7 @@ class Order
                 'notify', // catch templates using language strings
             ) );
             $T->set_file(array(
+                //'header'    => 'header.thtml',
                 'msg'       => 'msg_buyer.thtml',
                 'msg_body'  => 'order_detail.thtml',
                 'tracking'  => 'tracking_info.thtml',
@@ -1349,13 +1350,13 @@ class Order
                 $dl_links .= "<a href=\"$dl_url\">$dl_url</a><br />";*/
             }
 
-            $ext = $Item->getQuantity() * $Item->getPrice();
+            $ext = $OI->getQuantity() * $OI->getPrice();
             $item_total += $ext;
 
             $T->set_block('msg_body', 'ItemList', 'List');
             $T->set_var(array(
                 'qty'   => $OI->getQuantity(),
-                'price' => $Cur->FormatValue($Item->getPrice()),
+                'price' => $Cur->FormatValue($OI->getPrice()),
                 'ext'   => $Cur->FormatValue($ext),
                 'name'  => $OI->getDscp(),
                 'options_text' => $OI->getOptionDisplay(),
@@ -1363,7 +1364,7 @@ class Order
             ) );
             //), '', false, false);
             $T->parse('List', 'ItemList', true);
-            $x = $P->EmailExtra($item);
+            $x = $P->EmailExtra($OI);
             if ($x != '') $email_extras[] = $x;
         }
 
@@ -1475,6 +1476,7 @@ class Order
             $T->parse('detail', 'msg_body') //,
 //            '', false, false
         );
+        //$T->set_var('header', $T->parse('header', ''));
         $text = $T->parse('text', 'msg');
         return $text;
     }

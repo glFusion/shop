@@ -449,10 +449,10 @@ class Plugin extends \Shop\Product
     /**
      * Get additional text to add to the buyer's recipt for a product.
      *
-     * @param   object  $item   Order Item object (not used)
+     * @param   object  $OI     Order Item object (not used)
      * @return  string          Additional message to include in email
      */
-    public function EmailExtra($item)
+    public function EmailExtra(OrderItem $OI) : string
     {
         $text = '';
         // status from the service function isn't used.

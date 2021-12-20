@@ -486,12 +486,12 @@ class Coupon extends \Shop\Product
      * @param   object  $item   Order Item object, to get the code
      * @return  string          Additional message to include in email
      */
-    public function EmailExtra($item)
+    public function EmailExtra(OrderItem $OI) : string
     {
         global $LANG_SHOP;
 
         $retval = '';
-        $extra = $item->getExtras();
+        $extra = $OI->getExtras();
         if (isset($extra['special']) && isset($extra['special']['gc_code'])) {
             $code = $extra['special']['gc_code'];
             if (!empty($code)) {
