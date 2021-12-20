@@ -21,7 +21,8 @@ require_once '../lib-common.php';
 
 // Ensure sufficient privleges and dependencies to read this page
 if (
-    !function_exists('SHOP_access_check') ||
+    !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
+    !$_SHOP_CONF['catalog_enabled'] ||
     !SHOP_access_check()
 ) {
     COM_404();

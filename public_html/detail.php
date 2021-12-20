@@ -18,7 +18,7 @@ require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !function_exists('SHOP_access_check') ||
+    !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
     !SHOP_access_check()
 ) {
     COM_404();
