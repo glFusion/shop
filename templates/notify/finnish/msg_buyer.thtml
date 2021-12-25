@@ -1,3 +1,4 @@
+{header}
 <p>Kiitos ostoksestasi sivustolta {site_name}. Seuraavat tiedot ostoksestasi:</p>
 <p>
 {purchase_details}

@@ -1230,7 +1230,7 @@ class Order
                 'notify', // catch templates using language strings
             ) );
             $T->set_file(array(
-                //'header'    => 'header.thtml',
+                'header_tpl' => 'header.thtml',
                 'msg'       => 'msg_buyer.thtml',
                 'msg_body'  => 'order_detail.thtml',
                 'tracking'  => 'tracking_info.thtml',
@@ -1410,7 +1410,6 @@ class Order
             'payment_date'      => SHOP_now()->toMySQL(true),
             'payer_email'       => $this->buyer_email,
             'payer_name'        => $this->Billto->getName(),
-            'store_name'        => $Shop->getCompany(),
             //'txn_id'            => $this->pmt_txn_id,
             'pi_url'            => SHOP_URL,
             'pi_admin_url'      => SHOP_ADMIN_URL,
@@ -1429,6 +1428,15 @@ class Order
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
             'order_url'         => $this->buildUrl('view'),
             'has_downloads'     => $has_downloads,
+            // Elements for the header or footer
+            'store_name'        => $Shop->getCompany(),
+            'shop_addr1'        => $Shop->getAddress1(),
+            'shop_addr2'        => $Shop->getAddress2(),
+            'shop_city'         => $Shop->getCity(),
+            'shop_state'        => $Shop->getState(),
+            'shop_postal'       => $Shop->getPostal(),
+            'shop_phone'        => $Shop->getPhone(),
+            'shop_email'        => $Shop->getEmail(),
         ) );
         if ($this->_amt_paid > 0) {
             $T->set_var(array(
@@ -1476,7 +1484,8 @@ class Order
             $T->parse('detail', 'msg_body') //,
 //            '', false, false
         );
-        //$T->set_var('header', $T->parse('header', ''));
+
+        $T->set_var('header', $T->parse('', 'header_tpl'));
         $text = $T->parse('text', 'msg');
         return $text;
     }

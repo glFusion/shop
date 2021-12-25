@@ -1,3 +1,4 @@
+{header}
 <p>Děkujeme za váš nákup na webu {site_name}. Podrobnosti o vašem nákupu jsou uvedeny:</p>
 <p>
 {purchase_details}

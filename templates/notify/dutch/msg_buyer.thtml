@@ -1,3 +1,4 @@
+{header}
 <p>Bedankt voor uw aankoop bij {site_name}. Details van uw aankoop volgen:</p>
 <p>
 {purchase_details}
