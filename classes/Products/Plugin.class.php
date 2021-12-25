@@ -274,18 +274,18 @@ class Plugin extends \Shop\Product
      * Handle the purchase of this item.
      * - Update qty on hand if track_onhand is set (min. value 0).
      *
-     * @param   object  $Item       OrderItem object, to get options, etc.
-     * @param   array   $ipn_data   IPN data
+     * @param   object  $Item   OrderItem object, to get options, etc.
+     * @param   object  $IPN    IPN data object
      * @return  integer     Zero or error value
      */
     public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
-
-        if (!isset($ipn_data['uid'])) {
-            $ipn_data['uid'] = $Item->getOrder()->getUid();
+        if ($IPN['uid'] < 1) {
+            $IPN->setUid($Item->getOrder()->getUid());
         }
+
         $args = array(
             'item'  => array(
                 'item_id' => $Item->getProductID(),
@@ -295,7 +295,7 @@ class Plugin extends \Shop\Product
                 'paid' => $Item->getPrice(),
                 'order_id' => $Item->getOrder()->getOrderID(),
             ),
-            'ipn_data' => $ipn_data,
+            'ipn_data' => $IPN,
             'referrer' => array(
                 'ref_uid' => $Item->getOrder()->getReferrerId(),
                 'ref_token' => $Item->getOrder()->getReferralToken(),
