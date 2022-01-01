@@ -1545,8 +1545,8 @@ function plugin_user_login_shop($uid)
 
 /**
  * Actions to perform when a user account is created.
- * If configured to automatically enroll all users as affiliates,
- * do that here.
+ * - Enroll the user as an affiliates if so configured.
+ * - Link existing anonymous orders to the new ID if email matches.
  *
  * @param   integer $uid    ID of new user
  */
@@ -1558,6 +1558,9 @@ function plugin_user_create_shop($uid)
     ) {
         $Affiliate = new Shop\Affiliate($uid);
         $Affiliate->Approve(false);
+    }
+    if (Config::get('link_orders_new_user')) {
+        Shop\Order::linkByEmail($uid);
     }
 }
 

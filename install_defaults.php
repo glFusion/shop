@@ -295,7 +295,17 @@ $shopConfigData = array(
         'set' => true,
         'group' => 'shop',
     ),
-
+    array(
+        'name' => 'link_orders_new_user',
+        'default_value' => false,
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,
+        'sort' => 310,
+        'set' => true,
+        'group' => 'shop',
+    ),
 
     array (
         'name' => 'fs_features',            // Enabling features, etc.
