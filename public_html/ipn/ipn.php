@@ -42,4 +42,3 @@ if (!empty($gateway)) {
     }
 }
 
-?>

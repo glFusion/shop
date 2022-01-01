@@ -28,4 +28,3 @@ if (!empty($gw_name)) {
 
 http_response_code(200);
 
-?>

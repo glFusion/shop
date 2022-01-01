@@ -16,7 +16,7 @@
 require_once '../../lib-common.php';
 
 // Get the complete IPN message prior to any processing
-SHOP_log("Recieved IPN:", SHOP_LOG_DEBUG);
+SHOP_log("Received IPN:", SHOP_LOG_DEBUG);
 SHOP_log(var_export($_POST, true), SHOP_LOG_DEBUG);
 
 // Process IPN request
@@ -26,4 +26,3 @@ $ipn->Process();
 // Finished (this isn't necessary...but heck...why not?)
 echo "Thanks";
 
-?>

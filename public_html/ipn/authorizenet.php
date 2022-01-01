@@ -21,7 +21,7 @@ if (empty($gw_name)) {
     SHOP_log("Gateway not specified in Webhook message data");
     $log_level = SHOP_LOG_ALERT;
 } else {
-    SHOP_log("Recieved $gw_name Webhook:", SHOP_LOG_DEBUG);
+    SHOP_log("Received $gw_name Webhook:", SHOP_LOG_DEBUG);
     $log_level = SHOP_LOG_DEBUG;
 }
 
@@ -43,4 +43,3 @@ if (!empty($gw_name)) {
 }
 echo "Completed.";
 exit;
-?>
