@@ -461,7 +461,7 @@ class Supplier extends Address
      * @param   integer $step   Current step number
      * @return  string          HTML for edit form
      */
-    public function Edit()
+    public function Edit() : string
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 

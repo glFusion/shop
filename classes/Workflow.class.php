@@ -208,12 +208,13 @@ class Workflow
             $status = true;
             break;
         case 'addresses':
+            // Check that an address was entered. 0 indicates to-do.
             $billto = !$Cart->requiresBillto() || (
-                $Cart->getBillto()->getID() > 0 &&
+                $Cart->getBillto()->getID() != 0 &&
                 $Cart->getBillto()->isValid() == ''
             );
             $shipto = !$Cart->requiresShipto() || (
-                    $Cart->getShipto()->getID() > 0 &&
+                    $Cart->getShipto()->getID() != 0 &&
                     $Cart->getShipto()->isValid() == ''
             );
             $email = !empty($Cart->getBuyerEmail());

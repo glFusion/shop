@@ -786,7 +786,7 @@ class Address
      *
      * @return  string  HTML for editing form
      */
-    public function Edit()
+    public function Edit() : string
     {
         $have_state_country = false;
         if ($this->uid > 1) {
@@ -821,6 +821,7 @@ class Address
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
             'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
             'return' => SHOP_getVar($_GET, 'return'),
+            'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));

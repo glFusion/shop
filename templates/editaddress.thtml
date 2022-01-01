@@ -1,9 +1,9 @@
 {# begin {templatelocation} #}
 <h2>{$LANG_SHOP['edit_address']}</h2>
-<form id="addrform" action="{site_url}/shop/account.php" method="post" class="uk-form uk-form-horizontal">
+<form id="addrform" action="{action_url}" method="post" class="uk-form uk-form-horizontal">
+	<input type="hidden" name="ad_type" value="validated" />
 	<input type="hidden" name="addr_id" value="{addr_id}" />
 	<input type="hidden" name="save_url" value="{site_url}/shop/account.php" />
-	<input type="hidden" name="ad_type" value="validated" />
 	<input type="hidden" name="uid" value="{uid}" />
 	<input type="hidden" name="return" value="{return}" />
 

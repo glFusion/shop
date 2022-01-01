@@ -490,6 +490,7 @@ class Order
                 $this->Billto->setID($addr_id);
             } else {
                 $this->Billto = new Address($A);
+                $this->Billto->setID(-1);
             }
             $have_address = true;
         }
@@ -517,7 +518,7 @@ class Order
      * @param   array|NULL  $A      Array of info, or NULL to clear
      * @return  object      Current Order object
      */
-    public function setShipto($A)
+    public function setShipto($A) : self
     {
         global $_TABLES;
 
@@ -541,6 +542,7 @@ class Order
                 $this->Shipto->setID($addr_id);
             } else {
                 $this->Shipto = new Address($A);
+                $this->Shipto->setID(-1);
             }
             $have_address = true;
         } elseif (is_object($A)) {
@@ -3640,7 +3642,8 @@ class Order
             return true;
         }
 
-        // May need a shipping address for sales tax if there are physical items.
+        // May need a shipping address for sales tax, unless we use the origin
+        // as the tax nexus.
         if (
             $this->hasTaxable() &&
             $this->getTotal() > 0 &&
@@ -3940,6 +3943,25 @@ class Order
             $this->Save();
         }
         return $this;
+    }
+
+
+    /**
+     * Link all anonymous to a new user ID based on matching email.
+     * Called when a new user registers to link any previous orders to
+     * their new account.
+     *
+     * @param   integer $uid    New user ID
+     * @return  void
+     */
+    public static function linkByEmail(int $uid) : void
+    {
+        global $_TABLES;
+        $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+        $sql = "UPDATE {$_TABLES['shop.orders']}
+            SET uid = $uid
+            WHERE uid = 1 AND buyer_email = '" . DB_escapeString($email) . "'";
+        DB_query($sql, 1);
     }
 
 }

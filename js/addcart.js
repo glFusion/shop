@@ -194,7 +194,7 @@ var shopApplyGC = function(frm_id)
 
 // Change the country selection on an address form
 // Used for customer and supplier addresses
-function chgCountrySel(newcountry)
+function chgCountrySel(newcountry, pfx="")
 {
     var dataS = {
         "action": "getStateOpts",
@@ -209,10 +209,10 @@ function chgCountrySel(newcountry)
         success: function(result) {
             try {
                 if (result.status && result.opts.length > 0) {
-                    $("#stateSelect").html(result.opts);
-                    $("#stateSelectDiv").show();
+                    $("#" + pfx + "stateSelect").html(result.opts);
+                    $("#" + pfx + "stateSelectDiv").show();
                 } else {
-                    $("#stateSelectDiv").hide();
+                    $("#" + pfx + "stateSelectDiv").hide();
                 }
             }
             catch(err) {

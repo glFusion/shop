@@ -241,11 +241,26 @@ case 'save_shipping':
 
 case 'save_addresses':
     $Cart = Shop\Cart::getInstance();
-    foreach (array('billto', 'shipto') as $key) {
-        $addr_id = SHOP_getVar($_POST, $key . '_id', 'integer');
-        if ($addr_id > 0) {
-            $Addr = Shop\Address::getInstance($addr_id);
-            $Cart->setAddress($Addr, $key);
+    if (isset($_POST['is_anon'])) {
+        $Shipto = new Shop\Address;
+        $Shipto->fromArray($_POST, 'shipto');
+        $Shipto->setID(-1);
+        $Cart->setAddress($Shipto, 'shipto');
+        if (isset($_POST['shipto_is_billto'])) {
+            $Cart->setAddress($Shipto, 'billto');
+        } else {
+            $Billto = new Shop\Address;
+            $Billto->fromArray($_POST, 'billto');
+            $Billto->setID(-1);
+            $Cart->setAddress($Billto, 'billto');
+        }
+    } else {
+        foreach (array('billto', 'shipto') as $key) {
+            $addr_id = SHOP_getVar($_POST, $key . '_id', 'integer');
+            if ($addr_id > 0) {
+                $Addr = Shop\Address::getInstance($addr_id);
+                $Cart->setAddress($Addr, $key);
+            }
         }
     }
     $save = false;
@@ -332,6 +347,55 @@ case 'addresses':
     $content .= Shop\Menu::checkoutFlow($Cart, 'addresses');
     $content .= $V->withOrder($Cart)->addressSelection();
     break;
+
+case 'savevalidated':
+case 'saveaddr':
+    if ($actionval == 1 || $actionval == 2) {
+        $addr_vars = json_decode($_POST['addr'][$actionval], true);
+    } else {
+        $addr_vars = $_POST;
+    }
+    if (isset($addr_vars['addr_id'])) {
+        $id = $addr_vars['addr_id'];
+    } elseif (isset($addr_vars['id'])) {
+        $id = $addr_vars['id'];
+    }
+
+    $Addr = Shop\Address::getInstance($id);
+    $status = $Addr->setVars($addr_vars)
+                   ->isValid();
+    if ($status != '') {
+        $content .= COM_showMessageText(
+            $status,
+            $LANG_SHOP['invalid_form'],
+            true,
+            'error'
+        );
+        $content .= $Addr->Edit();
+        break;
+    }
+    if (!COM_isAnonUser()) {
+        $status = $Addr->Save();
+        if ($status > 0) {
+            SHOP_setMsg("Address saved");
+        } else {
+            SHOP_setMsg("Saving address failed");
+        }
+    }
+    $Cart = Shop\Cart::getInstance();
+    COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
+    break;
+
+case 'editaddr':
+    $Addr = Shop\Address::getInstance($id);
+    if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
+        echo "her";die;
+        COM_refresh(SHOP_URL . '/account.php?addresses');
+    }
+    $content .= Shop\Menu::User('none');
+    $content .= $Addr->Edit();
+    break;
+
 
 case 'billto':
 case 'shipto':

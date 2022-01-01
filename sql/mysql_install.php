@@ -177,7 +177,7 @@ $_SQL = array(
   `uid` int(11) unsigned NOT NULL DEFAULT 0,
   `order_date` int(11) unsigned NOT NULL DEFAULT 0,
   `last_mod` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `billto_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `billto_id` int(11) NOT NULL DEFAULT 0,
   `billto_name` varchar(255) DEFAULT NULL,
   `billto_company` varchar(255) DEFAULT NULL,
   `billto_address1` varchar(255) DEFAULT NULL,
@@ -187,7 +187,7 @@ $_SQL = array(
   `billto_country` varchar(255) DEFAULT NULL,
   `billto_zip` varchar(40) DEFAULT NULL,
   `billto_phone` varchar(30) DEFAULT NULL,
-  `shipto_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `shipto_id` int(11) NOT NULL DEFAULT 0,
   `shipto_name` varchar(255) DEFAULT NULL,
   `shipto_company` varchar(255) DEFAULT NULL,
   `shipto_address1` varchar(255) DEFAULT NULL,
@@ -938,7 +938,9 @@ $SHOP_UPGRADE['1.3.1'] = array(
 );
 $SHOP_UPGRADE['1.4.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
-    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`;"
+    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
 );
 
 

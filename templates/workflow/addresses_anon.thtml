@@ -1,0 +1,89 @@
+{# begin {templatelocation} #}
+	<input type="hidden" name="is_anon" value="1" />
+	<div class="uk-grid uk-child-width-1-1@small uk-child-width-1-2@m uk-grid-width-small-1-1 uk-grid-width-medium-1-2">
+		<div>
+			Shipping Address
+			{shipto_form}
+		</div>
+		<div>
+			Billing Address <input type="checkbox" name="shipto_is_billto" value="1" onclick="toggleBillto(this);"/> Same as Shipping
+			{billto_form}
+		</div>
+	</div>
+{#
+	<div class="uk-form-row uk-margin" style="margin-top:10px;">
+		<label class="uk-form-label">&nbsp;</label>
+		<div class="uk-form-controls" style="text-align:center;">
+			<button class="uk-button uk-button-success" type="submit" name="setorderaddr" value="true"
+				onclick="return validateAddress(this.form);"
+			>{$LANG_ADMIN['submit']}</button>
+			<button class="uk-button" type="reset">{$LANG_ADMIN['reset']}</button>
+			<a href="{cancel_url}" class="uk-button uk-button-primary">{$LANG_ADMIN['cancel']}</a>
+		</div>
+	</div>
+#}
+{form_footer}
+</form>
+<script>
+function _toggleRequired(fld_id, flag)
+{
+	$('#' + fld_id).attr('required', flag);
+	if (flag) {
+		$('#' + fld_id).addClass('required');
+	} else {
+		$('#' + fld_id).removeClass('required');
+	}
+}
+function toggleBillto(cbox)
+{
+	flag = cbox.checked ? false : true;
+	_toggleRequired('billto_name', flag);
+	_toggleRequired('billto_address1', flag);
+	_toggleRequired('billto_country', flag);
+	_toggleRequired('billto_city', flag);
+	_toggleRequired('billto_zip', flag);
+	_toggleRequired('billto_phone', flag);
+	$('#billto_addr_form').css("visibility", flag ? "" : "hidden");
+}
+function validateAddress(form)
+{
+console.log(form);
+alert("HERE");
+return false;
+    if (typeof(form) == 'undefined') {
+        return;
+    }
+
+    data = $("#" + form.id).serialize();
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=validateAddress",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status != true) {
+					modal = Shop.modal(result.form);
+					return false;
+                } else {
+                    var input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = "{action}";
+                    input.value = "x";;
+                    form.appendChild(input);
+                    form.submit();
+                }
+            }
+            catch(err) {
+            }
+        },
+        error: function(a,b,c) {
+            console.log(a);
+            console.log(b);
+            console.log(c);
+        }
+    });
+    return true;
+}
+</script>
+{# end {templatelocation} #}

@@ -206,6 +206,13 @@ case 'addresses':
 case 'orderhist':
 case 'history':
 default:
+    if (COM_isAnonUser()) {
+        SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
+        SHOP_setMsg($LANG_SHOP['gc_need_acct']);
+        COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+        exit;
+    }
+
     SHOP_setUrl($_SERVER['REQUEST_URI']);
     $content .= \Shop\Menu::User($mode);
     $R = \Shop\Report::getInstance('orderlist');

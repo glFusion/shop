@@ -379,8 +379,8 @@ class OrderBaseView
     protected function _renderAddresses()
     {
         if (
-            $this->Order->getBillto()->getID() > 0 ||
-            $this->Order->getBillto()->getID() > 0
+            $this->Order->getBillto()->getID() != 0 ||
+            $this->Order->getShipto()->getID() != 0
         ) {
             $this->TPL->set_var(array(
                 'billto_addr'   =>$this->Order->getBillto()->toHTML(),
