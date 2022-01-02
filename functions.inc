@@ -606,11 +606,12 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
     if (!array_key_exists($rights, $access)) {
         SHOP_isMinVersion();    // sets an admin message and closes the shop
         $acc = true;
-        if (!$_SHOP_CONF['shop_enabled'] && !SEC_hasRights('shop.admin')) {
-            $acc = false;
-        }
-        // If this plugin or a required plugin isn't available, abort gracefully
-        if (!in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')) {
+        if (
+            // If shop is closed and user is not an admin...
+            (!$_SHOP_CONF['shop_enabled'] && !plugin_ismoderator_shop()) ||
+            // or this plugin or a required plugin isn't available...
+            !in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')
+        ) {
             $acc = false;
         }
 
