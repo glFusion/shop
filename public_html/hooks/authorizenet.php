@@ -4,9 +4,9 @@
  * Authorize.Net does not support $_GET arguments in the webhook.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,11 +18,11 @@ require_once '../../lib-common.php';
 
 $gw_name = 'authorizenet';
 if (empty($gw_name)) {
-    SHOP_log("Gateway not specified in Webhook message data");
     $log_level = SHOP_LOG_ALERT;
+    SHOP_log("Gateway not specified in Webhook message data", $log_level);
 } else {
-    SHOP_log("Received $gw_name Webhook:", SHOP_LOG_DEBUG);
     $log_level = SHOP_LOG_DEBUG;
+    SHOP_log("Received $gw_name Webhook:", $log_level);
 }
 
 // Log everything before instantiating the webhook handler in case
