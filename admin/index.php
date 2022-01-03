@@ -71,9 +71,9 @@ $expected = array(
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
     'pi_products', 'pi_edit', 'pi_save', 'pi_del',
-    'products',
+    'products', 'ipndetail',
     // deprecated
-    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts', 'ipndetail',
+    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -700,7 +700,6 @@ case 'order':
     break;
 
 case 'ipndetail':
-    echo "$view deprecated";die;
     $val = NULL;
     foreach (array('id', 'txn_id') as $key) {
         if (isset($_GET[$key])) {
