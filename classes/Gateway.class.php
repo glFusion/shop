@@ -4,9 +4,9 @@
  * Provides the base class for actual payment gateway classes to use.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -422,7 +422,7 @@ class Gateway
      * @param   array   $A      Array of config items, e.g. $_POST
      * @return  boolean         True if saved successfully, False if not
      */
-    public function saveConfig($A = NULL)
+    public function saveConfig(?array $A = NULL) : bool
     {
         global $_TABLES;
 
@@ -431,6 +431,15 @@ class Gateway
             $this->orderby = (int)$A['orderby'];
             $this->grp_access = SHOP_getVar($A, 'grp_access', 'integer', 2);
             $services = SHOP_getVar($A, 'service', 'array');
+            foreach ($this->services as $name=>$enabled) {
+                if (array_key_exists($name, $services)) {
+                    echo "setting $name to $enabled<br />\n";
+                    $this->services[$name] = (int)$enabled;
+                } else {
+                    $this->services[$name] = 0;
+                }
+            }
+
             // Only update config if provided from form
             foreach ($this->cfgFields as $env=>$flds) {
                 foreach ($flds as $name=>$type) {
@@ -454,7 +463,7 @@ class Gateway
         if (!$config) return false;
 
         $config = DB_escapeString($config);
-        $services = DB_escapeString(@serialize($services));
+        $services = DB_escapeString(@serialize($this->services));
         $id = DB_escapeString($this->gw_name);
 
         $sql = "UPDATE {$_TABLES['shop.gateways']} SET

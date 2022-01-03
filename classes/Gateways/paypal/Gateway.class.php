@@ -3,9 +3,9 @@
  * Gateway implementation for PayPal.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -700,8 +700,9 @@ class Gateway extends \Shop\Gateway
      * calls the parent function to save to the database.
      *
      * @param   array   $A      Array of name=>value pairs (e.g. $_POST)
+     * @return  boolean     True on success, False on error
      */
-    public function SaveConfig($A = NULL)
+    public function saveConfig(?array $A = NULL) : bool
     {
         if (is_array($A)) {
             foreach ($this->getConfig() as $name=>$value) {

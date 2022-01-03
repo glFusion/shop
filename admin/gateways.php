@@ -98,7 +98,7 @@ case 'gwsave':
     // Save a payment gateway configuration
     $gw = \Shop\Gateway::getInstance($_POST['gw_id']);
     if ($gw !== NULL) {
-        $status = $gw->SaveConfig($_POST);
+        $status = $gw->saveConfig($_POST);
     }
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
