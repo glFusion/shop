@@ -433,7 +433,6 @@ class Gateway
             $services = SHOP_getVar($A, 'service', 'array');
             foreach ($this->services as $name=>$enabled) {
                 if (array_key_exists($name, $services)) {
-                    echo "setting $name to $enabled<br />\n";
                     $this->services[$name] = (int)$enabled;
                 } else {
                     $this->services[$name] = 0;
