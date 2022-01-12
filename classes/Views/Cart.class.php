@@ -411,7 +411,7 @@ class Cart extends OrderBaseView
         $Cust = Customer::getInstance($this->Order->getUid());
 
         $T = new Template('workflow/');
-        if (!$Cust->getUid() < 2) {
+        if ($Cust->getUid() < 2) {
             // Anonymous users can't maintain addresses in their accounts, so
             // just present the address forms for shipping and billing.
             $T->set_file(array(
