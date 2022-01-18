@@ -13,6 +13,7 @@
 namespace Shop\Upgrades;
 use Shop\OrderItem;
 use Shop\Product;
+use Shop\Config;
 
 class v1_4_1 extends Upgrade
 {
@@ -40,6 +41,19 @@ class v1_4_1 extends Upgrade
                         $OI->getProduct()->getTotalShippingUnits($OI->getVariantId())
                     )->Save();
                 }
+            }
+            // Reset TaxJar and TaxCloud to default providers, if used.
+            $c = \config::get_instance();
+            if (
+                Config::get('tax_provider') == 'taxjar' ||
+                Config::get('tax_provider') == 'taxcloud'
+            ) {
+                Config::set('tax_provider', 'internal');
+                $c->set('tax_provider', 'internal', Config::PI_NAME);
+            }
+            if (Config::get('address_validator') == 'taxcloud') {
+                Config::set('address_validator', 0);
+                $c->set('address_validator', 0, Config::PI_NAME);
             }
         }
         return self::setVersion(self::$ver);

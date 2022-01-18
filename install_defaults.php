@@ -1,13 +1,12 @@
 <?php
 /**
  * Configuration Defaults Shop plugin for glFusion.
- * Based on the Paypal Plugin for Geeklog CMS.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (C) 2005-2006 Vincent Furia <vinny01@users.sourceforge.net>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -1077,74 +1076,6 @@ $shopConfigData = array(
         'fieldset' => 20,
         'selection_array' => 0,
         'sort' => 50,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    // TaxJar configuration
-    array(
-        'name' => 'fs_tax_taxjar',
-        'default_value' => NULL,
-        'type' => 'fieldset',
-        'subgroup' => 30,
-        'fieldset' => 30,
-        'selection_array' => NULL,
-        'sort' => 0,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
-        'name' => 'tax_taxjar_token',
-        'default_value' => '',
-        'type' => 'passwd',
-        'subgroup' => 30,
-        'fieldset' => 30,
-        'selection_array' => 0,
-        'sort' => 10,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
-        'name' => 'tax_taxjar_nexus',
-        'default_value' => false,
-        'type' => 'select',
-        'subgroup' => 30,
-        'fieldset' => 30,
-        'selection_array' => 2,
-        'sort' => 20,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    // TaxCloud configuration
-    array(
-        'name' => 'fs_tax_taxcloud',
-        'default_value' => NULL,
-        'type' => 'fieldset',
-        'subgroup' => 30,
-        'fieldset' => 40,
-        'selection_array' => NULL,
-        'sort' => 0,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
-        'name' => 'tax_taxcloud_id',
-        'default_value' => '',
-        'type' => 'passwd',
-        'subgroup' => 30,
-        'fieldset' => 40,
-        'selection_array' => 0,
-        'sort' => 10,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
-        'name' => 'tax_taxcloud_key',
-        'default_value' => '',
-        'type' => 'passwd',
-        'subgroup' => 30,
-        'fieldset' => 40,
-        'selection_array' => 0,
-        'sort' => 20,
         'set' => true,
         'group' => 'shop',
     ),
