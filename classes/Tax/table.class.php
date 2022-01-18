@@ -3,9 +3,9 @@
  * Use the static databsae table to retrieve sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.3
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,6 +13,7 @@
  */
 namespace Shop\Tax;
 use Shop\Template;
+use Shop\Config;
 
 
 /**
@@ -29,7 +30,7 @@ class table extends \Shop\Tax
      */
     protected function _getData()
     {
-        global $_SHOP_CONF, $LANG_SHOP, $_TABLES;
+        global $LANG_SHOP, $_TABLES;
 
         // Default data returned if there is no nexus, or a rate entry
         // is not found.
@@ -89,7 +90,7 @@ class table extends \Shop\Tax
      */
     public static function adminList()
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+        global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $display = '';
         $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}";
@@ -215,7 +216,7 @@ class table extends \Shop\Tax
 
         $filter = '';
         $display .= ADMIN_list(
-            $_SHOP_CONF['pi_name'] . '_salestax',
+            Config:PI_NAME . '_salestax',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
@@ -236,7 +237,7 @@ class table extends \Shop\Tax
      */
     public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
         $retval = '';
         switch($fieldname) {

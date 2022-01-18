@@ -13,6 +13,7 @@
  */
 namespace Shop\Tax;
 use Shop\Address;
+use Shop\Config;
 
 
 /**
@@ -34,16 +35,48 @@ class avatax extends \Shop\Tax
      * @var string */
     protected $key = 'avatax';
 
+    /** Tax class mapping from Product Types.
+     * @var array */
+    protected $taxclasses = array(
+        10040 => 'SI026666',    //Installation services',
+        19000 => 'S0557082',    //Miscellaneous services',
+        19001 => 'SA036298',    //Services - Advertising',
+        //19002 => 'SP010000',  //Services - Parking',
+        19003 => 'OA020300',    //Event Admission',
+        19004 => 'S0557082',    //Services - Product Training',
+        19005 => 'SP140000',    //Professional Services',
+        19006 => 'SJ010000',    //Services - Cleaning',
+        19007 => 'SR060000',    //Services - Repair',
+        19008 => 'SB040100',    //Services - Hair',
+        19009 => 'SD086570',    //Services - Design',
+        20010 => 'PC040100',    //Clothing - General',
+        20041 => 'PC030106',    //Clothing - Swim Suits',
+        30070 => 'DC020500',    //Downloadbable Software',
+        31000 => 'D0000000',    //Downloads - General',
+        40010 => 'PF050300',    //Candy and similar items',
+        40020 => 'PF050700',    //Non-food dietary supplements',
+        //40030 => 'Food for humans consumption, unprepared',
+        40050 => 'PF050100',    //Soft drinks, soda, and other similar beverages',
+        40060 => 'PF050115',    //Bottled, drinkable water',
+        //41000 => 'Foods intended for on-site consumption. Ex. Restaurant meals.',
+        51010 => 'PH050101',    //Non-Prescription Drugs - Human',
+        51020 => 'PH050114',    //Prescription Drugs - Human',
+        81100 => 'PB100200',    //Books, printed',
+        81110 => 'PB100200',    //Textbooks, printed',
+        81120 => 'PB100300',    //Religious books and manuals, printed',
+        81300 => 'PN058970',    //Periodicals, printed, sold by subscription',
+        81310 => 'PN050814',    //Periodicals, printed, sold individually',
+    );
+
 
     /**
      * Set up internal variables and get the configuration.
      */
     public function __construct()
     {
-        global $_SHOP_CONF;
-        $this->account = $_SHOP_CONF['tax_avatax_account'];
-        $this->api_key = $_SHOP_CONF['tax_avatax_key'];
-        $this->test_mode = (int)$_SHOP_CONF['tax_test_mode'];
+        $this->account = Config::get('tax_avatax_account');
+        $this->api_key = Config::get('tax_avatax_key');
+        $this->test_mode = (int)Config::get('tax_test_mode');
         if ($this->test_mode) {
             $this->endpoint = 'https://sandbox-rest.avatax.com/api/v2/taxrates/byaddress';
         } else {
@@ -59,7 +92,7 @@ class avatax extends \Shop\Tax
      */
     protected function _getData()
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         if (!$this->hasNexus()) {
             return $this->default_rates;
@@ -110,4 +143,3 @@ class avatax extends \Shop\Tax
 
 }
 
-?>

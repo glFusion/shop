@@ -3,15 +3,16 @@
  * Use the internally-configured sales tax rate.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Tax;
+use Shop\Config;
 
 
 /**
@@ -31,10 +32,8 @@ class internal extends \Shop\Tax
      */
     protected function _getData()
     {
-        global $_SHOP_CONF;
-
         if ($this->hasNexus()) {
-            $rate = SHOP_getVar($_SHOP_CONF, 'tax_rate', 'float');
+            $rate = (float)Config::get('tax_rate');
         } else {
             $rate = 0;
         }
@@ -67,4 +66,3 @@ class internal extends \Shop\Tax
 
 }
 
-?>
