@@ -1,10 +1,18 @@
 # Shop plugin for glFusion - Changelog
 
 ## v1.4.1
+Release TBD
   * Save shipping units with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use fixed only if present.
   * Add flag to disable catalog if used only to support plugins.
   * Move feature-enablement configs under a separate header.
+  * Ensure complete IPN data is sent to plugins for handlePurchase().
+  * Add a header to buyer notifications, admin can customize.
+  * Allow anonymous buyers to provide addresses on orders without saving the address.
+  * Link anonymous orders to a new user's account by matching the email address.
+  * Fix #64 - saving a gateway didn't save unchecked service statuses.
+  * Fix #65 - disabled gateways were made available to plugins.
+  * Deprecate all sales tax APIs due to a lack of developer plans.
 
 ## v1.4.0
 Release 2021-09-25

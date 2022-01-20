@@ -283,6 +283,7 @@ class Upgrade
                 'classes/Validators/taxcloud.class.php',
                 'classes/Tax/taxcloud.class.php',
                 'classes/Tax/taxjar.class.php',
+                'classes/Tax/avatax.class.php',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
