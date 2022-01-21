@@ -81,11 +81,15 @@ class Category
 
     /** Indicate whether the current user is an administrator.
      * @var boolean */
-    private $isAdmin;
+    private $isAdmin = 0;
 
     /** Indicate whether this is a new record or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = 1;
+
+    /** Indicate whether this category is included in product feeds.
+     * @var boolean */
+    private $feed_enabled = 1;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -221,6 +225,17 @@ class Category
     public function isNew()
     {
         return $this->isNew ? 1 : 0;
+    }
+
+
+    /**
+     * Check if the syndication feed is enabled for this category.
+     *
+     * @return  boolean     1 if enabled, 0 if not
+     */
+    public function isFeedEnabled() : bool
+    {
+        return $this->feed_enabled ? 1 : 0;
     }
 
 

@@ -2337,6 +2337,74 @@ function plugin_templateSetVars_shop($templatename, &$template)
 
 
 /**
+ * Get content for the syndication feeds.
+ *
+ * @param   string  $feed       Feed ID to get
+ * @param   string  $link       Pointer to header link value
+ * @param   array   $update_data    Pointer to array of updated item IDs
+ * @param   string  $feedType   Feed type (RSS, ICS, etc.) We only do ICS.
+ * @return  array               Array of event data
+ */
+function plugin_getfeedcontent_shop(
+    $feed, &$link, &$update_data, $feedType, $feedVersion
+) {
+    //$Feed = Shop\Models\Syndication::create($feed);
+    //return $Feed->getFeedContent();
+    return Shop\Models\Syndication::getFeedcontent(
+        $feed, $link, $update_data, $feedType, $feedVersion
+    );
+}
+
+
+/**
+ * Get the names of RSS feeds that are provided.
+ * For evList this is a list of topics
+ *
+ * @return  array   Array of ID=>Name pairs
+ */
+function plugin_getfeednames_shop()
+{
+    return Shop\Models\Syndication::getFeedNames();
+}
+
+
+/**
+ * Checks to see if the RSS feed is up-to-date.
+ *
+ * @param   integer $feed   Feed ID from the RSS configuration
+ * @param   integer $topic  Topic ID being requested
+ * @param   string  $update_data    Comma-separated string of current item IDs
+ * @param   integer $limit  Configured limit on item count for this feed
+ * @return  boolean         True if feed needs updating, False otherwise
+ */
+function plugin_feedupdatecheck_shop(
+    $feed, $topic, $update_data, $limit,
+    $updated_type = '', $updated_topic = '', $updated_id = ''
+) {
+    return Shop\Models\Syndication::feedUpdateCheck(
+        $feed, $topic, $update_data, $limit,
+        $updated_type, $updated_topic, $updated_id
+    );
+}
+
+function plugin_getfeedformats_shop()
+{
+    return Shop\Models\Syndication::getFormats();
+}
+
+
+function plugin_getfeedprovider_shop($format, $A=array())
+{
+    $cls = '\\Shop\\Models\\Feeds\\' . $format;
+    if (class_exists($cls)) {
+        return new $cls($A);
+    } else {
+        return NULL;
+    }
+}
+
+
+/**
  * Get an array variable, first checking whether it's set.
  * If `$emptyok` is set then the default value is returned when the variable
  * is found but is empty. Otherwise as long as that variable is found it is

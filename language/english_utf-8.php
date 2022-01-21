@@ -55,6 +55,7 @@ $LANG_SHOP = array (
 'ipnlog'            => 'IPN Log',
 'category_list'     => 'Category List',
 'categories'        => 'Categories',
+'all_categories'    => 'All Categories',
 'admin_hdr'         => 'Create, delete and modify products in the catalog. You may also view purchase histories and the Shop IPN data for each transaction.',
 'admin_hdr_editattr' => 'Create or update a product attribute.',
 'admin_hdr_categories' => 'Edit product categories, or select "New Category" to create a new one. A category may be deleted only if it is not associated with any products.',
