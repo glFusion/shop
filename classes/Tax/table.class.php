@@ -28,7 +28,7 @@ class table extends \Shop\Tax
      *
      * @return  array   Decoded array of data from the JSON reply
      */
-    protected function _getData()
+    protected function _getData() : array
     {
         global $LANG_SHOP, $_TABLES;
 
@@ -48,34 +48,35 @@ class table extends \Shop\Tax
                 LIMIT 1";
             //echo $sql;die;
             $res = DB_query($sql, 1);
-            if ($res) {
+            if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);
-                if ($A) {           // Have to have found a record
-                    $data = array(
-                        'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
-                        'rates' => array(
-                            array(
-                                'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
-                                'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
-                                'type'  => 'State',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
-                                'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
-                                'type'  => 'County',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
-                                'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
-                                'type'  => 'City',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
-                                'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
-                                'type'  => 'Special',
-                            ),
+                $data = array(
+                    'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
+                    'rates' => array(
+                        array(
+                            'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
+                            'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
+                            'type'  => 'State',
                         ),
-                    );
+                        array(
+                            'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
+                            'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
+                            'type'  => 'County',
+                        ),
+                        array(
+                            'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
+                            'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
+                            'type'  => 'City',
+                        ),
+                        array(
+                            'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
+                            'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
+                            'type'  => 'Special',
+                        ),
+                    ),
+                );
+                foreach ($this->Order->getItems() as $OI) {
+                    $OI->setTaxRate((float)$A['combined_rate']);
                 }
             }
         }
@@ -88,7 +89,7 @@ class table extends \Shop\Tax
      *
      * @return  string      HTML for admin list
      */
-    public static function adminList()
+    public static function adminList() : string
     {
         global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
@@ -216,8 +217,8 @@ class table extends \Shop\Tax
 
         $filter = '';
         $display .= ADMIN_list(
-            Config:PI_NAME . '_salestax',
-            array(__CLASS__,  'getAdminField'),
+            Config::PI_NAME . '_salestax',
+            array(__CLASS__ . 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
         );
@@ -235,7 +236,7 @@ class table extends \Shop\Tax
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField(string $fieldname, string $fieldvalue, array $A, array $icon_arr)
     {
         global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
@@ -282,7 +283,7 @@ class table extends \Shop\Tax
      * @param   string  $code   Code to edit, empty for new entry
      * @return  string      HTML for editing form
      */
-    public static function Edit($code='')
+    public static function Edit(string $code='') : string
     {
         global $_TABLES;
 
@@ -362,7 +363,7 @@ class table extends \Shop\Tax
      * @param   array   $A      Arra of data elements
      * @return  boolean     True on success, False on error
      */
-    public static function Save($A)
+    public static function Save(array $A)
     {
         global $_TABLES;
 
@@ -412,7 +413,7 @@ class table extends \Shop\Tax
      *
      * @return  string      Message to display
      */
-    public static function Import()
+    public static function Import() : string
     {
         global $_CONF, $_TABLES, $LANG04, $LANG28;
 

@@ -1165,8 +1165,6 @@ class Category
      */
     public function getGoogleTaxonomy() : string
     {
-        global $_SHOP_CONF;
-
         $Paths = $this->getPath();
         $Paths = array_reverse($Paths);
         foreach ($Paths as $Path) {
@@ -1174,7 +1172,7 @@ class Category
                 return $Path->google_taxonomy;
             }
         }
-        return $_SHOP_CONF['def_google_category'];
+        return Config::get('def_google_category');
     }
 
 

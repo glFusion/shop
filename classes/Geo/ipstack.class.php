@@ -3,9 +3,9 @@
  * Class to look up locations using ipstack.com.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -13,6 +13,7 @@
  * @link        https://ipstack.com
  */
 namespace Shop\Geo;
+use Shop\Config;
 
 
 /**
@@ -39,9 +40,7 @@ class ipstack extends \Shop\GeoLocator
      */
     public function __construct()
     {
-        global $_SHOP_CONF;
-
-        $this->api_key = SHOP_getVar($_SHOP_CONF, 'ipstack_api_key');
+        $this->api_key = Config::get('ipstack_api_key');
         parent::__construct();
     }
 
@@ -51,7 +50,7 @@ class ipstack extends \Shop\GeoLocator
      *
      * @return  string      URL endpoint
      */
-    private function getEndpoint()
+    private function getEndpoint() : string
     {
         return 'http://api.ipstack.com/' . $this->ip .
             '?access_key=' . $this->api_key;
@@ -63,9 +62,9 @@ class ipstack extends \Shop\GeoLocator
      *
      * @return  array       Array containing country and state codes
      */
-    protected function _geoLocate()
+    protected function _geoLocate() : array
     {
-        global $_SHOP_CONF, $LANG_SHOP, $_CONF;
+        global $_CONF;
 
         // Can't geolocate if the api key is empty
         if (empty($this->ip) || empty($this->api_key)) {

@@ -30,12 +30,15 @@ class internal extends \Shop\Tax
      *
      * @return  array   Array of data (just total rate)
      */
-    protected function _getData()
+    protected function _getData() : array
     {
         if ($this->hasNexus()) {
             $rate = (float)Config::get('tax_rate');
         } else {
             $rate = 0;
+        }
+        foreach ($this->Order->getItems() as $OI) {
+            $OI->setTaxRate($rate);
         }
         return array(
             'totalRate' => $rate,
@@ -48,7 +51,7 @@ class internal extends \Shop\Tax
      *
      * @return  array       Array of tax data
      */
-    public function getRateBreakdown()
+    public function getRateBreakdown() : array
     {
         global $LANG_SHOP;
 

@@ -3105,7 +3105,7 @@ class Order
      * @param   float   $new_rate   New tax rate, NULL to recalculate
      * @return  object  $this
      */
-    public function setTaxRate($new_rate)
+    public function setTaxRate(?float $new_rate = NULL) : self
     {
         global $_TABLES;
 
@@ -3122,7 +3122,8 @@ class Order
                     $tax_addr = Address::fromGeoLocation();
                 }
             } elseif (
-                Shipper::getInstance($this->getShipperID())->getTaxLocation() == Tax::TAX_ORIGIN
+                Shipper::getInstance($this->getShipperID())
+                    ->getTaxLocation() == Tax::TAX_ORIGIN
             ) {
                 $tax_addr = new Company;
             } else {

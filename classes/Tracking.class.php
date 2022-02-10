@@ -3,9 +3,9 @@
  * Class to standardize shipment tracking information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -52,7 +52,7 @@ class Tracking
      *
      * @param   array   $info   Array of step information
      */
-    public function addStep($info)
+    public function addStep(array $info) : self
     {
         if (isset($info['datetime'])) {
             $datetime = $info['datetime'];
@@ -66,6 +66,7 @@ class Tracking
             'location'  => SHOP_getVar($info, 'location'),
             'message'   => SHOP_getVar($info, 'message'),
         );
+        return $this;
     }
 
 
@@ -80,13 +81,14 @@ class Tracking
      * @param   string  $value      Value
      * @param   string  $type       Type of data, e.g. date for special formatting
      */
-    public function addMeta($lang_str, $value, $type='string')
+    public function addMeta(string $lang_str, string $value, string $type='string') : self
     {
         $this->meta[] = array(
             'name'  => $lang_str,
             'value' => (string)$value,  // Could be SimpleXmlElement
             'type'  => $type,
         );
+        return $this;
     }
 
 
@@ -95,9 +97,10 @@ class Tracking
      *
      * @param   string  $value      Value
      */
-    public function addError($value)
+    public function addError(string $value) : self
     {
         $this->errors[] = (string)$value;
+        return $this;
     }
 
 
@@ -106,7 +109,7 @@ class Tracking
      *
      * @return  string      HTML for tracking info display
      */
-    public function getDisplay()
+    public function getDisplay() : string
     {
         global $_CONF, $LANG_SHOP;
 
@@ -165,7 +168,7 @@ class Tracking
      * @param   string  $tracknum   Tracking Number
      * @return  string      Cache key
      */
-    private static function _makeCacheKey($shipper, $tracknum)
+    private static function _makeCacheKey(string $shipper, string $tracknum) : string
     {
         return "shop.tracking.{$shipper}.{$tracknum}";
     }
@@ -178,7 +181,7 @@ class Tracking
      * @param   string  $tracknum   Tracking Number
      * @return  object|null     Tracking object, NULL if not found
      */
-    public static function getCache($shipper, $tracknum)
+    public static function getCache(string $shipper, string $tracknum)
     {
         $key = self::_makeCacheKey($shipper, $tracknum);
         $data = Cache::get($key);
@@ -192,7 +195,7 @@ class Tracking
      * @param   string  $shipper    Shipper ID code
      * @param   string  $tracknum   Tracking Number
      */
-    public function setCache($shipper, $tracknum)
+    public function setCache(string $shipper, string $tracknum)
     {
         $key = self::_makeCacheKey($shipper, $tracknum);
         $this->setTimestamp();
@@ -206,7 +209,7 @@ class Tracking
      * @param   string|null $ts Timestamp, null for current date/time
      * @return  object  $this
      */
-    protected function setTimestamp($ts=NULL)
+    protected function setTimestamp(?string $ts=NULL) : self
     {
         global $_CONF;
 
@@ -223,7 +226,7 @@ class Tracking
      *
      * @return  string      Timestamp string
      */
-    public function getTimestamp()
+    public function getTimestamp() : string
     {
         return $this->timestamp;
     }

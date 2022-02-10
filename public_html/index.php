@@ -22,12 +22,12 @@ require_once '../lib-common.php';
 // Ensure sufficient privleges and dependencies to read this page
 if (
     !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
-    !$_SHOP_CONF['catalog_enabled'] ||
     !SHOP_access_check()
 ) {
     COM_404();
     exit;
 }
+use Shop\Config;
 
 $page_title = '';
 $action = '';
@@ -108,7 +108,7 @@ case 'checkout':
     }
     // See what workflow elements we already have.
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+    if (Config::get('anon_buy') == 1 || !COM_isAnonUser()) {
         $view = 'none';
         $content .= $Cart->getView($next_step);
         break;
@@ -241,7 +241,7 @@ case 'action':      // catch all the "?action=" urls
             'payment_date'  => $_POST['payment_date'],
             'currency'      => $_POST['mc_currency'],
             'mc_gross'      => $_POST['mc_gross'],
-            'shop_url'    => $_SHOP_CONF['shop_url'],
+            'shop_url'      => Config::get('url'),
         ) );
         $content .= COM_showMessageText($T->parse('output', 'msg'),
                     $LANG_SHOP['thanks_title'], true);
@@ -322,7 +322,7 @@ case 'printorder':
 
 case 'vieworder':
     echo "deprecated";die;
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+    if (Config::get('anon_buy') == 1 || !COM_isAnonUser()) {
         \Shop\Cart::setSession('prevpage', $view);
         $content .= \Shop\Cart::getInstance()->View($view);
         $page_title = $LANG_SHOP['vieworder'];
@@ -384,15 +384,19 @@ case 'orderhist':
 case 'products':
 default:
     SHOP_setUrl();
-    $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
-    $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
-    $Cat = new Shop\Catalog;
-    if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
-        $Cat->withQuery($_REQUEST['query']);
+    if (Shop\Config::get('catalog_enabled')) {
+        $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
+        $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
+        $Cat = new Shop\Catalog;
+        if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
+            $Cat->withQuery($_REQUEST['query']);
+        }
+        $content .= $Cat->setCatID($cat_id)
+            ->setBrandID($brand_id)
+            ->defaultCatalog();
+    } else {
+        COM_404();
     }
-    $content .= $Cat->setCatID($cat_id)
-        ->setBrandID($brand_id)
-        ->defaultCatalog();
     break;
 
 case 'none':

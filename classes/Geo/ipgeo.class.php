@@ -3,9 +3,9 @@
  * Class to look up locations using IP Geolocation.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -14,6 +14,7 @@
  */
 namespace Shop\Geo;
 use Shop\State;
+use Shop\Config;
 
 
 /**
@@ -40,9 +41,7 @@ class ipgeo extends \Shop\GeoLocator
      */
     public function __construct()
     {
-        global $_SHOP_CONF;
-
-        $this->api_key = $_SHOP_CONF['ipgeo_api_key'];
+        $this->api_key = Config::get('ipgeo_api_key');
         parent::__construct();
     }
 
@@ -52,7 +51,7 @@ class ipgeo extends \Shop\GeoLocator
      *
      * @return  string      URL endpoint
      */
-    private function getEndpoint()
+    private function getEndpoint() : string
     {
         return 'https://api.ipgeolocation.io/ipgeo?apiKey=' . $this->api_key .
             '&ip=' . $this->ip;
@@ -64,10 +63,8 @@ class ipgeo extends \Shop\GeoLocator
      *
      * @return  array       Array containing country and state codes
      */
-    protected function _geoLocate()
+    protected function _geoLocate() : array
     {
-        global $_SHOP_CONF, $LANG_SHOP;
-
         // Can't geolocate if the api key is empty
         if (empty($this->ip) || empty($this->api_key)) {
             return $this->default_data;

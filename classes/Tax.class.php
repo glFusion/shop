@@ -3,9 +3,9 @@
  * Class to get and cache sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -52,13 +52,15 @@ abstract class Tax
     /**
      * Get an instance of the tax provider class.
      *
+     * @param   string  $name   Optional provider class name
      * @return  object      Tax provider object
      */
-    public static function getProvider()
+    public static function getProvider(?string $name = NULL) : object
     {
-        global $_SHOP_CONF;
-
-        $cls = '\\Shop\\Tax\\' . $_SHOP_CONF['tax_provider'];
+        if ($name === NULL) {
+            $name = Config::get('tax_provider');
+        }
+        $cls = '\\Shop\\Tax\\' . $name;
         if (class_exists($cls)) {
             return new $cls;
         } else {
@@ -74,7 +76,7 @@ abstract class Tax
      * @param   object  $Addr   Address object
      * @return  object  $this
      */
-    public function withAddress($Addr)
+    public function withAddress(Address $Addr) : self
     {
         $this->Address = $Addr;
         return $this;
@@ -87,7 +89,7 @@ abstract class Tax
      * @param   object  $Order  Order object
      * @return  object  $this
      */
-    public function withOrder($Order)
+    public function withOrder(Order $Order) : self
     {
         $this->Order = $Order;
         if ($this->Address == NULL) {
@@ -103,7 +105,7 @@ abstract class Tax
      * @param   string  $key    Additional cache key for data type
      * @return  string      Cache key
      */
-    private function _makeCacheKey($key='')
+    private function _makeCacheKey(string $key='') : string
     {
         if ($key != '') {
             $key = $key . '.';
@@ -122,7 +124,7 @@ abstract class Tax
      * @param   string  $key    Additional cache key for data type
      * @return  object|null     Tracking object, NULL if not found
      */
-    protected function getCache($key='')
+    protected function getCache(string $key='') : ?object
     {
         global $_TABLES;
 
@@ -138,7 +140,7 @@ abstract class Tax
      * @param   string  $key        Additional cache key for data type
      * @param   integer $exp        Seconds for cache timeout
      */
-    protected function setCache($data, $key='', $exp=0)
+    protected function setCache(string $data, string $key='', int $exp=0) : void
     {
         global $_TABLES;
 
@@ -157,10 +159,8 @@ abstract class Tax
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
-    protected function hasNexus()
+    protected function hasNexus() : bool
     {
-        global $_SHOP_CONF;
-
         $nexuses = Config::get('tax_nexuses');
         if (empty($nexuses) || !is_array($nexuses)) {
             // Return true if no nexus locations configured
@@ -193,7 +193,7 @@ abstract class Tax
      *
      * @return  float   Total tax rate for a location, globally-configurated rate on error.
      */
-    public function getRate()
+    public function getRate() : float
     {
         if ($this->hasNexus()) {
             $rate = $this->_getData()['totalRate'];
@@ -217,7 +217,7 @@ abstract class Tax
      *
      * @return  array       Array of tax data
      */
-    public function getRateBreakdown()
+    public function getRateBreakdown() : array
     {
         if ($this->hasNexus()) {
             $data = $this->_getData();
