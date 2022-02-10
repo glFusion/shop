@@ -279,6 +279,7 @@ class ups extends \Shop\Shipper
             }
             $Tracking->setCache($this->key, $tracking);
         } catch ( Exception $ex ) {
+            $Tracking->addError($LANG_SHOP['err_getting_info']);
             SHOP_log(
                 __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
                 ' Error getting tracking info: ' . print_r($ex,true)

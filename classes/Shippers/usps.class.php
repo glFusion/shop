@@ -573,7 +573,11 @@ class usps extends \Shop\Shipper
                 }
             }
         } catch ( Exception $ex ) {
-            echo $ex;
+            $Tracking->addError($LANG_SHOP['err_getting_info']);
+            SHOP_log(
+                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                ' Error getting tracking info: ' . print_r($ex,true)
+            );
         }
         $Tracking->setCache($this->key, $track_num);
         return $Tracking;

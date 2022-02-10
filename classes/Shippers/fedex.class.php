@@ -289,6 +289,11 @@ class fedex extends \Shop\Shipper
                     }
                 }
             } catch (\Exception $e) {
+                $Tracking->addError($LANG_SHOP['err_getting_info']);
+                SHOP_log(
+                    __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                    ' Error getting tracking info: ' . print_r($ex,true)
+                );
             }
         } else {
             SHOP_log(
@@ -296,7 +301,7 @@ class fedex extends \Shop\Shipper
                 '- Error getting tracking info: ' .
                 print_r($response,true)
             );
-            $Tracking->addError('Non-successful response received.');
+            $Tracking->addError($LANG_SHOP['err_getting_info']);
         }
         $Tracking->setCache($this->key, $track_num);
         return $Tracking;
