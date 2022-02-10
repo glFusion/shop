@@ -23,6 +23,8 @@ class v1_4_1 extends Upgrade
     {
         global $_TABLES, $SHOP_UPGRADE;
 
+        $c = \config::get_instance();
+
         // Set the shipping units value into each order item.
         // Must update the schema first, so check to see if the field exists
         // and save a flag if it doesn't.
@@ -42,20 +44,28 @@ class v1_4_1 extends Upgrade
                     )->Save();
                 }
             }
-            // Reset TaxJar and TaxCloud to default providers, if used.
-            $c = \config::get_instance();
-            if (
-                Config::get('tax_provider') == 'taxjar' ||
-                Config::get('tax_provider') == 'taxcloud'
-            ) {
-                Config::set('tax_provider', 'internal');
-                $c->set('tax_provider', 'internal', Config::PI_NAME);
-            }
-            if (Config::get('address_validator') == 'taxcloud') {
-                Config::set('address_validator', 0);
-                $c->set('address_validator', 0, Config::PI_NAME);
-            }
+
+            // Borrow the populate_units flag above to see if we need to update the
+            // days for expiring sale prices.
+            if (Config::get('purge_sale_prices') == 1) {
+                Config::set('purge_sale_prices', 30);   // set to default
+                $c->set('purge_sale_prices', 30, Config::PI_NAME);
         }
+
+        // Remove tax API providers and TaxCloud address validator, if used.
+        if (
+            Config::get('tax_provider') == 'taxjar' ||
+            Config::get('tax_provider') == 'taxcloud' ||
+            Config::get('tax_provider') == 'avatax'
+        ) {
+            Config::set('tax_provider', 'internal');
+            $c->set('tax_provider', 'internal', Config::PI_NAME);
+        }
+        if (Config::get('address_validator') == 'taxcloud') {
+            Config::set('address_validator', 0);
+            $c->set('address_validator', 0, Config::PI_NAME);
+        }
+
         return self::setVersion(self::$ver);
     }
 
