@@ -13,6 +13,7 @@ Release TBD
   * Fix #64 - saving a gateway didn't save unchecked service statuses.
   * Fix #65 - disabled gateways were made available to plugins.
   * Deprecate all sales tax APIs due to a lack of developer plans.
+  * Change `purge_sale_prices` from yes/no to a number of days.
 
 ## v1.4.0
 Release 2021-09-25

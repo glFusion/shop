@@ -3,9 +3,9 @@
  * Class to manage product sale prices based on item or category.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -424,12 +424,14 @@ class Sales
      */
     public static function Clean()
     {
-        global $_CONF, $_TABLES;
+        global $_TABLES;
 
-        $now = $_CONF['_now']->toMySQL(true);
-        $sql = "DELETE FROM {$_TABLES['shop.sales']}
-                WHERE end < '$now'";
-        DB_query($sql);
+        if (Config::get('purge_sale_prices') > -1) {
+            $days = (int)Config::get('purge_sale_prices');
+            $sql = "DELETE FROM {$_TABLES['shop.sales']}
+                    WHERE end < DATE_SUB(INTERVAL $days DAY)";
+            DB_query($sql);
+        }
     }
 
 
@@ -556,6 +558,9 @@ class Sales
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
         $sql = "SELECT * FROM {$_TABLES['shop.sales']}";
+        if (!isset($_POST['show_inactive'])) {
+            $sql .= " WHERE end >= '" . $_CONF['_now']->toMySQL(true) . "'";
+        }
 
         $header_arr = array(
             array(
@@ -619,19 +624,29 @@ class Sales
         );
 
         $text_arr = array(
-            'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/index.php',
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?sales=x',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?editsale=x',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $filter = 'Show Inactive?&nbsp;' . Field::checkbox(array(
+            'name' => 'show_inactive',
+            'id' => 'show_inactive',
+            'checked' => isset($_POST['show_inactive']),
+        ) );
+        $options = array();
+        $form_arr = array(
+            'top' => FieldList::buttonLink(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editsale=x',
+                'text' => $LANG_SHOP['new_item'],
+                'style' => 'success',
+            ) ),
+        );
+
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_discountlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            $filter, '', $options, $form_arr
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -658,22 +673,20 @@ class Sales
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
+            ) );
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
                 array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
                 )
-            );
+            ) );
             break;
 
         case 'end':
@@ -850,6 +863,5 @@ class Sales
         return $this->sale_id == 0;
     }
 
-}   // class Sales
+}
 
-?>
