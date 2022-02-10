@@ -767,7 +767,6 @@ class Shipper
     public static function getShippersForOrder($Order)
     {
         global $LANG_SHOP;
-        var_dump($Order->getShippingUnits());die;
 
         $cache_key = 'shipping_order_' . $Order->getOrderID() .
             '_' . $Order->getShippingUnits();
@@ -1457,6 +1456,7 @@ class Shipper
      */
     public function getTrackingUrl($tracking_num, $internal=true)
     {
+        $retval = '';
         $text = $tracking_num;
         $tracking_num = urlencode($tracking_num);
         if ($internal && $this->hasTrackingAPI()) {
@@ -1470,7 +1470,17 @@ class Shipper
                 )
             );
         } else {
-            $url = $this->_gettrackingUrl($tracking_num);
+            if (
+                Config::get('trk_aftership') &&
+                $this->id > 0 &&
+                $this->key != ''
+            ) {
+                // Get the aftership.com tracking url
+                $url = "https://aftership.com/track/{$this->key}/{$tracking_num}";
+            } else {
+                // Get the shipper's own tracking url
+                $url = $this->_getTrackingUrl($tracking_num);
+            }
             if (!empty($url)) {
                 $retval = COM_createLink(
                     $text,
@@ -1520,15 +1530,12 @@ class Shipper
     {
         global $_TABLES;
 
-        static $data = NULL;
-        if ($data === NULL) {
-            $code = DB_escapeString($this->key);
-            $data = DB_getItem(
-                $_TABLES['shop.carrier_config'],
-                'data',
-                "code = '$code'"
-            );
-        }
+        $code = DB_escapeString($this->key);
+        $data = DB_getItem(
+            $_TABLES['shop.carrier_config'],
+            'data',
+            "code = '$code'"
+        );
         if ($data) {        // check that a data item was retrieved
             $config = @json_decode($data, true);
             if ($config) {
@@ -1752,7 +1759,7 @@ class Shipper
             case 'password':
                 $F->set_file('field', 'text.thtml');
                 $F->set_var(array(
-                    'fld_name' => $name,
+                    'name' => $name,
                     'value' => $this->getConfig($name),
                 ) );
                 $F->parse('output', 'field');
