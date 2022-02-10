@@ -21,9 +21,9 @@
 <!-- BEGIN headlines -->
 			<li>
 				<a href="{url}">
-					<div class="uk-panel uk-panel-box">
+					<div class="uk-panel uk-panel-box shop-slider-panel">
 {!if thumb_url}
-						<div class="uk-panel-teaser">
+						<div class="uk-panel-teaser" style="text-align:center;">
 							{thumb_url}
 						</div>
 {!endif}
