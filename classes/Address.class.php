@@ -798,8 +798,15 @@ class Address
             }
         }
         if (!$have_state_country) {
-            $this->setState(Config::get('state'))
-                 ->setCountry(Config::get('country'));
+            $loc = GeoLocator::getProvider()->geoLocate();
+            if ($loc['ip'] != '') {
+                $A['country'] = $loc['country_code'];
+                $A['state'] = $loc['state_code'];
+                $A['city'] = $loc['city_name'];
+            } else {
+                $this->setState(Config::get('state'))
+                     ->setCountry(Config::get('country'));
+            }
         }
 
         $T = new Template;
