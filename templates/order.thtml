@@ -208,8 +208,10 @@
         <div id="orderPaymentMethod" style="margin-top:10px;">
             <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
 {!if checkout}
-{!else}
+{!elseif num_payments}
             <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
+{!else}
+            <span><b>{$LANG_SHOP['pmt_status']}:</b> <span class="uk-text-bold uk-text-danger">{pmt_status}</span></span>
 {!if pmt_btn}
             {pmt_btn}
 {!endif}

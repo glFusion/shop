@@ -22,7 +22,7 @@
 			<input class="uk-input uk-form-small uk-form-width-xsmall" name="quantity" type="number" min="{min_ord_qty}" onchange="ProcessForm(this.form.id);"
 				value="{min_ord_qty}"/>
 {!endif}
-			&nbsp;&nbsp;<button id="btn_add_cart_{frm_id}" type="submit" class="{btn_cls}"
+			&nbsp;&nbsp;<button id="btn_add_cart_{frm_id}" type="submit" class="uk-button uk-button-small uk-button-{btn_cls}"
 				onclick='shopAddToCart("{frm_id}");return false;'>
 				<i class="uk-icon uk-icon-shopping-cart">&nbsp;</i>{$LANG_SHOP['add_to_cart']}
 			</button>
