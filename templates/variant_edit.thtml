@@ -5,7 +5,7 @@
 	<input type="hidden" name="pv_id" value="{pv_id}" />
 	<input type="hidden" name="pv_item_id" value="{item_id}" />
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['product']}:</label>
 		<div class="uk-form-controls">
 			{item_name}
@@ -13,26 +13,26 @@
 	</div>
 {!endif}
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">SKU:
 			<span id="sku" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" name="pv_sku" value="{sku}" size="48" placeholder="{$LANG_SHOP['empty_to_gen']}" />
+			<input class="uk-input" type="text" name="pv_sku" value="{sku}" size="48" placeholder="{$LANG_SHOP['empty_to_gen']}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['supplier_ref']}:
 			<span id="hlp_sup_ref" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" name="pv_supplier_ref" value="{supplier_ref}" size="48" />
+			<input class="uk-input" type="text" name="pv_supplier_ref" value="{supplier_ref}" size="48" />
 		</div>
 	</div>
 
 {!if pv_id}
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['description']}:</label>
 		<div class="uk-form-controls">
 			{dscp}
@@ -40,65 +40,65 @@
 	</div>
 {!endif}
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['var_price']}:
 			<span id="price" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" name="pv_price" value="{price}" placeholder="{$LANG_SHOP['use_opt_price']}" size="20" maxlength="32" />
+			<input class="uk-input uk-form-width-small" type="text" name="pv_price" value="{price}" placeholder="{$LANG_SHOP['use_opt_price']}" size="20" maxlength="32" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['weight']}:
 			<span id="weight" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" name="pv_weight" value="{weight}" size="12" maxlength="12" />
+			<input class="uk-input uk-form-width-small" type="text" name="pv_weight" value="{weight}" size="12" maxlength="12" />
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['shipping']}:
 			<span id="shipping" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="text" name="pv_shipping_units" value="{shipping_units}" size="12" maxlength="32" />
+			<input class="uk-input uk-form-width-small" type="text" name="pv_shipping_units" value="{shipping_units}" size="12" maxlength="32" />
 		</div>
 	</div>
 
 {!if track_onhand}
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['track_onhand']}
 			<span id="onhand" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input id="pv_onhand" type="text" name="pv_qty_onhand" value="{onhand}" size="12" maxlength="12" placeholder="{$LANG_SHOP['use_prod_val']}" style="display:{onhand_vis}"; />&nbsp;
+			<input class="uk-input uk-form-width-small" id="pv_onhand" type="text" name="pv_qty_onhand" value="{onhand}" size="12" maxlength="12" placeholder="{$LANG_SHOP['use_prod_val']}" style="display:{onhand_vis}"; />&nbsp;
 			&nbsp;&nbsp;{$LANG_SHOP['reserved']}:
-			<input type="text" name="pv_qty_reserved" value="{reserved}" size="4"/>
+			<input class="uk-input uk-form-width-small" type="text" name="pv_qty_reserved" value="{reserved}" size="4"/>
 			&nbsp;&nbsp;{$LANG_SHOP['reorder']}:
-			<input type="text" name="pv_qty_reorder" value="{reorder}" size="12" maxlength="32" placeholder="{$LANG_SHOP['use_prod_val']}" />
+			<input class="uk-input uk-form-width-small" type="text" name="pv_qty_reorder" value="{reorder}" size="12" maxlength="32" placeholder="{$LANG_SHOP['use_prod_val']}" />
 		</div>
 	</div>
 {!endif}
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['enabled']}:
 			<span id="enabled" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input type="checkbox" name="pv_enabled" value="1" {ena_chk} />
+			<input class="uk-checkbox" type="checkbox" name="pv_enabled" value="1" {ena_chk} />
 		</div>
 	</div>
 
 <!-- BEGIN OptionGroups -->
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{pog_name}:</label>
 		<div class="uk-form-controls">
 {!if pv_id}
-			<select name="pv_groups[{pog_id}]">
+			<select class="uk-select" name="pv_groups[{pog_id}]">
 {!else}
-			<select multiple name="pv_groups[{pog_id}][]">
+			<select class="uk-select" multiple name="pv_groups[{pog_id}][]">
 {!endif}
 				<option value="0">-- n/a --</option>
 <!-- BEGIN OptionValues -->
@@ -109,15 +109,15 @@
 	</div>
 <!-- END OptionGroups -->
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['images']}:
-			<br />{$LANG_SHOP['chk_all']}: <input type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'pv_img_ids');">
+			<br />{$LANG_SHOP['chk_all']}: <input class="uk-checkbox" type="checkbox" name="chk_selectall" title="{$LANG_SHOP_HELP['hlp_chk_all']}" onclick="caItems(this.form,'pv_img_ids');">
 		</label>
 		<div class="uk-form-controls">
 			<ul class="shopProductThumbWrapper">
 <!-- BEGIN ImageBlock -->
 			<li class="shopProductThumb">
-				<input id="img_cb_{img_id}" type="checkbox" name="pv_img_ids[]" value="{img_id}" {img_chk} stylex="display:none;"/>
+				<input class="uk-checkbox" id="img_cb_{img_id}" type="checkbox" name="pv_img_ids[]" value="{img_id}" {img_chk} style="display:none;"/>
 				<label for="img_cb_{img_id}"><img src="{img_url}" id="img_{img_id}" /></label>
 			</li>
 <!-- END ImageBlock -->
@@ -126,9 +126,9 @@
 	</div>
 
 {!if is_form}
-	<div class="uk-form-row" align="center">
+	<div class="uk-form-row uk-margin" style="clear:both;text-align:center">
 		<button class="uk-button uk-button-success" type="submit" name="pv_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
-		<button class="uk-button" type="reset" />{$LANG_SHOP['clearform']}</button>
+		<button class="uk-button uk-button-default" type="reset" />{$LANG_SHOP['clearform']}</button>
 		<button class="uk-button uk-button-primary" type="reset"
 			onclick="document.location='{action_url}/index.php?editproduct&id={item_id}&tab=variants';">{$LANG_ADMIN['cancel']}</button>
 		<button style="float:right;" class="uk-button uk-button-danger" type="submit" name="pv_del" value="{$LANG_SHOP['deleteopt']}"

@@ -1,49 +1,44 @@
 {# begin {templatelocation} #}
-<script src="{site_url}/javascript/addons/datetime/jquery.datetimepicker.full.min.js" type="text/javascript"></script>
+<script src="{site_url}/javascript/addons/datetime/jquery.datetimepicker.full.min.js"></script>
 <link rel="stylesheet" type="text/css" href="{site_url}/javascript/addons/datetime/jquery.datetimepicker.min.css"/ >
-<script src="{site_url}/javascript/addons/datetime/datetimepicker.js" type="text/javascript"></script>
+<script src="{site_url}/javascript/addons/datetime/datetimepicker.js"></script>
 <h2>{lang_new_or_edit}: {$LANG_SHOP['disc_code']}</h2>
 <form id="codeform" class="uk-form uk-form-horizontal" action="{site_admin_url}/plugins/shop/index.php" method="post">
 	<input type="hidden" name="code_id" value="{code_id}" />
 	<fieldset>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['code']}:
 			<span id="code" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input required type="text" name="code" value="{code}" size="40" maxlength="40" />
-			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
+			<input class="uk-input uk-form-width-large" required type="text" name="code" value="{code}" size="40" maxlength="40" />&nbsp;<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['percent']}:
 			<span id="percent" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-			<input required type="text" name="percent" value="{percent}" size="10" maxlength="10" />
+			<input class="uk-input uk-form-width-small" required type="text" name="percent" value="{percent}" size="10" maxlength="10" />
 			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger tooltip" title="{$LANG_SHOP['required']}"></i>
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['start']}:
 			<span id="start" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-				<div class="uk-form-icon">
-						<i class="uk-icon-calendar"></i>
-						<input type="text" id="start_dt" name="start" value="{start_date}" size="12" maxlength="12"
-							class="shop_datepicker tooltip" title="{$LANG_SHOP['datepicker']}"
-							placeholder="{min_date}" />
-				</div>
-				<div class="uk-form-icon">
-						<i class="uk-icon-clock-o"></i>
-						<input type="text" id="start_time" name="start_time" value="{start_time}" size="12" maxlength="12"
-							class="shop_datepicker tooltip" title="{$LANG_SHOP['timepicker']}" placeholder="{min_time}"
-							{st_time_disabled} />
-				</div>
+			<i class="uk-icon-calendar"></i>
+			<input type="text" id="start_dt" name="start" value="{start_date}" size="12" maxlength="12"
+				class="shop_datepicker tooltip uk-input uk-form-width-small" title="{$LANG_SHOP['datepicker']}"
+				placeholder="{min_date}" />
+			<i class="uk-icon uk-icon-clock-o"></i>
+			<input type="text" id="start_time" name="start_time" value="{start_time}" size="12" maxlength="12"
+				class="uk-input shop_datepicker tooltip uk-form-width-small" title="{$LANG_SHOP['timepicker']}" placeholder="{min_time}"
+				{st_time_disabled} />
 			&nbsp;<input type="checkbox" name="start_allday" value="1" {st_allday_chk} onclick="setAllday(this,'start');"/>&nbsp;{$LANG_SHOP['allday']}
 			&nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
 				title="{$LANG_SHOP_HELP['reset_date']}"
@@ -51,24 +46,20 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['end']}:
 			<span id="end" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-				<div class="uk-form-icon">
-						<i class="uk-icon-calendar"></i>
-						<input type="text" id="end_dt" name="end" value="{end_date}" size="12" maxlength="12"
-							class="shop_datepicker tooltip" title="{$LANG_SHOP['datepicker']}"
-							placeholder="{max_date}" />
-				</div>
-				<div class="uk-form-icon">
-						<i class="uk-icon-clock-o"></i>
-						<input type="text" id="end_time" name="end_time" value="{end_time}" size="12" maxlength="12"
-							class="shop_datepicker tooltip" title="{$LANG_SHOP['timepicker']}"
-							placeholder="{max_time}"
-							{end_time_disabled} />
-				</div>
+			<i class="uk-icon-calendar"></i>
+			<input type="text" id="end_dt" name="end" value="{end_date}" size="12" maxlength="12"
+				class="shop_datepicker tooltip uk-input uk-form-width-small" title="{$LANG_SHOP['datepicker']}"
+				placeholder="{max_date}" />
+			<i class="uk-icon-clock-o"></i>
+			<input type="text" id="end_time" name="end_time" value="{end_time}" size="12" maxlength="12"
+				class="shop_datepicker tooltip uk-input uk-form-width-small" title="{$LANG_SHOP['timepicker']}"
+				placeholder="{max_time}"
+				{end_time_disabled} />
 			&nbsp;<input type="checkbox" name="end_allday" value="1" {end_allday_chk} onclick="setAllday(this,'end');"/>&nbsp;{$LANG_SHOP['allday']}
 			&nbsp;<i class="uk-icon uk-icon-remove uk-text-danger tooltip"
 				title="{$LANG_SHOP_HELP['reset_date']}"
@@ -76,21 +67,21 @@
 		</div>
 	</div>
 
-	<div class="uk-form-row">
+	<div class="uk-form-row uk-margin">
 		<label class="uk-form-label">{$LANG_SHOP['min_order']}:
 			<span id="min_order" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls">
-				<input type="text" name="min_order" value="{min_order}" />
+			<input class="uk-input uk-form-width-small" type="text" name="min_order" value="{min_order}" />
 		</div>
 	</div>
 
-	<div class="uk-form-row" align="center">
+	<div class="uk-form-row uk-margin" align="center">
 		<button class="uk-button uk-button-success type="submit" name="savecode" value="{$LANG_SHOP['save']}">{$LANG_ADMIN['save']}</button>
 		<button class="uk-button uk-button-primary" type="reset" />{$LANG_SHOP['clearform']}</button>
 		<button class="uk-button uk-button-danger" type="submit" name="delcode" value="{$LANG_ADMIN['delete']}"
 				onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['delete']}</button>
-		<a class="uk-button" href="{site_admin_url}/plugins/shop/index.php?codes">{$LANG_ADMIN['cancel']}</a>
+		<a class="uk-button uk-button-default" href="{site_admin_url}/plugins/shop/index.php?codes">{$LANG_ADMIN['cancel']}</a>
 	</div>
 
 </form>
