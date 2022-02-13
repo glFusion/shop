@@ -555,7 +555,7 @@ class Menu
         }
 
         if (!Config::get('shop_enabled')) {
-            $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
+            $retval .= SHOP_errorMessage($LANG_SHOP['shop_closed'], 'danger');
         }
         return $retval;
     }
