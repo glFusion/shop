@@ -646,14 +646,11 @@ class Country extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/regions.php?editcountry=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=0',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.countries',
@@ -711,14 +708,13 @@ class Country extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id'],
+            ) );
             break;
 
         case 'country_enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['country_id']}",
                 'checked' => $fieldvalue == 1,

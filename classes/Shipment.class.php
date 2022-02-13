@@ -480,9 +480,11 @@ class Shipment
             $title = $LANG_SHOP['order'] . ' ' . $order_id;
             $Order = Order::getInstance($order_id);
             if (!$Order->isShippedComplete()) {
-                $ship_btn = '<a class="uk-button uk-button-success" href="' .
-                    SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->getOrderID() .
-                    '">' . $LANG_SHOP['shiporder'] . '</a>';
+                $ship_btn = FieldList::buttonLink(array(
+                    'style' => 'success',
+                    'url' => SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . $Order->getOrderID(),
+                    'text' => $LANG_SHOP['shiporder'],
+                ) );
             } else {
                 $ship_btn = '';
             }
@@ -498,12 +500,14 @@ class Shipment
         );
 
         // Print selected packing lists
-        $prt_pl = '<button type="submit" name="shipment_pl" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_blank" ' .
-            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
-            '><i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
-            '</button>';
+        $prt_pl = FieldList::button(array(
+            'name' => 'shipment_pl',
+            'value' => 'x',
+            'size' => 'mini',
+            'formtarget' => '_blank',
+            'title' => $LANG_SHOP['print_sel_pl'],
+            'text' => FieldList::list(),
+        ) );
         $options = array(
             'chkselect' => 'true',
             'chkname'   => 'shipments',
@@ -553,10 +557,9 @@ class Shipment
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/shipments.php?edit={$A['shipment_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/shipments.php?edit={$A['shipment_id']}",
+            ) );
             break;
 
         case 'customer':
@@ -578,7 +581,7 @@ class Shipment
 
         case 'action':
             $retval = COM_createLink(
-                Icon::getHTML('list'),
+                FieldList::list(),
                 SHOP_ADMIN_URL . '/shipments.php?packinglist=' . $A['shipment_id'],
                 array(
                     'target'    => '_blank',
@@ -589,15 +592,14 @@ class Shipment
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/shipments.php?delete=' . $A['shipment_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/shipments.php?delete=' . $A['shipment_id'],
+                'attr' =>array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         default:

@@ -442,7 +442,7 @@ class Workflow
         $display .= "<h2>{$LANG_SHOP['workflows']}</h2>\n";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_workflowlist',
-            array(__CLASS__ , 'getAdminField'),
+            array(__CLASS__, 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             '', '', '', ''
         );
@@ -475,7 +475,7 @@ class Workflow
                     $sel = $fieldvalue == $val ? 'selected="selected"' : '';
                     $options .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
                 }
-                $retval = Field::select(array(
+                $retval = FieldList::select(array(
                     'id' => "sel{$fieldname}{$A['id']}",
                     'name' => "{$fieldname}_sel",
                     'onchange' => "SHOPupdateSel(this,'{$A['id']}','enabled', 'workflow');",

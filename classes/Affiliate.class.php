@@ -178,11 +178,13 @@ class Affiliate
             );
             $sess_key = 'payout';
             $query_arr['group_by'] .= ' HAVING (total_payout > 0 AND sent_payout IS NULL) OR (total_payout - sent_payout) > 0';
-            $bulk_update = '<button type="submit" name="do_payout" value="x" ' .
-                'class="uk-button uk-button-primary uk-button-mini tooltip" ' .
-                'title="' . $LANG_SHOP['payout'] . '">' .
-                $LANG_SHOP['payout'] .
-                '</button>';
+            $bulk_update = FieldList::button(array(
+                'name' => 'do_payout',
+                'value' => 'x',
+                'style' => 'primary',
+                'size' => 'mini',
+                'text' => $LANG_SHOP['payout'],
+            ) );
             $chkboxes = true;
         } else {
             $sess_key = 'all';

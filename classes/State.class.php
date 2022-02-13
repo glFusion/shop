@@ -574,14 +574,11 @@ class State extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/regions.php?editstate=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editstate=0',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.states',
@@ -653,16 +650,15 @@ class State extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editstate=' . $A['state_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editstate=' . $A['state_id'],
+            ) );
             break;
 
         case 'state_enabled':
         case 'tax_shipping':
         case 'tax_handling':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['state_id']}",
                 'checked' => $fieldvalue == 1,

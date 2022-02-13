@@ -673,13 +673,10 @@ class Customer
                 'ad_billto_def' => $address->isDefaultBillto(),
                 'ad_shipto_def' => $address->isDefaultShipto(),
                 'ad_checked' => $ad_checked,
-                'del_icon'  => Icon::getHTML(
-                    'delete', 'tooltip',
-                    array(
-                        'title' => $LANG_SHOP['delete'],
-                        'onclick' => 'removeAddress(' . $address->getID() . ');',
-                    )
-                ),
+                'del_icon'  => FieldList::delete(array(
+                    'title' => $LANG_SHOP['delete'],
+                    'onclick' => 'removeAddress(' . $address->getID() . ');',
+                ) ),
             ) );
             $T->parse('sAddr', 'SavedAddress', true);
         }

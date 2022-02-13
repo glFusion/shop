@@ -14,6 +14,7 @@
 namespace Shop\Tax;
 use Shop\Template;
 use Shop\Config;
+use Shop\FieldList;
 
 
 /**
@@ -185,13 +186,11 @@ class table extends \Shop\Tax
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_rate'],
-            SHOP_ADMIN_URL . '/index.php?edittaxrate=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_rate'],
+            'url' => SHOP_ADMIN_URL . '/index.php?edittaxrate=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.tax_rates',
@@ -208,17 +207,21 @@ class table extends \Shop\Tax
             'chkdelete' => 'true',
             'chkfield' => 'code',
             'chkname' => 'code',
-            'chkactions' => '<button type="submit" name="deltaxrate" value="x" ' .
-            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-            'title="' . $LANG_SHOP['delete'] . '" ' .
-            '><i name="deltax" class="uk-icon uk-icon-remove"></i>' .
-            '</button>',
+            'chkactions' => FieldList::button(array(
+                'type' => 'submit',
+                'name' => 'deltaxrate',
+                'value' => 'x',
+                'style' => 'primary',
+                'size' => 'mini',
+                'title' => $LANG_SHOP['delete'],
+                'text' => FieldList::minus(),
+            ) ),
         );
 
         $filter = '';
         $display .= ADMIN_list(
             Config::PI_NAME . '_salestax',
-            array(__CLASS__ . 'getAdminField'),
+            array(__CLASS__ , 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
         );
@@ -243,22 +246,19 @@ class table extends \Shop\Tax
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                \Shop\Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?edittaxrate=x&amp;code={$A['code']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?edittaxrate=x&amp;code={$A['code']}",
+            ) );
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                \Shop\Icon::getHTML('delete', 'tooltip', array('title' => $LANG_ADMIN['delete'])),
-                SHOP_ADMIN_URL . "/index.php?deltaxrate=x&amp;code={$A['code']}",
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . "/index.php?deltaxrate=x&amp;code={$A['code']}",
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
-                    'class' => 'tooltip',
-                )
-             );
+                ),
+            ) );
             break;
 
         case 'combined_rate':

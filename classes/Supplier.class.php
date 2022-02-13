@@ -352,7 +352,6 @@ class Supplier extends Address
     }
 
 
-
     /**
      * Save the supplier information.
      *
@@ -367,7 +366,7 @@ class Supplier extends Address
         if (
             !empty($_FILES) &&
             is_array($_FILES['logofile']) &&
-            !empty($_FILES['logofile']['tmpname'])
+            !empty($_FILES['logofile']['tmp_name'])
         ) {
             $Img = new Images\Supplier($this->getID(), 'logofile');
             $Img->uploadFiles();
@@ -601,10 +600,11 @@ class Supplier extends Address
             'form_url' => SHOP_ADMIN_URL . '/index.php?suppliers',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?edit_sup=0',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $display .= '<div>' . FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?edit_sup=0',
+            'style' => 'success',
+        ) ) . '</div>';
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_supplierlist',
             array(__CLASS__,  'getAdminField'),
@@ -632,10 +632,9 @@ class Supplier extends Address
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?edit_sup=' . $A['sup_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?edit_sup=' . $A['sup_id'],
+            ) );
             break;
 
         case 'logo':
@@ -647,20 +646,19 @@ class Supplier extends Address
             }
             break;
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?del_sup&id=' . $A['sup_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?del_sup&id=' . $A['sup_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'is_supplier':
         case 'is_brand':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => $fieldname . '_check',
                 'checked' => $fieldvalue == 1,
                 'id' => "tog{$fieldname}{$A['sup_id']}",

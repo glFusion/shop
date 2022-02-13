@@ -21,6 +21,7 @@ use Shop\Config;
 use Shop\GeoLocator;
 use Shop\Field;
 use Shop\Tooltipster;
+use Shop\FieldList;
 
 
 /**
@@ -428,14 +429,11 @@ class Zone
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
+            'style' => 'success',
+        ) );
         $text_arr = array(
             'form_url' => SHOP_ADMIN_URL . '/rules.php',
         );
@@ -486,10 +484,9 @@ class Zone
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}",
+            ) );
             break;
 
         case 'allow':
@@ -497,19 +494,18 @@ class Zone
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['rule_id']}",
                 'checked' => $fieldvalue == 1,

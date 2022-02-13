@@ -12,8 +12,8 @@
  * @filesource
  */
 namespace Shop\Reports;
-use Shop\Icon;
 use Shop\Currency;
+use Shop\FieldList;
 
 
 /**
@@ -343,13 +343,12 @@ class payment extends \Shop\Report
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delet_url' => SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
+                'attr' => array(
                     'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
-                )
-            );
+                ),
+            ) );
             break;
         }
 

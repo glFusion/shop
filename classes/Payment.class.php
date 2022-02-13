@@ -654,13 +654,11 @@ class Payment
             $R->setParam('order_id', $order_id);
         }
         if ($order_id != 'x') {
-            $new_btn = COM_createLink(
-                $LANG_SHOP['add_payment'],
-                SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
-                array(
-                    'class' => 'uk-button uk-button-success',
-                )
-            );
+            $new_btn = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['add_payment'],
+                'url' => SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
+                'style' => 'success',
+            ) );
         } else {
             $new_btn = '';
         }

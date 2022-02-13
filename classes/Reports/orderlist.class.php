@@ -13,6 +13,7 @@
  */
 namespace Shop\Reports;
 use Shop\Models\OrderState;
+use Shop\FieldList;
 
 
 /**
@@ -139,14 +140,9 @@ class orderlist extends \Shop\Report
                 array(
                     array(
                         'text'  => $LANG_SHOP['item_total'] . '&nbsp;' .
-                        \Shop\Icon::getHTML(
-                            'question',
-                            'tooltip',
-                            array(
-                                'title' => $LANG_SHOP_HELP['orderlist_total']
-                            )
-                        ),
-                        //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                        FieldList::info(array(
+                            'title' => $LANG_SHOP_HELP['orderlist_total'],
+                        ) ),
                         'field' => 'sales_amt',
                         'sort'  => true,
                         'align' => 'right',
@@ -264,9 +260,11 @@ class orderlist extends \Shop\Report
                 $total_shipping = $A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
-            $filter = '<select class="uk-form-small" name="period">' .
-                $this->getPeriodSelection($this->period, false) .
-                '</select>';
+            //var_dump($_POST);die;
+            $filter = FieldList::select(array(
+                'name' => 'period',
+                'option_list' => $this->getPeriodSelection($this->period, false),
+            ) );
             $T->set_var(
                 'output',
                 ADMIN_list(

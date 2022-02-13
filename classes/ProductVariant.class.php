@@ -1458,14 +1458,11 @@ class ProductVariant
         $view = SESS_getVar('shop.pv_view');
         switch ($view) {
         case 'pv_bulk':
-            $display .= COM_createLink(
-                Icon::getHTML('arrow-left') . '&nbsp;Back to Product',
-                SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
-                array(
-                    'style' => 'float:left;margin-right:10px;',
-                    'class' => 'uk-button',
-                )
-            );
+            $display .= FieldList::buttonLink(array(
+                'text' => FieldList::left(),
+                'style' => 'primary',
+                'url' => SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $prod_id,
+            ) );
         case 'variants':
             $defsort_arr['field'] = 'sku';
             unset($header_arr[3]);
@@ -1476,14 +1473,18 @@ class ProductVariant
                 'chkall' => true,
                 'chkfield' => 'pv_id',
                 'chkname' => 'pv_bulk_id',
-                'chkactions' => '<button name="pv_del_bulk" ' .
-                    'style="vertical-align:text-bottom;" ' .
-                    'class="uk-button uk-button-mini uk-button-danger" ' .
-                    'onclick="return confirm(\'' . $LANG01[125] . '\');">' . $LANG_ADMIN['delete'] . '</button>'.
-                    '&nbsp;&nbsp;<button name="pv_edit_bulk" ' .
-                    'style="vertical-align:text-bottom;" ' .
-                    'class="uk-button uk-button-mini uk-button-primary">' .
-                    $LANG_SHOP['update'] . '</button>',
+                'chkactions' => FieldList::button(array(
+                    'name' => 'pv_del_bulk',
+                    'style' => 'danger',
+                    'size' => 'mini',
+                    'onclick' => "return confirm('{$LANG01[125]}');",
+                    'text' => $LANG_ADMIN['delete'],
+                ) ) . FieldList::button(array(
+                    'name' => 'pv_edit_bulk',
+                    'style' => 'primary',
+                    'size' => 'mini',
+                    'text' => $LANG_SHOP['update'],
+                ) ),
             );
             $text_arr = array(
                 'has_limit' => true,
@@ -1498,21 +1499,17 @@ class ProductVariant
             break;
         }
         if ($prod_id > 0) {
-            $display .= COM_createLink($LANG_SHOP['new_variant'],
-                SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
-                array(
-                    'style' => 'float:left;',
-                    'class' => 'uk-button uk-button-success',
-                )
-            );
+            $display .= FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['new_variant'],
+                'url' => SHOP_ADMIN_URL . '/index.php?pv_edit=0&item_id=' . $prod_id,
+                'style' => 'success',
+            ) );
             if ($view !== 'pv_bulk') {
-                $display .= COM_createLink('Bulk Admin',
-                    SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
-                    array(
-                        'style' => 'float:left;margin-left:10px;',
-                        'class' => 'uk-button uk-button-primary',
-                    )
-                );
+                $display .= FieldList::buttonLink(array(
+                    'text' => 'Bulk Admin',
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_bulk=0&item_id=' . $prod_id,
+                    'style' => 'primary',
+                ) );
             }
         }
         $sql = "SELECT pv.*, stk.qty_onhand, stk.qty_reserved, stk.qty_reorder
@@ -1576,16 +1573,13 @@ class ProductVariant
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array(
-                    'title' => $LANG_ADMIN['edit'],
-                ) ),
-                SHOP_ADMIN_URL . "/index.php?pv_edit=x&amp;pv_id={$A['pv_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pv_edit=x&amp;pv_id={$A['pv_id']}",
+            ) );
             break;
 
         case 'enabled':
-            $retval = Field::checkbox(array(
+            $retval = FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['pv_id']}",
                 'checked' => $fieldvalue == 1,
@@ -1595,20 +1589,18 @@ class ProductVariant
 
         case 'orderby':
             if ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up'),
-                    SHOP_ADMIN_URL . '/index.php?pv_move=up&id=' . $A['pv_id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_move=up&id=' . $A['pv_id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['max_orderby']) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down'),
-                    SHOP_ADMIN_URL . '/index.php?pv_move=down&id=' . $A['pv_id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pv_move=down&id=' . $A['pv_id'],
+                ) );
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space() . '&nbsp;';
             }
             break;
 
@@ -1622,15 +1614,14 @@ class ProductVariant
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;pv_id=' . $A['pv_id'] . '&item_id=' . $A['item_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pv_del=x&amp;pv_id=' . $A['pv_id'] . '&item_id=' . $A['item_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'price':
@@ -1649,7 +1640,7 @@ class ProductVariant
         case 'qty_reserved':
             if ($extra['prod_id'] > 0) {
                 // For a specific product, values may be saved with the product.
-                $retval = Field::text(array(
+                $retval = FieldList::text(array(
                     'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
                     'value' => (float)$fieldvalue,
                     'size' => 4,
@@ -1663,7 +1654,7 @@ class ProductVariant
 
         case 'def_pv_id':
             $sel = $A['pv_id'] == $extra['def_pv_id'] ? 'checked="checked"' : '';
-            $retval = Field::radio(array(
+            $retval = FieldList::radio(array(
                 'name' => 'def_pv_id',
                 'value' => $A['pv_id'],
                 'checked' => $A['pv_id'] == $extra['def_pv_id'],

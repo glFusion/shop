@@ -16,12 +16,12 @@ use Shop\Currency;
 use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;
 use Shop\Config;
-use Shop\Icon;
 use Shop\Field;
 use Shop\Template;
 use Shop\Tooltipster;
 use Shop\OrderItem;
 use Shop\Models\IPN;
+use Shop\FieldList;
 
 
 /**
@@ -645,13 +645,11 @@ class Plugin extends \Shop\Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?pi_edit=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pi_edit=0',
+            'style' => 'success',
+        ) );
 
         // Filter on category, brand and supplier
         $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
@@ -711,30 +709,27 @@ class Plugin extends \Shop\Product
 
         switch($fieldname) {
         case 'copy':
-            $retval .= COM_createLink(
-                Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::copy(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?return=products&pi_edit={$A['id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?return=products&pi_edit={$A['id']}",
+            ) );
             break;
         case 'prod_type':
             $retval = $LANG_SHOP['prod_types'][$fieldvalue];
             break;
         case 'taxable':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'taxable',
                 'id' => "togenabled{$A['id']}",
                 'checked' => $fieldvalue == 1,
                 'onclick' => "SHOP_toggle(this,'{$A['id']}','taxable','pi_product');",
                 'value' => 1,
             ) );
-//            $retval = $fieldvalue ? 'Yes' : 'No';
             break;
 
         case 'price':
@@ -745,15 +740,14 @@ class Plugin extends \Shop\Product
             }
             break;
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pi_del=' . $A['id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
         default:
             $retval = $fieldvalue;

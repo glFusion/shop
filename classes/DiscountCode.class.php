@@ -632,10 +632,11 @@ class DiscountCode
             'form_url' => SHOP_ADMIN_URL . '/index.php?discountcodes',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?editcode=x',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $display .= '<div>' . FieldList::buttonLInk(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editcode=x',
+            'style' => 'success',
+        ) ). '</div>';
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_codelist',
             array(__CLASS__,  'getAdminField'),
@@ -666,22 +667,20 @@ class DiscountCode
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $A['code_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $A['code_id'],
+            ) );
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?delcode&code_id=' . $A['code_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?delcode&code_id=' . $A['code_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'end':

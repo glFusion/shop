@@ -20,6 +20,7 @@ use Shop\Template;
 use Shop\OrderItem;
 use Shop\Order;
 use Shop\Models\IPN;
+use Shop\FieldList;
 
 
 /**
@@ -989,12 +990,11 @@ class Coupon extends \Shop\Product
             COM_getBlockTemplate('_admin_block', 'header')
         );
         $display .= '<h2>' . $LANG_SHOP['couponlist'] . '</h2>';
-        $display .= '<div>' . COM_createLink(
-
-            $LANG_SHOP['send_giftcards'],
-            SHOP_ADMIN_URL . '/index.php?sendcards_form=x',
-            array('class' => 'uk-button uk-button-primary')
-        ) .
+        $display .= '<div>' . FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['send_giftcards'],
+            'url' => SHOP_ADMIN_URL . '/index.php?sendcards_form=x',
+            'style' => 'primary',
+        ) ) .
         '</div>';
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_couponlist',
@@ -1072,25 +1072,18 @@ class Coupon extends \Shop\Product
                 }
             }
             if ($newval) {
-                $retval .= "<button class=\"uk-button uk-button-mini uk-button-{$btn_class}\"
-                    title=\"{$title}\" data-uk-tooltip
-                    onclick=\"if (confirm('{$conf_txt}')) {
+                $retval .= FieldList::button(array(
+                    'title' => $title,
+                    'text' => $btn_txt,
+                    'style' => $btn_class,
+                    'size' => 'mini',
+                    'attr' => array(
+                        'onclick' => "if (confirm('{$conf_txt}')) {
                         SHOP_voidItem('coupon','{$A['code']}','$newval',this);
-                        }return false;\">{$btn_txt}</button>";
+                        }return false;",
+                    ),
+                ) );
             }
-            /*if ($fieldvalue == 'valid') {
-                $icon = \Shop\Icon::getIcon('unlock') . ' uk-text-success';
-            } else {
-                $icon = \Shop\Icon::getIcon('lock') . ' uk-text-danger';
-            }
-            //$retval = '<i class="' . $icon . '"></i>';
-            $retval = $fieldvalue;
-            if ($fieldvalue == 'valid' && $A['balance'] > 0) {
-                $retval .= ' <i class="' . \Shop\Icon::getIcon('lock') . ' uk-text-danger tooltip' .
-                    '" title="Click to void""></i>';
-            }
-            //<i id="ev_ena_{id}" class="uk-icon uk-icon-toggle-on uk-text-success" value="1" data-uk-tooltip
-             */
             break;
 
         default:

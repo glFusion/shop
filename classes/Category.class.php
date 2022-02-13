@@ -1023,9 +1023,10 @@ class Category
                 'sort'  => false,
             ),
             array(
-                'text'  => $LANG_ADMIN['delete'] .
-                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP['del_cat_instr'] . '"></i>',
+                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
+                FieldList::info(array(
+                    'title' => $LANG_SHOP['del_cat_instr'],
+                ) ),
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
             ),
@@ -1037,14 +1038,11 @@ class Category
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?editcat=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editcat=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.categories',
@@ -1088,14 +1086,13 @@ class Category
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_SHOP['edit'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}",
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['cat_id']}",
                 'checked' => $fieldvalue == 1,
@@ -1117,15 +1114,14 @@ class Category
 
         case 'delete':
             if (!self::isUsed($A['cat_id'])) {
-                $retval .= COM_createLink(
-                    '<i class="uk-icon uk-icon-remove uk-text-danger"></i>',
-                    SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
-                    array(
+                $retval .= FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
+                    'attr' => array(
                         'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                 ));
             }
             break;
 

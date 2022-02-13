@@ -405,14 +405,11 @@ class ProductOptionGroup
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?pog_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pog_edit=0',
+            'style' => 'success',
+        ) );
         $text_arr = array(
             'form_url' => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
         );
@@ -457,41 +454,37 @@ class ProductOptionGroup
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;pog_id={$A['pog_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;pog_id={$A['pog_id']}",
+            ) );
             break;
 
         case 'pog_orderby':
             if ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up'),
-                    SHOP_ADMIN_URL . '/index.php?pog_move=up&id=' . $A['pog_id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pog_move=up&id=' . $A['pog_id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['pog_count'] * 10) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down'),
-                    SHOP_ADMIN_URL . '/index.php?pog_move=down&id=' . $A['pog_id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pog_move=down&id=' . $A['pog_id'],
+                ) );
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space();
             }
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pog_del=x&amp;og_id=' . $A['og_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pog_del=x&amp;og_id=' . $A['og_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         default:

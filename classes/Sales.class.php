@@ -448,7 +448,7 @@ class Sales
         // If there are no products defined, return a formatted error message
         // instead of the form.
         if (DB_count($_TABLES['shop.products']) == 0) {
-            return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
+            return SHOP_errorMessage($LANG_SHOP['todo_noproducts']);
         }
 
         if ($this->EndDate->toMySQL(true) == self::maxDateTime()) {
@@ -681,7 +681,7 @@ class Sales
         case 'delete':
             $retval = FieldList::delete(array(
                 'delete_url' => SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
-                array(
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',

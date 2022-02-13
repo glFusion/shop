@@ -16,6 +16,7 @@
 namespace Shop\Gateways\terms;
 use Shop\Models\OrderState;
 use Shop\Gateway as GW;
+use Shop\FieldList;
 
 
 /**
@@ -264,15 +265,12 @@ class Gateway extends \Shop\Gateway
         // webhook processing, if available.
         $url = $Order->getInfo('gw_pmt_url');
         if (!empty($url)) {
-            $link = COM_createLink(
-                '<button class="uk-button uk-button-success">' .
-                    $LANG_SHOP['buttons']['pay_now'] .
-                    '</button>',
-                $url,
-                array(
-                    'target' => '_blank',
-                )
-            );
+            $link = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['buttons']['pay_now'],
+                'style' => 'success',
+                'target' => '_blank',
+                'url' => $url,
+            ) );
         } else {
             $link = '';
         }

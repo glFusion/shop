@@ -1248,7 +1248,7 @@ class Gateway
             $fld_name = "{$name}[{$env}]";
             switch ($type) {
             case 'checkbox':
-                $field = Field::checkbox(array(
+                $field = FieldList::checkbox(array(
                     'name' => $fld_name,
                     'checked' => (isset($this->config[$env][$name]) &&
                         $this->config[$env][$name] == 1),
@@ -1263,7 +1263,7 @@ class Gateway
                         'selected' => $opt['selected'],
                     );
                 }
-                $field = Field::select(array(
+                $field = FieldList::select(array(
                     'name' => $fld_name,
                     'options' => $options,
                 ) );
@@ -1274,7 +1274,7 @@ class Gateway
                 } else {
                     $val = '';
                 }
-                $field = Field::text(array(
+                $field = FieldList::text(array(
                     'name' => $fld_name,
                     'value' => $val,
                 ) );
@@ -1709,7 +1709,7 @@ class Gateway
             $cls = 'danger';
             $retval .= '<br />' . sprintf($LANG_SHOP_HELP['gw_bb2_wl_needed'], $url['path']);
         }
-        return '<span class="uk-text-' . $cls . '">' . $retval . '</span>';
+        return SHOP_errorMessage($retval, $cls);
     }
 
 
@@ -1860,20 +1860,18 @@ class Gateway
         switch($fieldname) {
         case 'edit':
             if ($A['enabled'] !== 'na') {
-                $retval .= COM_createLink(
-                    Icon::getHTML('edit', 'tooltip', array('title'=> $LANG_ADMIN['edit'])),
-                    SHOP_ADMIN_URL . "/gateways.php?gwedit&amp;gw_id={$A['id']}"
-                );
+                $retval .= FieldList::edit(array(
+                    'url' => SHOP_ADMIN_URL . "/gateways.php?gwedit&amp;gw_id={$A['id']}",
+                ) );
             }
             break;
 
         case 'enabled':
             if ($fieldvalue == 'na') {
                 return COM_createLink(
-                    Icon::getHTML('add'),
+                    FieldList::add(),
                     SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
                     array(
-                        'data-uk-tooltip' => '',
                         'title' => $LANG_SHOP['ck_to_install'],
                     )
                 );
@@ -1886,11 +1884,10 @@ class Gateway
                 $enabled = 0;
                 $tip = $LANG_SHOP['ck_to_enable'];
             }
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['id']}",
                 'checked' => $fieldvalue == 1,
-                'data-uk-tooltip' => '',
                 'title' => $tip,
                 'onclick' => "SHOP_toggle(this,'{$A['id']}','{$fieldname}','gateway');",
             ) );
@@ -1902,14 +1899,9 @@ class Gateway
             if (isset($A['version'])) {
                 $retval = $fieldvalue;
                 if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
-                    $retval .= COM_createLink(
-                        '&nbsp;<i class="uk-icon uk-icon-arrow-up"></i>&nbsp;',
-                        Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
-                        array(
-                            'class' => 'tooltip uk-text-success',
-                            'title' => $LANG_SHOP['upgrade'],
-                        )
-                    );
+                    $retval .= FieldList::up(array(
+                        'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
+                    ) );
                     $retval .= $A['code_version'];
                 }
             }
@@ -1920,34 +1912,31 @@ class Gateway
             if ($fieldvalue == 999) {
                 return '';
             } elseif ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/gateways.php?gwmove=up&id=' . $A['id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/gateways.php?gwmove=up&id=' . $A['id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['gw_count'] * 10) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down', 'uk-icon-justify'),
-                    SHOP_ADMIN_URL . '/gateways.php?gwmove=down&id=' . $A['id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/gateways.php?gwmove=down&id=' . $A['id'],
+                )) ;
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space();
             }
             break;
 
         case 'delete':
             if ($A['enabled'] != 'na') {
-                $retval = COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
-                    array(
+                $retval = FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
+                    'attr' => array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                ) );
             }
             break;
 

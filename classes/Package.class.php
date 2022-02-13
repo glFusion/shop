@@ -574,11 +574,9 @@ class Package
             ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                Icon::getHTML(
-                    'question',
-                    'tooltip',
-                    array('title'=>$LANG_SHOP_HELP['hlp_delete'])
-                ),
+                FieldList::info(array(
+                    'title' => $LANG_SHOP_HELP['hlp_delete'],
+                ) ),
                 'field' => 'delete',
                 'align' => 'center',
             ),
@@ -604,11 +602,11 @@ class Package
         $options = array('chkdelete' => true, 'chkfield' => 'pkg_id');
         $filter = '';
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_package'],
-            SHOP_ADMIN_URL . '/packages.php?pkgedit=0',
-            array('class' => 'uk-button uk-button-success')
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_package'],
+            'url' => SHOP_ADMIN_URL . '/packages.php?pkgedit=0',
+            'style' => 'success',
+        ) );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_pkglist',
             array(__CLASS__,  'getAdminField'),
@@ -638,14 +636,13 @@ class Package
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/packages.php?pkgedit={$A['pkg_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/packages.php?pkgedit={$A['pkg_id']}",
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['pkg_id']}",
                 'checked' => $fieldvalue == 1,
@@ -654,15 +651,14 @@ class Package
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/packages.php?pkgdelete=' . $A['pkg_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/packages.php?pkgdelete=' . $A['pkg_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         default:

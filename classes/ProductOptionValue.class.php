@@ -480,13 +480,11 @@ class ProductOptionValue
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?pov_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pov_edit=0',
+            'style' => 'success',
+        ) );
         $def_filter = '';
         $query_arr = array(
             'table' => 'shop.prod_opt_values',
@@ -544,27 +542,22 @@ class ProductOptionValue
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array(
-                    'title' => $LANG_ADMIN['edit'],
-                ) ),
-                SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;opt_id={$A['pov_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;opt_id={$A['pov_id']}",
+            ) );
             break;
 
         case 'orderby':
-            $retval = COM_createLink(
-                Icon::getHTML('arrow-up'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['pov_id']
-            ) .
-            COM_createLink(
-                Icon::getHTML('arrow-down'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['pov_id']
-            );
+            $retval = FieldList::up(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['pov_id'],
+            ) ) .
+            FieldList::down(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['pov_id'],
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['pov_id']}",
                 'checked' => $fieldvalue == 1,
@@ -573,15 +566,14 @@ class ProductOptionValue
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_pov'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'opt_price':

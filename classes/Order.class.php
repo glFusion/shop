@@ -2076,8 +2076,7 @@ class Order
         } elseif ($this->_amt_paid > 0) {
             return $LANG_SHOP['partial'];
         } else {
-            return '<span class="uk-text-bold uk-text-danger">' .
-                $LANG_SHOP['pmt_pending'] . '</span>';
+            return $LANG_SHOP['pmt_pending'];
         }
     }
 
@@ -2695,7 +2694,7 @@ class Order
         global $LANG_SHOP;
 
         return COM_createLink(
-            '<i class="uk-icon-mini uk-icon-list"></i>',
+            FieldList::list(),
            SHOP_ADMIN_URL . '/report.php?pdfpl=' . $order_id,
             array(
                 'class' => 'tooltip',
@@ -2721,7 +2720,7 @@ class Order
         $url = SHOP_URL . '/order.php?mode=pdforder&id=' . $order_id;
         if ($token != '') $url .= '&token=' . $token;
         return COM_createLink(
-            '<i class="uk-icon-mini uk-icon-print"></i>',
+            FieldList::print(),
             COM_buildUrl($url),
             array(
                 'class' => 'tooltip',

@@ -1201,7 +1201,9 @@ class Shipper
             ),
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                    Icon::getHTML('question', 'tooltip', array('title'=>$LANG_SHOP_HELP['hlp_delete'])),
+                FieldList::info(array(
+                    'title' => $LANG_SHOP_HELP['hlp_delete'],
+                ) ),
                 'field' => 'delete',
                 'align' => 'center',
             ),
@@ -1227,11 +1229,11 @@ class Shipper
         $options = array('chkdelete' => true, 'chkfield' => 'id');
         $filter = '';
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_ship_method'],
-            SHOP_ADMIN_URL . '/index.php?editshipper=0',
-            array('class' => 'uk-button uk-button-success')
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_ship_method'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editshipper=0',
+            'style' => 'success',
+        ) );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_shiplist',
             array(__CLASS__,  'getAdminField'),
@@ -1259,10 +1261,9 @@ class Shipper
             $Sh = self::getByCode($code);
             if ($Sh !== NULL) {
                 if ($Sh->hasConfig()) {
-                    $config = COM_createLink(
-                        '<i class="uk-icon uk-icon-edit"></i>',
-                        SHOP_ADMIN_URL . '/index.php?carrier_config=' . $code
-                    );
+                    $config = FieldList::edit(array(
+                        'url' => SHOP_ADMIN_URL . '/index.php?carrier_config=' . $code,
+                    ) );
                 }
             }
             $data_arr[] = array(
@@ -1321,14 +1322,13 @@ class Shipper
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title'=>$LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?editshipper={$A['id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?editshipper={$A['id']}",
+            ) );
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['id']}",
                 'checked' => $fieldvalue == 1,
@@ -1338,15 +1338,14 @@ class Shipper
 
         case 'delete':
             if (!self::isUsed($A['id'])) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
-                    array(
+                $retval .= FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/index.php?delshipping=' . $A['id'],
+                    'attr' => array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                ) );
             }
             break;
 
@@ -1727,8 +1726,6 @@ class Shipper
     {
         global $LANG_SHOP_HELP;
 
- //       $retval = '<div class="uk-alert">' .
-//            $LANG_SHOP_HELP['hlp_carrier_modules']
         $T = new Template;
         $T->set_file('form', 'carrier_config.thtml');
 
@@ -1747,23 +1744,24 @@ class Shipper
             $F = new Template('fields');
             switch ($type) {
             case 'checkbox':
-                $F->set_file('field', 'checkbox.thtml');
+                $fld = FieldList::checkbox(array(
+                    'name' => $name,
+                    'checked' => $this->getConfig($name),
+                ) );
+                /*$F->set_file('field', 'checkbox.thtml');
                 $F->set_var(array(
                     'fld_name' => $name,
                     'checked' => $this->getConfig($name),
                 ) );
                 $F->parse('output', 'field');
-                $fld = $F->finish($F->get_var('output'));
+                $fld = $F->finish($F->get_var('output'));*/
                 break;
             case 'text':
             case 'password':
-                $F->set_file('field', 'text.thtml');
-                $F->set_var(array(
+                $fld = FieldList::text(array(
                     'name' => $name,
                     'value' => $this->getConfig($name),
                 ) );
-                $F->parse('output', 'field');
-                $fld = $F->finish($F->get_var('output'));
                 break;
             default:
                 continue 2;

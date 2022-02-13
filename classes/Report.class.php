@@ -598,7 +598,7 @@ class Report
         // Get the last day of the last month in the quarter
         $ld = cal_days_in_month(CAL_GREGORIAN, $qtrs[$qtr][1], $year);
         $d1 = new \Date(
-            sprintf('%d-%02d-01 ' . $t1, $year, $qtrs[$qtr][0]),
+            sprintf('%d-%02d-01 00:00:00', $year, $qtrs[$qtr][0]),
             $_CONF['timezone']
         );
         $d2 = new \Date(
@@ -1039,37 +1039,45 @@ class Report
         global $LANG_SHOP;
 
         // Print selected packing lists
-        $prt_pl = '<button type="submit" name="pdfpl" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_blank" ' .
-            'title="' . $LANG_SHOP['print_sel_pl'] . '" ' .
-            '><i name="pdfpl" class="uk-icon uk-icon-list"></i>' .
-            '</button>';
+        $prt_pl = FieldList::button(array(
+            'name' => 'pdfpl',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_blank',
+            'title' => $LANG_SHOP['print_sel_pl'],
+            'text' => FieldList::list(),
+        ) );
         // Print selected orders
-        $prt_ord = '<button type="submit" name="pdforder" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_blank" ' .
-            'title="' . $LANG_SHOP['print_sel_ord'] . '" ' .
-            '><i name="pdfpl" class="uk-icon uk-icon-print"></i>' .
-            '</button>';
+        $prt_ord = FieldList::button(array(
+            'name' => 'pdforder',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_blank',
+            'title' => $LANG_SHOP['print_sel_ord'],
+            'text' => FieldList::print(),
+        ) );
         $statuses = OrderStatus::getAll();
         $upd_opts = '<option value="">--' . $LANG_SHOP['update_status'] . '--</option>' . LB;
         foreach ($statuses as $name=>$obj) {
             $upd_opts .= '<option value="' . $name . '">' . OrderStatus::getDscp($name) . '</option>' . LB;
         }
-        $upd_stat = Field::select(array(
+        $upd_stat = FieldList::select(array(
             'name' => 'newstatus',
             'onchange' => "SHOP_enaBtn(bulk_stat_upd, '', this.value);",
             'option_list' => $upd_opts,
         ) );
-        $upd_stat .= '<button type="submit" name="updstatus" value="x" ' .
-            'id="bulk_stat_upd" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'formtarget="_self" ' .
-            'title="' . $LANG_SHOP['update_status'] . '" ' .
-            'onclick="return confirm(\'' . $LANG_SHOP['q_upd_stat_all'] . '\');"' .
-            '><i name="updstat" class="uk-icon uk-icon-check"></i>' .
-            '</button>';
+        $upd_stat .= FieldList::button(array(
+            'name' => 'updstatus',
+            'value' => 'x',
+            'size' => 'mini',
+            'type' => 'submit',
+            'formtarget' => '_self',
+            'title' => $LANG_SHOP['update_status'],
+            'onclick' => "return confirm('{$LANG_SHOP['q_upd_stat_all']}');",
+            'text' => FieldList::checkmark(array()),
+        ) );
 
         $options = array(
             'chkselect' => 'true',
@@ -1080,6 +1088,5 @@ class Report
         return $options;
     }
 
-}   // class Report
+}
 
-?>

@@ -2148,12 +2148,12 @@ class Product
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
-            $btn_class = 'uk-button uk-button-small uk-button-success';
+            $btn_class = 'success';
             if ($this->track_onhand) {
                 $this->getVariants();
                 if (count($this->Variants) > 0) {
                     if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
-                        $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                        $btn_class = 'disabled';
                     }
                 }
             }
@@ -3728,7 +3728,9 @@ class Product
             ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
+                FieldList::info(array(
+                    'title' => $LANG_SHOP_HELP['hlp_prod_delete'],
+                ) ),
                 'field' => 'delete',
                 'sort' => false,
                 'align' => 'center',
@@ -3744,13 +3746,11 @@ class Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_item'],
-            SHOP_ADMIN_URL . '/index.php?editproduct=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editproduct=x',
+            'style' => 'success',
+        ) );
 
         // Filter on category, brand and supplier
         $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
@@ -3783,7 +3783,7 @@ class Product
             'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
-        /* TODO: glFusion 2.0
+        /* TODO: glFusion 2.0*/
         $bulk_update = FieldList::button(array(
             'name' => 'prod_bulk_frm',
             'text' => $LANG_SHOP['update'],
@@ -3818,27 +3818,6 @@ class Product
                 'onclick' => "return confirm'" . $LANG_SHOP['q_reset_ratings'] . "');",
             ),
         ) );
-         */
-
-        // Update certain product properties in bulk
-        $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'title="' . $LANG_SHOP['bulk_update'] . '">' .
-            $LANG_SHOP['update'] .
-            '</button>&nbsp;' .
-            '<button type="submit" name="prod_bulk_del" value="x" ' .
-            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-            'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
-            'title="' . $LANG_SHOP['bulk_delete'] . '">' .
-            $LANG_SHOP['delete'] .
-            '</button>&nbsp;' .
-            '<button type="submit" name="prod_bulk_reset" value="x" ' .
-            'class="uk-button uk-button-mini uk-button-primary tooltip" ' .
-            'onclick="return confirm\'' . $LANG_SHOP['q_reset_ratings'] . '\');" ' .
-            'title="' . $LANG_SHOP['bulk_reset'] . '">' .
-            $LANG_SHOP['reset_ratings'] .
-            '</button>';
-
         $options = array(
             'chkdelete' => true,
             'chkall' => true,
@@ -3856,7 +3835,7 @@ class Product
                 1
         );
         $filter = $LANG_SHOP['category'] . ': ';
-        $filter .= Field::select(array(
+        $filter .= FieldList::select(array(
         //$filter .= FieldList::select(array(
             'name' => 'cat_id',
             'onchange' => "javascript: document.location.href='" .
@@ -3877,7 +3856,7 @@ class Product
             "is_brand=1"
         );
         $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ':';
-        $filter .= Field::select(array(
+        $filter .= FieldList::select(array(
             'name' => 'brand_id',
             'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . '/index.php?products' .
@@ -3897,7 +3876,7 @@ class Product
             "is_supplier=1"
         );
         $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': ';
-        $filter .= Field::select(array(
+        $filter .= FieldList::select(array(
             'name' => 'supplier_id',
             'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . '/index.php?products' .
@@ -3940,37 +3919,34 @@ class Product
 
         switch($fieldname) {
         case 'copy':
-            $retval .= COM_createLink(
-                Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::copy(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?return=products&editproduct=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?return=products&editproduct=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'delete':
             if (!\Shop\Product::isUsed($A['id'])) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
-                    array(
+                $retval .= FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
+                    'attr' => array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                ) );
             } else {
                 $retval = '';
             }
             break;
 
         case 'enabled':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togenabled{$A['id']}",
                 'checked' => $fieldvalue == 1,
@@ -3979,7 +3955,7 @@ class Product
             ) );
             break;
 
-        case 'availability':
+        /*case 'availability':
             if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
                 $icon = 'avail-expired';
                 $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
@@ -3994,10 +3970,10 @@ class Product
                 }
             }
             $retval = Icon::getHTML($icon, 'tooltip', array('title' => $caption));
-            break;
+            break;*/
 
         case 'featured':
-            $retval = Field::checkbox(array(
+            $retval = FieldList::checkbox(array(
                 'name' => 'ena_check',
                 'id' => "togfeatured{$A['id']}",
                 'checked' => $fieldvalue == 1,
