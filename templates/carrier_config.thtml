@@ -4,7 +4,7 @@
 	<input type="hidden" name="carrier_code" value="{carrier_code}" />
 <!-- BEGIN ItemRow -->
 	<div class="uk-form-row uk-margin">
-		<label class="uk-form-label" for="f_{field_name}">{param_name}:</label>
+		<label class="uk-form-label" for="f_{name}">{param_name}:</label>
 		<div class="uk-form-controls uk-form-controls-text">
 			{input_field}
 		</div>
