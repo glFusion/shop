@@ -12,7 +12,6 @@
  * @filesource
  */
 namespace Shop;
-//use glFusion\FieldList;
 
 
 /**
@@ -123,7 +122,7 @@ class OrderStatus extends Workflow
     {
         global $LANG_SHOP;
 
-        /* TODO - glFusion 2.0
+        /* TODO - glFusion 2.0 */
         $options = array();
         foreach (self::getAll() as $key => $data) {
             if (!$data->enabled) continue;
@@ -137,7 +136,7 @@ class OrderStatus extends Workflow
             'id' => 'statSelect_' . $order_id,
             'onchange' => "SHOP_ordShowStatSubmit('{$order_id}', SHOP_getStatus('{$order_id}'), this.value);",
             'options' => $options,
-        ) );*/
+        ) );
 
         $T = new Template;
         $T->set_file('ordstat', 'orderstatus.thtml');
@@ -145,7 +144,7 @@ class OrderStatus extends Workflow
             'order_id'  => $order_id,
             'oldvalue'  => $selected,
             'showlog'   => $showlog == 1 ? 1 : 0,
-            //'status_select' => $status_selection,
+            'status_select' => $status_selection,
         ) );
         $T->set_block('ordstat', 'StatusSelect', 'Sel');
         foreach (self::getAll() as $key => $data) {
@@ -301,7 +300,7 @@ class OrderStatus extends Workflow
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            $retval .= Field::checkbox(array(
+            $retval .= FieldList::checkbox(array(
                 'name' => "{$fieldname}_check",
                 'id' => "tog{$fieldname}{$A['id']}",
                 'checked' => $fieldvalue == 1,
