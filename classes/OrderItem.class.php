@@ -50,11 +50,11 @@ class OrderItem
      * @var array */
     private $options_text = array();
 
-    /** Base unit price of item.
+    /** Base unit price of item, specified in the catalog
      * @var float */
     private $base_price = 0;
 
-    /** Final price of item after sale and options.
+    /** Item sale price, if on sale.
      * @var float */
     private $price = 0;
 
@@ -70,7 +70,8 @@ class OrderItem
      * @var float */
     private $handling = 0;
 
-    /** Net unit price of the line item.
+    /** Final net unit price of the line item.
+     * Includes options, sales, discounts.
      * @var float */
     private $net_price = 0;
 
@@ -190,7 +191,7 @@ class OrderItem
         }
         if ($OI->getID() == 0) {
             // New item, add options from the supplied arguments.
-            $OI->setPrice($OI->getBasePrice());   // default if no variant
+            $OI->setPrice($OI->getBasePrice());
             foreach ($OI->getVariant()->getOptions() as $POV) {
                 $OIO = new OrderItemOption;
                 $OIO->fromProductOptionValue($POV);
@@ -218,6 +219,8 @@ class OrderItem
                     }
                 }
             }
+            // Calculate if there's a sale price applicable.
+            $OI->setPrice($OI->getProduct()->getSalePrice($OI->getPrice()));
         } else {
             // Existing orderitem record, get the existing options
             $OI->setOptions(OrderItemOption::getOptionsForItem($OI));
@@ -1229,6 +1232,7 @@ class OrderItem
         if (!Product::isPluginItem($this->product_id)) {
             //$retval = $this->Product->getDiscountedPrice($this->quantity, $this->getOptionsPrice());
             $retval = $this->Product->setVariant($this->getVariant())->getPrice(array(), $this->quantity);
+            $retval = $this->Product->getSalePrice($retval);
         } else {
             $retval = $this->price;
         }

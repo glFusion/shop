@@ -2169,7 +2169,8 @@ class Product
                 'item_number'   => $this->id,
                 'frm_id'        => $frm_id,     // to separate multiple blocks
                 'short_description' => htmlspecialchars($this->short_description),
-                'amount'        => $this->getPrice(),
+                'amount'        => $this->getSalePrice(),
+                'base_price'    => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
                 //'form_url'  => $this->hasOptions() ? '' : 'true',
                 //'form_url'  => false,
@@ -2448,7 +2449,7 @@ class Product
      */
     public function getDisplayPrice($price = NULL)
     {
-        if ($price === NULL) $price = $this->getPrice();
+        if ($price === NULL) $price = $this->getSalePrice();
         return Currency::getInstance()->Format($price);
     }
 
@@ -2709,7 +2710,9 @@ class Product
         if ($price === NULL) {
             $price = $this->getBasePrice();
         }
-        return $this->getSale()->calcPrice($price);
+        return Currency::getInstance()->RoundVal(
+            $this->getSale()->calcPrice($price)
+        );
     }
 
 
