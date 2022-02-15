@@ -284,6 +284,7 @@ class Upgrade
                 'classes/Tax/taxcloud.class.php',
                 'classes/Tax/taxjar.class.php',
                 'classes/Tax/avatax.class.php',
+                'upgrade.inc.php',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
@@ -299,8 +300,10 @@ class Upgrade
 
         foreach ($paths as $path=>$files) {
             foreach ($files as $file) {
-                SHOP_log("removing $path/$file");
-                self::delPath("$path/$file");
+                if (file_exists("$path/$file")) {
+                    SHOP_log("removing $path/$file");
+                    self::delPath("$path/$file");
+                }
             }
         }
     }
