@@ -959,7 +959,6 @@ class IPN
             ->setBuyerEmail($this->payer_email)
             ->setLogUser($this->GW->getDscp());
         $this->Order->Save();
-        echo $this->Order->getOrderID() . "<br />\n";
         return 0;
     }
 

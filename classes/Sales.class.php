@@ -424,12 +424,13 @@ class Sales
      */
     public static function Clean()
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF;
 
         if (Config::get('purge_sale_prices') > -1) {
             $days = (int)Config::get('purge_sale_prices');
+            $now = $_CONF['_now']->toMySQL(true);
             $sql = "DELETE FROM {$_TABLES['shop.sales']}
-                    WHERE end < DATE_SUB(INTERVAL $days DAY)";
+                    WHERE end < DATE_SUB('$now', INTERVAL $days DAY)";
             DB_query($sql);
         }
     }

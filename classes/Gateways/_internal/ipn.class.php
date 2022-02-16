@@ -115,7 +115,7 @@ class ipn extends \Shop\IPN
         if (!$this->Verify()) {
             $logId = $this->Log(false);
             $this->handleFailure(
-                SHOP_FAILURE_VERIFY,
+                self::FAILURE_VERIFY,
                 "($logId) Verification failed"
             );
             return false;
