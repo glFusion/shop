@@ -104,6 +104,10 @@ class Order
      * @var string */
     protected $order_id = '';
 
+    /** Buyer's user ID.
+     * @var integer */
+    protected $uid = 0;
+
     /** Order sequence.
      * This is incremented when an order moves out of "pending" status
      * and becomes a real order.
@@ -119,6 +123,14 @@ class Order
     /** Last modified timestamp.
      * @var string */
     protected $last_mod = '';
+
+    /** Record ID of the billing address.
+     * @var integer */
+    protected $billto_id = 0;
+
+    /** Record ID of the shipping address.
+     * @var integer */
+    protected $shipto_id = 0;
 
     /** Billing address object.
      * @var object */
@@ -159,6 +171,10 @@ class Order
     /** Special instructions entered by the buyer.
      * @var string */
     private $instructions = '';
+
+    /** Token used to allow anonymous viewing of the order.
+     * @var string */
+    protected $token = '';
 
     /** Order status string, pending, processing, shipped, etc.
      * @var string */
