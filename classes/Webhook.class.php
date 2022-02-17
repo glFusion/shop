@@ -560,7 +560,7 @@ class Webhook
             $this->Order->handlePurchase($this->IPN);
         } else {
             SHOP_log('Cannot process order ' . $this->getOrderID(), SHOP_LOG_ERROR);
-            SHOP_log('canprocess? ' . var_export($GW->okToProcess($this->Order),true), SHOP_LOG_DEBUG);
+            SHOP_log('canprocess? ' . var_export($this->GW->okToProcess($this->Order),true), SHOP_LOG_DEBUG);
             SHOP_log('status ' . $this->Order->getStatus(), SHOP_LOG_DEBUG);
             return false;
         }
