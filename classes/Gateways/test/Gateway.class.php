@@ -67,7 +67,7 @@ class Gateway extends \Shop\Gateway
         );
 
         parent::__construct($A);
-        $this->gw_url = SHOP_URL . '/ipn/ipn.php?_gw=_internal';
+        $this->gw_url = SHOP_URL . '/hooks/webhook.php?_gw=test';
     }
 
 
@@ -141,7 +141,7 @@ class Gateway extends \Shop\Gateway
             $vars['ipn_type'] = 'buy_now';  // force type for IPN processor.
             $vars['txn_id'] = uniqid();     // Bogus transaction ID.
             $vars['quantity'] = 1;
-            $vars['notify_url'] = $this->ipn_url;
+            $vars['notify_url'] = $this->getIpnUrl();
 
             if ($P->getWeight() > 0) {
                 $vars['weight'] = $P->getWeight();
@@ -208,7 +208,7 @@ class Gateway extends \Shop\Gateway
         $T = new Template('buttons/generic');
         $T->set_file('btn', 'btn_' . $btn_type . '.thtml');
         $T->set_var(array(
-            'action_url'    => $this->getActionUrl(),
+            'action_url'    => $this->getIpnUrl(),
             'btn_text'      => $btn_text,
             'gateway_vars'  => $gateway_vars,
             'gw_name'       => $this->gw_name,
@@ -244,6 +244,20 @@ class Gateway extends \Shop\Gateway
         return $this->isEnabled() && SEC_inGroup($this->grp_access);
     }
 
-}
 
-?>
+    /**
+     * Get the form action URL.
+     * This function may be overridden by the child class.
+     * The default is to simply return the configured URL
+     *
+     * This is public so that if it is not declared by the child class,
+     * it can be called during IPN processing.
+     *
+     * @return  string      URL to payment processor
+     */
+    public function getActionUrl()
+    {
+        return $this->getWebhookUrl();
+    }
+
+}
