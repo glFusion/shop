@@ -290,7 +290,7 @@ case 'saveshipto':
     $Address = new Shop\Address($addr);
     $status = $Address->isValid($addr);
     if ($status != '') {
-        $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
+        $content .= SHOP_errorMessage($status, 'danger', $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
