@@ -124,7 +124,7 @@ case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
     $status = \Shop\Customer::isValidAddress($_POST);
     if ($status != '') {
-        $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
+        $content .= SHOP_errorMessage($status, 'danger', $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
