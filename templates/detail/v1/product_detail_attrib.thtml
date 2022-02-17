@@ -108,8 +108,7 @@
 			{buy_now_button}<br />
 <!-- END BtnBlock -->
 		</div>
-		<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-		</div>
+		<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="display:none;"></div>
 		<div id="shopProductDesc" class="shopProductDesc v1">
 			{description}
 		</div>
@@ -123,7 +122,7 @@
 {!endif}
 		<ul id="productThumbWrapper" class="shopProductThumbWrapper v1">
 <!-- BEGIN Thumbnail -->
-			<li class="shopProductThumb v1">
+			<li class="shopProductThumb v1 uk-lightbox">
  {!if thumb_url}
 				<a href="{img_url}" data-uk-lightbox="{group:'product'}">
 					<img src="{thumb_url}"

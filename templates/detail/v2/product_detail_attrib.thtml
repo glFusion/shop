@@ -38,7 +38,7 @@
 {!endif}
 		<ul id="productThumbWrapper" class="shopProductThumbWrapper v2">
 <!-- BEGIN Thumbnail -->
-			<li class="shopProductThumb v2">
+			<li class="shopProductThumb v2" uk-lightbox>
 				<a href="{img_url}" data-uk-lightbox="{group:'product'}">
 					<img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}"
 						title="{$LANG_SHOP[click_to_enlarge]}"
@@ -135,8 +135,7 @@
 <!-- END SpecialFields -->
 
 				{add_cart_button}
-				<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-				</div>
+				<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="display:none;"></div>
 			</div>
 		</form>
 <!-- BEGIN BtnBlock -->
