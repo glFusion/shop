@@ -1038,6 +1038,7 @@ class ProductVariant
                 (pv_id, pov_id) VALUES $sql_vals";
             DB_query($sql);
         }
+        self::reOrder($item_id);
         Cache::clear(self::TAG);
     }
 
@@ -1109,13 +1110,13 @@ class ProductVariant
 
         // Create two standardized arrays to detect new and removed option vals.
         // Only if submitted from a form, where the groups variable is present.
-        if (isset($A['groups'])) {
+        if (isset($A['pv_groups'])) {
             $old_opts = array();
             $new_opts = array();
             foreach ($this->getOptions() as $Opt) {
                 $old_opts[] = $Opt->getID();
             }
-            foreach ($A['groups'] as $opt) {
+            foreach ($A['pv_groups'] as $opt) {
                 if ($opt > 0) {
                     $new_opts[] = (int)$opt;
                 }
@@ -1284,13 +1285,13 @@ class ProductVariant
     /**
      * Reorder all attribute items with the same product ID and attribute name.
      */
-    private function reOrder()
+    public static function reOrder(int $item_id) : void
     {
         global $_TABLES;
 
         $sql = "SELECT pv_id, orderby
                 FROM {$_TABLES['shop.product_variants']}
-                WHERE item_id= '{$this->item_id}'
+                WHERE item_id= '{$item_id}'
                 ORDER BY orderby ASC;";
         $result = DB_query($sql);
 
@@ -1340,7 +1341,7 @@ class ProductVariant
                     WHERE pv_id = '{$this->pv_id}'";
             //echo $sql;die;
             DB_query($sql);
-            $this->reOrder();
+            self::reOrder($this->item_id);
         }
     }
 
