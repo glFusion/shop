@@ -166,7 +166,6 @@ div.shopDetailAttrib.v2 {
     clear: both;
     margin-bottom: 1em;
     margin-top: 2em;
-    font-size: 1.2em;
 }
 div.shopProductDesc.v2 {
     margin-bottom: 2em;
@@ -1121,3 +1120,4 @@ div.cart-item {
 .shopOrderNoteIcon {
 	cursor: pointer;
 }
+
