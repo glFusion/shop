@@ -2035,8 +2035,8 @@ class Gateway
      */
     public function getWebhookUrl($args=array())
     {
-        static $url = NULL;
-        if ($url === NULL) {
+        static $urls = array();
+        if (!array_key_exists($this->gw_name, $urls)) {
             $url = Config::get('ipn_url');
             if (empty($url)) {
                 // Use the default IPN url
@@ -2046,13 +2046,14 @@ class Gateway
                 $url .= '/';
             }
             $url .= 'webhook.php?_gw=' . $this->gw_name;
+            $urls[$this->gw_name] = $url;
         }
         if (!empty($args)) {
             $params = '&' . http_build_query($args);
         } else {
             $params = '';
         }
-        return $url . $params;
+        return $urls[$this->gw_name] . $params;
      }
 
 
