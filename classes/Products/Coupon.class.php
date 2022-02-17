@@ -21,6 +21,9 @@ use Shop\OrderItem;
 use Shop\Order;
 use Shop\Models\IPN;
 use Shop\FieldList;
+use Shop\Company;
+use Shop\Currency;
+use Shop\Cache;
 
 
 /**
@@ -252,7 +255,7 @@ class Coupon extends \Shop\Product
                 3,
                 sprintf(
                     $LANG_SHOP['coupon_apply_msg3'],
-                    \Shop\Company::getInstance()->getEmail()
+                    Company::getInstance()->getEmail()
                 )
             );
         } else {
@@ -271,7 +274,7 @@ class Coupon extends \Shop\Product
                     redeemer = $uid,
                     redeemed = UNIX_TIMESTAMP()
                     WHERE code = '$code'");
-            \Shop\Cache::clear('coupons');
+            Cache::clear('coupons');
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
                 SHOP_error("A DB error occurred marking coupon $code as redeemed", SHOP_LOG_ERROR);
@@ -282,7 +285,7 @@ class Coupon extends \Shop\Product
             0,
             sprintf(
                 $LANG_SHOP['coupon_apply_msg0'],
-                \Shop\Currency::getInstance()->Format($A['amount'])
+                Currency::getInstance()->Format($A['amount'])
             )
         );
     }
@@ -360,7 +363,7 @@ class Coupon extends \Shop\Product
                 ->Save();
         }*/
 
-        \Shop\Cache::clear('coupons_' . $uid);
+        Cache::clear('coupons_' . $uid);
         return $retval;     // return array of applied coupons and amounts
     }
 
@@ -469,8 +472,8 @@ class Coupon extends \Shop\Product
                 $recip_name,
             ),
             'from' => array(
-                'email' => \Shop\Company::getInstance()->getEmail(),
-                'name'  => \Shop\Company::getInstance()->getCompany(),
+                'email' => Company::getInstance()->getEmail(),
+                'name'  => Company::getInstance()->getCompany(),
             ),
             'htmlmessage' => $msg_text,
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
@@ -525,7 +528,7 @@ class Coupon extends \Shop\Product
         if ($price == 0) {
             return $LANG_SHOP['see_details'];
         } else {
-            return \Shop\Currency::getInstance()->Format($price);
+            return Currency::getInstance()->Format($price);
         }
     }
 
@@ -551,7 +554,7 @@ class Coupon extends \Shop\Product
         $cache_key = 'coupons_' . $uid . '_' . $all;
         $updatecache = false;       // indicator that cache must be updated
         $today = date('Y-m-d');
-        /*$coupons = \Shop\Cache::get($cache_key);
+        /*$coupons = Cache::get($cache_key);
         if ($coupons === NULL) {*/
             // cache not found, read all non-expired coupons
             $coupons = array();
@@ -580,7 +583,7 @@ class Coupon extends \Shop\Product
         // If coupons were read from the DB, or any cached ones expired,
         // update the cache
         if ($updatecache) {
-            \Shop\Cache::set(
+            Cache::set(
                 $cache_key,
                 $coupons,
                 array('coupons', 'coupons_' . $uid),
@@ -775,6 +778,12 @@ class Coupon extends \Shop\Product
     {
         global $_TABLES, $_USER;;
 
+        // Check that the requested status is valid
+        if ($newstatus != self::VOID && $newstatus != self::VALID) {
+            SHOP_log("Invalid status sent to Coupon::Void(): $newval");
+            return false;
+        }
+
         SHOP_log("Setting $code as $newstatus", SHOP_LOG_DEBUG);
         $code = DB_escapeString($code);
         $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
@@ -842,7 +851,7 @@ class Coupon extends \Shop\Product
         }
         if (DB_numRows($res) > 0) {
             // If there were any updates, clear the coupon cache
-            \Shop\Cache::clear('coupons');
+            Cache::clear('coupons');
         }
     }
 
@@ -981,8 +990,37 @@ class Coupon extends \Shop\Product
         );
 
         $text_arr = array(
-            'has_extras' => false,
+            'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/index.php?coupons=x',
+        );
+
+        $bulk_update = FieldList::button(array(
+            'name' => 'coup_bulk_void',
+            'text' => $LANG_SHOP['void'],
+            'value' => self::VOID,
+            'size' => 'mini',
+            'style' => 'danger',
+            'attr' => array(
+                'onclick' => "return confirm('" . $LANG_SHOP['q_confirm_void'] . "');",
+            ),
+        ) );
+        $bulk_update .= FieldList::button(array(
+            'name' => 'coup_bulk_unvoid',
+            'text' => $LANG_SHOP['valid'],
+            'value' => self::VALID,
+            'size' => 'mini',
+            'style' => 'success',
+            'attr' => array(
+                'onclick' => "return confirm('" . $LANG_SHOP['q_confirm_unvoid'] . "');",
+            ),
+        ) );
+
+        $options = array(
+            'chkdelete' => true,
+            'chkall' => true,
+            'chkfield' => 'code',
+            'chkname' => 'coupon_code',
+            'chkactions' => $bulk_update,
         );
 
         $display = COM_startBlock(
@@ -1000,7 +1038,7 @@ class Coupon extends \Shop\Product
             $_SHOP_CONF['pi_name'] . '_couponlist',
             array(__CLASS__, 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            '', '', $options, ''
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -1025,7 +1063,7 @@ class Coupon extends \Shop\Product
         static $Cur = NULL;
         static $Dt = NULL;
         if ($Dt === NULL) $Dt = new \Date('now', $_CONF['timezone']);
-        if ($Cur === NULL) $Cur = \Shop\Currency::getInstance();
+        if ($Cur === NULL) $Cur = Currency::getInstance();
 
         switch($fieldname) {
         case 'buyer':

@@ -56,6 +56,7 @@ $expected = array(
     'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del', 'prod_bulk_reset',
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
+    'coup_bulk_void', 'coup_bulk_unvoid',
     // Views to display
     'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other',
@@ -86,6 +87,7 @@ foreach($expected as $provided) {
         break;
     }
 }
+
 $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
@@ -665,6 +667,17 @@ case 'delpayment':
     echo "payments deprecated in index.php";die;
     Shop\Payment::delete($actionval);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_GET['ord_pmts']);
+    break;
+
+case 'coup_bulk_void':
+case 'coup_bulk_unvoid':
+    $newval = $actionval;   // should be "void" or "valid"
+    if (isset($_POST['coupon_code']) && is_array($_POST['coupon_code'])) {
+        foreach ($_POST['coupon_code'] as $item_id) {
+            $status = Shop\Products\Coupon::Void($item_id, $newval);
+        }
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?coupons');
     break;
 
 default:
