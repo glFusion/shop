@@ -591,9 +591,12 @@ class Gateway
                     services = '" . DB_escapeString($services) . "',
                     version = '" . DB_escapeString($this->getCodeVersion()) . "',
                     grp_access = {$this->grp_access}";
-            DB_query($sql);
-            Cache::clear('gateways');
-            return DB_error() ? false : true;
+            DB_query($sql, 1);
+            if (!DB_error()) {
+                self::ReOrder();
+                Cache::clear('gateways');
+                return true;
+            }
         }
         return false;
     }
