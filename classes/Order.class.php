@@ -3609,7 +3609,7 @@ class Order
      */
     public function getBalanceDue()
     {
-        $due = $this->order_total - $this->_amt_paid - $this->getGC();
+        $due = $this->order_total - $this->_amt_paid;
         $due = $this->getCurrency()->formatValue($due);
         return $due;
     }

@@ -16,6 +16,7 @@ Release TBD
   * Change `purge_sale_prices` from yes/no to a number of days.
   * Fix setting sale prices in orderitem table.
   * Add bulk void/unvoid buttons for coupons.
+  * Fix duplicate gift card payment on invoice view calculation.
 
 ## v1.4.0
 Release 2021-09-25

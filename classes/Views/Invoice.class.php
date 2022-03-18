@@ -341,8 +341,9 @@ class Invoice extends OrderBaseView
             //'stat_update'   => OrderStatus::Selection($this->order_id, 1, $this->Order->getStatus()),
             'amt_paid_fmt' => $this->Currency->Format($this->Order->getAmountPaid()),
         ) );
-        if ($this->Order->getAmountPaid() > 0) {
-            $paid = $this->Order->getAmountPaid();
+
+        $paid = $this->Order->getAmountPaid();
+        if ($paid > 0) {
             $this->TPL->set_var(array(
                 'amt_paid_num' => $this->Currency->formatValue($paid),
                 'due_amount' => $this->Currency->formatValue($this->Order->getBalanceDue()),

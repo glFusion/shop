@@ -538,7 +538,8 @@ class OrderBaseView
             'cart_tax'      => $this->Order->getTax() > 0 ? $this->Currency->FormatValue($this->Order->getTax()) : 0,
         ) );
         $this->TPL->set_var(array(
-            'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
+            // commented for issue #66
+            //'apply_gc'      => $by_gc > 0 ? $this->Currency->FormatValue($by_gc) : 0,
             'net_total'     => $this->Currency->Format($total - $by_gc),
             'discount_code' => $this->Order->getDiscountCode(),
             'dc_row_vis'    => $this->Order->getDiscountCode(),
