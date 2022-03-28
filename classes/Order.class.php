@@ -1222,13 +1222,14 @@ class Order
      * @param   boolean $toadmin    True to include admin email, default=true
      * @return  object  $this
      */
-    public function Notify($status='', $gw_msg='', $force=false, $toadmin=true)
+    public function Notify($status='', $gw_msg='', $force=false, $toadmin=true) : self
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
         // Check if any notification is to be sent for this status update.
-        $notify_buyer = OrderStatus::getInstance($status)->notifyBuyer();
-        $notify_admin = OrderStatus::getInstance($status)->notifyAdmin() && $toadmin;
+        $orderstatus = OrderStatus::getInstance($status);
+        $notify_buyer = $orderstatus->notifyBuyer();
+        $notify_admin = $orderstatus->notifyAdmin() && $toadmin;
         if (!$force && !$notify_buyer && !$notify_admin) {
             return $this;
         }
