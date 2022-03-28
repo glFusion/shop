@@ -55,7 +55,7 @@
 			<form class="uk-form uk-form-stacked" method="post" id="{frm_id}" action="javascript:void()">
 				<input type="hidden" name="item_number" value="{id}" />
 				<input type="hidden" name="has_options" value="{have_attributes}" />
-				<div class="shopDetailPrice v2">
+				<div id="pricedisplay" class="shopDetailPrice v2" style="display:{price_vis}">
 {!if on_sale}
 					<span class="shopPrice was">{price_prefix}</span>
 					<span class="shopPrice was" id="price_was">{orig_price}</span>
@@ -69,11 +69,11 @@
 						<span class="shopPrice sale">{price_postfix}</span>
 					</div>
 {!else}
-				<div>
-					<span class="shopPrice normal">{price_prefix}</span>
-					<span class="shopPrice normal" id="price">{init_price}</span>
-					<span class="shopPrice normal">{price_postfix}</span>
-				</div>
+					<div>
+						<span class="shopPrice normal">{price_prefix}</span>
+						<span class="shopPrice normal" id="price">{init_price}</span>
+						<span class="shopPrice normal">{price_postfix}</span>
+					</div>
 {!endif}
 <!-- BEGIN qtyDiscTxt -->
 				<div class="shopQtyDisc">{qty_disc}</div>

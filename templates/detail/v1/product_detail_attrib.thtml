@@ -8,8 +8,8 @@
 	</a>
 </div>
 {!endif}
-+{!if aff_link}
-<div class="floatright">
+{!if aff_link}
+<div class="floatright" style="margin-bottom:10px;">
 	<a class="uk-button uk-button-mini cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">{$LANG_SHOP['my_aff_link']}
 	</a>
 	<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
@@ -30,7 +30,7 @@
 			<h1>{short_description}</h1>
 			{name}
 			<p />
-			<div class="shopDetailPrice v1">
+			<div id="pricedisplay" class="shopDetailPrice v1" style="display:{price_vis}">
 				<b>{$LANG_SHOP['price']}:&nbsp;&nbsp;</b>
 {!if on_sale}
 				<span class="shopPrice was">{price_prefix}</span><span class="shopPrice was" id="price_was">{orig_price}</span>

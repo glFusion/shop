@@ -2149,11 +2149,13 @@ class Product
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
             $btn_class = 'success';
+            $price_vis = '';
             if ($this->track_onhand) {
                 $this->getVariants();
                 if (count($this->Variants) > 0) {
                     if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
                         $btn_class = 'disabled';
+                        $price_vis = 'hidden';
                     }
                 }
             }
@@ -2181,6 +2183,7 @@ class Product
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
                 'btn_cls'   => $btn_class,
+                'price_vis' => $price_vis,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -3786,7 +3789,6 @@ class Product
             'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
-        /* TODO: glFusion 2.0*/
         $bulk_update = FieldList::button(array(
             'name' => 'prod_bulk_frm',
             'text' => $LANG_SHOP['update'],

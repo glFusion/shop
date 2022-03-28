@@ -1,6 +1,6 @@
 # Shop plugin for glFusion - Changelog
 
-## v1.4.1
+## v1.5.0
 Release TBD
   * Save shipping units with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use fixed only if present.
@@ -17,6 +17,7 @@ Release TBD
   * Fix setting sale prices in orderitem table.
   * Add bulk void/unvoid buttons for coupons.
   * Fix duplicate gift card payment on invoice view calculation.
+  * Hide price and disable buttons if a product selection is not available.
 
 ## v1.4.0
 Release 2021-09-25
