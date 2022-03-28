@@ -89,6 +89,7 @@
 								ondblclick="moveSelectedOptions(this.form['catAvailable'],this.form['catSelected']);">
 							{available_cats}
 						</select>
+					</td>
 					<td class="aligncenter">
 						<button class="uk-button uk-button-mini uk-button-primary" name="right" type="submit"
 							onclick="moveSelectedOptions(this.form['catAvailable'],this.form['catSelected'],false);return false;">{$LANG_SHOP['include']}&nbsp;&gt;&gt;</button>
