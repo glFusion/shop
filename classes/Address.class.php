@@ -763,12 +763,13 @@ class Address
 
         if (!isset($parts[$this->name])) {
             $parts[$this->name] = array();
-            $status = LGLIB_invokeService(
-                'lglib', 'parseName',
+            $status = PLG_callFunctionForOnePlugin(
+                'service_parseName_lglib',
                 array(
-                    'name' => $this->name,
-                ),
-                $parts[$this->name], $svc_msg
+                    1 => array('name' => $this->name),
+                    2 => &$parts[$this->name],
+                    3 => &$svc_msg,
+                )
             );
         }
         if ($req == NULL) {

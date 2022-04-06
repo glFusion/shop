@@ -24,8 +24,8 @@ trait PDF
 
     public function initPDF()
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             if (class_exists('\\Spipu\\Html2Pdf\\Html2Pdf')) {
                 $this->html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             } else {
@@ -37,9 +37,9 @@ trait PDF
             SHOP_log($e);
             return false;
         }
-
         return true;
     }
+
 
     public function writePDF($content)
     {

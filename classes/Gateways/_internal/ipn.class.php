@@ -123,9 +123,9 @@ class ipn extends \Shop\IPN
 
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
-        $tax = LGLIB_getVar($this->ipn_data, 'tax', 'float');
-        $shipping = LGLIB_getVar($this->ipn_data, 'shipping', 'float');
-        $handling = LGLIB_getVar($this->ipn_data, 'handling', 'float');
+        $tax = SHOP_getVar($this->ipn_data, 'tax', 'float');
+        $shipping = SHOP_getVar($this->ipn_data, 'shipping', 'float');
+        $handling = SHOP_getVar($this->ipn_data, 'handling', 'float');
         $price = (float)$this->ipn_data['pmt_gross'] - $tax - $shipping - $handling;
         if (isset($this->ipn_data['item_number'])) {
             $this->addItem(array(

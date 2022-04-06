@@ -125,12 +125,20 @@ class Plugin extends \Shop\Product
         // Try to call the plugin's function to get product info.
         // TODO - Deprecate, this is legacy. Plugins should return product info
         // from plugin_iteminfo functions.
-        $status = LGLIB_invokeService(
+        /*$status = LGLIB_invokeService(
             $this->pi_name,
             'productinfo',
             $this->pi_info,
             $A,
             $svc_msg
+        );*/
+        $status = PLG_callFunctionForOnePlugin(
+            'service_productinfo_' . $this->pi_name,
+            array(
+                1 => $this->pi_info,
+                2 => &$A,
+                3 => &$svc_msg,
+            )
         );
         if ($status == PLG_RET_OK) {
             $this->price = SHOP_getVar($A, 'price', 'float', $def_price);
@@ -301,12 +309,20 @@ class Plugin extends \Shop\Product
                 'ref_token' => $Item->getOrder()->getReferralToken(),
             ),
         );
-        $status = LGLIB_invokeService(
+        /*$status = LGLIB_invokeService(
             $this->pi_name,
             'handlePurchase',
             $args,
             $output,
             $svc_msg
+        );*/
+        $status = PLG_callFunctionForOnePlugin(
+            'service_handlePurchase_' . $this->pi_name,
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
         );
         return $status == PLG_RET_OK ? true : false;
     }
@@ -326,13 +342,21 @@ class Plugin extends \Shop\Product
             'item_id'   => explode(':', $this->item_id),
             'ipn_data'  => $pp_data,
         );
-        $status = LGLIB_invokeService(
+        $status = PLG_callFunctionForOnePlugin(
+            'service_handleRefnd_' . $this->pi_name,
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
+        );
+        /*$status = LGLIB_invokeService(
             $this->pi_name,
             'handleRefund',
             $args,
             $output,
             $svc_msg
-        );
+        );*/
         return $status == PLG_RET_OK ? true : false;
     }
 
@@ -367,13 +391,21 @@ class Plugin extends \Shop\Product
             if (isset($override['uid'])) {
                 $this->pi_info['mods']['uid'] = $override['uid'];
             }
-            $status = LGLIB_invokeService(
+            $status = PLG_callFunctionForOnePlugin(
+                'service_productinfo_' . $this->pi_name,
+                array(
+                    1 => $this->pi_info,
+                    2 => &$output,
+                    3 => &$svc_msg,
+                )
+            );
+            /*$status = LGLIB_invokeService(
                 $this->pi_name,
                 'productinfo',
                 $this->pi_info,
                 $A,
                 $svc_msg
-            );
+            );*/
             if ($status == PLG_RET_OK && isset($A['price'])) {
                 $this->price = (float)$A['price'];
             }
@@ -456,13 +488,21 @@ class Plugin extends \Shop\Product
     {
         $text = '';
         // status from the service function isn't used.
-        LGLIB_invokeService(
+        PLG_callFunctionForOnePlugin(
+            'service_emailreceiptInfo_' . $this->pi_name,
+            array(
+                1 => $this->pi_info,
+                2 => &$text,
+                3 => &$svc_msg,
+            )
+        );
+        /*LGLIB_invokeService(
             $this->pi_name,
             'emailReceiptInfo',
             $this->pi_info,
             $text,
             $svc_msg
-        );
+        );*/
         return $text;
     }
 

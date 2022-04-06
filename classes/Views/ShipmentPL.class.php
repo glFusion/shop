@@ -132,8 +132,8 @@ class ShipmentPL
      */
     public static function printPDF($ids, $type='pdfpl')
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');

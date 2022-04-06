@@ -768,29 +768,27 @@ class Gateway
                 $pi_info = explode(':', $item['item_number']);
                 SHOP_log('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true), SHOP_LOG_DEBUG);
 
-                $status = LGLIB_invokeService($pi_info[0], 'productinfo',
-                        array($item_number, $item_opts),
-                        $product_info, $svc_msg);
-                if ($status != PLG_RET_OK) {
-                    $product_info = array();
-                }
-
-                if (!empty($product_info)) {
+                $status = PLG_callFunctionForOnePlugin(
+                    'service_' . $pi_info[0] . '_productinfo',
+                    array(
+                        1 => array($item_number, $item_opts),
+                        2 => &$product_info,
+                        3 => &$svc_msg,
+                    )
+                );
+                if (is_array($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
                 SHOP_log("Paymentgw::handlePurchase() Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
                 $vars = array(
-                        'item' => $item,
-                        'ipn_data' => array(),
+                    'item' => $item,
+                    'ipn_data' => array(),
                 );
-                $status = LGLIB_invokeService(
-                    $pi_info[0],
-                    'handlePurchase',
-                    $vars,
-                    $A,
-                    $svc_msg
+                $A = PLG_callFunctionForOnePlugin(
+                    'plugin_' . $pi_info[0] . '_handlepurchase',
+                    $vars
                 );
-                if ($status != PLG_RET_OK) {
+                if (!is_array($A)) {
                     $A = array();
                 }
 

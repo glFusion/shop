@@ -469,18 +469,20 @@ case 'sendcards':
     if ($no_exp == 1) {
         $exp = \Shop\Products\Coupon::MAX_EXP;
     }
-    $status = LGLIB_invokeService('shop', 'sendcards',
+    $status = PLG_callFunctionForOnePlugin(
+        'service_sendcards_shop',
         array(
-            'amount'    => $amt,
-            'members'   => $uids,
-            'group_id'  => $gid,
-            'expires'   => $exp,
-            'notify'    => true,
-        ),
-        $output,
-        $errs
+            1 => array(
+                'amount' => $amt,
+                'members'   => $uids,
+                'group_id'  => $gid,
+                'expires'   => $exp,
+                'notify'    => true,
+            ),
+            2 => &$output,
+            3 => &$errs,
+        )
     );
-
     if (empty($errs)) {
         SHOP_setMsg(count($output) . ' coupons sent');
     } else {

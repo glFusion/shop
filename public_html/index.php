@@ -334,13 +334,21 @@ case 'vieworder':
 case 'pidetail':
     // Show detail for a plugin item wrapped in the catalog layout
     $item = explode(':', $actionval);
-    $status = LGLIB_invokeService($item[0], 'getDetailPage',
+    $status = PLG_callFunctionForOnePlugin(
+        'service_getDetailPage_' . $item[0],
+        array(
+            1 => array('item_id' => $actionval),
+            2 => &$output,
+            3 => &$svc_msg,
+        )
+    );
+    /*$status = LGLIB_invokeService($item[0], 'getDetailPage',
         array(
             'item_id' => $actionval,
         ),
         $output,
         $svc_msg
-    );
+    );*/
     if ($status != PLG_RET_OK) {
         $output = $LANG_SHOP['item_not_found'];
     }

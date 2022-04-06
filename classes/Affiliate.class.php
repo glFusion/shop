@@ -468,12 +468,13 @@ class Affiliate
             $hidden['success_msg'] = $LANG_SHOP['msg_aff_signup_created'];
         }
         $args['hidden'] = $hidden;
-        $status = LGLIB_invokeService(
-            'forms',
-            'renderForm',
-            $args,
-            $output,
-            $svc_msg
+        $status = PLG_callFunctionForOnePlugin(
+            'service_renderForm_forms',
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
         );
         return $status == PLG_RET_OK ? $output['content'] : '';
     }

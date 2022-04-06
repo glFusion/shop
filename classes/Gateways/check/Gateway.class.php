@@ -295,12 +295,20 @@ class Gateway extends \Shop\Gateway
                 // Initialize item info array to be used later
                 $A = array();
 
-                $status = LGLIB_invokeService(
+                $status = PLG_callFunctionForOnePlugin(
+                    'service_getproductinfo_' . $pi_info[0],
+                    array(
+                        1 => array($item_number, $item_opts),
+                        2 => &$product_info,
+                        3 => &$svc_msg,
+                    )
+                );
+                /*$status = LGLIB_invokeService(
                     $pi_info[0], 'productinfo',
                     array($item_number, $item_opts),
                     $product_info,
                     $svc_msg
-                );
+                );*/
                 if ($status != PLG_RET_OK) {
                     $product_info = array();
                 }
@@ -316,12 +324,20 @@ class Gateway extends \Shop\Gateway
                 );
                 // TODO: should plugin handlePurchase be called here, or when
                 // the order is paid.
-                $status = LGLIB_invokeService(
+                $status = PLG_callFunctionForOnePlugin(
+                    'service_handlePurchase_' . $pi_info[0],
+                    array(
+                        1 => $vars,
+                        2 => &$A,
+                        3 => &$svc_msg,
+                    )
+                );
+                /*$status = LGLIB_invokeService(
                     $pi_info[0], 'handlePurchase',
                     $vars,
                     $A,
                     $svc_msg
-                );
+                );*/
                 if ($status != PLG_RET_OK) {
                     $A = array();
                 }

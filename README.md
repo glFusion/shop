@@ -44,8 +44,7 @@ When the Shop plugin is first installed, it is only available to members of the 
 
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.
-Functions are called via `LGLIB_invokeService()`, which is similar to `PLG_invokeService()` for web services.
-Arguments are passed in an array, an "output" variable receives the output, and the return is a standard `PLG_RET_*` value.
+Functions are called via `PLG_callFunctionForOnePlugin()`.
 
 ### `service_getproductinfo_<plugin_name>`
 Gets general information about the product for inclusion in the catalog or to determine pricing when processing an order.
