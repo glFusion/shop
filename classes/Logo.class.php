@@ -283,7 +283,7 @@ class Logo
 
         if ($_CONF['debug_image_upload']) {
             SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ . ': ' .
+                __METHOD__ . '(): ' .
                 ": Resizing using GD2: Src = " . $this->s_path . " mimetype = " . $this->mime_type
             );
         }

@@ -281,7 +281,7 @@ class ups extends \Shop\Shipper
         } catch ( Exception $ex ) {
             $Tracking->addError($LANG_SHOP['err_getting_info']);
             SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                __METHOD__ . '() Line ' . __LINE__ .
                 ' Error getting tracking info: ' . print_r($ex,true)
             );
         }
@@ -503,7 +503,7 @@ class ups extends \Shop\Shipper
             }
         } catch ( Exception $ex ) {
             SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                __METHOD__ . '() Line ' . __LINE__ .
                 ' Error getting quote for order ' . $Order->getOrderID() .
                 print_r($ex,true)
             );

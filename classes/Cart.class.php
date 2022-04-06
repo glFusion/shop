@@ -576,7 +576,7 @@ class Cart extends Order
     {
         global $_SHOP_CONF;
 
-        echo __CLASS__ . '::' . __FUNCTION__ . ': Deprecated';die;
+        echo __METHOD__ . '(): Deprecated';die;
 
         $retval = '';
         $total = $this->getTotal();

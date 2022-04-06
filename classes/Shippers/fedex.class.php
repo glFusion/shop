@@ -291,14 +291,13 @@ class fedex extends \Shop\Shipper
             } catch (\Exception $e) {
                 $Tracking->addError($LANG_SHOP['err_getting_info']);
                 SHOP_log(
-                    __CLASS__ . '::' . __FUNCTION__ . ' Line ' . __LINE__ .
+                    __METHOD__ . '() Line ' . __LINE__ .
                     ' Error getting tracking info: ' . print_r($ex,true)
                 );
             }
         } else {
             SHOP_log(
-                __CLASS__ . '::' . __FUNCTION__ .
-                '- Error getting tracking info: ' .
+                __METHOD__ . '()- Error getting tracking info: ' .
                 print_r($response,true)
             );
             $Tracking->addError($LANG_SHOP['err_getting_info']);
@@ -449,8 +448,7 @@ class fedex extends \Shop\Shipper
                     ->setPackageCount(count($Packages));
             } else {
                 SHOP_log(
-                    __CLASS__ . '::' . __FUNCTION__ .
-                    " Error getting Fedex quote for order {$Order->getOrderID()} " .
+                    __METHOD__ . "() Error getting Fedex quote for order {$Order->getOrderID()} " .
                     print_r($response,true)
                 );
             }
