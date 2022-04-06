@@ -50,6 +50,7 @@ spl_autoload_register(function ($class)
 use Shop\Models\Views;
 use Shop\Upgrades;
 use Shop\Config;
+use glFusion\Log\Log;
 Config::getInstance();      // to load $_SHOP_CONF
 global $_SHOP_CONF;
 
@@ -111,7 +112,6 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
     $_USER['username'] = 'anonymous';
     $_USER['fullname'] = 'Anonymous';
 }
-
 
 /**
  * Show the product catalog in the centerblock.
@@ -597,9 +597,11 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
  * $rights.  If not log the error, display a generic access denied message
  * and exit.
  *
+ * The default is to check only shop.view and shop.admin to allow view access.
+ *
  * @param   string  $rights     Comma-separated list of allowable rights
  */
-function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
+function SHOP_access_check($rights = 'shop.admin,shop.view')
 {
     global $_PLUGINS, $_SHOP_CONF;
     static $access = array();
@@ -611,7 +613,8 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
             // If shop is closed and user is not an admin...
             (!$_SHOP_CONF['shop_enabled'] && !plugin_ismoderator_shop()) ||
             // or this plugin or a required plugin isn't available...
-            !in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')
+            !in_array('lglib', $_PLUGINS) ||
+            !SEC_hasRights($rights, 'OR')
         ) {
             $acc = false;
         }
@@ -1903,14 +1906,13 @@ function plugin_configmanager_use_sku_shop_validate($val)
 function plugin_configmanager_select_aff_form_id_shop()
 {
     $retval = array();
-    $status = LGLIB_invokeService(
-        'forms',
-        'getMyForms',
+    $status = PLG_callFunctionForOnePlugin(
+       'service_getMyForms_forms',
         array(
-            'basename' => '',
-        ),
-        $A,
-        $svc_msg
+            1 => array('basename' => ''),
+            2 => &$A,
+            3 => &$svc_msg,
+        )
     );
     if ($status == PLG_RET_OK) {
         foreach ($A as $id=>$name) {

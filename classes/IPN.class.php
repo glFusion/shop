@@ -642,7 +642,7 @@ class IPN
         //$overrides = $this->custom->toArray();
         $overrides = array();
         $overrides['price'] = $args['price'];
-        $overrides['tax'] = LGLIB_getVar($args, 'tax', 'float');
+        $overrides['tax'] = SHOP_getVar($args, 'tax', 'float');
         $price = $P->getPrice($opts, $args['quantity'], $overrides);
 
         $this->items[] = array(

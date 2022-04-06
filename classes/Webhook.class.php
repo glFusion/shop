@@ -545,7 +545,12 @@ class Webhook
     {
         if (is_null($this->Order)) {
             $this->Order = Order::getInstance($this->getOrderID());
+        } else {
+            // We already have an order object, may need to update it to
+            // reflect the payment that was just recorded.
+            $this->Order->updatePmtStatus();
         }
+
         if ($this->Order->isNew()) {
             SHOP_log("Error: Order {$this->getOrderID()} is not valid", SHOP_LOG_ERROR);
             return false;
@@ -553,7 +558,6 @@ class Webhook
 
         if (
             $this->GW->okToProcess($this->Order)
-            //&& !$Order->statusAtLeast(OrderState::PROCESSING)
         ) {
             $this->IPN->setUid($this->Order->getUid());
             // Handle the purchase for each order item
