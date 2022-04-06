@@ -25,11 +25,11 @@ abstract class Tax
 
     /** Address object used for rate lookup.
      * @var object */
-    protected $Address;
+    protected $Address = NULL;
 
     /** Order object used for tax calculations.
      * @var object */
-    protected $Order;
+    protected $Order = NULL;
 
     /** Use test endpoints.
      * @var boolean */

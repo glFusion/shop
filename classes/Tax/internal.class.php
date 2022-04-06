@@ -37,8 +37,10 @@ class internal extends \Shop\Tax
         } else {
             $rate = 0;
         }
-        foreach ($this->Order->getItems() as $OI) {
-            $OI->setTaxRate($rate);
+        if ($this->Order) {
+            foreach ($this->Order->getItems() as $OI) {
+                $OI->setTaxRate($rate);
+            }
         }
         return array(
             'totalRate' => $rate,

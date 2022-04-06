@@ -76,8 +76,10 @@ class table extends \Shop\Tax
                         ),
                     ),
                 );
-                foreach ($this->Order->getItems() as $OI) {
-                    $OI->setTaxRate((float)$A['combined_rate']);
+                if ($this->Order) {
+                    foreach ($this->Order->getItems() as $OI) {
+                        $OI->setTaxRate((float)$A['combined_rate']);
+                    }
                 }
             }
         }
