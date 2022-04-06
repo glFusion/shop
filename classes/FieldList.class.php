@@ -133,14 +133,6 @@ class FieldList extends \glFusion\FieldList
         return $t->finish($t->get_var('output'));
     }
 
-    public static function add() : string
-    {
-        $t = self::init();
-        $t->set_block('field','field-add');
-        $t->parse('output','field-add');
-        return $t->finish($t->get_var('output'));
-    }
-
     public static function circle($args=array()) : string
     {
         $t = self::init();
@@ -165,6 +157,5 @@ class FieldList extends \glFusion\FieldList
         $t->parse('output','field-icon');
         return $t->finish($t->get_var('output'));
     }
-
 
 }
