@@ -206,7 +206,7 @@ class Invoice extends OrderBaseView
      *
      * @return  mixed   HTML or PDF output
      */
-    public function Render()
+    public function Render() : ?string
     {
         if (empty($this->order_ids)) {
             $this->order_ids = array($this->order_id);
@@ -241,6 +241,7 @@ class Invoice extends OrderBaseView
             $output = $this->createHTML();
             return $this->createPDF($output);
         }*/
+        return NULL;
     }
 
 
@@ -346,7 +347,7 @@ class Invoice extends OrderBaseView
         if ($paid > 0) {
             $this->TPL->set_var(array(
                 'amt_paid_num' => $this->Currency->formatValue($paid),
-                'due_amount' => $this->Currency->formatValue($this->Order->getBalanceDue()),
+                'due_amount' => $this->Currency->format($this->Order->getBalanceDue()),
             ) );
         }
         $this->TPL->parse('output', 'order');

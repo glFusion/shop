@@ -2008,6 +2008,11 @@ class Shipper
                     self::$base_tag
                 );
             }
+            // Will prevent the shipper from appearing in the workflow, this
+            // is just to ensure a valid return.
+            if (!is_array($retval)) {
+                $retval = array();
+            }
         }
         return $retval;
     }
