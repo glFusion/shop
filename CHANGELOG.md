@@ -19,6 +19,10 @@ Release TBD
   * Fix duplicate gift card payment on invoice view calculation.
   * Hide price and disable buttons if a product selection is not available.
 
+## v1.4.1
+Release 2022-04-07
+  * Fix return from Gateway::getAll() when no gateways are installed.
+
 ## v1.4.0
 Release 2021-09-25
   * Add sales tax location configuration setting for virtual items.

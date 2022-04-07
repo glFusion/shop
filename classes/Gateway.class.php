@@ -1357,6 +1357,7 @@ class Gateway
 
         $gateways = array();
         $key = $enabled ? 1 : 0;
+        $gateways[$key] = array();
         $cache_key = 'gateways_' . $key;
         $tmp = Cache::get($cache_key);
         if ($tmp === NULL) {
