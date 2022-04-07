@@ -1869,13 +1869,12 @@ class Gateway
 
         case 'enabled':
             if ($fieldvalue == 'na') {
-                return COM_createLink(
-                    FieldList::add(),
-                    SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
+                return FieldList::add(array(
+                    'url' => SHOP_ADMIN_URL. '/gateways.php?gwinstall&gwname=' . urlencode($A['id']),
                     array(
                         'title' => $LANG_SHOP['ck_to_install'],
                     )
-                );
+                ) );
             } elseif ($fieldvalue == '1') {
                 $switch = ' checked="checked"';
                 $enabled = 1;
