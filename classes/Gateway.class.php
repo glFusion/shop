@@ -4,9 +4,9 @@
  * Provides the base class for actual payment gateway classes to use.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -1348,6 +1348,7 @@ class Gateway
 
         $gateways = array();
         $key = $enabled ? 1 : 0;
+        $gateways[$key] = array();
         $cache_key = 'gateways_' . $key;
         $tmp = Cache::get($cache_key);
         if ($tmp === NULL) {
