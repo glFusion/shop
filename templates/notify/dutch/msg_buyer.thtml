@@ -37,6 +37,5 @@ Je hebt een resterend saldo van de cadeaubon van {gc_bal_fmt}.
 {!endif}
 <p>
 Bedankt,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

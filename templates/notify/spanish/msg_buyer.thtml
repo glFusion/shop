@@ -47,6 +47,5 @@ Tienes un saldo de tarjeta de regalo restante de {gc_bal_fmt}.
 {!endif}
 <p>
 Gracias,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

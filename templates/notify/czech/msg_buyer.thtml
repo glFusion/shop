@@ -47,6 +47,5 @@ Zbývající zůstatek na dárkové kartě je {gc_bal_fmt}.
 {!endif}
 <p>
 Díky,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

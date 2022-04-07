@@ -1253,6 +1253,7 @@ class Order
                 'msg'       => 'msg_buyer.thtml',
                 'msg_body'  => 'order_detail.thtml',
                 'tracking'  => 'tracking_info.thtml',
+                'footer_tpl' => 'footer.thtml',
             ) );
 
             $text = $this->_prepareNotification($T, $gw_msg, true);
@@ -1505,6 +1506,7 @@ class Order
         );
 
         $T->set_var('header', $T->parse('', 'header_tpl'));
+        $T->set_var('footer', $T->parse('', 'footer_tpl'));
         $text = $T->parse('text', 'msg');
         return $text;
     }

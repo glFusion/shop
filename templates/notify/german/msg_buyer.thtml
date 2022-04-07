@@ -47,6 +47,5 @@ Sie haben ein verbleibendes Geschenkkartenguthaben von {gc_bal_fmt}.
 {!endif}
 <p>
 Danke,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

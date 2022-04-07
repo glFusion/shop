@@ -48,6 +48,5 @@ You have a remaining gift card balance of {gc_bal_fmt}.
 {!endif}
 <p>
 Thanks,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>
