@@ -50,6 +50,7 @@ class v1_4_1 extends Upgrade
             if (Config::get('purge_sale_prices') == 1) {
                 Config::set('purge_sale_prices', 30);   // set to default
                 $c->set('purge_sale_prices', 30, Config::PI_NAME);
+            }
         }
 
         // Remove tax API providers and TaxCloud address validator, if used.
