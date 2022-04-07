@@ -64,7 +64,7 @@ class Product extends \Shop\Image
         // Seed image cache with thumbnails
         $this->MakeThumbs();
         $filenames = array();
-        foreach ($this->goodfiles as $filename) {
+        foreach ($this->getFilenames() as $filename) {
             $parts = pathinfo($filename);
             $basename = $parts['basename'];
             $sql = "INSERT INTO {$_TABLES['shop.images']} SET
