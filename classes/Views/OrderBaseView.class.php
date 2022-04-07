@@ -526,7 +526,7 @@ class OrderBaseView
             'total_postfix' => $this->Currency->Post(),
             'total_num'     => $this->Currency->FormatValue($total),
             'cur_decimals'  => $this->Currency->Decimals(),
-            'item_subtotal' => $this->Currency->FormatValue($subtotal),
+            'item_subtotal' => $this->Currency->Format($subtotal),
             'is_invoice'    => $this->is_invoice,
             'icon_dscp'     => $icon_tooltips,
             'have_images'   => $this->is_invoice ? $have_images : false,

@@ -85,15 +85,17 @@
   </tr>
   <tr><td></td></tr>
 <!-- END ItemRow -->
-{!!if {is_invoice} && {subtotal} !!}
+{!if is_invoice}
   <tr>
     <td colspan="3" style="text-align:right">
       {$LANG_SHOP['item_total']}
     </td>
     <td colspan="2" style="text-align:right">
-      {subtotal}
+      {item_subtotal}
     </td>
   </tr>
+{!endif}
+{!!if {is_invoice} && {subtotal} !!}
 {!if dc_row_vis}
         <tr>
             <td colspan="3" style="text-align:right;">{$LANG_SHOP['disc_code']}</td>
