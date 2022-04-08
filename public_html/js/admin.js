@@ -1,9 +1,9 @@
 /**
- *   Toggle field for Shop products
+ * Toggle field for Shop products
  *
- *   @param  object  cbox    Checkbox
- *   @param  string  id      Sitemap ID, e.g. plugin name
- *   @param  string  type    Type of sitemap (XML or HTML)
+ * @param	object  cbox    Checkbox
+ * @param	string  id      Sitemap ID, e.g. plugin name
+ * @param	string  type    Type of sitemap (XML or HTML)
  */
 var SHOP_toggle = function(cbox, id, type, component) {
     oldval = cbox.checked ? 0 : 1;
@@ -135,18 +135,16 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
 }
 
 
-/*  Show the "update status" submit button if the order status selection has
-    changed.
-*/
+/**
+ * Show the "update status" submit button if the order status selection has
+ * changed.
+ */
 function SHOP_ordShowStatSubmit(order_id, oldvalue, newvalue)
 {
-    var el = document.getElementById("shopSetStat_" + order_id);
-    if (el) {
-        if (newvalue != oldvalue) {
-            el.style.visibility = '';
-        } else {
-            el.style.visibility = 'hidden';
-        }
+	if (newvalue != oldvalue) {
+        $("#shopSetStat_" + order_id).show();
+    } else {
+        $("#shopSetStat_" + order_id).hide();
     }
 }
 
