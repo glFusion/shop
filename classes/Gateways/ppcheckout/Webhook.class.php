@@ -127,7 +127,7 @@ class Webhook extends \Shop\Webhook
                     $Pmt->setRefID($ref_id)
                         ->setAmount($this->getPayment())
                         ->setGateway($this->getSource())
-                        ->setMethod($this->getSource())
+                        ->setMethod($this->GW->getDisplayName())
                         ->setComment('Webhook ' . $this->getID())
                         ->setOrderID($this->getOrderID());
                     if ($Pmt->Save()) {
