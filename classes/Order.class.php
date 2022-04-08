@@ -745,7 +745,7 @@ class Order
      * @since   v1.3.1
      * @return  string      Invoice number
      */
-    public function getInvoiceNumber()
+    public function getInvoiceNumber() : string
     {
         global $_SHOP_CONF;
 
@@ -1443,6 +1443,7 @@ class Order
             'status'            => $this->status,
             'order_instr'       => $this->instructions,
             'order_id'          => $this->order_id,
+            'invoice_number'    => $this->getInvoiceNumber(),
             'token'             => $this->token,
             'email_extras'      => implode('<br />' . LB, $email_extras),
             'order_date'        => $this->order_date->format($_SHOP_CONF['datetime_fmt'], true),
@@ -1476,7 +1477,22 @@ class Order
             ) );
         }
 
-        $this->_setAddressTemplate($T);
+        $billto = $this->Billto->toArray();
+        $shipto = $this->Shipto->toArray();
+        $have_billto = false;
+        $have_shipto = false;
+        foreach ($this->_addr_fields as $fld) {
+            if (isset($billto[$fld]) && !empty($billto[$fld])) {
+                $T->set_var('billto_' . $fld, $billto[$fld]);
+                $have_billto = true;
+            }
+            if (isset($shipto[$fld]) && !empty($shipto[$fld])) {
+                $T->set_var('shipto_' . $fld, $shipto[$fld]);
+                $have_shipto = true;
+            }
+        }
+        $T->set_var('have_billto', $have_billto);
+        $T->set_var('have_shipto', $have_shipto);
 
         // If any part of the order is paid by gift card, indicate that and
         // calculate the net amount paid by shop, etc.
