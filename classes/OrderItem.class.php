@@ -738,7 +738,7 @@ class OrderItem
      */
     public function getWeight()
     {
-        $weight = $this->Product->getWeight();
+        $weight = $this->getProduct()->getWeight();
         if ($this->variant_id > 0) {
             $weight += ProductVariant::getInstance($this->variant_id)->getWeight();
         }
@@ -768,7 +768,7 @@ class OrderItem
     /**
      * Get the total number of shipping units for this item
      *
-     * @return  float       Total shipping units (per-product * quantity)
+     * @return  float       Shipping units for one of this item
      */
     public function getShippingUnits() : float
     {
@@ -776,13 +776,23 @@ class OrderItem
     }
 
 
+    /**
+     * Gets the total shipping units for the item.
+     *
+     * @return  float       Number of shipping units.
+     */
     public function getTotalShippingUnits() : float
     {
         return (float)$this->shipping_units * (float)$this->quantity;
     }
 
 
-    public function productShippingUnits()
+    /**
+     * Get the product shipping unit amount.
+     *
+     * @return  float       Shipping units for the product/variant
+     */
+    public function productShippingUnits() : float
     {
         $units = $this->Product->getShippingUnits();
         if ($this->variant_id > 0) {
