@@ -62,7 +62,7 @@ class Order
 
     /** OrderItem objects.
      * @var array */
-    protected $items = array();
+    protected $Items = array();
 
     /** Order item total, excluding discount codes.
       @var float */
@@ -272,7 +272,7 @@ class Order
             $this->order_id = $id;
             if (!$this->Load($id)) {
                 $this->isNew = true;
-                $this->items = array();
+                $this->Items = array();
             } else {
                 $this->isNew = false;
             }
@@ -380,7 +380,7 @@ class Order
         }
 
         // Now load the items
-        $this->items = OrderItem::getByOrder($this->order_id);
+        $this->Items = OrderItem::getByOrder($this->order_id);
         $this->unTaint();
         return true;
     }
@@ -424,7 +424,7 @@ class Order
      * Add a single item to this order.
      * Extracts item information from the provided $data variable, and
      * reads the item information from the database as well.  The entire
-     * item record is added to the $items array as 'data'
+     * item record is added to the $Items array as 'data'
      *
      * @param   array   $args   Array of item data
      */
@@ -469,7 +469,7 @@ class Order
            ->setTaxRate($this->tax_rate)
            ->setShipping($args['shipping'])
            ->Save();
-        $this->items[] = $OI;
+        $this->Items[] = $OI;
         $this->calcTotalCharges();
     }
 
@@ -745,7 +745,7 @@ class Order
      * @since   v1.3.1
      * @return  string      Invoice number
      */
-    public function getInvoiceNumber() : string
+    public function getInvoiceNumber()
     {
         global $_SHOP_CONF;
 
@@ -833,7 +833,7 @@ class Order
 
         // Save all the order items
         if ($save_items) {
-            foreach ($this->items as $Item) {
+            foreach ($this->Items as $Item) {
                 $Item->saveIfTainted();
             }
         }
@@ -952,9 +952,10 @@ class Order
      * Only updates the order if the status is pending, not if it has already
      * been move further along.
      *
+     * @param   boolean $notify     True to allow buyer notification.
      * @return  object  $this
      */
-    public function updatePmtStatus()
+    public function updatePmtStatus(bool $notify=true)
     {
         // Recalculate amount paid in case this order is cached.
         $Pmts = $this->getPayments();
@@ -976,10 +977,10 @@ class Order
             // already been set to Processing or higher.
             if (!$this->statusAtLeast(OrderState::PROCESSING)) {
                 if ($this->hasPhysical()) {
-                   $this->updateStatus(OrderState::PROCESSING);
+                   $this->updateStatus(OrderState::PROCESSING, true, $notify);
                 } else {
                     // No physical items, consider the order closed.
-                    $this->updateStatus(OrderState::CLOSED);
+                    $this->updateStatus(OrderState::CLOSED, true, $notify);
                 }
             }
         }
@@ -1253,7 +1254,6 @@ class Order
                 'msg'       => 'msg_buyer.thtml',
                 'msg_body'  => 'order_detail.thtml',
                 'tracking'  => 'tracking_info.thtml',
-                'footer_tpl' => 'footer.thtml',
             ) );
 
             $text = $this->_prepareNotification($T, $gw_msg, true);
@@ -1349,7 +1349,7 @@ class Order
             $gw_dscp = '';
         }
 
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             $P = $OI->getProduct();
 
             // Add the file to the filename array, if any. Download
@@ -1523,7 +1523,6 @@ class Order
         );
 
         $T->set_var('header', $T->parse('', 'header_tpl'));
-        $T->set_var('footer', $T->parse('', 'footer_tpl'));
         $text = $T->parse('text', 'msg');
         return $text;
     }
@@ -1638,7 +1637,7 @@ class Order
         $C = Currency::getInstance($this->currency);
         $tax = 0;
         $this->tax_items = 0;
-        foreach ($this->items as &$Item) {
+        foreach ($this->Items as &$Item) {
             $this->tax_items += $Item->getTaxable();
             $tax += $Item->getTax();
         }
@@ -1665,7 +1664,7 @@ class Order
         global $_SHOP_CONF;
 
         $this->handling = 0;
-        foreach ($this->items as $OI) {
+        foreach ($this->Items as $OI) {
             $P = $OI->getProduct();
             $this->handling += $P->getHandling($OI->getQuantity());
         }
@@ -1705,7 +1704,7 @@ class Order
         global $_TABLES;
 
         $total = 0;
-        foreach ($this->items as $id => $OI) {
+        foreach ($this->Items as $id => $OI) {
             $total += ($OI->getPrice() * $OI->getQuantity());
         }
         // Remove any discount amount.
@@ -1787,7 +1786,7 @@ class Order
             'quantity'      => 1,
         );
         $Item2 = OrderItem::fromArray($args);
-        foreach ($this->items as $id=>$Item1) {
+        foreach ($this->Items as $id=>$Item1) {
             if ($Item1->Matches($Item2)) {
                 return $id;
             }
@@ -1877,7 +1876,7 @@ class Order
      */
     public function getItems()
     {
-        return $this->items;
+        return $this->Items;
     }
 
 
@@ -1892,7 +1891,7 @@ class Order
     public function getItem($item_id)
     {
         return NULL;
-        foreach ($this->items as $Item) {
+        foreach ($this->Items as $Item) {
             if ($Item->product_id == $item_id) {
                 return $Item;
             }
@@ -2056,7 +2055,7 @@ class Order
     public function hasPhysical()
     {
         $retval = 0;
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             if ($OI->getProduct()->isPhysical()) {
                 $retval += $OI->getQuantity();
             }
@@ -2073,7 +2072,7 @@ class Order
     public function hasTaxable()
     {
         $retval = 0;
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             if ($OI->getProduct()->isTaxable()) {
                 $retval += $OI->getQuantity();
             }
@@ -2083,13 +2082,31 @@ class Order
 
 
     /**
+     * See if this order requires shipping.
+     * Only physical items with shipping units or weight are considered.
+     *
+     * @return  boolean     True if shipping is required, False if not
+     */
+    public function needsShipping() : bool
+    {
+        $units = 0;
+        $weight = 0;
+        foreach ($this->Items as $id=>$OI) {
+            $units += $OI->getTotalShippingUnits();
+            $weight += $OI->getWeight();
+        }
+        return ($units > 0 || $weight > 0);
+    }
+
+        
+    /**
      * Check if this order has only downloadable items.
      *
      * @return  boolean     True if download only, False if now.
      */
     public function isDownloadOnly()
     {
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             if (!$OI->getProduct()->isDownload(true)) {
                 return false;
             }
@@ -2164,7 +2181,7 @@ class Order
     {
         $shipping_amt = 0;
         $shipping_units = 0;
-        foreach ($this->items as $OI) {
+        foreach ($this->Items as $OI) {
             $shipping_amt += $OI->getShipping() * $OI->getQuantity();
             $shipping_units += $OI->getTotalShippingUnits();
         }
@@ -2511,7 +2528,7 @@ class Order
         // If already set, return OK. Nothing to do.
         if ($new != $old) {
             // Update each item's pricing
-            foreach ($this->items as $Item) {
+            foreach ($this->Items as $Item) {
                 $Item->convertCurrency($old, $new);
             }
 
@@ -2647,7 +2664,7 @@ class Order
         $item_id = $x[0];
         if (!isset($qty[$item_id])) {
             $qty[$item_id] = 0;
-            foreach ($this->items as $OI) {
+            foreach ($this->Items as $OI) {
                 if ($OI->getProductId() == $item_id) {
                     $qty[$item_id] += $OI->getQuantity();
                 }
@@ -2681,7 +2698,7 @@ class Order
         }
 
         $total_qty = $this->getTotalBaseItems($item_id);
-        foreach ($this->items as $key=>$OI) {
+        foreach ($this->Items as $key=>$OI) {
             if ($OI->getProductID() != $item_id) {
                 continue;
             }
@@ -2776,7 +2793,7 @@ class Order
     public function totalShippingUnits()
     {
         $units = 0;
-        foreach ($this->items as $OI) {
+        foreach ($this->Items as $OI) {
             $units += $OI->getTotalShippingUnits();
         }
         return $units;
@@ -3069,7 +3086,7 @@ class Order
     {
         $gross_items = 0;
         $shipped_items = 0;
-        foreach ($this->items as $oi_id=>$data) {
+        foreach ($this->Items as $oi_id=>$data) {
             if ($data->getProduct()->isPhysical()) {
                 $gross_items += $data->getQuantity();
                 $shipped_items += ShipmentItem::getItemsShipped($oi_id);
@@ -3406,9 +3423,9 @@ class Order
     {
         global $_TABLES;
 
-        foreach ($this->items as $id=>$Item) {
-            $this->items[$id]->applyDiscountPct($this->getDiscountPct());
-            $this->items[$id]->Save();
+        foreach ($this->Items as $id=>$Item) {
+            $this->Items[$id]->applyDiscountPct($this->getDiscountPct());
+            $this->Items[$id]->Save();
         }
         $this->updateRecord(array(
             "discount_code = '" . DB_escapeString($this->discount_code) . "'",
@@ -3485,7 +3502,7 @@ class Order
     protected function calcItemTotals()
     {
         $this->net_nontax = $this->net_taxable = $this->gross_items = $this->net_items = 0;
-        foreach ($this->items as $Item) {
+        foreach ($this->Items as $Item) {
             $item_gross = $Item->getPrice() * $Item->getQuantity();
             $item_net = $Item->getNetPrice() * $Item->getQuantity();
             $this->gross_items += $item_gross;
@@ -3567,7 +3584,7 @@ class Order
      */
     public function hasItems()
     {
-        return count($this->items);
+        return count($this->Items);
     }
 
 
@@ -3581,7 +3598,7 @@ class Order
     public function checkRules()
     {
         $this->hasInvalid = false;
-        foreach ($this->items as $id=>$Item) {
+        foreach ($this->Items as $id=>$Item) {
             $Product = $Item->getProduct();
             $Rule = $Product->getRule();
             if ($Product->isPhysical()) {
@@ -3673,7 +3690,9 @@ class Order
      */
     public function requiresShipto()
     {
-        if ($this->hasPhysical() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
+
+        //if ($this->hasPhysical() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
+        if ($this->needsShipping() && Shipper::getInstance($this->shipper_id)->requiresShipto()) {
             // Have to have a physical shipping address for physical products.
             return true;
         }
