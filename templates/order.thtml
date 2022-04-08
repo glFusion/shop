@@ -273,7 +273,7 @@
                     <option value="{stat_key}" {selected}>{stat_descr}</option>
 <!-- END StatusSelect -->
                 </select>
-                <input type="checkbox" name="notify" value="1" />Send update to buyer
+                <input type="checkbox" name="notify" value="1" />&nbsp;{$LANG_SHOP['notify_buyer']}
                 <br />
                 <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
                 <br />
