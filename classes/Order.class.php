@@ -1450,7 +1450,7 @@ class Order
             'order_url'         => $this->buildUrl('view'),
             'has_downloads'     => $has_downloads,
             // Elements for the header or footer
-            'store_name'        => $Shop->getCompany(),
+            'shop_name'         => $Shop->getCompany(),
             'shop_addr1'        => $Shop->getAddress1(),
             'shop_addr2'        => $Shop->getAddress2(),
             'shop_city'         => $Shop->getCity(),
@@ -1458,6 +1458,7 @@ class Order
             'shop_postal'       => $Shop->getPostal(),
             'shop_phone'        => $Shop->getPhone(),
             'shop_email'        => $Shop->getEmail(),
+            'shop_addr'         => $Shop->toHTML('address'),
         ) );
         if ($this->_amt_paid > 0) {
             $T->set_var(array(
