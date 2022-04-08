@@ -548,7 +548,8 @@ class Webhook
         } else {
             // We already have an order object, may need to update it to
             // reflect the payment that was just recorded.
-            $this->Order->updatePmtStatus();
+            // Don't notify the buyer of this step, this is just housekeeping.
+            $this->Order->updatePmtStatus(false);
         }
 
         if ($this->Order->isNew()) {
