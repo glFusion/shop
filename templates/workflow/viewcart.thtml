@@ -61,7 +61,7 @@
                             <input type="hidden" name="quantity[{cart_item_id}]" value="{item_quantity}" />
                             {item_quantity}
 {!else}
-                            <input style="width:70%" class="uk-input uk-form-small" type="number" id="f_qty_{cart_item_id}"
+                            <input style="width:70%" class="uk-input" type="number" id="f_qty_{cart_item_id}"
                                 onchange="mustUpdateCart();return false;" min="{min_ord_qty}"
 {!if max_ord_qty}
                                 max="{max_ord_qty}"
@@ -146,7 +146,7 @@
                 <div>
                     {$LANG_SHOP['disc_code']}:
 					<input id="discount_code" type="text" name="discount_code"
-						class="uk-input uk-form-small uk-form-width-medium"
+						class="uk-input uk-form-width-medium"
                         oninput="updateDCButton();return false;" />
                     <button id="dc_validate" name="update"
                         class="uk-button uk-button-small uk-button-success" disabled="disabled">{$LANG_SHOP['apply']}</button>
@@ -154,7 +154,7 @@
 {!endif}
                 <div class="orderInstructions">
                     {$LANG_SHOP['enter_email']}:
-                    <input class="uk-input uk-form-small uk-form-width-medium" id="buyer_email" type="text"
+                    <input class="uk-input uk-form-width-large" id="buyer_email" type="text"
                         name="buyer_email" value="{buyer_email}"/>
                     <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger"></i>
                 </div>
