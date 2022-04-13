@@ -1,5 +1,5 @@
 {header}
-<p>Thank you for your purchase from {site_name}. Details of your purchase follow:</p> 
+<p>Thank you for your order from {site_name}. Details of your purchase follow:</p> 
 <p>
 {purchase_details}
 </p>
