@@ -900,7 +900,6 @@ class Order
             }
         }
         $sql = $sql1 . implode(', ', $fields) . $sql2;
-        //echo $sql;die;
         //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         $this->isNew = false;
@@ -3867,7 +3866,7 @@ class Order
             }
 
             // Update the order status and date
-            $this->setStatus($newstatus)->setOrderDate()->Save(false);
+            $this->setStatus($newstatus, true, false)->setOrderDate()->Save(false);
 
             SHOP_log(
                 "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
