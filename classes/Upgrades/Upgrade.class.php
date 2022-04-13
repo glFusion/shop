@@ -83,6 +83,10 @@ class Upgrade
             if (!v1_4_1::upgrade()) return false;
         }
 
+        if (!COM_checkVersion(self::$current_ver, '1.5.0')) {
+            if (!v1_5_0::upgrade()) return false;
+        }
+
         // Make sure paths and images are created.
         require_once __DIR__ . '/../../autoinstall.php';
         plugin_postinstall_shop(true);

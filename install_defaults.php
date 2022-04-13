@@ -53,17 +53,6 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'admin_email_addr',
-        'default_value' => '',
-        'type' => 'text',
-        'subgroup' => 0,
-        'fieldset' => 0,
-        'selection_array' => 0,
-        'sort' => 10,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
         'name' => 'currency',
         'default_value' => 'USD',
         'type' => 'select',

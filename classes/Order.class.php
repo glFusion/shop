@@ -1269,7 +1269,7 @@ class Order
                 COM_emailNotification(array(
                     'to' => array($this->buyer_email),
                     'from' => array(
-                        'email' => $_CONF['site_mail'],
+                        'email' => $_CONF['noreply_mail'],
                         'name'  => $Shop->getCompany(),
                     ),
                     'htmlmessage' => $text,
@@ -1296,8 +1296,8 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
-            if (!empty($_SHOP_CONF['admin_email_addr'])) {
-                $email_addr = $_SHOP_CONF['admin_email_addr'];
+            if (!empty($_SHOP_CONF['shop_email'])) {
+                $email_addr = $_SHOP_CONF['shop_email'];
             } else {
                 $email_addr = $_CONF['site_mail'];
             }
