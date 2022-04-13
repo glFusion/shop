@@ -569,6 +569,7 @@ class Catalog
             $plugins = $_PLUGINS;
         }
         foreach ($plugins as $pi_name) {
+            $plugin_data = array();
             $status = PLG_callFunctionForOnePlugin(
                 'service_getproducts_' . $pi_name,
                 array(
@@ -577,14 +578,7 @@ class Catalog
                     3 => &$svc_msg,
                 )
             );
-            /*$status = LGLIB_invokeService(
-                $pi_name,
-                'getproducts',
-                array(),
-                $plugin_data,
-                $svc_msg
-            );*/
-            if ($status != PLG_RET_OK || empty($plugin_data)) {
+            if ($status !== PLG_RET_OK || empty($plugin_data)) {
                 continue;
             }
 
