@@ -213,8 +213,8 @@ class Cart extends Order
         } else {
             $PV = ProductVariant::getByAttributes($P->getID(), $options);
         }
-        if (!is_array($this->items)) {
-            $this->items = array();
+        if (!is_array($this->Items)) {
+            $this->Items = array();
         }
 
         // Extract the attribute IDs from the options array to create
@@ -247,10 +247,10 @@ class Cart extends Order
 
         $quantity = $P->validateOrderQty($quantity);
         if ($have_id !== false) {
-            $new_quantity = $this->items[$have_id]->getQuantity();
+            $new_quantity = $this->Items[$have_id]->getQuantity();
             $new_quantity += $quantity;
-            $this->items[$have_id]->setQuantity($new_quantity, $override);
-            $this->items[$have_id]->Save();     // to save updated order value
+            $this->Items[$have_id]->setQuantity($new_quantity, $override);
+            $this->Items[$have_id]->Save();     // to save updated order value
         } elseif ($quantity == 0) {
             return false;
         } else {
@@ -303,7 +303,7 @@ class Cart extends Order
     public function updateItem($item_number, $updates)
     {
         // Search through the cart for the item number
-        foreach ($this->items as $id=>$OI) {
+        foreach ($this->Items as $id=>$OI) {
             if ($OI->getProductID() == $item_number) {
                 // If the item is found, loop through the updates and apply
                 $OI->updateItem($updates);
@@ -338,14 +338,14 @@ class Cart extends Order
             // Make sure the item object exists. This can get out of sync if a
             // cart has been finalized and the user updates it from another
             // browser window.
-            if (array_key_exists($id, $this->items)) {
+            if (array_key_exists($id, $this->Items)) {
                 $qty = (float)$qty;
-                $item_id = $this->items[$id]->getProductId();
-                $old_qty = $this->items[$id]->getQuantity();
+                $item_id = $this->Items[$id]->getProductId();
+                $old_qty = $this->Items[$id]->getQuantity();
                 $Product = Product::getById($item_id);
                 // Check that the order hasn't exceeded the max allowed qty.
                 $max = $Product
-                    ->setVariant($this->items[$id]->getVariantID())
+                    ->setVariant($this->Items[$id]->getVariantID())
                     ->getMaxOrderQty();
                 if ($qty > $max) {
                     $qty = $max;
@@ -366,9 +366,9 @@ class Cart extends Order
                 } elseif ($old_qty != $qty) {
                     // The number field on the viewcart form should prevent this,
                     // but just in case ensure that the qty ordered is allowed.
-                    $this->items[$id]->setQuantity($qty);
+                    $this->Items[$id]->setQuantity($qty);
                     $this->applyQtyDiscounts($item_id);
-                    $this->items[$id]->Save();
+                    $this->Items[$id]->Save();
                 }
             } else {
                 $this->Taint();
@@ -438,12 +438,12 @@ class Cart extends Order
     {
         global $_TABLES;
 
-        if (isset($this->items[$id])) {
-            $this->items[$id]->Delete();
-            unset($this->items[$id]);
+        if (isset($this->Items[$id])) {
+            $this->Items[$id]->Delete();
+            unset($this->Items[$id]);
             $this->Save();
         }
-        return $this->items;
+        return $this->Items;
     }
 
 
@@ -459,10 +459,10 @@ class Cart extends Order
 
         // Only clear if this is actually a cart, not a finalized order.
         if ($this->status == OrderState::CART) {
-            foreach ($this->items as $Item) {
+            foreach ($this->Items as $Item) {
                 $Item->Delete();
             }
-            $this->items = array();
+            $this->Items = array();
             $vals = array(
                 "gross_items = 0",
                 "net_nontax = 0",
@@ -998,7 +998,7 @@ class Cart extends Order
 
         $invalid = array();     // Holder for product objects
         $msg = array();         // Message to be displayed
-        foreach ($this->items as $id=>$Item) {
+        foreach ($this->Items as $id=>$Item) {
             $P = $Item->getProduct();
             if (!$P->canOrder()) {
                 if (!isset($invalid['removed'])) {
