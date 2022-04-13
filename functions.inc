@@ -2534,6 +2534,7 @@ function SHOP_isMinVersion($required = '')
     } else {
         $isMinVer = true;
     }
+    return $isMinVer;
 }
 
 
