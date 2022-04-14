@@ -1,17 +1,21 @@
 <?php
 /**
- * Order History Report.
+ * Item purchase report.
+ * Shows each order item with pricing and option info.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Product;
+use Shop\ProductVariant;
+
 
 /**
  * Class for Order History Report.
@@ -59,13 +63,20 @@ class itempurchase extends \Shop\Report
         $this->item_id = SHOP_getVar($_GET, 'item_id');
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
-        $Item = \Shop\Product::getByID($this->item_id);
-        $this->item_dscp = $Item->getShortDscp();
+        $Product = Product::getByID($this->item_id);
+        $this->item_dscp = $Product->getShortDscp();
         $this->item_id = DB_escapeString($this->item_id);
         $T = $this->getTemplate();
 
+        $text_flds = $Product->getCustom();
+        if (is_array($text_flds) && (count($text_flds) > 1 || !empty($text_flds[0]))) {
+            $has_custom = true;
+        } else {
+            $has_custom = false;
+        }
+
         $sql = "SELECT purch.*, purch.quantity as qty, ord.order_date, ord.uid,
-            ord.billto_name, ord.billto_company, ord.status
+            ord.billto_name, ord.billto_company, ord.status, ord.buyer_email
             FROM {$_TABLES['shop.orderitems']} purch
             LEFT JOIN {$_TABLES['shop.orders']} ord ON ord.order_id = purch.order_id";
 
@@ -145,30 +156,90 @@ class itempurchase extends \Shop\Report
         case 'csv':
             $sql .= ' ' . $query_arr['default_filter'];
             $res = DB_query($sql);
-            $T->set_block('report', 'ItemRow', 'row');
+            if (!empty($text_flds)) {
+                $text_flds = ',"' . implode('","', $text_flds) . '"';
+                $T->set_var('custom_header', $text_flds);
+            }
             $order_date = clone $_CONF['_now'];   // Create an object to be updated later
+            $total_sales = 0;
+            $total_shipping = 0;
+            $total_tax = 0;
+            $total_total = 0;
+            $items = array();
+            $variant_headers = array();
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
-                } else {
+                } elseif (!empty($A['billto_name'])) {
                     $customer = $A['billto_name'];
+                } else {
+                    $customer = COM_getDisplayName($A['uid']);
                 }
                 $order_date->setTimestamp($A['order_date']);
-                $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
-                $T->set_var(array(
+                $item_total = $A['net_price'] * $A['quantity'];
+                $order_total = $item_total + $A['tax'] + $A['shipping'] + $A['handling'];
+                $total_sales += $item_total;
+                $total_tax += $A['tax'];
+                $total_shipping += $A['shipping'];
+                $total_total += $order_total;
+                $items[$A['id']] = array(
                     'item_name'     => $this->item_dscp,
                     'order_id'      => $A['order_id'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
                     'qty'           => $A['qty'],
                     'uid'           => $A['uid'],
+                    'email'         => $A['buyer_email'],
+                    'variants'      => array(),
+                    'custom'        => '',
+                );
+                if ($A['variant_id'] > 0) {
+                    $PV = ProductVariant::getInstance($A['variant_id']);
+                    if ($PV->getID() > 0) {     // make sure it's a good record
+                        foreach ($PV->getDscp() as $dscp) {
+                            // isset() would probably just be extra work here...
+                            $variant_headers[$dscp['name']] = $dscp['name'];
+                            $items[$A['id']]['variants'][$dscp['name']] = $dscp['value'];
+                        }
+                    }
+                }
+                if ($has_custom) {
+                    $extras = json_decode($A['extras'], true);
+                    if (!empty($extras) && isset($extras['custom']) && is_array($extras['custom'])) {
+                        $items[$A['id']]['custom'] = ',"' . implode('","', $extras['custom']) . '"';
+                    }
+                }
+            }
+            if (!empty($variant_headers)) {
+                $T->set_var('variant_header', ',"' . implode('","', $variant_headers) . '"');
+            }
+
+            $T->set_block('report', 'ItemRow', 'row');
+            foreach ($items as $item) {
+                $T->set_var(array(
+                    'item_name'     => $item['item_name'],
+                    'order_id'      => $item['order_id'],
+                    'order_date'    => $item['order_date'],
+                    'customer'      => $item['customer'],
+                    'qty'           => $item['qty'],
+                    'uid'           => $item['uid'],
+                    'email'         => $item['email'],
+                    'custom_flds'   => $item['custom'],
                     'nl'            => "\n",
                 ) );
+                $variants = array();
+                if (!empty($variant_headers)) {
+                    // Accumulate variant values, making sure every variant name
+                    // is included with a blank value if necessary.
+                    foreach ($variant_headers as $var_name) {
+                        if (!isset($item['variants'][$var_name])) {
+                            $item['variants'][$var_name] = '';
+                        }
+                        $variants[] = $item['variants'][$var_name];
+                    }
+                    $T->set_var('variants', ',"' . implode('","', $variants) . '"');
+                }
                 $T->parse('row', 'ItemRow', true);
-                $total_sales += $A['sales_amt'];
-                $total_tax += $A['tax'];
-                $total_shipping += $A['shipping'];
-                $total_total += $order_total;
             }
             break;
         }
@@ -200,4 +271,3 @@ class itempurchase extends \Shop\Report
 
 }
 
-?>
