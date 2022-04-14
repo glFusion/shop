@@ -18,6 +18,7 @@ use Shop\Models\Token;
 use Shop\Models\ReferralTag;
 use Shop\Models\Session;
 use Shop\Models\AffiliateSale;
+use glFusion\Notifier;
 
 
 /**
@@ -1234,8 +1235,9 @@ class Order
             return $this;
         }
 
+        $Notifier = Notifier::getProvider('email');
         $Shop = new Company;
-        if ($force || $notify_buyer) {
+        if ($this->buyer_email != '' && ($force || $notify_buyer)) {
             $save_language = $LANG_SHOP;    // save the site language
             $save_userlang = $_CONF['language'];
             $_CONF['language'] = $this->Customer->getLanguage(true);
@@ -1265,18 +1267,12 @@ class Order
                 $LANG_SHOP['sub_email']
             );
             $subject = sprintf($subject, $Shop->getCompany());
-            if ($this->buyer_email != '') {
-                COM_emailNotification(array(
-                    'to' => array($this->buyer_email),
-                    'from' => array(
-                        'email' => $_CONF['noreply_mail'],
-                        'name'  => $Shop->getCompany(),
-                    ),
-                    'htmlmessage' => $text,
-                    'subject' => htmlspecialchars($subject),
-                ) );
-                SHOP_log("Buyer Notification Done.", SHOP_LOG_DEBUG);
-            }
+
+            $Notifier->addRecipient($this->uid, $this->buyer_email)
+                     ->setSubject(htmlspecialchars($subject))
+                     ->setMessage($text, true)
+                     ->send();
+            SHOP_log("Buyer Notification Done.", SHOP_LOG_DEBUG);
             $LANG_SHOP = $save_language;    // Restore the default language
         }
 
@@ -1296,24 +1292,12 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
-            if (!empty($_SHOP_CONF['shop_email'])) {
-                $email_addr = $_SHOP_CONF['shop_email'];
-            } else {
-                $email_addr = $_CONF['site_mail'];
-            }
-            SHOP_log("Sending email to admin at $email_addr", SHOP_LOG_DEBUG);
-            if (!empty($email_addr)) {
-                COM_emailNotification(array(
-                    'to' => array(
-                        'email' => $email_addr,
-                        'name'  => $Shop->getCompany(),
-                    ),
-                    'from' => SHOP_getVar($_CONF, 'noreply_mail', 'string', $_CONF['site_mail']),
-                    'htmlmessage' => $text,
-                    'subject' => htmlspecialchars($LANG_SHOP['subj_email_admin']),
-                ) );
-                SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
-            }
+            SHOP_log("Sending email to admin at " . $Shop->getEmail(), SHOP_LOG_DEBUG);
+            $Notifier->addRecipient(0, $Shop->getEmail(), $Shop->getCompany())
+                         ->setSubject($LANG_SHOP['subj_email_admin'])
+                         ->setMessage($text, true)
+                         ->send();
+            SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
         }
         return $this;
     }
