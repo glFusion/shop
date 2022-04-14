@@ -2529,19 +2529,10 @@ class Product
         $status = 0;
 
         // update the qty on hand, if tracking and not already zero
-        if ($this->track_onhand && $this->getOnhand() > 0) {
-            /*$sql = "UPDATE {$_TABLES['shop.products']} SET
-                    onhand = GREATEST(0, onhand - {$Item->getQuantity()})
-                    WHERE id = '{$this->id}'";*/
-            $reserved = isset($IPN) && $IPN['reserved_stock'] ? true : false;
-            Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity(), $reserved);
+        if ($this->track_onhand) {
+            Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity());
             Cache::clear('products');
             Cache::clear('sitemap');
-            //DB_query($sql, 1);
-            /*if (DB_error()) {
-                SHOP_log("SQL errror: $sql", SHOP_LOG_ERROR);
-                $status = 1;
-            }*/
         }
         return $status;
     }
