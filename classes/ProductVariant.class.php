@@ -1644,8 +1644,7 @@ class ProductVariant
                 $retval = FieldList::text(array(
                     'name' => 'quantities[' . $A['pv_id'] . '][' . $fieldname . ']',
                     'value' => (float)$fieldvalue,
-                    'size' => 4,
-                    'style' => 'text-align:right',
+                    'style' => 'text-align:right;width:50px;',
                 ) );
             } else {
                 // Showing all product variants, no editing from the list.
