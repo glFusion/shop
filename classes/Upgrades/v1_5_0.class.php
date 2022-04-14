@@ -11,11 +11,9 @@
  * @filesource
  */
 namespace Shop\Upgrades;
-use Shop\OrderItem;
-use Shop\Product;
 use Shop\Config;
 
-class v1.5.0 extends Upgrade
+class v1_5_0 extends Upgrade
 {
     private static $ver = '1.5.0';
 
@@ -23,12 +21,14 @@ class v1.5.0 extends Upgrade
     {
         global $_TABLES, $SHOP_UPGRADE;
 
-        $c = \config::get_instance();
-
         $admin_email = Config::get('admin_email_addr');
         $shop_email = Config::get('shop_email');
         if (empty($shop_email) && !empty($admin_email)) {
-            $c->set('shop_email', $admin_mail, Config::PI_NAME)
+            $c = \config::get_instance();
+            $c->set('shop_email', $admin_mail, Config::PI_NAME);
+        }
+        if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
+            return false;
         }
         return self::setVersion(self::$ver);
     }

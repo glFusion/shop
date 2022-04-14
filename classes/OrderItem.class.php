@@ -25,6 +25,10 @@ class OrderItem
      * @var integer */
     private $id = 0;
 
+    /** Related order ID.
+     * @var string */
+    private $order_id = '';
+
     /** Product record ID or string for a plugin item.
      * @var mixed */
     private $product_id = 0;
@@ -106,6 +110,14 @@ class OrderItem
     /** Quantity that has been shipped/fulfilled.
      * @var integer */
     private $qty_shipped = 0;
+
+    /** Expiration timestamp, normally for downloadable items.
+     * @var integer */
+    private $expiration = 0;
+
+    /** Token, used to verify anonymous download access.
+     * @var string */
+    private $token = '';
 
     /** Flag indicating the item failed a zone rule.
      * Not saved to the database.
@@ -296,8 +308,6 @@ class OrderItem
         $this->setSKU(SHOP_getVar($A, 'sku'));
         $this->dscp = SHOP_getVar($A, 'description');
         $this->quantity = SHOP_getVar($A, 'quantity', 'integer', 0);
-        $this->txn_id = SHOP_getVar($A, 'txn_id');
-        $this->txn_type = SHOP_getVar($A, 'txn_type');
         $this->expiration = SHOP_getVar($A, 'expiration', 'integer', 0);
         $this->base_price = SHOP_getVar($A, 'base_price', 'float', 0);
         $this->price = SHOP_getVar($A, 'price', 'float', 0);
@@ -574,8 +584,6 @@ class OrderItem
                 sku = '" . DB_escapeString($this->sku) . "',
                 description = '" . DB_escapeString($this->dscp) . "',
                 quantity = '" . (float)$this->quantity. "',
-                txn_id = '" . DB_escapeString($this->txn_id) . "',
-                txn_type = '" . DB_escapeString($this->txn_type) . "',
                 qty_discount = '" . (float)$this->qty_discount. "',
                 base_price = '" . (float)$this->base_price. "',
                 price = '" . (float)$this->price . "',

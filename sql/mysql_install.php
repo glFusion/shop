@@ -94,8 +94,6 @@ $_SQL = array(
   `sku` varchar(128) NOT NULL DEFAULT '',
   `description` varchar(255) DEFAULT NULL,
   `quantity` int(11) NOT NULL DEFAULT 1,
-  `txn_id` varchar(128) DEFAULT '',
-  `txn_type` varchar(255) DEFAULT '',
   `expiration` int(11) unsigned NOT NULL DEFAULT 0,
   `base_price` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `price` decimal(9,4) NOT NULL DEFAULT 0.0000,
@@ -113,8 +111,7 @@ $_SQL = array(
   `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
-  KEY `purchases_productid` (`product_id`),
-  KEY `purchases_txnid` (`txn_id`)
+  KEY `purchases_productid` (`product_id`)
 ) ENGINE=MyISAM",
 
 'shop.images' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
@@ -941,6 +938,10 @@ $SHOP_UPGRADE['1.4.1'] = array(
     "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
+);
+$SHOP_UPGRADE['1.5.0'] = array(
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_id`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
 );
 
 
