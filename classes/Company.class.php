@@ -66,8 +66,12 @@ class Company extends Address
             ->setPostal(Config::get('zip'))
             ->setCountry(Config::get('country'))
             ->setName(Config::get('remit_to'))
-            ->setPhone(Config::get('shop_phone'))
-            ->setEmail(Config::get('shop_email'));
+            ->setPhone(Config::get('shop_phone'));
+        if (!empty(Config::get('shop_email'))) {
+            $this->setEmail(Config::get('shop_email'));
+        } else {
+            $this->setEmail($_CONF['site_mail']);
+        }
     }
 
 
