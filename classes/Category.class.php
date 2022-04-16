@@ -79,6 +79,10 @@ class Category
      * @var integer */
     private $zone_rule = 0;
 
+    /** Product class ID.
+     * @var integer */
+    protected $prod_rule = 0;
+
     /** Indicate whether the current user is an administrator.
      * @var boolean */
     private $isAdmin = 0;
@@ -114,7 +118,7 @@ class Category
         $this->isNew = true;
 
         if (is_array($id)) {
-            $this->SetVars($id, true);
+            $this->setVars($id, true);
         } elseif ($id > 0) {
             $this->cat_id = $id;
             if (!$this->Read()) {
@@ -131,7 +135,7 @@ class Category
      * @param   array   $row    Array of values, from DB or $_POST
      * @param   boolean $fromDB True if read from DB, false if from a form
      */
-    public function SetVars($row, $fromDB=false)
+    public function setVars($row, $fromDB=false)
     {
         if (!is_array($row)) return;
 
@@ -147,6 +151,7 @@ class Category
         $this->google_taxonomy = $row['google_taxonomy'];
         $this->image = $row['image'];
         $this->zone_rule = (int)$row['zone_rule'];
+        $this->prod_rule = (int)$row['prod_rule'];
     }
 
 
@@ -188,7 +193,7 @@ class Category
             return false;
         } else {
             $row = DB_fetchArray($result, false);
-            $this->SetVars($row, true);
+            $this->setVars($row, true);
             $this->isNew = false;
             Cache::set(self::_makeCacheKey($id), $this, 'categories');
             return true;
@@ -250,7 +255,7 @@ class Category
         global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
-            $this->SetVars($A);
+            $this->setVars($A);
         }
 
         // For new images, move the image from temp storage into the
@@ -283,7 +288,8 @@ class Category
                 grp_access ='{$this->grp_access}',
                 image='" . DB_escapeString($this->image) . "',
                 google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "',
-                zone_rule = " . $this->getRuleID();
+                zone_rule = " . $this->getRuleID() . ",
+                prod_rule = " . $this->prod_rule;
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
             //COM_errorLog($sql);
@@ -459,6 +465,7 @@ class Category
             'google_taxonomy' => $this->google_taxonomy,
             'nonce'         => Images\Category::makeNonce(),
             'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
+            'product_rule_options' => Rules\Product::optionList($this->prod_rule),
         ) );
         if ($this->image != '') {
             $T->set_var(array(
@@ -1282,6 +1289,17 @@ class Category
 
 
     /**
+     * Get the product class record ID.
+     *
+     * @return  integer     Record ID of the product class
+     */
+    public function getProductRuleId() : int
+    {
+        return $this->prod_rule;
+    }
+
+
+    /**
      * Delete product->category mappings when a product is deleted.
      *
      * @param   integer $prod_id    Product record ID
@@ -1327,7 +1345,6 @@ class Category
     {
         return (int)$this->zone_rule;
     }
-
 
 
     /**

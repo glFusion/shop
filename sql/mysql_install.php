@@ -79,6 +79,7 @@ $_SQL = array(
   `lead_time` varchar(64) NOT NULL DEFAULT '',
   `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `zone_rule` int(11) unsigned NOT NULL DEFAULT '0',
+  `prod_rule` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -137,6 +138,7 @@ $_SQL = array(
   `brand_id` int(11) NOT NULL DEFAULT 0,
   `supplier_id` int(11) NOT NULL DEFAULT 0,
   `zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
+  `prod_rule` int(11) unsigned NOT NULL DEFAULT 0,
   `lft` smallint(5) unsigned NOT NULL DEFAULT 0,
   `rgt` smallint(5) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`cat_id`),
@@ -940,6 +942,18 @@ $SHOP_UPGRADE['1.4.1'] = array(
     "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
 );
 $SHOP_UPGRADE['1.5.0'] = array(
+    "CREATE TABLE `{$_TABLES['shop.product_rules']}` (
+      `pr_id` int(11) unsigned NOT NULL,
+      `pr_name` varchar(40) DEFAULT NULL,
+      `pr_dscp` varchar(255) DEFAULT NULL,
+      `pr_hazmat` tinyint(1) unsigned NOT NULL DEFAULT 0,
+      `pr_shipper_ids` text DEFAULT NULL,
+      `pr_zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
+      PRIMARY KEY (`pr_id`)
+    ) ENGINE=MyIsam",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
+    "ALTER TABLE {$_TABLES['shop.categories']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
+
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
 );
@@ -969,3 +983,4 @@ $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
 $_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][0];
 $_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][1];
+$_SQL['shop.product_rules'] = $SHOP_UPGRADE['1.5.0'][0];

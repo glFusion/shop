@@ -932,19 +932,15 @@ dl#featurelist dt {
   float: left;
   width: 30%;
   /* adjust the width; make sure the total of both is 100% */
-  padding: 0;
-  margin: 0;
   margin-top:5px;
+  clear:both;
 }
 dl#featurelist dd {
   float: left;
   width: 70%;
   /* adjust the width; make sure the total of both is 100% */
-  padding: 0;
-  margin: 0;
   margin-top:5px;
 }
-
 
 div.cart {
     width: 90%;

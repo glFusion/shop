@@ -5,4 +5,12 @@
   {$LANG_SHOP['no_products_match']}
 </div>
 {!endif}
+{!if rule_notes}
+<div class="uk-alert">
+	<h4>{$LANG_SHOP['notes']}</h4>
+	<ul>
+	{rule_notes}
+	</ul>
+</div>
+{!endif}
 {# end {templatelocation} #}

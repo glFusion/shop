@@ -504,7 +504,7 @@
 		{features_list}
 	</li>
 
-{# Zone Restrictions #}
+{# Restrictions #}
 	<li>
 		<div class="uk-form-row uk-margin">
 			<label class="uk-form-label">{$LANG_SHOP['zone_rule']}:
@@ -514,6 +514,17 @@
 				<select class="uk-select" name="zone_rule">
 					<option value="0">-- {$LANG_SHOP['none']} --</option>
 					{zone_rule_options}
+				</select>
+			</div>
+		</div>
+		<div class="uk-form-row uk-margin">
+			<label class="uk-form-label">{$LANG_SHOP['product_rule']}:
+				<span id="hlp_prod_rule" class="tooltip_cfg tooltipstered"></span>
+			</label>
+			<div class="uk-form-controls">
+				<select class="uk-select" name="prod_rule">
+					<option value="0">-- {$LANG_SHOP['none']} --</option>
+					{product_rule_options}
 				</select>
 			</div>
 		</div>

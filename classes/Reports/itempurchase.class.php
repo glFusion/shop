@@ -56,7 +56,7 @@ class itempurchase extends \Shop\Report
      *
      * @return  string  HTML for report
      */
-    public function Render()
+    public function Render() : string
     {
         global $_TABLES, $_CONF, $LANG_SHOP;
 
@@ -157,6 +157,9 @@ class itempurchase extends \Shop\Report
             $sql .= ' ' . $query_arr['default_filter'];
             $res = DB_query($sql);
             if (!empty($text_flds)) {
+                foreach ($text_flds as $idx=>$val) {
+                    $text_flds[$idx] = $this->remQuote($val);
+                }
                 $text_flds = ',"' . implode('","', $text_flds) . '"';
                 $T->set_var('custom_header', $text_flds);
             }
@@ -183,13 +186,13 @@ class itempurchase extends \Shop\Report
                 $total_shipping += $A['shipping'];
                 $total_total += $order_total;
                 $items[$A['id']] = array(
-                    'item_name'     => $this->item_dscp,
-                    'order_id'      => $A['order_id'],
+                    'item_name'     => $this->remQuote($this->item_dscp),
+                    'order_id'      => $this->remQuote($A['order_id']),
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
-                    'qty'           => $A['qty'],
-                    'uid'           => $A['uid'],
-                    'email'         => $A['buyer_email'],
+                    'qty'           => (float)$A['qty'],
+                    'uid'           => (int)$A['uid'],
+                    'email'         => $this->remQuote($A['buyer_email']),
                     'variants'      => array(),
                     'custom'        => '',
                 );
@@ -197,15 +200,17 @@ class itempurchase extends \Shop\Report
                     $PV = ProductVariant::getInstance($A['variant_id']);
                     if ($PV->getID() > 0) {     // make sure it's a good record
                         foreach ($PV->getDscp() as $dscp) {
-                            // isset() would probably just be extra work here...
-                            $variant_headers[$dscp['name']] = $dscp['name'];
-                            $items[$A['id']]['variants'][$dscp['name']] = $dscp['value'];
+                            $variant_headers[$dscp['name']] = $this->remQuote($dscp['name']);
+                            $items[$A['id']]['variants'][$dscp['name']] = $this->remQuote($dscp['value']);
                         }
                     }
                 }
                 if ($has_custom) {
                     $extras = json_decode($A['extras'], true);
                     if (!empty($extras) && isset($extras['custom']) && is_array($extras['custom'])) {
+                        foreach ($extras['custom'] as $idx=>$val) {
+                            $extras['custom'][$idx] = $this->remQuote($val);
+                        }
                         $items[$A['id']]['custom'] = ',"' . implode('","', $extras['custom']) . '"';
                     }
                 }

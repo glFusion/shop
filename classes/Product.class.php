@@ -3,9 +3,9 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -17,7 +17,6 @@ use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
 use Shop\Models\IPN;
-//use glFusion\FieldList;
 
 
 /**
@@ -326,6 +325,15 @@ class Product
     /** Affiliate bonus percentage.
      * @var float */
     protected $aff_percent = 0;
+
+    /** Product class ID.
+     * @var integer */
+    protected $prod_rule = 0;
+
+    /** Effective product rule object.
+     * Only instantiated if needed.
+     * var object */
+    protected $productRule = NULL;
 
     /** Flag to indicate that the product cannot be purchased.
      * @var boolean */
@@ -678,6 +686,7 @@ class Product
         $this->custom = $row['custom'];
         $this->setAvailBegin($row['avail_beg']);
         $this->setAvailEnd($row['avail_end']);
+        $this->prod_rule = (int)$row['prod_rule'];
         if ($this->avail_end < $this->avail_beg) {
             $this->avail_end = Dates::MAX_DATE;
         }
@@ -1213,7 +1222,8 @@ class Product
                 zone_rule = {$this->getZoneRuleID()},
                 buttons= '" . DB_escapeString($this->btn_type) . "',
                 min_ord_qty = '" . (int)$this->min_ord_qty . "',
-                max_ord_qty = '" . (int)$this->max_ord_qty . "'";
+                max_ord_qty = '" . (int)$this->max_ord_qty . "',
+                prod_rule = {$this->prod_rule}";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         DB_query($sql, 1);
@@ -1399,8 +1409,7 @@ class Product
             'keywords'      => htmlspecialchars($this->keywords, ENT_QUOTES, COM_getEncodingt()),
             'currency'      => $_SHOP_CONF['currency'],
             //'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL('product_form',
-                                            $_CONF['language']),
+            'doc_url'       => SHOP_getDocURL('product_form', $_CONF['language']),
             'prod_type'     => $this->prod_type,
             'weight'        => $this->weight,
             'feat_chk'      => $this->featured == 1 ? 'checked="checked"' : '',
@@ -1547,6 +1556,7 @@ class Product
             $T->set_var('sale_prices', $DT->finish($DT->get_var('output')));
         }
 
+        $T->set_var('product_rule_options', Rules\Product::optionList($this->prod_rule));
         $retval .= $T->parse('output', 'product');
         $retval .= COM_endBlock();
         return $retval;
@@ -1935,10 +1945,27 @@ class Product
             ) );
             $T->parse('FL', 'FeatList', true);
         }
-        if ($zonerule_dscp != '') {
+        $restrictions = array();
+        if (!empty($zonerule_dscp)) {
+            $restrictions[] = $zonerule_dscp;
+        }
+        $PCs = Rules\Product::getByProduct($this);
+        foreach ($PCs as $PC) {
+            $pc_restriction = $PC->getDscp();
+            if (!empty($pc_restriction)) {
+                $restrictions[] = $pc_restriction;
+            }
+        }
+        if (!empty($restrictions)) {
+            if (count($restrictions) > 1) {
+                $prule_text = '<ul><li>' . implode('</li><li>', $restrictions) . '</li></ul>';
+            } else {
+                $prule_text = $restrictions[0];
+            }
+
             $T->set_var(array(
-                'ft_name' => $LANG_SHOP['restrictions'],
-                'fv_text' => $zonerule_dscp
+                'ft_name' => $LANG_SHOP['other'],
+                'fv_text' => $prule_text,
             ) );
             $T->parse('FL', 'FeatList', true);
         }
@@ -2632,6 +2659,31 @@ class Product
     public function getWeight()
     {
         return $this->weight;
+    }
+
+
+    /**
+     * Get the product class ID assigned to this product.
+     *
+     * @return  integer     Product Class ID
+     */
+    public function getProductRuleId() : int
+    {
+        return $this->prod_rule;
+    }
+
+
+    /**
+     * Get the effective product class object for this product.
+     *
+     * @return  object      Product Rule object
+     */
+    public function getEffectiveProductRule() : \Shop\Rules\Product
+    {
+        if ($this->productRule == NULL) {
+            $this->productRule = Rules\Product::getEffective($this);
+        }
+        return $this->productRule;
     }
 
 

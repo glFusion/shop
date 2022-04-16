@@ -57,6 +57,7 @@ $expected = array(
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
     'coup_bulk_void', 'coup_bulk_unvoid',
+    'pr_save', 'pr_del',
     // Views to display
     'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other',
@@ -72,7 +73,7 @@ $expected = array(
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
     'pi_products', 'pi_edit', 'pi_save', 'pi_del',
-    'products', 'ipndetail',
+    'products', 'ipndetail', 'pr_edit', 'pr_list',
     // deprecated
     'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
@@ -248,6 +249,28 @@ case 'pv_del':
     } else {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $_REQUEST['item_id']);
     }
+    exit;
+    break;
+
+case 'pr_save':
+    $PC = new Shop\Rules\Product((int)$_POST['pr_id']);
+    if ($PC->Save($_POST)) {
+        COM_setMsg($LANG_SHOP['item_updated']);
+    } else {
+        COM_setMsg($LANG_SHOP['item_upd_err']);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
+    break;
+
+case 'pr_del':
+    if (isset($_POST['delbutton_x']) && is_array($actionval)) {
+        foreach ($actionval as $val) {
+        Shop\Rules\Product::Delete((int)$val);
+        }
+    } elseif ($actionval > 0) {
+        Shop\Rules\Product::Delete((int)$actionval);
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
     exit;
     break;
 
@@ -832,6 +855,10 @@ case 'carriers':
     $content .= Shop\Shipper::carrierList();
     break;
 
+case 'pr_list':
+    $content .= Shop\Rules\Product::adminList();
+    break;
+
 case 'variants':
     $content .= Shop\Menu::adminCatalog('variants');
 case 'pv_bulk':
@@ -1170,6 +1197,12 @@ case 'none':
 case 'pi_products':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Products\Plugin::adminList();
+    break;
+
+case 'pr_edit':
+    $actionval = (int)$actionval;
+    $PC = new Shop\Rules\Product($actionval);
+    $content .= $PC->Edit();
     break;
 
 default:

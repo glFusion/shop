@@ -2239,8 +2239,16 @@ class Order
         $base_chg = $this->gross_items + $this->handling + $this->tax;
         $shipping_units = $this->totalShippingUnits();
         $Shippers = Shipper::getAll(true, $shipping_units);
+        $PR = $this->getEffectiveProductRule();
+        $allowed_shippers = $PR->getShipperIds();
         $methods = array();
         foreach ($Shippers as $code=>$Shipper) {
+            if (
+                !empty($allowed_shippers) &&
+                !in_array($Shipper->getId(), $allowed_shippers)
+            ) {
+                continue;
+            }
             $quote = $Shipper->getQuote($this);
             if ($this->getTaxShipping()) {
                 $tax_rate = $this->getTaxRate();
@@ -2262,6 +2270,11 @@ class Order
                     'order_total' => Currency::getInstance()->FormatValue($order_total),
                 );
             }
+        }
+
+        if (empty($methods)) {
+            // No possible shipping methods
+            return array();
         }
 
         // Get all the shippers and rates for the selection
@@ -2780,6 +2793,21 @@ class Order
             $units += $OI->getTotalShippingUnits();
         }
         return $units;
+    }
+
+
+    /**
+     * Get the total shipping weight for this order.
+     *
+     * @return  float       Total shipping weight
+     */
+    public function totalShippingWeight() : float
+    {
+        $weight = 0;
+        foreach ($this->Items as $OI) {
+            $weight += $OI->getWeight();
+        }
+        return $weight;
     }
 
 
@@ -4000,6 +4028,25 @@ class Order
             SET uid = $uid
             WHERE uid = 1 AND buyer_email = '" . DB_escapeString($email) . "'";
         DB_query($sql, 1);
+    }
+
+
+    /**
+     * Get the combined product rules for all items on this order.
+     *
+     * @return  object      Product Rule object
+     */
+    public function getEffectiveProductRule() : object
+    {
+        $retval = new Rules\Product;
+        foreach ($this->Items as $Item) {
+            $Rules = Rules\Product::getByProduct($Item->getProduct());
+            foreach ($Rules as $Rule) {
+                $retval->Merge($Rule);
+            }
+        }
+        $retval->setDscp('Final product classification for order ' . $this->getOrderId());
+        return $retval;
     }
 
 }
