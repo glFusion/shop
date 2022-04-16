@@ -200,6 +200,7 @@ class Cart extends Order
         $options_text = SHOP_getVar($args, 'options_text', 'array');
         $shipping   = SHOP_getVar($args, 'shipping', 'float', 0);
         $shipping_units = SHOP_getVar($args, 'shipping_units', 'float', $P->getShippingUnits());
+        $shipping_weight= SHOP_getVar($args, 'shipping_weight', 'float', $P->getWeight());
 
         if (isset($args['description'])) {
             $item_dscp  = $args['description'];
@@ -266,6 +267,7 @@ class Cart extends Order
                 'override'  => $override,
                 'shipping'  => $shipping,
                 'shipping_units' => $shipping_units,
+                'shipping_weight' => $shipping_weight,
                 'taxable'   => $P->isTaxable() ? 1 : 0,
             );
             if (Product::isPluginItem($item_id)) {

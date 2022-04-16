@@ -110,6 +110,7 @@ $_SQL = array(
   `tax` decimal(9,4) NOT NULL DEFAULT 0.0000,
   `tax_rate` decimal(6,4) NOT NULL DEFAULT 0.0000,
   `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
+  `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `purchases_productid` (`product_id`)
@@ -935,12 +936,6 @@ $SHOP_UPGRADE['1.3.1'] = array(
     "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT current_timestamp()",
     "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
 );
-$SHOP_UPGRADE['1.4.1'] = array(
-    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
-    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
-    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
-);
 $SHOP_UPGRADE['1.5.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.product_rules']}` (
       `pr_id` int(11) unsigned NOT NULL,
@@ -951,11 +946,16 @@ $SHOP_UPGRADE['1.5.0'] = array(
       `pr_zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
       PRIMARY KEY (`pr_id`)
     ) ENGINE=MyIsam",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
+    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.products']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
 
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` AFTER `shipping_units`",
 );
 
 

@@ -674,7 +674,7 @@ class Product
         $this->expiration = $row['expiration'];
         $this->keywords = $row['keywords'];
         $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
-        $this->weight = $row['weight'];
+        $this->weight = (float)$row['weight'];
         $this->taxable = isset($row['taxable']) ? $row['taxable'] : 0;
         $this->shipping_type = SHOP_getVar($row, 'shipping_type', 'integer');
         $this->shipping_amt = SHOP_getVar($row, 'shipping_amt', 'float');
@@ -2658,7 +2658,7 @@ class Product
      */
     public function getWeight()
     {
-        return $this->weight;
+        return (float)$this->weight;
     }
 
 

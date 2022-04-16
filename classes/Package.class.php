@@ -754,13 +754,13 @@ class Package
             $item_units = $single_units * $qty;
             $fixed_shipping += $Item->getShipping() * $qty;
             $total_units += $item_units;
-            $total_weight += $qty * $P->getWeight();
+            $single_weight += $qty * $Item->getShippingWeight();
             for ($i = 0; $i < $qty; $i++) {
                 $items[] = array(
                     'orderitem_id' => $id,
                     'item_name'     => $Item->getDscp(),
                     'single_units' => $single_units,
-                    'weight' => $P->getWeight(),
+                    'single_weight' => $single_weight,
                     'price' => $Item->getPrice(),
                     'packed'    => false,
                 );
@@ -802,7 +802,7 @@ class Package
                 $weight_left = $Pkg->getMaxWeight() - $Pkg->getWeight();
                 if (
                     $units_left >= $item['single_units'] &&
-                    $weight_left >= $item['weight']
+                    $weight_left >= $item['single_weight']
                 ) {
                     // can add more of this item to the package.
                     $Pkg->addUnits($item['single_units']);
@@ -810,7 +810,7 @@ class Package
                     //$pkg['units'] += $item['single_units'];
                     //$pkg['units_left'] -= $item['single_units'];
                     $units_left -= $item['single_units'];
-                    $weight_left -= $item['weight'];
+                    $weight_left -= $item['single_weight'];
                     $item['packed'] = true;
                     break;
                 }
@@ -835,10 +835,10 @@ class Package
                     // Check that the item will fit. If not, there's a problem.
                     if (
                         $item['single_units'] <= $pkgClass->getMaxUnits() &&
-                        $item['weight'] <= $pkgClass->getMaxWeight()
+                        $item['single_weight'] <= $pkgClass->getMaxWeight()
                     ) {
                         $thisPkg = clone $pkgClass;
-                        $thisPkg->addWeight($item['weight']);
+                        $thisPkg->addWeight($item['single_weight']);
                         $thisPkg->addUnits($item['single_units']);
                         $thisPkg->addValue($item['price']);
                         $retval[] = $thisPkg;

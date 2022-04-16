@@ -457,6 +457,7 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
         $OI = OrderItem::fromArray($args);
+        COM_errorLog(var_export($args,true));
         if (!isset($args['shipping_units'])) {
             $args['shipping_units'] = $OI->getShippingUnits() + $PV->getShippingUnits();
         }
@@ -2076,7 +2077,7 @@ class Order
         $weight = 0;
         foreach ($this->Items as $id=>$OI) {
             $units += $OI->getTotalShippingUnits();
-            $weight += $OI->getWeight();
+            $weight += $OI->getTotalShippingWeight();
         }
         return ($units > 0 || $weight > 0);
     }
@@ -2164,13 +2165,16 @@ class Order
     {
         $shipping_amt = 0;
         $shipping_units = 0;
+        $shipping_weight = 0;
         foreach ($this->Items as $OI) {
             $shipping_amt += $OI->getShipping() * $OI->getQuantity();
             $shipping_units += $OI->getTotalShippingUnits();
+            $shipping_weight += $OI->getTotalShippingWeight();
         }
         return array(
             'units' => $shipping_units,
             'amount' => $shipping_amt,
+            'weight' => $shipping_weight,
         );
     }
 
@@ -2805,7 +2809,7 @@ class Order
     {
         $weight = 0;
         foreach ($this->Items as $OI) {
-            $weight += $OI->getWeight();
+            $weight += $OI->getTotalShippingWeight();
         }
         return $weight;
     }

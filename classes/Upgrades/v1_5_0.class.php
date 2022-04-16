@@ -12,6 +12,9 @@
  */
 namespace Shop\Upgrades;
 use Shop\Config;
+use Shop\OrderItem;
+use Shop\ProductVariant;
+
 
 class v1_5_0 extends Upgrade
 {
@@ -29,6 +32,25 @@ class v1_5_0 extends Upgrade
         }
         if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
             return false;
+        }
+        $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
+        $res = DB_query($sql);
+        if ($res) {
+            while ($A = DB_fetchArray($res, false)) {
+                $weight = 0;
+                $OI = OrderItem::fromArray($A);
+                $weight = (float)$OI->getProduct()->getWeight();
+                if ($OI->getVariantId() > 0) {
+                    $weight += (float)ProductVariant::getInstance($OI->getVariantId())->getWeight();
+                }
+                if ($weight > 0) {
+                    DB_query(
+                        "UPDATE {$_TABLES['shop.orderitems']}
+                        SET shipping_weight = $weight
+                        WHERE id = " . $OI->getId()
+                    );
+                }
+            }
         }
         return self::setVersion(self::$ver);
     }

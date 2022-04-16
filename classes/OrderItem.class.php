@@ -66,9 +66,13 @@ class OrderItem
      * @var float */
     private $shipping = 0;
 
-    /** Total number of shipping units for the line item.
+    /** Number of shipping units for a unit of this item.
      * @var float */
     private $shipping_units = 0;
+
+    /** Shipping weight for a unit of this item.
+     * @var float */
+    private $shipping_weight = 0;
 
     /** Handling charge for the line item.
      * @var float */
@@ -231,6 +235,10 @@ class OrderItem
                     }
                 }
             }
+            if (!isset($A['shipping_weight'])) {
+                // Get the shipping weight from the product if not included.
+                $OI->setShippingWeight($OI->getProduct()->getWeight());
+            }
             // Calculate if there's a sale price applicable.
             $OI->setPrice($OI->getProduct()->getSalePrice($OI->getPrice()));
         } else {
@@ -320,6 +328,7 @@ class OrderItem
         $this->taxable = SHOP_getVar($A, 'taxable', 'integer') ? 1 : 0;
         $this->shipping = SHOP_getVar($A, 'shipping', 'float', 0);
         $this->shipping_units = SHOP_getVar($A, 'shipping_units', 'float', 0);
+        $this->shipping_weight = SHOP_getVar($A, 'shipping_weight', 'float', 0);
         $this->handling = SHOP_getVar($A, 'handling', 'float', 0);
         $this->tax = SHOP_getVar($A, 'tax', 'float', 0);
         $this->tax_rate = SHOP_getVar($A, 'tax_rate', 'float', 0);
@@ -594,6 +603,7 @@ class OrderItem
                 extras = '" . DB_escapeString(json_encode($this->extras)) . "',
                 shipping = {$this->shipping},
                 shipping_units = {$this->shipping_units},
+                shipping_weight = {$this->shipping_weight},
                 tax = {$this->getTax()},
                 tax_rate = {$this->getTaxRate()}";
                 //options = '" . DB_escapeString($this->options) . "',
@@ -796,6 +806,28 @@ class OrderItem
 
 
     /**
+     * Get the unit shipping weight for this line item.
+     *
+     * @return  float       Shipping units for one of this item
+     */
+    public function getShippingWeight() : float
+    {
+        return (float)$this->shipping_weight;
+    }
+
+
+    /**
+     * Gets the total shipping weight for the item.
+     *
+     * @return  float       Total shipping weight for this line item
+     */
+    public function getTotalShippingWeight() : float
+    {
+        return (float)$this->shipping_weight * (float)$this->quantity;
+    }
+
+
+    /**
      * Get the product shipping unit amount.
      *
      * @return  float       Shipping units for the product/variant
@@ -839,12 +871,26 @@ class OrderItem
      * Set the total number of shipping units related to this line item.
      * Quantity x units_per_unit
      *
-     * @param   float   $units      Total shipping units
+     * @param   float   $units      Unit shipping units
      * @return  object  $this
      */
     public function setShippingUnits(float $units) : object
     {
         $this->shipping_units = (float)$units;
+        return $this;
+    }
+
+
+    /**
+     * Set the total number of shipping units related to this line item.
+     * Quantity x units_per_unit
+     *
+     * @param   float   $weight     Unit shipping weight
+     * @return  object  $this
+     */
+    public function setShippingWeight(float $wt) : object
+    {
+        $this->shipping_weight = (float)$wt;
         return $this;
     }
 
