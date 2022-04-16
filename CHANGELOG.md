@@ -18,6 +18,7 @@ Release TBD
   * Add bulk void/unvoid buttons for coupons.
   * Fix duplicate gift card payment on invoice view calculation.
   * Hide price and disable buttons if a product selection is not available.
+  * Add custom fields and variants to item purchase report.
 
 ## v1.4.1
 Release 2022-04-07

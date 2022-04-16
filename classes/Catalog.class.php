@@ -3,9 +3,9 @@
  * Class to render the catalog view.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner
+ * @copyright   Copyright (c) 2009-2022 Lee Garner
  * @package     shop
- * @version     v1.3.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -533,6 +533,23 @@ class Catalog
             $T->set_var('no_rows', true);
         }
 
+        // Show the category rules in the footer, if any.
+        $notes = array();
+        if ($Cat->getRuleId() > 0) {
+            $have_rules = true;
+            $Rule = Rules\Zone::getInstance($Cat->getRuleId());
+            $notes[] = $Rule->getDscp();
+
+        }
+        if (is_int($this->cat_id) && $this->cat_id > 0) {
+            $Rules = Rules\Product::getByCategory($Cat);
+            if (!empty($Rules)) {
+                foreach ($Rules as $Rule) {
+                    $notes[] = $Rule->getDscp();
+                }
+            }
+            $T->set_var('rule_notes', '<li>' . implode('</li><li>', $notes) . '</li>');
+        }
         $display .= $T->parse('', 'end');
         return $display;
     }
@@ -709,7 +726,6 @@ class Catalog
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             ) );
             $T->parse('PI', 'ProductItems', true);
-            //var_dump($T);die;
         }
         $display .= $T->parse('', 'start');
         $display .= $T->parse('', 'wrapper');

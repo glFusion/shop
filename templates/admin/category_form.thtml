@@ -12,7 +12,7 @@
 			<span id="cat_name" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" id="cat_name" name="cat_name" value="{cat_name}" />
+			<input class="uk-input uk-form-width-medium" required type="text" id="cat_name" name="cat_name" value="{cat_name}" />
 		</div>
 	</div>
 
@@ -22,7 +22,7 @@
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
 {!if parent_sel}
-			<select class="uk-select uk-form-small uk-form-width-small" name="parent_id" id="parent_id">
+			<select class="uk-select uk-form-width-small" name="parent_id" id="parent_id">
 				{parent_sel}
 			</select>
 {!else}
@@ -48,7 +48,7 @@
 			<span id="g_taxonomy" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<input class="uk-input uk-form-small uk-form-width-medium" type="text" name="google_taxonomy" id="google_taxonomy" value="{google_taxonomy}" />
+			<input class="uk-input uk-form-width-medium" type="text" name="google_taxonomy" id="google_taxonomy" value="{google_taxonomy}" />
 		</div>
 	</div>
 
@@ -107,9 +107,21 @@
 			<span id="hlp_zone_rule" class="tooltip_cfg tooltipstered"></span>
 		</label>
 		<div class="uk-form-controls uk-form-controls-text">
-			<select class="uk-select uk-form-small uk-form-width-medium" name="zone_rule">
+			<select class="uk-select uk-form-width-medium" name="zone_rule">
 				<option value="0">-- {$LANG_SHOP['none']} --</option>
 				{zone_rule_options}
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['product_rule']}:
+			<span id="hlp_prod_rule" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<select class="uk-select" name="prod_rule">
+				<option value="0">-- {$LANG_SHOP['none']} --</option>
+				{product_rule_options}
 			</select>
 		</div>
 	</div>

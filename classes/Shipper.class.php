@@ -994,7 +994,7 @@ class Shipper
             tax_loc = '{$this->getTaxLocation()}',
             min_units = '{$this->min_units}',
             max_units = '{$this->max_units}',
-            valid_from = '{$this->valid_from->toUnix()}',
+            valid_from = " . max(0, $this->valid_from->toUnix()) . ",
             valid_to = '{$this->valid_to->toUnix()}',
             use_fixed = '{$this->use_fixed}',
             free_threshold = '{$this->free_threshold}',
@@ -1916,7 +1916,6 @@ class Shipper
             ->setServiceID($this->key . '.' . $this->id);
         $found = false;
         if (
-            $this->item_shipping['units'] > 0 &&
             $this->item_shipping['units'] <= $this->max_units &&
             $this->item_shipping['units'] >= $this->min_units
         ) {

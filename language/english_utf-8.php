@@ -774,6 +774,15 @@ $LANG_SHOP = array (
 'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
 'pi_name' => 'Plugin',
 'plugins' => 'Plugins',
+'is_hazmat' => 'Is Hazmat',
+'allowed_shippers' => 'Allowed Shippers',
+'product_rule' => 'Product Rule',
+'dscp_prod_classes' => 'Add or update product classes, where you can specify special product restrictions by jproduct or category.',
+'upd_prod_classes' => 'Update Product Rules',
+'edit_pr' => 'Edit a Product Rule',
+'item_updated' => 'The item has been updated.',
+'item_upd_err' => 'There was an error saving the item.',
+'other_info' => 'Other Information',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
