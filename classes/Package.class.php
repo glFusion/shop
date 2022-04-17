@@ -754,7 +754,9 @@ class Package
             $item_units = $single_units * $qty;
             $fixed_shipping += $Item->getShipping() * $qty;
             $total_units += $item_units;
-            $single_weight += $qty * $Item->getShippingWeight();
+            $single_weight = $Item->getShippingWeight();
+            $item_weight = $qty * $single_weight;
+            $total_weight += $item_weight;
             for ($i = 0; $i < $qty; $i++) {
                 $items[] = array(
                     'orderitem_id' => $id,
