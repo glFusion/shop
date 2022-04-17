@@ -50,10 +50,6 @@
 	<i class="uk-icon uk-icon-arrow-left"></i>
 <!-- END field-right -->
 
-<!-- BEGIN field-add -->
-	<i class="uk-icon uk-icon-plus-circle uk-text-success"></i>
-<!-- END field-add -->
-
 <!-- BEGIN field-circle -->
 	<i class="uk-icon uk-icon-circle uk-text-{status}"></i>
 <!-- END field-circle -->
