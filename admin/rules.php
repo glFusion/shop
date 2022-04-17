@@ -123,7 +123,7 @@ case 'pr_save':
     } else {
         COM_setMsg($LANG_SHOP['item_upd_err']);
     }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?pr_list');
     break;
 
 case 'pr_del':
@@ -134,7 +134,7 @@ case 'pr_del':
     } elseif ($actionval > 0) {
         Shop\Rules\Product::Delete((int)$actionval);
     }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?pr_list');
     exit;
     break;
 
