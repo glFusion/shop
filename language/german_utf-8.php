@@ -773,6 +773,23 @@ $LANG_SHOP = array (
 'msg_aff_signup_created' => 'Thank you for registering as an affiliate',
 'pi_name' => 'Plugin',
 'plugins' => 'Plugins',
+'gc_code' => 'Gift Card Code',
+'gc_message' => 'Message',
+'is_hazmat' => 'Is Hazmat',
+'allowed_shippers' => 'Allowed Shippers',
+'product_rule' => 'Product Rule',
+'product_rules' => 'Product Rules',
+'dscp_rules' => 'Add or update regions, region-based rules and product rules, where you can specify special product restrictions by product or category.',
+'update_rules' => 'Update Product and Region Rules',
+'edit_pr' => 'Edit a Product Rule',
+'item_updated' => 'The item has been updated.',
+'item_upd_err' => 'There was an error saving the item.',
+'other_info' => 'Other Information',
+'zone_rules' => 'Zone Rules',
+'adm_mnu_pr' => 'Product rules can be used to limit shipping options for specific products or categories.',
+'adm_mnu_zr' => 'Zone rules can allow or disallow purchasing and shipping for specific regions.',
+'adm_mnu_region' => 'Purchases and shipping will be complegely disallowed for any region, country, or state that is unchecked.',
+'adm_mnu_states' => 'Uncheck any state for which sales should be disallowed.<br />You can also indicat whether a state charges sales tax on shipping and/or handling charges (USA only).',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';

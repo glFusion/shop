@@ -2,12 +2,13 @@
 
 ## v1.5.0
 Release TBD
-  * Save shipping units with orderitems to facilitate injected products from plugins.
-  * Don't calculate shipping where units = 0, use fixed only if present.
+  * Require glFusion 2.1.0+
+  * Save shipping units and weights with orderitems to facilitate injected products from plugins.
+  * Don't calculate shipping where units = 0, use only fixed if present.
   * Add flag to disable catalog if used only to support plugins.
   * Move feature-enablement configs under a separate header.
   * Ensure complete IPN data is sent to plugins for handlePurchase().
-  * Add a header to buyer notifications, admin can customize.
+  * Add a header and footer templates to buyer notifications, admin can customize.
   * Allow anonymous buyers to provide addresses on orders without saving the address.
   * Link anonymous orders to a new user's account by matching the email address.
   * Fix #64 - saving a gateway didn't save unchecked service statuses.
@@ -16,13 +17,16 @@ Release TBD
   * Change `purge_sale_prices` from yes/no to a number of days.
   * Fix setting sale prices in orderitem table.
   * Add bulk void/unvoid buttons for coupons.
-  * Fix duplicate gift card payment on invoice view calculation.
+  * Fix duplicate gift card payment on invoice view calculation (#66).
   * Hide price and disable buttons if a product selection is not available.
   * Add custom fields and variants to item purchase report.
+  * Implement product rules to limit shippers (#69).
+    * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
+  * Leverage glFusion 2.1.0+ Notifier class.
 
 ## v1.4.1
 Release 2022-04-07
-  * Fix return from Gateway::getAll() when no gateways are installed.
+  * Fix return from Gateway::getAll() when no gateways are installed (#67).
 
 ## v1.4.0
 Release 2021-09-25
