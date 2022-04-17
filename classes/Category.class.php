@@ -1210,7 +1210,9 @@ class Category
                 ORDER BY c.lft DESC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['cat_id']] = new self($A);
+                if ((int)$A['cat_id'] > 0) {    // may be empty if nothing found
+                    $retval[$A['cat_id']] = new self($A);
+                }
             }
 
             // If no categories are found, add the root category to be sure
