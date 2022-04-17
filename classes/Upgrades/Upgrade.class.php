@@ -3,9 +3,9 @@
  * Upgrade routines for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -33,11 +33,11 @@ class Upgrade
 
     /** Deployed code version, or target upgrade version.
      * @var string */
-    protected static $code_ver;
+    protected static $code_ver = '';
 
     /** Currently-installed version.
      * @var string */
-    protected static $current_ver;
+    protected static $current_ver = '';
 
     /** Flag to indicate a development upgrade.
      * Causes SQL errors to be ignored.
@@ -51,7 +51,7 @@ class Upgrade
      * @param   boolean $dvlp   True for a development upgrade
      * @return  boolean     True on success, False on first error
      */
-    public static function doUpgrade($dvlp = false)
+    public static function doUpgrade(bool $dvlp = false) : bool
     {
         global $_PLUGIN_INFO;
 
@@ -120,7 +120,7 @@ class Upgrade
      * @param   boolean $ignore_error   True to ignore SQL errors.
      * @return  boolean     True on success, False on failure
      */
-    public static function doUpgradeSql($version, $ignore_error = false)
+    public static function doUpgradeSql(string $version, bool $ignore_error = false) : bool
     {
         global $_TABLES, $_SHOP_CONF, $SHOP_UPGRADE, $_DB_dbms, $_VARS;
 
@@ -177,7 +177,7 @@ class Upgrade
      * @param   string  $ver    New version to set
      * @return  boolean         True on success, False on failure
      */
-    public static function setVersion($ver)
+    public static function setVersion(string $ver) : bool
     {
         global $_TABLES, $_SHOP_CONF, $_PLUGIN_INFO;
 
@@ -205,7 +205,7 @@ class Upgrade
     /**
      * Update the plugin configuration
      */
-    public static function updateConfig()
+    public static function updateConfig() : void
     {
         global $shopConfigData;
         USES_lib_install();
@@ -220,7 +220,7 @@ class Upgrade
      *
      * @param   string  $dir    Directory name
      */
-    public static function delPath($dir)
+    public static function delPath(string $dir) : void
     {
         if (is_dir($dir)) {
             $objects = scandir($dir);
@@ -246,7 +246,7 @@ class Upgrade
      * Errors in unlink() and rmdir() are ignored.
      * @todo: the arrays should probably be moved to version classes.
      */
-    public static function removeOldFiles()
+    public static function removeOldFiles() : void
     {
         global $_CONF;
 
@@ -320,7 +320,7 @@ class Upgrade
      * @param   string  $col_name   Column name to check
      * @return  boolean     True if the column exists, False if not
      */
-    public static function tableHasColumn($table, $col_name)
+    public static function tableHasColumn(string $table, string $col_name) : bool
     {
         global $_TABLES;
 
@@ -337,7 +337,7 @@ class Upgrade
      * @param   string  $col_name   Column name to check
      * @return  string      Column datatype
      */
-    public static function columnType($table, $col_name)
+    public static function columnType(string $table, string $col_name) : string
     {
         global $_TABLES, $_DB_name;
 
@@ -362,7 +362,7 @@ class Upgrade
      * @param   string  $idx_name   Index name
      * @return  integer     Number of rows (fields) in the index
      */
-    public static function tableHasIndex($table, $idx_name)
+    public static function tableHasIndex(string $table, string $idx_name) : bool
     {
         global $_TABLES;
 
