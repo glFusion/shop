@@ -13,7 +13,7 @@
         <span id="hlp_rule_name" class="tooltip_cfg tooltipstered"></span>
       </label>
       <div class="uk-form-controls">
-        <input class="uk-input uk-form-small" required type="text" name="rule_name" placeholder="{$LANG_SHOP['rule_name']}" value="{rule_name}" size="80" />
+        <input class="uk-input" required type="text" name="rule_name" placeholder="{$LANG_SHOP['rule_name']}" value="{rule_name}" size="80" />
       </div>
     </div>
 

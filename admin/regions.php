@@ -157,37 +157,37 @@ case 'disa_state':
 
 case 'editregion':
     $region_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('regions');
+    $content .= Shop\Menu::adminRules('regions');
     $content .= Shop\Region::getInstance($region_id)->Edit();
     break;
 
 case 'editcountry':
     $country_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('countries');
+    $content .= Shop\Menu::adminRules('countries');
     $content .= Shop\Country::getInstance($country_id)->Edit();
     break;
 
 case 'editstate':
     $state_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('states');
+    $content .= Shop\Menu::adminRules('states');
     $content .= Shop\State::getInstance($state_id)->Edit();
     break;
 
 case 'countries':
     $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
     $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\State::adminList($country_id);
     break;
 
 case 'regions':
 default:
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Region::adminList();
     break;
 }

@@ -125,9 +125,9 @@ class Menu
                 'active' => $view == 'reports' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/regions.php',
-                'text' => $LANG_SHOP['regions'],
-                'active' => $view == 'regions' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/rules.php',
+                'text' => $LANG_SHOP['rules'],
+                'active' => $view == 'rules' ? true : false,
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
@@ -180,30 +180,40 @@ class Menu
      * @param   string  $view   View being shown, so set the help text
      * @return  string      Administrator menu
      */
-    public static function adminRegions($view='')
+    public static function adminRules($view='')
     {
         global $LANG_SHOP;
 
         $menu_arr = array(
             array(
+                'url'  => SHOP_ADMIN_URL . '/rules.php?pr_list',
+                'text' => $LANG_SHOP['product_rules'],
+                'active' => $view == 'pr_list' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_pr'],
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/rules.php?zr_list',
+                'text' => $LANG_SHOP['zone_rules'],
+                'active' => $view == 'zr_list' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_zr'],
+            ),
+            array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?regions',
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_region'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?countries',
                 'text' => $LANG_SHOP['countries'],
                 'active' => $view == 'countries' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_region'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?states',
                 'text' => $LANG_SHOP['states'],
                 'active' => $view == 'states' ? true : false,
-            ),
-            array(
-                'url'  => SHOP_ADMIN_URL . '/rules.php',
-                'text' => $LANG_SHOP['rules'],
-                'active' => $view == 'rules' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_states'],
             ),
         );
         return self::_makeSubMenu($menu_arr);

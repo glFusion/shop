@@ -252,44 +252,6 @@ case 'pv_del':
     exit;
     break;
 
-case 'pr_save':
-    $PC = new Shop\Rules\Product((int)$_POST['pr_id']);
-    if ($PC->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['item_updated']);
-    } else {
-        COM_setMsg($LANG_SHOP['item_upd_err']);
-    }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
-    break;
-
-case 'pr_del':
-    if (isset($_POST['delbutton_x']) && is_array($actionval)) {
-        foreach ($actionval as $val) {
-        Shop\Rules\Product::Delete((int)$val);
-        }
-    } elseif ($actionval > 0) {
-        Shop\Rules\Product::Delete((int)$actionval);
-    }
-    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?pr_list');
-    exit;
-    break;
-
-case 'rule_add':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
-    if ($rule_id > 0) {
-        switch ($actionval) {
-        case 'region':
-        case 'country':
-        case 'state':
-            Shop\Rules\Zone::getInstance($rule_id)
-                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
-                ->Save();
-            break;
-        }
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?' . http_build_query($_GET));
-    break;
-
 case 'ft_del':
     Shop\Feature::Delete($_REQUEST['ft_id']);
     $view = 'features';
@@ -855,10 +817,6 @@ case 'carriers':
     $content .= Shop\Shipper::carrierList();
     break;
 
-case 'pr_list':
-    $content .= Shop\Rules\Product::adminList();
-    break;
-
 case 'variants':
     $content .= Shop\Menu::adminCatalog('variants');
 case 'pv_bulk':
@@ -1094,21 +1052,10 @@ case 'suppliers':
     $content .= Shop\Supplier::adminList();
     break;
 
-case 'rules':
-    // Display the list of zone rules
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Rules\Zone::adminList();
-    break;
-
 case 'features':
     // Display the list of features
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Feature::adminList();
-    break;
-
-case 'rule_edit':
-    $content .= Shop\Menu::adminRegions('rules');
-    $content .= Shop\Rules\Zone::getInstance($actionval)->Edit();
     break;
 
 case 'ft_edit':
@@ -1136,47 +1083,6 @@ case 'prod_bulk_frm':
     $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
     break;
 
-case 'editregion':
-    echo "$view deprecated";die;
-    $region_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('regions');
-    $content .= Shop\Region::getInstance($region_id)->Edit();
-    break;
-
-case 'editcountry':
-    echo "$view deprecated";die;
-    $country_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('countries');
-    $content .= Shop\Country::getInstance($country_id)->Edit();
-    break;
-
-case 'editstate':
-    echo "$view deprecated";die;
-    $state_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('states');
-    $content .= Shop\State::getInstance($state_id)->Edit();
-    break;
-
-case 'countries':
-    echo "$view deprecated";die;
-    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Country::adminList($region_id);
-    break;
-
-case 'states':
-    echo "$view deprecated";die;
-    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\State::adminList($country_id);
-    break;
-
-case 'regions':
-    echo "$view deprecated";die;
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Region::adminList();
-    break;
-
 case 'newpayment':
     echo "deprecated";die;
     $Pmt = new Shop\Payment;
@@ -1197,12 +1103,6 @@ case 'none':
 case 'pi_products':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Products\Plugin::adminList();
-    break;
-
-case 'pr_edit':
-    $actionval = (int)$actionval;
-    $PC = new Shop\Rules\Product($actionval);
-    $content .= $PC->Edit();
     break;
 
 default:

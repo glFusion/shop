@@ -523,11 +523,11 @@ class Product
         $text_arr = array(
             'has_limit' => true,
             'has_search' => true,
-            'form_url' => SHOP_ADMIN_URL . '/index.php?pclasses',
+            'form_url' => SHOP_ADMIN_URL . '/rules.php',
         );
         $display .= FieldList::buttonLink(array(
             'text' => $LANG_SHOP['new_item'],
-            'url' => SHOP_ADMIN_URL . '/index.php?pr_edit=0',
+            'url' => SHOP_ADMIN_URL . '/rules.php?pr_edit=0',
             'style' => 'success',
         ) );
         $query_arr = array(
@@ -571,13 +571,13 @@ class Product
         switch($fieldname) {
         case 'edit':
             $retval .= FieldList::edit(array(
-                'url' => SHOP_ADMIN_URL . "/index.php?pr_edit={$A['pr_id']}",
+                'url' => SHOP_ADMIN_URL . "/rules.php?pr_edit={$A['pr_id']}",
             ) );
             break;
 
         case 'delete':
             $retval .= FieldList::delete(array(
-                'delete_url' => SHOP_ADMIN_URL. '/index.php?pr_del=' . $A['pr_id'],
+                'delete_url' => SHOP_ADMIN_URL. '/rules.php?pr_del=' . $A['pr_id'],
                 'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
