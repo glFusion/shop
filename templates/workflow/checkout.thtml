@@ -144,6 +144,11 @@
 					<div style="margin-top:10px;">
 						{$LANG_SHOP['pmt_method']}: {pmt_method}
 					</div>
+{!if ship_method}
+					<div style="margin-top:10px;">
+						{$LANG_SHOP['ship_via']}: {ship_method}
+					</div>
+{!endif}
 					<div style="margin-top:10px;">
 						{$LANG_SHOP['notify_email']}: {buyer_email}
 					</div>

@@ -206,7 +206,7 @@
         <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
         <div id="orderPaymentMethod" style="margin-top:10px;">
-            <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
+            {!if 0}<span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />{!endif}
 {!if checkout}
 {!elseif num_payments}
             <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
@@ -241,7 +241,6 @@
             <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
             </p>
         </div>
-        <hr />
         <div style="clear:both;">
 {!if checkout}
             <div id="orderPmtMethod">{pmt_logo}</div>
@@ -256,7 +255,7 @@
             <div style="clear:both;"></div>
 {!else}
   {!if ship_method}
-            <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
+            <p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
   {!endif}
   {!if is_admin}
             <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
