@@ -313,9 +313,13 @@ class fedex extends \Shop\Shipper
      * @param   object  $Order  Order to be shipped
      * @return  array       Array of ShippingQuote objects
      */
-    protected function _getQuote($Order)
+    protected function _getQuote($Order) : array
     {
         global $_SHOP_CONF;
+
+        if (!$this->hasValidConfig()) {
+            return array();
+        }
 
         $Addr = $Order->getShipto();
         $Packages = Package::packOrder($Order, $this);
