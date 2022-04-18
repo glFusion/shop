@@ -881,6 +881,8 @@ function plugin_autouninstall_shop()
             // v1.4.0
             'shop.stock',
             'shop.plugin_products',
+            // v1.5.0
+            'shop.product_rules',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
