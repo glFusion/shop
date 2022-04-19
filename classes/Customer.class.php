@@ -3,15 +3,16 @@
  * Class to handle user account info for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\ReferralTag;
 
 
 /**
@@ -48,14 +49,21 @@ class Customer
      * @var string */
     private $pref_gw;
 
-    /**  Flag to indicate that this is a new record.
-     * @var boolean */
-    private $isNew = true;
+    /** Referrer ID.
+     * @var string */
+    private $affiliate_id = '';
+
+    /** Affiliate payment method.
+     * @var string */
+    private $aff_pmt_method = '_coupon';
+
+    /** Customer IDs created by payment gateways.
+     * @var array */
+    private $gw_ids = array();
 
     /** Shopping cart information.
      * @var array */
     private $cart = array();
-
 
     /** Form action URL when saving profile information.
      * @var string */
@@ -96,38 +104,118 @@ class Customer
      */
     private function ReadUser($uid = 0)
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF;
 
         $uid = (int)$uid;
         if ($uid == 0) $uid = $this->uid;
         if ($uid < 2) {     // Anon information is not saved
             return;
         }
-
-        $res = DB_query(
-            "SELECT u.username, u.fullname, u.email, u.language, ui.*
-                FROM {$_TABLES['users']} u
-                LEFT JOIN {$_TABLES['shop.userinfo']} ui
+        $sql = "SELECT u.username, u.fullname, u.email, u.language,
+            ui.*, UNIX_TIMESTAMP(ui.created) AS created_ts
+            FROM {$_TABLES['users']} u
+            LEFT JOIN {$_TABLES['shop.userinfo']} ui
                 ON u.uid = ui.uid
-                WHERE u.uid = $uid"
-        );
+            WHERE u.uid = $uid";
+        $res = DB_query($sql);
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
-            $this->setCart($A['cart']);
             $this->username = $A['username'];
             $this->fullname = $A['fullname'];
             $this->email = $A['email'];
-            $this->language = $A['language'];
-            $this->isNew = false;
+            $this->language = str_replace('_' . COM_getCharset(), '', $A['language']);
+            $this->setCart($A['cart']);
             $this->setPrefGW(SHOP_getVar($A, 'pref_gw'));
             $this->addresses = Address::getByUser($uid);
+            $this->gw_ids = $this->getCustomerIds($uid);
+            $this->setCreationDate($A['created_ts']);
+            if ($A['uid'] > 0) {
+                // The returned uid value will be null if the user record was
+                // found but there is no customer record created yet.
+                $this->affiliate_id = $A['affiliate_id'];
+                $this->aff_pmt_method = $A['aff_pmt_method'];
+            } else {
+                // Create a record
+                $this->saveUser();
+            }
         } else {
+            // Not even a valid user ID
             $this->cart = array();
-            $this->isNew = true;
             $this->addresses = array();
             $this->pref_gw = '';
-            $this->saveUser();      // create a user record
         }
+    }
+
+
+    /**
+     * Get the gateway-specific customer IDs for this customer.
+     * This is to be able to check if the customer exists with the gateway
+     * provider and to search transactions.
+     *
+     * @return  array   Array of gateway-specific customer IDs
+     */
+    public function getCustomerIds()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.customerXgateway']}
+            WHERE uid = {$this->uid}";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['gw_id']] = $A['cust_id'];
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Set the customer reference ID for a payment gateway.
+     * This stores the customer ID returned from the payment gateway
+     * when a customer record is created during invoicing.
+     *
+     * @param   string  $gw_id      ID of gateway
+     * @param   string  $cust_id    Gateway's reference ID
+     * @return  object  $this
+     */
+    public function setGatewayID($gw_id, $cust_id)
+    {
+        global $_TABLES;
+
+        $gw_id = DB_escapeString($gw_id);
+        $cust_id = DB_escapeString($cust_id);
+        $sql = "INSERT INTO {$_TABLES['shop.customerXgateway']} SET
+            uid = {$this->uid},
+            gw_id = '$gw_id',
+            cust_id = '$cust_id'
+            ON DUPLICATE KEY UPDATE
+            cust_id = '$cust_id'";
+        //echo $sql;die;
+        DB_query($sql);
+        return $this;
+    }
+
+
+    /**
+     * Get the customer reference ID for a payment gateway.
+     *
+     * @param   string  $gw_id      ID of gateway
+     * @return  string      Customer ID, NULL if not set
+     */
+    public function getGatewayId($gw_id)
+    {
+        return SHOP_getVar($this->gw_ids, $gw_id, 'string', NULL);
+    }
+
+
+    /**
+     * Get the customer's full name from the glFusion profile.
+     *
+     * @return  string      Full name
+     */
+    public function getFullname()
+    {
+        return $this->fullname;
     }
 
 
@@ -189,7 +277,7 @@ class Customer
         if (array_key_exists($add_id, $this->addresses)) {
             return $this->addresses[$add_id];
         } else {
-            return array();
+            return reset($this->addresses);
         }
     }
 
@@ -215,6 +303,11 @@ class Customer
      */
     public function getDefaultAddress($type='billto')
     {
+        if ($this->uid < 2) {
+            // Anonymous has no saved address
+            return Address::fromGeoLocation();
+        }
+
         if ($type != 'billto') $type = 'shipto';
         foreach ($this->addresses as $Addr) {
             if ($Addr->isDefault($type)) {
@@ -237,6 +330,111 @@ class Customer
     public function getEmail()
     {
         return $this->email;
+    }
+
+
+    /**
+     * Get the referral token.
+     *
+     * @return  string      Referral Token value
+     */
+    public function getReferralToken()
+    {
+        return ReferralTag::get();
+    }
+
+
+    /**
+     * Get the customer user ID.
+     * Used to determine if a customer record was actually found.
+     *
+     * @return  integer     Record ID from userinfo table
+     */
+    public function countOrders()
+    {
+        return Order::countActiveByUser($this->uid);
+    }
+
+
+    /**
+     * Get the customer's affiliate ID.
+     *
+     * @return  string      Affiliate ID, NULL if affiliate sales disabled
+     */
+    public function getAffiliateId()
+    {
+        if (Config::get('aff_enabled')) {
+            return $this->affiliate_id;
+        } else {
+            return NULL;
+        }
+    }
+
+
+    /**
+     * Create an affiliate ID for this customer.
+     *
+     * @return  object  $this
+     */
+    public function createAffiliateId()
+    {
+        if (
+            $this->affiliate_id == 'pending' ||
+            $this->affiliate_id == ''
+        ) {
+            $this->affiliate_id = ReferralTag::create();
+        }
+        return $this;
+    }
+
+
+    public function withAffiliateId($aff_id)
+    {
+        $this->affiliate_id = $aff_id;
+        return $this;
+    }
+
+
+    /**
+     * Set the creation date object from a unix timestamp.
+     *
+     * @param   integer $ts     Timestamp, NULL for now.
+     * @return  object  $this
+     */
+    public function setCreationDate($ts=NULL)
+    {
+        global $_CONF;
+
+        if ($ts === NULL) {
+            $ts = time();
+        } else {
+            $ts = (int)$ts;
+        }
+        $this->created = new \Date($ts, $_CONF['timezone']);
+        return $this;
+    }
+
+
+    /**
+     * Get the creation date for a customer.
+     *
+     * @return  object      Date object
+     */
+    public function getCreationDate()
+    {
+        return $this->created;
+    }
+
+
+    /**
+     * Delete the affiliate ID for this customer.
+     *
+     * @return  object  $this
+     */
+    public function resetAffiliateId()
+    {
+        $this->affiliate_id = '';
+        return $this;
     }
 
 
@@ -279,24 +477,40 @@ class Customer
      */
     public function saveUser()
     {
-        global $_TABLES;
+        global $_TABLES, $_CONF;
 
         if ($this->uid < 2) {
             // Act as if saving was successful but do nothing.
             return true;
         }
 
+        // Create a new referrer token if not present.
+        // If auto_enroll is set then check the order count unless all
+        // uses are auto-enrolled.
+        if (
+            $this->affiliate_id == '' &&
+            Config::get('aff_auto_enroll') && (
+                Config::get('aff_eligible') == 'allusers' ||
+                $this->countOrders() > 0
+            )
+        ) {
+            $this->affiliate_id = ReferralTag::create();
+        }
+
         $cart = DB_escapeString(@serialize($this->cart));
         $sql = "INSERT INTO {$_TABLES['shop.userinfo']} SET
             uid = {$this->uid},
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
-            cart = '$cart'
+            cart = '$cart',
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
+            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'
             ON DUPLICATE KEY UPDATE
             pref_gw = '" . DB_escapeString($this->getPrefGW()) . "',
-            cart = '$cart'";
+            cart = '$cart',
+            affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
+            aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
         SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
-        Cache::clear('shop.user_' . $this->uid);
         return DB_error() ? false : true;
     }
 
@@ -315,7 +529,6 @@ class Customer
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
-        Cache::clear('shop.user_' . $uid);
     }
 
 
@@ -349,7 +562,7 @@ class Customer
      */
     public static function isValidAddress($A)
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP;
 
         $invalid = array();
         $retval = '';
@@ -357,18 +570,11 @@ class Customer
         if (empty($A['name']) && empty($A['company'])) {
             $invalid[] = 'name_or_company';
         }
-
-        if ($_SHOP_CONF['get_street'] == 2 && empty($A['address1']))
-            $invalid[] = 'address1';
-        if ($_SHOP_CONF['get_city'] == 2 && empty($A['city']))
-            $invalid[] = 'city';
-        if ($_SHOP_CONF['get_state'] == 2 && empty($A['state']))
-            $invalid[] = 'state';
-        if ($_SHOP_CONF['get_postal'] == 2 && empty($A['zip']))
-            $invalid[] = 'zip';
-        if ($_SHOP_CONF['get_country'] == 2 && empty($A['country']))
-            $invalid[] = 'country';
-
+        foreach (array('address1', 'city', 'state', 'zip', 'country') as $key) {
+            if (!isset($A[$key]) || empty($A[$key])) {
+                $invalid[] = $key;
+            }
+        }
         if (!empty($invalid)) {
             foreach ($invalid as $id) {
                 $retval .= '<li> ' . $LANG_SHOP[$id] . '</li>' . LB;
@@ -388,13 +594,13 @@ class Customer
      * @param   integer $step   Current step number
      * @return  string          HTML for edit form
      */
-    public function AddressForm($type='billto', $A=array(), $step)
+    public function AddressForm($type='billto', $A=array(), $step=1)
     {
-        global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP;
         if ($type != 'billto') $type = 'shipto';
         if (empty($this->formaction)) $this->formaction = 'save' . $type;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('address', 'address.thtml');
 
         // Set the address to select by default. Start by using the one
@@ -416,7 +622,7 @@ class Customer
             $have_address = true;
         }
         if (!$have_address) {
-            $loc = GeoLocate::getProvider()->geoLocate();
+            $loc = GeoLocator::getProvider()->geoLocate();
             if ($loc['ip'] != '') {
                 $A['country'] = $loc['country_code'];
                 $A['state'] = $loc['state_code'];
@@ -467,13 +673,10 @@ class Customer
                 'ad_billto_def' => $address->isDefaultBillto(),
                 'ad_shipto_def' => $address->isDefaultShipto(),
                 'ad_checked' => $ad_checked,
-                'del_icon'  => Icon::getHTML(
-                    'delete', 'tooltip',
-                    array(
-                        'title' => $LANG_SHOP['delete'],
-                        'onclick' => 'removeAddress(' . $address->getID() . ');',
-                    )
-                ),
+                'del_icon'  => FieldList::delete(array(
+                    'title' => $LANG_SHOP['delete'],
+                    'onclick' => 'removeAddress(' . $address->getID() . ');',
+                ) ),
             ) );
             $T->parse('sAddr', 'SavedAddress', true);
         }
@@ -517,21 +720,6 @@ class Customer
             'state'     => isset($A['state']) ? $A['state'] : '',
             'zip'       => isset($A['zip']) ? $A['zip'] : '',
             'country'   => isset($A['country']) ? $A['country'] : '',
-            /*'def_checked' => $def_addr > 0 && $def_addr == $addr_id ?
-            'checked="checked"' : '',*/
-            'req_street'    => $_SHOP_CONF['get_street'] == 2 ? 'true' : '',
-            'req_city'      => $_SHOP_CONF['get_city'] == 2 ? 'true' : '',
-            'req_state'     => $_SHOP_CONF['get_state'] == 2 ? 'true' : '',
-            'req_country'   => $_SHOP_CONF['get_country'] == 2 ? 'true' : '',
-            'req_postal'    => $_SHOP_CONF['get_postal'] == 2 ? 'true' : '',
-            'req_phone'     => $_SHOP_CONF['get_phone'] == 2 ? 'true' : '',
-            'get_street'    => $_SHOP_CONF['get_street'] > 0 ? 'true' : '',
-            'get_city'      => $_SHOP_CONF['get_city'] > 0 ? 'true' : '',
-            'get_state'     => $_SHOP_CONF['get_state'] > 0 ? 'true' : '',
-            'get_country'   => $_SHOP_CONF['get_country'] > 0 ? 'true' : '',
-            'get_postal'    => $_SHOP_CONF['get_postal'] > 0 ? 'true' : '',
-            'get_phone'     => $_SHOP_CONF['get_phone'] > 0 ? 'true' : '',
-
             'hiddenvars'    => $hiddenvars,
             'action'        => $this->formaction,
             'next_step'     => (int)$step + 1,
@@ -540,6 +728,7 @@ class Customer
             ),
             'state_options' => $state_options,
             'state_sel_vis' => strlen($state_options) > 0 ? '' : 'none',
+            'allow_default' => $this->uid > 1,
         ) );
         $T->parse('output','address');
         return $T->finish($T->get_var('output'));
@@ -580,18 +769,38 @@ class Customer
     {
         global $_USER;
 
-        if ($uid == 0) $uid = $_USER['uid'];
+        if ($uid == 0) {
+            $uid = $_USER['uid'];
+        }
         $uid = (int)$uid;
         // If not already set, read the user info from the database
         if (!isset(self::$users[$uid])) {
-            $key = 'shop.user_' . $uid;  // Both the key and cache tag
-            self::$users[$uid] = Cache::get($key);
-            if (!self::$users[$uid]) {
-                self::$users[$uid] = new self($uid);
-                Cache::set($key, self::$users[$uid], $key);
-            }
+            self::$users[$uid] = new self($uid);
         }
         return self::$users[$uid];
+    }
+
+
+    /**
+     * Get a customer record by the referrer token.
+     * Used to validate a supplied referral.
+     *
+     * @param   string  $affiliate_id   Affiliate ID
+     * @return  object|boolean  Customer object, false if token not valid
+     */
+    public static function findByAffiliate($affiliate_id)
+    {
+        global $_TABLES, $_CONF;
+
+        $retval = false;
+        if (!empty($affiliate_id)) {
+            $where = "affiliate_id ='" . DB_escapeString($affiliate_id) . "'";
+            $uid = (int)DB_getItem($_TABLES['shop.userinfo'], 'uid', $where);
+            if ($uid > 1) {
+                $retval = new self($uid);
+            }
+        }
+        return $retval;
     }
 
 
@@ -607,12 +816,7 @@ class Customer
      */
     public function getLanguage($fullname = false)
     {
-        if (!$fullname) {
-            $lang = explode('_', $this->language);
-            return $lang[0];
-        } else {
-            return $this->language;
-        }
+        return $this->language;
     }
 
 
@@ -663,6 +867,41 @@ class Customer
     }
 
 
-}   // class Customer
+    /**
+     * Get the customer's preferred payout method for affiliate referrals.
+     * Only Coupons are currently supported.
+     *
+     * @return  string      Payout method (Gateway name)
+     */
+    public function getAffPayoutMethod()
+    {
+        return '_coupon';
+    }
 
-?>
+
+    /**
+     * Get this affiliate's link to be shared.
+     *
+     * @param   mixed   $item_id    Product ID (not SKU) to add to the link
+     * @return  string      URL to product with affiliate ID parameter.
+     */
+    public function getAffiliateLink($item_id='')
+    {
+        if (Config::get('aff_enabled') && !empty($this->affiliate_id)) {
+            if ($item_id != '') {
+                // Direct to the product detail page
+                $url = Config::get('url') . '/detail.php?' .
+                    Config::get('aff_key') . '=' . $this->affiliate_id .
+                    '&item_id=' . $item_id;
+            } else {
+                // Go to the catalog homepage
+                $url = Config::get('url') . '/index.php?' .
+                    Config::get('aff_key') . '=' . $this->affiliate_id;
+            }
+            return $url;
+        } else {
+            return '';
+        }
+    }
+
+}

@@ -1,0 +1,21 @@
+Cher administrateur de site;
+<p>
+Vous avez reçu une nouvelle commande via votre site Web. Vérifiez les informations d'achat sur
+{site_admin_url}/plugins/shop/index.php?order={order_id}
+ pour toute action que vous pourriez devoir entreprendre.
+</p>
+<p>
+Les détails de l'achat suivent:
+</p>
+<p>
+Acheteur: {payer_name} (ID {acheteur_uid}, {user_name})<br />
+{payer_email}
+</p>
+<p>
+{Détails d'achat}
+</p>
+{!if order_instr}
+<p>Instructions spéciales: {order_instr}</p>
+{!endif}
+<p>État de la commande: {status}</p>
+<p>Le paiement a été effectué via {gateway_name} le {payment_date}</p>

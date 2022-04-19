@@ -3,10 +3,10 @@
  * Class to look up locations using IP Geolocation.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.4.1
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -14,12 +14,14 @@
  */
 namespace Shop\Geo;
 use Shop\State;
+use Shop\Config;
+
 
 /**
  * Use ipgeolocation.io.
  * @package shop
  */
-class ipgeo extends \Shop\GeoLocate
+class ipgeo extends \Shop\GeoLocator
 {
     /** Descriptive key name used for caching.
      * @var string */
@@ -31,7 +33,7 @@ class ipgeo extends \Shop\GeoLocate
 
     /** Provider API key.
      * @var string */
-    private $api_key;
+    private $api_key = '';
 
 
     /**
@@ -39,9 +41,8 @@ class ipgeo extends \Shop\GeoLocate
      */
     public function __construct()
     {
-        global $_SHOP_CONF;
-
-        $this->api_key = $_SHOP_CONF['ipgeo_api_key'];
+        $this->api_key = Config::get('ipgeo_api_key');
+        parent::__construct();
     }
 
 
@@ -50,7 +51,7 @@ class ipgeo extends \Shop\GeoLocate
      *
      * @return  string      URL endpoint
      */
-    private function getEndpoint()
+    private function getEndpoint() : string
     {
         return 'https://api.ipgeolocation.io/ipgeo?apiKey=' . $this->api_key .
             '&ip=' . $this->ip;
@@ -62,9 +63,12 @@ class ipgeo extends \Shop\GeoLocate
      *
      * @return  array       Array containing country and state codes
      */
-    public function geoLocate()
+    protected function _geoLocate() : array
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        // Can't geolocate if the api key is empty
+        if (empty($this->ip) || empty($this->api_key)) {
+            return $this->default_data;
+        }
 
         $resp = $this->getCache($this->ip);   // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
@@ -113,21 +117,27 @@ class ipgeo extends \Shop\GeoLocate
         } else {
             $decoded = json_decode($resp, true);
         }
-        $retval = array(
-            'ip' => (string)$decoded['ip'],
-            'continent_code' => (string)$decoded['continent_code'],
-            'country_code' => (string)$decoded['country_code2'],
-            'state_code' => (string)$decoded['state_iso'],
-            'city_name' => (string)$decoded['city'],
-            'zip' => (string)$decoded['zipcode'],
-            'lat' => (float)$decoded['latitude'],
-            'lng' => (float)$decoded['longitude'],
-            'timezone' => (string)$decoded['time_zone']['name'],
-            'status' => $decoded['status'],
-        );
+        if ($decoded['status']) {
+            $retval = array(
+                'ip' => (string)$decoded['ip'],
+                'continent_code' => (string)$decoded['continent_code'],
+                'continent_name' => SHOP_getVar($decoded, 'continent_name'),
+                'country_code' => SHOP_getVar($decoded, 'country_code2'),
+                'country_name' => (string)$decoded['country_name'],
+                'state_code' => (string)$decoded['state_iso'],
+                'state_name' => (string)$decoded['state_prov'],
+                'city_name' => (string)$decoded['city'],
+                'zip' => (string)$decoded['zipcode'],
+                'lat' => (float)$decoded['latitude'],
+                'lng' => (float)$decoded['longitude'],
+                'timezone' => (string)$decoded['time_zone']['name'],
+                'status' => $decoded['status'],
+                'isp' => $decoded['isp'],
+            );
+        } else {
+            return $this->default_data;
+        }
         return $retval;
     }
 
 }
-
-?>

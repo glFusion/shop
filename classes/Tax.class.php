@@ -3,9 +3,9 @@
  * Class to get and cache sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,13 +20,16 @@ namespace Shop;
  */
 abstract class Tax
 {
+    const TAX_ORIGIN = 0;
+    const TAX_DESTINATION = 1;
+
     /** Address object used for rate lookup.
      * @var object */
-    protected $Address;
+    protected $Address = NULL;
 
     /** Order object used for tax calculations.
      * @var object */
-    protected $Order;
+    protected $Order = NULL;
 
     /** Use test endpoints.
      * @var boolean */
@@ -49,13 +52,15 @@ abstract class Tax
     /**
      * Get an instance of the tax provider class.
      *
+     * @param   string  $name   Optional provider class name
      * @return  object      Tax provider object
      */
-    public static function getProvider()
+    public static function getProvider(?string $name = NULL) : object
     {
-        global $_SHOP_CONF;
-
-        $cls = '\\Shop\\Tax\\' . $_SHOP_CONF['tax_provider'];
+        if ($name === NULL) {
+            $name = Config::get('tax_provider');
+        }
+        $cls = '\\Shop\\Tax\\' . $name;
         if (class_exists($cls)) {
             return new $cls;
         } else {
@@ -71,7 +76,7 @@ abstract class Tax
      * @param   object  $Addr   Address object
      * @return  object  $this
      */
-    public function withAddress($Addr)
+    public function withAddress(Address $Addr) : self
     {
         $this->Address = $Addr;
         return $this;
@@ -84,7 +89,7 @@ abstract class Tax
      * @param   object  $Order  Order object
      * @return  object  $this
      */
-    public function withOrder($Order)
+    public function withOrder(Order $Order) : self
     {
         $this->Order = $Order;
         if ($this->Address == NULL) {
@@ -100,7 +105,7 @@ abstract class Tax
      * @param   string  $key    Additional cache key for data type
      * @return  string      Cache key
      */
-    private function _makeCacheKey($key='')
+    private function _makeCacheKey(string $key='') : string
     {
         if ($key != '') {
             $key = $key . '.';
@@ -119,12 +124,12 @@ abstract class Tax
      * @param   string  $key    Additional cache key for data type
      * @return  object|null     Tracking object, NULL if not found
      */
-    protected function getCache($key='')
+    protected function getCache(string $key='') : ?object
     {
         global $_TABLES;
 
         $key = $this->_makeCacheKey($key);
-        return CacheDB::get($key);
+        return Cache::get($key);
     }
 
 
@@ -135,7 +140,7 @@ abstract class Tax
      * @param   string  $key        Additional cache key for data type
      * @param   integer $exp        Seconds for cache timeout
      */
-    protected function setCache($data, $key='', $exp=0)
+    protected function setCache(string $data, string $key='', int $exp=0) : void
     {
         global $_TABLES;
 
@@ -143,25 +148,26 @@ abstract class Tax
         if ($exp <= 0) {
             $exp = 86400 * 7;
         }
-        CacheDB::set($key, $data, $exp);
+        Cache::set($key, $data, $exp);
     }
 
 
     /**
      * Determine if the shop has a nexus in the destination state/province.
      * Uses a statically-configured array of state,country values.
+     * Requires a valid Address object being used for tax determination.
      *
      * @return  boolean     True if there is a nexus, False if not.
      */
-    protected function hasNexus()
+    protected function hasNexus() : bool
     {
-        global $_SHOP_CONF;
-
-        if (empty($_SHOP_CONF['tax_nexuses'])) {
-            // No nexus locations configured
+        $nexuses = Config::get('tax_nexuses');
+        if (empty($nexuses) || !is_array($nexuses)) {
+            // Return true if no nexus locations configured
             return true;
         }
-        foreach ($_SHOP_CONF['tax_nexuses'] as $str) {
+
+        foreach ($nexuses as $str) {
             $parts = explode('-', strtoupper($str));
             $country = $parts[0];
             $state = isset($parts[1]) ? $parts[1] : '';
@@ -183,20 +189,23 @@ abstract class Tax
 
     /**
      * Look up a tax rate for the Address provided in the constructor.
+     * Updates the order items if an order is defined.
      *
      * @return  float   Total tax rate for a location, globally-configurated rate on error.
      */
-    public function getRate()
+    public function getRate() : float
     {
         if ($this->hasNexus()) {
             $rate = $this->_getData()['totalRate'];
         } else {
             $rate = 0;;
         }
-        foreach ($this->Order->getItems() as &$Item) {
-            if ($Item->isTaxable()) {
-                $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
-                $Item->setTax($tax)->setTaxRate($rate);
+        if ($this->Order !== NULL) {
+            foreach ($this->Order->getItems() as &$Item) {
+                if ($Item->isTaxable()) {
+                    $tax = $rate * $Item->getQuantity() * $Item->getNetPrice();
+                    $Item->setTax($tax)->setTaxRate($rate);
+                }
             }
         }
         return $rate;
@@ -208,7 +217,7 @@ abstract class Tax
      *
      * @return  array       Array of tax data
      */
-    public function getRateBreakdown()
+    public function getRateBreakdown() : array
     {
         if ($this->hasNexus()) {
             $data = $this->_getData();
@@ -224,5 +233,3 @@ abstract class Tax
     }
 
 }
-
-?>

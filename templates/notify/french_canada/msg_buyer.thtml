@@ -1,0 +1,52 @@
+{header}
+<p>Merci pour votre achat auprès de {site_name}. Les détails de votre achat suivent:</p>
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+Vous pouvez télécharger vos fichiers achetés à partir des liens suivants:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Instructions spéciales: {order_instr}</p>
+{!endif}
+{!if pending}
+<p>
+Votre paiement est en attente. Une fois votre paiement reçu, vous recevrez
+un autre e-mail confirmant votre paiement.
+</p>
+{!endif}
+<p>Vous pouvez consulter votre commande sur {order_url}
+{!if has_downloads}
+<br />Vos achats téléchargeables peuvent être téléchargés à partir du lien ci-dessus.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p><b>Message:</b><br />{gw_msg}</p>
+{!endif}
+
+{!if affiliate_id}
+<p>
+Parrainez un ami et obtenez des bonus de parrainage! Votre lien d'affiliation est {affiliate_link}.
+{!if affiliate_info}
+<br />Visitez l'<a href="{affiliate_info}">{affiliate_info}</a> pour plus de détails.
+{!endif}
+</p>
+{!endif}
+
+{!if gc_bal_num}
+<p>
+Il vous reste un solde de carte-cadeau de {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Merci,<br />
+{site_name}<br />
+{URL du site}
+</p>

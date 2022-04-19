@@ -20,15 +20,15 @@ namespace Shop;
  */
 class Feature
 {
-    use DBO;    // import trait for reordering
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key, used by DBO class.
      * @var string */
-    private static $TABLE = 'shop.features';
+    protected static $TABLE = 'shop.features';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    private static $F_ID = 'ft_id';
+    protected static $F_ID = 'ft_id';
 
     /** Tag array used with caching, for consistency.
      * @var array */
@@ -287,14 +287,15 @@ class Feature
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = SHOP_getTemplate('feature_form', 'form');
+        $T = new Template('admin');
+        $T->set_file('form', 'feature_form.thtml');
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($this->ft_id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_ft'] . ': ' . $this->ft_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->ft_name);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_ft']);
+            $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['features']);
         }
 
         $T->set_var(array(
@@ -373,14 +374,11 @@ class Feature
             'direction' => 'ASC',
         );
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_ft'],
-            SHOP_ADMIN_URL . '/index.php?ft_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?ft_edit=0',
+            'style' => 'success',
+        ) );
         $query_arr = array(
             'table' => 'shop.features',
             'sql' => $sql,
@@ -422,41 +420,37 @@ class Feature
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?ft_edit={$A['ft_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?ft_edit={$A['ft_id']}",
+            ) );
             break;
 
         case 'orderby':
             if ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up'),
-                    SHOP_ADMIN_URL . '/index.php?ft_move=up&id=' . $A['ft_id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?ft_move=up&id=' . $A['ft_id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['count'] * 10) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down'),
-                    SHOP_ADMIN_URL . '/index.php?ft_move=down&id=' . $A['ft_id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?ft_move=down&id=' . $A['ft_id'],
+                ) );
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space();
             }
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?ft_del=x&amp;ft_id=' . $A['ft_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?ft_del=x&amp;ft_id=' . $A['ft_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         default:
@@ -598,7 +592,7 @@ class Feature
     {
         global $_TABLES;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('prod_feat', 'prod_feat_form.thtml');
         $T->set_var('prod_id', $prod_id);
         $Features = self::getByProduct($prod_id);

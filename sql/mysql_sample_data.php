@@ -3,9 +3,9 @@
  * Default data installed when the Shop plugin is installed.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -28,17 +28,20 @@ $_SHOP_SAMPLEDATA = array(
     'shop.workflows' => "INSERT INTO {$_TABLES['shop.workflows']}
             (id, wf_name, orderby, enabled, can_disable)
         VALUES
-            (1, 'viewcart', 10, 3, 0),
-            (2, 'billto', 20, 0, 1),
-            (3, 'shipto', 30, 2, 1)",
+            (0, 'viewcart', 10, 3, 0),
+            (0, 'addresses', 20, 1, 0),
+            (0, 'shipping', 30, 1, 0),
+            (0, 'payment', 40, 3, 0),
+            (0, 'confirm', 50, 3, 0)",
     'shop.orderstatus' => "INSERT INTO {$_TABLES['shop.orderstatus']}
             (id, orderby, enabled, name, notify_buyer, notify_admin)
         VALUES
-            (1, 10, 1, 'pending', 0, 0),
-            (2, 20, 1, 'processing', 1, 0),
-            (3, 30, 1, 'shipped', 1, 0),
-            (4, 40, 1, 'closed', 0, 0),
-            (5, 50, 1, 'refunded', 0, 0)",
+            (0, 10, 1, 'pending', 0, 0),
+            (0, 20, 1, 'processing', 1, 0),
+            (0, 30, 1, 'shipped', 1, 0),
+            (0, 40, 1, 'closed', 1, 0),
+            (0, 50, 1, 'refunded', 0, 0),
+            (0, 60, 1, 'invoiced', 0, 0)",
     'shop.currency' => "INSERT IGNORE INTO `{$_TABLES['shop.currency']}` (
             code, symbol,  name, numeric_code, symbol_placement, symbol_spacer, code_placement,
             decimals, rounding_step, thousands_sep, decimal_sep, major_unit, minor_unit,
@@ -178,7 +181,7 @@ $_SHOP_SAMPLEDATA = array(
         ('UAH','???.','Ukrainian Hryvnia',980,'after',' ','hidden',2,0.00,',','.','Hryvnia','Kopiyka',1.00000,'2014-01-05 04:49:55'),
         ('UGX','USh','Ugandan Shilling',800,'hidden',' ','after',0,0.00,',','.','Shilling','Cent',1.00000,'2014-01-05 04:54:44'),
         ('USD','$','United States Dollar',840,'before',' ','hidden',2,0.00,',','.','Dollar','Cent',1.00000,'2014-01-05 04:49:55'),
-        ('UYU','$U','Uruguayan Peso',858,'hidden',' ','after',2,0.00,',','.','Peso','Centésimo',1.00000,'2014-01-05 04:54:44'),
+        ('UYU','\$U','Uruguayan Peso',858,'hidden',' ','after',2,0.00,',','.','Peso','Centésimo',1.00000,'2014-01-05 04:54:44'),
         ('VEF','Bs.F.','Venezuelan Bolívar Fuerte',NULL,'hidden',' ','after',2,0.00,',','.','Bolivares Fuerte','Céntimo',1.00000,'2014-01-05 04:54:44'),
         ('VND','?','Vietnamese Dong',704,'after','','hidden',0,0.00,'.','.','Dong','Hà',1.00000,'2014-01-05 04:53:33'),
         ('VUV','VT','Vanuatu Vatu',548,'hidden',' ','after',0,0.00,',','.','Vatu',NULL,1.00000,'2014-01-05 04:54:44'),
@@ -811,6 +814,13 @@ $_SHOP_SAMPLEDATA = array(
         (322,24,'Tasmania','TAS',1),
         (323,24,'Victoria','VIC',1),
         (324,24,'Western Australia','WA',1)",
+    'shop.packages' => "INSERT IGNORE INTO `gl_shop_packages` VALUES
+        (1,46,15,5,1.75,8.75,'USPS Small Flat Rate Box','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"9.50\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"STANDARD_OVERNIGHT\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"_na\",\"rate\":\"\"},\"usps\":{\"container\":\"SM FLAT RATE BOX\",\"service\":\"PRI\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (2,535,70,8.75,6,11.25,'USPS Medium Flat Rate Box #1','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"_na\",\"rate\":\"\"},\"usps\":{\"container\":\"MD FLAT RATE BOX\",\"service\":\"PRI\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (3,458,70,12,3.5,14,'USPS Medium Flat Rate Box #2','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"_na\",\"rate\":\"\"},\"usps\":{\"container\":\"MD FLAT RATE BOX\",\"service\":\"PRI\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (4,792,70,12.25,6,12.25,'USPS Large Flat Rate Box','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"_na\",\"rate\":\"\"},\"usps\":{\"container\":\"LG FLAT RATE BOX\",\"service\":\"PRI\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (5,2197,70,14,14,14,'14-inch square box','{\"dhl\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"9.50\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"GROUND_HOME_DELIVERY\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"01\",\"rate\":\"\"},\"usps\":{\"container\":\"VARIABLE\",\"service\":\"PCL_GND\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (6,6,1,4.5,0.5,7,'Small Padded Envelope','{\"dhl\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"3.95\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"\"},\"ups\":{\"container\":\"02\",\"service\":\"01\",\"rate\":\"\"},\"usps\":{\"container\":\"PADDED FLAT RATE ENVELOPE\",\"service\":\"FC_PKG\",\"rate\":\"\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (7,51,5,3,2,14,'12-inch Knife Box','{\"dhl\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"GROUND_HOME_DELIVERY\",\"rate\":\"0\"},\"ups\":{\"container\":\"02\",\"service\":\"03\",\"rate\":\"0\"},\"usps\":{\"container\":\"VARIABLE\",\"service\":\"PCL_GND\",\"rate\":\"0\"},\"willcall\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"}}'),
+        (8,4675,25,8.5,5.5,12,'Box-60','{\"dhl\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"14.75\"},\"delivery\":{\"container\":\"\",\"service\":\"_na\",\"rate\":\"0\"},\"fedex\":{\"container\":\"YOUR_PACKAGING\",\"service\":\"GROUND_HOME_DELIVERY\",\"rate\":\"0\"},\"ups\":{\"container\":\"02\",\"service\":\"03\",\"rate\":\"0\"},\"usps\":{\"container\":\"VARIABLE\",\"service\":\"PCL_GND\",\"rate\":\"0\"},\"willcall\":{\"container\":\"\",\"service\":\"_fixed\",\"rate\":\"0\"}}')",
 );
-
-?>

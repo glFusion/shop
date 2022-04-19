@@ -1,4 +1,5 @@
-<p>Thank you for your purchase from {site_name}. Details of your purchase follow:</p> 
+{header}
+<p>Thank you for your order from {site_name}. Details of your purchase follow:</p> 
 <p>
 {purchase_details}
 </p>
@@ -18,13 +19,28 @@ Your payment is pending.  Once your payment is received, you will receive
 another email message confirming your payment.
 </p>
 {!endif}
-<p>You may view your order at {order_url}</p>
+<p>
+You may view your order at {order_url}
+{!if has_downloads}
+<br />Your downloadable purchases may be downloaded from the above link.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}
 {!if gw_msg}
-<p><b>{$LANG_SHOP['message']}:</b><br />{gw_msg}</p>
+<p><b>Message:</b><br />{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+Refer a friend and get referral bonuses! Your affiliate link is {affiliate_link}.
+{!if affiliate_info}
+<br />Visit <a href="{affiliate_info}">{affiliate_info}</a> for details.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 You have a remaining gift card balance of {gc_bal_fmt}.
@@ -32,6 +48,5 @@ You have a remaining gift card balance of {gc_bal_fmt}.
 {!endif}
 <p>
 Thanks,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

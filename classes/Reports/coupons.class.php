@@ -211,11 +211,14 @@ class coupons extends \Shop\Report
                 $var = $extra['isAdmin'] ? '' : $A['code'];
                 break;
             case 'gc_applied':
-                $var = $A['order_id'];
+                $var = COM_createLink(
+                    $A['order_id'],
+                    COM_buildUrl(SHOP_URL . '/order.php?mode=view&id=' . $A['order_id'])
+                );
                 break;
             case 'gc_voided':
             case 'gc_unvoided':
-                $var = COM_getDisplayName($A['uid']);
+                $var = COM_getDisplayName($A['uid']) . ' (' . $A['code'] . ')';
                 break;
             }
             $retval = sprintf(
@@ -227,6 +230,7 @@ class coupons extends \Shop\Report
         case 'amount':
             switch ($A['msg']) {
             case 'gc_redeemed':
+            case 'gc_unvoided':
                 break;
             default:
                 $fieldvalue *= -1;

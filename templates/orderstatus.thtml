@@ -1,7 +1,10 @@
 {# begin {templatelocation} #}
-<script type="text/javascript">
+<script>
 SHOP_setStatus("{order_id}", "{oldvalue}");
 </script>
+{!if 0}
+{status_select}
+{!endif}
 <select id="statSelect_{order_id}" name="newstatus[{order_id}]"
     onchange='SHOP_ordShowStatSubmit("{order_id}", SHOP_getStatus("{order_id}"), this.value);'>
 <!-- BEGIN StatusSelect -->
@@ -9,8 +12,8 @@ SHOP_setStatus("{order_id}", "{oldvalue}");
 <!-- END StatusSelect -->
 </select>
 <input type="hidden" name="oldstatus[{order_id}]" value="{oldvalue}" />
-<span id="shopSetStat_{order_id}" style="visibility:hidden;">
-<button type="submit" class="uk-button uk-button-success uk-button-mini tooltip"
+<span id="shopSetStat_{order_id}" style="display:none;">
+<button type="reset" class="uk-button uk-button-success uk-button-mini tooltip"
     title="{$LANG_SHOP['update_status']}"
     onclick='SHOP_updateOrderStatus("{order_id}", SHOP_getStatus("{order_id}"), document.getElementById("statSelect_{order_id}").value, {showlog}, ""); return false;'>
     <i class="uk-icon uk-icon-check"></i></button>

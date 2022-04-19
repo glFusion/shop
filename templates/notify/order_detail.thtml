@@ -58,6 +58,12 @@
 </table>
 
 <p>
+  {$LANG_SHOP['buyer_email']}: {payer_email}
+</p>
+<p>
+{!if invoice_number}
+  {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+{!endif}
   {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
   {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}</span>
 </p>
@@ -77,6 +83,9 @@
   {!if options_text}
     {options_text}
   {!endif}
+{!if extras_text}
+	<br />{extras_text}
+{!endif}
   </td>
   <td style="vertical-align:top;width:80px;text-align:right;">{price}</td>
   <td style="vertical-align:top;width:80px;text-align:right;">{ext}</td>
@@ -131,7 +140,7 @@
 {!endif}
 {!if pmt_method}
 <p>
-    {$LANG_SHOP['pmt_method']}: {pmt_method}
+    {$LANG_SHOP['pmt_method']}: {gateway_name}
 </p>
 {!endif}
 <p>{$LANG_SHOP['status']}: {status}</p>

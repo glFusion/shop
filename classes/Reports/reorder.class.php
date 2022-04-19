@@ -54,20 +54,22 @@ class reorder extends \Shop\Report
         $this->setParam('supplier_id', SHOP_getVar($_GET, 'supplier_id'), 'integer');
         $T = $this->getTemplate();
 
-        $sql = "SELECT p.id, p.name, p.short_description, p.onhand, p.reorder,
-            short_description as dscp, p.supplier_ref, pv.supplier_ref as pv_ref,
-            pv.pv_id, pv.sku, pv.onhand as pv_onhand, pv.reorder as pv_reorder,
+        $sql = "SELECT p.id as item_id, p.name as base_sku,
+            p.short_description as dscp, p.supplier_ref, pv.supplier_ref as pv_ref,
+            pv.pv_id, pv.sku, stk.qty_onhand as qty_onhand, stk.qty_reorder as qty_reorder,
             s.sup_id as supplier_id, s.company as supplier
             FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.stock']} stk
+                ON p.id = stk.stk_item_id
             LEFT JOIN {$_TABLES['shop.product_variants']} pv
-                ON p.id = pv.item_id
+                ON p.id = pv.item_id AND stk.stk_pv_id = pv.pv_id
             LEFT JOIN {$_TABLES['shop.suppliers']} s
                 ON s.sup_id = p.supplier_id";
 
         $header_arr = array(
             array(
                 'text'  => $LANG_SHOP['item_name'],
-                'field' => 'name',
+                'field' => 'base_sku',
                 'sort'  => true,
             ),
             array(
@@ -109,10 +111,7 @@ class reorder extends \Shop\Report
             'direction' => 'ASC',
         );
 
-        $where = " WHERE track_onhand = 1 AND (
-            (pv.pv_id IS NULL AND p.onhand <= p.reorder) OR
-            (pv.pv_id IS NOT NULL AND pv.onhand <= pv.reorder)
-        )";
+        $where = " WHERE p.track_onhand = 1 AND qty_onhand <= qty_reorder";
         if ($this->supplier_id > 0) {
             $where .= " AND supplier_id = " . (int)$this->supplier_id;
         }
@@ -161,8 +160,8 @@ class reorder extends \Shop\Report
                     'dscp'          => $this->remQuote($A['short_description']),
                     'sku'           => $this->remQuote($A['sku']),
                     'supplier_ref'  => empty($A['pv_ref']) ? $A['supplier_ref'] : $A['pv_ref'],
-                    'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['pv_onhand'],
-                    'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['pv_reorder'],
+                    'onhand'        => is_null($A['pv_id']) ? $A['onhand'] : $A['qty_onhand'],
+                    'reorder'       => is_null($A['pv_id']) ? $A['reorder'] : $A['qty_reorder'],
                     'supplier'      => $A['supplier'],
                     'nl'            => "\n",
                 ) );
@@ -212,11 +211,11 @@ class reorder extends \Shop\Report
             );
             break;
         case 'onhand':
-            $retval = is_null($A['sku']) ? (float)$A['onhand'] : (float)$A['pv_onhand'];
+            $retval = (float)$A['qty_onhand'];
             break;
 
         case 'reorder':
-            $retval = is_null($A['pv_id']) ? (float)$A['reorder'] : (float)$A['pv_reorder'];
+            $retval = (float)$A['qty_reorder'];
             break;
 
         case 'supplier_ref':

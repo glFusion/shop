@@ -101,6 +101,11 @@ This plugin currently requires you to have only one currency enabled. All the cu
           <dd>Select your preferred unit of measure for product weight: Kilograms or Pounds.</dd>
       </dl>
 
+      <dl id="desc_uom_size">
+          <dt>Unit of Size Measurement</dt>
+          <dd>Select your preferred unit of measure for sizes: Inches or Centimetres.</dd>
+      </dl>
+
       <dl id="desc_tc_link">
           <dt>Link to Terms and Conditions</dt>
           <dd>Enter an optional URL to your TOC page for purchases. This will appear on the cart form prior to checkout.</dd>
@@ -213,6 +218,12 @@ When buttons are encrypted, several temporary files are created and then deleted
         </dd>
       </dl>
 
+      <dl id="desc_catalog_enabled">
+        <dt>Enable Catalog?</dt>
+        <dd>Select whether the catalog is enabled. This is normally &quot;Yes&quot;, but if you&apos;re only using the Shop to support other plugins you should probably set this to &quot;No&quot;.
+        </dd>
+      </dl>
+
       <dl id="desc_ipn_url">
         <dt>IPN URL Override?</dt>
         <dd>If your site does not support SSL you may have to serve the IPN handlers from another URL, such as &quot;https://yourhost.com/~yourname/ipn&quot;. If so, enter that URL here, including the path to where you will place the IPN handlers. You may need to modify the handlers themselves to include lib-common.php from the correct path as well.
@@ -234,6 +245,11 @@ When buttons are encrypted, several temporary files are created and then deleted
           <dd>Select &quot;Yes&quot; to enable skipping directly to final checkout if the order meets certain requirements.</dd>
       </dl>
 
+	  <dl id="desc_inv_start_num">
+		  <dt>Starting Invoice Number</dt>
+		  <dd>Invoice numbers are created sequentially, beginning with &quot;1&quot;, as orders are finalized. If numeric, this number will be added to the sequence number when orders are displayed. If not, it will be used as a formatting string, i.e. you could enter &quot;INV-%d&quot;.</dd>
+	  </dl>
+
       <h2>Block Settings</h2>
 
       <dl id="desc_blk_random_limit">
@@ -249,11 +265,6 @@ When buttons are encrypted, several temporary files are created and then deleted
       <dl id="desc_blk_popular_limit">
         <dt>Number of products in Popular block</dt>
         <dd>This is the number of products that will be shown in the "Popular Products" block. If this number is less than one, then one product will be shown.</dd>
-      </dl>
-
-      <dl id="desc_cache_max_age">
-        <dt>Max. Cache File Age</dt>
-        <dd>The output of blocks such as "Popular Products" can be cached to reduce database queries and improve performance. This is the number of seconds that a cached file will be used before it is refreshed from the database. Set this to zero to disable caching.</dd>
       </dl>
 
       <h2>Debugging</h2>
@@ -315,6 +326,11 @@ When buttons are encrypted, several temporary files are created and then deleted
           <dd>If you elect to use smartystreets.com as your address validator, enter your token here.</dd>
       </dl>
 
+	  <dl id="desc_smartystreets_license">
+		  <dt>SmartyStreets License</dt>
+		  <dd>Enter the license or subscription type for SmartyStreets. The default is for the free subscription.</dd>
+	  </dl>
+
       <h2>Shop Information</h2>
 
       <dl id="desc_name">
@@ -344,7 +360,7 @@ When buttons are encrypted, several temporary files are created and then deleted
 
       <dl id="desc_state">
         <dt>Shop State</dt>
-        <dd>Enter the state or province where your shop is located.</dd>
+        <dd>Enter the ISO code (2-letter abbr.) for the state or province where your shop is located.</dd>
       </dl>
 
       <dl id="desc_zip">
@@ -369,7 +385,7 @@ When buttons are encrypted, several temporary files are created and then deleted
 
       <dl id="desc_purge_sale_prices">
         <dt>Purge Sale Prices?</dt>
-        <dd>Select &quot;Yes&quot; to purge a sale price from the table as soon as the sale has expired to keep the table clean. Select &quot;No&quot; to keep old sale prices around so they can be re-activated by changing the dates.</dd>
+		<dd>Enter a number of days to keep sale prices in the database, or &quot;-1&quot; to disable purging. This is useful if you wish to re-activate periodic sales by changing the dates.</dd>
       </dl>
 
       <dl id="desc_gc_enabled">
@@ -419,52 +435,74 @@ When buttons are encrypted, several temporary files are created and then deleted
 
       <dl id="desc_tax_nexuses">
           <dt>Sales Tax Nexuses</dt>
-          <dd>Create elements for each location where you have a nexus for sales tax purposes. Enter values in ISO-3166-2 format (CC-SS where &quot;CC&quot; is the country code and &quot;SS&quot; is the state or region). For example, use &quot;US-CA&quot; for California, USA. If the state/region is omitted then the nexus will apply to the entire country.</dd>
+          <dd>Create elements for each location where you have a nexus for sales tax purposes. Enter values in ISO-3166-2 format (CC-SS where &quot;CC&quot; is the country code and &quot;SS&quot; is the state or region). For example, use &quot;US-CA&quot; for California, USA. If the state/region is omitted then the nexus will apply to the entire country. If empty, sales tax will always be calculated.</dd>
       </dl>
 
       <dl id="desc_tax_provider">
           <dt>Sales Tax Provider</dt>
-          <dd>Select the provider for sales tax calculations. &quot;Internal&quot; uses the internal tax tables, &quot;Configured Rate&quot; applies the rate set below to all taxable items. The others require you to create accounts with the tax providers and configure them on the other tabs.</dd>
+		  <dd>Select the provider for sales tax calculations. &quot;Internal&quot; uses the internal tax tables, &quot;Configured Rate&quot; applies the rate set below to all taxable items.</dd>
       </dl>
 
       <dl id="desc_tax_rate">
         <dt>Tax Rate</dt>
-        <dd>Enter the percentage charged by your shop as sales tax, or zero if you do not charge tax. This will be calculated and added to orders for taxable items. Enter the rate as a decimal, e.g. &quot;.085&quot; for 8.5%.</dd>
+        <dd>If you select the &quot;Configured Rate&quot; option, then enter the percentage charged by your shop as sales tax or zero if you do not charge tax. This will be calculated and added to orders for taxable items. Enter the rate as a decimal, e.g. &quot;.085&quot; for 8.5%.</dd>
       </dl>
 
-      <dl id="desc_tax_test_mode">
-          <dt>Tax Test Mode?</dt>
-          <dd>Select whether the tax calculations are using the provider&apos;s &quot;test&quot; or &quot;sandbox&quot; mode. Not all providers support this and it has no effect if the &quot;Configured&quot; or &quot;Internal&quot; providers are used.
+	  <dl id="desc_tax_nexus_virt">
+		  <dt>Nexus for virtual products</dt>
+		  <dd>Select how the tax rate for virtual products is calculates. Options are to use the origin (Shop) location, use the customer-entered shipping address, or use the automatically-determined location via IP geolocation (if enabled).</dd>
+	  </dl>
+
+      <dl id="desc_aff_key">
+          <dt>Affiliate URL Key</dt>
+          <dd>The key name used in the referral link. Default is &quot;shop_ref&quot;, so the link would appear as &quot;https://sitename/?shop_ref=xxxxx&quot;. If you change this be sure it is a unique value not used elswhere in glFusion.</dd>
       </dl>
 
-      <dl id="desc_tax_avatax_key">
-          <dt>Avatax Key</dt>
-          <dd>Enter the key for your Avalara &quot;Avatax&quot; account.</dd>
+      <dl id="desc_aff_cookie_exp_days">
+          <dt>Affiliate Cookie Expiration</dt>
+          <dd>Enter the number of days for which a referral is valid if no items are added to the buyer's cart.</dd>
       </dl>
 
-      <dl id="desc_tax_avatax_account">
-          <dt>Avatax Account</dt>
-          <dd>Enter the account ID for your Avalara &quot;Avatax&quot; account.</dd>
+      <dl id="desc_aff_cart_exp_days">
+          <dt>Affiliate Cart Expiration</dt>
+          <dd>Enter the number of days for which the referral is valid once items have been added to the buyer's cart.</dd>
       </dl>
 
-      <dl id="desc_tax_taxjar_token">
-          <dt>Taxjar API Token</dt>
-          <dd>Enter the API Token for your Taxjar account.</dd>
+      <h2>Affiliate Program Settings</h2>
+
+      <dl id="desc_aff_enabled">
+          <dt>Affiliate Program Enabled</dt>
+          <dd>Select whether to enable the affiliate referral program globally.</dd>
       </dl>
 
-      <dl id="desc_tax_taxjar_nexus">
-          <dt>Use TaxJar Nexus API</dt>
-          <dd>Select Yes to check the TaxJar API for a nexus. Select No to use the configured nexus settings above.</dd>
+      <dl id="desc_aff_allow_entry">
+          <dt>Allow affiliate code entry during checkout</dt>
+          <dd>Select whether an affiliate code can be entered during checkout to override a referral created from an affiliate link</dd>
       </dl>
 
-      <dl id="desc_tax_taxcloud_id">
-          <dt>TaxCloud Login ID</dt>
-          <dd>Enter the Login ID that you receive from taxcloud.com.</dd>
+      <dl id="desc_aff_ref_exp_days">
+          <dt>Expiration in days for referrals</dt>
+          <dd>Enter the number of days after a referral is made when it will no longer be used for an order. Referrals which have resulted in products being added to a cart will expire when the cart expires.</dd>
       </dl>
 
-      <dl id="desc_tax_taxcloud_key">
-          <dt>TaxCloud API Key</dt>
-          <dd>Enter the API key that you receive from taxcloud.com.</dd>
+      <dl id="desc_aff_pct">
+          <dt>Default Affiliate Bonus Percentage</dt>
+          <dd>Enter the default bonus percentage of net sales to be paid to affiliates. Use a whole number, e.g. &quot;4.5&quot; for 4.5% (.045).</dd>
+      </dl>
+
+      <dl id="desc_aff_min_ordstatus">
+          <dt>Minimum order status</dt>
+          <dd>Select the minimum order status to be considered for affiliate payouts. Orders that have not yet reached this status will not have bonuses paid.</dd>
+      </dl>
+
+      <dl id="desc_aff_min_payment">
+          <dt>Minimum Affiliate Payment</dt>
+          <dd>Enter the minimum amount, in the Shop&apos;s currency, for affiliate payments. Affiliates whose balance has not reached this level will not receive a payment when payments are processed.</dd>
+      </dl>
+
+      <dl id="desc_aff_key">
+          <dt>Affiliate URL key</dt>
+          <dd>This is the url key used to detect an affiliate ID. You may change this to something else but be sure it cannot be used for any other purpose on your site.</dd>
       </dl>
 
       <h2>Geocoding Settings</h2>
@@ -483,6 +521,16 @@ When buttons are encrypted, several temporary files are created and then deleted
           <dt>IPGeo API Key</dt>
           <dd>Enter the API key provided by ipgeolocation.io if this provider is used.</dd>
       </dl>
+
+	  <dl id="desc_def_google_category">
+		  <dt>Default Google Product Category</dt>
+		  <dd>Enter the code for the default Google product category to be used in feeds, where a category does not have a code specified.</dd>
+	  </dl>
+
+	  <dl id="desc_link_orders_new_user">
+		  <dt>Link anonymous orders to new user account</dt>
+		  <dd>Select whether anonymous orders with a matching e-mail address will be automatically linked to a new user&apos;s account at registration.</dd>
+	  </dl>
 
     </div>
   </div>

@@ -1,0 +1,8 @@
+{# begin {templatelocation} #}
+<select {sel_info}>
+<!-- BEGIN optionRow -->
+	<option value="{value}" {!if selected}selected="selected"{!endif} {!if disabled}disabled="disabled"{!endif} {other}>{opt_name}</option>
+<!-- END optionRow -->
+	{option_list}
+</select>
+{# end {templatelocation} #}

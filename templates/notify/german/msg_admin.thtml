@@ -1,0 +1,21 @@
+Sehr geehrter Site-Administrator,
+<p>
+Sie haben über Ihre Website eine neue Bestellung erhalten. Überprüfen Sie die Kaufinformationen unter
+{site_admin_url}/plugins/shop/index.php?order={order_id}
+ für alle Maßnahmen, die Sie möglicherweise ergreifen müssen.
+</p>
+<p>
+Details zum Kauf folgen:
+</p>
+<p>
+Käufer: {Zahlername} (ID {Käufer-ID}, {Benutzername})<br />
+{payer_email}
+</p>
+<p>
+{purchase_details}
+</p>
+{!if order_instr}
+<p> Besondere Anweisungen: {order_instr}</p>
+{!endif}
+<p>Bestellstatus: {status}</ p>
+<p>Die Zahlung erfolgte über {Gateway-Name} am {Zahlungsdatum}</ p>

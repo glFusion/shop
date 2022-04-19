@@ -21,7 +21,7 @@ namespace Shop;
  */
 class Category
 {
-    use DBO;        // import generic database operations
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Key field name.
      * @var string */
@@ -75,13 +75,25 @@ class Category
      * @var string */
     private $google_taxonomy = '';
 
+    /** Zone restriction rule ID.
+     * @var integer */
+    private $zone_rule = 0;
+
+    /** Product class ID.
+     * @var integer */
+    protected $prod_rule = 0;
+
     /** Indicate whether the current user is an administrator.
      * @var boolean */
-    private $isAdmin;
+    private $isAdmin = 0;
 
     /** Indicate whether this is a new record or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = 1;
+
+    /** Indicate whether this category is included in product feeds.
+     * @var boolean */
+    private $feed_enabled = 1;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -97,7 +109,7 @@ class Category
      * Reads in the specified class, if $id is set.  If $id is zero,
      * then a new entry is being created.
      *
-     * @param   integer $id Optional type ID
+     * @param   integer|array   $id Record ID or array
      */
     public function __construct($id=0)
     {
@@ -105,19 +117,8 @@ class Category
 
         $this->isNew = true;
 
-        $this->cat_id = 0;
-        $this->parent_id = 0;
-        $this->cat_name = '';
-        $this->dscp = '';
-        $this->grp_access = 2;  // All users have access by default
-        $this->image = '';
-        $this->enabled = 1;
-        $this->disp_name = '';
-        $this->lft = 0;
-        $this->rgt = 0;
-        $this->google_taxonomy = '';
         if (is_array($id)) {
-            $this->SetVars($id, true);
+            $this->setVars($id, true);
         } elseif ($id > 0) {
             $this->cat_id = $id;
             if (!$this->Read()) {
@@ -134,7 +135,7 @@ class Category
      * @param   array   $row    Array of values, from DB or $_POST
      * @param   boolean $fromDB True if read from DB, false if from a form
      */
-    public function SetVars($row, $fromDB=false)
+    public function setVars($row, $fromDB=false)
     {
         if (!is_array($row)) return;
 
@@ -149,6 +150,21 @@ class Category
         $this->rgt = isset($row['rgt']) ? $row['rgt'] : 0;
         $this->google_taxonomy = $row['google_taxonomy'];
         $this->image = $row['image'];
+        $this->zone_rule = (int)$row['zone_rule'];
+        $this->prod_rule = (int)$row['prod_rule'];
+    }
+
+
+    /**
+     * Set the display name.
+     *
+     * @param   string  $disp_name  Displya name
+     * @return  object  $this
+     */
+    public function setDisplayName($disp_name)
+    {
+        $this->disp_name = $disp_name;
+        return $this;
     }
 
 
@@ -170,14 +186,14 @@ class Category
             return;
         }
 
-        $result = DB_query("SELECT *
-                    FROM {$_TABLES['shop.categories']}
-                    WHERE cat_id='$id'");
+        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+                WHERE cat_id='$id'";
+        $result = DB_query($sql);
         if (!$result || DB_numRows($result) != 1) {
             return false;
         } else {
             $row = DB_fetchArray($result, false);
-            $this->SetVars($row, true);
+            $this->setVars($row, true);
             $this->isNew = false;
             Cache::set(self::_makeCacheKey($id), $this, 'categories');
             return true;
@@ -218,6 +234,17 @@ class Category
 
 
     /**
+     * Check if the syndication feed is enabled for this category.
+     *
+     * @return  boolean     1 if enabled, 0 if not
+     */
+    public function isFeedEnabled() : bool
+    {
+        return $this->feed_enabled ? 1 : 0;
+    }
+
+
+    /**
      * Save the current values to the database.
      *
      * @param  array   $A      Optional array of values from $_POST
@@ -228,7 +255,7 @@ class Category
         global $_TABLES, $_SHOP_CONF;
 
         if (is_array($A)) {
-            $this->SetVars($A);
+            $this->setVars($A);
         }
 
         // For new images, move the image from temp storage into the
@@ -260,7 +287,9 @@ class Category
                 enabled='{$this->enabled}',
                 grp_access ='{$this->grp_access}',
                 image='" . DB_escapeString($this->image) . "',
-                google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "'";
+                google_taxonomy = '" . DB_escapeString($this->google_taxonomy) . "',
+                zone_rule = " . $this->getRuleID() . ",
+                prod_rule = " . $this->prod_rule;
             $sql = $sql1 . $sql2 . $sql3;
             //echo $sql;die;
             //COM_errorLog($sql);
@@ -396,19 +425,20 @@ class Category
         // Clean up old upload images that never got assigned to a category
         Images\Category::cleanUnassigned();
 
-        $T = SHOP_getTemplate('category_form', 'category');
+        $T = new Template('admin');
+        $T->set_file('category', 'category_form.thtml');
         $id = $this->cat_id;
 
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit'] . ': ' . $this->cat_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->cat_name);
             $T->set_var('cat_id', $id);
             //$not = 'NOT';
             //$items = $id;
         } else {
-            $retval = COM_startBlock($LANG_SHOP['create_category']);
+            $retval = COM_startBlock($LANG_SHOP['new_item'] . ': ' . $LANG_SHOP['category']);
             $T->set_var('cat_id', '');
             //$not = '';
             //$items = '';
@@ -422,6 +452,7 @@ class Category
         }
 
         $T->set_var(array(
+            'framework'     => $_SYSTEM['framework'],
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
             'cat_name'      => $this->cat_name,
@@ -433,6 +464,8 @@ class Category
             'doc_url'       => SHOP_getDocURL('category_form'),
             'google_taxonomy' => $this->google_taxonomy,
             'nonce'         => Images\Category::makeNonce(),
+            'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
+            'product_rule_options' => Rules\Product::optionList($this->prod_rule),
         ) );
         if ($this->image != '') {
             $T->set_var(array(
@@ -446,7 +479,8 @@ class Category
         }
 
         // Display any sales pricing for this category
-        $DT = SHOP_getTemplate('sales_table', 'stable');
+        $DT = new Template;
+        $DT->set_file('stable', 'sales_table.thtml');
         $DT->set_var('edit_sale_url', SHOP_ADMIN_URL . '/index.php?sales');
         $DT->set_block('stable', 'SaleList', 'SL');
         foreach (Sales::getCategory($this->cat_id) as $D) {
@@ -484,10 +518,11 @@ class Category
 
         $retval .= $T->parse('output', 'category');
 
-        @setcookie($_CONF['cookie_name'].'fckeditor',
-                SEC_createTokenGeneral('advancededitor'),
-                time() + 1200, $_CONF['cookie_path'],
-                $_CONF['cookiedomain'], $_CONF['cookiesecure']);
+        SEC_setCookie(
+            $_CONF['cookie_name'].'fckeditor',
+            SEC_createTokenGeneral('advancededitor'),
+            time() + 1200
+        );
 
         $retval .= COM_endBlock();
         return $retval;
@@ -648,7 +683,7 @@ class Category
     {
         global $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file('cat_bc_tpl', 'cat_bc.thtml');
         $T->set_var('pi_url', SHOP_URL . '/index.php');
         $breadcrumbs = array(
@@ -725,13 +760,13 @@ class Category
         $p = $prefix == '&nbsp;' ? 'nbsp_' : $prefix . '_';
         $cache_key = self::_makeCacheKey('cat_tree_' . $p . (string)$root_id);
         $All = Cache::get($cache_key);
-        if (!$All) {        // not found in cache, build the tree
+        if ($All === NULL) {    // not found in cache, build the tree
             if ($root_id > 0) {
                 $Root = self::getInstance($root_id);
                 $between = " AND parent.lft BETWEEN {$Root->lft} AND {$Root->rgt}";
             }
             $prefix = DB_escapeString($prefix);
-            $sql = "SELECT node.cat_id, node.cat_name,
+            $sql = "SELECT node.cat_id,
                     CONCAT( REPEAT( '$prefix', (COUNT(parent.cat_name) - 1) ), node.cat_name) AS disp_name
                 FROM {$_TABLES['shop.categories']} AS node,
                     {$_TABLES['shop.categories']} AS parent
@@ -742,10 +777,32 @@ class Category
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
                 $All[$A['cat_id']] = new self($A['cat_id']);
+                $All[$A['cat_id']]->setDisplayName($A['disp_name']);
             }
             Cache::set($cache_key, $All, 'categories');
         }
         return $All;
+    }
+
+
+    /**
+     * Get the categories above this one, in descending order up to Root.
+     *
+     * @return  array       Array of Category objects
+     */
+    public function getParentTree()
+    {
+        global $_TABLES;
+
+        $retval = array();
+        $sql = "SELECT * FROM {$_TABLES['shop.categories']}
+            WHERE lft < {$this->lft} AND rgt > {$this->rgt}
+            ORDER BY lft DESC";
+        $res = DB_query($sql);
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['cat_id']] = new self($A);
+        }
+        return $retval;
     }
 
 
@@ -973,9 +1030,10 @@ class Category
                 'sort'  => false,
             ),
             array(
-                'text'  => $LANG_ADMIN['delete'] .
-                    '&nbsp;<i class="uk-icon uk-icon-question-circle tooltip" title="' .
-                    $LANG_SHOP['del_cat_instr'] . '"></i>',
+                'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
+                FieldList::info(array(
+                    'title' => $LANG_SHOP['del_cat_instr'],
+                ) ),
                 'field' => 'delete', 'sort' => false,
                 'align' => 'center',
             ),
@@ -987,14 +1045,11 @@ class Category
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_category'],
-            SHOP_ADMIN_URL . '/index.php?editcat=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editcat=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.categories',
@@ -1038,24 +1093,18 @@ class Category
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                '<i class="uk-icon uk-icon-edit tooltip" title="' . $LANG_SHOP['edit'] . '"></i>',
-                SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?editcat=x&amp;id={$A['cat_id']}",
+            ) );
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['cat_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['cat_id']}\",\"enabled\",".
-                "\"category\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['cat_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['cat_id']}','enabled','category');",
+            ) );
             break;
 
         case 'grp_access':
@@ -1072,15 +1121,14 @@ class Category
 
         case 'delete':
             if (!self::isUsed($A['cat_id'])) {
-                $retval .= COM_createLink(
-                    '<i class="uk-icon uk-icon-remove uk-text-danger"></i>',
-                    SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
-                    array(
+                $retval .= FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/index.php?deletecat=x&amp;cat_id=' . $A['cat_id'],
+                    'attr' => array(
                         'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                 ));
             }
             break;
 
@@ -1114,10 +1162,11 @@ class Category
     /**
      * Get the google taxonomy for this category.
      * If none defined, search for one in the parent categories.
+     * As a last resort, return the configured default category ID.
      *
-     * @return  string  Google taxonomy, empty string if none found
+     * @return  string  Google taxonomy, default value if none found
      */
-    public function getGoogleTaxonomy()
+    public function getGoogleTaxonomy() : string
     {
         $Paths = $this->getPath();
         $Paths = array_reverse($Paths);
@@ -1126,7 +1175,7 @@ class Category
                 return $Path->google_taxonomy;
             }
         }
-        return '';
+        return Config::get('def_google_category');
     }
 
 
@@ -1154,11 +1203,16 @@ class Category
         $cache_key = 'shop.categories_' . $prod_id;
         $retval = Cache::get($cache_key);
         if ($retval === NULL) {
-            $sql = "SELECT cat_id FROM {$_TABLES['shop.prodXcat']}
-                WHERE product_id = $prod_id";
+            $sql = "SELECT c.* FROM {$_TABLES['shop.prodXcat']} px
+                LEFT JOIN {$_TABLES['shop.categories']} c
+                ON c.cat_id = px.cat_id
+                WHERE px.product_id = $prod_id
+                ORDER BY c.lft DESC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[$A['cat_id']] = self::getInstance($A['cat_id']);
+                if ((int)$A['cat_id'] > 0) {    // may be empty if nothing found
+                    $retval[$A['cat_id']] = new self($A);
+                }
             }
 
             // If no categories are found, add the root category to be sure
@@ -1197,7 +1251,7 @@ class Category
      *
      * @return  integer     Category DB record ID
      */
-    public function getID()
+    public function getID() : int
     {
         return $this->cat_id;
     }
@@ -1208,7 +1262,7 @@ class Category
      *
      * @return  string  Category name
      */
-    public function getName()
+    public function getName() : string
     {
         return $this->cat_name;
     }
@@ -1219,7 +1273,7 @@ class Category
      *
      * @return  integer     Parent ID
      */
-    public function getParentID()
+    public function getParentID() : int
     {
         return (int)$this->parent_id;
     }
@@ -1230,9 +1284,20 @@ class Category
      *
      * @return  string      Category description
      */
-    public function getDscp()
+    public function getDscp() : string
     {
         return $this->dscp;
+    }
+
+
+    /**
+     * Get the product class record ID.
+     *
+     * @return  integer     Record ID of the product class
+     */
+    public function getProductRuleId() : int
+    {
+        return $this->prod_rule;
     }
 
 
@@ -1241,7 +1306,7 @@ class Category
      *
      * @param   integer $prod_id    Product record ID
      */
-    public static function deleteProduct($prod_id)
+    public static function deleteProduct($prod_id) : void
     {
         global $_TABLES;
 
@@ -1257,7 +1322,7 @@ class Category
      * @param   integer $dst    Destination product ID
      * @return  boolean     True on success, False on error
      */
-    public static function cloneProduct($src, $dst)
+    public static function cloneProduct($src, $dst) : bool
     {
         global $_TABLES;
 
@@ -1275,15 +1340,38 @@ class Category
 
     /**
      * Get the zone rule ID for this category.
-     * Traverses the tree in reverse and returns the first rule found.
-     * TODO: stub function during testing
      *
      * @return  integer     Applicable rule ID
      */
-    public function getRuleID()
+    public function getRuleID() : int
     {
-        return 3;
+        return (int)$this->zone_rule;
     }
-}
 
-?>
+
+    /**
+     * Get the effective zone rule for this category by checking parents.
+     *
+     * @return  integer     Zone rule ID
+     */
+    public function getEffectiveZoneRule() : int
+    {
+        $retval = 0;
+        if ($this->getRuleID() > 0) {
+            $retval = $this->getRuleID();
+        } elseif ($this->getID() > 1) {
+            // Don't get parents of root category, not needed.
+            $Parents = $this->getParentTree();
+            foreach ($Parents as $Parent) {
+                // Look for rules in parent categories, stop at the
+                // first one foune.
+                if ($Parent->getRuleID() > 0) {
+                    $retval = $Parent->getRuleID();
+                    break;
+                }
+            }
+        }
+        return $retval;
+    }
+
+}

@@ -21,13 +21,13 @@ require_once '../lib-common.php';
 
 // Ensure sufficient privleges and dependencies to read this page
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
     !SHOP_access_check()
 ) {
     COM_404();
     exit;
 }
+use Shop\Config;
 
 $page_title = '';
 $action = '';
@@ -108,7 +108,7 @@ case 'checkout':
     }
     // See what workflow elements we already have.
     $next_step = SHOP_getVar($_POST, 'next_step', 'integer', 0);
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+    if (Config::get('anon_buy') == 1 || !COM_isAnonUser()) {
         $view = 'none';
         $content .= $Cart->getView($next_step);
         break;
@@ -124,7 +124,7 @@ case 'saveshipto':
     $addr_type = substr($action, 4);   // get 'billto' or 'shipto'
     $status = \Shop\Customer::isValidAddress($_POST);
     if ($status != '') {
-        $content .= SHOP_errMsg($status, $LANG_SHOP['invalid_form']);
+        $content .= SHOP_errorMessage($status, 'danger', $LANG_SHOP['invalid_form']);
         $view = $addr_type;
         break;
     }
@@ -186,7 +186,7 @@ case 'delcartitem':
 case 'emptycart':
     echo "depreacated";die;
     \Shop\Cart::getInstance()->Clear();
-    COM_setMsg($LANG_SHOP['cart_empty']);
+    SHOP_setMsg($LANG_SHOP['cart_empty']);
     echo COM_refresh(SHOP_URL . '/index.php');
     break;
 
@@ -202,7 +202,8 @@ case 'thanks':
         if ($gw !== NULL) {
             $tVars = $gw->thanksVars();
             if (!empty($tVars)) {
-                $T = SHOP_getTemplate('thanks_for_order', 'msg');
+                $T = Shop\Template::getByLang();
+                $T->set_file('msg', 'thanks_for_order.thtml');
                 $T->set_var('site_name', $_CONF['site_name']);
                 foreach ($tVars as $name=>$val) {
                     $T->set_var($name, $val);
@@ -225,7 +226,7 @@ case 'thanks':
             }
         }
     }
-    $Cart = Shop\Cart::getInstance();   // generate a new cart
+    //$Cart = Shop\Cart::getInstance();   // generate a new cart
     $content .= COM_showMessageText($message, $LANG_SHOP['thanks_title'], true, 'success');
     $view = 'products';
     break;
@@ -233,13 +234,14 @@ case 'thanks':
 case 'action':      // catch all the "?action=" urls
     switch ($actionval) {
     case 'thanks':
-        $T = SHOP_getTemplate('thanks_for_order', 'msg');
+        $T = Shop\Template::getByLang();
+        $T->set_file('msg', 'thanks_for_order.thtml');
         $T->set_var(array(
             'site_name'     => $_CONF['site_name'],
             'payment_date'  => $_POST['payment_date'],
             'currency'      => $_POST['mc_currency'],
             'mc_gross'      => $_POST['mc_gross'],
-            'shop_url'    => $_SHOP_CONF['shop_url'],
+            'shop_url'      => Config::get('url'),
         ) );
         $content .= COM_showMessageText($T->parse('output', 'msg'),
                     $LANG_SHOP['thanks_title'], true);
@@ -320,7 +322,7 @@ case 'printorder':
 
 case 'vieworder':
     echo "deprecated";die;
-    if ($_SHOP_CONF['anon_buy'] == 1 || !COM_isAnonUser()) {
+    if (Config::get('anon_buy') == 1 || !COM_isAnonUser()) {
         \Shop\Cart::setSession('prevpage', $view);
         $content .= \Shop\Cart::getInstance()->View($view);
         $page_title = $LANG_SHOP['vieworder'];
@@ -332,13 +334,21 @@ case 'vieworder':
 case 'pidetail':
     // Show detail for a plugin item wrapped in the catalog layout
     $item = explode(':', $actionval);
-    $status = LGLIB_invokeService($item[0], 'getDetailPage',
+    $status = PLG_callFunctionForOnePlugin(
+        'service_getDetailPage_' . $item[0],
+        array(
+            1 => array('item_id' => $actionval),
+            2 => &$output,
+            3 => &$svc_msg,
+        )
+    );
+    /*$status = LGLIB_invokeService($item[0], 'getDetailPage',
         array(
             'item_id' => $actionval,
         ),
         $output,
         $svc_msg
-    );
+    );*/
     if ($status != PLG_RET_OK) {
         $output = $LANG_SHOP['item_not_found'];
     }
@@ -362,7 +372,7 @@ case 'viewcart':
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= $Cart->getView(0);
     } else {
-        COM_setMsg($LANG_SHOP['cart_empty']);
+        SHOP_setMsg($LANG_SHOP['cart_empty']);
         COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
@@ -373,15 +383,28 @@ case 'checkoutcart':
     $content .= \Shop\Cart::getInstance()->View(5);
     break;
 
+case 'orderhist':
+    $Report = Shop\Report::getInstance('orderlist');
+    $Report->setUid();
+    $content = $Report->Render();
+    break;
+
 case 'products':
 default:
     SHOP_setUrl();
-    $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
-    $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
-    $Cat = new Shop\Catalog;
-    $content .= $Cat->setCatID($cat_id)
-        ->setBrandID($brand_id)
-        ->defaultCatalog();
+    if (Shop\Config::get('catalog_enabled')) {
+        $cat_id = SHOP_getVar($_REQUEST, 'category', 'mixed');
+        $brand_id = SHOP_getVar($_REQUEST, 'brand', 'integer');
+        $Cat = new Shop\Catalog;
+        if (isset($_REQUEST['query']) && !isset($_REQUEST['clearsearch'])) {
+            $Cat->withQuery($_REQUEST['query']);
+        }
+        $content .= $Cat->setCatID($cat_id)
+            ->setBrandID($brand_id)
+            ->defaultCatalog();
+    } else {
+        COM_404();
+    }
     break;
 
 case 'none':
@@ -395,5 +418,3 @@ $display .= $content;
 $display .= \Shop\Menu::siteFooter();
 echo $display;
 exit;
-
-?>

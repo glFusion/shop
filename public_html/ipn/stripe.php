@@ -1,53 +1,30 @@
 <?php
 /**
  * IPN processor for Stripe notifications.
+ * Deprecated as of v1.3.0, included here for backwards compatibility.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
+ * @deprecated  v1.3.0
  */
 
 require_once '../../lib-common.php';
 
-// Instantiate the gateway to load the needed API key.
-$GW = Shop\Gateway::getInstance('stripe');
-$sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-$payload = @file_get_contents('php://input');
-SHOP_log('Recieved Stripe IPN: ' . var_export($payload, true), SHOP_LOG_DEBUG);
-$event = null;
-
-try {
-    $event = \Stripe\Webhook::constructEvent(
-        $payload, $sig_header, $GW->getWebhookSecret()
-    );
-} catch(\UnexpectedValueException $e) {
-    // Invalid payload
-    SHOP_log("Unexpected Value received from Stripe");
-    http_response_code(400); // PHP 5.4 or greater
-    exit;
-} catch(\Stripe\Error\SignatureVerification $e) {
-    // Invalid signature
-    SHOP_log("Invalid Stripe signature received");
-    http_response_code(400); // PHP 5.4 or greater
-    exit;
-}
-
-// Handle the checkout.session.completed event
-if ($event->type == 'checkout.session.completed') {
-    // Fulfill the purchase...
-    $ipn = \Shop\IPN::getInstance('stripe', $event);
-    if ($ipn) {
-        $ipn->Process();
+$gw_name = SHOP_getVar($_GET, '_gw');
+if (!empty($gw_name)) {
+    $WH = Shop\Webhook::getInstance($gw_name);
+    if ($WH && $WH->Verify()) {
+        $WH->Dispatch();
     } else {
-        SHOP_log('Stripe IPN processor not found');
+        SHOP_log("Webhook verification failed for $gw_name");
     }
 }
 
-http_response_code(200); // PHP 5.4 or greater
+http_response_code(200);
 
-?>

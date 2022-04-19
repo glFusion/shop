@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Currency;
+use Shop\FieldList;
 
 
 /**
@@ -135,7 +137,7 @@ class payment extends \Shop\Report
                 'align' => 'center',
             ),
         );
-        $extra = array();
+        $this->setExtra('order_id', $this->order_id);
         $defsort_arr = array(
             'field' => 'pmt_ts',
             'direction' => 'DESC',
@@ -227,6 +229,75 @@ class payment extends \Shop\Report
 
 
     /**
+     * Display the detail for a single item.
+     *
+     * @param   mixed   $val    Value to display
+     * @param   string  $key    Name of variable used in Admin list
+     * @return  string      HTML for item detail report
+     */
+    public function RenderDetail($pmt_id)
+    {
+        global $_TABLES, $_CONF, $LANG_SHOP;
+
+        $pmt_id = (int)$pmt_id;
+        $sql = "SELECT * FROM {$_TABLES['shop.payments']} pmts
+            LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
+            ON ipn.txn_id = pmts.pmt_ref_id
+            WHERE pmts.pmt_id = '$pmt_id'";
+        $res = DB_query($sql);
+        $A = DB_fetchArray($res, false);
+        if (empty($A)) {
+            return "Nothing Found";
+        }
+
+        // Allow all json-encoded data to be available to the template
+        $gw = \Shop\Gateway::create($A['pmt_gateway']);
+        $gw->loadSDK();
+        $ipn = @json_decode($A['ipn_data'],true);
+        if ($gw !== NULL) {
+            if ($ipn) {
+                $vals = $gw->ipnlogVars($ipn);
+            } else {
+                $vals = array();
+                $A['id'] = $LANG_SHOP['manual_entry'];
+                $A['ip_addr'] = 'n/a';
+            }
+            // Create ipnlog template
+            $T = $this->getTemplate('single');
+
+            // Display the specified ipnlog row
+            $Dt = new \Date($A['ts'], $_CONF['timezone']);
+            $T->set_var(array(
+                'pmt_id'    => $A['pmt_id'],
+                'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
+                'id'        => $A['id'],
+                'ip_addr'   => $A['ip_addr'],
+                'time'      => SHOP_dateTooltip($Dt),
+                'txn_id'    => $A['pmt_ref_id'],
+                'gateway'   => $A['pmt_gateway'],
+                'comment'   => $A['pmt_comment'],
+            ) );
+
+            if (!empty($vals)) {
+                $T->set_block('report', 'DataBlock', 'Data');
+                foreach ($vals as $key=>$value) {
+                    $T->set_var(array(
+                        'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
+                        'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
+                    ) );
+                    $T->parse('Data', 'DataBlock', true);
+                }
+            }
+            if ($ipn) {
+                $T->set_var('ipn_data', print_r($ipn, true));
+            }
+            $retval = $T->parse('output', 'report');
+        }
+        return $retval;
+    }
+
+
+    /**
      * Get the display value for a field specific to this report.
      * This function takes over the "default" handler in Report::getReportField().
      * @access  protected as it is only called from Report::getReportField().
@@ -247,16 +318,15 @@ class payment extends \Shop\Report
         case 'pmt_order_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $fieldvalue
+                SHOP_ADMIN_URL . '/orders.php?order=' . $fieldvalue
             );
             break;
 
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                SHOP_ADMIN_URL . '/index.php?ipndetail=x&amp;txn_id=' . $fieldvalue,
+                \Shop\Payment::getDetailUrl($A['pmt_id']),
                 array(
-                    'target' => '_blank',
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
                 )
@@ -271,7 +341,17 @@ class payment extends \Shop\Report
             $D = new \Date($fieldvalue, $_CONF['timezone']);
             $retval = $D->toMySQL(true);
             break;
+
+        case 'delete':
+            $retval = FieldList::delete(array(
+                'delet_url' => SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
+                'attr' => array(
+                    'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
+                ),
+            ) );
+            break;
         }
+
         return $retval;
     }
 

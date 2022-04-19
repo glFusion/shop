@@ -82,13 +82,13 @@ class paypal extends \Shop\IPN
         // Set the IPN status to one of the standard values
         switch ($this->ipn_data['payment_status']) {
         case 'Pending':
-            $this->setStatus(self::STATUS_PENDING);
+            $this->setStatus(self::PENDING);
             break;
         case 'Completed':
-            $this->setStatus(self::STATUS_PAID);
+            $this->setStatus(self::PAID);
             break;
         case 'Refunded':
-            $this->setSTatus(self::STATUS_REFUNDED);
+            $this->setSTatus(self::REFUNDED);
             break;
         }
 
@@ -115,7 +115,7 @@ class paypal extends \Shop\IPN
      *
      * @return  boolean         true if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         // Even test transactions have to be unique
         if (!$this->isUniqueTxnId()) {
@@ -252,7 +252,7 @@ class paypal extends \Shop\IPN
             );
             $this->addItem($args);
 
-            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
+            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->code}", SHOP_LOG_DEBUG);
             $this->handlePurchase();
             break;
 
@@ -260,7 +260,7 @@ class paypal extends \Shop\IPN
             // shopping cart
             // Create a cart and read the info from the cart table.
             $this->Order = $this->getOrder();
-            if (!$this->Order || $this->Order->isNew()) {
+            if (!$this->Order || $this->Order->isNew) {
                 $this->handleFailure(NULL, "Order ID {$this->order_id} not found for cart purchases");
                 return false;
             }
@@ -270,28 +270,24 @@ class paypal extends \Shop\IPN
                 ->setPmtHandling($this->Order->getInfo('handling'));
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
+                SHOP_log("Empty Cart for id {$this->Order->order_id}", SHOP_LOG_ERROR);
                 return false;
             }
 
             foreach ($Cart as $item) {
-                $item_id = $item->getProductID();
-                $options = $item->getOptions();
-                if (!empty($options)) {
-                    if (is_array($options)) {
-                        $options = implode(',', $options);
-                    }
-                    $item_id .= '|' . $options;
+                $item_id = $item->product_id;
+                if ($item->options != '') {
+                    $item_id .= '|' . $item->options;
                 }
                 $args = array(
                     'item_id'   => $item_id,
-                    'quantity'  => $item->getQuantity(),
-                    'price'     => $item->getPrice(),
-                    'item_name' => $item->getDscp(),
-                    'shipping'  => $item->getShipping(),
-                    'handling'  => $item->getHandling(),
-                    'tax'       => $item->getTax(),
-                    'extras'    => $item->getExtras(),
+                    'quantity'  => $item->quantity,
+                    'price'     => $item->price,
+                    'item_name' => $item->getShortDscp(),
+                    'shipping'  => $item->shipping,
+                    'handling'  => $item->handling,
+                    'tax'       => $item->tax,
+                    'extras'    => $item->extras,
                 );
                 $this->addItem($args);
             }

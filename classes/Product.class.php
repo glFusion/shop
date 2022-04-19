@@ -3,35 +3,33 @@
  * Class to manage products.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\ProductType;
+use Shop\Models\Dates;
+use Shop\Models\Views;
+use Shop\Models\Stock;
+use Shop\Models\IPN;
+
 
 /**
- * Class for product.
+ * Class for products.
  * @package shop
  */
 class Product
 {
-    use DBO;    // Import common DB actions like toggling fields
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key. Blank value will cause no action to be taken.
      * @var string */
     protected static $TABLE = 'shop.products';
-
-    /** Minimum possible date available.
-     * @const string */
-    const MIN_DATE = '1900-01-01';
-
-    /** Maximum possible date available.
-     * @const string */
-    const MAX_DATE = '9999-12-31';
 
     /** Out-of-stock items can be sold and backordered.
      * @const integer */
@@ -72,10 +70,6 @@ class Product
     /** Type of shipping available for this product.
      * @var integer */
     protected $shipping_type = 0;
-
-    /** Quantity currently on hand.
-     * @var integer */
-    protected $onhand = 0;
 
     /** Flag indicating how to display out-of-stock items.
      * @var integer */
@@ -219,6 +213,8 @@ class Product
     public $buttons;
 
     /** Special fields, created by adding text strings.
+     * Set statically by the product, see the $custom property for
+     * admin-created input fields such as embroidery or engraving info.
      * @var array */
     protected $special_fields = array();
 
@@ -237,7 +233,7 @@ class Product
 
     /** Type of button to create depends on the current view- list or detail.
      * @var string */
-    protected $_view = 'detail';
+    protected $_view = Views::DETAIL;
 
     /** Sale object associated with this product.
      * @var object */
@@ -258,7 +254,7 @@ class Product
 
     /** OrderItem ID to get previously-ordered options.
      * @var integer */
-    protected $oi_id;
+    protected $oi_id = 0;
 
     /** Minimum allowed quantity per order.
      * @var integer */
@@ -268,13 +264,10 @@ class Product
      * @var integer */
     protected $max_ord_qty = 0;
 
-    /** Reorder quantity. Overridden by variants if any exist.
-     * @var integer */
-    protected $reorder = 0;
-
     /** Custom text input fields solicited on the order form.
      * @var string */
     protected $custom = '';
+
     /** Supplier ID.
      * @var integer */
     protected $supplier_id = 0;
@@ -324,6 +317,33 @@ class Product
      * @var string */
     protected $pi_name = '';
 
+    /** Flag to indicate the product purchase affects referral bonuses.
+     * Catalog products typically will do this, plugins will not.
+     * @var boolean */
+    protected $aff_apply_bonus = true;
+
+    /** Affiliate bonus percentage.
+     * @var float */
+    protected $aff_percent = 0;
+
+    /** Product class ID.
+     * @var integer */
+    protected $prod_rule = 0;
+
+    /** Effective product rule object.
+     * Only instantiated if needed.
+     * var object */
+    protected $productRule = NULL;
+
+    /** Flag to indicate that the product cannot be purchased.
+     * @var boolean */
+    protected $canPurchase = true;
+
+    /** Stock level object for products without variants.
+     * Variants have their own related Stock objects.
+     * @var object */
+    protected $Stock = NULL;
+
 
     /**
      * Constructor.
@@ -340,6 +360,14 @@ class Product
         $this->pi_name = $_SHOP_CONF['pi_name'];
         $this->btn_text = '';
         $this->cancel_url = SHOP_URL . '/index.php';
+
+        // Disable affiliate bonuses if the program is disabled.
+        if (Config::get('aff_enabled')) {
+            $this->aff_percent = Config::get('aff_pct');
+        } else {
+            $this->aff_apply_bonus = false;
+        }
+
         if (is_array($id)) {
             // Record has already been read from the DB
             $this->setVars($id, true);
@@ -393,6 +421,7 @@ class Product
         } else {
             // A single product ID
             $id = $A;
+            $idx = COM_sanitizeId($A);
         }
         if (!$id) {
             // Missing product ID
@@ -429,7 +458,7 @@ class Product
      */
     private static function _getInstance($A)
     {
-        if (isset($A['prod_type']) && $A['prod_type'] == SHOP_PROD_COUPON) {
+        if (isset($A['prod_type']) && $A['prod_type'] == ProductType::COUPON) {
             $P = new \Shop\Products\Coupon($A);
         } else {
             $P = new self($A);
@@ -597,7 +626,7 @@ class Product
     {
         // available to end of time by default
         if ($value < '1970-01-02') {
-            $value = self::MIN_DATE;
+            $value = Dates::MIN_DATE;
         }
         $this->avail_beg = trim($value);
         return $this;
@@ -614,7 +643,7 @@ class Product
     {
         // available to end of time by default
         if ($value < '1970-01-02') {
-            $value = self::MAX_DATE;
+            $value = Dates::MAX_DATE;
         }
         $this->avail_end = trim($value);
         return $this;
@@ -638,14 +667,14 @@ class Product
         $this->enabled = isset($row['enabled']) ? $row['enabled'] : 0;
         $this->featured = isset($row['featured']) ? $row['featured'] : 0;
         $this->name = $row['name'];
-        $this->old_sku = SHOP_getVar($row, 'old_sku');
+        //$this->old_sku = SHOP_getVar($row, 'old_sku');
         $this->short_description = $row['short_description'];
-        $this->price = $row['price'];
+        $this->price = (float)$row['price'];
         $this->filename = $row['file'];
         $this->expiration = $row['expiration'];
         $this->keywords = $row['keywords'];
         $this->prod_type = isset($row['prod_type']) ? $row['prod_type'] : 0;
-        $this->weight = $row['weight'];
+        $this->weight = (float)$row['weight'];
         $this->taxable = isset($row['taxable']) ? $row['taxable'] : 0;
         $this->shipping_type = SHOP_getVar($row, 'shipping_type', 'integer');
         $this->shipping_amt = SHOP_getVar($row, 'shipping_amt', 'float');
@@ -653,17 +682,20 @@ class Product
         $this->show_random = isset($row['show_random']) ? $row['show_random'] : 0;
         $this->show_popular = isset($row['show_popular']) ? $row['show_popular'] : 0;
         $this->track_onhand = isset($row['track_onhand']) ? $row['track_onhand'] : 0;
-        $this->onhand = $row['onhand'];
         $this->oversell = isset($row['oversell']) ? $row['oversell'] : 0;
         $this->custom = $row['custom'];
         $this->setAvailBegin($row['avail_beg']);
         $this->setAvailEnd($row['avail_end']);
+        $this->prod_rule = (int)$row['prod_rule'];
         if ($this->avail_end < $this->avail_beg) {
-            $this->avail_end = self::MAX_DATE;
+            $this->avail_end = Dates::MAX_DATE;
         }
         $this->min_ord_qty = SHOP_getVar($row, 'min_ord_qty', 'integer', 1);
         $this->max_ord_qty = SHOP_getVar($row, 'max_ord_qty', 'integer', 0);
-        $this->reorder = (int)$row['reorder'];
+        if (!$this->hasVariants()) {
+            // Get the stock count from the base Stock record
+            $this->Stock = Stock::getByItem($this->id);
+        }
 
         // Get the quantity discount table. If coming from a form,
         // there will be two array variables for qty and discount percent.
@@ -696,7 +728,7 @@ class Product
             ->setSupplierRef($row['supplier_ref'])
             ->setLeadTime($row['lead_time'])
             ->setDefVariantID(SHOP_getVar($row, 'def_pv_id', 'integer'))
-            ->setRuleID($row['zone_rule']);
+            ->setZoneRuleID($row['zone_rule']);
 
         if ($fromDB) {
             $this->views = $row['views'];
@@ -776,6 +808,17 @@ class Product
 
 
     /**
+     * Get the currently-active product variant.
+     *
+     * @return  object      ProductVariant object
+     */
+    public function getVariant()
+    {
+        return $this->Variant;
+    }
+
+
+    /**
      * Get all the static features related to this product.
      * Sets the local Features property for later use.
      *
@@ -820,7 +863,7 @@ class Product
      * @param   integer $id     Rule ID
      * @return  object  $this
      */
-    private function setRuleID($id)
+    private function setZoneRuleID($id)
     {
         $this->zone_rule = (int)$id;
         return $this;
@@ -829,13 +872,47 @@ class Product
 
 
     /**
-     * Get the zone rule ID
+     * Get the zone rule ID for this item.
      *
-     * @return  intger      Rule ID
+     * @return  integer     Zone rule record ID
      */
-    public function getRuleID()
+    public function getZoneRuleID()
     {
         return (int)$this->zone_rule;
+    }
+
+
+    /**
+     * Get the zone rule ID.
+     * Looks first for a rule affecting this specific product. If none found,
+     * recurse backwards through the categories to determine if any has a
+     * rule set. First non-zero rule ID is returned.
+     *
+     * @param   boolean $incl_prod  True to include the product rule
+     * @return  integer     Rule record ID
+     */
+    public function getEffectiveRuleID($incl_prod=true)
+    {
+        $retval = 0;
+        if ($this->zone_rule > 0 && $incl_prod) {
+            $retval = $this->zone_rule;
+        } else {
+            $cache_key = 'prod_eff_rule_id_' . $this->id;
+            $retval = Cache::get($cache_key);
+            if ($retval === NULL) {
+                $Cats = $this->getCategories();
+                $Cats = array_reverse($Cats, true);
+                foreach ($Cats as $Cat) {
+                    $retval = $Cat->getEffectiveZoneRule();
+                    if ($retval > 0) {
+                        // Found a rule, no need to look further
+                        break;
+                    }
+                }
+            }
+            Cache::set($cache_key, $retval, array('categories', 'products'));
+        }
+        return (int)$retval;
     }
 
 
@@ -846,11 +923,15 @@ class Product
      */
     public function getRule()
     {
-        if ($this->zone_rule> 0) {
-            return Rules\Zone::getInstance($this->zone_rule);
-        } else {
-            return new Rules\Zone;
+        static $retval = NULL;
+        if ($retval === NULL) {
+            if ($this->getEffectiveRuleID() > 0) {
+                $retval = Rules\Zone::getInstance($this->getEffectiveRuleID());
+            } else {
+                $retval = new Rules\Zone;
+            }
         }
+        return $retval;
     }
 
 
@@ -907,7 +988,7 @@ class Product
 
         // See if the name changed. If so, then the Variant skus need to be
         // updated.
-        $old_sku = $this->name;
+        $this->old_sku = $this->name;
 
         if (is_array($A)) {
             $this->setVars($A);
@@ -916,8 +997,7 @@ class Product
         $nonce = SHOP_getVar($A, 'nonce');
         $this->Errors = $this->_Validate();
         if (!empty($errs)) {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             return false;
         }
 
@@ -949,8 +1029,7 @@ class Product
         // Check for errors during validation and file upload,
         // and abort before any real DB action is taken.
         if (!empty($this->Errors)) {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             return false;
         }
 
@@ -974,73 +1053,10 @@ class Product
         if ($old_rating_ena && !$this->rating_enabled) {
             RATING_resetRating($_SHOP_CONF['pi_name'], $this->id);
         }
-
-        // Serialize the quantity discount array
-        $qty_discounts = DB_escapeString(@serialize($this->qty_discounts));
-
-        // Insert or update the record, as appropriate
-        if ($this->id > 0) {
-            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
-            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
-            $sql3 = " WHERE id='{$this->id}'";
-            // While we're here, change the existing Variant SKUs if the
-            // product SKU has changed.
-            if (empty($this->Errors) && $old_sku != $this->name) {
-                foreach ($this->getVariants() as $Variant) {
-                    $Variant->updateSKU($old_sku, $this->name);
-                }
-            }
-        } else {
-            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
-            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
-                dt_add = UTC_TIMESTAMP(), ";
-            $sql3 = '';
-        }
-        //$options = DB_escapeString(@serialize($this->options));
-        $sql2 = "name='" . DB_escapeString($this->name) . "',
-                short_description='" . DB_escapeString($this->short_description) . "',
-                description='" . DB_escapeString($this->description) . "',
-                keywords='" . DB_escapeString($this->keywords) . "',
-                price='" . number_format($this->price, 2, '.', '') . "',
-                prod_type='" . (int)$this->prod_type. "',
-                weight='" . number_format($this->weight, 2, '.', '') . "',
-                file='" . DB_escapeString($this->filename) . "',
-                expiration='" . (int)$this->expiration. "',
-                enabled='" . (int)$this->enabled. "',
-                featured='" . (int)$this->featured. "',
-                views='" . (int)$this->views. "',
-                taxable='" . (int)$this->taxable . "',
-                shipping_type='" . (int)$this->shipping_type . "',
-                shipping_amt = '{$this->shipping_amt}',
-                shipping_units = '{$this->shipping_units}',
-                comments_enabled='" . (int)$this->comments_enabled . "',
-                rating_enabled='" . (int)$this->rating_enabled . "',
-                show_random='" . (int)$this->show_random . "',
-                show_popular='" . (int)$this->show_popular . "',
-                onhand='{$this->onhand}',
-                reorder = '{$this->reorder}',
-                track_onhand='{$this->track_onhand}',
-                oversell = '{$this->oversell}',
-                qty_discounts = '{$qty_discounts}',
-                custom='" . DB_escapeString($this->custom) . "',
-                avail_beg='" . DB_escapeString($this->avail_beg) . "',
-                avail_end='" . DB_escapeString($this->avail_end) . "',
-                brand_id ='" . $this->getBrandID() . "',
-                supplier_id ='" . $this->getSupplierID() . "',
-                supplier_ref = '{$this->getSupplierRef()}',
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
-                def_pv_id = {$this->getDefVariantID()},
-                zone_rule = {$this->getRuleID()},
-                buttons= '" . DB_escapeString($this->btn_type) . "',
-                min_ord_qty = '" . (int)$this->min_ord_qty . "',
-                max_ord_qty = '" . (int)$this->max_ord_qty . "'";
-        //options='$options',
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
+        $status = $this->saveToDB();
+        if ($status && $this->id > 0) {
             if ($this->isNew) {
-                $this->id = DB_insertID();
+                //$this->id = DB_insertID();
                 if (!empty($nonce)) {
                     Images\Product::setProductID($nonce, $this->id);
                 }
@@ -1064,12 +1080,30 @@ class Product
                 }
             }
 
-            $this->updateCategories($A['selected_cats']);
+            if (isset($A['selected_cats']) && !empty($A['selected_cats'])) {
+                $this->updateCategories($A['selected_cats']);
+            }
+
             // Save any variants that were created.
             // First, set item ID into $_POST var for ProductVariant to use.
             $A['item_id'] = $this->id;
-            if (is_array($A) && isset($A['groups'])) {
+            if (is_array($A) && isset($A['pv_groups'])) {
+                $A['pv_item_id'] = $this->id;
                 ProductVariant::saveNew($A);
+            }
+
+            // Save the stock levels.
+            // The product form will have one "quantities" array with index "0"
+            // to represent the base product, while the variants form will have
+            // multiple quantities.
+            if (isset($A['quantities']) && is_array($A['quantities'])) {
+                foreach($A['quantities'] as $pv_id=>$data) {
+                    Stock::getByItem($this->id, $pv_id)
+                        ->withOnhand($data['qty_onhand'])
+                        ->withReserved($data['qty_reserved'])
+                        ->withReorder($data['qty_reorder'])
+                        ->Save();
+                }
             }
 
             // Add any new features
@@ -1088,12 +1122,6 @@ class Product
                     Feature::deleteProduct($this->id, $ft_id);
                 }
             }
-
-            //SHOP_log($sql, SHOP_LOG_DEBUG);
-            $status = true;
-        } else {
-            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
-            $status = false;
         }
 
         // Clear all product caches since this save may affect availablity
@@ -1118,16 +1146,95 @@ class Product
 
         // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
-            COM_setMsg($LANG_SHOP['msg_updated']);
+            SHOP_setMsg($LANG_SHOP['msg_updated']);
             SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
-            $msg = '<ul><li>' . implode('</li><li>', $this->Errors) . '</li></ul>';
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($this->Errors, 'error');
             SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
-            COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct=x&id=' . $this->id);
+            COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
+        }
+    }
+
+
+    /**
+     * Saves the product record to the database without updating anything else.
+     *
+     * @return  boolean     True on success, False on error
+     */
+    public function saveToDB()
+    {
+        global $_TABLES;
+
+        // Insert or update the record, as appropriate
+        if ($this->id > 0) {
+            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
+            $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
+            $sql3 = " WHERE id='{$this->id}'";
+            // While we're here, change the existing Variant SKUs if the
+            // product SKU has changed.
+            if (empty($this->Errors) && !empty($this->old_sku) && $this->old_sku != $this->name) {
+                foreach ($this->getVariants() as $Variant) {
+                    $Variant->updateSKU($this->old_sku, $this->name);
+                }
+            }
+        } else {
+            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
+            $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
+                dt_add = UTC_TIMESTAMP(), ";
+            $sql3 = '';
+        }
+
+        //$options = DB_escapeString(@serialize($this->options));
+        $sql2 = "name='" . DB_escapeString($this->name) . "',
+                short_description='" . DB_escapeString($this->short_description) . "',
+                description='" . DB_escapeString($this->description) . "',
+                keywords='" . DB_escapeString($this->keywords) . "',
+                price='" . number_format($this->price, 2, '.', '') . "',
+                prod_type='" . (int)$this->prod_type. "',
+                weight='" . number_format($this->weight, 2, '.', '') . "',
+                file='" . DB_escapeString($this->filename) . "',
+                expiration='" . (int)$this->expiration. "',
+                enabled='" . (int)$this->enabled. "',
+                featured='" . (int)$this->featured. "',
+                views='" . (int)$this->views. "',
+                taxable='" . (int)$this->taxable . "',
+                shipping_type='" . (int)$this->shipping_type . "',
+                shipping_amt = '{$this->shipping_amt}',
+                shipping_units = '{$this->shipping_units}',
+                comments_enabled='" . (int)$this->comments_enabled . "',
+                rating_enabled='" . (int)$this->rating_enabled . "',
+                show_random='" . (int)$this->show_random . "',
+                show_popular='" . (int)$this->show_popular . "',
+                track_onhand='{$this->track_onhand}',
+                oversell = '{$this->oversell}',
+                qty_discounts = '" . DB_escapeString(@serialize($this->qty_discounts)) . "',
+                custom='" . DB_escapeString($this->custom) . "',
+                avail_beg='" . DB_escapeString($this->avail_beg) . "',
+                avail_end='" . DB_escapeString($this->avail_end) . "',
+                brand_id ='" . $this->getBrandID() . "',
+                supplier_id ='" . $this->getSupplierID() . "',
+                supplier_ref = '{$this->getSupplierRef()}',
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                def_pv_id = {$this->getDefVariantID()},
+                zone_rule = {$this->getZoneRuleID()},
+                buttons= '" . DB_escapeString($this->btn_type) . "',
+                min_ord_qty = '" . (int)$this->min_ord_qty . "',
+                max_ord_qty = '" . (int)$this->max_ord_qty . "',
+                prod_rule = {$this->prod_rule}";
+        $sql = $sql1 . $sql2 . $sql3;
+        //echo $sql;die;
+        DB_query($sql, 1);
+        if (DB_error()) {
+            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
+            return false;
+        } else {
+            if ($this->isNew) {
+                $this->id = DB_insertId();
+            }
+            return true;
         }
     }
 
@@ -1155,11 +1262,16 @@ class Product
         foreach ($this->Images as $prow) {
             $this->deleteImage($prow['img_id']);
         }
-        DB_delete($_TABLES['shop.products'], 'id', $this->id);
+        // Make sure all related image records are deleted, in case some
+        // image files are missing and not reflected in the Images array.
+        DB_delete($_TABLES['shop.images'], 'product_id', $this->id);
+
         ProductVariant::deleteByProduct($this->id);
+        Stock::deleteByProduct($this->id);
         Category::deleteProduct($this->id);
         Feature::deleteProduct($this->id);
         self::deleteButtons($this->id);
+        DB_delete($_TABLES['shop.products'], 'id', $this->id);
         Cache::clear('products');
         Cache::clear('sitemap');
         PLG_itemDeleted($this->id, $_SHOP_CONF['pi_name']);
@@ -1194,18 +1306,11 @@ class Product
         global $_TABLES, $_SHOP_CONF;
 
         $img_id = (int)$img_id;
-        if ($img_id < 1) {
+        if ($img_id < 1 || !isset($this->Images[$img_id])) {
             return;
         }
 
-        $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $this->Images[$img_id]['filename'];
-        if (is_file($filespec)) {
-            // Ignore errors due to file permissions, etc. Worst case is
-            // that an image gets left behind on disk
-            @unlink($filespec);
-        }
-
-        DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
+        Images\Product::deleteById($img_id);
         Cache::delete(self::_makeCacheKey($this->id));
         Cache::delete(self::_makeCacheKey($this->id, 'img'));
     }
@@ -1241,7 +1346,8 @@ class Product
         SEC_setCookie(
             $_CONF['cookie_name'].'adveditor',
             SEC_createTokenGeneral('advancededitor'),
-            time() + 1200, $_CONF['cookie_path'],
+            time() + 1200,
+            $_CONF['cookie_path'],
             $_CONF['cookiedomain'],
             $_CONF['cookiesecure'],
             false
@@ -1250,7 +1356,8 @@ class Product
         // Delete old image records that aren't associated with a product
         Images\Product::cleanUnassigned();
 
-        $T = SHOP_getTemplate('product_form', 'product');
+        $T = new Template;
+        $T->set_file('product', 'product_form.thtml');
         // Set up the wysiwyg editor, if available
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {
@@ -1273,12 +1380,12 @@ class Product
         // Add the current product ID to the form if it's an existing product.
         if ($id > 0) {
             $retval = COM_startBlock(
-                $LANG_SHOP['edit'] . ': ' . $this->short_description
+                $LANG_SHOP['edit_item'] . ': ' . $this->short_description
             );
 
         } else {
             $T->set_var('id', '');
-            $retval = COM_startBlock($LANG_SHOP['new_product']);
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
 
         }
 
@@ -1302,8 +1409,7 @@ class Product
             'keywords'      => htmlspecialchars($this->keywords, ENT_QUOTES, COM_getEncodingt()),
             'currency'      => $_SHOP_CONF['currency'],
             //'pi_url'        => SHOP_URL,
-            'doc_url'       => SHOP_getDocURL('product_form',
-                                            $_CONF['language']),
+            'doc_url'       => SHOP_getDocURL('product_form', $_CONF['language']),
             'prod_type'     => $this->prod_type,
             'weight'        => $this->weight,
             'feat_chk'      => $this->featured == 1 ? 'checked="checked"' : '',
@@ -1323,12 +1429,11 @@ class Product
                                     'checked="checked"' : '',
             'trk_onhand_chk' => $this->track_onhand== 1 ?
                                     'checked="checked"' : '',
-            'onhand'        => $this->onhand,
             "oversell_sel{$this->oversell}" => 'selected="selected"',
             'custom' => $this->custom,
             'avail_beg'     => self::_InputDtFormat($this->avail_beg),
             'avail_end'     => self::_InputDtFormat($this->avail_end),
-            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php'),
+            'ret_url'       => SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?products'),
             'variant_list'  => $this->id > 0 ? ProductVariant::adminList($this->id) : ProductVariant::Create(),
             'nonce'         => Images\Product::makeNonce(),
             'brand'         => $this->brand_id,
@@ -1337,7 +1442,6 @@ class Product
             'available_cats' => $allcats_sel,
             'selected_cats' => $selcats_sel,
             'tabactive_' . $tab => 'class="uk-active"',
-            'reorder'       => $this->reorder,
             'brand_select' => Supplier::getBrandSelection($this->getBrandID()),
             'supplier_select' => Supplier::getSupplierSelection($this->getSupplierID()),
             //'limit_availability_chk' => $this->limit_availability ? 'checked="checked"' : '',
@@ -1347,6 +1451,16 @@ class Product
             'ph_lead_time'  => $ph_lead_time,
             'zone_rule_options' => Rules\Zone::optionList($this->zone_rule),
         ) );
+        if (!$this->hasVariants()) {
+            $T->set_var(array(
+                'have_variants' => false,
+                'qty_onhand' => $this->getOnhand(),
+                'qty_reorder' => $this->getReorder(),
+                'qty_reserved' => $this->getReserved(),
+            ) );
+        } else {
+            $T->set_var('has_variants', true);
+        }
 
         // Create the button type selections. New products get the default
         // button selected, existing products get the saved button selected
@@ -1373,7 +1487,7 @@ class Product
 
         $T->set_block('product', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
-            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+            if ($value == ProductType::COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
                 continue;
             }
             $T->set_var(array(
@@ -1384,7 +1498,7 @@ class Product
             $T->parse('ProdType', 'ProdTypeRadio', true);
         }
 
-        if (!self::isUsed($this->id)) {
+        if (!$this->isNew() && !self::isUsed($this->id)) {
             $T->set_var('candelete', 'true');
         }
 
@@ -1392,15 +1506,17 @@ class Product
         $T->set_block('product', 'PhotoRow', 'PRow');
         $i = 0;     // initialize image counter
         $imgorder = array();     // string to contain image order
-        foreach ($this->Images as $id=>$prow) {
-            $imgorder[] = $prow['img_id'];
-            $T->set_var(array(
-                'img_url'   => $this->getImage($prow['filename'])['url'],
-                'thumb_url' => $this->getThumb($prow['filename'])['url'],
-                'img_id'    => $prow['img_id'],
-                'img_cnt'   => $i++,
-            ) );
-            $T->parse('PRow', 'PhotoRow', true);
+        if ($this->Images) {
+            foreach ($this->Images as $id=>$prow) {
+                $imgorder[] = $prow['img_id'];
+                $T->set_var(array(
+                    'img_url'   => $this->getImage($prow['filename'])['url'],
+                    'thumb_url' => $this->getThumb($prow['filename'])['url'],
+                    'img_id'    => $prow['img_id'],
+                    'img_cnt'   => $i++,
+                ) );
+                $T->parse('PRow', 'PhotoRow', true);
+            }
         }
         $imgorder = implode(',', $imgorder);
         $T->set_var('imgorder', $imgorder);
@@ -1416,7 +1532,8 @@ class Product
 
         $Disc = Sales::getByProduct($this->id);
         if (!empty($Disc)) {
-            $DT = SHOP_getTemplate('sales_table', 'stable');
+            $DT = new Template;
+            $DT->set_file('stable', 'sales_table.thtml');
             $DT->set_var('edit_sale_url',
                 SHOP_ADMIN_URL . '/index.php?sales');
             $DT->set_block('stable', 'SaleList', 'SL');
@@ -1439,6 +1556,7 @@ class Product
             $T->set_var('sale_prices', $DT->finish($DT->get_var('output')));
         }
 
+        $T->set_var('product_rule_options', Rules\Product::optionList($this->prod_rule));
         $retval .= $T->parse('output', 'product');
         $retval .= COM_endBlock();
         return $retval;
@@ -1534,6 +1652,9 @@ class Product
             return $retval;
         }
 
+        // Create a good form ID
+        $frm_id = 'add_cart_' . COM_sanitizeID($prod_id . uniqid(), false);
+
         // Get the currency object which is used repeatedly
         $Cur = Currency::getInstance();
 
@@ -1575,16 +1696,16 @@ class Product
         }
 
         // Set the template dir based on the configured template version
-        $T = new \Template(array(
-            __DIR__ . '/../templates/detail/' . $_SHOP_CONF['product_tpl_ver'],
-            __DIR__ . '/../templates/detail',
+        $T = new Template(array(
+            'detail/' . $_SHOP_CONF['product_tpl_ver'],
+            'detail',
         ) );
         $T->set_file(array(
             'product'   => 'product_detail_attrib.thtml',
             'prod_info' => 'details_blk.thtml',
         ) );
         // Set up the template containing common javascript
-        $JT = new \Template(__DIR__ . '/../templates/detail');
+        $JT = new Template('detail');
         $JT->set_file('js', 'detail_js.thtml');
 
         $name = $this->name;
@@ -1670,10 +1791,11 @@ class Product
                 }
                 foreach ($ogOpts as $Opt) {
                     $T->set_var(array(
-                        'opt_id'   => $Opt->getID(),
-                        'opt_str'  => htmlspecialchars($Opt->getValue()),
-                        'radio_selected'  => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
-                        'select_selected'  => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
+                        'frm_id' => $frm_id,
+                        'opt_id' => $Opt->getID(),
+                        'opt_str' => htmlspecialchars($Opt->getValue()),
+                        'radio_selected' => $Opt->getID() == $sel_opt ? 'checked="checked"' : '',
+                        'select_selected' => $Opt->getID() == $sel_opt ? 'selected="selected"' : '',
                     ) );
                     $T->parse('optSel', 'Option' . $OG->getType(), true);
                 }
@@ -1717,7 +1839,9 @@ class Product
             if (!empty($ids)) {
                 $showImages = array();
                 foreach ($ids as $id) {
-                    $showImages[$id] = $this->Images[$id];
+                    if (isset($this->Images[$id])) {
+                        $showImages[$id] = $this->Images[$id];
+                    }
                 }
             }
         }
@@ -1763,7 +1887,7 @@ class Product
         $T->set_var(array(
             'have_attributes'   => $this->hasOptions(),
             'cur_code'          => $Cur->getCode(),   // USD, etc.
-            'frm_id'            => COM_sanitizeID($prod_id, false),
+            'frm_id'            => $frm_id,
             'id'                => $prod_id,
             'name'              => $name,
             'short_description' => $s_dscp,
@@ -1793,6 +1917,9 @@ class Product
             'sku'               => $this->getName(),
             //'lead_time'         => $this->getOnhand() == 0 ? $this->LeadTime() : '',
             'lead_time'    => $this->getOnhand() == 0 ? '(' . sprintf($LANG_SHOP['disp_lead_time'], $this->LeadTime()) . ')' : '',
+            'aff_link'          => $this->getAffiliateLink(),
+            'lang_copy_clipboard' => $LANG_SHOP['copy_cb'],
+            'lang_copy_success' => $LANG_SHOP['copy_cb_success'],
         ) );
 
         if (!empty($this->Categories)) {
@@ -1819,10 +1946,27 @@ class Product
             ) );
             $T->parse('FL', 'FeatList', true);
         }
-        if ($zonerule_dscp != '') {
-                $T->set_var(array(
-                'ft_name' => $LANG_SHOP['restrictions'],
-                'fv_text' => $zonerule_dscp
+        $restrictions = array();
+        if (!empty($zonerule_dscp)) {
+            $restrictions[] = $zonerule_dscp;
+        }
+        $PCs = Rules\Product::getByProduct($this);
+        foreach ($PCs as $PC) {
+            $pc_restriction = $PC->getDscp();
+            if (!empty($pc_restriction)) {
+                $restrictions[] = $pc_restriction;
+            }
+        }
+        if (!empty($restrictions)) {
+            if (count($restrictions) > 1) {
+                $prule_text = '<ul><li>' . implode('</li><li>', $restrictions) . '</li></ul>';
+            } else {
+                $prule_text = $restrictions[0];
+            }
+
+            $T->set_var(array(
+                'ft_name' => $LANG_SHOP['other'],
+                'fv_text' => $prule_text,
             ) );
             $T->parse('FL', 'FeatList', true);
         }
@@ -1843,7 +1987,7 @@ class Product
             $T->parse('SF', 'SpecialFields', true);
         }
 
-        $buttons = $this->PurchaseLinks();
+        $buttons = $this->PurchaseLinks(Views::DETAIL, $frm_id);
         $T->set_block('product', 'BtnBlock', 'Btn');
         foreach ($buttons as $name=>$html) {
             if ($name == 'add_cart') {
@@ -1887,6 +2031,7 @@ class Product
         $JT->set_var(array(
             'have_attributes'   => $T->get_var('have_attributes'),
             'price'             => $T->get_var('price'),
+            'frm_id'            => $T->get_var('frm_id'),
             'id'                => $T->get_var('id'),
             'cur_decimals'      => $T->get_var('cur_decimals'),
             'session_id'        => session_id(),
@@ -1958,13 +2103,27 @@ class Product
      * May be Shop buttons, login-required link, or download button.
      *
      * @param   string  $type   View type where the button will be shown
+     * @param   string  $frm_id Form ID, NULL to create a random form
      * @return  array   Array of buttons as name=>html.
      */
-    public function PurchaseLinks($type='detail')
+    public function PurchaseLinks($type=Views::DETAIL, $frm_id=NULL)
     {
         global $_CONF, $_USER, $_SHOP_CONF, $_TABLES;
 
         $buttons = array();
+
+        if (!$this->canPurchase()) {
+            return $buttons;
+        }
+
+        // Don't show any buttons for downloads that aren't available
+        // in the buyer's location.
+        // Physical item rule checks are done during checkout after the
+        // shipping address is known.
+        if ($this->isDownload() && !$this->getRule()->isOK()) {
+            return $buttons;
+        }
+
         $this->_view = $type;
 
         // Indicate that an "add to cart" button should be returned along with
@@ -1972,9 +2131,10 @@ class Product
         // and is available for immediate download, this will be turned off.
         $add_cart = $_SHOP_CONF['ena_cart'] == 1 ? true : false;
 
-        if ($this->prod_type == SHOP_PROD_DOWNLOAD && $this->price == 0) {
+        if ($this->prod_type == ProductType::DOWNLOAD && $this->price == 0) {
             // Free, or unexpired downloads for non-anymous
-            $T = SHOP_getTemplate('btn_download', 'download', 'buttons');
+            $T = new Template('buttons');
+            $T->set_file('download', 'btn_download.thtml');
             $T->set_var('action_url', SHOP_URL . '/download.php');
             $T->set_var('id', $this->id);
             $buttons['download'] = $T->parse('', 'download');
@@ -1984,12 +2144,16 @@ class Product
             !$_SHOP_CONF['anon_buy']
         ) {
             // Requires login before purchasing
-            $T = SHOP_getTemplate('btn_login_req', 'login_req', 'buttons');
+            $T = new Template('buttons');
+            $T->set_file('login_req', 'btn_login_req.thtml');
             $buttons['login'] = $T->parse('', 'login_req');
             $add_cart = false;
         } else {
             // Normal buttons for everyone else
-            if ($this->canBuyNow() && $this->btn_type != '') {
+            if (
+                $this->canBuyNow() &&
+                $this->btn_type != ''
+            ) {
                 // Gateway buy-now buttons only used if no options
                 foreach (Gateway::getAll() as $gw) {
                     if ($gw->Supports($this->btn_type)) {
@@ -2008,36 +2172,46 @@ class Product
             $this->canOrder()
             //($this->price > 0 || !$this->canBuyNow())
         ) {
-            $T = new \Template(SHOP_PI_PATH . '/templates');
+            $T = new Template;
             $T->set_file(array(
                 'cart'  => 'buttons/btn_add_cart_attrib.thtml',
             ) );
-            $btn_class = 'uk-button uk-button-small uk-button-success';
+            $btn_class = 'success';
+            $price_vis = '';
             if ($this->track_onhand) {
                 $this->getVariants();
                 if (count($this->Variants) > 0) {
                     if ($this->Variants[0]->getOnhand() == 0 && $this->oversell > self::OVERSELL_ALLOW) {
-                        $btn_class = 'uk-button uk-button-small uk-button-disabed';
+                        $btn_class = 'disabled';
+                        $price_vis = 'hidden';
                     }
                 }
             }
 
+            if ($frm_id === NULL) {
+                $frm_id = uniqid();
+            } else {
+                $frm_id = COM_sanitizeID($frm_id, false);
+            }
+            $add_form_url = in_array($type, array(Views::BLOCK, Views::LIST));
             $T->set_var(array(
                 'item_name'     => htmlspecialchars($this->name),
                 'item_number'   => $this->id,
-                'frm_id'        => COM_sanitizeID($this->id, false),
+                'frm_id'        => $frm_id,     // to separate multiple blocks
                 'short_description' => htmlspecialchars($this->short_description),
-                'amount'        => $this->getPrice(),
+                'amount'        => $this->getSalePrice(),
+                'base_price'    => $this->getPrice(),
                 'action_url'    => SHOP_URL . '/index.php',
                 //'form_url'  => $this->hasOptions() ? '' : 'true',
                 //'form_url'  => false,
-                'form_url'  => $this->_view == 'list' ? true : false,
+                'form_url'  => $add_form_url,
                 'tpl_ver'   => $_SHOP_CONF['product_tpl_ver'],
                 'quantity'  => $this->getFixedQuantity(),
                 'nonce'     => Cart::getInstance()->makeNonce($this->id . $this->name),
                 'max_ord_qty'   => $this->getMaxOrderQty(),
                 'min_ord_qty'   => $this->min_ord_qty,
                 'btn_cls'   => $btn_class,
+                'price_vis' => $price_vis,
             ) );
             $buttons['add_cart'] = $T->parse('', 'cart');
         }
@@ -2052,7 +2226,7 @@ class Product
      */
     public function hasOptions()
     {
-        return empty($this->OptionGroups) ? false : true;
+        return count($this->OptionGroups);
     }
 
 
@@ -2177,12 +2351,12 @@ class Product
     {
         if (
             $this->isTaxable()          // need address in cart for tax
-            || $this->zone_rule > 0       // has an active zone rule
+            || $this->zone_rule > 0     // has an active zone rule
             || !$this->canOrder()       // Can't be ordered at all, unavailable
-            || $this->hasOptions()      // no attributes to select
-            || $this->hasDiscounts()    // no quantity-based discounts
-            || $this->hasCustomFields() // no text fields to fill in
-            || $this->hasSpecialFields()    // no special fields to fill in
+            || $this->hasOptions()      // has attributes to select
+            || $this->hasDiscounts()    // has quantity-based discounts
+            || $this->hasCustomFields() // has text fields to fill in
+            || $this->hasSpecialFields()    // has special fields to fill in
         ) {
             // If any of the above apply, then the buy-now button can't be used.
             return false;
@@ -2220,7 +2394,11 @@ class Product
      */
     public function getBasePrice()
     {
-        return (float)$this->price;
+        $price = (float)$this->price;
+        if (!is_null($this->Variant)) {
+            $price += (float)$this->Variant->getPrice();
+        }
+        return $price;
     }
 
 
@@ -2234,9 +2412,10 @@ class Product
     public function getDiscountedPrice($qty=1, $opts_price=0)
     {
         $price = $this->getSale()->calcPrice($this->price + $opts_price);
-        return Currency::getInstance()->RoundVal(
+        $disc_price = Currency::getInstance()->RoundVal(
             $price * (1 - ($this->getDiscount($qty) / 100))
         );
+        return $disc_price;
     }
 
 
@@ -2252,40 +2431,29 @@ class Product
      */
     public function getPrice($opts = array(), $quantity = 1, $override = array())
     {
-        if (!is_array($opts)) {
-            $opts= explode(',', $opts);
-        }
         if ($this->override_price && isset($override['price'])) {
             // If an override price is specified, just return it.
             $this->price = (float)$override['price'];
             return round($this->price, Currency::getInstance()->Decimals());
-        } else {
-            // Otherwise start with the effective sale price
-            $price = $this->getSalePrice();
+        }
+
+        // Otherwise start with the effective sale price
+        $price = $this->getBasePrice();
+
+        if (!empty($opts)) {
+            if (!is_array($opts)) {
+                $opts = explode(',', $opts);
+            }
+            $PV = ProductVariant::getByAttributes($this->id, $opts);
+            $price += $PV->getPrice();
         }
 
         // Calculate the discount factor if a quantity discount is in play
         $discount_factor = (100 - $this->getDiscount($quantity)) / 100;
 
-        // Add attribute prices to base price.
-        // $Option could be an OrderItemOption or ProductOptionValue key
-        foreach ($opts as $Option) {
-            $key = 0;
-            // Allow for $opts to be an array of attribute IDs, or ProductOption objects.
-            if (is_object($Option)) {
-                $price += $Option->getPrice();
-            } else {
-                // Option is a ProductOptionValue record key
-                $POV = $this->getOption($Option);
-                if ($POV !== false) {
-                    $price += (float)$POV->getPrice();
-                }
-            }
-        }
-
         // Discount the price, including attributes
         $price *= $discount_factor;
-        $price = round($price, Currency::getInstance()->Decimals());
+        $price = Currency::getInstance()->RoundVal($price);
         return $price;
     }
 
@@ -2312,7 +2480,7 @@ class Product
      */
     public function getDisplayPrice($price = NULL)
     {
-        if ($price === NULL) $price = $this->getPrice();
+        if ($price === NULL) $price = $this->getSalePrice();
         return Currency::getInstance()->Format($price);
     }
 
@@ -2342,80 +2510,6 @@ class Product
 
 
     /**
-     * Get the options display to be shown in the cart and on the order.
-     * Returns a string like so:
-     *      -- option1: option1_value
-     *      -- option2: optoin2_value
-     *
-     * @deprecated
-     * @param  object  $item   Specific OrderItem object from the cart
-     * @return string      Option display
-     */
-    public function XXgetOptionDisplay($item)
-    {
-        $retval = '';
-        $opts = array();
-
-        // Get attributes selected from the available options
-        // Use item_options since the class var doesn't work with empty()
-        $item_options = $item->options;
-        if (!empty($item_options)) {
-            $options = explode(',', $item_options);
-            foreach ($options as $option) {
-                $opts[] = array(
-                    'opt_name'  => $this->options[$option]['opt_name'],
-                    'opt_value' => $this->options[$option]['opt_value'],
-                );
-            }
-        }
-
-        // Get special fields submitted with the purchase
-        if (is_array($item->extras)) {
-            if (isset($item->extras['special']) && is_array($item->extras['special'])) {
-                $sp_flds = $this->getSpecialFields($item->extras['special']);
-                foreach ($sp_flds as $txt=>$val) {
-                    $opts[] = array(
-                        'opt_name'  => $txt,
-                        'opt_value' => $val,
-                    );
-                }
-            }
-        }
-
-        // Get text fields defined with the product
-        $text_names = explode('|', $this->custom);
-        if (
-            !empty($text_names) &&
-            isset($item->extras['custom']) &&
-            is_array($item->extras['custom'])
-        ) {
-            foreach ($item->extras['custom'] as $tid=>$val) {
-                if (array_key_exists($tid, $text_names) && !empty($val)) {
-                    $opts[] = array(
-                        'opt_name'  => $text_names[$tid],
-                        'opt_value' => $val,
-                    );
-                }
-            }
-        }
-
-        if (!empty($opts)) {
-            $T = SHOP_getTemplate('view_options', 'options');
-            $T->set_block('options', 'ItemOptions', 'ORow');
-            foreach ($opts as $opt) {
-                $T->set_var(array(
-                    'opt_name'  => $opt['opt_name'],
-                    'opt_value' => strip_tags($opt['opt_value']),
-                ) );
-                $T->parse('ORow', 'ItemOptions', true);
-            }
-            $retval .= $T->parse('output', 'options');
-        }
-        return $retval;
-    }
-
-
-    /**
      * Get the descriptive values for a specified set of options.
      *
      * @param   array   $options    Array of integer option values
@@ -2427,8 +2521,12 @@ class Product
         if (!is_array($options)) {
             $options = explode(',', $options);
         }
-        foreach ($options as $key) {
-            if (strpos($key, '|') !== false) {  // complete option strings
+        foreach ($options as $option) {
+            $key = NULL;
+            if ($option instanceof OrderItemOption) {
+                $key = $option->getOptionID();
+            } elseif (is_string($key) && strpos($key, '|') !== false) {
+                // complete option strings
                 list($key, $junk) = explode('|', $key);
             }
             if (isset($this->options[$key])) {
@@ -2449,28 +2547,20 @@ class Product
      *  - Update qty on hand if track_onhand is set (min. value 0)
      *
      * @param   object  $Item       Item record, to get options, etc.
-     * @param   object  $Order      Optional order (not used yet)
      * @param   array   $ipn_data   IPN data (not used in this class)
      * @return  integer     Zero or error value
      */
-    public function handlePurchase(&$Item, $Order=NULL, $ipn_data = array())
+    public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
         global $_TABLES;
 
         $status = 0;
 
         // update the qty on hand, if tracking and not already zero
-        if ($this->track_onhand && $this->getOnhand() > 0) {
-            $sql = "UPDATE {$_TABLES['shop.products']} SET
-                    onhand = GREATEST(0, onhand - {$Item->getQuantity()})
-                    WHERE id = '{$this->id}'";
+        if ($this->track_onhand) {
+            Stock::recordPurchase($this->id, $Item->getVariantId(), $Item->getQuantity());
             Cache::clear('products');
             Cache::clear('sitemap');
-            DB_query($sql, 1);
-            if (DB_error()) {
-                SHOP_log("SQL errror: $sql", SHOP_LOG_ERROR);
-                $status = 1;
-            }
         }
         return $status;
     }
@@ -2520,7 +2610,7 @@ class Product
      * Get all the options for this product.
      *
      * @todo determine if this still works
-     * @deprecate
+     * @deprecated
      * @return  array       Array of options
      */
     public function getOptions()
@@ -2569,7 +2659,32 @@ class Product
      */
     public function getWeight()
     {
-        return $this->weight;
+        return (float)$this->weight;
+    }
+
+
+    /**
+     * Get the product class ID assigned to this product.
+     *
+     * @return  integer     Product Class ID
+     */
+    public function getProductRuleId() : int
+    {
+        return $this->prod_rule;
+    }
+
+
+    /**
+     * Get the effective product class object for this product.
+     *
+     * @return  object      Product Rule object
+     */
+    public function getEffectiveProductRule() : \Shop\Rules\Product
+    {
+        if ($this->productRule == NULL) {
+            $this->productRule = Rules\Product::getEffective($this);
+        }
+        return $this->productRule;
     }
 
 
@@ -2597,8 +2712,8 @@ class Product
         // Set product variables to indicate a new product and save it.
         $this->isNew = true;
         $this->id = 0;
-        $this->name = $this->name . uniqid();
-        $this->Save();
+        $this->name = $this->name . '_' . uniqid();
+        $this->saveToDB();
         if ($this->id < 1) {
             SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
             return false;
@@ -2640,9 +2755,11 @@ class Product
     public function getSalePrice($price = NULL)
     {
         if ($price === NULL) {
-            $price = $this->price;
+            $price = $this->getBasePrice();
         }
-        return $this->getSale()->calcPrice($price);
+        return Currency::getInstance()->RoundVal(
+            $this->getSale()->calcPrice($price)
+        );
     }
 
 
@@ -2714,20 +2831,24 @@ class Product
      * Determine if a product can be displayed in the catalog.
      * Default availability dates are from 1900-01-01 to 9999-12-31.
      *
-     * @param   boolean $isadmin    True if this is an admin, can view all
+     * @param   integer $uid    User ID, current user if null
      * @return  boolean True if on sale, false if not
      */
-    public function canDisplay($isadmin = false)
+    public function canDisplay(?int $uid = NULL) : bool
     {
+        global $_USER;
+
+        if ($uid === NULL) {
+            $uid = (int)$_USER['uid'];
+        }
+
         // If the product is disabled, return false now
         if ($this->id < 1 || !$this->enabled) {
             return false;
         }
 
-        if ($isadmin) return true;  // Admin can always view and order
-
         // Check the user's permission, if not admin
-        if (!$this->hasAccess()) {
+        if (!$this->hasAccess($uid)) {
             return false;
         }
 
@@ -2756,7 +2877,7 @@ class Product
     public function getQuantityBO($qty)
     {
         if ($this->track_onhand) {
-            $avail = $this->hasVariant() ? $this->Variant->getOnhand() : $this->onhand;
+            $avail = $this->getOnhand();
             return max($qty - $avail, 0);
         } else {
             return 0;
@@ -2774,12 +2895,7 @@ class Product
     public function getMaxOrderQty()
     {
         $max = $this->max_ord_qty == 0 ? self::MAX_ORDER_QTY : $this->max_ord_qty;
-        if ($this->hasVariant()) {
-            $onhand = $this->Variant->getOnhand();
-        } else {
-            $onhand = $this->onhand;
-        }
-
+        $onhand = $this->getOnhand();
         if (!$this->track_onhand || $this->oversell == self::OVERSELL_ALLOW) {
             return $max;
         } else {
@@ -2805,9 +2921,9 @@ class Product
      * Returns the adjusted quantity if the requested value is not allowed.
      *
      * @param   integer $qty    Requested quantity
-     * @return  integer         Max allowed quantity
+     * @return  float       Max allowed quantity
      */
-    public function validateOrderQty($qty)
+    public function validateOrderQty($qty) : float
     {
         $max = $this->getMaxOrderQty();
         $min = $this->getMinOrderQty();
@@ -2846,7 +2962,7 @@ class Product
      */
     private static function _InputDtFormat($str)
     {
-        if ($str < '1970-01-02' || $str == self::MAX_DATE) {
+        if ($str < '1970-01-02' || $str == Dates::MAX_DATE) {
             return '';
         } else {
             return $str;
@@ -2869,6 +2985,18 @@ class Product
         } else {
             return false;
         }
+    }
+
+
+    /**
+     * Get the name of the plugin supplying the product.
+     * Returns `shop` for catalog items.
+     *
+     * @return  string      Plugin name
+     */
+    public function getPluginName()
+    {
+        return $this->pi_name;
     }
 
 
@@ -2914,18 +3042,25 @@ class Product
      * Determine if the current user has access to view this product.
      * If the user has access to at least one parent category, return true.
      *
+     * @param   int     $uid    User ID, null = current user
      * @return  boolean     True if access and purchase is allowed.
      */
-    public function hasAccess()
+    public function hasAccess(?int $uid = NULL) : bool
     {
         global $_GROUPS;
+
+        if ($uid === NULL) {
+            $groups = $_GROUPS;
+        } else {
+            $groups = SEC_getUserGroups($uid);
+        }
 
         if (self::isPluginItem($this->item_id)) {
             return true;
         }
         $Cats = $this->getCategories();
         foreach ($this->getCategories() as $Cat) {
-            if ($Cat->hasAccess($_GROUPS)) {
+            if ($Cat->hasAccess($groups)) {
                 return true;
             }
         }
@@ -2976,7 +3111,18 @@ class Product
      */
     public function getReorder()
     {
-        return (float)$this->reorder;
+        return $this->getStock()->getReorder();
+    }
+
+
+    /**
+     * Get the quantity of stock items currently reserved for cards.
+     *
+     * @return  float       Quantity of items reserved
+     */
+    public function getReserved()
+    {
+        return $this->getStock()->getReserved();
     }
 
 
@@ -2992,22 +3138,32 @@ class Product
 
 
     /**
+     * Get the affiliate referral link for the product.
+     * Does not use COM_buildUrl().
+     *
+     * @return  string      Affiliate referral URL
+     */
+    public function getAffiliateLink()
+    {
+        return Customer::getInstance()->getAffiliateLink($this->id);
+    }
+
+
+    /**
      * Get the URL to the item detail page.
      *
      * @param   integer $oi_id  Order Item ID
      * @param   string  $q      Query string. Should be url-encoded already
      * @return  string      Item detail URL
      */
-    public function getLink($oi_id=0, $q='')
+    public function getLink()
     {
-        global $_SHOP_CONF;
-
-        $id = $_SHOP_CONF['use_sku'] ? $this->name : $this->id;
+        $id = Config::get('use_sku') ? $this->name : $this->id;
         $url = SHOP_URL . '/detail.php?id=' . $id;
-        if ($oi_id > 0 || $q != '') {
-            $url .= '&oi_id=' . (int)$oi_id;
-            if ($q != '') {
-                $url .= '&query=' . $q;
+        if ($this->oi_id > 0 || $this->query != '') {
+            $url .= '&oi_id=' . (int)$this->oi_id;
+            if ($this->query != '') {
+                $url .= '&query=' . $this->query;
             }
         }
         return COM_buildUrl($url);
@@ -3017,9 +3173,9 @@ class Product
     /**
      * Get additional text to add to the buyer's receipt for a product.
      *
-     * @param   object  $orderitem  Line item to check.
+     * @param   object  $OI     OrderItem object to check, not used by default
      */
-    public function EmailExtra($orderitem)
+    public function EmailExtra(OrderItem $OI) : string
     {
         return '';
     }
@@ -3118,20 +3274,10 @@ class Product
      */
     private function _OutOfStock()
     {
-        if ($this->track_onhand != 0) {
-            if ($this->hasVariants()) {
-                // Return the oversell setting for the caller to act accordingly
-                // when out of stock
-                foreach ($this->getVariants() as $Var) {
-                    if ($Var->getOnhand() >  0) {
-                        return 0;
-                        break;
-                    }
-                }
-                return $this->oversell;
-            } elseif ($this->onhand == 0) {
-                return $this->oversell;
-            }
+        if ($this->getOnhand() > 0) {
+            return self::OVERSELL_ALLOW;
+        } else {
+            return $this->oversell;
         }
         return 0;
     }
@@ -3148,9 +3294,9 @@ class Product
     public function isDownload($only = false)
     {
         if ($only) {
-            $retval = ($this->prod_type == SHOP_PROD_DOWNLOAD);
+            $retval = ($this->prod_type == ProductType::DOWNLOAD);
         } else {
-            $retval = ($this->prod_type & SHOP_PROD_DOWNLOAD) == SHOP_PROD_DOWNLOAD;
+            $retval = ($this->prod_type & ProductType::DOWNLOAD) == ProductType::DOWNLOAD;
         }
         return $retval;
     }
@@ -3174,7 +3320,7 @@ class Product
      */
     public function isPhysical()
     {
-        return ($this->prod_type & SHOP_PROD_PHYSICAL) == SHOP_PROD_PHYSICAL;
+        return ($this->prod_type & ProductType::PHYSICAL);
     }
 
 
@@ -3189,29 +3335,25 @@ class Product
     {
         global $_TABLES;
 
-        // If already loaded, just return the images.
+        $cache_key = self::_makeCacheKey($this->id, 'img');
+        //$this->Images = Cache::get($cache_key);
         if ($this->Images === NULL) {
-            $cache_key = self::_makeCacheKey($this->id, 'img');
-            $this->Images = Cache::get($cache_key);
-            if ($this->Images === NULL) {
-                $this->Images = array();
-                $sql = "SELECT img_id, filename, orderby
-                    FROM {$_TABLES['shop.images']}
-                    WHERE product_id='". $this->id . "'
-                    ORDER BY orderby ASC";
-                $res = DB_query($sql);
-                while ($prow = DB_fetchArray($res, false)) {
-                    if (self::imageExists($prow['filename'])) {
-                        $this->Images[$prow['img_id']] = $prow;
-                    } else {
-                        // Might as well remove DB records for images that don't exist.
-                        $this->deleteImage($prow['img_id']);
-                    }
+            $this->Images = array();
+            $sql = "SELECT img_id, filename, orderby
+                FROM {$_TABLES['shop.images']}
+                WHERE product_id='". $this->id . "'
+                ORDER BY orderby ASC";
+            $res = DB_query($sql);
+            while ($prow = DB_fetchArray($res, false)) {
+                if (self::imageExists($prow['filename'])) {
+                    $this->Images[$prow['img_id']] = $prow;
+                } else {
+                    // Might as well remove DB records for images that don't exist.
+                    $this->deleteImage($prow['img_id']);
                 }
-                Cache::set($cache_key, $this->Images, 'products');
             }
+            Cache::set($cache_key, $this->Images, 'products');
         }
-
         return $this->Images;
     }
 
@@ -3389,6 +3531,17 @@ class Product
 
 
     /**
+     * Check if the product is enabled for purchase.
+     *
+     * @return  integer     1 if enabled, 0 if not
+     */
+    public function isEnabled()
+    {
+        return $this->enabled ? 1 : 0;
+    }
+
+
+    /**
      * Get the rating bar, if supported.
      *
      * @param   boolean $force_static   True to force static display.
@@ -3448,11 +3601,11 @@ class Product
         global $LANG_SHOP, $_SHOP_CONF;
 
         if (empty($ids)) {
-            COM_setMsg("No products selected");
+            SHOP_setMsg("No products selected");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
         $ids = implode(',', $ids);
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'prod_bulk_form.thtml');
         $T->set_var(array(
             'prod_ids'  => $ids,
@@ -3464,7 +3617,7 @@ class Product
         ) );
         $T->set_block('form', 'ProdTypeRadio', 'ProdType');
         foreach ($LANG_SHOP['prod_types'] as $value=>$text) {
-            if ($value == SHOP_PROD_COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
+            if ($value == ProductType::COUPON && $_SHOP_CONF['gc_enabled'] == 0) {
                 continue;
             }
             $T->set_var(array(
@@ -3559,7 +3712,7 @@ class Product
         $sql = "SELECT
                 p.id, p.name, p.short_description, p.description, p.price,
                 p.prod_type, p.enabled, p.featured,
-                p.avail_beg, p.avail_end, p.track_onhand, p.onhand, p.oversell
+                p.avail_beg, p.avail_end, p.track_onhand, p.oversell
             FROM {$_TABLES['shop.products']} p";
         if ($cat_id > 0) {
             $sql .= " LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
@@ -3625,8 +3778,11 @@ class Product
             ),*/
             array(
                 'text'  => $LANG_ADMIN['delete'] . '&nbsp;' .
-                Icon::getHTML('question', 'tooltip', array('title' => $LANG_SHOP_HELP['hlp_prod_delete'])),
-                'field' => 'delete', 'sort' => false,
+                FieldList::info(array(
+                    'title' => $LANG_SHOP_HELP['hlp_prod_delete'],
+                ) ),
+                'field' => 'delete',
+                'sort' => false,
                 'align' => 'center',
             ),
         );
@@ -3640,13 +3796,11 @@ class Product
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_product'],
-            SHOP_ADMIN_URL . '/index.php?editproduct=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editproduct=x',
+            'style' => 'success',
+        ) );
 
         // Filter on category, brand and supplier
         $cat_id = SHOP_getVar($_GET, 'cat_id', 'integer', 0);
@@ -3679,19 +3833,40 @@ class Product
             'form_url' => SHOP_ADMIN_URL . "/index.php?products&cat_id=$cat_id&brand+id=$brand_id&supplier_id=$supplier_id",
         );
 
-        // Update certain product properties in bulk
-        $bulk_update = '<button type="submit" name="prod_bulk_frm" value="x" ' .
-            'class="uk-button uk-button-mini tooltip" ' .
-            'title="' . $LANG_SHOP['bulk_update'] . '">' .
-            $LANG_SHOP['update'] .
-            '</button>&nbsp;' .
-            '<button type="submit" name="prod_bulk_del" value="x" ' .
-            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-            'onclick="return confirm(\'' . $LANG_SHOP['q_del_items'] . '\');" ' .
-            'title="' . $LANG_SHOP['bulk_delete'] . '">' .
-            $LANG_SHOP['delete'] .
-            '</button>';
-
+        $bulk_update = FieldList::button(array(
+            'name' => 'prod_bulk_frm',
+            'text' => $LANG_SHOP['update'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_update'],
+            ),
+        ) );
+        $bulk_update .= FieldList::button(array(
+            'name' => 'prod_bulk_del',
+            'text' => $LANG_SHOP['delete'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'style' => 'danger',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_delete'],
+                'onclick' => "return confirm('" . $LANG_SHOP['q_del_items'] . "');",
+            ),
+        ) );
+        $bulk_update .= FieldList::button(array(
+            'name' => 'prod_bulk_reset',
+            'text' => $LANG_SHOP['reset_ratings'],
+            'value' => 'x',
+            'size' => 'mini',
+            'class' => 'tooltip',
+            'style' => 'primary',
+            'attr' => array(
+                'title' => $LANG_SHOP['bulk_reset'],
+                'onclick' => "return confirm'" . $LANG_SHOP['q_reset_ratings'] . "');",
+            ),
+        ) );
         $options = array(
             'chkdelete' => true,
             'chkall' => true,
@@ -3699,50 +3874,66 @@ class Product
             'chkname' => 'prod_bulk',
             'chkactions' => $bulk_update,
         );
-        $filter = $LANG_SHOP['category'] . ': <select name="cat_id"
-            onchange="javascript: document.location.href=\'' .
-            SHOP_ADMIN_URL . '/index.php?products' .
-            '&amp;brand_id=' . $brand_id .
-            '&amp;supplier_id=' . $supplier_id .
-            '&amp;cat_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
+
+        // Create the filter by category option
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
                 $_TABLES['shop.categories'],
                 'cat_id,cat_name',
                 $cat_id,
                 1
-            ) .
-            "</select>" . LB;
-        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ': <select name="brand_id"
-            onchange="javascript: document.location.href=\'' .
+        );
+        $filter = $LANG_SHOP['category'] . ': ';
+        $filter .= FieldList::select(array(
+        //$filter .= FieldList::select(array(
+            'name' => 'cat_id',
+            'onchange' => "javascript: document.location.href='" .
+                SHOP_ADMIN_URL . "/index.php?products" .
+                "&amp;brand_id=$brand_id" .
+                "&amp;supplier_id=$supplier_id" .
+                "&amp;cat_id='+this.options[this.selectedIndex].value",
+            'option_list' => $sel_options,
+        ) );
+
+        // Create the filter by brand option
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
+            $_TABLES['shop.suppliers'],
+            'sup_id,company',
+            $brand_id,
+            1,
+            "is_brand=1"
+        );
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['brand'] . ':';
+        $filter .= FieldList::select(array(
+            'name' => 'brand_id',
+            'onchange' => "javascript: document.location.href='" .
                 SHOP_ADMIN_URL . '/index.php?products' .
-                '&amp;cat_id=' . $cat_id .
-                '&amp;supplier_id=' . $supplier_id .
-                '&amp;brand_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.suppliers'],
-                'sup_id,company',
-                $brand_id,
-                1,
-                "is_brand=1"
-            ) .
-            "</select>" . LB;
-        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': <select name="supplier_id"
-            onchange="javascript: document.location.href=\'' .
-            SHOP_ADMIN_URL . '/index.php?products' .
-            '&amp;brand_id=' . $brand_id .
-            '&amp;cat_id=' . $cat_id .
-            '&amp;supplier_id=\'+' . 'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.suppliers'],
-                'sup_id,company',
-                $supplier_id,
-                1,
-                "is_supplier=1"
-            ) .
-            "</select>" . LB;
+                "&amp;cat_id=$cat_id" .
+                "&amp;supplier_id=$supplier_id" .
+                "&amp;brand_id='+this.options[this.selectedIndex].value",
+            'option_list' => $sel_options,
+        ) );
+
+        // Create the filter by supplier option
+        $sel_options = '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB;
+        $sel_options .= COM_optionList(
+            $_TABLES['shop.suppliers'],
+            'sup_id,company',
+            $supplier_id,
+            1,
+            "is_supplier=1"
+        );
+        $filter .= '&nbsp;&nbsp;' . $LANG_SHOP['supplier'] . ': ';
+        $filter .= FieldList::select(array(
+            'name' => 'supplier_id',
+            'onchange' => "javascript: document.location.href='" .
+                SHOP_ADMIN_URL . '/index.php?products' .
+                "&amp;brand_id=$brand_id" .
+                "&amp;cat_id=$cat_id" .
+                "&amp;supplier_id='+this.options[this.selectedIndex].value",
+            'option_list' => $sel_options,
+        ) );
         $filter .= '<br />' . LB;
 
         $display .= ADMIN_list(
@@ -3765,7 +3956,7 @@ class Product
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array())
     {
         global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
         static $today = NULL;
@@ -3777,50 +3968,43 @@ class Product
 
         switch($fieldname) {
         case 'copy':
-            $retval .= COM_createLink(
-                Icon::getHTML('copy', 'tooltip', array('title' => $LANG_SHOP['copy_product'])),
-                SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::copy(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?prod_clone=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?editproduct=x&amp;id={$A['id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?return=products&editproduct=x&amp;id={$A['id']}",
+            ) );
             break;
 
         case 'delete':
             if (!\Shop\Product::isUsed($A['id'])) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('delete'),
-                    SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
-                    array(
+                $retval .= FieldList::delete(array(
+                    'delete_url' => SHOP_ADMIN_URL. '/index.php?deleteproduct=x&amp;id=' . $A['id'],
+                    'attr' => array(
                         'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                         'title' => $LANG_SHOP['del_item'],
                         'class' => 'tooltip',
-                    )
-                );
+                    ),
+                ) );
             } else {
                 $retval = '';
             }
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['id']}\",\"enabled\",".
-                    "\"product\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','enabled','product');",
+                'value' => 1,
+            ) );
             break;
 
-        case 'availability':
+        /*case 'availability':
             if ($A['avail_beg'] > $today || $A['avail_end'] < $today) {
                 $icon = 'avail-expired';
                 $caption = $LANG_SHOP['available'] . ' ' . $A['avail_beg'] . ' - ' . $A['avail_end'];
@@ -3835,20 +4019,16 @@ class Product
                 }
             }
             $retval = Icon::getHTML($icon, 'tooltip', array('title' => $caption));
-            break;
+            break;*/
 
         case 'featured':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togfeatured{$A['id']}\"
-                onclick='SHOP_toggle(this,\"{$A['id']}\",\"featured\",".
-                "\"product\");' />" . LB;
+            $retval = FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togfeatured{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'value' => 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','featured','product');",
+            ) );
             break;
 
         case 'name':
@@ -3890,7 +4070,7 @@ class Product
             break;
 
         case 'price':
-            $retval = \Shop\Currency::getInstance()->FormatValue($fieldvalue);
+            $retval = Currency::getInstance()->FormatValue($fieldvalue);
             break;
 
         default:
@@ -3937,19 +4117,19 @@ class Product
         }
         $retval = array(
             'status'    => 0,
-            'msg'       => $this->track_onhand ? $this->onhand . ' ' . $LANG_SHOP['available'] : '',
+            'msg'       => $this->track_onhand ? $this->getOnhand() . ' ' . $LANG_SHOP['available'] : '',
             'allowed'   => true,
             'is_oos'    => false,
-            'orig_price' => Currency::getInstance()->RoundVal($this->getPrice()),
-            'sale_price' => Currency::getInstance()->RoundVal($this->getSalePrice($this->getPrice())),
-            'onhand'    => $this->onhand,
+            'orig_price' => Currency::getInstance()->RoundVal($this->getBasePrice()),
+            'sale_price' => Currency::getInstance()->RoundVal($this->getPrice()),
+            'onhand'    => $this->getOnhand(),
             'weight'    => $this->getWeight(),
             'sku'       => $this->getName(),
-            'leadtime'  => $this->onhand == 0 ? $this->getLeadTimeMessage() : '',
-            'images'    => array(),
+            'leadtime'  => $this->getOnhand() == 0 ? $this->getLeadTimeMessage() : '',
+            'images'    => array_keys($this->Images),
         );
         if ($this->track_onhand) {
-            if ($this->onhand < $opts['quantity']) {
+            if ($this->getOnhand() < $opts['quantity']) {
                 $retval['is_oos'] = true;
                 if ($this->getOversell() == self::OVERSELL_HIDE) {
                     $retval['status'] = 2;
@@ -4021,13 +4201,19 @@ class Product
 
     /**
      * Set the variant for this product.
+     * Uses the default variant if available and a variant ID is not given.
      *
      * @param   integer|object  $variant    Variant ID or object
      * @return  object  $this
      */
-    public function setVariant($variant)
+    public function setVariant($variant = 0)
     {
-        if (is_integer($variant)) {
+        if (
+            $variant === 0 &&
+            $this->def_pv_id > 0
+        ) {
+            $this->Variant = ProductVariant::getInstance($this->def_pv_id);
+        } elseif (is_integer($variant) && $variant > 0) {
             $this->Variant = ProductVariant::getInstance($variant);
         } elseif (is_object($variant)) {
             $this->Variant = $variant;
@@ -4066,6 +4252,22 @@ class Product
     public function getShippingUnits()
     {
         return $this->shipping_units;
+    }
+
+
+    /**
+     * Get the total shipping units related to this product, including variant.
+     *
+     * @param   integer $pv_id  ProductVariant ID
+     * @return  float       Total shipping units for the product variant
+     */
+    public function getTotalShippingUnits(int $pv_id=0) : float
+    {
+        $units = $this->getShippingUnits();
+        if ($pv_id > 0) {
+            $units += ProductVariant::getInstance($pv_id)->getShippingUnits();
+        }
+        return $units;
     }
 
 
@@ -4117,42 +4319,33 @@ class Product
      * Update the category cross-reference table.
      * TODO: update in-memory categories property.
      *
-     * @param   array|string    $cats   String from form or array of cat IDs
+     * @param   string|array    $cat_ids    Category IDs
      * @return  object  $this
      */
-    private function updateCategories($cats)
+    private function updateCategories($cat_ids)
     {
         global $_TABLES;
 
-        if (empty($cats)) {
-            // If no categories specified, use root category automatically
-            $cats = array(Category::getRoot()->getID());
-        } elseif (is_string($cats)) {
-            $cats = explode('|', $cats);
+        if (is_string($cat_ids)) {
+            $cat_ids = explode('|', $cat_ids);
+        } elseif (!is_array($cat_ids)) {
+            return $this;
         }
-        $add = array();
-        $rem = array();
-        foreach ($cats as $cat_id) {
-            if (!array_key_exists($cat_id, $this->getCategories())) {
-                $add[] = "({$this->id}, $cat_id)";
+
+        $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
+                product_id = '{$this->id}'";
+        DB_query($sql);
+
+        foreach ($cat_ids as $cat_id) {
+            $cat_id = (int)$cat_id;
+            if ($cat_id > 0) {
+                $vals[] = "({$this->id}, $cat_id)";
             }
         }
-        foreach ($this->getCategories() as $cat_id=>$cat) {
-            if (!in_array($cat_id, $cats)) {
-                $rem[] = $cat_id;
-            }
-        }
-        if (!empty($add)) {
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']} VALUES " .
-                implode(',', $add);
-            DB_query($sql);
-        }
-        if (!empty($rem)) {
-            $sql = "DELETE FROM {$_TABLES['shop.prodXcat']} WHERE
-                product_id = '{$this->id}' AND
-                cat_id in (" . implode(',', $rem) . ')';
-            DB_query($sql);
-        }
+        $sql = "INSERT IGNORE INTO {$_TABLES['shop.prodXcat']}
+            (product_id, cat_id) VALUES " . implode(',', $vals);
+        DB_query($sql, 1);
+
         return $this;
     }
 
@@ -4218,7 +4411,7 @@ class Product
      */
     public function getTrackOnhand()
     {
-        return $this->track_onhand;
+        return $this->track_onhand ? 1 : 0;
     }
 
 
@@ -4234,6 +4427,27 @@ class Product
 
 
     /**
+     * Get the Stock object for this product.
+     * If there are variants then the current variant Stock object is used,
+     * otherwise the object attached to the Product is used.
+     *
+     * @return  object      Stock object
+     */
+    public function getStock()
+    {
+        if ($this->trackOnhand()) {
+            if ($this->hasVariant()) {
+                return $this->Variant->getStock();
+            } elseif (is_object($this->Stock)) {
+                return $this->Stock;
+            }
+        }
+        // fallback if neither condition is satisfied
+        return new Stock;
+    }
+
+
+    /**
      * Get the quantity on hand.
      * If there are variants, get the variant onhand value, otherwise use the
      * product's value.
@@ -4242,11 +4456,7 @@ class Product
      */
     public function getOnhand()
     {
-        if ($this->hasVariant()) {
-            return $this->Variant->getOnhand();
-        } else {
-            return $this->onhand;
-        }
+        return $this->getStock()->getOnhand();
     }
 
 
@@ -4373,6 +4583,59 @@ class Product
 
 
     /**
+     * Set the query string to be passed to detail pages, etc.
+     *
+     * @param   string  $query_str  Query string
+     * @return  object  $this
+     */
+    public function withQuery($query_str='')
+    {
+        $this->query = $query_str;
+        return $this;
+    }
+
+
+    /**
+     * Set the order item ID, to show the correct variant.
+     *
+     * @param   integer $oi_id      OrderItem record ID
+     * @return  object  $this
+     */
+    public function withOrderItem($oi_id=0)
+    {
+        $this->oi_id = (int)$oi_id;
+        return $this;
+    }
+
+
+    /**
+     * Enable or disable purchasing this product.
+     * Normal used to display the product, but not allow purchasing, since
+     * the default for canPurchase is true.
+     *
+     * @param   boolean $flag   True to allow purchases, False to disallow
+     * @return  object  $this
+     */
+    public function enablePurchase($flag=true)
+    {
+        $this->canPurchase = $flag ? true : false;
+        return $this;
+    }
+
+
+    /**
+     * Check if the product can be purchased.
+     * Used to show add-cart and other buttons to the catalog and detail views.
+     *
+     * @return  boolean     True if purchase allowed, False if not
+     */
+    public function canPurchase()
+    {
+        return $this->canPurchase;
+    }
+
+
+    /**
      * Get the category selection lists.
      * Returns 2 arrays, available category options and selected ones.
      * If `$prod_id` is empty then no selected categories are returned. This
@@ -4462,6 +4725,7 @@ class Product
 
     /**
      * Check if a discount code can be applied to this product.
+     * Normal catalog items can have a discount code applied.
      *
      * @return  boolean     True if a code can apply, False if not
      */
@@ -4470,6 +4734,48 @@ class Product
         return true;
     }
 
-}
 
-?>
+    /**
+     * Check if an affiliate bonus is available on this product.
+     *
+     * @return  boolean     True if bonus-elibible, False if not
+     */
+    public function affApplyBonus()
+    {
+        return $this->aff_apply_bonus ? 1 : 0;
+    }
+
+
+    /**
+     * Get the affiliate bonus percentage for this product.
+     *
+     * @return  fload       Percentage in whole numbers, 4.5 = .045
+     */
+    public function getAffiliatePercent()
+    {
+        if ($this->aff_apply_bonus) {
+            return (float)$this->aff_percent;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
+     * Reserve a quantity of this item when it's added to a cart.
+     *
+     * @param   float   $qty    Quantity to reserve
+     */
+    public function reserveStock($qty)
+    {
+        $this->getVariants();
+        $PV = $this->getVariant();
+        if ($PV === NULL) {
+            $pv_id = 0;
+        } else {
+            $pv_id = $PV->getID();
+        }
+        Stock::reserve($this->id, $pv_id, $qty);
+    }
+
+}

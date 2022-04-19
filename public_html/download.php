@@ -18,13 +18,24 @@
 
 /** Import core glFusion libraries */
 require_once('../lib-common.php');
+// Make sure the plugin is available
+if (
+    !function_exists('SHOP_access_check') ||
+    !SHOP_access_check()
+) {
+    COM_404();
+    exit;
+}
 
 // Sanitize the product ID and token
 $id = SHOP_getVar($_GET, 'id', 'int');
 $token = SHOP_getVar($_GET, 'token');
 
 // Need to have one or the other, prefer token
-if (empty($token) && $id == 0) {
+if (
+    (empty($token) && $id == 0) ||
+    !SHOP_isMinVersion()
+) {
     COM_404();
     exit;
 }
@@ -66,7 +77,7 @@ if (is_array($A) && !empty($A['file'])) {
         $DL->setLogFile($_CONF['path'] . 'logs/error.log');
         $DL->setLogging(true);
     } else {
-        $DL->setLogginf(false);
+        $DL->setLogging(false);
     }
     //$DL->setAllowedExtensions($_SHOP_CONF['allowedextensions']);
     $DL->setPath($_SHOP_CONF['download_path']);

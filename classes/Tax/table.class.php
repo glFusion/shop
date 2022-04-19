@@ -3,15 +3,18 @@
  * Use the static databsae table to retrieve sales tax rates.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.4.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop\Tax;
+use Shop\Template;
+use Shop\Config;
+use Shop\FieldList;
 
 
 /**
@@ -26,9 +29,9 @@ class table extends \Shop\Tax
      *
      * @return  array   Decoded array of data from the JSON reply
      */
-    protected function _getData()
+    protected function _getData() : array
     {
-        global $_SHOP_CONF, $LANG_SHOP, $_TABLES;
+        global $LANG_SHOP, $_TABLES;
 
         // Default data returned if there is no nexus, or a rate entry
         // is not found.
@@ -46,34 +49,37 @@ class table extends \Shop\Tax
                 LIMIT 1";
             //echo $sql;die;
             $res = DB_query($sql, 1);
-            if ($res) {
+            if ($res && DB_numRows($res) == 1) {
                 $A = DB_fetchArray($res, false);
-                if ($A) {           // Have to have found a record
-                    $data = array(
-                        'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
-                        'rates' => array(
-                            array(
-                                'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
-                                'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
-                                'type'  => 'State',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
-                                'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
-                                'type'  => 'County',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
-                                'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
-                                'type'  => 'City',
-                            ),
-                            array(
-                                'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
-                                'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
-                                'type'  => 'Special',
-                            ),
+                $data = array(
+                    'totalRate' => SHOP_getVar($A, 'combined_rate', 'float'),
+                    'rates' => array(
+                        array(
+                            'rate'  => SHOP_getVar($A, 'state_rate', 'float'),
+                            'name'  => $A['state'] . ' ' . $LANG_SHOP['state_rate'],
+                            'type'  => 'State',
                         ),
-                    );
+                        array(
+                            'rate'  => SHOP_getVar($A, 'county_rate', 'float'),
+                            'name'  => $A['state'] . ' ' . $LANG_SHOP['county_rate'],
+                            'type'  => 'County',
+                        ),
+                        array(
+                            'rate'  => SHOP_getVar($A, 'city_rate', 'float'),
+                            'name'  => $A['region'] . ' ' . $LANG_SHOP['city_rate'],
+                            'type'  => 'City',
+                        ),
+                        array(
+                            'rate'  => SHOP_getVar($A, 'special_rate', 'float'),
+                            'name'  => $A['region'] . ' ' . $LANG_SHOP['special_rate'],
+                            'type'  => 'Special',
+                        ),
+                    ),
+                );
+                if ($this->Order) {
+                    foreach ($this->Order->getItems() as $OI) {
+                        $OI->setTaxRate((float)$A['combined_rate']);
+                    }
                 }
             }
         }
@@ -86,9 +92,9 @@ class table extends \Shop\Tax
      *
      * @return  string      HTML for admin list
      */
-    public static function adminList()
+    public static function adminList() : string
     {
-        global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
+        global $_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN, $LANG_SHOP_HELP;
 
         $display = '';
         $sql = "SELECT * FROM {$_TABLES['shop.tax_rates']}";
@@ -182,13 +188,11 @@ class table extends \Shop\Tax
             '', '',
             COM_getBlockTemplate('_admin_block', 'header')
         );
-        $display .= COM_createLink($LANG_SHOP['new_rate'],
-            SHOP_ADMIN_URL . '/index.php?edittaxrate=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_rate'],
+            'url' => SHOP_ADMIN_URL . '/index.php?edittaxrate=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.tax_rates',
@@ -205,17 +209,21 @@ class table extends \Shop\Tax
             'chkdelete' => 'true',
             'chkfield' => 'code',
             'chkname' => 'code',
-            'chkactions' => '<button type="submit" name="deltaxrate" value="x" ' .
-            'class="uk-button uk-button-mini uk-button-danger tooltip" ' .
-            'title="' . $LANG_SHOP['delete'] . '" ' .
-            '><i name="deltax" class="uk-icon uk-icon-remove"></i>' .
-            '</button>',
+            'chkactions' => FieldList::button(array(
+                'type' => 'submit',
+                'name' => 'deltaxrate',
+                'value' => 'x',
+                'style' => 'primary',
+                'size' => 'mini',
+                'title' => $LANG_SHOP['delete'],
+                'text' => FieldList::minus(),
+            ) ),
         );
 
         $filter = '';
         $display .= ADMIN_list(
-            $_SHOP_CONF['pi_name'] . '_salestax',
-            array(__CLASS__,  'getAdminField'),
+            Config::PI_NAME . '_salestax',
+            array(__CLASS__ , 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             $filter, '', $options, ''
         );
@@ -233,29 +241,26 @@ class table extends \Shop\Tax
      * @param   array   $icon_arr   System icon array (not used)
      * @return  string              HTML for field display in the table
      */
-    public static function getAdminField($fieldname, $fieldvalue, $A, $icon_arr)
+    public static function getAdminField(string $fieldname, string $fieldvalue, array $A, array $icon_arr)
     {
-        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+        global $_CONF, $LANG_SHOP, $LANG_ADMIN;
 
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                \Shop\Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?edittaxrate=x&amp;code={$A['code']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?edittaxrate=x&amp;code={$A['code']}",
+            ) );
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                \Shop\Icon::getHTML('delete', 'tooltip', array('title' => $LANG_ADMIN['delete'])),
-                SHOP_ADMIN_URL . "/index.php?deltaxrate=x&amp;code={$A['code']}",
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . "/index.php?deltaxrate=x&amp;code={$A['code']}",
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
-                    'class' => 'tooltip',
-                )
-             );
+                ),
+            ) );
             break;
 
         case 'combined_rate':
@@ -280,7 +285,7 @@ class table extends \Shop\Tax
      * @param   string  $code   Code to edit, empty for new entry
      * @return  string      HTML for editing form
      */
-    public static function Edit($code='')
+    public static function Edit(string $code='') : string
     {
         global $_TABLES;
 
@@ -308,7 +313,7 @@ class table extends \Shop\Tax
                 'special_rate' => 0,
             );
         }
-        $T = new \Template(SHOP_PI_PATH . '/templates/');
+        $T = new Template;
         $T->set_file('form', 'edit_tax.thtml');
         $T->set_var(array(
             'code' => $A['code'],
@@ -337,7 +342,7 @@ class table extends \Shop\Tax
     {
         global $_TABLES;
 
-        if (empty($code)) {
+        if (is_array($code) && empty($code)) {
             return;
         }
         if (is_array($code)) {
@@ -346,7 +351,7 @@ class table extends \Shop\Tax
             }
             $code_str = implode(',', $code);
         } else {
-            $code_str = DB_escapeString($code);
+            $code_str = "'" . DB_escapeString($code) . "'";
         }
         $sql = "DELETE FROM {$_TABLES['shop.tax_rates']} WHERE code IN ($code_str)";
         //echo $sql;die;
@@ -360,7 +365,7 @@ class table extends \Shop\Tax
      * @param   array   $A      Arra of data elements
      * @return  boolean     True on success, False on error
      */
-    public static function Save($A)
+    public static function Save(array $A)
     {
         global $_TABLES;
 
@@ -373,10 +378,10 @@ class table extends \Shop\Tax
             $A['combined_rate'] = $A['state_rate'] + $A['county_rate'] + $A['city_rate'] + $A['special_rate'];
         }
         $sql = "INSERT INTO {$_TABLES['shop.tax_rates']} SET
-            code = '" . DB_escapeString($A['code']) . "',
+            code = '" . DB_escapeString(substr($A['code'], 0, 25)) . "',
             country = '" . DB_escapeString($A['country']) . "',
             state = '" . DB_escapeString($A['state']) . "',
-            region = '" . DB_escapeString($A['region']) . "',
+            region = '" . DB_escapeString(substr($A['region'],0,128)) . "',
             zip_from = '" . DB_escapeString($A['zip_from']) . "',
             zip_to = '" . DB_escapeString($A['zip_to']) . "',
             combined_rate = {$A['combined_rate']},
@@ -410,7 +415,7 @@ class table extends \Shop\Tax
      *
      * @return  string      Message to display
      */
-    public static function Import()
+    public static function Import() : string
     {
         global $_CONF, $_TABLES, $LANG04, $LANG28;
 
@@ -467,11 +472,12 @@ class table extends \Shop\Tax
                         $failures++;
                         continue;
                     }
-                    $country = 'US';
-                    $code = DB_escapeString($country . $data[0] . $data[1]);
-                    $state = DB_escapeString($data[0]);
-                    $zip = DB_escapeString($data[1]);
-                    $region = DB_escapeString($data[2]);
+                    // Set the field values. Limit length based on schema
+                    $country = 'US';    // only US supported
+                    $code = substr(DB_escapeString($country . $data[0] . $data[1]), 0, 25);
+                    $state = substr(DB_escapeString($data[0]), 0, 10);
+                    $zip = substr(DB_escapeString($data[1]), 0, 10);
+                    $region = substr(DB_escapeString($data[2]), 0, 128);
                     $state_rate = (float)$data[3];
                     $combined_rate = (float)$data[4];
                     $county_rate = (float)$data[5];

@@ -1,3 +1,4 @@
+{header}
 <p>Gracias por su compra de {site_name}. Los detalles de su compra siguen:</p> 
 <p>
 {purchase_details}
@@ -18,13 +19,27 @@ Puedes descargar tus archivos comprados desde los siguientes enlaces:
 Su pago está pendiente. Una vez que se reciba su pago, recibirá
 otro mensaje de correo electrónico confirmando su pago.</p>
 {!endif}
-<p>Puedes ver tu pedido en {order_url}</p>
+<p>Puedes ver tu pedido en {order_url}
+{!if has_downloads}
+<br />Sus compras descargables se pueden descargar desde el enlace anterior.
+{!endif}
+</p>
 {!if email_extras}
 <p>{email_extras}</p>
 {!endif}
 {!if gw_msg}
 <p>{gw_msg}</p>
 {!endif}
+
+{!if affiliate_id}
+<p>
+¡Recomiende a un amigo y obtenga bonificaciones por recomendación! Tu enlace de afiliado es {affiliate_link}.
+{!if affiliate_info}
+<br />Visite la <a href="{affiliate_info}">{affiliate_info}</a> para obtener más detalles.
+{!endif}
+</p>
+{!endif}
+
 {!if gc_bal_num}
 <p>
 Tienes un saldo de tarjeta de regalo restante de {gc_bal_fmt}.
@@ -32,6 +47,5 @@ Tienes un saldo de tarjeta de regalo restante de {gc_bal_fmt}.
 {!endif}
 <p>
 Gracias,<br />
-{site_name}<br />
-{site_url}
+{footer}
 </p>

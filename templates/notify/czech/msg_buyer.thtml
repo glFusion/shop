@@ -1,0 +1,51 @@
+{header}
+<p>Děkujeme za váš nákup na webu {site_name}. Podrobnosti o vašem nákupu jsou uvedeny:</p>
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+Zakoupené soubory si můžete stáhnout z následujících odkazů:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Zvláštní pokyny: {order_instr}</p>
+{!endif}
+{!if pending}
+<p>
+Vaše platba čeká na vyřízení. Jakmile obdržíte platbu, obdržíte ji
+další e-mailovou zprávu potvrzující vaši platbu.
+</p>
+{!endif}
+<p>Objednávku si můžete prohlédnout na adrese {order_url}
+{!if has_downloads}
+<br />Vaše nákupy ke stažení lze stáhnout z výše uvedeného odkazu.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p><b>Zpráva:</b><br />{gw_msg}</p>
+{!endif}
+
+{!if affiliate_id}
+<p>
+Doporučte přítele a získejte bonusy za doporučení! Váš partnerský odkaz je {affiliate_link}.
+{!if affiliate_info}
+<br />Podrobnosti najdete na adrese <a href="{affiliate_info}">{affiliate_info}</a>.
+{!endif}
+</p>
+{!endif}
+
+{!if gc_bal_num}
+<p>
+Zbývající zůstatek na dárkové kartě je {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Díky,<br />
+{footer}
+</p>

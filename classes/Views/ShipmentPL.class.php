@@ -14,6 +14,7 @@
 namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Shipment;
+use Shop\Template;
 
 
 /**
@@ -59,7 +60,7 @@ class ShipmentPL
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file(array(
             'order'     => $type == 'pdf' ? 'packinglist.pdf.thtml' : 'packinglist.thtml',
             'tracking'  => 'shipment_tracking_2.thtml',
@@ -77,7 +78,7 @@ class ShipmentPL
                 'item_dscp'     => htmlspecialchars($OI->getDscp()),
                 'item_options'  => $OI->getOptionDisplay(),
                 'item_quantity' => $Item->getQuantity(),
-                'sku'           => $P->getSKU($OI),
+                'sku'           => $OI->getSKU(),
             ) );
             $T->parse('iRow', 'ItemRow', true);
             $T->clear_var('iOpts');
@@ -107,7 +108,8 @@ class ShipmentPL
             'order_instr'   => htmlspecialchars($this->Order->getInstructions()),
             'shop_name'     => $Shop->getCompany(),
             'shop_addr'     => $Shop->toHTML('address'),
-            'shop_phone'    => $_SHOP_CONF['shop_phone'],
+            'shop_phone'    => $Shop->getPhone(),
+            'shop_email'    => $Shop->getEmail(),
             'billto_addr'   => $this->Order->getBillto()->toHTML(),
             'shipto_addr'   => $this->Order->getShipto()->toHTML(),
             'status'        => $this->Order->getStatus(),
@@ -130,8 +132,8 @@ class ShipmentPL
      */
     public static function printPDF($ids, $type='pdfpl')
     {
-        USES_lglib_class_html2pdf();
         try {
+            USES_lglib_class_html2pdf();
             $html2pdf = new \Spipu\Html2Pdf\Html2Pdf('P', 'A4', 'en');
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');

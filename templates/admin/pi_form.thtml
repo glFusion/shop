@@ -1,0 +1,66 @@
+{# begin {templatelocation} #}
+<form action="{site_admin_url}/plugins/shop/index.php" method="post" class="uk-form uk-form-horizontal"
+	enctype="multipart/form-data">
+
+<input type="hidden" name="id" value="{pi_id}" />
+<div class="uk-alert">{$LANG_SHOP_HELP['hlp_pi_products']}</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="pi_name">{$LANG_SHOP['pi_name']}:
+			<span id="hlp_pi_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" name="pi_name">
+				{pi_options}
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="prod_type">{$LANG_SHOP['prod_type']}:
+			<span id="hlp_prod_type" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-small" name="prod_type" id="prod_type">
+				<option value="1" {!!if {prod_type} == "1" !!}selected="selected"{!endif}>Physical</option>
+				<option value="2" {!!if {prod_type} == "2" !!}selected="selected"{!endif}>Downloadable</option>
+				<option value="4" {!!if {prod_type} == "4" !!}selected="selected"{!endif}>Other Virtual</option>
+				<option value="3" {!!if {prod_type} == "3" !!}selected="selected"{!endif}>Physical + Download</option>
+				<option value="8" {!!if {prod_type} == "8" !!}selected="selected"{!endif}>Gift Card</option>
+			</select>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="price">{$LANG_SHOP['price']}:
+			<span id="hlp_price" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" id="price" name="price" value="{price}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="enabled">{$LANG_SHOP['taxable']}?
+			<span id="hlp_taxable" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="taxable" id="taxable" value="1" {!if taxable}checked="checked"{!endif} />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin" uk-margin-large" style="margin-top:10px;">
+		<label class="uk-form-label">&nbsp;</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<button class="uk-button uk-button-success" type="submit" name="pi_save" value="{$LANG_ADMIN['save']}" />{$LANG_ADMIN['save']}</button>
+			<button class="uk-button uk-button-primary" type="reset" name="reset" value="{$LANG_SHOP['clearform']}" />{$LANG_SHOP['clearform']}</button>
+			<a class="uk-button" href="{site_admin_url}/plugins/shop/index.php?pi_products">{$LANG_ADMIN['cancel']}</a>
+			<div style="display:inline; float:right;">
+				<button style="align:right;" type="submit" class="uk-button uk-button-danger" name="pi_del" value="{$LANG_ADMIN['delete']}"
+				onclick="return confirm('{$LANG_SHOP['q_del_item']}');" />{$LANG_ADMIN['delete']}</button>
+			</div>
+		</div>
+	</div>
+</form>
+{tooltipster_js}
+{# end {templatelocation} #}

@@ -24,6 +24,10 @@
 namespace Shop;
 use Shop\Logger\IPN as logIPN;
 use Shop\Products\Coupon;
+use Shop\Models\OrderState;
+use Shop\Models\CustomInfo;
+use Shop\Models\IPN as IPNModel;
+
 
 // this file can't be used on its own
 if (!defined ('GVERSION')) {
@@ -40,10 +44,11 @@ if (!isset($_SHOP_CONF['sys_test_ipn'])) $_SHOP_CONF['sys_test_ipn'] = false;
  */
 class IPN
 {
-    const STATUS_PAID = 'paid';
-    const STATUS_PENDING = 'pending';
-    const STATUS_REFUNDED = 'refunded';
-    const STATUS_CLOSED = 'closed';
+    // Deprecated constants required for upgrades.
+    const PAID = 'paid';
+    const PENDING = 'pending';
+    const REFUNDED = 'refunded';
+    const CLOSED = 'closed';
 
     const FAILURE_UNKNOWN = 0;
     const FAILURE_VERIFY = 1;
@@ -121,8 +126,7 @@ class IPN
      * @var string */
     private $event = 'payment';
 
-    /**
-     * Holder for the complete IPN data array.
+    /** Holder for the complete IPN data array.
      * Used only for recording the raw data; no processing is done on this data
      * by the base class. Instantiated classes will use this to populate the
      * standard variables.
@@ -130,14 +134,12 @@ class IPN
      */
     protected $ipn_data = array();
 
-    /**
-     * Custom data that comes from the IPN provider, typically pass-through.
+    /** Custom data that comes from the IPN provider, typically pass-through.
      * @var array
      */
-    protected $custom = array();
+    protected $custom = NULL;
 
-    /**
-     * Shipping address information.
+    /** Shipping address information.
      * @var array
      */
     protected $shipto = array();
@@ -161,11 +163,15 @@ class IPN
 
     /** Order object.
      * @var object */
-    protected $Order;
+    protected $Order = NULL;
 
-    /** Cart object.
-    * @var object */
-    protected $Cart;
+    /** Payment object.
+     * @var object */
+    protected $Payment = NULL;
+
+    /** IPN Model object to hold key info in a standard layout.
+     * @var object */
+    protected $IPN = NULL;
 
 
     /**
@@ -177,12 +183,12 @@ class IPN
      */
     public function __construct($A=array())
     {
-        global $_SHOP_CONF;
-
         if (is_array($A)) {
             $this->ipn_data = $A;
         }
-
+        $this->IPN = new IPNModel;
+        $this->IPN['gw_name'] = $this->gw_id;
+        $this->custom = new CustomInfo;
         // Create a gateway object to get some of the config values
         $this->GW = Gateway::getInstance($this->gw_id);
         // If the transaction date wasn't set by the handler,
@@ -200,6 +206,7 @@ class IPN
     public function setPmtGross($amount)
     {
         $this->pmt_gross = (float)$amount;
+        $this->IPN['pmt_gross'] = $this->pmt_gross;
         return $this;
     }
 
@@ -342,6 +349,8 @@ class IPN
     public function setUid($uid)
     {
         $this->uid = (int)$uid;
+        $this->IPN->setUid($uid);
+        $this->IPN->setCustom('uid', $uid);
         return $this;
     }
 
@@ -366,6 +375,7 @@ class IPN
     public function setTxnId($txn_id)
     {
         $this->txn_id = $txn_id;
+        $this->IPN['txn_id'] = $txn_id;
         return $this;
     }
 
@@ -416,6 +426,7 @@ class IPN
         global $_CONF;
 
         $this->txn_date = new \Date($dt, $_CONF['timezone']);
+        $this->IPN['sql_date'] = $this->txn_date->toMySQL(true);
         return $this;
     }
 
@@ -440,6 +451,7 @@ class IPN
     public function setEmail($email)
     {
         $this->payer_email = $email;
+        $this->IPN['payer_email'] = $email;
         return $this;
     }
 
@@ -464,6 +476,7 @@ class IPN
     public function setPayerName($name)
     {
         $this->payer_name = $name;
+        $this->IPN['payer_name'] = $name;
         return $this;
     }
 
@@ -574,10 +587,11 @@ class IPN
     public function setStatus($status)
     {
         switch ($status) {
-        case self::STATUS_PENDING:
-        case self::STATUS_PAID:
-        case self::STATUS_REFUNDED:
-        case self::STATUS_CLOSED:
+        case OrderState::PENDING:
+        case OrderState::PAID:
+        case OrderState::REFUNDED:
+        case OrderState::CLOSED:
+        case OrderState::CANCELED;
             $this->status = $status;
             break;
         default:
@@ -607,7 +621,11 @@ class IPN
     protected function addItem($args)
     {
         // Minimum required arguments: item, quantity, unit price
-        if (!isset($args['item_id']) || !isset($args['quantity']) || !isset($args['price'])) {
+        if (
+            !isset($args['item_id']) ||
+            !isset($args['quantity']) ||
+            !isset($args['price'])
+        ) {
             return;
         }
 
@@ -625,8 +643,10 @@ class IPN
         }
         // If the product allows the price to be overridden, just take the
         // IPN-supplied price. This is the case for donations.
-        $overrides = $this->custom;
+        //$overrides = $this->custom->toArray();
+        $overrides = array();
         $overrides['price'] = $args['price'];
+        $overrides['tax'] = SHOP_getVar($args, 'tax', 'float');
         $price = $P->getPrice($opts, $args['quantity'], $overrides);
 
         $this->items[] = array(
@@ -642,6 +662,7 @@ class IPN
             'options'   => isset($tmp[1]) ? $tmp[1] : '',
             'extras'    => isset($args['extras']) ? $args['extras'] : '',
             'overrides' => $overrides,
+            'custom'    => $this->custom->toArray(),
         );
     }
 
@@ -694,7 +715,11 @@ class IPN
         }
 
         // Count purchases with txn_id, if > 0
-        $count = DB_count($_TABLES['shop.ipnlog'], 'txn_id', $this->txn_id);
+        $count = DB_count(
+            $_TABLES['shop.ipnlog'],
+            array('gateway', 'txn_id', 'event'),
+            array($this->GW->getName(), $this->txn_id, $this->event)
+        );
         if ($count > 0) {
             SHOP_log("Received duplicate IPN {$this->txn_id} for {$this->gw_id}", SHOP_LOG_ERROR);
             return false;
@@ -746,56 +771,41 @@ class IPN
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        // For each item purchased, create an order item
-        foreach ($this->items as $id=>$item) {
-            $P = Product::getByID($item['item_number']);
-            if ($P->isNew()) {
-                $this->Error("Item {$item['item_number']} not found - txn " .
-                        $this->getTxnId());
-                continue;
-            }
-
-            $this->items[$id]['prod_type'] = $P->getProductType();
-            SHOP_log("Shop item " . $item['item_number'], SHOP_LOG_DEBUG);
-
-            // If it's a downloadable item, then get the full path to the file.
-            if ($P->getFilename() != '') {
-                $this->items[$id]['file'] = $_SHOP_CONF['download_path'] . $P->getFilename();
-                $token_base = $this->getTxnId() . time() . rand(0,99);
-                $token = md5($token_base);
-                $this->items[$id]['token'] = $token;
-            } else {
-                $token = '';
-            }
-            if ($P->getExpiration() > 0) {
-                $this->items[$id]['expiration'] = $P->getExpiration();
-            }
-
-            // If a custom name was supplied by the gateway's IPN processor,
-            // then use that.  Otherwise, plug in the name from inventory or
-            // the plugin, for the notification email.
-            if (empty($item['name'])) {
-                $this->items[$id]['name'] = $P->getShortDscp();
-            }
-        }   // foreach item
-
         $status = is_null($this->Order) ? $this->createOrder() : 0;
+        if ($status) {
+            $order_id = 'Unknown';
+        } else {
+            $order_id  = $this->Order->getOrderId();
+        }
         if ($status == 0) {
             // Now all of the items are in the order object, check for sufficient
             // funds. If OK, then save the order and call each handlePurchase()
             // for each item.
             if (!$this->isSufficientFunds()) {
                 $logId = $this->gw_name . ' - ' . $this->txn_id;
-                $this->handleFailure(self::FAILURE_FUNDS,
-                        "($logId) Insufficient/incorrect funds for purchase");
+                $this->handleFailure(
+                    self::FAILURE_FUNDS,
+                    "($logId) Insufficient/incorrect funds for purchase"
+                );
                 return false;
             }
 
             // Get the gift card amount applied to this order and save it with the order record.
-            $by_gc = $this->getCredit('gc');
-            if ($by_gc > 0) {
-                $this->Order->setByGC($by_gc);
-                Coupon::Apply($by_gc, $this->Order->getUID(), $this->Order);
+            $coupons = \Shop\Products\Coupon::Apply(
+                $this->Order->getGC(),
+                $this->Order->getUid(),
+                $this->Order
+            );
+            if ($coupons !== false) {
+                $this->Order->setInfo('applied_gc', $coupons);
+            } else {
+                $user_bal = \Shop\Products\Coupon::getUserBalance($this->Order->getUid());
+                $this->handleFailure(
+                    self::FAILURE_FUNDS,
+                    "Insufficient coupon balance " . $user_bal .
+                    " for requested amount " . $this->Order->getGC()
+                );
+                return false;
             }
 
             // Log all non-payment credits applied to the order
@@ -811,36 +821,22 @@ class IPN
                 }
             }
             $this->Order->Save();
+            $this->recordPayment($order_id);
 
             // Handle the purchase for each order item
             $ipn_data = $this->ipn_data;
             $ipn_data['status'] = $this->status;
-            $ipn_data['custom'] = $this->custom;
-            foreach ($this->Order->getItems() as $item) {
-                $item->getProduct()->handlePurchase($item, $this->Order, $ipn_data);
-            }
-            /*if ($this->pmt_gross > 0) {
-                $this->Order->Log(sprintf(
-                    $LANG_SHOP['amt_paid_gw'],
-                    $this->pmt_gross,
-                    $this->GW->getDisplayName()
-                ));
-            }*/
+            $ipn_data['custom'] = (string)$this->custom;
+            //$ipn_data['uid'] = $this->Order->getUid();
+            //$ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
+            $this->IPN['uid'] = $this->Order->getUid();
+            $this->Order->handlePurchase($this->IPN);
         } else {
             SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
             return false;
         }
-
-        $this->recordPayment();     // Also updates order status
-        if ($this->status == 'paid' && $this->Order->isDownloadOnly()) {
-            // If this paid order has only downloadable items, them mark
-            // it closed since there's no further action needed.
-            // Notification should have been done above, set notify to false to
-            // avoid duplicates.
-            $this->setStatus(self::STATUS_CLOSED);
-        }
         return true;
-    }  // function handlePurchase
+    }
 
 
     /**
@@ -867,123 +863,105 @@ class IPN
             'order_id',
             "pmt_txn_id='" . DB_escapeString($this->txn_id) . "'"
         );
+
         if (!empty($order_id)) {
             $this->Order = Order::getInstance($order_id);
             if ($this->Order->getOrderID() != '') {
                 $this->Order->setLogUser($this->GW->getDscp());
             }
             return 2;
-        }
-
-        // Need to create a new, empty order object
-        $this->Order = new Order();
-
-        if ($this->order_id != '') {
-            $this->Cart = new Cart($this->order_id);
-            if (!$this->Cart->hasItems()) {
-                if (!$_SHOP_CONF['sys_test_ipn']) {
-                    return 1; // shouldn't normally be empty except during testing
-                }
-            }
         } else {
-            $this->Cart = NULL;
-        }
+            // Need to create a new, empty order object
+            $this->Order = Order::getInstance(0);
+            if (isset($this->custom['ref_token']) && !empty($this->custom['ref_token'])) {
+                $this->Order->setReferralToken($this->custom['ref_token']);
+            }
 
-        $this->Order->setUID($this->uid);
+            foreach ($this->items as $id=>$item) {
+                $options = DB_escapeString($item['options']);
+                $option_desc = array();
+                //$tmp = explode('|', $item['item_number']);
+                //list($item_number,$options) =
+                //if (is_numeric($item_number)) {
+                $P = Product::getByID($item['item_id'], $this->custom);
+                $item['short_description'] = $P->getShortDscp();
+                if (!empty($options)) {
+                    // options is expected as CSV
+                    $sql = "SELECT attr_name, attr_value
+                        FROM {$_TABLES['shop.prod_attr']}
+                        WHERE attr_id IN ($options)";
+                    $optres = DB_query($sql);
+                    $opt_str = '';
+                    while ($O = DB_fetchArray($optres, false)) {
+                        $opt_str .= ', ' . $O['attr_value'];
+                        $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
+                    }
+                }
+
+                // Get the product record and custom strings
+                if (
+                    isset($item['extras']['custom']) &&
+                    is_array($item['extras']['custom']) &&
+                    !empty($item['extras']['custom'])
+                ) {
+                    foreach ($item['extras']['custom'] as $cust_id=>$cust_val) {
+                        $option_desc[] = $P->getCustom($cust_id) . ': ' . $cust_val;
+                    }
+                }
+                $args = array(
+                    'order_id' => $this->Order->getorderID(),
+                    'product_id' => $item['item_number'],
+                    'description' => $item['short_description'],
+                    'quantity' => $item['quantity'],
+                    'txn_type' => $this->custom['transtype'],
+                    'txn_id' => $this->txn_id,
+                    'status' => 'pending',
+                    'token' => md5(time()),
+                    'price' => $item['price'],
+                    'taxable' => $P->isTaxable(),
+                    'options' => $options,
+                    'options_text' => $option_desc,
+                    'extras' => $item['extras'],
+                    'shipping' => SHOP_getVar($item, 'shipping', 'float'),
+                    'handling' => SHOP_getVar($item, 'handling', 'float'),
+                    'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
+                );
+                $this->Order->addItem($args);
+            }   // foreach item
+            /*if (
+                !$this->Order->hasItems() &&
+                !(isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn'])
+            ) {
+                return 1; // shouldn't normally be empty except during testing
+            }*/
+        }
+        $this->Order->setUid($this->uid);
         $this->Order->setBuyerEmail($this->payer_email);
         $this->Order->setStatus('pending');
         if ($this->uid > 1) {
             $U = Customer::getInstance($this->uid);
+            $this->Order->setBillto($U->getDefaultAddress('billto'));
         }
 
         // Get the billing and shipping addresses from the cart record,
         // if any.  There may not be a cart in the database if it was
         // removed by a previous IPN, e.g. this is the 'completed' message
         // and we already processed a 'pending' message
-        $BillTo = '';
-        if ($this->Cart) {
-            $BillTo = $this->Cart->getAddress('billto');
-            $this->Order->instructions = $this->Cart->getInstructions();
-        }
-        if (empty($BillTo) && $this->uid > 1) {
-            $BillTo = $U->getDefaultAddress('billto');
-        }
-        if (is_array($BillTo)) {
-            $this->Order->setBillto($BillTo);
+        $ShipTo = $this->shipto;
+        if (!empty($ShipTo)) {
+            $this->Order->setShipto($ShipTo);
+        } elseif ($this->uid > 1) {
+            $this->Order->setShipto($U->getDefaultAddress('shipto'));
         }
 
-        $ShipTo = $this->shipto;
-        if (empty($ShipTo)) {
-            if ($this->Cart) $ShipTo = $this->Cart->getAddress('shipto');
-            if (empty($ShipTo) && $this->uid > 1) {
-                $ShipTo = $U->getDefaultAddress('shipto');
-            }
-        }
-        if (is_array($ShipTo)) {
-            $this->Order->setShipto($ShipTo);
-        }
-        if (isset($this->shipto['phone'])) {
-            $this->Order->setPhone($this->shipto['phone']);
-        }
+        // We're creating an order based on a single IPN message,
+        // so just trust the numbers received.
         $this->Order->setPmtMethod($this->gw_id)
             ->setPmtTxnID($this->txn_id)
             ->setShipping($this->pmt_shipping)
             ->setHandling($this->pmt_handling)
             ->setBuyerEmail($this->payer_email)
             ->setLogUser($this->GW->getDscp());
-
-        //$this->Order->items = array();
-        foreach ($this->items as $id=>$item) {
-            $options = DB_escapeString($item['options']);
-            $option_desc = array();
-            //$tmp = explode('|', $item['item_number']);
-            //list($item_number,$options) =
-            //if (is_numeric($item_number)) {
-            $P = Product::getByID($item['item_id'], $this->custom);
-            $item['short_description'] = $P->getShortDscp();
-            if (!empty($options)) {
-                // options is expected as CSV
-                $sql = "SELECT attr_name, attr_value
-                        FROM {$_TABLES['shop.prod_attr']}
-                        WHERE attr_id IN ($options)";
-                $optres = DB_query($sql);
-                $opt_str = '';
-                while ($O = DB_fetchArray($optres, false)) {
-                    $opt_str .= ', ' . $O['attr_value'];
-                    $option_desc[] = $O['attr_name'] . ': ' . $O['attr_value'];
-                }
-            }
-
-            // Get the product record and custom strings
-            if (
-                isset($item['extras']['custom']) &&
-                is_array($item['extras']['custom']) &&
-                !empty($item['extras']['custom'])
-            ) {
-                foreach ($item['extras']['custom'] as $cust_id=>$cust_val) {
-                    $option_desc[] = $P->getCustom($cust_id) . ': ' . $cust_val;
-                }
-            }
-            $args = array(
-                'order_id' => $this->Order->getorderID(),
-                'product_id' => $item['item_number'],
-                'description' => $item['short_description'],
-                'quantity' => $item['quantity'],
-                'txn_type' => $this->custom['transtype'],
-                'txn_id' => $this->txn_id,
-                'status' => 'pending',
-                'token' => md5(time()),
-                'price' => $item['price'],
-                'taxable' => $P->isTaxable(),
-                'options' => $options,
-                'options_text' => $option_desc,
-                'extras' => $item['extras'],
-                'shipping' => SHOP_getVar($item, 'shipping', 'float'),
-                'handling' => SHOP_getVar($item, 'handling', 'float'),
-                'paid' => SHOP_getVar($item['overrides'], 'price', 'float', $item['price']),
-            );
-            $this->Order->addItem($args);
-        }   // foreach item
         $this->Order->Save();
         return 0;
     }
@@ -1120,7 +1098,7 @@ class IPN
      */
     public static function getInstance($name, $vars=array())
     {
-        $cls = __NAMESPACE__ . '\\ipn\\' . $name;
+        $cls = __NAMESPACE__ . '\\Gateways\\' . $name . '\\ipn';
         if (class_exists($cls)) {
             return new $cls($vars);
         } else {
@@ -1233,7 +1211,7 @@ class IPN
             $order_id = $this->order_id;
         }
         $this->Order = Order::getInstance($order_id);
-        $this->addCredit('gc', $this->getCurrency()->RoundUp($this->Order->getInfo('apply_gc')));
+        $this->addCredit('gc', $this->getCurrency()->RoundUp($this->Order->getGC()));
         return $this->Order;
     }
 
@@ -1292,22 +1270,78 @@ class IPN
      *
      * @return  object  New payment object
      */
-    protected function recordPayment()
+    protected function recordPayment($order_id='')
     {
         global $LANG_SHOP;
 
-        $Pmt = new Payment;
-        $Pmt->setRefID($this->getTxnId())
+        $this->Payment = new Payment;
+        $this->Payment->setRefID($this->getTxnId())
             ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)
             ->setMethod($this->GW->getDisplayName())
             ->setComment($LANG_SHOP['ipn_pmt_comment'])
-            ->setOrderID($this->Order->getOrderId());
+            ->setStatus($this->status)
+            ->setOrderID($order_id);
         Tracker::getInstance()->confirmOrder($this->Order, $this->session_id);
-        return $Pmt->Save();
+        return $this->Payment->Save();
     }
 
-}   // class IPN
 
-?>
+    /**
+     * Verify that the webhook message is valid and can be processed.
+     * This stub function always returns true, derived classes should test
+     * the actual IPN message.
+     *
+     * @return  boolean     True if valid, False if not.
+     */
+    public function Verify()
+    {
+        return true;
+    }
+
+
+    /**
+     * Set the event type, e.g. payment, cancelled, etc.
+     * This is logged in the ipnlog table and used to help check for duplicate
+     * messages.
+     *
+     * @param   string  $event  Event type supplied by the IPN message
+     * @return  object  $this
+     */
+    public function setEvent($event)
+    {
+        $this->event = $event;
+        return $this;
+    }
+
+
+    /**
+     * Get the actual event code sent by the gateway.
+     *
+     * @return  string      Event code
+     */
+    public function getEvent()
+    {
+        return $this->event;
+    }
+
+
+    /**
+     * Echo a response to the IPN request based on the status from Process().
+     *
+     * @param   boolean $status     Result from processing
+     * @return  void
+     */
+    public function Response($status)
+    {
+        echo "Thanks";
+        exit;
+        /*if ($status) {
+            echo COM_refresh(SHOP_URL . '/index.php?thanks=' . $this->gw_id);
+        } else {
+            echo COM_refresh(SHOP_URL . '/index.php?msg=8');
+        }*/
+    }
+
+}

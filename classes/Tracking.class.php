@@ -3,9 +3,9 @@
  * Class to standardize shipment tracking information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,6 +20,10 @@ namespace Shop;
  */
 class Tracking
 {
+    /** Time in minutes to cache tracking info.
+     * @const integer */
+    private const CACHE_MINUTES = 60;
+
     /** Steps recorded along the way.
      * @var array */
     private $steps = array();
@@ -31,6 +35,10 @@ class Tracking
     /** Error messages to be shown.
      * @var array */
     private $errors = array();
+
+    /** Timestamp when data was retrieved from the shipper.
+     * @var string */
+    private $timestamp = '';
 
 
     /**
@@ -44,7 +52,7 @@ class Tracking
      *
      * @param   array   $info   Array of step information
      */
-    public function addStep($info)
+    public function addStep(array $info) : self
     {
         if (isset($info['datetime'])) {
             $datetime = $info['datetime'];
@@ -58,6 +66,7 @@ class Tracking
             'location'  => SHOP_getVar($info, 'location'),
             'message'   => SHOP_getVar($info, 'message'),
         );
+        return $this;
     }
 
 
@@ -72,13 +81,14 @@ class Tracking
      * @param   string  $value      Value
      * @param   string  $type       Type of data, e.g. date for special formatting
      */
-    public function addMeta($lang_str, $value, $type='string')
+    public function addMeta(string $lang_str, string $value, string $type='string') : self
     {
         $this->meta[] = array(
             'name'  => $lang_str,
             'value' => (string)$value,  // Could be SimpleXmlElement
             'type'  => $type,
         );
+        return $this;
     }
 
 
@@ -87,9 +97,10 @@ class Tracking
      *
      * @param   string  $value      Value
      */
-    public function addError($value)
+    public function addError(string $value) : self
     {
         $this->errors[] = (string)$value;
+        return $this;
     }
 
 
@@ -98,12 +109,12 @@ class Tracking
      *
      * @return  string      HTML for tracking info display
      */
-    public function getDisplay()
+    public function getDisplay() : string
     {
         global $_CONF, $LANG_SHOP;
 
         $dt_format = 'd M Y';
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('tracking', 'tracking.thtml');
         $T->set_block('tracking', 'trackingMeta', 'mRow');
         $T->set_var(array(
@@ -144,6 +155,7 @@ class Tracking
             $err_msg = '<p>' . implode('</p><p>', $this->errors) . '</p>';
             $T->set_var('err_msg', $err_msg);
         }
+        $T->set_var('current_as_of', sprintf($LANG_SHOP['current_as_of'], $this->getTimestamp()));
         $T->parse('output', 'tracking');
         return $T->finish($T->get_var('output'));
     }
@@ -156,7 +168,7 @@ class Tracking
      * @param   string  $tracknum   Tracking Number
      * @return  string      Cache key
      */
-    private static function _makeCacheKey($shipper, $tracknum)
+    private static function _makeCacheKey(string $shipper, string $tracknum) : string
     {
         return "shop.tracking.{$shipper}.{$tracknum}";
     }
@@ -169,25 +181,10 @@ class Tracking
      * @param   string  $tracknum   Tracking Number
      * @return  object|null     Tracking object, NULL if not found
      */
-    public static function getCache($shipper, $tracknum)
+    public static function getCache(string $shipper, string $tracknum)
     {
-        global $_TABLES;
-
         $key = self::_makeCacheKey($shipper, $tracknum);
-        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
-            $key = DB_escapeString($key);
-            $exp = time();
-            $data = DB_getItem(
-                $_TABLES['shop.cache'],
-                'data',
-                "cache_key = '$key' AND expires >= $exp"
-            );
-            if ($data !== NULL) {
-                $data = @unserialize(base64_decode($data));
-            }
-        } else {
-            $data = Cache::get($key);
-        }
+        $data = Cache::get($key);
         return $data;
     }
 
@@ -198,28 +195,40 @@ class Tracking
      * @param   string  $shipper    Shipper ID code
      * @param   string  $tracknum   Tracking Number
      */
-    public function setCache($shipper, $tracknum)
+    public function setCache(string $shipper, string $tracknum)
     {
-        global $_TABLES;
-
         $key = self::_makeCacheKey($shipper, $tracknum);
-        if (version_compare(GVERSION, Cache::MIN_GVERSION, '<')) {
-            $key = DB_escapeString($key);
-            $data = DB_escapeString(base64_encode(serialize($this)));
-            $exp = time() + 600;
-            $sql = "INSERT IGNORE INTO {$_TABLES['shop.cache']} SET
-                cache_key = '$key',
-                expires = $exp,
-                data = '$data'
-                ON DUPLICATE KEY UPDATE
-                    expires = $exp,
-                    data = '$data'";
-            DB_query($sql);
-        } else {
-            Cache::set($key, $this, 'shop.tracking', 600);
+        $this->setTimestamp();
+        Cache::set($key, $this, 'shop.tracking', self::CACHE_MINUTES);
+    }
+
+
+    /**
+     * Set the timestamp string when data was retrieved.
+     *
+     * @param   string|null $ts Timestamp, null for current date/time
+     * @return  object  $this
+     */
+    protected function setTimestamp(?string $ts=NULL) : self
+    {
+        global $_CONF;
+
+        if ($ts === NULL) {
+            $ts = $_CONF['_now']->toMySQL(true);
         }
+        $this->timestamp = $ts;
+        return $this;
+    }
+
+
+    /**
+     * Get the timestamp when data was updated.
+     *
+     * @return  string      Timestamp string
+     */
+    public function getTimestamp() : string
+    {
+        return $this->timestamp;
     }
 
 }
-
-?>

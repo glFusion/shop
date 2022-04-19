@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Reports;
+use Shop\Models\OrderState;
+use Shop\FieldList;
 
 
 /**
@@ -28,8 +30,12 @@ class orderlist extends \Shop\Report
      * Excludes cart.
      * @var array */
     private $default_statuses = array(
-        'invoiced', 'pending', 'paid', 'processing', 'shipped',
-        'closed', 'complete', 'refunded',
+        OrderState::INVOICED,
+        OrderState::PENDING,
+        OrderState::PROCESSING,
+        OrderState::SHIPPED,
+        OrderState::CLOSED,
+        OrderState::REFUNDED,
     );
 
     /**
@@ -41,6 +47,8 @@ class orderlist extends \Shop\Report
     {
         global $_TABLES, $_CONF, $LANG_SHOP, $LANG_SHOP_HELP, $_USER;
 
+        USES_lib_admin();
+
         $T = $this->getTemplate();
         $from_date = $this->startDate->toUnix();
         $to_date = $this->endDate->toUnix();
@@ -48,7 +56,7 @@ class orderlist extends \Shop\Report
             $cust_hdr = array(
                 'text'  => $LANG_SHOP['customer'],
                 'field' => 'customer',
-                'sort'  => true,
+                'sort'  => false,
             );
         } else {
             $cust_hdr = array();
@@ -63,6 +71,7 @@ class orderlist extends \Shop\Report
                 'text'  => '',
                 'field' => 'action',
                 'sort'  => false,
+                'align' => 'center',
             ),
             array(
                 'text'  => $LANG_SHOP['order_date'],
@@ -131,14 +140,9 @@ class orderlist extends \Shop\Report
                 array(
                     array(
                         'text'  => $LANG_SHOP['item_total'] . '&nbsp;' .
-                        \Shop\Icon::getHTML(
-                            'question',
-                            'tooltip',
-                            array(
-                                'title' => $LANG_SHOP_HELP['orderlist_total']
-                            )
-                        ),
-                        //<i class="uk-icon uk-icon-question-circle tooltip" title="' .
+                        FieldList::info(array(
+                            'title' => $LANG_SHOP_HELP['orderlist_total'],
+                        ) ),
                         'field' => 'sales_amt',
                         'sort'  => true,
                         'align' => 'right',
@@ -160,6 +164,7 @@ class orderlist extends \Shop\Report
                 $q_str['run'] = 'orderlist';
             }
             unset($q_str['uid']);
+            unset($q_str['query_limit']);
             $q_str = http_build_query($q_str);
             $form_url = SHOP_ADMIN_URL . '/report.php?' . $q_str;
             $this->setExtra('uid_link', SHOP_ADMIN_URL . '/report.php?' . $q_str . '&uid=');
@@ -211,13 +216,15 @@ class orderlist extends \Shop\Report
             'table' => 'shop.orders',
             'sql' => $sql,
             'query_fields' => array(
+                'order_id',
                 'billto_name', 'billto_company', 'billto_address1',
                 'billto_address2','billto_city', 'billto_state',
                 'billto_country', 'billto_zip',
                 'shipto_name', 'shipto_company', 'shipto_address1',
                 'shipto_address2','shipto_city', 'shipto_state',
                 'shipto_country', 'shipto_zip',
-                'phone', 'buyer_email', 'ord.order_id',
+                'billto_phone', 'shipto_phone',
+                'buyer_email', 'ord.order_id',
             ),
             'default_filter' => "WHERE $where",
             //'group_by' => 'ord.order_id',
@@ -253,10 +260,14 @@ class orderlist extends \Shop\Report
                 $total_shipping = $A['total_shipping'];
                 $total_total = $total_sales + $total_tax + $total_shipping;
             }
-            $filter = '<select name="period">' . $this->getPeriodSelection($this->period, false) . '</select>';
+            //var_dump($_POST);die;
+            $filter = FieldList::select(array(
+                'name' => 'period',
+                'option_list' => $this->getPeriodSelection($this->period, false),
+            ) );
             $T->set_var(
                 'output',
-                \ADMIN_list(
+                ADMIN_list(
                     'shop_rep_orderlist',
                     array('\Shop\Report', 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
@@ -271,19 +282,22 @@ class orderlist extends \Shop\Report
             $total_total = 0;
             // Assemble the SQL manually from the Admin list components
             $sql .= ' ' . $query_arr['default_filter'];
-            $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defaort_arr['direction'];
+            $sql .= ' ORDER BY ' . $defsort_arr['field'] . ' ' . $defsort_arr['direction'];
             $res = DB_query($sql);
             $T->set_block('report', 'ItemRow', 'row');
             while ($A = DB_fetchArray($res, false)) {
                 if (!empty($A['billto_company'])) {
                     $customer = $A['billto_company'];
-                } else {
+                } elseif (!empty($A['billto_name'])) {
                     $customer = $A['billto_name'];
+                } else {
+                    $customer = COM_getDisplayName($A['uid']);
                 }
                 $order_date->setTimestamp($A['order_date']);
                 $order_total = $A['sales_amt'] + $A['tax'] + $A['shipping'];
                 $T->set_var(array(
                     'order_id'      => $A['order_id'],
+                    'invoice'       => $A['order_seq'],
                     'order_date'    => $order_date->format('Y-m-d', true),
                     'customer'      => $this->remQuote($customer),
                     'sales_amt'     => self::formatMoney($A['sales_amt']),
@@ -352,8 +366,13 @@ class orderlist extends \Shop\Report
             $retval .= '</span>';
             break;
         case 'balance':
-            $bal = $A['order_total'] - $A['paid'];
+            $bal = $A['order_total'] - $A['paid'] - $A['by_gc'];;
             $retval = self::formatMoney($bal);
+            if ($A['by_gc'] > .0001) {
+                $by_gc = self::formatMoney($A['by_gc']);
+                $retval = '<span class="tooltip" title="' . $by_gc . ' paid by gift card">' .
+                    $retval . '</span>';
+            }
             break;
         case 'order_date':
             $dt->setTimestamp($fieldvalue);

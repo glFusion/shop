@@ -17,7 +17,7 @@ If you use the Bad Behavior plugin, be sure that you whitelist your Shop IPN
 URL (`shop/ipn/*provider*.php`). Bad Behavior may otherwise block IPN messages
 from your gateway provider.
 
-This version of the Shop plugin requires at least version 1.0.7 of the lgLib plugin for supporting functions.
+This version of the Shop plugin requires at least version 1.0.10 of the lgLib plugin for supporting functions.
 
 ## Considerations if you have the Paypal Plugin installed
 The Shop plugin includes wrapper functions to match the Paypal functions used
@@ -44,8 +44,7 @@ When the Shop plugin is first installed, it is only available to members of the 
 
 ## Plugin APIs
 Plugins may leverage this plugin to process payments and have their products included in the catalog.
-Functions are called via `LGLIB_invokeService()`, which is similar to `PLG_invokeService()` for web services.
-Arguments are passed in an array, an "output" variable receives the output, and the return is a standard `PLG_RET_*` value.
+Functions are called via `PLG_callFunctionForOnePlugin()`.
 
 ### `service_getproductinfo_<plugin_name>`
 Gets general information about the product for inclusion in the catalog or to determine pricing when processing an order.

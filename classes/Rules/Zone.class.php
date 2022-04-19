@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @since       v1.2.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,6 +16,12 @@ use Shop\Region;
 use Shop\Country;
 use Shop\State;
 use Shop\Icon;      // for the admin list
+use Shop\Template;
+use Shop\Config;
+use Shop\GeoLocator;
+use Shop\Field;
+use Shop\Tooltipster;
+use Shop\FieldList;
 
 
 /**
@@ -24,15 +30,15 @@ use Shop\Icon;      // for the admin list
  */
 class Zone
 {
-    use \Shop\DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key for DBO utilities.
      * @var string */
-    private static $TABLE = 'shop.zone_rules';
+    protected static $TABLE = 'shop.zone_rules';
 
     /** ID Field name for DBO utilities.
      * @var string */
-    private static $F_ID = 'rule_id';
+    protected static $F_ID = 'rule_id';
 
     /** Record ID of the rule.
      * @var integer */
@@ -150,34 +156,6 @@ class Zone
 
 
     /**
-     * Find the applicable zone rule for a product.
-     *
-     * @param   object  $P  Product object
-     * @return  object      Applicable Zone Rule object
-     */
-    public static function findRule($P)
-    {
-        $rule_id = 0;
-        if ($P->getRuleID() > 0) {
-            $rule_id = $P->getRuleID();
-        } else {
-            $cats = array();
-            foreach ($P->getCategories() as $Cat) {
-                $cats = array_merge($cats, $Cat->getPath(false));
-            }
-            $cats = array_reverse($cats);
-            foreach ($cats as $Cat) {
-                if ($Cat->getRuleID() > 0) {
-                    $rule_id = $Cat->getRuleID();
-                    break;
-                }
-            }
-        }
-        return self::getInstance($rule_id);
-    }
-
-
-    /**
      * Get the rule ID.
      *
      * @return  integer     Rule record ID
@@ -202,21 +180,40 @@ class Zone
     /**
      * Check whether sales are allowed to a region based on this rule.
      *
-     * @param   object  $Addr   Address object
+     * @param   object|null $Addr   Address object, null if virtual to geocode
      * @return  boolean     True if sales are allowed, False if not
      */
-    public function isOK($Addr)
+    public function isOK($Addr = NULL)
     {
         // If there is no actual rule set, or the rule is disabled, return true
         if ($this->rule_id == 0 || !$this->enabled) {
             return true;
         }
 
-        $State = State::getInstance($Addr);
+        if ($Addr === NULL) {
+            if (Config::get('ipgeo_provider') != '') {
+                $data = GeoLocator::getProvider()
+                    ->geoLocate();
+                if (
+                    $data['status'] == false ||
+                    empty($data['country_code']) ||
+                    empty($data['state_code'])
+                ) {
+                    return true;    // default to OK if unable to geocode
+                } else {
+                    $State = State::getInstance($data['state_code']);
+                    $Country = Country::getInstance($data['country_code']);
+                }
+            } else {
+                return true;    // no geolocation configured
+            }
+        } else {
+            $State = State::getInstance($Addr);
+            $Country = Country::getInstance($Addr->getCountry());
+        }
         $state_id = $State->getID();
         $country_id = $State->getCountryID();
-        $region_id = Country::getInstance($Addr->getCountry())->getRegionID();
-
+        $region_id = $Country->getRegionID();
         // Check if the region, country and country-state is found, in that order
         $apply = in_array($region_id, $this->regions) ||
             in_array($country_id, $this->countries) ||
@@ -432,14 +429,11 @@ class Zone
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_rule'],
-            SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/rules.php?rule_edit=0',
+            'style' => 'success',
+        ) );
         $text_arr = array(
             'form_url' => SHOP_ADMIN_URL . '/rules.php',
         );
@@ -490,10 +484,9 @@ class Zone
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/rules.php?rule_edit={$A['rule_id']}",
+            ) );
             break;
 
         case 'allow':
@@ -501,33 +494,23 @@ class Zone
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/rules.php?rule_del=' . $A['rule_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-                $tip = $LANG_SHOP['ck_to_disable'];
-            } else {
-                $switch = '';
-                $enabled = 0;
-                $tip = $LANG_SHOP['ck_to_enable'];
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                data-uk-tooltip
-                id=\"togenabled{$A['rule_id']}\"
-                title=\"$tip\"
-                onclick='SHOP_toggle(this,\"{$A['rule_id']}\",\"{$fieldname}\",".
-                "\"zone_rule\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['rule_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['rule_id']}','{$fieldname}','zone_rule');",
+            ) );
             break;
 
         default:
@@ -549,10 +532,9 @@ class Zone
     {
         global $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template('admin');
         $T->set_file(array(
             'form'  => 'rule_edit.thtml',
-            'tips'  => 'tooltipster.thtml',
         ) );
         $T->set_var(array(
             'rule_id'   => $this->rule_id,
@@ -604,6 +586,7 @@ class Zone
             $T->set_var(array(
                 'id'    => $id,
                 'name'  => $Obj->getName(),
+                'tooltipster_js' => Tooltipster::get('zone_rules'),
             ) );
             $T->parse('SB', 'stateBlk', true);
         }

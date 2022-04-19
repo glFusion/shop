@@ -4,9 +4,9 @@
  * This is used to supply Shop functions to other plugins.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2011-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2011-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -36,7 +36,6 @@ if (!defined ('GVERSION')) {
  * desired.  $args['add_cart'] simply needs to be set to get an add-to-cart
  * button.
  *
- * @uses    Gateway::ExternalButton()
  * @param   array   $args       Array of item information
  * @param   array   $output     Pointer to output array
  * @param   array   $svc_msg    Unused
@@ -46,16 +45,19 @@ function service_genButton_shop($args, &$output, &$svc_msg)
 {
     global $_CONF, $_SHOP_CONF;
 
-    $Cart = Shop\Cart::getInstance();
     $btn_type = isset($args['btn_type']) ? $args['btn_type'] : 'buy_now';
     $output = array();
+
+    if (!SHOP_access_check()) {
+        // If the shop is closed, return now but consider this normal.
+        return PLG_RET_OK;
+    }
 
     // Create the immediate purchase button, if requested.  As soon as a
     // gateway supplies the requested button type, break from the loop.
     if (!empty($btn_type)) {
-        foreach (Shop\Gateway::getall() as $gw) {
+        foreach (Shop\Gateway::getall(true) as $gw) {
             if ($gw->Supports('external') && $gw->Supports($btn_type)) {
-                //$output[] = $gw->ExternalButton($args, $btn_type);
                 $P = Shop\Product::getByID($args['item_number']);
                 $output[] = $gw->ProductButton($P);
             }
@@ -68,11 +70,12 @@ function service_genButton_shop($args, &$output, &$svc_msg)
         $_SHOP_CONF['ena_cart'] == 1
     ) {
         if (!isset($args['item_type'])) {
-            $args['item_type'] = SHOP_PROD_VIRTUAL;
+            $args['item_type'] = Shop\Models\ProductType::VIRTUAL;
         }
         $btn_cls = 'orange';
         $btn_disabled = '';
         $unique = isset($args['unique']) ? 1 : 0;
+        $Cart = Shop\Cart::getInstance();
         if ($unique) {
             // If items may only be added to the cart once, check that
             // this one isn't already there
@@ -81,7 +84,8 @@ function service_genButton_shop($args, &$output, &$svc_msg)
                 $btn_disabled = 'disabled="disabled"';
             }
         }
-        $T = SHOP_getTemplate('btn_add_cart', 'cart', 'buttons');
+        $T = new Shop\Template('buttons');
+        $T->set_file('cart', 'btn_add_cart.thtml');
         $T->set_var(array(
             'item_name'     => $args['item_name'],
             'item_number'   => $args['item_number'],
@@ -340,7 +344,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
 
     $output = array();
     $svc_msg = array();
-    if (!$_SHOP_CONF['gc_enabled'] || !$_SHOP_CONF['shop_enabled']) {
+    if (!$_SHOP_CONF['gc_enabled']) {
         $svc_msg[] = 'Shop or Gift Cards not enabled';
         return PLG_RET_PERMISSION_DENIED;
     }
@@ -408,7 +412,64 @@ function plugin_formatAmount_shop($amount)
 }
 
 
+/**
+ * Approve a submission from another plugin.
+ * Currently supported is form approval for affiliate registrations.
+ * Recommended to add a hidden or admin-only field `uid` to the form so that
+ * admins can fill out on behalf of other users. If not present, the submitting
+ * user ID is used.
+ *
+ * @param   array   $args   Array of arguments - amount, users, expiration
+ * @param   mixed   &$output    Output data
+ * @param   mixed   &$svc_msg   Service message
+ * @return  integer     Status code
+ */
+function service_approvesubmission_shop($args, &$output, &$svc_msg)
+{
+    if (isset($args['source'])) {
+        // Currently need to know the source
+        switch ($args['source']) {
+        case 'forms':
+            // Form submission, e.g. affiliate registration
+            $data = explode(':', $args['pi_info']);
+            switch ($data[0]) {
+            case 'affiliate':
+                // Verify that the correct form is being used.
+                if (
+                    !isset($args['source_id']) ||
+                    $args['source_id'] != Shop\Config::get('aff_form_id')
+                ) {
+                    return false;
+                }
+
+                // Get the user ID from the form field if set, otherwise use
+                // the submitter's ID
+                if (isset($args['uid'])) {
+                    $uid = (int)$args['uid'];
+                } else {
+                    $uid = 0;
+                }
+                if ($uid < 2) {
+                    // Invalid affiliate user ID, nothing to do
+                    return false;
+                }
+
+                // Create the affiliate ID and do whatever else is needed for
+                // approved applications such as sending welcom emails (TODO).
+                $moderated = isset($args['moderated']) ? $args['moderated'] : false;
+                $Affiliate = new Shop\Affiliate($uid);
+                $Affiliate->Approve($moderated);
+                break;
+            }
+            break;
+        }
+    }
+    return true;
+}
+
+
 if (
+    isset($_SHOP_CONF['enable_svc_funcs']) &&
     $_SHOP_CONF['enable_svc_funcs'] &&
     !function_exists('service_genButton_paypal')
 ) {

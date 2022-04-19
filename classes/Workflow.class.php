@@ -13,6 +13,8 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Session;
+
 
 /**
  * Class for workflow items.
@@ -45,7 +47,7 @@ class Workflow
 
     /** Workflow Name.
      * @var string */
-    public $wf_name;
+    private $wf_name;
 
     /** Database ID of the workflow record.
      * @var integer */
@@ -54,6 +56,7 @@ class Workflow
     /** Flag to indicate that the workflow is enabled.
      * @var boolean */
     public $enabled;
+
 
     /**
      * Constructor.
@@ -132,25 +135,145 @@ class Workflow
 
 
     /**
-     * Check if this workflow has been satisfided based on the cart contents.
+     * Get the workflow name.
+     *
+     * @return  string  Workflow name
+     */
+    public function getName()
+    {
+        return $this->wf_name;
+    }
+
+
+    /**
+     * Get the friendly title of the workflow.
+     *
+     * @return  string  Workflow title
+     */
+    public function getTitle()
+    {
+        global $LANG_SHOP;
+
+        if (isset($LANG_SHOP[$this->wf_name])) {
+            return $LANG_SHOP[$this->wf_name];
+        } else {
+            return $this->wf_name;
+        }
+    }
+
+
+    /**
+     * Determine if this workflow is needed for a given order.
+     *
+     * @param   object  $Cart   Cart object
+     * @return  boolean     True if workflow is required, False if not
+     */
+    public function isNeeded($Cart)
+    {
+        switch ($this->wf_name) {
+        case 'addresses':
+            $retval = $Cart->requiresBillto() || $Cart->requiresShipto();
+            break;
+        case 'shipping':
+            $retval = $Cart->requiresShipto() && $Cart->hasPhysical();
+            break;
+        case 'viewcart':
+        case 'payment':
+        case 'confirm':
+        default:
+            $retval = true;
+            break;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Check if this workflow has been satisfied based on the cart contents.
+     * Verifies that each required field from the workflow's page has been
+     * satisfied.
      *
      * @param   object  $Cart   Shopping cart/Order object
      * @return  boolean     True if the workflow is complete, False if not
      */
     public function isSatisfied($Cart)
     {
+        // If a workflow is not required at all, consider it satisfied.
+        if (!$this->isNeeded($Cart)) {
+            return true;
+        }
+
         switch ($this->wf_name) {
+        case 'viewcart':
+            $status = true;
+            break;
+        case 'addresses':
+            // Check that an address was entered. 0 indicates to-do.
+            $billto = !$Cart->requiresBillto() || (
+                $Cart->getBillto()->getID() != 0 &&
+                $Cart->getBillto()->isValid() == ''
+            );
+            $shipto = !$Cart->requiresShipto() || (
+                    $Cart->getShipto()->getID() != 0 &&
+                    $Cart->getShipto()->isValid() == ''
+            );
+            $email = !empty($Cart->getBuyerEmail());
+            $status = ($billto && $shipto && $email);
+            break;
         case 'billto':
             $status = !$Cart->requiresBillto() || $Cart->getBillto()->isValid() == '';
             break;
         case 'shipto':
             $status = !$Cart->requiresShipto() || $Cart->getShipto()->isValid() == '';
             break;
+        case 'shipping':
+            $status = !$Cart->requiresShipto() || $Cart->getShipperID() > 0;
+            break;
+        case 'payment':
+            $GW = Gateway::getInstance($Cart->getPmtMethod());
+            $status = $GW->hasAccess($Cart->getTotal());
+            break;
         default:
-            $status = true;
+            $status = false;
             break;
         }
         return $status;
+    }
+
+
+    /**
+     * Finds the next used workflow.
+     * Used to step through all workflow steps even if subsequent flows have
+     * been satisfied.
+     *
+     * @param   object  $Cart   Cart object, to see which flows are needed.
+     * @return  string      Workflow name
+     */
+    /*public static function findNextStep($Cart, $current_name)
+    {
+        $Flows = self::getAll();
+        foreach ($Flows as $Flow) {
+            if (
+}*/
+
+
+    /**
+     * Finds the first unsatisfied workflow.
+     *
+     * @param   object  $Cart   Cart object to pass to isSatisfied()
+     * @return  string      Name of required workflow
+     */
+    public static function findFirstNeeded($Cart)
+    {
+        $retval = 'confirm';
+        $Flows = self::getAll();
+        foreach ($Flows as $Flow) {
+            if (!$Flow->isSatisfied($Cart)) {
+                $retval = $Flow->getName();
+                break;
+            }
+        }
+        return $retval;
     }
 
 
@@ -165,7 +288,7 @@ class Workflow
     {
         global $_TABLES;
 
-        if (is_integer($id)) {
+        if (is_numeric($id)) {
             $key_fld = 'wf_id';
         } else {
             $key_fld = 'wf_name';
@@ -193,8 +316,9 @@ class Workflow
         global $_TABLES;
 
         $id = (int)$id;
-        if ($id < 1)
+        if ($id < 1) {
             return -1;
+        }
         $field = DB_escapeString($field);
 
         // Determing the new value (opposite the old)
@@ -218,16 +342,34 @@ class Workflow
      * Get the next view in the workflow to be displayed.
      * This function receives the name of the current view, then looks
      * in it's array of views to return the next in line.
+     * Workflows that are not needed, e.g. `addresses` if there are no
+     * physical items, are skipped.
      *
      * @param   string  $currview   Current view
      * @return  string              Next view in line
      */
-    public static function getNextView($currview = '')
+    public static function getNextView($currview, $Cart)
     {
         global $_SHOP_CONF;
 
-        /** Load the views, if not done already */
+        // Load the views, if not done already done
         $workflows = self::getAll();
+
+        // Bypass any workflows before the current step
+        for ($i = 0; $i < count($workflows) - 1; $i++) {
+            if ($workflows[$i]->getName() == $currview) {
+                break;
+            }
+        }
+
+        // Search remaining workflows for the first one still needed.
+        $i++;
+        for (; $i < count($workflows) -1; $i++) {
+            if ($workflows[$i]->isNeeded($Cart)) {
+                break;
+            }
+        }
+        return $workflows[$i];
 
         // If the current view is empty, or isn't part of our array,
         // then set the current key to -1 so we end up returning value 0.
@@ -239,7 +381,7 @@ class Workflow
         }
 
         if ($curr_key > -1) {
-            Cart::setSession('prevpage', $workflows[$curr_key]);
+            Session::set('prevpage', $workflows[$curr_key]);
         }
         if (isset($workflows[$curr_key + 1])) {
             $view = $workflows[$curr_key + 1];
@@ -300,7 +442,7 @@ class Workflow
         $display .= "<h2>{$LANG_SHOP['workflows']}</h2>\n";
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_workflowlist',
-            array(__CLASS__ , 'getAdminField'),
+            array(__CLASS__, 'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
             '', '', '', ''
         );
@@ -328,20 +470,28 @@ class Workflow
         case 'wf_enabled':
             $fieldvalue = $A['enabled'];
             if ($A['can_disable'] == 1) {
-                $retval = "<select id=\"sel{$fieldname}{$A['id']}\" name=\"{$fieldname}_sel\" " .
-                    "onchange='SHOPupdateSel(this,\"{$A['id']}\",\"enabled\", \"workflow\");'>" . LB;
+                $options = '';
                 foreach ($LANG_SHOP['wf_statuses'] as $val=>$str) {
                     $sel = $fieldvalue == $val ? 'selected="selected"' : '';
-                    $retval .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
+                    $options .= "<option value=\"{$val}\" $sel>{$str}</option>" . LB;
                 }
-                $retval .= '</select>' . LB;
+                $retval = FieldList::select(array(
+                    'id' => "sel{$fieldname}{$A['id']}",
+                    'name' => "{$fieldname}_sel",
+                    'onchange' => "SHOPupdateSel(this,'{$A['id']}','enabled', 'workflow');",
+                    'option_list' => $options,
+                ) );
             } else {
                 $retval = $LANG_SHOP['required'];
             }
             break;
 
         case 'wf_name':
-            $retval = $LANG_SHOP[$fieldvalue];
+            if (isset($LANG_SHOP[$fieldvalue])) {
+                $retval = $LANG_SHOP[$fieldvalue];
+            } else {
+                $retval = $fieldvalue;
+            }
             break;
 
        default:
@@ -353,5 +503,3 @@ class Workflow
     }
 
 }
-
-?>

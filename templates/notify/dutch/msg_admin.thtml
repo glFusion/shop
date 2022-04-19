@@ -1,0 +1,21 @@
+Beste sitebeheerder;
+<p>
+U heeft een nieuwe bestelling ontvangen via uw website. Controleer de aankoopinformatie op
+{site_admin_url}/plugins/shop/index.php?order={order_id}
+ voor elke actie die u mogelijk moet ondernemen.
+</p>
+<p>
+Details van de aankoop volgen:
+</p>
+<p>
+Koper: {payer_name} (ID {buyer_uid}, {user_name})<br />
+{payer_email}
+</p>
+<p>
+{aankoopdetails}
+</p>
+{!if order_instr}
+<p>Speciale instructies: {order_instr}</p>
+{!endif}
+<p>Bestelstatus: {status}</p>
+<p>De betaling is gedaan via {gateway_name} op {payment_date}</p>

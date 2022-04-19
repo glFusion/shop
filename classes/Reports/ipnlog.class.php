@@ -3,9 +3,9 @@
  * Order History Report.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v0.7.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -22,6 +22,10 @@ class ipnlog extends \Shop\Report
     /** Icon to use in report selection.
      * @var string */
     protected $icon = 'money';
+
+    /** Selected gateway to limit output.
+     * @var string */
+    protected $gateway = '';
 
 
     /**
@@ -67,7 +71,7 @@ class ipnlog extends \Shop\Report
      */
     public function Render()
     {
-        global $_TABLES, $_CONF, $LANG_SHOP;
+        global $_TABLES, $_CONF, $LANG_SHOP, $_SHOP_CONF;
 
         $this->setParam('gateway', SHOP_getVar($_GET, 'gateway'));
 
@@ -105,6 +109,11 @@ class ipnlog extends \Shop\Report
                 'sort'  => true,
             ),
             array(
+                'text'  => $LANG_SHOP['status'],
+                'field' => 'event',
+                'sort'  => false,
+            ),
+            array(
                 'text'  => $LANG_SHOP['order_number'],
                 'field' => 'order_id',
                 'sort'  => true,
@@ -120,6 +129,9 @@ class ipnlog extends \Shop\Report
         if (!empty($this->gateway)) {
             $where .= " AND gateway = '" . DB_escapeString($this->gateway) . "'";
         }
+        if (!empty($this->order_id)) {
+            $where .= " AND order_id = '" . DB_escapeString($this->order_id) . "'";
+        }
 
         $query_arr = array(
             'table' => 'shop.ipnlog',
@@ -130,7 +142,7 @@ class ipnlog extends \Shop\Report
         $text_arr = array(
             'has_extras' => true,
             'form_url' => SHOP_ADMIN_URL . '/report.php?run=' . $this->key .
-                '&perod=' . $period . '&gateway=' . $gateway,
+                '&perod=' . $this->period . '&gateway=' . $this->gateway,
         );
 
         switch ($this->type) {
@@ -204,8 +216,8 @@ class ipnlog extends \Shop\Report
             return "Nothing Found";
         }
 
-        // Allow all serialized data to be available to the template
-        $ipn = @unserialize($A['ipn_data']);
+        // Allow all json-encoded data to be available to the template
+        $ipn = @json_decode($A['ipn_data'], true);
         $gw = \Shop\Gateway::getInstance($A['gateway']);
         if ($gw !== NULL && $ipn !== NULL) {
             $vals = $gw->ipnlogVars($ipn);
@@ -218,9 +230,11 @@ class ipnlog extends \Shop\Report
             $T->set_var(array(
                 'id'        => $A['id'],
                 'ip_addr'   => $A['ip_addr'],
-                'time'      => SHOP_dateTooltip($Dt),
+                'time'      => $Dt->format('Y-m-d H:i:s T', true),
                 'txn_id'    => $A['txn_id'],
                 'gateway'   => $A['gateway'],
+                'order_id'  => $A['order_id'],
+                'event'     => $A['event'],
                  //'pmt_gross' => $vals['pmt_gross'],
                 //'verified'  => $vals['verified'],
                 //'pmt_status' => $vals['pmt_status'],
@@ -279,7 +293,7 @@ class ipnlog extends \Shop\Report
         case 'ipn_id':
             $retval = COM_createLink(
                 $A['id'],
-                SHOP_ADMIN_URL . '/index.php?ipndetail=x&amp;id=' . $A['id'],
+                SHOP_ADMIN_URL . '/payments.php?ipndetail=x&amp;id=' . $A['id'],
                 array(
                     'target' => '_blank',
                     'class' => 'tooltip',

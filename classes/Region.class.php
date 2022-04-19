@@ -34,19 +34,19 @@ class Region extends RegionBase
 
     /** Region DB record ID.
      * @var integer */
-    private $region_id;
+    private $region_id = 0;
 
     /** UN Region Code.
      * @var integer */
-    private $region_code;
+    private $region_code = 0;
 
     /** Region Name.
      * @var string */
-    private $region_name;
+    private $region_name = '';
 
     /** Sales are allowed to this region?
      * @var integer */
-    private $region_enabled;
+    private $region_enabled = 1;
 
 
     /**
@@ -88,7 +88,8 @@ class Region extends RegionBase
                 // when there is no region assigned (e.g. Antarctica)
                 $A = array(
                     'region_id'     => 0,
-                    'region_name'  => '',
+                    'region_code'   => 0,
+                    'region_name'   => '',
                     'region_enabled' => 1,
                 );
             }
@@ -249,10 +250,9 @@ class Region extends RegionBase
      */
     public function Edit()
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'region.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
 
         $T->set_var(array(
@@ -260,9 +260,8 @@ class Region extends RegionBase
             'region_code'   => $this->getCode(),
             'region_name'   => $this->getName(),
             'ena_chk'       => $this->region_enabled ? 'checked="checked"' : '',
-            'doc_url'       => SHOP_getDocUrl('region_form'),
+            'tooltipster_js' => Tooltipster::get('region_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
     }
@@ -354,14 +353,11 @@ class Region extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_region'],
-            SHOP_ADMIN_URL . '/regions.php?editregion=x',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editregion=x',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.regions',
@@ -405,24 +401,18 @@ class Region extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editregion=' . $A['region_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editregion=' . $A['region_id'],
+            ) );
             break;
 
         case 'region_enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['region_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['region_id']}\",\"region_enabled\",".
-                    "\"region\");' />" . LB;
+            $retval = FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['region_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['region_id']}','region_enabled','region');",
+            ) );
             break;
 
         case 'region_name':
@@ -441,5 +431,3 @@ class Region extends RegionBase
     }
 
 }
-
-?>

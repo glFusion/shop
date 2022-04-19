@@ -1,7 +1,6 @@
-<script type="text/javascript" src="{site_url}/ckeditor/ckeditor.js" ></script >
-<script type="text/javascript" >
+<script src="{site_url}/ckeditor/ckeditor.js" ></script >
+<script >
 var site_url = "{site_url}";
-var comment;
 function loadEditor(id) {
     var instance = CKEDITOR.replace( id, {
     	toolbar: [

@@ -15,8 +15,7 @@
 require_once '../lib-common.php';
 
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check()
 ) {
     COM_404();
@@ -56,22 +55,27 @@ case 'view':
     // View a completed order record
     $order = \Shop\Order::getInstance($id);
     if ($order->canView($token)) {
-        $content .= $order->View();
+        $View = new Shop\Views\Invoice();
+        $content .= $View->withOrder($order)->withToken($token)->Render();
+        //$content .= $order->View();
     } else {
         COM_404();
     }
     break;
 
-case 'pdfpl':
 case 'pdforder':
     $order = Shop\Order::getInstance($id);
     if ($order->canView($token)) {
-        \Shop\Order::printPDF($id, $mode);
+        $View = new Shop\Views\Invoice();
+        $content = $View->withOrderId($id)->withToken($token)->withOutput('pdf')->Render();
+    } else {
+        COM_404();
     }
     break;
 
 case 'packinglist':
 case 'print':
+    echo __LINE__ . ' deprecatd';die;
     // Display a printed order or packing list and exit.
     // This is expected to be shown in a _blank browser window/tab.
     $order = \Shop\Order::getInstance($id);

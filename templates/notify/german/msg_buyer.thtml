@@ -1,0 +1,51 @@
+{header}
+<p>Vielen Dank für Ihren Kauf bei {site_name}. Details zu Ihrem Kauf folgen:</p>
+<p>
+{Einzelheiten zum Kauf}
+</p>
+{!if files}
+<p>
+Sie können Ihre gekauften Dateien über die folgenden Links herunterladen:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Besondere Anweisungen: {order_instr}</p>
+{!endif}
+{!falls ausstehend}
+<p>
+Ihre Zahlung steht noch aus. Sobald Ihre Zahlung eingegangen ist, erhalten Sie
+eine weitere E-Mail-Nachricht, die Ihre Zahlung bestätigt.
+</p>
+{!endif}
+<p>Sie können Ihre Bestellung unter {order_url}
+{!if has_downloads}
+<br />Ihre herunterladbaren Einkäufe können über den obigen Link heruntergeladen werden.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p><b>Nachricht:</b><br />{gw_msg}</p>
+{!endif}
+
+{!if affiliate_id}
+<p>
+Empfehlen Sie einen Freund und erhalten Sie Empfehlungsboni! Ihr Affiliate-Link ist {affiliate_link}.
+{!if affiliate_info}
+<br />Besuchen Sie die <a href="{affiliate_info}">{affiliate_info}</a> für Details.
+{!endif}
+</p>
+{!endif}
+
+{!if gc_bal_num}
+<p>
+Sie haben ein verbleibendes Geschenkkartenguthaben von {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Danke,<br />
+{footer}
+</p>

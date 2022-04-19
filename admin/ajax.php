@@ -202,8 +202,8 @@ case 'dropupload':
         // Only one filename here, this to get the image id also
         foreach ($filenames as $img_id=>$filename) {
             $retval['filenames'][] = array(
-                'img_url'   => Shop\Product::getImage($filename)['url'],
-                'thumb_url' => Shop\Product::getThumb($filename)['url'],
+                'img_url'   => Shop\Images\Product::getUrl($filename)['url'],
+                'thumb_url' => Shop\Images\Product::getThumbUrl($filename)['url'],
                 'img_id' => $img_id,
             );
         }
@@ -319,7 +319,6 @@ case 'add_tracking':
                 'shipper_code'  => $shipper_code,
                 'tracking_url'  => $tracking_url,
             );
-            COM_errorlog(print_r($retval,true));
         } else {
             $retval['statusMessage'] = $LANG_SHOP['err_invalid_form'];
         }
@@ -372,6 +371,19 @@ case 'void':
             'status' => $status,
             'statusMessage' => $LANG_SHOP['err_msg'],
             'text' => $LANG_SHOP['valid'],
+        );
+    }
+    break;
+
+case 'getUnpaidOrders':
+    // Get all unpaid orders for a specific user ID
+    $uid = (int)$_POST['uid'];
+    $Orders = Shop\Order::getUnpaid($uid);
+    $retval = array();
+    foreach ($Orders as $Order) {
+        $retval[$Order->getID()] = array(
+            'total' => $Order->getTotal(),
+            'amt_paid' => $Order->getAmountPaid(),
         );
     }
     break;
@@ -501,6 +513,10 @@ case 'toggle':
         $newval = \Shop\State::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
         break;
 
+    case 'pi_product':
+        $newval = \Shop\Products\Plugin::Toggle($_POST['oldval'], $_POST['type'], $_POST['id']);
+        break;
+
     default:
         exit;
     }
@@ -515,6 +531,30 @@ case 'toggle':
             $LANG_SHOP['msg_updated'] : $LANG_SHOP['msg_nochange'],
         'title' => $title,
     );
+    break;
+
+case 'getCarrierPkgInfo':
+    $retval = array(
+        'carrier_id' => '',
+        'pkg_codes' => array(),
+        'svc_codes' => array(),
+        'status' => false,
+    );
+    $carrier_id = $_POST['carrier_id'];
+    if ($carrier_id != '') {
+        $Carrier = Shop\Shipper::getByCode($carrier_id);
+        if ($Carrier) {
+            foreach ($Carrier->getPackageCodes() as $key=>$dscp) {
+                $retval['pkg_codes'][$key] = $dscp;
+            }
+            foreach ($Carrier->getServiceCodes() as $key=>$dscp) {
+                $retval['svc_codes'][$key] = $dscp;
+            }
+            $retval['carrier_id'] = $carrier_id;
+            $retval['status'] = true;
+        }
+    }
+    break;
 }
 
 // Return the $retval array as a JSON string

@@ -3,15 +3,17 @@
  * Class to provide admin and user-facing menus.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Template;
+
 
 /**
  * Class to provide admin and user-facing menus.
@@ -27,7 +29,7 @@ class Menu
      */
     public static function User($view='')
     {
-        global $_CONF, $LANG_SHOP, $_SHOP_CONF;
+        global $_CONF, $LANG_SHOP;
 
         USES_lib_admin();
 
@@ -38,7 +40,7 @@ class Menu
                 'text' => $LANG_SHOP['back_to_catalog'],
             ),
             array(
-                'url'  => COM_buildUrl(SHOP_URL . '/account.php'),
+                'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=orderhist'),
                 'text' => $LANG_SHOP['purchase_history'],
                 'active' => $view == 'orderhist' ? true : false,
             ),
@@ -50,7 +52,7 @@ class Menu
         );
 
         // Show the Gift Cards menu item only if enabled.
-        if ($_SHOP_CONF['gc_enabled']) {
+        if (Config::get('gc_enabled')) {
             $active = $view == 'couponlog' ? true : false;
             $menu_arr[] = array(
                 'url'  => COM_buildUrl(SHOP_URL . '/account.php?mode=couponlog'),
@@ -59,6 +61,16 @@ class Menu
                 'link_admin' => plugin_ismoderator_shop(),
             );
         }
+
+        // Show the Affiliate Sales item only if enabled.
+        if (Config::get('aff_enabled')) {
+            $menu_arr[] = array(
+                'url' => COM_buildUrl(SHOP_URL . '/affiliate.php'),
+                'text' => $LANG_SHOP['affiliates'],
+                'active' => $view == 'affiliate' ? true : false,
+            );
+        }
+        
         return \ADMIN_createMenu($menu_arr, $hdr_txt);
     }
 
@@ -71,7 +83,7 @@ class Menu
      */
     public static function Admin($view='')
     {
-        global $_CONF, $LANG_ADMIN, $LANG_SHOP, $_SHOP_CONF;
+        global $_CONF, $LANG_ADMIN, $LANG_SHOP;
 
         USES_lib_admin();
         if (isset($LANG_SHOP['admin_hdr_' . $view]) &&
@@ -88,30 +100,15 @@ class Menu
                 'active' => $view == 'products' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?orders',
+                'url' => SHOP_ADMIN_URL . '/orders.php',
                 'text' => $LANG_SHOP['orders'],
                 'active' => $view == 'orders' || $view == 'shipments' ? true : false,
             ),
-            /*array(
-                'url' => SHOP_ADMIN_URL . '/index.php?categories=x',
-                'text' => $LANG_SHOP['categories'],
-                'active' => $view == 'categories' ? true : false,
-            ),*/
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
-                'text' => $LANG_SHOP['options'],
-                'active' => $view == 'options' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?shipping=x',
                 'text' => $LANG_SHOP['shipping'],
                 'active' => $view == 'shipping' ? true : false,
             ),
-            /*array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
-                'text' => $LANG_SHOP['sale_prices'],
-                'active' => $view == 'sales' ? true : false,
-            ),*/
             array(
                 'url'  => SHOP_ADMIN_URL . '/gateways.php',
                 'text' => $LANG_SHOP['gateways'],
@@ -123,30 +120,37 @@ class Menu
                 'active' => $view == 'wfadmin' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
-                'text' => $LANG_SHOP['other_func'],
-                'active' => $view == 'other' ? true : false,
-            ),
-            array(
                 'url'  => SHOP_ADMIN_URL . '/report.php',
                 'text' => $LANG_SHOP['reports'],
                 'active' => $view == 'reports' ? true : false,
             ),
             array(
-                'url'  => SHOP_ADMIN_URL . '/regions.php',
-                'text' => $LANG_SHOP['regions'],
-                'active' => $view == 'regions' ? true : false,
+                'url'  => SHOP_ADMIN_URL . '/rules.php',
+                'text' => $LANG_SHOP['rules'],
+                'active' => $view == 'rules' ? true : false,
             ),
             array(
-                'url'  => $_CONF['site_admin_url'],
-                'text' => $LANG_ADMIN['admin_home'],
+                'url'  => SHOP_ADMIN_URL . '/index.php?other=x',
+                'text' => $LANG_SHOP['other_func'],
+                'active' => $view == 'other' ? true : false,
             ),
         );
+        if (Config::get('aff_enabled')) {
+            $menu_arr[] = array(
+                'url' => SHOP_ADMIN_URL . '/affiliates.php',
+                'text' => $LANG_SHOP['affiliates'],
+                'active' => $view == 'affiliates' ? true : false,
+            );
+        }
+        $menu_arr[] = array(
+            'url'  => $_CONF['site_admin_url'],
+            'text' => $LANG_ADMIN['admin_home'],
+        );
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
-            'title' => $LANG_SHOP['admin_title'] . ' (' . $_SHOP_CONF['pi_version'] . ')',
+            'title' => $LANG_SHOP['admin_title'] . ' (' . Config::get('pi_version') . ')',
             'link_store' => true,
             'icon'  => plugin_geticon_shop(),
             'is_admin' => true,
@@ -176,30 +180,40 @@ class Menu
      * @param   string  $view   View being shown, so set the help text
      * @return  string      Administrator menu
      */
-    public static function adminRegions($view='')
+    public static function adminRules($view='')
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP;
 
         $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/rules.php?pr_list',
+                'text' => $LANG_SHOP['product_rules'],
+                'active' => $view == 'pr_list' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_pr'],
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/rules.php?zr_list',
+                'text' => $LANG_SHOP['zone_rules'],
+                'active' => $view == 'zr_list' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_zr'],
+            ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?regions',
                 'text' => $LANG_SHOP['regions'],
                 'active' => $view == 'regions' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_region'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?countries',
                 'text' => $LANG_SHOP['countries'],
                 'active' => $view == 'countries' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_region'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/regions.php?states',
                 'text' => $LANG_SHOP['states'],
                 'active' => $view == 'states' ? true : false,
-            ),
-            array(
-                'url'  => SHOP_ADMIN_URL . '/rules.php',
-                'text' => $LANG_SHOP['rules'],
-                'active' => $view == 'rules' ? true : false,
+                'help' => $LANG_SHOP['adm_mnu_states'],
             ),
         );
         return self::_makeSubMenu($menu_arr);
@@ -214,7 +228,7 @@ class Menu
      */
     public static function adminCatalog($view='')
     {
-        global $LANG_SHOP, $_SHOP_CONF;
+        global $LANG_SHOP, $LANG_SHOP_HELP, $LANG01;
 
         $menu_arr = array(
             array(
@@ -231,44 +245,58 @@ class Menu
                 'url'  => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
                 'text' => $LANG_SHOP['opt_grps'],
                 'active' => $view == 'opt_grp' ? true : false,
+                'help' => $LANG_SHOP_HELP['opt_groups'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?options=x',
                 'text' => $LANG_SHOP['options'],
                 'active' => $view == 'options' ? true : false,
+                'help' => $LANG_SHOP_HELP['options'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?variants=x',
                 'text' => $LANG_SHOP['variants'],
                 'active' => $view == 'variants' ? true : false,
+                'help' => $LANG_SHOP_HELP['variants'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?sales=x',
                 'text' => $LANG_SHOP['sale_prices'],
                 'active' => $view == 'sales' ? true : false,
+                'help' => $LANG_SHOP_HELP['sale_prices'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?codes=x',
                 'text' => $LANG_SHOP['codes'],
                 'active' => $view == 'codes' ? true : false,
+                'help' => $LANG_SHOP_HELP['discount_codes'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?suppliers',
                 'text' => $LANG_SHOP['suppliers'],
                 'active' => $view == 'suppliers' ? true : false,
+                'help' => $LANG_SHOP_HELP['suppliers'],
             ),
             array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?features',
                 'text' => $LANG_SHOP['features'],
                 'active' => $view == 'features' ? true : false,
+                'help' => $LANG_SHOP_HELP['features'],
+            ),
+            array(
+                'url'  => SHOP_ADMIN_URL . '/index.php?pi_products',
+                'text' => $LANG01[77],
+                'active' => $view == 'pi_products' ? true : false,
+                'help' => $LANG_SHOP_HELP['pi_products'],
             ),
         );
-        if ($_SHOP_CONF['gc_enabled']) {
+        if (Config::get('gc_enabled')) {
             // Show the Coupons menu option only if enabled
             $menu_arr[] = array(
                 'url'  => SHOP_ADMIN_URL . '/index.php?coupons=x',
                 'text' => $LANG_SHOP['coupons'],
                 'active' => $view == 'coupons' ? true : false,
+                'help' => $LANG_SHOP_HELP['coupons'],
             );
         }
         return self::_makeSubMenu($menu_arr);
@@ -304,6 +332,12 @@ class Menu
                 'active' => $view == 'carriers' ? true : false,
                 'help'  => $LANG_SHOP_HELP['carrier_modules'],
             ),
+            array(
+                'url'   => SHOP_ADMIN_URL . '/packages.php',
+                'text'  => $LANG_SHOP['packages'],
+                'active' => $view == 'packages' ? true : false,
+                'help'  => $LANG_SHOP_HELP['packages'],
+            ),
         );
         return self::_makeSubMenu($menu_arr);
     }
@@ -322,19 +356,24 @@ class Menu
 
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?orders',
+                'url'  => SHOP_ADMIN_URL . '/orders.php',
                 'text' => $LANG_SHOP['orders'],
                 'active' => $view == 'orders' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?shipments=x',
+                'url' => SHOP_ADMIN_URL . '/shipments.php',
                 'text' => $LANG_SHOP['shipments'],
                 'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=x',
+                'url' => SHOP_ADMIN_URL . '/payments.php?payments=x',
                 'text' => $LANG_SHOP['payments'],
-                'active' => $view == 'ord_pmts' ? true : false,
+                'active' => $view == 'payments' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=x',
+                'text' => $LANG_SHOP['webhooks'],
+                'active' => $view == 'webhooks' ? true : false,
             ),
         );
         return self::_makeSubMenu($menu_arr);
@@ -355,19 +394,24 @@ class Menu
         $retval = '';
         $menu_arr = array(
             array(
-                'url'  => SHOP_ADMIN_URL . '/index.php?order=' . $Order->getOrderID(),
+                'url'  => SHOP_ADMIN_URL . '/orders.php?order=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['order'],
                 'active' => $view == 'order' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_ship=' . $Order->getOrderID(),
+                'url' => SHOP_ADMIN_URL . '/shipments.php?shipments=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['shipments'],
-                'active' => $view == 'ord_ship' ? true : false,
+                'active' => $view == 'shipments' ? true : false,
             ),
             array(
-                'url' => SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $Order->getOrderID(),
+                'url' => SHOP_ADMIN_URL . '/payments.php?payments=' . $Order->getOrderID(),
                 'text' => $LANG_SHOP['payments'],
-                'active' => $view == 'ord_pmts' ? true : false,
+                'active' => $view == 'payments' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/payments.php?webhooks=' . $Order->getOrderID(),
+                'text' => $LANG_SHOP['webhooks'],
+                'active' => $view == 'webhooks' ? true : false,
             ),
         );
         $retval .= self::_makeSubMenu($menu_arr);
@@ -381,6 +425,32 @@ class Menu
 
 
     /**
+     * Create the administrator sub-menu for the Affiliate management.
+     *
+     * @param   string  $view   View being shown, so set the help text
+     * @return  string      Administrator menu
+     */
+    public static function adminAffiliates($view='')
+    {
+        global $LANG_SHOP, $LANG_SHOP_HELP;
+
+        $menu_arr = array(
+            array(
+                'url'  => SHOP_ADMIN_URL . '/affiliates.php',
+                'text' => $LANG_SHOP['all'],
+                'active' => $view == 'affiliates' ? true : false,
+            ),
+            array(
+                'url' => SHOP_ADMIN_URL . '/affiliates.php?payout',
+                'text' => $LANG_SHOP['pending_payout'],
+                'active' => $view == 'payout' ? true : false,
+            ),
+        );
+        return self::_makeSubMenu($menu_arr);
+    }
+
+
+    /**
      * Create a submenu using a standard template.
      *
      * @param   array   $menu_arr   Array of menu items
@@ -388,7 +458,7 @@ class Menu
      */
     private static function _makeSubMenu($menu_arr)
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('menu', 'submenu.thtml');
         $T->set_block('menu', 'menuItems', 'items');
         $hlp = '';
@@ -447,7 +517,7 @@ class Menu
     {
         global $_USER;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('title', 'shop_title.thtml');
         $T->set_var(array(
             'title' => $page_title,
@@ -455,7 +525,7 @@ class Menu
             'link_admin' => plugin_ismoderator_shop(),
             'link_account' => ($page != 'account' && $_USER['uid'] > 1),
         ) );
-        if ($page != 'cart' && Cart::getCart()) {
+        if ($page != 'cart' && Cart::getCartID()) {
             $item_count = Cart::getInstance()->hasItems();
             if ($item_count) {
                 $T->set_var('link_cart', $item_count);
@@ -474,11 +544,14 @@ class Menu
      */
     public static function siteHeader($title='', $meta='')
     {
-        global $_SHOP_CONF, $LANG_SHOP;
+        global $LANG_SHOP;
 
         $retval = '';
+        if ($title == '') {
+            $title = $LANG_SHOP['main_title'];
+        }
 
-        switch($_SHOP_CONF['displayblocks']) {
+        switch(Config::get('displayblocks')) {
         case 2:     // right only
         case 0:     // none
             $retval .= COM_siteHeader('none', $title, $meta);
@@ -491,8 +564,8 @@ class Menu
             break;
         }
 
-        if (!$_SHOP_CONF['shop_enabled']) {
-            $retval .= '<div class="uk-alert uk-alert-danger">' . $LANG_SHOP['shop_closed'] . '</div>';
+        if (!Config::get('shop_enabled')) {
+            $retval .= SHOP_errorMessage($LANG_SHOP['shop_closed'], 'danger');
         }
         return $retval;
     }
@@ -505,11 +578,9 @@ class Menu
      */
     public static function siteFooter()
     {
-        global $_SHOP_CONF;
-
         $retval = '';
 
-        switch($_SHOP_CONF['displayblocks']) {
+        switch(Config::get('displayblocks')) {
         case 2 : // right only
         case 3 : // left and right
             $retval .= COM_siteFooter();
@@ -524,8 +595,43 @@ class Menu
         return $retval;
     }
 
+
+    /**
+     * Show the submenu for the checkout workflow.
+     *
+     * @param   object  $Cart   Cart object, to see what steps are needed
+     * @param   string  $step   Current step name
+     * @return  string      HTML for workflow menu
+     */
+    public static function checkoutFlow($Cart, $step = 'viewcart')
+    {
+        $Flows = Workflow::getAll();
+        $flow_count = 0;
+        $T = new Template('workflow/');
+        $T->set_file('menu', 'menu.thtml');
+        $T->set_block('menu', 'Flows', 'Flow');
+        foreach ($Flows as $Flow) {
+            if (!$Flow->isNeeded($Cart)) {
+                continue;
+            }
+            $flow_count++;
+            $T->set_var(array(
+                'mnu_cls' => 'completed',
+                'wf_name' => $Flow->getName(),
+                'wf_title' => $Flow->getTitle(),
+                'is_done' => $Flow->isSatisfied($Cart) ? 1 : 0,
+                'is_active' => $Flow->getName() == $step ? 1 : 0,
+                'current_wf' => $step,
+            ) );
+            $T->parse('Flow', 'Flows', true);
+        }
+        $T->set_var(array(
+            'wrap_form' => $step != 'confirm',
+            'flow_count' => $flow_count,
+            'pi_url' => Config::get('url'),
+        ) );
+        $T->parse('output', 'menu');
+        return $T->finish($T->get_var('output'));
+    }
+
 }
-
-?>
-
-

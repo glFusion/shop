@@ -1,0 +1,52 @@
+{# begin {templatelocation} #}
+<h2>
+{!if region_id}
+    {$LANG_SHOP['edit']}: {$LANG_SHOP['region']}
+{!else}
+    {$LANG_SHOP['new_item']}: {$LANG_SHOP['region']}
+{!endif}
+</h2>
+<form action="{site_admin_url}/plugins/shop/regions.php" method="post"
+    class="uk-form uk-form-horizontal">
+    <input type="hidden" name="region_id" value="{region_id}" />
+
+    <div class="uk-form-row uk-margin">
+        <label class="uk-form-label" for="f_name">{$LANG_SHOP['code']}:
+            <span id="hlp_region_code" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input class="uk-input uk-form-small uk-form-width-xsmall" required type="text" id="f_code" name="region_code" value="{region_code}" />
+        </div>
+    </div>
+
+    <div class="uk-form-row uk-margin">
+        <label class="uk-form-label" for="f_name">{$LANG_SHOP['name']}:
+            <span id="hlp_region_name" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls">
+            <input class="uk-input uk-form-small uk-form-width-large" required type="text" id="f_name" name="region_name" value="{region_name}" />
+            <i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+        </div>
+    </div>
+
+    <div class="uk-form-row uk-margin">
+        <label class="uk-form-label">{$LANG_SHOP['enabled']}:
+            <span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
+        </label>
+        <div class="uk-form-controls uk-form-controls-text">
+            <input class="uk-checkbox" type="checkbox" id="f_enabled" name="region_enabled" {ena_chk} value="1" />
+        </div>
+    </div>
+
+    <div class="uk-form-row uk-margin" style="margin-top:10px;">
+        <label class="uk-form-label">&nbsp;</label>
+        <div class="uk-form-controls" style="text-align:center;">
+            <button class="uk-button uk-button-success" type="submit" name="saveregion">{$LANG_ADMIN['submit']}</button>
+            <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
+            <a class="uk-button" type="reset" name="regions"
+                href="{site_admin_url}/plugins/shop/regions.php">{$LANG_ADMIN['cancel']}</a>
+        </div>
+    </div>
+</form>
+{tooltipster_js}
+ {# begin {templatelocation} #}

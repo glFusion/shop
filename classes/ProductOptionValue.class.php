@@ -22,7 +22,7 @@ class ProductOptionValue
 {
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -30,27 +30,27 @@ class ProductOptionValue
 
     /** Record ID.
      * @var integer */
-    private $pov_id;
+    private $pov_id = 0;
 
     /** Option Group record ID.
      * @var integer */
-    private $pog_id;
+    private $pog_id = 0;
 
     /** Option value.
      * @var string */
-    private $pov_value;
+    private $pov_value = '';
 
     /** Option price impact.
      * @var float */
-    private $pov_price;
+    private $pov_price = 0;
 
     /** Orderby option for selection.
      * @var integer */
-    private $orderby;
+    private $orderby = 9999;
 
     /** SKU component for this option.
      * @var string */
-    private $sku;
+    private $sku = '';
 
 
     /**
@@ -63,8 +63,6 @@ class ProductOptionValue
      */
     public function __construct($id=0)
     {
-        $this->isNew = true;
-
         if (is_array($id)) {
             // Received a full Option record already read from the DB
             $this->setVars($id);
@@ -168,7 +166,7 @@ class ProductOptionValue
                 $POG->setName($_POST['pog_name']);
                 $POG->Save();
             }
-            $this->pog_id = $POG->pog_id;
+            $this->pog_id = $POG->getID();
         }
 
         // Make sure the necessary fields are filled in
@@ -199,8 +197,7 @@ class ProductOptionValue
             if ($this->isNew) {
                 $this->pov_id = DB_insertID();
             }
-            self::reOrder($this-pog_id);
-            //Cache::delete('options_' . $this->item_id);
+            self::reOrder($this->pog_id);
             Cache::clear('products');
             Cache::clear('options');
             return true;
@@ -227,6 +224,7 @@ class ProductOptionValue
             return false;
         }
 
+        // Delete from the option->value reference table
         ProductVariant::deleteOptionValue($opt_id);
         DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
         Cache::clear('products');
@@ -247,8 +245,10 @@ class ProductOptionValue
         $sql = "SELECT pov_id FROM {$_TABLES['shop.prod_opt_vals']}
             WHERE pog_id = " . (int)$og_id;
         $res = DB_query($sql);
-        while ($A = DB_fetchArray($sql, false)) {
-            self::Delete($A['pov_id']);
+        if (DB_numRows($res) > 0) {
+            while ($A = DB_fetchArray($sql, false)) {
+                self::Delete($A['pov_id']);
+            }
         }
     }
 
@@ -281,7 +281,7 @@ class ProductOptionValue
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template('admin');
         $T->set_file('optform', 'option_val_form.thtml');
         $id = $this->pov_id;
 
@@ -289,13 +289,16 @@ class ProductOptionValue
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_opt'] . ': ' . $this->pov_value);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->pov_value);
             $T->set_var('pov_id', $id);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_option']);
-            $this->pog_id = ProductOptionGroup::getFirst()->getID();
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
             $T->set_var('pov_id', '');
+            if ($this->pog_id == 0) {
+                $this->pog_id = ProductOptionGroup::getFirst()->getID();
+            }
         }
+
         $T->set_var(array(
             'action_url'    => SHOP_ADMIN_URL,
             'pi_url'        => SHOP_URL,
@@ -308,7 +311,7 @@ class ProductOptionValue
                         $_TABLES['shop.prod_opt_grps'],
                         'pog_id,pog_name',
                         $this->pog_id,
-                        0
+                        1
                     ),
             'orderby_opts'  => self::getOrderbyOpts($this->pog_id, $this->orderby),
             'sku'           => $this->sku,
@@ -364,7 +367,8 @@ class ProductOptionValue
             $order += $stepNumber;
         }
         if ($changed) {
-            Cache::clear();
+            Cache::clear('products');
+            Cache::clear('options');
         }
     }
 
@@ -476,13 +480,11 @@ class ProductOptionValue
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink($LANG_SHOP['new_opt'],
-            SHOP_ADMIN_URL . '/index.php?pov_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pov_edit=0',
+            'style' => 'success',
+        ) );
         $def_filter = '';
         $query_arr = array(
             'table' => 'shop.prod_opt_values',
@@ -491,9 +493,14 @@ class ProductOptionValue
             'default_filter' => $def_filter,
         );
 
-        $text_arr = array();
+        $text_arr = array(
+            'form_url' => SHOP_ADMIN_URL . '/index.php?options=x',
+        );
         $filter = '';
-        $options = array();
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'pov_id',
+        );
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_attrlist',
             array(__CLASS__,  'getAdminField'),
@@ -535,49 +542,38 @@ class ProductOptionValue
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array(
-                    'title' => $LANG_ADMIN['edit'],
-                ) ),
-                SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;opt_id={$A['pov_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pov_edit=x&amp;opt_id={$A['pov_id']}",
+            ) );
             break;
 
         case 'orderby':
-            $retval = COM_createLink(
-                Icon::getHTML('arrow-up'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['pov_id']
-            ) .
-            COM_createLink(
-                Icon::getHTML('arrow-down'),
-                SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['pov_id']
-            );
+            $retval = FieldList::up(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?pov_move=up&id=' . $A['pov_id'],
+            ) ) .
+            FieldList::down(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?pov_move=down&id=' . $A['pov_id'],
+            ) );
             break;
 
         case 'enabled':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                id=\"togenabled{$A['pov_id']}\"
-                onclick='SHOP_toggle(this,\"{$A['pov_id']}\",\"enabled\",".
-                "\"option\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['pov_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['pov_id']}','enabled','option);",
+            ) );
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pov_del=x&amp;opt_id=' . $A['pov_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_pov'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'opt_price':
@@ -683,9 +679,9 @@ class ProductOptionValue
 
         $prod_id = (int)$prod_id;
         $og_id = (int)$og_id;
-        //$cache_key = 'options_' . $prod_id . '_' . $og_id;
-        //$opts = Cache::get($cache_key);
-        //if ($opts === NULL) {
+        $cache_key = 'options_' . $prod_id . '_' . $og_id;
+        $opts = Cache::get($cache_key);
+        if ($opts === NULL) {
             $opts = array();
             $sql = "SELECT pov.* FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
@@ -703,8 +699,8 @@ class ProductOptionValue
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);
             }
-            //Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
-        //}
+            Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
+        }
         return $opts;
     }
 
@@ -768,10 +764,12 @@ class ProductOptionValue
      * Set the OptionGroup ID for this value.
      *
      * @param   integer $grp_id     ProductOptionGroup ID
+     * @return  object  $this
      */
     public function setGroupID($grp_id)
     {
         $this->pog_id = $grp_id;
+        return $this;
     }
 
 
@@ -779,10 +777,12 @@ class ProductOptionValue
      * Set the product ID for this value.
      *
      * @param   integer $item_id    Product ID
+     * @return  object  $this
      */
     public function setItemID($item_id)
     {
         $this->item_id = $item_id;
+        return $this;
     }
 
 }

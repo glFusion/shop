@@ -1,56 +1,56 @@
 {# begin {templatelocation} #}
 <div class="shopProductListOuter v1">
 <!-- BEGIN ProductItems -->
-    <div class="shopProductListItem v1 uk-grid">
-        <div class="ItemUrl v1 uk-width-1-3">
-            <div class="shortdescription">
+	<div class="shopProductListItem v1 uk-grid">
+		<div class="ItemUrl v1 uk-width-1-3">
+			<div class="shortdescription">
 {!if item_url}
-                <a class="itemname" href="{item_url}">{short_description}</a>
+				<a class="itemname" href="{item_url}">{short_description}</a>
 {!else}
-                {short_description}
+				{short_description}
 {!endif}
-            </div>
-            <div class="ItemImage">
+			</div>
+			<div class="ItemImage">
 {!if small_pic}
-  {!if item_url}
-                <a href="{item_url}"><img src="{small_pic}" alt="{name}" /></a>
-  {!else}
-                <img src="{small_pic}" alt="{name}" />
-  {!endif}
+{!if item_url}
+				<a href="{item_url}"><img src="{small_pic}" alt="{name}" /></a>
 {!else}
-                &nbsp;
+				<img src="{small_pic}" alt="{name}" />
 {!endif}
-            </div>
-        </div>
+{!else}
+				&nbsp;
+{!endif}
+			</div>
+		</div>
 
-        <div class="uk-width-1-3">
+		<div class="uk-width-1-3">
 {!if rating_bar}
-            <div class="uk-hidden-small ppRatingBar list v1">{rating_bar}</div>
+			<div class="uk-hidden-small shopRatingBar list v1">{rating_bar}</div>
 {!endif}
-        </div>
+		</div>
 
-        <div class="ItemButtons uk-width-1-3">
+		<div class="ItemButtons uk-width-1-3">
 {!if price}
-            <div class="shopPrice list v1">
-  {!if on_sale}
-                <span class="shopPrice was">{orig_price}</span>
-                <span class="shopPrice sale">{price}</span>
-  {!else}
-                <span class="shopPrice list v1 normal">
-                {price}</span>
-  {!endif}
-            </div>
+			<div class="shopPrice list v1">
+{!if on_sale}
+				<span class="shopPrice was">{orig_price}</span>
+				<span class="shopPrice sale">{price}</span>
+{!else}
+				<span class="shopPrice list v1 normal">
+				{price}</span>
+{!endif}
+			</div>
 {!endif}
 {!if oos}
-            <span class="shopOnhand sm v1 floatright">({$LANG_SHOP['oos_short']})</span>
+			<span class="shopOnhand sm v1 floatright">({$LANG_SHOP['oos_short']})</span>
 {!endif}
 <!-- BEGIN BtnBlock -->
-            <div style="clear:right;overflow:auto;padding-bottom:2px;padding-top:2px;">
-            {button}
-            </div>
+			<div style="clear:right;overflow:auto;padding-bottom:2px;padding-top:2px;">
+			{button}
+			</div>
 <!-- END BtnBlock -->
-        </div>
-    </div>
+		</div>
+	</div>
 <!-- END ProductItems -->
 </div>
 {# end {templatelocation} #}

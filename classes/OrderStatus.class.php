@@ -13,6 +13,7 @@
  */
 namespace Shop;
 
+
 /**
  * Class for order processing workflow items.
  * Order statuses are defined in the database and can be re-ordered and
@@ -21,7 +22,7 @@ namespace Shop;
  */
 class OrderStatus extends Workflow
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table name.
      * @var string */
@@ -121,11 +122,29 @@ class OrderStatus extends Workflow
     {
         global $LANG_SHOP;
 
-        $T = SHOP_getTemplate('orderstatus', 'ordstat');
+        /* TODO - glFusion 2.0 */
+        $options = array();
+        foreach (self::getAll() as $key => $data) {
+            if (!$data->enabled) continue;
+            $options[self::getDscp($key)] = array(
+                'selected' => $key == $selected,
+                'value' => $key,
+            );
+        }
+        $status_selection = FieldList::select(array(
+            'name' => 'newstatus[' . $order_id . ']',
+            'id' => 'statSelect_' . $order_id,
+            'onchange' => "SHOP_ordShowStatSubmit('{$order_id}', SHOP_getStatus('{$order_id}'), this.value);",
+            'options' => $options,
+        ) );
+
+        $T = new Template;
+        $T->set_file('ordstat', 'orderstatus.thtml');
         $T->set_var(array(
             'order_id'  => $order_id,
             'oldvalue'  => $selected,
             'showlog'   => $showlog == 1 ? 1 : 0,
+            'status_select' => $status_selection,
         ) );
         $T->set_block('ordstat', 'StatusSelect', 'Sel');
         foreach (self::getAll() as $key => $data) {
@@ -162,41 +181,6 @@ class OrderStatus extends Workflow
     public function notifyAdmin()
     {
         return $this->notify_admin == 1 ? true : false;
-    }
-
-
-    /**
-     * Toggles a DB field from the given value to the opposite.
-     *
-     * @param   integer $id         ID number of element to modify
-     * @param   string  $field      Database fieldname to change
-     * @param   integer $oldvalue   Original value to change
-     * @return  integer     New value, or old value upon failure
-     */
-    public static function XToggle($id, $field, $oldvalue)
-    {
-        global $_TABLES;
-
-        $oldvalue = $oldvalue == 0 ? 0 : 1;
-        $id = (int)$id;
-        if ($id < 1)
-            return $oldvalue;
-        $field = DB_escapeString($field);
-
-        // Determing the new value (opposite the old)
-        $newvalue = $oldvalue == 1 ? 0 : 1;
-
-        $sql = "UPDATE {$_TABLES[self::$TABLE]}
-                SET $field = $newvalue
-                WHERE id ='$id'";
-        //echo $sql;die;
-        DB_query($sql, 1);
-        if (!DB_error()) {
-            return $newvalue;
-        } else {
-            SHOP_log("OrderStatus::Toggle() SQL error: $sql", SHOP_LOG_ERROR);
-            return $oldvalue;
-        }
     }
 
 
@@ -316,17 +300,12 @@ class OrderStatus extends Workflow
         case 'enabled':
         case 'notify_buyer':
         case 'notify_admin':
-            if ($fieldvalue == '1') {
-                $switch = ' checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"{$fieldname}_check\"
-                id=\"tog{$fieldname}{$A['id']}\"
-                onclick='SHOP_toggle(this,\"{$A['id']}\",\"{$fieldname}\",".
-                "\"orderstatus\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => "{$fieldname}_check",
+                'id' => "tog{$fieldname}{$A['id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['id']}','{$fieldname}','orderstatus');",
+            ) );
             break;
 
         case 'name':
@@ -342,5 +321,3 @@ class OrderStatus extends Workflow
     }
 
 }
-
-?>

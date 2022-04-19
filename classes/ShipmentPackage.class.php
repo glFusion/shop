@@ -23,27 +23,27 @@ class ShipmentPackage
 {
     /** Package record ID.
      * @var integer */
-    private $pkg_id;
+    private $pkg_id = 0;
 
     /** Record ID of shipment containing this package.
      * @var integer */
-    private $shipment_id;
+    private $shipment_id = 0;
 
     /** Record ID of the shipper for this package.
      * @var integer */
-    private $shipper_id;
+    private $shipper_id = 0;
 
     /** Information about the shipper.
      * @var string */
-    private $shipper_info;
+    private $shipper_info = '';
 
     /** Package tracking number.
      * @var string */
-    private $tracking_num;
+    private $tracking_num = '';
 
     /** General comment entered about the package.
      * @var string */
-    private $comment;
+    private $comment = '';
 
 
     /**

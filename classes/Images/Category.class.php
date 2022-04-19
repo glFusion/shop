@@ -32,20 +32,6 @@ class Category extends \Shop\Image
      * @var integer */
     protected static $maxheight = 300;
 
-    /**
-     * Constructor.
-     *
-     * @param   integer $record_id Product ID number
-     * @param   string  $varname    Name of form field
-     */
-/*    public function __construct($record_id, $varname='photo')
-    {
-        global $_SHOP_CONF;
-
-        $this->pathImage = $_SHOP_CONF[self::$pathkey];
-        parent::__construct($record_id, $varname);
-    }
- */
 
     /**
      * Perform the file upload.

@@ -38,13 +38,16 @@ class MigratePP
             return false;
         }
 
-        // Perform the migration. Don't migrate the button cache.
+        // Always make sure the cache is cleared
+        Cache::clear();
+
+        // Perform the migration.
+        // Don't migrate the button cache or workflows table.
         // Clear out the Shop tables and insert data from Paypal.
         // These tables have the same schema between Paypal 0.6.0 and Shop.
         $tables = array(
-            'coupon_log',
             'order_log', 'orderstatus',
-            'workflows', 'currency',
+            'currency',
         );
         foreach ($tables as $table) {
             if (!self::migrateTable($table)) {
@@ -171,14 +174,25 @@ class MigratePP
         global $_TABLES;
 
         COM_errorLog("Migrating Coupons ...");
-        return self::_dbExecute(array(
+        $status = self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.coupons']}",
             "INSERT INTO {$_TABLES['shop.coupons']}
                 SELECT *, 'valid' as status
                 FROM {$_TABLES['paypal.coupons']}",
         ) );
-    }
+        if (!status) {
+            return false;
+        }
 
+        // Now migrate the coupon log
+        $status = self::_dbExecute(array(
+            "TRUNCATE {$_TABLES['shop.coupon_log']}",
+            "INSERT INTO {$_TABLES['shop.coupon_log']}
+                SELECT id, uid, 2, code, ts, order_id, amount, msg
+                FROM {$_TABLES['paypal.coupon_log']}",
+        ) );
+        return $status;
+    }
 
 
     /**
@@ -225,7 +239,7 @@ class MigratePP
                 `featured`, `dt_add`, `views`, `comments_enabled`, `rating_enabled`,
                 `buttons`, `rating`, `votes`, `weight`, `taxable`, `shipping_type`,
                 `shipping_amt`, `shipping_units`, `show_random`, `show_popular`,
-                `options`, `track_onhand`, `onhand`, `oversell`, `qty_discounts`,
+                `options`, `track_onhand`, `oversell`, `qty_discounts`,
                 `custom`, `avail_beg`, `avail_end`,
                 `brand`, `min_ord_qty`, `max_ord_qty`
             ) SELECT
@@ -234,7 +248,7 @@ class MigratePP
                 `featured`, `dt_add`, `views`, `comments_enabled`, `rating_enabled`,
                 `buttons`, `rating`, `votes`, `weight`, `taxable`, `shipping_type`,
                 `shipping_amt`, `shipping_units`, `show_random`, `show_popular`,
-                `options`, `track_onhand`, `onhand`, `oversell`, `qty_discounts`,
+                `options`, `track_onhand`, `oversell`, `qty_discounts`,
                 `custom`, `avail_beg`, `avail_end`,
                 '' as brand, 1 as min_ord_qty, 0 as max_ord_qty
             FROM {$_TABLES['paypal.products']}",
@@ -270,22 +284,27 @@ class MigratePP
         $sql = array(
             "TRUNCATE {$_TABLES['shop.orders']}",
             "INSERT INTO {$_TABLES['shop.orders']} (
-                order_id, uid, order_date, last_mod, billto_id,
-                billto_name, billto_company, billto_address1, billto_address2,
-                billto_city, billto_state, billto_country, billto_zip,
-                shipto_id, shipto_name, shipto_company, shipto_address1,
-                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
-                phone, buyer_email, gross_items, net_nontax, net_taxable, order_total,
+                order_id, uid, order_date, last_mod,
+                billto_id, billto_name, billto_company,
+                billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip, billto_phone,
+                shipto_id, shipto_name, shipto_company,
+                shipto_address1, shipto_address2,
+                shipto_city, shipto_state, shipto_country, shipto_zip, shipto_phone,
+                buyer_email,
+                gross_items, net_nontax, net_taxable, order_total,
                 tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
                 instructions, token, tax_rate, info, currency, order_seq,
                 shipper_id, discount_code, discount_pct
             ) SELECT
-                order_id, uid, order_date, last_mod, billto_id,
-                billto_name, billto_company, billto_address1, billto_address2,
-                billto_city, billto_state, billto_country, billto_zip,
-                shipto_id, shipto_name, shipto_company, shipto_address1,
-                shipto_address2, shipto_city, shipto_state, shipto_country, shipto_zip,
-                phone, buyer_email,
+                order_id, uid, order_date, last_mod,
+                billto_id, billto_name, billto_company,
+                billto_address1, billto_address2,
+                billto_city, billto_state, billto_country, billto_zip, phone,
+                shipto_id, shipto_name, shipto_company,
+                shipto_address1, shipto_address2,
+                shipto_city, shipto_state, shipto_country, shipto_zip, phone,
+                buyer_email,
                 0 as gross_items, 0 as net_nontax, 0 as net_taxable, 0 as order_total,
                 tax, shipping, handling, by_gc, status, pmt_method, pmt_txn_id,
                 instructions, token, tax_rate, info, $currency, $order_seq,
@@ -379,7 +398,6 @@ class MigratePP
                 $Item = new \Shop\OrderItem($A);
                 foreach ($opt_ids as $opt_id) {
                     $OIO = new \Shop\OrderItemOption();
-                    $OIO->oi_id = $A['id'];
                     $OIO->setOpt($opt_id);
                     $OIO->Save();
                 }
@@ -389,11 +407,10 @@ class MigratePP
             if (isset($extras['custom']) && !empty($extras['custom'])) {
                 $values = $extras['custom'];
                 $P = \Shop\Product::getByID($A['product_id']);
-                $names = explode('|', $P->custom);
+                $names = explode('|', $P->getCustom());
                 foreach($names as $id=>$name) {
                     if (!empty($values[$id])) {
                         $OIO = new \Shop\OrderItemOption();
-                        $OIO->oi_id = $A['id'];
                         $OIO->setOpt(0, $name, $values[$id]);
                         $OIO->Save();
                     }
@@ -416,10 +433,10 @@ class MigratePP
         global $_TABLES;
 
         COM_errorLog("Migrating Option Values ...");
-        if (self::tableHasIndex('shop.prod_opt_vals', 'item_id')) {
+        if (self::_tableHasIndex('shop.prod_opt_vals', 'item_id')) {
             self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `item_id`");
         }
-        if (self::tableHasIndex('shop.prod_opt_vals', 'pog_value')) {
+        if (self::_tableHasIndex('shop.prod_opt_vals', 'pog_value')) {
             // Drop key so duplicate values can be created, it will be
             // replaced in createVariants()
             self::_dbExecute("ALTER TABLE {$_TABLES['shop.prod_opt_vals']} DROP KEY `pog_value`");
@@ -589,7 +606,7 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.gateways']}",
             "INSERT INTO {$_TABLES['shop.gateways']}
-                SELECT *, 2 as grp_access
+                SELECT *, 2 as grp_access, '1.3.0' as version
                 FROM {$_TABLES['paypal.gateways']}",
         ) );
     }
@@ -627,7 +644,8 @@ class MigratePP
         return self::_dbExecute(array(
             "TRUNCATE {$_TABLES['shop.ipnlog']}",
             "INSERT INTO {$_TABLES['shop.ipnlog']}
-                SELECT *, '' as order_id
+                SELECT
+                    id, ip_addr, ts, verified, txn_id, gateway, '', ipn_data, ''
                 FROM {$_TABLES['paypal.ipnlog']}",
         ) );
     }
@@ -891,15 +909,10 @@ class MigratePP
             'prod' => array(
                 'receiver_email'    => $cfg['bus_prod_email'],
                 'micro_receiver_email'  => $cfg['micro_prod_email'],
-                'micro_cert_id'     => $cfg['micro_cert_id'],
-                'endpoint'          => $cfg['prod_url'],
-                'webhook_id'   => '',
                 'pp_cert'           => $cfg['pp_cert'],
                 'pp_cert_id'        => $cfg['pp_cert_id'],
                 'micro_cert'        => $cfg['micro_cert'],
                 'micro_cert_id'     => $cfg['micro_cert_id'],
-                'api_username'      => '',
-                'api_password'      => '',
             ),
             'test' => array(
                 'receiver_email'    => $cfg['bus_test_email'],
@@ -908,9 +921,6 @@ class MigratePP
                 'pp_cert_id'        => $cfg['pp_cert_id'],
                 'micro_cert'        => $cfg['micro_cert'],
                 'micro_cert_id'     => $cfg['micro_cert_id'],
-                'webhook_id' => '',
-                'api_username'      => '',
-                'api_password'      => '',
             ),
             'global' => array(
                 'micro_threshold'   => $cfg['micro_threshold'],

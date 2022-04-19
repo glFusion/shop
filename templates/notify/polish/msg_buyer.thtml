@@ -1,0 +1,52 @@
+{header}
+<p>Dziękujemy za zakup w {site_name}. Szczegóły Twojego zakupu:</p>
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+Możesz pobrać zakupione pliki, korzystając z następujących łączy:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Instrukcje specjalne: {order_instr}</p>
+{!endif}
+{!if pending}
+<p>
+Twoja płatność oczekuje. Po otrzymaniu płatności otrzymasz
+kolejna wiadomość e-mail potwierdzająca płatność.
+</p>
+{!endif}
+<p>Możesz zobaczyć swoje zamówienie pod adresem {order_url}
+{!if has_downloads}
+<br />Twoje zakupy do pobrania można pobrać z powyższego łącza.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p><b>Wiadomość:</b><br />{gw_msg}</p>
+{!endif}
+
+{!if affiliate_id}
+<p>
+Poleć znajomego i otrzymuj bonusy za polecenie! Twój link partnerski to {affiliate_link}.
+{!if affiliate_info}
+Odwiedź adres <a href="{affiliate_info}">{affiliate_info}</a>, aby uzyskać szczegółowe informacje.
+<br />Visit for details.
+{!endif}
+</p>
+{!endif}
+
+{!if gc_bal_num}
+<p>
+Masz pozostałe saldo karty podarunkowej w wysokości {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Dzięki,<br />
+{footer}
+</p>

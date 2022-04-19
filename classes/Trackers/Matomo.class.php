@@ -1,6 +1,7 @@
 <?php
 
 namespace Shop\Trackers;
+use Shop\Order;
 
 class Matomo extends \Shop\Tracker
 {
@@ -51,7 +52,7 @@ class Matomo extends \Shop\Tracker
      *
      * @return  string      Tracking code
      */
-    public function getCode()
+    public function getCode() : string
     {
         global $_CONF;
 
@@ -68,7 +69,8 @@ class Matomo extends \Shop\Tracker
         
         $T->parse('output', 'tracker');
         //var_dump($T->finish ($T->get_var('output')));die;
-        return $T->finish ($T->get_var('output'));
+        $retval = $T->finish($T->get_var('output'));
+        return $retval;
     }
 
 
@@ -123,7 +125,7 @@ class Matomo extends \Shop\Tracker
             $price,
             $qty
         ]);");
-        
+
         /// Records the cart for this visit
         //$this->_addCode("_paq.push(['trackEcommerceCartUpdate', $price]);");
         return $this;
@@ -173,7 +175,7 @@ class Matomo extends \Shop\Tracker
     }
 
 
-    public function confirmOrder($Ord, $session_id)
+    public function confirmOrder(Order $Ord, ?string $session_id=NULL) : bool
     {
         $cid = self::makeCid($session_id);
         $net_items = 0;
@@ -182,17 +184,19 @@ class Matomo extends \Shop\Tracker
             $sku = $Item->getProductId();
             $dscp = $Item->getDscp();
             $price = $Item->getPrice();
-            $cats = array();
+            $qty = $Item->getQuantity();
+            /*$cats = array();
             foreach ($Item->getProduct()->getCategories() as $Cat) {
                 $cats[] = $Cat->getName();
             }
-            $cats = !empty($cats) ? json_encode($cats) : '';
+            //$cats = !empty($cats) ? json_encode($cats) : '';
+            $cats = !empty($cats) ? implode(',', $cats) : '';*/
             $items[] = array(
-                $Item->getProductId(),
-                $Item->getDscp(),
-                $cats,
-                $Item->getPrice(),
-                $Item->getQuantity(),
+                $sku,
+                $dscp,
+                '',   //$cats,
+                $price,
+                $qty,
             ); 
             $net_items += $Item->getNetPrice() * $Item->getQuantity();
         }
@@ -231,7 +235,6 @@ class Matomo extends \Shop\Tracker
         );
         $params = implode('&', $params);*/
         $params = http_build_query($params);
-        echo $params;die;
         return self::_curlExec($this->getAPIUrl() . '/matomo.php?' . $params);
     }
 
@@ -255,4 +258,3 @@ class Matomo extends \Shop\Tracker
 
 }
 
-?>

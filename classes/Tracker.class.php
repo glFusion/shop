@@ -1,6 +1,7 @@
 <?php
 
 namespace Shop;
+use Shop\Order;
 
 class Tracker
 {
@@ -67,12 +68,12 @@ class Tracker
         return $this;
     }
 
-    public function confirmOrder($Ord, $session_id)
-    {
+    public function confirmOrder(Order $Ord, ?string $session_id=NULL) : bool
+    { 
         return true;
     }
 
-    protected function _curlExec($url)
+    protected function _curlExec(string $url) : bool
     {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);

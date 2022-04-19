@@ -3,9 +3,9 @@
  * Class to handle category images.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.3.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -20,7 +20,7 @@ namespace Shop\Images;
  */
 class Supplier extends \Shop\Image
 {
-    /** Key into $_SHOP_CONF where the image path can be found.
+    /** Key into the configuration where the image path can be found.
      * @var string */
     protected static $pathkey = 'brands';
 
@@ -34,34 +34,7 @@ class Supplier extends \Shop\Image
 
 
     /**
-     * Constructor.
-     *
-     * @param   integer $record_id Product ID number
-     * @param   string  $varname    Name of form field
-     */
-/*    public function __construct($record_id, $varname='logofile')
-    {
-        global $_SHOP_CONF;
-
-        $this->pathImage = "{$_SHOP_CONF['tmpdir']}images/brands";
-        parent::__construct($record_id, $varname);
-    }
- */
-
-    /**
-     * Create the target filename for the image file.
-     * Suppliers/Brands simply names the image for the record ID.
-     *
-     * @return  string      File name
-     */
-    protected function makeFileName()
-    {
-        return $this->record_id . '.jpg';
-    }
-
-
-    /**
-     * Delete a category image from disk and the table.
+     * Delete a supplier logo image from disk and the table.
      * Intended to be called from ajax.php.
      *
      * @param   integer $rec_id     Record ID
@@ -70,11 +43,12 @@ class Supplier extends \Shop\Image
      */
     public static function DeleteImage($rec_id, $nonce)
     {
-        $rec_id = (int)$rec_id;
-        @unlink("{$_SHOP_CONF['tmpdir']}images/brands/{$rec_id}.jpg");
+        $Supplier = Supplier::getInstance($rec_id);
+        if ($Supplier->getID()) {
+            @unlink(Config::get('tmpdir') . "/images/brands/" . $Supplier->getImageName());
+            $Supplier->setImageName('')->Save();
+        }
         return true;
     }
 
 }
-
-?>

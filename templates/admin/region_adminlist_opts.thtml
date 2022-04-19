@@ -1,0 +1,14 @@
+{# begin {templatelocation} #}
+<button type="submit" name="ena_{key}" value="x"
+	class="uk-button uk-button-mini uk-button-success tooltip"
+	title="{$LANG_ADMIN['enable']}"><i class="uk-icon uk-icon-check"></i></button>&nbsp;
+<button type="submit" name="disa_{key}" value="x"
+	class="uk-button uk-button-mini uk-button-danger tooltip"
+	title="{$LANG_ADMIN['disable']}"><i class="uk-icon uk-icon-remove"></i></button>&nbsp;
+<select class="uk-select uk-form-small uk-form-width-medium" name="rule_id">
+	{zone_options}
+</select>
+<button type="submit" name="rule_add" value="{key}"
+	class="uk-button uk-button-mini uk-button-primary tooltip"
+	title="{$LANG_SHOP['add_to_rule']}">{$LANG_SHOP['add_to_rule']}</button>
+{# end {templatelocation} #}

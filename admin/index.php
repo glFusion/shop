@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -19,8 +19,7 @@ require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check('shop.admin')
 ) {
     COM_404();
@@ -40,37 +39,43 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 // $view for the page to show.  $mode is often set by glFusion functions,
 // so we'll check for it and see if we should use it, but by using $action
 // and $view we don't tend to conflict with glFusion's $mode.
-$action = $_SHOP_CONF['adm_def_view'];
+//$action = $_SHOP_CONF['adm_def_view'];
+$action = '';
 $expected = array(
     // Actions to perform
     'deleteproduct', 'deletecatimage', 'deletecat',
     'saveproduct', 'savecat', 'pov_save', 'pov_del', 'resetbuttons',
     'carrier_save', 'pv_save', 'pv_del', 'pv_del_bulk',
-    'attrcopy', 'pov_move', 'wfmove',
+    'attrcopy', 'pov_move', 'wfmove', 'pv_move',
     'prod_clone', 'runreport', 'configreport', 'sendcards', 'purgecache',
     'delsale', 'savesale', 'purgecarts', 'saveshipper', 'updcartcurrency',
     'delcode', 'savecode', 'save_sup',
     'migrate_pp', 'purge_trans', 'pog_del', 'pog_move', 'pog_save',
     'addshipment', 'updateshipment', 'del_shipment', 'delshipping',
     'importtaxexec', 'savetaxrate', 'deltaxrate', 'statcomment',
-    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del',
+    'prod_bulk_save', 'pv_bulk_save', 'prod_bulk_del', 'prod_bulk_reset',
     'ft_save', 'ft_del', 'ft_move',
     'savepayment', 'delpayment',
+    'coup_bulk_void', 'coup_bulk_unvoid',
+    'pr_save', 'pr_del',
     // Views to display
-    'history', 'orders', 'ipnlog', 'editproduct', 'editcat', 'categories',
+    'ipnlog', 'editproduct', 'editcat', 'categories',
     'pov_edit', 'other',
     'carrier_config',
     'opt_grp', 'pog_edit', 'carriers',
     'wfadmin', 'order', 'reports', 'coupons', 'sendcards_form',
-    'sales', 'editsale', 'editshipper', 'shipping', 'ipndetail',
+    'sales', 'editsale', 'editshipper', 'shipping',
     'codes', 'editcode', 'pv_edit', 'pv_bulk',
     'shiporder', 'editshipment', 'shipment_pl', 'order_pl',
-    'shipments', 'ord_ship', 'ord_pmts', 'newpayment',
+    'newpayment',
     'importtaxform', 'taxrates', 'edittaxrate', 'suppliers', 'edit_sup',
     'prod_bulk_frm','pv_edit_bulk', 'variants', 'options',
     'regions', 'countries', 'states',
     'features', 'ft_view', 'ft_edit',
-    'products',
+    'pi_products', 'pi_edit', 'pi_save', 'pi_del',
+    'products', 'ipndetail', 'pr_edit', 'pr_list',
+    // deprecated
+    'history', 'orders', 'shipments', 'ord_ship', 'ord_pmts',
 );
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -88,7 +93,10 @@ $mode = isset($_REQUEST['mode']) ? $_REQUEST['mode'] : '';
 $view = 'products';     // Default if no correct view specified
 
 switch ($action) {
-case 'statcomment':         // update comment and status
+case 'statcomment':
+    // Update comment and status.
+    // Ignore the notify-buyer setting for the status and go by whether the
+    // checkbox is selected.
     $order_id = SHOP_getVar($_POST, 'order_id');
     $notify = SHOP_getVar($_POST, 'notify', 'integer', 0);
     $comment = SHOP_getVar($_POST, 'comment');
@@ -98,10 +106,10 @@ case 'statcomment':         // update comment and status
         $Ord->updateStatus($newstatus, true, false);
         $Ord->Log($comment);
         if ($notify) {
-            $Ord->Notify($newstatus, $comment, $notify, false);
+            $Ord->Notify($newstatus, $comment, true, false);
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?order=' . $order_id);
+    COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $order_id);
     break;
 
 case 'prod_clone':
@@ -115,22 +123,22 @@ case 'deleteproduct':
     if (!\Shop\Product::isUsed($_REQUEST['id'])) {
         $P->Delete();
     } else {
-        COM_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
+        SHOP_setMsg(sprintf($LANG_SHOP['no_del_item'], $P->name), 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'delshipping':
     if (Shop\Shipper::Delete($actionval)) {
-        COM_setMsg($LANG_SHOP['msg_deleted']);
+        SHOP_setMsg($LANG_SHOP['msg_deleted']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?shipping');
     break;
 
 case 'deletecatimage':
-    $id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
+    $id = SHOP_getVar($_GET, 'cat_id', 'integer');
     if ($id > 0) {
         $C = new \Shop\Category($id);
         $C->deleteImage();
@@ -144,9 +152,9 @@ case 'deletecatimage':
 case 'deletecat':
     $C = \Shop\Category::getInstance($_REQUEST['cat_id']);
     if ($C->getParentID() == 0) {
-        COM_setMsg($LANG_SHOP['dscp_root_cat'], 'error');
+        SHOP_setMsg($LANG_SHOP['dscp_root_cat'], 'error');
     } elseif (\Shop\Category::isUsed($_REQUEST['cat_id'])) {
-        COM_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->getName()), 'error');
+        SHOP_setMsg(sprintf($LANG_SHOP['no_del_cat'], $C->getName()), 'error');
     } else {
         $C->Delete();
     }
@@ -154,15 +162,14 @@ case 'deletecat':
     break;
 
 case 'saveproduct':
-    $url = SHOP_getUrl(SHOP_ADMIN_URL . '/index.php');
     $P = new \Shop\Product($_POST['id']);
     if (!$P->Save($_POST)) {
         $msg = $P->PrintErrors();
         if ($msg != '') {
-            COM_setMsg($msg, 'error');
+            SHOP_setMsg($msg, 'error');
         }
     }
-    COM_refresh($url);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'savecat':
@@ -175,6 +182,11 @@ case 'savecat':
     }
     break;
 
+case 'pi_save':
+    Shop\Products\Plugin::saveConfig($_POST);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pi_products');
+    break;
+
 case 'ft_save':
     $FT = new Shop\Feature($_POST['ft_id']);
     if (!$FT->Save($_POST)) {
@@ -184,7 +196,7 @@ case 'ft_save':
     break;
 
 case 'pog_save':
-    $POG = new \Shop\ProductOptionGroup($_POST['og_id']);
+    $POG = new \Shop\ProductOptionGroup($_POST['pog_id']);
     if (!$POG->Save($_POST)) {
         $content .= COM_showMessageText($LANG_SHOP['invalid_form']);
     }
@@ -194,11 +206,12 @@ case 'pog_save':
 case 'pv_save':
     $from = SESS_getVar('shop.pv_view');
     $pv_id = SHOP_getVar($_POST, 'pv_id', 'integer');
-    $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
     Shop\ProductVariant::getInstance($pv_id)->Save($_POST);
     if ($from == 'pv_bulkedit') {
+        $item_id = SHOP_getVar($_POST, 'item_id', 'integer');
         COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulkedit&item_id=' . $item_id);
     } else {
+        $item_id = SHOP_getVar($_POST, 'pv_item_id', 'integer');
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editproduct&tab=variants&id=' . $item_id);
     }
     break;
@@ -212,7 +225,7 @@ case 'pov_save':
         // Updating an existing option, return to the list
         COM_refresh(SHOP_ADMIN_URL . '/index.php?options=x');
     } else {
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&item_id=' . $_POST['item_id'] . '&pog_id=' . $Opt->getGroupID());
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?pov_edit=x&pog_id=' . $Opt->getGroupID());
     }
     break;
 
@@ -223,7 +236,9 @@ case 'pv_del_bulk':
     }
     Shop\Cache::clear('products');
     Shop\Cache::clear('options');
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . $_GET['item_id']);
+    COM_refresh(
+        SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . SHOP_getVar($_GET, 'item_id', 'integer')
+    );
     break;
 
 case 'pv_del':
@@ -237,29 +252,18 @@ case 'pv_del':
     exit;
     break;
 
-case 'rule_add':
-    $rule_id = SHOP_getVar($_POST, 'rule_id', 'integer', 0);
-    if ($rule_id > 0) {
-        switch ($actionval) {
-        case 'region':
-        case 'country':
-        case 'state':
-            Shop\Rules\Zone::getInstance($rule_id)
-                ->add($actionval, SHOP_getVar($_POST, $actionval . '_id', 'array', array()))
-                ->Save();
-            break;
-        }
-    }
-    COM_refresh(SHOP_ADMIN_URL . '/index.php?' . http_build_query($_GET));
-    break;
-
 case 'ft_del':
     Shop\Feature::Delete($_REQUEST['ft_id']);
     $view = 'features';
     break;
 
+case 'pi_del':
+    $content .= Shop\Products\Plugin::deleteConfig($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?pi_products');
+    break;
+
 case 'pog_del':
-    Shop\ProductOptionGroup::Delete($_REQUEST['og_id']);
+    Shop\ProductOptionGroup::Delete($_REQUEST['pog_id']);
     $view = 'opt_grp';
     break;
 
@@ -271,7 +275,7 @@ case 'pov_del':
 
 case 'resetbuttons':
     DB_query("TRUNCATE {$_TABLES['shop.buttons']}");
-    COM_setMsg($LANG_SHOP['buttons_purged']);
+    SHOP_setMsg($LANG_SHOP['buttons_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
@@ -292,15 +296,15 @@ case 'updcartcurrency':
         }
         $updated++;
     }
-    COM_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
+    SHOP_setMsg(sprintf($LANG_SHOP['x_carts_updated'], $updated));
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'migrate_pp':
     if (Shop\MigratePP::doMigration()) {
-        COM_setMsg($LANG_SHOP['migrate_pp_ok']);
+        SHOP_setMsg($LANG_SHOP['migrate_pp_ok']);
     } else {
-        COM_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
+        SHOP_setMsg($LANG_SHOP['migrate_pp_error'], 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
@@ -311,17 +315,18 @@ case 'purge_trans':
     if (!$_SHOP_CONF['shop_enabled']) {
         \Shop\Order::Purge();
         \Shop\IPN::Purge();
+        \Shop\Payment::Purge();
         \Shop\Products\Coupon::Purge();
         \Shop\Shipment::Purge();
         \Shop\Cache::clear();
-        COM_setMsg($LANG_SHOP['trans_purged']);
+        SHOP_setMsg($LANG_SHOP['trans_purged']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'purgecarts':
     \Shop\Cart::Purge();
-    COM_setMsg($LANG_SHOP['carts_purged']);
+    SHOP_setMsg($LANG_SHOP['carts_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
@@ -340,9 +345,9 @@ case 'carrier_save':
         $status = $Shipper->saveConfig($_POST);
     }
     if ($status) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['err_msg'], 'error');
+        SHOP_setMsg($LANG_SHOP['err_msg'], 'error');
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?carriers');
     break;
@@ -361,6 +366,16 @@ case 'pog_move':
         Shop\ProductOptionGroup::moveRow($og_id, $actionval);
     }
     $view = 'opt_grp';
+    break;
+
+case 'pv_move':
+    $pv_id = SHOP_getVar($_GET, 'id', 'integer');
+    $prod_id = SHOP_getVar($_GET, 'prod_id', 'integer');
+    if ($pv_id > 0) {
+        $PV = new \Shop\ProductVariant($pv_id);
+        $PV->moveRow($actionval);
+    }
+    COM_refresh(SHOP_ADMIN_URL . "/index.php?editproduct=x&id={$PV->getItemID()}&tab=variants");
     break;
 
 case 'pov_move':
@@ -439,40 +454,42 @@ case 'sendcards':
     if ($no_exp == 1) {
         $exp = \Shop\Products\Coupon::MAX_EXP;
     }
-    $status = LGLIB_invokeService('shop', 'sendcards',
+    $status = PLG_callFunctionForOnePlugin(
+        'service_sendcards_shop',
         array(
-            'amount'    => $amt,
-            'members'   => $uids,
-            'group_id'  => $gid,
-            'expires'   => $exp,
-            'notify'    => true,
-        ),
-        $output,
-        $errs
+            1 => array(
+                'amount' => $amt,
+                'members'   => $uids,
+                'group_id'  => $gid,
+                'expires'   => $exp,
+                'notify'    => true,
+            ),
+            2 => &$output,
+            3 => &$errs,
+        )
     );
-
     if (empty($errs)) {
-        COM_setMsg(count($output) . ' coupons sent');
+        SHOP_setMsg(count($output) . ' coupons sent');
     } else {
         $msg = '<ul><li>' . implode('</li><li>', $errs) . '</li></ul>';
-        COM_setMsg($msg, 'error', true);
+        SHOP_setMsg($msg, 'error', true);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?sendcards_form=x');
     break;
 
 case 'purgecache':
     \Shop\Cache::clear();
-    COM_setMsg($LANG_SHOP['cache_purged']);
+    SHOP_setMsg($LANG_SHOP['cache_purged']);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?other=x');
     break;
 
 case 'savesale':
     $D = new \Shop\Sales($_POST['id']);
     if (!$D->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
+        SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editsale&id=' . $D->id);
     } else {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?sales');
     }
     exit;
@@ -482,21 +499,30 @@ case 'save_sup':
     // Save a supplier/brand record
     $Sup = new Shop\Supplier($_POST['sup_id']);
     if ($Sup->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?suppliers');
     } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $Sup->getID());
+        $msg = '';
+        foreach ($Sup->getErrors() as $err) {
+            $msg .= '<li>' . $err . '</li>' . LB;
+        }
+        if (!empty($msg)) {
+            $msg = '<ul>' . $msg . '</ul>';
+        } else {
+            $msg = $LANG_SHOP['msg_nochange'];
+        }
+        SHOP_setMsg($msg, 'error', true);
+        COM_refresh(SHOP_ADMIN_URL . '/index.php?edit_sup=' . $Sup->getID());
     }
     break;
 
 case 'savecode':
     $C = new Shop\DiscountCode($_POST['code_id']);
     if (!$C->Save($_POST)) {
-        //COM_setMsg($LANG_SHOP['msg_nochange']);
+        //SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $C->getCodeID());
     } else {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/index.php?codes');
     }
     exit;
@@ -538,9 +564,9 @@ case 'del_shipment':
 case 'addshipment':
     $S = Shop\Shipment::create($_POST['order_id']);
     if ($S->Save($_POST)) {
-        COM_refresh(SHOP_getUrl(SHOP_ADMIN_URL . '/index.php?order=' . $S->getOrderID()));
+        COM_refresh(SHOP_ADMIN_URL . '/orders.php?order=' . $_POST['order_id']);
     } else {
-        COM_setMsg("Error Adding Shipment, see the error log");
+        SHOP_setMsg("Error Adding Shipment, see the error log");
         COM_refresh(SHOP_ADMIN_URL . '/index.php?shiporder=x&order_id=' . urlencode($_POST['order_id']));
     }
     break;
@@ -554,7 +580,7 @@ case 'savetaxrate':
     $code = $_POST['old_code'];
     $status = Shop\Tax\table::Save($_POST);
     if (!$status) {
-        COM_setMsg("Error Saving tax", true);
+        SHOP_setMsg("Error Saving tax", true);
     }
     if (empty($_POST['old_code'])) {
         COM_refresh(SHOP_ADMIN_URL . '/index.php?edittaxrate');
@@ -571,9 +597,9 @@ case 'deltaxrate':
 
 case 'prod_bulk_save':
     if (Shop\Product::BulkUpdateDo($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
@@ -586,20 +612,31 @@ case 'prod_bulk_del':
             $msg = $LANG_SHOP['msg_some_not_del'];
         }
     }
-    COM_setMsg($msg);
+    SHOP_setMsg($msg);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+    break;
+
+case 'prod_bulk_reset':
+    $prod_ids = SHOP_getVar($_POST, 'prod_bulk', 'array', array());
+    $mag = $LANG_SHOP['msg_updated'];   // assume success
+    foreach ($prod_ids as $id) {
+        RATING_resetRating(Shop\Config::PI_NAME, $id);
+    }
+    SHOP_setMsg($msg);
     COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
     break;
 
 case 'pv_bulk_save':
     if (Shop\ProductVariant::BulkUpdateDo($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
     } else {
-        COM_setMsg($LANG_SHOP['error']);
+        SHOP_setMsg($LANG_SHOP['error']);
     }
     COM_refresh(SHOP_ADMIN_URL . '/index.php?variants');
     break;
 
 case 'savepayment':
+    echo "payments deprecated in index.php";die;
     $Pmt = Shop\Payment::getInstance($_POST['pmt_id']);
     $Pmt->setAmount($_POST['amount'])
         ->setMethod($_POST['gw_id'])
@@ -613,17 +650,32 @@ case 'savepayment':
     COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_POST['order_id']);
     break;
 
+case 'delpayment':
+    echo "payments deprecated in index.php";die;
+    Shop\Payment::delete($actionval);
+    COM_refresh(SHOP_ADMIN_URL . '/index.php?ord_pmts=' . $_GET['ord_pmts']);
+    break;
+
+case 'coup_bulk_void':
+case 'coup_bulk_unvoid':
+    $newval = $actionval;   // should be "void" or "valid"
+    if (isset($_POST['coupon_code']) && is_array($_POST['coupon_code'])) {
+        foreach ($_POST['coupon_code'] as $item_id) {
+            $status = Shop\Products\Coupon::Void($item_id, $newval);
+        }
+    }
+    echo COM_refresh(SHOP_ADMIN_URL . '/index.php?coupons');
+    break;
+
 default:
     $view = $action;
     break;
 }
 
 switch ($view) {
-case 'history':
-    $content .= \Shop\history(true);
-    break;
-
 case 'orders':
+    echo "$view deprecated";die;
+    // Kept kere since this may be the default admin view
     $content .= Shop\Menu::adminOrders($view);
     $R = \Shop\Report::getInstance('orderlist');
     if ($R !== NULL) {
@@ -640,10 +692,11 @@ case 'coupons':
     break;
 
 case 'order':
+    echo "$view deprecated";die;
     $order = \Shop\Order::getInstance($actionval);
-    $order->setAdmin(true);
+    $V = (new \Shop\Views\Invoice)->withOrderId($actionval)->setAdmin(true);
     $content .= Shop\Menu::viewOrder($view, $order);
-    $content .= $order->View('adminview');
+    $content .= $V->Render();
     break;
 
 case 'ipndetail':
@@ -708,6 +761,10 @@ case 'editcat':
     $content .= $C->showForm();
     break;
 
+case 'pi_edit':
+    $content .= Shop\Products\Plugin::edit($actionval);
+    break;
+
 case 'categories':
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Category::adminList();
@@ -757,7 +814,7 @@ case 'shipping':
 
 case 'carriers':
     $content .= Shop\Menu::adminShipping($view);
-    $content .= Shop\Shipper::carrierLIst();
+    $content .= Shop\Shipper::carrierList();
     break;
 
 case 'variants':
@@ -783,11 +840,14 @@ case 'pov_edit':
     $opt_id = SHOP_getVar($_GET, 'opt_id', 'integer');
     $content .= Shop\Menu::adminCatalog($view);
     $Opt = new Shop\ProductOptionValue($opt_id);
+    if ($Opt->getID() == 0) {
+        $Opt->setGroupID(SHOP_getVar($_GET, 'pog_id', 'integer'));
+    }
     $content .= $Opt->Edit();
     break;
 
 case 'pog_edit':
-    $og_id = SHOP_getVar($_GET, 'og_id');
+    $og_id = SHOP_getVar($_GET, 'pog_id');
     $OG = new \Shop\ProductOptionGroup($og_id);
     $content .= Shop\Menu::adminCatalog($view);
     $content .= $OG->Edit();
@@ -806,7 +866,8 @@ case 'editcode':
     break;
 
 case 'other':
-    $T = SHOP_getTemplate('other_functions', 'funcs');
+    $T = new Shop\Template;
+    $T->set_file('funcs', 'other_functions.thtml');
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
         'can_migrate_pp' => Shop\MigratePP::canMigrate(),
@@ -817,7 +878,8 @@ case 'other':
     break;
 
 case 'sendcards_form':
-    $T = SHOP_getTemplate('send_cards', 'cards');
+    $T = new Shop\Template;
+    $T->set_file('cards', 'send_cards.thtml');
     $sql = "SELECT uid,fullname FROM {$_TABLES['users']}
                 WHERE status > 0 AND uid > 1";
     $res = DB_query($sql, 1);
@@ -860,6 +922,7 @@ case 'gwedit':
 
 case 'carrier_config':
     $Shipper = \Shop\Shipper::getByCode($actionval);
+    $content .= Shop\Menu::adminShipping('carriers');
     if ($Shipper !== NULL) {
         $content .= $Shipper->Configure();
     }
@@ -883,6 +946,7 @@ case 'configreport':
 
 case 'editshipper':
     $S = new \Shop\Shipper($actionval);
+    $content .= Shop\Menu::adminShipping('shipping');
     $content .= $S->Edit();
     break;
 
@@ -893,14 +957,15 @@ case 'editshipment':
             SHOP_setUrl($_REQUEST['ret_url']);
         }
         $S = new Shop\Shipment($shipment_id);
-        $V = new Shop\Views\Shipment($S->getOrderID());
-        $V->setShipmentID($shipment_id);
-        $content = $V->Render($action);
+        $V = new Shop\Views\ShipmentForm($S->getOrderID());
+        $V->withShipmentID($shipment_id);
+        $content = $V->Render();
     }
     break;
 
 case 'payments':
 case 'ord_pmts':
+    echo "payments deprecated in index.php";die;
     // View payments on an order
     if ($actionval != 'x') {
         $Order = Shop\Order::getInstance($actionval);
@@ -913,6 +978,7 @@ case 'ord_pmts':
 
 case 'shipments':
 case 'ord_ship':
+    echo "$view deprecated";die;
     // View admin list of shipments
     SHOP_setUrl();
     if ($actionval != 'x') {
@@ -931,16 +997,16 @@ case 'shiporder':
     if (isset($_GET['ret_url'])) {
         SHOP_setUrl($_GET['ret_url']);
     }
-    $V = new Shop\Views\Shipment($_GET['order_id']);
-    $content .= $V->Render($action);
-    /*
-    $Ord = Shop\Order::getInstance($_GET['order_id']);
-    if (!$Ord->isNew) {
+    $V = new Shop\Views\ShipmentForm($_GET['order_id']);
+    $content .= $V->Render();
+    /*$Ord = Shop\Order::getInstance($_GET['order_id']);
+    if (!$Ord->isNew()) {
         $content .= $Ord->View('shipment');
     }*/
     break;
 
 case 'order_pl':
+    echo $view . " DEPRECATED";die;
     // Get the packing list for an entire order.
     // This is expected to be shown in a _blank browser window/tab.
     $PL = new Shop\Views\OrderPL($actionval);
@@ -953,16 +1019,19 @@ case 'order_pl':
     break;
 
 case 'shipment_pl':
+    echo "shipment_pl deprecated";die;
     if ($actionval == 'x') {
         $shipments = SHOP_getVar($_POST, 'shipments', 'array');
     } else {
         $shipments = $actionval;
     }
-    Shop\Views\ShipmentPL::printPDF($shipments, $view);
+    $PL = new Shop\Views\Shipment();
+    $PL->asPackingList()->withOutput('pdf')->withShipmentId($shipments)->Render();
     break;
 
 case 'taxrates':
-    $T = SHOP_getTemplate('upload_tax', 'tpl');
+    $T = new Shop\Template;
+    $T->set_file('tpl', 'upload_tax.thtml');
     $T->set_var(array(
         'admin_url' => SHOP_ADMIN_URL . '/index.php',
         'can_migrate_pp' => Shop\MigratePP::canMigrate(),
@@ -974,7 +1043,7 @@ case 'taxrates':
     break;
 
 case 'edittaxrate':
-    $content .= Shop\Tax\table::Edit($_GET['code']);
+    $content .= Shop\Tax\table::Edit(SHOP_getVar($_GET, 'code'));
     break;
 
 case 'suppliers':
@@ -983,21 +1052,10 @@ case 'suppliers':
     $content .= Shop\Supplier::adminList();
     break;
 
-case 'rules':
-    // Display the list of zone rules
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Rules\Zone::adminList();
-    break;
-
 case 'features':
     // Display the list of features
     $content .= Shop\Menu::adminCatalog($view);
     $content .= Shop\Feature::adminList();
-    break;
-
-case 'rule_edit':
-    $content .= Shop\Menu::adminRegions('rules');
-    $content .= Shop\Rules\Zone::getInstance($actionval)->Edit();
     break;
 
 case 'ft_edit':
@@ -1007,7 +1065,7 @@ case 'ft_edit':
 
 case 'edit_sup':
     // Edit a supplier or brand record
-    $Sup = new Shop\Supplier($_GET['id']);
+    $Sup = new Shop\Supplier($actionval);
     $content .= $Sup->Edit();
     break;
 
@@ -1025,63 +1083,53 @@ case 'prod_bulk_frm':
     $content .= Shop\Product::BulkUpdateForm($_POST['prod_bulk']);
     break;
 
-case 'editregion':
-    echo "$view deprecated";die;
-    $region_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('regions');
-    $content .= Shop\Region::getInstance($region_id)->Edit();
-    break;
-
-case 'editcountry':
-    echo "$view deprecated";die;
-    $country_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('countries');
-    $content .= Shop\Country::getInstance($country_id)->Edit();
-    break;
-
-case 'editstate':
-    echo "$view deprecated";die;
-    $state_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('states');
-    $content .= Shop\State::getInstance($state_id)->Edit();
-    break;
-
-case 'countries':
-    echo "$view deprecated";die;
-    $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Country::adminList($region_id);
-    break;
-
-case 'states':
-    echo "$view deprecated";die;
-    $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\State::adminList($country_id);
-    break;
-
-case 'regions':
-    echo "$view deprecated";die;
-    $content .= Shop\Menu::adminRegions($view);
-    $content .= Shop\Region::adminList();
-    break;
-
 case 'newpayment':
+    echo "deprecated";die;
     $Pmt = new Shop\Payment;
     $Pmt->setOrderID($actionval);
     $content .= $Pmt->pmtForm();
+    break;
+
+case 'products':
+    SHOP_setUrl();
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
     break;
 
 case 'none':
     // Content provided by an action above, don't show anything here
     break;
 
+case 'pi_products':
+    $content .= Shop\Menu::adminCatalog($view);
+    $content .= Shop\Products\Plugin::adminList();
+    break;
+
 default:
     SHOP_setUrl();
-    $view = 'products';     // to set the active menu
-    $cat_id = isset($_GET['cat_id']) ? (int)$_GET['cat_id'] : 0;
-    $content .= Shop\Menu::adminCatalog($view);
-    $content .= Shop\Product::adminList($cat_id);
+    switch ($_SHOP_CONF['adm_def_view']) {
+    case 'orders':
+        $view = 'orders';
+        $content .= Shop\Menu::adminOrders($view);
+        $R = \Shop\Report::getInstance('orderlist');
+        if ($R !== NULL) {
+            $R->setAdmin(true);
+            // Params usually from GET but could be POSTed time period
+            $R->setParams($_REQUEST);
+            $content .= $R->Render();
+        }
+        break;
+    case 'categories':
+        $content .= Shop\Menu::adminCatalog('categories');
+        $content .= Shop\Category::adminList();
+        $view = 'products';     // to set the active menu
+        break;
+    default:
+        $view = 'products';     // to set the active menu
+        $content .= Shop\Menu::adminCatalog('products');
+        $content .= Shop\Product::adminList(SHOP_getVar($_GET, 'cat_id', 'integer'));
+        break;
+    }
     break;
 }
 

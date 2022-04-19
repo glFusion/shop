@@ -2,73 +2,63 @@
 <div class="shopOrderContainer">
 {!if is_admin}
 {!else}
-<div style="display:inline-block;">
-{!if return_url}
-<a href="{return_url}" class="uk-button uk-button-small">
-<i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['go_back']}
-</a>
-{!else}
-<a href="{site_url}/shop" class="uk-button uk-button-small">
-<i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['storefront']}
-</a>
+  {!if return_url}
+        <a href="{return_url}" class="uk-button uk-button-small">
+            <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['go_back']}
+        </a>
+  {!else}
+        <a href="{site_url}/shop" class="uk-button uk-button-small">
+            <i class="uk-icon uk-icon-backward"></i>&nbsp;{$LANG_SHOP['storefront']}
+        </a>
+  {!endif}
+    <h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
 {!endif}
-</div>
-<h1 class="aligncenter">{$LANG_SHOP['order_summary']}</h1>
-{!endif}
+
 {!if not_final}
     <div class="shopOrderButtons">
-      {gateway_vars}
+        {gateway_vars}
     </div>
 {!else}
-  <div class="floatright">
-    {linkPrint}
-{!if is_admin}
-    {linkPackingList}
-{!if itemsToShip}
-    <br />
-    <a class="uk-button uk-button-primary"
-        href="{site_admin_url}/plugins/shop/index.php?shiporder=x&order_id={order_number}&ret_url={ret_url}">{$LANG_SHOP['ship']}</a>
-{!endif}
-{!endif}
-  </div>
+    <div class="floatright">
+        {linkPrint}
+  {!if is_admin}
+        {linkPackingList}
+    {!if itemsToShip}
+        <br />
+        <a class="uk-button uk-button-primary"
+            href="{site_admin_url}/plugins/shop/index.php?shiporder=x&order_id={order_number}&ret_url={ret_url}">{$LANG_SHOP['ship']}</a>
+    {!endif}
+  {!endif}
+    </div>
 {!endif}
 
-  <div class="shopOrder">
+    <div class="shopOrder">
 
 {!if rules_msg}
-    <div class="uk-alert uk-alert-danger">{rules_msg}</div>
+        <div class="uk-alert uk-alert-danger">{rules_msg}</div>
 {!endif}
+        <div uk-grid class="uk-grid uk-child-width-1-1 uk-child-width-1-2@m uk-grid-width-medium-1-2 uk-grid-width-1-1">
+            <div class="orderAddress">
+                <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
+                <br />{billto_addr}
+            </div>
 
-    <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-1-1">
-    <div class="orderAddress">
-      <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
-{!if Xnot_final}
-      <a href="{pi_url}/index.php?view=billto">[{$LANG_ADMIN['edit']}]</a>
-{!endif}
-      <br />
-      {billto_addr}
-    </div>
+            <div class="orderAddress">
+                <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
+                <br />{shipto_addr}
+            </div>
+        </div>
 
-    <div class="orderAddress">
-      <span class="header">{$LANG_SHOP['ship_to']}:</span>&nbsp;
-{!if Xnot_final}
-      <a href="{pi_url}/index.php?view=shipto">[{$LANG_ADMIN['edit']}]</a>
+{!if checkout}
+{!else}
+        <div id="shopOrderNumber">
+  {!if invoice_number}
+            {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
+  {!endif}
+            {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
+            {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
+        </div>
 {!endif}
-      <br />
-      {shipto_addr}
-    </div>
-    </div>
-
-    {!if checkout}
-    {!else}
-    <div id="shopOrderNumber">
-{!if invoice_number}
-      {$LANG_SHOP['invoice_number']}:&nbsp;&nbsp;{invoice_number}<br />
-{!endif}
-      {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
-      {$LANG_SHOP['order_date']}:&nbsp;&nbsp;<span class="tooltip" title="{order_date_tip}">{order_date}</span>
-    </div>
-    {!endif}
 
         <div class="cart">
             <div class="cart-items">
@@ -94,9 +84,9 @@
                                     title="{$LANG_SHOP_HELP['hlp_rules_item']}"></i>
                                 </a>
 {!elseif item_link}
-                                <a href="{item_link}">{img_url}</a>
+                                <a href="{item_link}">{img_url}</a>&nbsp;
 {!else}
-                                {img_url}
+                                {img_url}&nbsp;
 {!endif}
                             </div>
                             <div class="cart-item-title">
@@ -105,6 +95,7 @@
 {!else}
                                 {item_dscp}
 {!endif}
+
 {!if is_file}
                                 &nbsp;&nbsp;<a href="{site_url}/shop/download.php?id={item_id}&token={token}"><button class="uk-button uk-button-primary uk-button-mini">{$LANG_SHOP['download']}</button></a>
 {!endif}
@@ -112,6 +103,7 @@
                                 <br />{sku}
 {!endif}
                                 {item_options}
+                                {item_extras}
                             </div>
                         </div>
                         <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-price">
@@ -134,9 +126,10 @@
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{subtotal}</div>
                 </div>
 {!endif}
+
 {!if dc_row_vis}
                 <div class="uk-grid" style="margin-top:5px;">
-                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code})</div>
+                    <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['disc_code']} ({discount_code} {dc_pct})</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{dc_amt}</div>
                 </div>
                 <div class="uk-grid" style="margin-top:5px;">
@@ -144,36 +137,41 @@
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{net_items}</div>
                 </div>
 {!endif}
+
 {!!if {shipper_id} > 0 || {shipping} > 0 !!}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">
                         {$LANG_SHOP['shipping']}:
-{!if ship_method}
+  {!if ship_method}
                         ({ship_method})
-{!endif}
+  {!endif}
                     </div>
                     <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping}</div>
                 </div>
 {!endif}
+
 {!if handling}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['handling']}</div
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{handling}</div>
                 </div>
-{!if tax_handling}
+  {!if tax_handling}
                 <span class="tooltip" title="{$LANG_SHOP['taxable']}">{tax_icon}</span>
+  {!endif}
 {!endif}
-{!endif}
+
 {!if cart_tax}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['sales_tax']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{cart_tax}</div>
                 </div>
 {!endif}
+
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['total']}</div>
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{total_sign} {total}</div>
                 </div>
+
 {!if apply_gc}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info subtotal">{$LANG_SHOP['apply_gc']}</div>
@@ -184,6 +182,7 @@
                     <div class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{net_total}</div>
                 </div>
 {!endif}
+
 {!if amt_paid_num}
                 <div class="uk-grid" style="margin-top:5px;">
                     <div class="uk-width-1-2 uk-width-medium-5-6 cart-total-info">{$LANG_SHOP['paid']}</div>
@@ -195,114 +194,126 @@
                 </div>
 {!endif}
             </div>
+        </div>
     </div>
-  </div>
 
-  <div id="orderInstructions">
-    <span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
+    <div id="orderInstructions">
+        <span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
+
 {!if order_instr}
-    {order_instr}
+        {order_instr}
 {!else}
-    <span class="orderInstructions">{$LANG_SHOP['none']}</span>
+        <span class="orderInstructions">{$LANG_SHOP['none']}</span>
 {!endif}
-    <div id="orderPaymentMethod" style="margin-top:10px;">
-        <span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />
-        <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span><br />
+        <div id="orderPaymentMethod" style="margin-top:10px;">
+            {!if 0}<span><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_dscp}</span><br />{!endif}
+{!if checkout}
+{!elseif num_payments}
+            <span><b>{$LANG_SHOP['pmt_status']}:</b> {pmt_status}</span>
+{!else}
+            <span><b>{$LANG_SHOP['pmt_status']}:</b> <span class="uk-text-bold uk-text-danger">{pmt_status}</span></span>
+{!if pmt_btn}
+            {pmt_btn}
+{!endif}
+            <br />
+            <b>{$LANG_SHOP['payments']}:</b>
+{!endif}
+{!if num_payments}
+            <table>
+            <tr><th>{$LANG_SHOP['datetime']}</th><th>{$LANG_SHOP['amount']}</th><th>{$LANG_SHOP['paid_by']}</th>
 {!if is_admin}
-        <b>{$LANG_SHOP['payments']}:</b>
-        <table>
-<!-- BEGIN Payments -->
-        <tr>
-        <td>{pmt_amount}</td>
-        <td>{gw_name}</td>
-{!if pmt_txn_id}
-        <td><a href="{ipn_det_url}">{pmt_txn_id}</a></td>
+            <th>{$LANG_SHOP['trans_id']}</th>
 {!endif}
-        </tr>
+            </tr>
+<!-- BEGIN Payments -->
+            <tr>
+                <td>{pmt_date}</td>
+                <td style="text-align:right">{pmt_amount}</td>
+                <td>{gw_name}</td>
+{!!if {is_admin} && {pmt_txn_id} !!}
+                <td><a href="{pmt_det_url}">{pmt_txn_id}</a></td>
+{!endif}
+            </tr>
 <!-- END Payments -->
+            </table>
+{!endif}
+            <p>
+            <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
+            </p>
+        </div>
+        <div style="clear:both;">
+{!if checkout}
+            <div id="orderPmtMethod">{pmt_logo}</div>
+            <div style="float:left;">
+                <button class="uk-button uk-button-primary" type="submit" name="editcart"
+                    value="{$LANG_SHOP['viewcart']}"
+                    onclick="document.location.href='{pi_url}/cart.php?editcart';">{$LANG_SHOP['edit_order']}</button>
+            </div>
+            <div class="shopOrderButtons">
+                {gateway_vars}
+            </div>
+            <div style="clear:both;"></div>
+{!else}
+  {!if ship_method}
+            <p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
+  {!endif}
+  {!if is_admin}
+            <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
+            <p>
+            {$LANG_SHOP['pmt_total']}: {amt_paid_fmt}
+    {!if is_paid}
+            <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
+    {!endif}
+            <form class="uk-form" action="{site_admin_url}/plugins/shop/index.php" method="post">
+                <input type="hidden" name="order_id" value="{order_number}" />
+                <input type="hidden" name="oldstatus" value="{oldstatus}" />
+                {$LANG_SHOP['status']}: <select name="newstatus">
+<!-- BEGIN StatusSelect -->
+                    <option value="{stat_key}" {selected}>{stat_descr}</option>
+<!-- END StatusSelect -->
+                </select>
+                <input type="checkbox" name="notify" value="1" />&nbsp;{$LANG_SHOP['notify_buyer']}
+                <br />
+                <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
+                <br />
+                <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip" name="statcomment"
+                    title="{$LANG_SHOP['update_status']}">
+                    {$LANG_SHOP['upd_stat_cmt']}
+                </button>
+            </form>
+            </p>
+  {!else}
+            <p>{$LANG_SHOP['status']}: {status}</p>
+  {!endif}
+  {!if shipment_block}
+            <div id="orderShipmentBlock">
+                {shipment_block}
+            </div>
+  {!endif}
+            <table id="shopOrderLog">
+            <tr>
+                <th>{$LANG_SHOP['timestamp']}</th>
+  {!if is_admin}
+                <th>{$LANG_SHOP['username']}</th>
+  {!endif}
+                <th>{$LANG_SHOP['message']}</th>
+            </tr>
+<!-- BEGIN LogMessages -->
+            <tr style="line-height: 1.5rem;">
+                <td style="vertical-align:top;white-space:nowrap" class="tooltip" title="{log_ts_tip}">{log_ts}</td>
+  {!if is_admin}
+                <td style="vertical-align:top;white-space:nowrap" >{log_username}</td>
+  {!endif}
+                <td style="vertical-align:top;">{log_msg}</td>
+            </tr>
+<!-- END LogMessages -->
         </table>
 {!endif}
-    <p>
-        <b>{$LANG_SHOP['notify_email']}:</b> {payer_email}
-    </p>
-  </div>
-  <hr />
-  <div style="clear:both;">
-{!if checkout}
-    <div id="orderPmtMethod">{pmt_logo}</div>
-    <div style="float:left;">
-      <button class="uk-button uk-button-primary" type="submit" name="editcart"
-        value="{$LANG_SHOP['viewcart']}"
-        onclick="document.location.href='{pi_url}/cart.php?editcart';">{$LANG_SHOP['edit_order']}</button>
-    </div>
-    <div class="shopOrderButtons">
-      {gateway_vars}
-    </div>
-    <div style="clear:both;"></div>
-{!else}
-{!if ship_method}
-    <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
-{!endif}
-{!if is_admin}
-  <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
-  <p>
-  {$LANG_SHOP['pmt_total']}: {amt_paid_fmt}
-{!if is_paid}
-    <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
-{!endif}
-  <form action="{site_admin_url}/plugins/shop/index.php" method="post">
-    <input type="hidden" name="order_id" value="{order_number}" />
-    <input type="hidden" name="oldstatus" value="{oldstatus}" />
-  {$LANG_SHOP['status']}: <select name="newstatus">
-<!-- BEGIN StatusSelect -->
-    <option value="{stat_key}" {selected}>{stat_descr}</option>
-<!-- END StatusSelect -->
-  </select>
-  <input type="checkbox" name="notify" value="1" />Send update to buyer
-  <br />
-  <textarea id="order_comment" name="comment" rows="3" cols="5" style="width:50%" placeholder="{$LANG_SHOP['comment']}"></textarea>
-  <br />
-  <button type="submit" class="uk-button uk-button-success uk-button-mini tooltip" name="statcomment"
-    title="{$LANG_SHOP['update_status']}">
-    {$LANG_SHOP['upd_stat_cmt']}
-  </button>
-{!if 0}
-    onclick='SHOP_updateOrderStatus("{order_number}", "{order_status}", document.getElementById("statSelect_{order_number}").value, 1, document.getElementById("order_comment").value); return false;'>
-{!endif}
-  </form>
-  </p>
-{!else}
-  <p>{$LANG_SHOP['status']}: {status}</p>
-{!endif}
-{!if shipment_block}
-  <div id="orderShipmentBlock">
-    {shipment_block}
-  </div>
-{!endif}
-  <p>
-    <table id="shopOrderLog">
-     <tr>
-      <th>{$LANG_SHOP['timestamp']}</th>
-{!if is_admin}
-      <th>{$LANG_SHOP['username']}</th>
-{!endif}
-      <th>{$LANG_SHOP['message']}</th>
-     </tr>
-    <!-- BEGIN LogMessages -->
-    <tr style="line-height: 1.5rem;">
-      <td style="vertical-align:top;white-space:nowrap" class="tooltip" title="{log_ts_tip}">{log_ts}</td>
-{!if is_admin}
-      <td style="vertical-align:top;white-space:nowrap" >{log_username}</td>
- {!endif}
-      <td style="vertical-align:top;">{log_msg}</td>
-    </tr>
-    <!-- END LogMessages -->
-     </table>
-  {!endif}
 
-  <p>
-    {shipping_block}
-  </p>
-  </div>
+        <p>
+            {shipping_block}
+        </p>
+    </div>
+    </div>
 </div>
 {# end {templatelocation} #}

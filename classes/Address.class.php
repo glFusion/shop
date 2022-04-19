@@ -80,7 +80,7 @@ class Address
      * @var array */
     protected $_fields = array(
         'name', 'company', 'address1', 'address2',
-        'city', 'state', 'zip', 'country',
+        'city', 'state', 'zip', 'country', 'phone',
     );
 
 
@@ -101,8 +101,9 @@ class Address
         if (is_array($data)) {
             $this->setVars($data);
         }
-        if ($this->uid < 1) {
+        if ($this->addr_id < 1) {
             // in case an empty object is being created, set the user ID
+            // and defaults for the selections
             $this->setUid($_USER['uid']);
         }
     }
@@ -118,20 +119,42 @@ class Address
     {
         global $_SHOP_CONF;
 
-        $this->setUid(SHOP_getVar($data, 'uid', 'integer'))
-            ->setID(SHOP_getVar($data, 'addr_id', 'integer'))
-            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
-            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'))
-            ->setName(SHOP_getVar($data, 'name'))
-            ->setCompany(SHOP_getVar($data, 'company'))
-            ->setAddress1(SHOP_getVar($data, 'address1'))
-            ->setAddress2(SHOP_getVar($data, 'address2'))
-            ->setCity(SHOP_getVar($data, 'city'))
-            ->setState(SHOP_getVar($data, 'state'))
-            ->setPostal(SHOP_getVar($data, 'zip'))
-            ->setCountry(SHOP_getVar($data, 'country', 'string', $_SHOP_CONF['country']))
-            ->setBilltoDefault(SHOP_getVar($data, 'billto_def', 'integer'))
-            ->setShiptoDefault(SHOP_getVar($data, 'shipto_def', 'integer'));
+        if (isset($data['uid'])) {
+            $this->setUid($data['uid']);
+        }
+        if (isset($data['addr_id'])) {
+            $this->setID($data['addr_id']);
+        }
+        if (isset($data['billto_def'])) {
+            $this->setBilltoDefault($data['billto_def']);
+        }
+        if (isset($data['shipto_def'])) {
+            $this->setShiptoDefault($data['shipto_def']);
+        }
+        if (isset($data['name'])) {
+            $this->setName($data['name']);
+        }
+        if (isset($data['address1'])) {
+            $this->setAddress1($data['address1']);
+        }
+        if (isset($data['address2'])) {
+            $this->setAddress2($data['address2']);
+        }
+        if (isset($data['city'])) {
+            $this->setCity($data['city']);
+        }
+        if (isset($data['state'])) {
+            $this->setState($data['state']);
+        }
+        if (isset($data['zip'])) {
+            $this->setPostal($data['zip']);
+        }
+        if (isset($data['country'])) {
+            $this->setCountry($data['country']);
+        }
+        if (isset($data['phone'])) {
+            $this->setPhone($data['phone']);
+        }
         return $this;
     }
 
@@ -576,6 +599,10 @@ class Address
     public static function getByUser($uid)
     {
         global $_TABLES;
+        static $cache = array();
+        if (isset($cache[$uid])) {
+            return $cache[$uid];
+        }
 
         $uid = (int)$uid;
         $retval = array();
@@ -587,6 +614,7 @@ class Address
                 $retval[$A['addr_id']] = new self($A);
             }
         }
+        $cache[$uid] = $retval;
         return $retval;
     }
 
@@ -636,10 +664,13 @@ class Address
 
     /**
      * Render the address as text, separated by the specified separator.
-     * Sets the city, state, zip line according to the country format.
-     * A single address field can be retrieved by setting `$part` to one
-     * of the field names. The special value `address` can be supplied to
-     * get all the address lines except company and person name.
+     * Request can be for a single address field, an array of fields,
+     * or a keyword to get multiple standard parts. Keywords include:
+     *   - street: gets only the street address
+     *   - address: gets street address, city/state/zip line and country
+     *   - all : gets all components except the phone number
+     * The special key `cityline` can be used also to get the city/state/zip
+     * line according to the country format.
      *
      * @param   string  $part   Optional part of address to retrieve
      * @param   string  $sep    Line separator, simple `\n` by default.
@@ -647,43 +678,50 @@ class Address
      */
     public function toText($part="all", $sep="\n")
     {
-        global $_SHOP_CONF;
-
-        $retval = '';
-        $common = array(
-            'name', 'company', 'address1', 'address2',
-        );
-
-        if ($part == 'address') {
-            // Requesting only the address portion, remove name and company
-            unset($common[0]);
-            unset($common[1]);
-        } elseif ($part != 'all') {
-            // Immediately return the single requested element.
-            // Typically name or company, not address components.
-            if ($this->$part !== NULL) {
-                return $this->$part;
-            } else {
-                return '';
+        $parts = array();
+        if (is_string($part)) {
+            $part = array($part);
+        }
+        foreach ($part as $p) {
+            switch ($p) {
+            case 'all':
+                $parts[] = 'name';
+                $parts[] = 'company';
+            case 'address':
+                $parts[] = 'address1';
+                $parts[] = 'address2';
+                $parts[] = 'cityline';
+                $parts[] = 'country';
+                break;
+            case 'street':
+                $parts[] = 'address1';
+                $parts[] = 'address2';
+                break;
+            default:
+                $parts[] = $p;
+                break;
             }
         }
 
-        // No specific part requested, format and return all element
-        foreach ($common as $key) {
-            if ($this->$key != '') {
-                $retval .= $this->$key . $sep;
+        $retval = array();
+        foreach ($parts as $part) {
+            switch ($part) {
+            case 'cityline':
+                $retval[] = $this->getCityLine($sep);
+                break;
+            case 'country':
+                if ($this->country != Config::get('country')) {
+                    $retval[] = Country::getInstance($this->country)->getName();
+                }
+                break;
+            default:
+                if (isset($this->$part) && !empty($this->$part)) {
+                    $retval[] = $this->$part;
+                }
+                break;
             }
         }
-
-        $retval .= $this->getCityLine($sep);
-
-        // Include the country as the last line, unless this is a domestic address.
-        if ($_SHOP_CONF['country'] != $this->country && $this->country != '') {
-            $retval .=  $sep . Country::getInstance($this->country)->getName();
-        }
-        if ($this->phone != '') {
-            $retval .= $sep . $this->phone;
-        }
+        $retval = implode($sep, $retval);
         return $retval;
     }
 
@@ -702,6 +740,18 @@ class Address
 
 
     /**
+     * Get a MD5 hash of the address. Used for caching keys.
+     *
+     * @uses    self::toText()
+     * @return  string      MD5 hash of the text address
+     */
+    public function toHash()
+    {
+        return md5($this->toText('address'));
+    }
+
+
+    /**
      * Get the parsed parts of a name field.
      *
      * @param   string  $req    Requested part, NULL for all
@@ -713,12 +763,13 @@ class Address
 
         if (!isset($parts[$this->name])) {
             $parts[$this->name] = array();
-            $status = LGLIB_invokeService(
-                'lglib', 'parseName',
+            $status = PLG_callFunctionForOnePlugin(
+                'service_parseName_lglib',
                 array(
-                    'name' => $this->name,
-                ),
-                $parts[$this->name], $svc_msg
+                    1 => array('name' => $this->name),
+                    2 => &$parts[$this->name],
+                    3 => &$svc_msg,
+                )
             );
         }
         if ($req == NULL) {
@@ -736,9 +787,30 @@ class Address
      *
      * @return  string  HTML for editing form
      */
-    public function Edit()
+    public function Edit() : string
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $have_state_country = false;
+        if ($this->uid > 1) {
+            $Addr = Customer::getInstance()->getDefaultAddress('shipto');
+            if ($Addr->getID() > 0) {
+                $this->setState($Addr->getState())
+                    ->setCountry($Addr->getCountry());
+                $have_state_country = true;
+            }
+        }
+        if (!$have_state_country) {
+            $loc = GeoLocator::getProvider()->geoLocate();
+            if ($loc['ip'] != '') {
+                $A['country'] = $loc['country_code'];
+                $A['state'] = $loc['state_code'];
+                $A['city'] = $loc['city_name'];
+            } else {
+                $this->setState(Config::get('state'))
+                     ->setCountry(Config::get('country'));
+            }
+        }
+
+        $T = new Template;
         $T->set_file('form', 'editaddress.thtml');
         $T->set_var(array(
             'addr_id' => $this->addr_id,
@@ -752,8 +824,12 @@ class Address
             'zip' => $this->zip,
             'country_options' => Country::optionList($this->country),
             'state_options' => State::optionList($this->country, $this->state),
+            'phone' => $this->phone,
             'def_shipto_chk' => $this->isDefaultShipto() ? 'checked="checked"' : '',
             'def_billto_chk' => $this->isDefaultBillto() ? 'checked="checked"' : '',
+            'cancel_url' => SHOP_getUrl(SHOP_URL . '/account.php?addresses'),
+            'return' => SHOP_getVar($_GET, 'return'),
+            'action_url' => SHOP_URL . '/account.php',
         ) );
         $T->parse('output', 'form');
         return  $T->finish($T->get_var('output'));
@@ -796,7 +872,6 @@ class Address
                 shipto_def = '" . $this->isDefaultShipto() . "'";
         $sql = $sql1 . $sql . $sql2;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->addr_id == 0) {
@@ -824,6 +899,7 @@ class Address
 
     /**
      *  Return the properties array.
+     *  Keys can be prefixed with billto_ or shipto_ to match Orders schema.
      *
      *  @return array   Address properties
      */
@@ -839,6 +915,7 @@ class Address
             'state'     => $this->state,
             'zip'       => $this->zip,
             'country'   => $this->country,
+            'phone'     => $this->phone,
         );
     }
 
@@ -876,7 +953,7 @@ class Address
      * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid($required=false)
+    public function isValid($required=true)
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
@@ -887,32 +964,27 @@ class Address
             $invalid[] = 'name_or_company';
         }
         if (
-            ($required || $_SHOP_CONF['get_street'] == 2)
-            && empty($this->address1)
+            $required && empty($this->address1)
         ) {
             $invalid[] = 'address1';
         }
         if (
-            ($required || $_SHOP_CONF['get_city'] == 2)
-            && empty($this->city)
+            $required && empty($this->city)
         ) {
             $invalid[] = 'city';
         }
         if (
-            ($required || $_SHOP_CONF['get_state'] == 2)
-            && empty($this->state)
+            $required && empty($this->state)
         ) {
             $invalid[] = 'state';
         }
         if (
-            ($required || $_SHOP_CONF['get_postal'] == 2)
-            && empty($this->zip)
+            $required && empty($this->zip)
         ) {
             $invalid[] = 'zip';
         }
         if (
-            ($required || $_SHOP_CONF['get_country'] == 2)
-            && $this->country == ''
+            $required && $this->country == ''
         ) {
             $invalid[] = 'country';
         }
@@ -1027,6 +1099,59 @@ class Address
         return $this;       // default if no validator used
     }
 
-}
 
-?>
+    /**
+     * Get the option elements for an address selection list.
+     *
+     * @param   integer $uid        Customer user ID
+     * @param   string  $type       'billto' or 'shipto'
+     * @param   integer $sel_id     Preselected address ID
+     */
+    public static function optionList($uid, $type, $sel_id=0)
+    {
+        $retval = '';
+        $Addresses = self::getByUser($uid);
+        foreach ($Addresses as $Addr) {
+            if (
+                ($sel_id == 0 && $Addr->isDefault($type)) ||
+                ($sel_id > 0 && $sel_id == $Addr->getID())
+            ) {
+                $sel = 'selected="selected"';
+            } else {
+                $sel = '';
+            }
+            $retval .= '<option value="' . $Addr->getID() . '" ' . $sel . '>' .
+                $Addr->toText() . '</option>' . LB;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Create an address from IP Geolocation information.
+     * The full address is not created, only city, state, country and zip.
+     *
+     * @param   string  $ip     IP address, current remote address if empty
+     * @return  object      Address object
+     */
+    public static function fromGeoLocation($ip=NULL)
+    {
+        $Geo = GeoLocator::getProvider();
+        if ($ip === NULL) {
+            $Geo->withIP($ip);
+        }
+        $addr = $Geo->geoLocate();
+        if ($addr['status']) {
+            $retval = new self(array(
+                'city' => $addr['city_name'],
+                'state' => $addr['state_code'],
+                'country' => $addr['country_code'],
+                'zip' => $addr['zip'],
+            ) );
+        } else {
+            $retval = new self;
+        }
+        return $retval;
+    }
+
+}

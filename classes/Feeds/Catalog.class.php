@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Feeds;
+use Shop\Template;
+
 
 /**
  * Class for product feeds.
@@ -59,14 +61,19 @@ class Catalog
      */
     private function _Render($feed)
     {
-        global $_CONF;
+        global $_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates/feeds/catalog/');
+        $T = new Template('feeds/catalog/');
         $T->set_file('feed', $feed . '.thtml');
         if (!empty($T->last_error)) {
             SHOP_log("Missing catalog feed template for $feed");
             return false;
         }
+        $T->set_var(array(
+            'feed_title' => $_CONF['site_name'],
+            'feed_dscp' => $_CONF['site_name'] . ' ' . $LANG_SHOP['catalog'],
+            'lb' => "\n",
+        ) );
         $Cur = \Shop\Currency::getInstance();
         $Products = \Shop\Product::getAll();
         $T->set_var('newline', "\n");

@@ -49,27 +49,9 @@ class internal extends \Shop\IPN
         $this->gw_id = '_internal';
         parent::__construct($A);
 
-        // Set the custom data into an array. If it can't be unserialized,
-        // then treat it as a single value which contains only the user ID.
-        if (isset($A['custom'])) {
-            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
-            if (!$this->custom) {
-                $this->custom = array('uid' => $A['custom']);
-            }
-        } else {
-            $this->custom = array();
-        }
-
         // Get the IPN type, default to "cart" for backward compatibility
         $this->ipn_type = SHOP_getVar($this->ipn_data, 'ipn_type', 'string', 'cart');
-        if (isset($this->ipn_data['pmt_gros'])) {
-            $pmt_gross = $this->ipn_data['pmt_gross'];
-        } elseif (isset($custom['by_gc'])) {
-            $pmt_gross = $custom['by_gc'];
-        } else {
-            $pmt_gross = 0;
-        }
-        $this->setPmtGross($pmt_gross)
+        $this->setPmtGross($this->ipn_data['pmt_gross'])
             ->setPmtTax(SHOP_getVar($this->ipn_data, 'tax', 'float'))
             ->setPmtShipping(SHOP_getVar($this->ipn_data, 'shipping', 'float'))
             ->setPmtHandling(SHOP_getVar($this->ipn_data, 'handling', 'float'))
@@ -78,8 +60,16 @@ class internal extends \Shop\IPN
         $this->gw_name = $this->GW->getName();
         $this->gw_desc = $this->GW->getDscp();
 
+        // Set the custom data into an array. If it can't be unserialized,
+        // then treat it as a single value which contains only the user ID.
+        if (isset($A['custom'])) {
+            $this->custom = @unserialize(str_replace('\'', '"', $A['custom']));
+            if (!$this->custom) {
+                $this->custom = array('uid' => $A['custom']);
+            }
+        }
         $this->setUid($this->custom['uid'])
-            ->setStatus(self::STATUS_PAID);
+            ->setStatus(self::PAID);
     }
 
 
@@ -90,7 +80,7 @@ class internal extends \Shop\IPN
      *
      * @return  boolean         True if successfully validated, false otherwise
      */
-    private function Verify()
+    public function Verify()
     {
         switch($this->ipn_type) {
         case 'cart':
@@ -126,7 +116,7 @@ class internal extends \Shop\IPN
             $this->addCredit('gc', SHOP_getVar($info, 'apply_gc', 'float'));
             break;
         }
-        $this->setStatus(self::STATUS_PAID);
+        $this->setStatus(self::PAID);
         return true;
     }
 
@@ -232,7 +222,7 @@ class internal extends \Shop\IPN
                 $this->setPayerName($_USER['fullname']);
             }
             $this
-                ->setOrderID($this->Order->getOrderID())
+                ->setOrderID($this->Order->order_id)
                 ->setTxnId(SHOP_getVar($this->ipn_data, 'txn_id'))
                 ->setPmtTax($this->Order->getInfo('tax'))
                 ->setStatus(SHOP_getVar($this->ipn_data, 'payment_status'));
@@ -276,22 +266,22 @@ class internal extends \Shop\IPN
         // IPN item numbers are indexes into the cart, so get the
         // actual product ID from the cart
         foreach ($Cart as $idx=>$item) {
-            $item_id = $item->getProductID();
-            if ($item->getOptionIdString() != '') {
-                $item_id .= '|' . $item->getOptionIdString();
+            $item_id = $item->product_id;
+            if ($item->options != '') {
+                $item_id .= '|' . $item->options;
             }
             $args = array(
                 'item_id'   => $item_id,
-                'quantity'  => $item->getQuantity(),
-                'price'     => $item->getPrice(),
-                'item_name' => $item->getDscp(),
-                'shipping'  => $item->getShipping(),
-                'handling'  => $item->getHandling(),
-                'extras'    => $item->getExtras(),
+                'quantity'  => $item->quantity,
+                'price'     => $item->price,
+                'item_name' => $item->name,
+                'shipping'  => $item->shipping,
+                'handling'  => $item->handling,
+                'extras'    => $item->extras,
             );
             $this->addItem($args);
-            $total_shipping += $item->getShipping();
-            $total_handling += $item->getHandling();
+            $total_shipping += $item->shipping;
+            $total_handling += $item->handling;
         }
         $this->setPmtShipping($total_shipping)
             ->setPmtHandling($total_handling);

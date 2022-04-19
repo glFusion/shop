@@ -20,19 +20,19 @@ namespace Shop;
  */
 class ProductOptionGroup
 {
-    use DBO;        // Import database operations
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table key, used by DBO class.
      * @var string */
-    private static $TABLE = 'shop.prod_opt_grps';
+    protected static $TABLE = 'shop.prod_opt_grps';
 
     /** ID Field name, used by DBO class.
      * @var string */
-    private static $F_ID = 'pog_id';
+    protected static $F_ID = 'pog_id';
 
     /** Order field name, useb by DBO class.
      * @var string */
-    private static $F_ORDERBY = 'pog_orderby';
+    protected static $F_ORDERBY = 'pog_orderby';
 
     /** Tag array used with caching, for consistency.
      * @var array */
@@ -56,7 +56,7 @@ class ProductOptionGroup
 
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    private $isNew;
+    private $isNew = true;
 
     /** Array of error messages, to be accessible by the calling routines.
      * @var array */
@@ -75,8 +75,6 @@ class ProductOptionGroup
      */
     public function __construct($id=0)
     {
-        $this->isNew = true;
-
         if (is_array($id)) {
             $this->setVars($id);
         } else {
@@ -273,8 +271,6 @@ class ProductOptionGroup
     {
         global $_TABLES;
 
-        return true;        // stub until function works properly or is removed
-
         if ($og_id <= 0) {
             return false;
         }
@@ -310,15 +306,16 @@ class ProductOptionGroup
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP, $_SYSTEM;
 
-        $T = SHOP_getTemplate('option_grp_form', 'form');
+        $T = new Template('admin');
+        $T->set_file('form', 'option_grp_form.thtml');
         $id = $this->pog_id;
         // If we have a nonzero category ID, then we edit the existing record.
         // Otherwise, we're creating a new item.  Also set the $not and $items
         // values to be used in the parent category selection accordingly.
         if ($id > 0) {
-            $retval = COM_startBlock($LANG_SHOP['edit_og'] . ': ' . $this->pog_name);
+            $retval = COM_startBlock($LANG_SHOP['edit_item'] . ': ' . $this->pog_name);
         } else {
-            $retval = COM_startBlock($LANG_SHOP['new_og']);
+            $retval = COM_startBlock($LANG_SHOP['new_item']);
         }
 
         $orderby_sel = $this->pog_orderby - 10;
@@ -408,15 +405,14 @@ class ProductOptionGroup
         );
 
         $display = COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_og'],
-            SHOP_ADMIN_URL . '/index.php?pog_edit=0',
-            array(
-                'style' => 'float:left;',
-                'class' => 'uk-button uk-button-success',
-            )
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?pog_edit=0',
+            'style' => 'success',
+        ) );
+        $text_arr = array(
+            'form_url' => SHOP_ADMIN_URL . '/index.php?opt_grp=x',
         );
-        $text_arr = array();
         $query_arr = array(
             'table' => 'shop.prod_opt_grps',
             'sql' => $sql,
@@ -458,41 +454,37 @@ class ProductOptionGroup
 
         switch($fieldname) {
         case 'edit':
-            $retval .= COM_createLink(
-                Icon::getHTML('edit', 'tooltip', array('title' => $LANG_ADMIN['edit'])),
-                SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;og_id={$A['pog_id']}"
-            );
+            $retval .= FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . "/index.php?pog_edit=x&amp;pog_id={$A['pog_id']}",
+            ) );
             break;
 
         case 'pog_orderby':
             if ($fieldvalue > 10) {
-                $retval = COM_createLink(
-                    Icon::getHTML('arrow-up'),
-                    SHOP_ADMIN_URL . '/index.php?pog_move=up&id=' . $A['pog_id']
-                );
+                $retval = FieldList::up(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pog_move=up&id=' . $A['pog_id'],
+                ) );
             } else {
-                $retval = '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval = FieldList::space();
             }
             if ($fieldvalue < $extra['pog_count'] * 10) {
-                $retval .= COM_createLink(
-                    Icon::getHTML('arrow-down'),
-                    SHOP_ADMIN_URL . '/index.php?pog_move=down&id=' . $A['pog_id']
-                );
+                $retval .= FieldList::down(array(
+                    'url' => SHOP_ADMIN_URL . '/index.php?pog_move=down&id=' . $A['pog_id'],
+                ) );
             } else {
-                $retval .= '<i class="uk-icon uk-icon-justify">&nbsp;</i>';
+                $retval .= FieldList::space();
             }
             break;
 
         case 'delete':
-            $retval .= COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL. '/index.php?pog_del=x&amp;og_id=' . $A['og_id'],
-                array(
+            $retval .= FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL. '/index.php?pog_del=x&amp;og_id=' . $A['og_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         default:
@@ -557,10 +549,15 @@ class ProductOptionGroup
         global $_TABLES;
 
         $prod_id = (int)$prod_id;
+        static $retval = array();
+        if (isset($retval[$prod_id])) {
+            return $retval[$prod_id];
+        }
+        $retval[$prod_id] = array();
         //$cache_key = 'og_prod_' . $prod_id;
         //$grps = Cache::get($cache_key);
         //if ($grps === NULL) {
-            $grps = array();
+            //$grps = array();
             $sql = "SELECT DISTINCT pog.pog_id FROM {$_TABLES['shop.prod_opt_vals']} pov
                 LEFT JOIN {$_TABLES['shop.prod_opt_grps']} pog ON pog.pog_id = pov.pog_id
                 LEFT JOIN {$_TABLES['shop.variantXopt']} vxo ON vxo.pov_id = pov.pov_id
@@ -570,8 +567,8 @@ class ProductOptionGroup
             //echo $sql;die;
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $grps[$A['pog_id']] = new self($A['pog_id']);
-                $grps[$A['pog_id']]->setOptionValues(
+                $retval[$prod_id][$A['pog_id']] = new self($A['pog_id']);
+                $retval[$prod_id][$A['pog_id']]->setOptionValues(
                     ProductOptionValue::getByProduct($prod_id, $A['pog_id'])
                 );
             }
@@ -579,7 +576,7 @@ class ProductOptionGroup
         //} else {
         //    $x = new ProductOptionValue;    // just to get the class loaded.
         //}
-        return $grps;
+        return $retval[$prod_id];
     }
 
 

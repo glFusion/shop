@@ -3,15 +3,17 @@
  * Class to render the catalog view.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner
+ * @copyright   Copyright (c) 2009-2022 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\ProductType;
+use Shop\Models\Views;
 
 
 /**
@@ -20,6 +22,22 @@ namespace Shop;
  */
 class Catalog
 {
+    /** Homepage layout - product list (default).
+     * @const integer */
+    public const HP_PRODUCT = 1;
+
+    /** Homepage layout - category list, all categories.
+     * @const integer */
+    public const HP_CAT = 2;
+
+    /** Homepage layout - category list, all categories including.
+     * @const integer */
+    public const HP_CATHOME = 4;
+
+    /** Homepage layout - category list, top-level only, no root.
+     * @const integer */
+    public const HP_CATTOP = 8;
+
     /** Brand ID, to limit results.
      * @var integer */
     private $brand_id = 0;
@@ -70,6 +88,19 @@ class Catalog
 
 
     /**
+     * Set the query string.
+     *
+     * @param   string  $query  Search string
+     * @return  object  $this
+     */
+    public function withQuery($query)
+    {
+        $this->query_str = $query;
+        return $this;
+    }
+
+
+    /**
      * Show the default catalog layout based on plugin configuration.
      *
      * @return  string      HTML for catalog display
@@ -79,10 +110,16 @@ class Catalog
         global $_SHOP_CONF, $LANG_SHOP;
 
         $content = '';
+
+        // Check access here in case centerblock is enabled.
+        if (!SHOP_access_check()) {
+            return $content;
+        }
+
         if (
-            ($_SHOP_CONF['hp_layout'] & SHOP_HP_CAT) == SHOP_HP_CAT &&
+            ($_SHOP_CONF['hp_layout'] & self::HP_CAT) == self::HP_CAT &&
             $this->cat_id == 0 &&
-            (!isset($_GET['query']) || isset($_GET['clearsearch']))
+            empty($this->query)
         ) {
             $content .= $this->Categories();
         } else {
@@ -107,13 +144,18 @@ class Catalog
 
         // Create product template
         if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
-            'download'  => 'buttons/btn_download',
-            'login_req' => 'buttons/btn_login_req',
-            'btn_details' => 'buttons/btn_details',
+        $T = new Template(array(
+            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            'buttons',
+            '',
+        ) );
+        $T->set_file(array(
+            'wrapper'   => 'wrapper.thtml',
+            'start'   => 'product_list_start.thtml',
+            'end'     => 'product_list_end.thtml',
+            'download'  => 'btn_download.thtml',
+            'login_req' => 'btn_login_req.thtml',
+            'btn_details' => 'btn_details.thtml',
         ) );
 
         // If a string is submitted as the category ID, treat it as a plugin and
@@ -202,7 +244,7 @@ class Catalog
         }*/
         if (count($A) > 1) {
             // Only include the categories if there is more than the root cat.
-            $CT = new \Template(__DIR__ . '/../templates');
+            $CT = new Template;
             $CT->set_file('catlinks', 'category_links.thtml');
             if ($cat_img_url != '') {
                 $CT->set_var('catimg_url', $cat_img_url);
@@ -261,43 +303,29 @@ class Catalog
         // Get products from database. "c.enabled is null" is to allow products
         // with no category defined
         $today = $_CONF['_now']->format('Y-m-d', true);
-        $sql = " FROM {$_TABLES['shop.categories']} c
-            INNER JOIN {$_TABLES['shop.prodXcat']} x
-                ON x.cat_id = c.cat_id
-            INNER JOIN {$_TABLES['shop.products']} p
-                ON p.id = x.product_id
-                WHERE p.enabled=1
-                AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
-                AND (
+        $sql = "SELECT p.id, p.track_onhand, p.oversell, (
+                SELECT sum(stk.qty_onhand) FROM {$_TABLES['shop.stock']} stk
+                WHERE stk.stk_item_id = p.id
+            ) as qty_onhand
+            FROM {$_TABLES['shop.products']} p
+            LEFT JOIN {$_TABLES['shop.prodXcat']} pxc
+                ON p.id = pxc.product_id
+            LEFT JOIN {$_TABLES['shop.categories']} c
+                ON pxc.cat_id=c.cat_id
+            WHERE
+                p.enabled=1 AND
+                (
                     (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
                     OR c.enabled IS NULL
-                    )
-                AND (
-                    p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
-                    ) $cat_sql";
-
-/*        $sql = " FROM {$_TABLES['shop.products']} p
-                LEFT JOIN {$_TABLES['shop.categories']} c
-                    ON p.cat_id = c.cat_id
-                WHERE p.enabled=1
-                AND p.avail_beg <= '$today' AND p.avail_end >= '$today'
-                AND (
-                    (c.enabled=1 " . SEC_buildAccessSql('AND', 'c.grp_access') . ")
-                    OR c.enabled IS NULL
-                    )
-                AND (
-                    p.track_onhand = 0 OR p.onhand > 0 OR p.oversell < 2
-                    ) $cat_sql";
- */
-        $search = '';
+                ) AND
+                p.avail_beg <= '$today' AND
+                p.avail_end >= '$today' $cat_sql";
+        //echo $sql;die;
+        //
         // Add search query, if any
-        if (
-            isset($_REQUEST['query']) &&
-            !empty($_REQUEST['query']) &&
-            !isset($_REQUEST['clearsearch'])
-        ) {
-            $this->query_str = urlencode($_REQUEST['query']);
-            $search = DB_escapeString($_REQUEST['query']);
+        $search = '';
+        if (!empty($this->query_str)) {
+            $search = DB_escapeString($this->query_str);
             $fields = array(
                 'p.name', 'c.cat_name', 'p.short_description', 'p.description',
                 'p.keywords',
@@ -309,21 +337,22 @@ class Catalog
             $srch = ' AND (' . implode(' OR ', $srches) . ')';
             $sql .= $srch;
         }
+
         $pagenav_args = array();
         if ($this->cat_id > 0) {
             $pagenav_args[] = 'category=' . $this->cat_id;
         }
 
-        // If applicable, order by
-        $sql .= " ORDER BY $sql_sortby";
-        $sql_key = md5($sql);
-        //echo $sql;die;
+        $sql .= " GROUP BY p.id
+            HAVING p.track_onhand = 0 OR p.oversell < 2 OR qty_onhand > 0
+            ORDER BY $sql_sortby ";
 
         // Count products from database
+        $sql_key = md5($sql);
         $cache_key = Cache::makeKey('prod_cnt_' . $sql_key);
         $count = Cache::get($cache_key);
         if ($count === NULL) {
-            $res = DB_query('SELECT DISTINCT p.id ' . $sql);
+            $res = DB_query($sql);
             $count = DB_numRows($res);
             Cache::set($cache_key, $count, array('products', 'categories'));
         }
@@ -351,7 +380,7 @@ class Catalog
         $cache_key = Cache::makeKey('prod_list_' . $sql_key);
         $Products = Cache::get($cache_key);
         if ($Products === NULL) {
-            $res = DB_query('SELECT DISTINCT p.id, p.short_description ' . $sql);
+            $res = DB_query($sql);
             $Products = array();
             while ($A = DB_fetchArray($res, false)) {
                 $Products[] = Product::getById($A['id']);
@@ -360,16 +389,6 @@ class Catalog
         }
 
         // Create product template
-        /*if (empty($_SHOP_CONF['list_tpl_ver'])) $_SHOP_CONF['list_tpl_ver'] = 'v1';
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
-            'download'  => 'buttons/btn_download',
-            'login_req' => 'buttons/btn_login_req',
-            'btn_details' => 'buttons/btn_details',
-        ) );*/
-
         $T->set_var(array(
             'pi_url'        => SHOP_URL,
             //'user_id'       => $_USER['uid'],
@@ -415,6 +434,8 @@ class Catalog
             if (!$P->canDisplay()) {
                 continue;
             }
+            $P->setVariant();
+            $link = $P->withQuery($this->query_str)->getLink();
             $prodrows++;
             $T->set_var(array(
                 'item_id'       => $P->getID(),
@@ -422,23 +443,21 @@ class Catalog
                 'short_description' => htmlspecialchars(PLG_replacetags($P->getShortDscp())),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'encrypted'     => '',
-                'item_url'      => $P->getLink(0, $this->query_str),
+                'item_url'      => $link,
+                'aff_link'      => $P->getAffiliateLink(),
                 'img_cell_width' => ($_SHOP_CONF['max_thumb_size'] + 20),
                 'track_onhand'  => $P->trackOnhand() ? 'true' : '',
-                'qty_onhand'    => $P->getOnhand(),
                 'has_discounts' => $P->hasDiscounts() ? 'true' : '',
                 'price'         => $P->getDisplayPrice(),
-                'orig_price'    => $P->getDisplayPrice($P->getPrice()),
+                'orig_price'    => $P->getDisplayPrice($P->getBasePrice()),
                 'on_sale'       => $P->isOnSale(),
                 'small_pic'     => $P->getImage('', 200)['url'],
-                'onhand'        => $P->trackOnhand() ? $P->getOnhand() : '',
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
                 'nonce'         => $Cart->makeNonce($P->getID() . $P->getName()),
                 'can_add_cart'  => $P->canBuyNow(), // must have no attributes
                 'rating_bar'    => $P->ratingBar(true),
                 'oos'           => !$P->isInStock(),
             ) );
-
             if ($isAdmin) {
                 $T->set_var(array(
                     'is_admin'  => 'true',
@@ -454,7 +473,7 @@ class Catalog
                 !$P->hasSpecialFields()
             ) {
                 // Buttons only show in the list if there are no options to select
-                $buttons = $P->PurchaseLinks('list');
+                $buttons = $P->PurchaseLinks(Views::LIST);
                 foreach ($buttons as $name=>$html) {
                     $T->set_var('button', $html);
                     $T->parse('Btn', 'BtnBlock', true);
@@ -485,7 +504,7 @@ class Catalog
         ) {
             // Clear out-of-stock flag which doesn't appply to plugins
             $T->clear_var('oos');
-            $this->getPluginProducts($T);
+            $prodrows += $this->getPluginProducts($T);
         }
 
         //$T->parse('output', 'wrapper');
@@ -515,6 +534,23 @@ class Catalog
             $T->set_var('no_rows', true);
         }
 
+        // Show the category rules in the footer, if any.
+        $notes = array();
+        if ($Cat->getRuleId() > 0) {
+            $have_rules = true;
+            $Rule = Rules\Zone::getInstance($Cat->getRuleId());
+            $notes[] = $Rule->getDscp();
+
+        }
+        if (is_int($this->cat_id) && $this->cat_id > 0) {
+            $Rules = Rules\Product::getByCategory($Cat);
+            if (!empty($Rules)) {
+                foreach ($Rules as $Rule) {
+                    $notes[] = $Rule->getDscp();
+                }
+            }
+            $T->set_var('rule_notes', '<li>' . implode('</li><li>', $notes) . '</li>');
+        }
         $display .= $T->parse('', 'end');
         return $display;
     }
@@ -526,75 +562,96 @@ class Catalog
      *
      * @param   object  $T      Template object
      * @param   string  $pi_name    Plugin name, empty for all plugins
-     */ 
+     * @return  integer     Number of plugin products added to the template
+     */
     private function getPluginProducts(&$T, $pi_name='')
     {
         global $_SHOP_CONF, $_PLUGINS, $_USER;
 
+        $num_products = 0;
+
         // Get products from plugins.
         // For now, this hack shows plugins only on the first page, since
         // they're not included in the page calculation.
-        if (
-            $_SHOP_CONF['show_plugins']
-        ) {
-            // Get the currency class for formatting prices
-            $Cur = Currency::getInstance();
-            $Cart = Cart::getInstance();
+        if (!$_SHOP_CONF['show_plugins']) {
+            return $num_products;
+        }
 
-            if (!empty($pi_name)) {
-                $plugins = array($pi_name);
-            } else {
-                $plugins = $_PLUGINS;
+        // Get the currency class for formatting prices
+        $Cur = Currency::getInstance();
+        $Cart = Cart::getInstance();
+
+        if (!empty($pi_name)) {
+            $plugins = array($pi_name);
+        } else {
+            $plugins = $_PLUGINS;
+        }
+        foreach ($plugins as $pi_name) {
+            $plugin_data = array();
+            $status = PLG_callFunctionForOnePlugin(
+                'service_getproducts_' . $pi_name,
+                array(
+                    1 => array(),
+                    2 => &$plugin_data,
+                    3 => &$svc_msg,
+                )
+            );
+            if ($status !== PLG_RET_OK || empty($plugin_data)) {
+                continue;
             }
-            foreach ($plugins as $pi_name) {
-                $status = LGLIB_invokeService(
-                    $pi_name,
-                    'getproducts',
-                    array(),
-                    $plugin_data,
-                    $svc_msg
-                );
-                if ($status != PLG_RET_OK || empty($plugin_data)) {
+
+            foreach ($plugin_data as $A) {
+                // Skip items that can't be shown
+                if (isset($A['canDisplay']) && !$A['canDisplay']) {
                     continue;
                 }
-                foreach ($plugin_data as $A) {
-                    // Reset button values
-                    $buttons = '';
-                    if (!isset($A['buttons'])) {
-                        $A['buttons'] = array();
-                    }
-                    if (isset($A['add_cart']) && !$A['add_cart']) {
-                        $can_add_cart = false;
-                    } else {
-                        $can_add_cart = true;
-                    }
 
-                    $P = \Shop\Product::getByID($A['id']);
-                    $price = $P->getPrice();
-                    $T->set_var(array(
-                        'id'        => $P->getID(),     // required
-                        'item_id'   => $P->getItemID(), // required
-                        'name'      => $P->getDscp(),
-                        'short_description' => $P->getDscp(),
-                        'encrypted' => '',
-                        'item_url'  => $P->getLink(0, $this->query_str),
-                        'track_onhand' => '',   // not available for plugins
-                        'small_pic' => $P->getImage()['url'],
-                        'on_sale'   => '',
-                        'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
-                        'can_add_cart'  => $can_add_cart,
-                        'rating_bar' => $P->ratingBar(true),
-                    ) );
-                    if ($price > 0) {
-                        $T->set_var('price', $Cur->Format($price));
-                    } else {
-                        $T->clear_var('price');
-                    }
+                $P = Product::getByID($A['id']);
 
+                // Reset button values
+                $buttons = '';
+                if (!isset($A['buttons'])) {
+                    $A['buttons'] = array();
+                }
+                if (
+                    (isset($A['add_cart']) && !$A['add_cart']) ||
+                    (isset($A['canPurchase']) && !$A['canPurchase'])
+                ) {
+                    $P->enablePurchase(false);
+                }
+
+                if ($P->isNew()) {
+                    // An error in getting the plugin product
+                    continue;
+                }
+                $link = $P->withQuery($this->query_str)->getLink();
+                $price = $P->getPrice();
+                $T->set_var(array(
+                    'id'        => $P->getID(),     // required
+                    'item_id'   => $P->getItemID(), // required
+                    'name'      => $P->getDscp(),
+                    'short_description' => $P->getDscp(),
+                    'encrypted' => '',
+                    'item_url'  => $link,
+                    'track_onhand' => '',   // not available for plugins
+                    'small_pic' => $P->getImage()['url'],
+                    'on_sale'   => '',
+                    'nonce'     => $Cart->makeNonce($P->getID(). $P->getName()),
+                    'can_add_cart'  => $P->canPurchase(),
+                    'rating_bar' => $P->ratingBar(true),
+                ) );
+                if ($price > 0) {
+                    $T->set_var('price', $Cur->Format($price));
+                } else {
+                    $T->clear_var('price');
+                }
+
+                // Skip button display if the item can't be purchased
+                if (!isset($A['canPurchase']) || $A['canPurchase']) {
                     if ($price > 0 && $_USER['uid'] == 1 && !$_SHOP_CONF['anon_buy']) {
                         $buttons .= $T->set_var('', 'login_req') . '&nbsp;';
                     /*} elseif (
-                        (!isset($A['prod_type']) || $A['prod_type'] > SHOP_PROD_PHYSICAL) &&
+                        (!isset($A['prod_type']) || $A['prod_type'] > ProductType::PHYSICAL) &&
                         $A['price'] == 0
                     ) {
                         // Free items or items purchased and not expired, allow download.
@@ -607,14 +664,14 @@ class Catalog
                             $T->parse('Btn', 'BtnBlock', true);
                         }
                     }
-                    $T->clear_var('Btn');
-                    //$prodrows++;
-                    $T->parse('PI', 'ProductItems', true);
-                }   // foreach plugin_data
+                }
+                $T->clear_var('Btn');
+                $T->parse('PI', 'ProductItems', true);
+                $num_products++;
+            }   // foreach plugin_data
 
-            }   // foreach $plugins
-
-        }   // if showing plugins
+        }   // foreach $plugins
+        return $num_products;
     }
 
 
@@ -628,28 +685,30 @@ class Catalog
         global $_SHOP_CONF;
 
         $display = '';
-        $cat_sql = '';
 
         $RootCat = Category::getRoot();
         // If showing only top-level categories then get the children of Root,
         // otherwise get the whole category tree.
-        if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATTOP) == SHOP_HP_CATTOP) {
+        if (($_SHOP_CONF['hp_layout'] & self::HP_CATTOP) == self::HP_CATTOP) {
             $Cats = $RootCat->getChildren();
-            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) == SHOP_HP_CATHOME) {
+            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) == self::HP_CATHOME) {
                 array_unshift($Cats, $RootCat);
             }
         } else {
             $Cats = \Shop\Category::getTree();
-            if (($_SHOP_CONF['hp_layout'] & SHOP_HP_CATHOME) != SHOP_HP_CATHOME) {
+            if (($_SHOP_CONF['hp_layout'] & self::HP_CATHOME) != self::HP_CATHOME) {
                 unset($Cats[$RootCat->cat_id]);
             }
         }
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
-        $T = SHOP_getTemplate(array(
-            'wrapper'   => 'list/' . $_SHOP_CONF['list_tpl_ver'] . '/wrapper',
-            'start'   => 'product_list_start',
-            'end'     => 'product_list_end',
+        $T = new Template(array(
+            'list/' . $_SHOP_CONF['list_tpl_ver'],
+            '',
+        ) );
+        $T->set_file(array(
+            'wrapper'   => 'wrapper.thtml',
+            'start'   => 'product_list_start.thtml',
+            'end'     => 'product_list_end.thtml',
         ) );
         $T->set_var('pi_url', SHOP_URL);
 
@@ -668,7 +727,6 @@ class Catalog
                 'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             ) );
             $T->parse('PI', 'ProductItems', true);
-            //var_dump($T);die;
         }
         $display .= $T->parse('', 'start');
         $display .= $T->parse('', 'wrapper');
@@ -677,5 +735,3 @@ class Catalog
     }
 
 }
-
-?>

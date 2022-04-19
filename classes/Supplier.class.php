@@ -3,9 +3,9 @@
  * Class to handle addresses for suppliers and brands.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.1
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -19,15 +19,15 @@ namespace Shop;
  */
 class Supplier extends Address
 {
-    use DBO;
+    use \Shop\Traits\DBO;        // Import database operations
 
     /** Table name, used by DBO.
      * @var string */
-    private static $TABLE = 'shop.suppliers';
+    protected static $TABLE = 'shop.suppliers';
 
     /** Key field ID, used by DBO.
      * @var string */
-    private static $F_ID = 'sup_id';
+    protected static $F_ID = 'sup_id';
 
     /** Flag indicates that this is a supplier (default)
      * @var integer */
@@ -43,7 +43,15 @@ class Supplier extends Address
 
     /** Normal lead time for this supplier.
      * @var string */
-    private $lead_time;
+    private $lead_time = '';
+
+    /** Logo image filename.
+     * @var string */
+    private $logo_image = '';
+
+    /** Array of error messages.
+     * @var array */
+    private $_errors = array();
 
 
     /**
@@ -76,8 +84,8 @@ class Supplier extends Address
     /**
      * Get a specific supplier by ID.
      *
-     * @param   integer $addr_id    Address ID to retrieve
-     * @return  object      Address object, empty if not found
+     * @param   integer $id Record ID to retrieve
+     * @return  object      Supplier object, empty if not found
      */
     public static function getInstance($addr_id)
     {
@@ -102,6 +110,9 @@ class Supplier extends Address
     {
         global $_SHOP_CONF;
 
+        if (isset($data['logo_image'])) {
+            $this->setLogoImage(SHOP_getVar($data, 'logo_image', 'string', ''));
+        }
         return $this->setID(SHOP_getVar($data, 'sup_id', 'integer'))
             ->setName(SHOP_getVar($data, 'name'))
             ->setCompany(SHOP_getVar($data, 'company'))
@@ -128,6 +139,7 @@ class Supplier extends Address
     public function setLeadTime($str)
     {
         $this->lead_time = $str;
+        return $this;
     }
 
 
@@ -230,6 +242,30 @@ class Supplier extends Address
 
 
     /**
+     * Set the logo image filename.
+     *
+     * @param   string  $fname  Image filename
+     * @return  object  $this
+     */
+    public function setLogoImage($fname)
+    {
+        $this->logo_image = $fname;
+        return $this;
+    }
+
+
+    /**
+     * Get the logo image filename only, no path.
+     *
+     * @return  string      Logo image filename
+     */
+    public function getLogoImage()
+    {
+        return $this->logo_image;
+    }
+
+
+    /**
      * Get a selection list for brand, supplier, or all records.
      *
      * @param   integer $sel    Selected record ID
@@ -286,6 +322,37 @@ class Supplier extends Address
 
 
     /**
+     * Get the error messages created during an operation.
+     *
+     * @return  array   Array of error messages
+     */
+    public function getErrors()
+    {
+        return $this->_errors;
+    }
+
+
+    /**
+     * Deletes a single image from disk.
+     *
+     * @param   string  $fname  Optional filename override.
+     */
+    public function deleteImage($fname=NULL)
+    {
+        if ($fname === NULL) {
+            $fname = $this->getLogoImage();
+        }
+        $path = Config::get('tmpdir') . '/images/brands';
+        if (is_file("{$path}/{$fname}")) {
+            @unlink("{$path}/{$fname}");
+        }
+        if ($fname === NULL) {
+            $this->setLogoImage('');
+        }
+    }
+
+
+    /**
      * Save the supplier information.
      *
      * @param   array   $A  Optional data array from $_POST
@@ -295,8 +362,29 @@ class Supplier extends Address
     {
         global $_TABLES;
 
+        // Handle the image upload first.
+        if (
+            !empty($_FILES) &&
+            is_array($_FILES['logofile']) &&
+            !empty($_FILES['logofile']['tmp_name'])
+        ) {
+            $Img = new Images\Supplier($this->getID(), 'logofile');
+            $Img->uploadFiles();
+            if (!empty($Img->getErrors())) {
+                $this->_errors = array_merge($this->_errors, $Img->getErrors());
+                return false;
+            } else {
+                if (!empty($this->getLogoImage())) {
+                    $this->deleteImage();
+                }
+                $this->setLogoImage($Img->getFilenames()[0]);
+            }
+        }
         if (is_array($A)) {
             $this->setAddress($A);
+            if (isset($A['del_logo']) && !empty($this->getLogoImage())) {
+                $this->deleteImage();
+            }
         }
         if ($this->getID() > 0) {
             $sql1 = "UPDATE {$_TABLES['shop.suppliers']} SET ";
@@ -317,7 +405,8 @@ class Supplier extends Address
                 dscp = '" . DB_escapeString($this->getDscp()) . "',
                 is_supplier = {$this->getIsSupplier()},
                 is_brand = {$this->getIsBrand()},
-                lead_time = '" . DB_escapeString($this->getLeadTime()) . "'";
+                lead_time = '" . DB_escapeString($this->getLeadTime()) . "',
+                logo_image = '" . DB_escapeString($this->logo_image) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
@@ -331,10 +420,7 @@ class Supplier extends Address
         } else {
             $status = false;
         }
-        if (!empty($_FILES)) {
-            $Img = new Images\Supplier($this->getID(), 'logofile');
-            $Img->uploadFiles();
-        }
+
         return $status;
     }
 
@@ -361,7 +447,7 @@ class Supplier extends Address
      */
     public function getImage()
     {
-        return Images\Supplier::getUrl($this->getID() . '.jpg');
+        return Images\Supplier::getUrl($this->getLogoImage());
     }
 
 
@@ -374,11 +460,11 @@ class Supplier extends Address
      * @param   integer $step   Current step number
      * @return  string          HTML for edit form
      */
-    public function Edit()
+    public function Edit() : string
     {
         global $_TABLES, $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template('admin');
         $T->set_file('form', 'supplier_form.thtml');
         $tpl_var = $_SHOP_CONF['pi_name'] . '_entry';
         switch (PLG_getEditorType()) {
@@ -514,10 +600,11 @@ class Supplier extends Address
             'form_url' => SHOP_ADMIN_URL . '/index.php?suppliers',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_supplier'],
-            SHOP_ADMIN_URL . '/index.php?edit_sup=0',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $display .= '<div>' . FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?edit_sup=0',
+            'style' => 'success',
+        ) ) . '</div>';
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_supplierlist',
             array(__CLASS__,  'getAdminField'),
@@ -545,14 +632,13 @@ class Supplier extends Address
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?edit_sup&id=' . $A['sup_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?edit_sup=' . $A['sup_id'],
+            ) );
             break;
 
         case 'logo':
-            $url = Images\Supplier::getUrl($A['sup_id'] . '.jpg')['url'];
+            $url = Images\Supplier::getUrl($A['logo_image'])['url'];
             if ($url != '') {
                 $retval = COM_createImage($url, '', array(
                     'class' => 'shopLogoImage small',
@@ -560,25 +646,24 @@ class Supplier extends Address
             }
             break;
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?del_sup&id=' . $A['sup_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?del_sup&id=' . $A['sup_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'is_supplier':
         case 'is_brand':
-            $chk = $fieldvalue == 1 ? 'checked="checked"' : '';
-            $retval .= "<input type=\"checkbox\" $chk value=\"1\" name=\"{$fieldname}_check\"
-                    id=\"tog{$fieldname}{$A['sup_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['sup_id']}\",\"$fieldname\",".
-                    "\"supplier\");' />" . LB;
-//            $retval .= '<input type="checkbox" id="' . $fieldname . '_' . $A['sup_id'] . '" ' . $chk . '/>';
+            $retval .= FieldList::checkbox(array(
+                'name' => $fieldname . '_check',
+                'checked' => $fieldvalue == 1,
+                'id' => "tog{$fieldname}{$A['sup_id']}",
+                'onclick' => "SHOP_toggle(this,'{$A['sup_id']}','$fieldname','supplier');",
+            ) );
             break;
 
         default:
@@ -588,6 +673,4 @@ class Supplier extends Address
         return $retval;
     }
 
-}   // class Supplier 
-
-?>
+}

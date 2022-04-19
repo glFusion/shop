@@ -1,0 +1,50 @@
+{header}
+<p>Kiitos ostoksestasi sivustolta {site_name}. Seuraavat tiedot ostoksestasi:</p>
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+Voit ladata ostamasi tiedostot seuraavista linkeistä:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Erityisohjeet: {order_instr}</p>
+{!endif}
+{!if pending}
+<p>
+Maksusi odottaa. Kun maksu on vastaanotettu, saat sen
+toinen sähköpostiviesti, joka vahvistaa maksusi.
+</p>
+{!endif}
+<p>Voit tarkastella tilaustasi osoitteessa {order_url}
+{!if has_downloads}
+<br />Ladattavat ostoksesi voidaan ladata yllä olevasta linkistä.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!jos gw_msg}
+<p><b>Viesti:</b><br />{gw_msg}</p>
+{!endif}
+{!if affiliate_id}
+<p>
+Kutsu ystäväsi ja saat viittausbonuksia! Kumppanilinkkisi on {affiliate_link}.
+{!if affiliate_info}
+<br />Lisätietoja on osoitteessa <a href="{affiliate_info}">{affiliate_info}</a>.
+{!endif}
+</p>
+{!endif}
+
+{!if gc_bal_num}
+<p>
+Sinulla on jäljellä lahjakorttisaldo {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Kiitos,<br />
+{footer}
+</p>

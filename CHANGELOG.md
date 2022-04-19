@@ -1,19 +1,81 @@
 # Shop plugin for glFusion - Changelog
 
-## v1.3.0
+## v1.5.0
 Release TBD
-  * Discounts may not be applied to all products, e.g. gift cards.
+  * Require glFusion 2.1.0+
+  * Save shipping units and weights with orderitems to facilitate injected products from plugins.
+  * Don't calculate shipping where units = 0, use only fixed if present.
+  * Add flag to disable catalog if used only to support plugins.
+  * Move feature-enablement configs under a separate header.
+  * Ensure complete IPN data is sent to plugins for handlePurchase().
+  * Add a header and footer templates to buyer notifications, admin can customize.
+  * Allow anonymous buyers to provide addresses on orders without saving the address.
+  * Link anonymous orders to a new user's account by matching the email address.
+  * Fix #64 - saving a gateway didn't save unchecked service statuses.
+  * Fix #65 - disabled gateways were made available to plugins.
+  * Deprecate all sales tax APIs due to a lack of developer plans.
+  * Change `purge_sale_prices` from yes/no to a number of days.
+  * Fix setting sale prices in orderitem table.
+  * Add bulk void/unvoid buttons for coupons.
+  * Fix duplicate gift card payment on invoice view calculation (#66).
+  * Hide price and disable buttons if a product selection is not available.
+  * Add custom fields and variants to item purchase report.
+  * Implement product rules to limit shippers (#69).
+    * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
+  * Leverage glFusion 2.1.0+ Notifier class.
+
+## v1.4.1
+Release 2022-04-07
+  * Fix return from Gateway::getAll() when no gateways are installed (#67).
+
+## v1.4.0
+Release 2021-09-25
+  * Add sales tax location configuration setting for virtual items.
+  * Fix error if a referrer is not found at login. (May happen if the plugin is reinstalled.)
+  * Use checkbox field name for gateway service config if the language string is not defined.
+  * Make sure the update-needed message is shown only once.
+  * Migrate Square and Stripe gateways to uploadable modules.
+  * Allow products to be shown in the catalog but not purchased, e.g. current memberships.
+  * Fix product cloning and SKU changes.
+  * Move quantity tracking to Stock table, reserve items as they go into carts.
+  * Fix `No Product` message showing even if plugin products are displayed.
+  * Add interface for plugin products to be sold where the plugin doesn't support Shop.
+
+## v1.3.0
+Release 2021-04-20
+  * Discount codes may be blocked for some products, e.g. gift cards.
   * Remove `paid` as an order status, check total paid instead.
+  * Update Stripe API to 7.65.0 - 2020-11-19.
   * Update Square API to 3.20200325.0.
   * Add interface for customers to edit addresses outside of orders.
-  * Add fast-checkout where the order allows it.
+  * Add fast-checkout where the order allows it (no shipping or tax needed).
   * Enable sales tax charges on shipping and handling.
-  * Add invoicing via Paypal invoice API.
+  * Add invoicing via Paypal, Square and Stripe invoice APIs.
   * Link to customer in order report now filters report.
   * Enable/disable donation buttons in Paypal gateway config.
   * Allow user-entered prices for some plugin items, e.g. Donations.
   * Shipping methods may not require a shipping address, e.g. will-call.
   * Shipping methods, e.g. will-call, may set tax based on origin vs. destination.
+  * Use the shop.admin privilege for access control instead of a separate admin group.
+  * SQL fixes to work with MySQL's strict mode.
+  * Update checkout workflow, steps are easier on mobile devices.
+  * Checkout workflows can no longer be disabled. Unnecessary steps are skipped.
+  * Enable API-based shipping quotes for UPS, USPS and FedEx.
+  * Enable free-shipping thresholds per shipper.
+  * New address entry form defaults to the shop's city and country.
+  * Zone rules can apply to downloads using IP geolocation.
+  * Zone rules can be applied to categories as well as products.
+  * Remove unnecessary `cache_max_age` setting for blocks.
+  * Add button to reset multiple products' ratings.
+  * Enable plugin-style installation of payment gateways.
+  * Fix: OrderItem was using default option price instead of variant price.
+  * Fix: Updated supplier/brand logos not shown due to image caching.
+  * Feature: Add affiliate referrals
+  * Orders without physical items are set to "Closed" upon payment.
+
+## v1.2.2
+Release 2020-09-25
+  * Fix SQL error in standard glFusion search.
 
 ## v1.2.1
 Release 2020-03-02

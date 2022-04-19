@@ -2,135 +2,159 @@
 {javascript}
 <div style="clear:both;"></div>
 <div class="shopProductDetail v2" style="width: 50%;" id="shopShortDesc">
-    <h1>{short_description}</h1>
+	<h1>{short_description}</h1>
 </div>
 {!if can_edit}
 <div class="floatright">
-    <a href="{pi_admin_url}/index.php?editproduct=x&amp;id={id}">
-        <i class="uk-icon uk-icon-pencil uk-icon-small"></i>
-    </a>
+	<a href="{pi_admin_url}/index.php?return=detail&editproduct=x&amp;id={id}">
+		<i class="uk-icon uk-icon-pencil uk-icon-small"></i>
+	</a>
 </div>
 {!endif}
-
-<div class="uk-grid" style="clear:both;margin-top:20px;">
-    <div class="shopProductDetail v2 uk-width-large-2-4 uk-width-medium-1-2 uk-width-small-1-1" id="product-image">
+{!if aff_link}
+<div class="floatright">
+	<a class="uk-button uk-button-mini cpybtn" title="{lang_copy_clipboard}" data-clipboard-text="{aff_link}">{$LANG_SHOP['my_aff_link']}
+	</a>
+	<script src="{site_url}/javascript/addons/clipboard/clipboard.min.js"></script>
+	<script>
+		var clipboard = new Clipboard('.cpybtn');
+		clipboard.on('success', function(e) {
+			e.clearSelection();
+			Shop.notify("{lang_copy_success}", "success");
+		});
+	</script>
+</div>
+{!endif}
+<div uk-grid class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-small-1-1 uk-child-width-1-2@m uk-child-width-1-1@s" style="clear:both;margin-top:20px;">
+	<div class="shopProductDetail v2" id="product-image">
 {!if main_img}
-        <div class="main_img uk-hidden-small">
-            <img id="disp_img" class="uk-responsive-width uk-responsive-height"
-                alt="Product Image"
-                src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
-        </div>
+		<div class="main_img uk-hidden-small">
+			<img id="disp_img" class="uk-responsive-width uk-responsive-height"
+				alt="Product Image"
+				src="{site_url}/lglib/img.php?src={main_imgfile}&plugin=shop&sess={session_id}&width=460&height=460" />
+		</div>
 {!else}
-        <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
+		<div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 {!endif}
-        <ul id="productThumbWrapper" class="shopProductThumbWrapper v2"></ul>
-    </div>
+		<ul id="productThumbWrapper" class="shopProductThumbWrapper v2">
+<!-- BEGIN Thumbnail -->
+			<li class="shopProductThumb v2" uk-lightbox>
+				<a href="{img_url}" data-uk-lightbox="{group:'product'}">
+					<img src="{thumb_url}" alt="{$LANG_SHOP[click_to_enlarge]}"
+						title="{$LANG_SHOP[click_to_enlarge]}"
+						class="tooltip" style="border:0px;"
+						onmouseover="javascript:SHOPupdateImage({img_id});" />
+				</a>
+			</li>
+<!-- END Thumbnail -->
+		</ul>
+	</div>
 
-    <div class="shopDetailAttrib v2 uk-width-large-1-2 uk-width-medium-1-2 uk-width-small-1-1">
-      <div class="uk-width-large-2-3 uk-width-medium-1-1 uk-width-small-1-1">
-        <form class="uk-form uk-form-horizontal" method="post" id="add_cart_{frm_id}" action="javascript:void()">
-            <input type="hidden" name="item_number" value="{id}" />
-            <div class="shopDetailPrice v2">
+	<div class="shopDetailAttrib v2">
+		<div class="uk-width-1-1">
+			<form class="uk-form uk-form-stacked" method="post" id="{frm_id}" action="javascript:void()">
+				<input type="hidden" name="item_number" value="{id}" />
+				<input type="hidden" name="has_options" value="{have_attributes}" />
+				<div id="pricedisplay" class="shopDetailPrice v2" style="display:{price_vis}">
 {!if on_sale}
-                <span class="shopPrice was">{price_prefix}</span>
-                <span class="shopPrice was" id="price_was">{orig_price}</span>
-                <span class="shopPrice sale">{price_postfix}</span>
-                <div>
+					<span class="shopPrice was">{price_prefix}</span>
+					<span class="shopPrice was" id="price_was">{orig_price}</span>
+					<span class="shopPrice sale">{price_postfix}</span>
+					<div>
 {!if sale_name}
-                    <span class="shopPrice sale">{sale_name}: </span>
+						<span class="shopPrice sale">{sale_name}: </span>
 {!endif}
-                    <span class="shopPrice sale">{price_prefix}</span>
-                    <span class="shopPrice sale" id="price">{init_price}</span>
-                    <span class="shopPrice sale">{price_postfix}</span>
-                </div>
+						<span class="shopPrice sale">{price_prefix}</span>
+						<span class="shopPrice sale" id="price">{init_price}</span>
+						<span class="shopPrice sale">{price_postfix}</span>
+					</div>
 {!else}
-                <div>
-                    <span class="shopPrice normal">{price_prefix}</span>
-                    <span class="shopPrice normal" id="price">{init_price}</span>
-                    <span class="shopPrice normal">{price_postfix}</span>
-                </div>
+					<div>
+						<span class="shopPrice normal">{price_prefix}</span>
+						<span class="shopPrice normal" id="price">{init_price}</span>
+						<span class="shopPrice normal">{price_postfix}</span>
+					</div>
 {!endif}
 <!-- BEGIN qtyDiscTxt -->
-                <div class="shopQtyDisc">{qty_disc}</div>
+				<div class="shopQtyDisc">{qty_disc}</div>
 <!-- END qtyDiscTxt -->
 {!if qty_disc}
-                <div class="shopQtyDiscText">{$LANG_SHOP['qty_disc_text']}</div>
+				<div class="shopQtyDiscText">{$LANG_SHOP['qty_disc_text']}</div>
 {!endif}
-            </div>
+			</div>
 
-            <div id="shopProductAttrib" class="shopDetailAddCart v2">
+			<div id="shopProductAttrib" class="shopDetailAddCart v2">
 <!-- BEGIN OptionGroup -->
-                <div class="uk-form-row">
-                    <label class="uk-form-label" for="options{og_id}">{og_name}:</label>
-                    <div class="uk-form-controls">
+				<div class="uk-form-row">
+					<label class="uk-form-label" for="options{og_id}">{og_name}:</label>
+					<div class="uk-form-controls">
 {!!if {og_type} == "select" !!}
-                        <select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm(this.form);">
+						<select class="uk-form" id="options{og_id}" name="options[]" onchange="ProcessForm('{frm_id}');">
 <!-- BEGIN Optionselect -->
-                            <option value="{opt_id}" {select_selected}>{opt_str}</option>
+							<option value="{opt_id}" {select_selected}>{opt_str}</option>
 <!-- END Optionselect -->
-                        </select>
+						</select>
 {!!elseif {og_type} == "checkbox" !!}
 <!-- BEGIN Optioncheckbox -->
-                        <input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm(this.form);"/>&nbsp;{opt_str}<br />
+						<input type="checkbox" name="options[]" value="{opt_id}" {checked} onclick="ProcessForm('{frm_id}');"/>&nbsp;{opt_str}<br />
 <!-- END Optioncheckbox -->
 {!!elseif {og_type} == "radio" !!}
 <!-- BEGIN Optionradio -->
-                        <input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm(this.form);">&nbsp;{opt_str}<br />
+						<input type="radio" name="options[]" value="{opt_id}" {radio_selected} onclick="ProcessForm('{frm_id}');">&nbsp;{opt_str}<br />
 <!-- END Optionradio -->
 {!endif}
-                    </div>
-                </div>
+					</div>
+				</div>
 <!-- END OptionGroup -->
 
 <!-- BEGIN CustAttrib -->
-                <div class=uk-form-row>
-                    <label class="uk-form-label" for="{fld_id}">{fld_name}:</label>
-                    <div class="uk-form-controls">
-                        <input type="text" class="shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" size="40" />
-                    </div>
-                </div>
+				<div class=uk-form-row>
+					<label class="uk-form-label" for="{fld_id}">{fld_name}:</label>
+					<div class="uk-form-controls">
+						<input type="text" class="uk-width-1-1 shopProductCustomText" name="extras[custom][]" id="{fld_id}" value="{fld_val}" />
+					</div>
+				</div>
 <!-- END CustAttrib -->
 
 <!-- BEGIN SpecialFields -->
-                <div class=uk-form-row>
-                    <label class="uk-form-label" for="{sf_name}">{sf_text}:
+				<div class=uk-form-row>
+					<label class="uk-form-label" for="{sf_name}">{sf_text}:
 {!if sf_help}
-                        <i class="uk-icon uk-icon-question-circle tooltip" title="{sf_help}"></i>
+						<i class="uk-icon uk-icon-question-circle tooltip" title="{sf_help}"></i>
 {!endif} 
-                    </label>
-                    <div class="uk-form-controls">
+					</label>
+					<div class="uk-form-controls">
 {!!if {sf_type} == "textarea" !!}
-                        <textarea name="extras[special][{sf_name}]" id="{sf_name}"
-                            style="width:100%;height:100px;"></textarea>
+						<textarea name="extras[special][{sf_name}]" id="{sf_name}"
+							style="width:100%;height:100px;"></textarea>
 {!else}
-                        <input type="text" class="{sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" size="40" />
+						<input type="text" class="uk-width-1-1 {sf_class}" name="extras[special][{sf_name}]" id="{sf_name}" />
 {!endif}
-                    </div>
-                </div>
+					</div>
+				</div>
 <!-- END SpecialFields -->
 
-                {add_cart_button}
-                <div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="visibility:hidden;">
-                </div>
-            </div>
-        </form>
+				{add_cart_button}
+				<div id="oos_msg" class="shopOnhand uk-alert uk-alert-danger floatright" style="display:none;"></div>
+			</div>
+		</form>
 <!-- BEGIN BtnBlock -->
-        <div class="shopDetailBuyNow v2">{buy_now_button}</div>
+		<div class="shopDetailBuyNow v2">{buy_now_button}</div>
 <!-- END BtnBlock -->
-      </div>
-      <div style="clear:right;padding-top:25px;">
-        {prod_det_blk}
-      </div>
-    </div>
+		</div>
+		<div style="clear:right;padding-top:25px;">
+			{prod_det_blk}
+		</div>
+	</div>
 {!if main_img}
-    <div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
+	<div id="shopProductDesc" class="shopProductDesc v2">{description}</div>
 {!endif}
 
 {!if rating_bar}
-    <div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
+	<div class="shopRatingBar detail v2" style="clear:both;">{rating_bar}</div>
 {!endif}
-    <div class="shopComments">
-      {usercomments}
-    </div>
+	<div class="shopComments">
+		{usercomments}
+	</div>
 </div>
 {# end {templatelocation} #}

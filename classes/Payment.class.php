@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop;
+use Shop\Models\OrderState;
 
 
 /**
@@ -20,6 +21,9 @@ namespace Shop;
  */
 class Payment
 {
+    const UNVERIFIED = 0;
+    const VERIFIED = 1;
+
     /** Payment record ID in the database.
      * @var integer */
     private $pmt_id = 0;
@@ -61,6 +65,15 @@ class Payment
      * @var boolean */
     private $is_money = 1;
 
+    /** Flag to indicate the payment status.
+     * @var integer */
+    private $is_complete = 1;   // assume completed, for backwards compatibility
+
+    /** Payment status from latest webhook.
+     * @var status */
+    private $status = '';
+
+
 
     /**
      * Set internal variables from a data array.
@@ -80,6 +93,8 @@ class Payment
                 ->setOrderID($A['pmt_order_id'])
                 ->setComment($A['pmt_comment'])
                 ->setMethod($A['pmt_method'])
+                ->setStatus($A['pmt_status'])
+                ->setComplete($A['is_complete'])
                 ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
@@ -100,6 +115,28 @@ class Payment
 
         $sql = "SELECT * FROM {$_TABLES['shop.payments']}
             WHERE pmt_id = " . (int)$id;
+        $res = DB_query($sql);
+        if ($res) {
+            $A = DB_fetchArray($res, true);
+        } else {
+            $A = NULL;
+        }
+        return new self($A);
+    }
+
+
+    /**
+     * Get a payment record from the database by reference ID.
+     *
+     * @param   string  $ref_id Paymetn reference ID
+     * @return  object      Payment object
+     */
+    public static function getByReference($ref_id)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT * FROM {$_TABLES['shop.payments']}
+            WHERE pmt_ref_id = '" . DB_escapeString($ref_id) . "'";
         $res = DB_query($sql);
         if ($res) {
             $A = DB_fetchArray($res, true);
@@ -379,8 +416,14 @@ class Payment
     {
         global $_TABLES, $LANG_SHOP;
 
-        $sql = "INSERT INTO {$_TABLES['shop.payments']} SET
-            pmt_ts = {$this->getTS()},
+        if ($this->pmt_id == 0) {
+            $sql1 = "INSERT INTO {$_TABLES['shop.payments']} SET ";
+            $sql3 = '';
+        } else {
+            $sql1 = "UPDATE {$_TABLES['shop.payments']} SET ";
+            $sql3 = " WHERE pmt_id = " . $this->pmt_id;
+        }
+        $sql2 = "pmt_ts = {$this->getTS()},
             is_money = {$this->isMoney()},
             pmt_gateway = '" . DB_escapeString($this->getGateway()) . "',
             pmt_amount = '" . $this->getAmount() . "',
@@ -388,25 +431,24 @@ class Payment
             pmt_order_id = '" . DB_escapeString($this->getOrderID()) . "',
             pmt_method = '" . DB_escapeString($this->method) . "',
             pmt_comment = '" . DB_escapeString($this->comment) . "',
+            pmt_status = '" . DB_escapeString($this->getStatus()) . "',
+            is_complete = {$this->isComplete()},
             pmt_uid = " . (int)$this->uid;
+        $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
         $res = DB_query($sql);
-        if (!DB_error()) {
+        if (!DB_error() && $this->isComplete()) {
+            $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
             $this->setPmtId(DB_insertID());
             $Order = Order::getInstance($this->getOrderID());
             $Order->updatePmtStatus()
                 ->Log(
-                    sprintf($LANG_SHOP['amt_paid_gw'],
+                    sprintf(
+                        $lang_str,
                         $this->getAmount(),
                         $this->getGateway()
                     )
                 );
-            $Order->Notify(
-                '',
-                $LANG_SHOP['notify_pmt_received'],
-                true,
-                false
-            );
         }
         return $this;
     }
@@ -495,9 +537,10 @@ class Payment
      * Get all the payment objects for a specific order.
      *
      * @param   string  $order_id   Order ID
+     * @param   integer $is_complete    True to get only completed pmts
      * @return  array       Array of Payment objects
      */
-    public static function getByOrder($order_id)
+    public static function getByOrder($order_id, $is_complete=1)
     {
         global $_TABLES;
         static $P = array();
@@ -509,8 +552,11 @@ class Payment
         $P[$order_id] = array();
         $order_id = DB_escapeString($order_id);
         $sql = "SELECT * FROM {$_TABLES['shop.payments']}
-            WHERE pmt_order_id = '$order_id'
-            ORDER BY pmt_ts ASC";
+            WHERE pmt_order_id = '$order_id'";
+        if ($is_complete) {
+            $sql .= " AND is_complete = 1";
+        }
+        $sql .= " ORDER BY pmt_ts ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $P[$order_id][] = new self($A);
@@ -531,7 +577,7 @@ class Payment
         //$Orders = Order::getUnpaid();
         $Order = Order::getInstance($this->order_id);
         $bal_due = $Order->getBalanceDue();
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template;
         $T->set_file('form', 'pmt_form.thtml');
         $T->set_var(array(
             'user_select' => COM_optionList(
@@ -542,12 +588,12 @@ class Payment
             ),
             'pmt_id' => $this->pmt_id,
             'order_id' => $this->order_id,
-            'amount' => $this->amount,
+            'amount' => $this->amount > 0 ? $this->amount : '',
             'ref_id' => $this->ref_id,
             'money_chk' => $this->is_money ? 'checked="checked"' : '',
             'bal_due' => Currency::getInstance($Order->getCurrency()->getCode())->formatMoney($bal_due),
         ) );
-        $Gateways = Gateway::getAll();
+        $Gateways = Gateway::getEnabled();
         $T->set_block('form', 'GatewayOpts', 'gwo');
         foreach ($Gateways as $GW) {
             $T->set_var(array(
@@ -560,6 +606,19 @@ class Payment
         $T->parse('output', 'form');
         $form = $T->finish($T->get_var('output'));
         return $form;
+    }
+
+
+    /**
+     * Delete a single payment.
+     *
+     * @param   integer $pmt_id     Payment record ID
+     */
+    public static function delete($pmt_id)
+    {
+        global $_TABLES;
+
+        DB_delete($_TABLES['shop.payments'], 'pmt_id', (int)$pmt_id);
     }
 
 
@@ -595,13 +654,11 @@ class Payment
             $R->setParam('order_id', $order_id);
         }
         if ($order_id != 'x') {
-            $new_btn = COM_createLink(
-                $LANG_SHOP['add_payment'],
-                SHOP_ADMIN_URL . '/index.php?newpayment=' . $order_id,
-                array(
-                    'class' => 'uk-button uk-button-success',
-                )
-            );
+            $new_btn = FieldList::buttonLink(array(
+                'text' => $LANG_SHOP['add_payment'],
+                'url' => SHOP_ADMIN_URL . '/payments.php?newpayment=' . $order_id,
+                'style' => 'success',
+            ) );
         } else {
             $new_btn = '';
         }
@@ -612,6 +669,66 @@ class Payment
         return $new_btn . $R->Render();
     }
 
-}
 
-?>
+    /**
+     * Get the URL to a single payment detail record.
+     *
+     * @param   integer $pmt_id     Payment record ID
+     * @return  string      URL to detail display
+     */
+    public static function getDetailUrl($pmt_id)
+    {
+        return SHOP_ADMIN_URL . '/payments.php?pmtdetail=x&pmt_id=' . $pmt_id;
+    }
+
+
+    /**
+     * Set the payment complete flag.
+     * True indicates that the payment has been confirmed complete by the
+     * gateway.
+     *
+     * @param   integer $status     1 if complete, 0 if pending
+     * @eturn   object  $this
+     */
+    public function setComplete($status)
+    {
+        $this->is_complete = (int)$status;
+        return $this;
+    }
+
+
+    /**
+     * Check if the payment is finalized.
+     *
+     * @return  integer     1 if complete, 0 if pending
+     */
+    public function isComplete()
+    {
+        return (int)$this->is_complete;
+    }
+
+
+    /**
+     * Set the payment status string from the gateway.
+     *
+     * @param   string  $status     Informational status
+     * @return  object  $this
+     */
+    public function setStatus($status)
+    {
+        $this->status = $status;
+        return $this;
+    }
+
+
+    /**
+     * Get the payment status string.
+     *
+     * @return  string      Informational status info
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+}

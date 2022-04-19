@@ -16,8 +16,7 @@ require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check('shop.admin')
 ) {
     COM_404();
@@ -110,6 +109,7 @@ case 'run':
     break;
 
 case 'shipment_pl':
+    echo __LINE__ . ' deprecated';
     if ($actionval == 'x') {
         $shipments = SHOP_getVar($_POST, 'shipments', 'array');
     } else {
@@ -119,12 +119,27 @@ case 'shipment_pl':
     break;
 
 case 'pdfpl':
+    if ($actionval == 'x') {
+        $orders = SHOP_getVar($_POST, 'orders', 'array');
+    } else {
+        $orders = $actionval;
+    }
+    $View = new Shop\Views\Invoice;
+    $View
+        ->withOrderIds($orders)
+        ->asPackingList()
+        ->withOutput('pdf')
+        ->Render();
+    break;
 case 'pdforder':
     if ($actionval == 'x') {
         $orders = SHOP_getVar($_POST, 'orders', 'array');
     } else {
         $orders = $actionval;
     }
+    $View = new Shop\Views\Invoice;
+    $View->withOrderId($orders)->withOutput('pdf')->Render();
+    break;
     \Shop\Order::printPDF($orders, $view);
     break;
 

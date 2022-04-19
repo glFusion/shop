@@ -1,6 +1,10 @@
 /**
-*   Add an item to the shopping cart.
-*/
+ * Shop plugin javascript.
+ */
+
+/*
+ * Add an item to the shopping cart.
+ */
 var shopAddToCart = function(frm_id, nonce)
 {
     if (typeof(nonce) == "undefined") {
@@ -12,8 +16,7 @@ var shopAddToCart = function(frm_id, nonce)
         data = "item_number=" + frm_id + "&nonce=" + nonce;
     }
 
-    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    spinner.show();
+    Shop.spinner_show();
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -23,19 +26,11 @@ var shopAddToCart = function(frm_id, nonce)
             try {
                 if (result.content != '') {
                     // Update the shopping cart block if it is displayed
-                    divid = document.getElementById("shopCartBlockContents");
-                    if (divid != undefined) {
-                        divid.innerHTML = result.content;
-                        if (result.unique) {
-                            var btn_id = frm_id + '_add_cart_btn';
-                            btn = document.getElementById(btn_id);
-                            if (btn != undefined) {
-                                document.getElementById(btn_id).disabled = true;
-                                document.getElementById(btn_id).className = 'shopButton grey';
-                            }
-                        }
+                    $("#shopCartBlockContents").html(result.content);
+                    if (result.unique) {
+                        $("#"+frm_id+"_add_cart_btn").prop('disabled', true);
                     }
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, 'success');
                     // If a return URL is provided, redirect to that page
                     if (result.ret_url != '') {
                         window.location.href = result.ret_url;
@@ -43,20 +38,48 @@ var shopAddToCart = function(frm_id, nonce)
                 }
             } catch(err) {
             }
-            spinner.hide();
-            blk_setvis_shop_cart(result.content == "" ? "none" : "block");
+            Shop.spinner_hide();
+            all_setvis_cart_links(result.content == "" ? false : true);
         },
         error: function() {
-            spinner.hide();
+            Shop.notify('An error occurred.', 'error');
         }
     });
     return false;
 };
 
+function SHOP_delFromCart(oi_id)
+{
+    var dataS = {
+        "oi_id": oi_id,
+    };
+    var data = $.param(dataS);
+    $.ajax({
+        type: "GET",
+        dataType: "json",
+        url: glfusionSiteUrl + "/shop/ajax.php?action=delcartitem",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.content != '') {
+                    // Update the shopping cart block if it is displayed
+                    $("#shopCartBlockContents").html(result.content);
+                }
+            } catch(err) {
+            }
+            all_setvis_cart_links(result.content == "" ? false : true);
+        },
+        error: function() {
+        }
+    });
+    return false;
+}
+
 
 /**
-*   Set the visibility of the cart block so it only appears if there are items
-*/
+ * Set the visibility of the cart block so it only appears if there are items.
+ * @todo: deprecate in favor of all_setvis_cart_links()
+ */
 function blk_setvis_shop_cart(newvis)
 {
     blk = document.getElementById("shop_cart");
@@ -70,8 +93,25 @@ function blk_setvis_shop_cart(newvis)
 }
 
 /**
-*   Finalize the cart.
-*/
+ * Set the visibility for all cart-view buttons, blocks, links, etc.
+ * Need to set the shop_cart ID to show/hide the PHP block, which doesn't
+ * have a CSS class.
+ */
+function all_setvis_cart_links(newvis)
+{
+	if (newvis) {
+		$(".shop_cart_vis").show();
+		$("#shop_cart").show();
+	} else {
+		$(".shop_cart_vis").hide();
+		$("#shop_cart").hide();
+	}
+}
+
+
+/**
+ * Finalize the cart.
+ */
 function finalizeCart(cart_id, uid, redirects=false)
 {
     // First check that there is a payer email filled out.
@@ -79,8 +119,7 @@ function finalizeCart(cart_id, uid, redirects=false)
         return false;
     }
 */
-    var spinner = UIkit.modal.blockUI('<div class="uk-text-large uk-text-center"><i class="uk-icon-spinner uk-icon-large uk-icon-spin"></i></div>', {center:true});
-    spinner.show();
+    Shop.spinner_show();
     var dataS = {
         "cart_id": cart_id,
         "uid": uid,
@@ -100,11 +139,11 @@ function finalizeCart(cart_id, uid, redirects=false)
                 } else {
                     stat = false;
                 }
+                if (!redirects) {
+                    Shop.spinner_hide();
+                }
             } catch(err) {
                 stat = false;
-            }
-            if (!redirects) {
-                spinner.hide();
             }
         },
         error: function(httpRequest, message, errorThrown) {
@@ -112,8 +151,8 @@ function finalizeCart(cart_id, uid, redirects=false)
             console.log(httpRequest);
             console.log(message);
             console.log(errorThrown);
+            Shop.spinner_hide();
             throw errorThrown + ': ' + message;
-            spinner.hide();
             return false;
         },
     });
@@ -121,8 +160,8 @@ function finalizeCart(cart_id, uid, redirects=false)
 }
 
 /**
-*   Add an item to the shopping cart.
-*/
+ * Apply a gift card to the cart. Get the amount from the form.
+ */
 var shopApplyGC = function(frm_id)
 {
     data = $("#"+frm_id).serialize();
@@ -143,7 +182,7 @@ var shopApplyGC = function(frm_id)
                     }
                 }
                 if (result.msg != '') {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, 'success');
                 }
                 document.getElementById('enterGC').value = '';
             } catch(err) {
@@ -155,7 +194,7 @@ var shopApplyGC = function(frm_id)
 
 // Change the country selection on an address form
 // Used for customer and supplier addresses
-function chgCountrySel(newcountry)
+function chgCountrySel(newcountry, pfx="")
 {
     var dataS = {
         "action": "getStateOpts",
@@ -170,10 +209,10 @@ function chgCountrySel(newcountry)
         success: function(result) {
             try {
                 if (result.status && result.opts.length > 0) {
-                    $("#stateSelect").html(result.opts);
-                    $("#stateSelectDiv").show();
+                    $("#" + pfx + "stateSelect").html(result.opts);
+                    $("#" + pfx + "stateSelectDiv").show();
                 } else {
-                    $("#stateSelectDiv").hide();
+                    $("#" + pfx + "stateSelectDiv").hide();
                 }
             }
             catch(err) {
@@ -213,3 +252,4 @@ function SHOPvalidateAddress(form)
     });
     return;
 }
+

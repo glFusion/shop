@@ -28,7 +28,7 @@ class UploadDownload
 {
     /** File storage directory.
      * @var string */
-    private $_filePath;
+    private $_filePath = '';
 
     /** Array of error messages accumulated during processing.
      * @var array */
@@ -284,7 +284,7 @@ class UploadDownload
                 'application/pdf'                   => array('pdf'),
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => array('xlsx'),
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => array('docx'),
-                'pplication/vnd.openxmlformats-officedocument.presentationml.presentation' => array('pptx'),
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => array('pptx'),
                 'application/msaccess'              => array('mdb'),
             );
         } else {
@@ -877,8 +877,12 @@ class UploadDownload
      */
     private static function _fixMimeArrayCase($arr)
     {
-        $arr = array_change_key_case($arr);
+        $arr = array_change_key_case($arr, CASE_LOWER);
         foreach ($arr as $key=>$data) {
+            if (is_string($data)) {
+                // Convert to array if extensions are a comma-separated list
+                $data = explode(',', $data);
+            }
             foreach ($data as $idx=>$ext) {
                 if (strpos($ext, '.') === 0) {
                     $data[$idx] = substr($ext, 1);
@@ -1169,8 +1173,8 @@ class UploadDownload
             if (!$this->_fileSizeOk()) {
                 $err_msg = 'File, ' . $this->_currentFile['name'] . ', is larger than the ' .
                     COM_numberFormat($this->_maxFileSize,0) . ' byte limit';
-                $this->_addError($msg);
-                $this->_currentFile['localerror'][] = $msg;
+                $this->_addError($err_msg);
+                $this->_currentFile['localerror'][] = $err_msg;
             }
 
             // If all systems check, do the upload
@@ -1268,7 +1272,10 @@ class UploadDownload
                 $this->_imageIndex++;
             }
         } else {
-            if ($this->_filesToUpload['name'] != '' && $this->_filesToUpload['error'] == UPLOAD_ERR_OK) {
+            if (
+                $this->_filesToUpload['name'] != '' &&
+                $this->_filesToUpload['error'] == UPLOAD_ERR_OK
+            ) {
                 $fparts = pathinfo($this->_filesToUpload['name']);
                 $this->_currentFile['name'] = $fparts['basename'];
                 $this->_currentFile['extension'] = strtolower($fparts['extension']);
@@ -1447,5 +1454,3 @@ class UploadDownload
     }
 
 }
-
-?>

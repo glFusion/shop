@@ -3,9 +3,9 @@
  * Class to manage options/attributes associated with order line items.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -56,6 +56,11 @@ class OrderItemOption
      * @var float */
     private $oio_price = 0;
 
+    /** Flag to indicate the object has been changed and needs saving.
+     * @var boolean */
+    private $_tainted = true;
+
+
     /**
      * Constructor.
      * Initializes the order item
@@ -103,7 +108,11 @@ class OrderItemOption
         //echo $sql;die;
         $res = DB_query($sql);
         if ($res) {
-            return $this->setVars(DB_fetchArray($res, false));
+            $status = $this->setVars(DB_fetchArray($res, false));
+            if ($status) {
+                $this->unTaint();
+            }
+            return $status;
         } else {
             return false;
         }
@@ -130,6 +139,24 @@ class OrderItemOption
 
 
     /**
+     * Create an OrderItemOption record from a ProductOptionValue.
+     *
+     * @param   object  $POV        ProductOptionValue object
+     * @return  object  $this
+     */
+    public function fromProductOptionValue(object $POV) : object
+    {
+        $this->pog_id = $POV->getGroupID();
+        $this->pov_id = $POV->getID();
+        $this->oio_name = ProductOptionGroup::getInstance($POV->getGroupID())->getName();
+        $this->oio_value = $POV->getValue();
+        $this->oio_price = $POV->getPrice();
+        $this->Taint();
+        return $this;
+    }
+
+
+    /**
      * Set the OrderItem record ID property.
      *
      * @param   integer $id     OrderItem record ID
@@ -137,6 +164,9 @@ class OrderItemOption
      */
     public function setOrderItemID($id)
     {
+        if ($this->oi_id != $id) {
+            $this->Taint();
+        }
         $this->oi_id = (int)$id;
         return $this;
     }
@@ -145,31 +175,39 @@ class OrderItemOption
     /**
      * Get the options associated with an order item.
      *
-     * @param   object  $Item   OrderItem object
+     * @param   object  $OI OrderItem object
      * @return  array       Array of OrderItemOption objects
      */
-    public static function getOptionsForItem($Item)
+    public static function getOptionsForItem(OrderItem $OI)
     {
         global $_TABLES;
 
-        if ($Item->getID() < 1) {
+        static $retval = array();
+        $item_id = $OI->getID();
+        if ($item_id < 1) {
             // Catch bad or empty Item objects
-            return $retval;
+            return array();
         }
+
+        if (isset($retval[$item_id])) {
+            return $retval[$item_id];
+        }
+
+        $retval[$item_id] = array();
         //$cache_key = "oio_item_{$Item->id}";
         //$retval = Cache::get($cache_key);
         //if ($retval === NULL) {
-            $retval = array();
+            //$retval = array();
             $sql = "SELECT * FROM {$_TABLES['shop.oi_opts']}
-                WHERE oi_id = {$Item->getID()}
+                WHERE oi_id = {$item_id}
                 ORDER BY oio_id ASC";
             $res = DB_query($sql);
             while ($A = DB_fetchArray($res, false)) {
-                $retval[] = new self($A);
+                $retval[$item_id][] = new self($A);
             }
         //    Cache::set($cache_key, $retval, array('order_' . $Item->order_id));
         //}
-        return $retval;
+        return $retval[$item_id];
     }
 
 
@@ -211,6 +249,7 @@ class OrderItemOption
      * @param   integer $pov_id     Product Option Value ID, zero to use name/value
      * @param   string  $name       Name of custom field
      * @param   string  $value      Value of custom field
+     * @return  object  $this
      */
     public function setOpt($pov_id, $name='', $value='')
     {
@@ -232,6 +271,8 @@ class OrderItemOption
             $this->oio_value = $value;
             $this->oio_price = 0;
         }
+        $this->Taint();
+        return $this;
     }
 
 
@@ -347,6 +388,53 @@ class OrderItemOption
         return $this->pov_id;
     }
 
-}
 
-?>
+    /**
+     * Save this item if it has been changed.
+     *
+     * @return  object  $this
+     */
+    public function saveIfTainted() : object
+    {
+        if ($this->isTainted()) {
+            $this->Save();
+        }
+        return $this;
+    }
+
+
+    /**
+     * Check if the record is "tainted" by values being changed.
+     *
+     * @return  boolean     True if tainted and needs to be saved
+     */
+    public function isTainted() : bool
+    {
+        return $this->_tainted;
+    }
+
+
+    /**
+     * Taint this object, indicating that something has changed.
+     *
+     * @return  object  $this
+     */
+    public function Taint() : object
+    {
+        $this->_tainted = true;
+        return $this;
+    }
+
+
+    /**
+     * Remove the taint flag.
+     *
+     * @return  object  $this
+     */
+    public function unTaint() : object
+    {
+        $this->_tainted = false;
+        return $this;
+    }
+
+}

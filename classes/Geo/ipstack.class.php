@@ -3,23 +3,24 @@
  * Class to look up locations using ipstack.com.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     vTBD
- * @since       vTBD
+ * @version     v1.4.1
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  * @link        https://ipstack.com
  */
 namespace Shop\Geo;
+use Shop\Config;
 
 
 /**
  * Use ipstack.com
  * @package shop
  */
-class ipstack extends \Shop\GeoLocate
+class ipstack extends \Shop\GeoLocator
 {
     /** Descriptive key name used for caching.
      * @var string */
@@ -31,7 +32,7 @@ class ipstack extends \Shop\GeoLocate
 
     /** Provider API key.
      * @var string */
-    private $api_key;
+    private $api_key = '';
 
 
     /**
@@ -39,9 +40,8 @@ class ipstack extends \Shop\GeoLocate
      */
     public function __construct()
     {
-        global $_SHOP_CONF;
-
-        $this->api_key = SHOP_getVar($_SHOP_CONF, 'ipstack_api_key');
+        $this->api_key = Config::get('ipstack_api_key');
+        parent::__construct();
     }
 
 
@@ -50,7 +50,7 @@ class ipstack extends \Shop\GeoLocate
      *
      * @return  string      URL endpoint
      */
-    private function getEndpoint()
+    private function getEndpoint() : string
     {
         return 'http://api.ipstack.com/' . $this->ip .
             '?access_key=' . $this->api_key;
@@ -62,17 +62,18 @@ class ipstack extends \Shop\GeoLocate
      *
      * @return  array       Array containing country and state codes
      */
-    public function geoLocate()
+    protected function _geoLocate() : array
     {
-        global $_SHOP_CONF, $LANG_SHOP, $_CONF;
+        global $_CONF;
 
-        $endpoint = $this->getEndpoint($this->ip);
-        if (empty($endpoint)) {
+        // Can't geolocate if the api key is empty
+        if (empty($this->ip) || empty($this->api_key)) {
             return $this->default_data;
         }
 
         $resp = $this->getCache($this->ip);   // Try first to read from cache
         if ($resp === NULL) {           // Cache failed, look up via API
+            $endpoint = $this->getEndpoint($this->ip);
             $ch = curl_init();
             curl_setopt_array($ch, array(
                 CURLOPT_RETURNTRANSFER => 1,
@@ -92,12 +93,12 @@ class ipstack extends \Shop\GeoLocate
             if ($status['http_code'] == 200) {
                 $decoded = json_decode($resp, true);
                 if (!isset($decoded['error'])) {
-                    $this->setCache($resp, $thie->ip);
+                    $this->setCache($resp, $this->ip);
                 } else {
                     $msg = $decoded['error']['info'];
                     $decoded = $this->default_data;
                     $decoded['message'] = $msg;
-                    COM_errorLog("Shop\Geo\ipstack error $msg", SHOP_LOG_ERROR);
+                    SHOP_log($msg, SHOP_LOG_ERROR);
                 }
             } else {
                 SHOP_log("Geo/ipstack error {$status['http_code']}, data: $resp", SHOP_LOG_ERROR);
@@ -109,18 +110,20 @@ class ipstack extends \Shop\GeoLocate
         $retval = array(
             'ip' => $decoded['ip'],
             'continent_code' => $decoded['continent_code'],
+            'continent_name' => $decoded['continent_name'],
             'country_code' => $decoded['country_code'],
+            'country_name' => $decoded['country_name'],
             'state_code' => $decoded['region_code'],
+            'state_name' => $decoded['region_name'],
             'city_name' => $decoded['city'],
             'zip' => $decoded['zip'],
             'lat' => (float)$decoded['latitude'],
             'lng' => (float)$decoded['longitude'],
             'timezone' => $_CONF['timezone'],
             'status' => true,
+            'isp' => NULL,
         );
         return $retval;
     }
 
 }
-
-?>

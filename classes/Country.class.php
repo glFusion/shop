@@ -484,10 +484,9 @@ class Country extends RegionBase
         if (is_array($A)) {
             $this->setVars($A);
         }
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'country.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
         $T->set_var(array(
             'country_id'    => $this->getID(),
@@ -499,9 +498,8 @@ class Country extends RegionBase
             'dial_code'     => $this->getDialCode(),
             'region_options' => Region::optionLIst($this->region_id, false),
             'ena_chk'       => $this->country_enabled ? 'checked="checked"' : '',
-            'doc_url'       => SHOP_getDocUrl('country_form'),
+            'tooltipster_js' => Tooltipster::get('country_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output','form');
         return $T->finish($T->get_var('output'));
     }
@@ -648,14 +646,11 @@ class Country extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_country'],
-            SHOP_ADMIN_URL . '/regions.php?editcountry=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=0',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.countries',
@@ -669,17 +664,20 @@ class Country extends RegionBase
             'form_url' => SHOP_ADMIN_URL . '/regions.php?countries=x&region_id=' . $region_id,
         );
 
-        $filter = $LANG_SHOP['region'] . ': <select name="region_id"
-            onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/regions.php?countries&amp;region_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
+        $T = new Template('admin');
+        $T->set_file(array(
+            'filter' => 'sel_region.thtml',
+        ) );
+        $T->set_var(array(
+            'lang_regiontype' => $LANG_SHOP['region'],
+            'fld_name' => 'region_id',
+            'onchange_url' => SHOP_ADMIN_URL . '/regions.php?countries&amp;region_id=',
+            'option_list' => COM_optionList(
                 $_TABLES['shop.regions'], 'region_id,region_name', $region_id, 1
-            ) .
-            "</select>" . LB;
-
+            ),
+        ) );
+        $T->parse('output', 'filter');
+        $filter = $T->finish($T->get_var('output'));
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_countrylist',
             array(__CLASS__,  'getAdminField'),
@@ -710,24 +708,18 @@ class Country extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editcountry=' . $A['country_id'],
+            ) );
             break;
 
         case 'country_enabled':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['country_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['country_id']}\",\"country_enabled\",".
-                    "\"country\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['country_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['country_id']}','country_enabled','country');",
+            ) );
             break;
 
         case 'country_name':
@@ -752,5 +744,3 @@ class Country extends RegionBase
     }
 
 }
-
-?>

@@ -7,7 +7,6 @@
         <h1 class="aligncenter">{page_title}</h1>
         {linkPackingList}
 
-
         <div class="uk-grid uk-grid-width-medium-1-2 uk-grid-width-small-1-1">
             <div class="orderAddress">
               <span class="header">{$LANG_SHOP['bill_to']}:</span>&nbsp;
@@ -31,60 +30,60 @@
             <div class="cart-items">
                 <div class="uk-grid uk-margin uk-hidden-small">
                     <div class="uk-width-medium-1-2">{$LANG_SHOP['description']}</div>
-                    <div class="uk-width-medium-1-4">{$LANG_SHOP['ordered']}</div>
-                    <div class="uk-width-medium-1-4">{$LANG_SHOP['shipped']}</div>
+                    <div class="uk-width-medium-1-5 cart-item-quantity">{$LANG_SHOP['ordered']}</div>
+                    <div class="uk-width-medium-1-5 cart-item-quantity">{$LANG_SHOP['shipped']}</div>
                 </div>
             </div>
 
 <!-- BEGIN ItemRow -->
-                <div class="cart-item">
-                    <div class="uk-grid uk-margin">
-                        <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
-                            <div class="cart-item-title">
-                                {item_dscp}
+            <div class="cart-item">
+                <div class="uk-grid uk-margin">
+                    <div class="uk-width-medium-1-2 uk-width-1-1 cart-item-product">
+                        <div class="cart-item-title">
+                            {item_dscp}
 {!if sku}
-                                <br />{sku}
+                            <br />{sku}
 {!endif}
-                                {item_options}
-                            </div>
+                            {item_options}
                         </div>
-                        <div class="uk-width-medium-1-4 uk-width-1-2 cart-item-quantity">
-                            {ordered}
-                        </div>
+                    </div>
+                    <div class="uk-width-medium-1-5 uk-width-1-2 cart-item-quantity">
+                        {item_quantity}
+                    </div>
 
-                        <div class="uk-width-medium-1-4 uk-width-1-2 cart-item-total">
+                    <div class="uk-width-medium-1-5 uk-width-1-2 cart-item-quantity">
 {!if can_ship}
 {!if newship}
-                            <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
-                            <input type="hidden" name="maxship[{oi_id}]" value="{toship}" />
+                        <input type="text" name="ship_qty[{oi_id}]" size="5" class="alignright ship_qty" value="{toship}" />
+                        <input type="hidden" name="maxship[{oi_id}]" value="{toship}" />
 {!else}
-                            {toship}
+                        {toship}
 {!endif}
 {!else}
-                            {toship_text}
+                        {toship_text}
 {!endif}
-                        </div>
-<!-- END ItemRow -->
+					</div>
                 </div>
             </div>
+<!-- END ItemRow -->
         </div>
     </div>
 
-    <div id="trackinginfo">
+    <div id="trackinginfo" class="uk-width-1-1 uk-width-medium-2-3" style="padding-left:3px">
         {tracking_form}
     </div>
 
+    <div class="uk-width-1-1 uk-width-medium-1-3">
 {!if ship_method}
         <p>{$LANG_SHOP['ship_via']}: {ship_method}</p>
 {!endif}
 
-    <div id="orderInstructions"><span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span><br />
-{!if order_instr}
-        {order_instr}
-{!else}
-        <span class="orderInstructions">{$LANG_SHOP['none']}</span>
-{!endif}
+        <p>
+            <span class="orderInstructionsTitle">{$LANG_SHOP['order_instr']}:</span>
+            <br />{order_instr}
+        </p>
     </div>
+    <div style="clear:both;margin-top:15px;">
     <button style="float:none;" type="submit" class="uk-button uk-button-success" id="btn_submit"
 {!if shipment_id}
         name="updateshipment"
@@ -100,8 +99,9 @@
 {!endif}
     <button style="float:none;" type="submit" class="uk-button" name="cancel"
         onclick="window.history.go(-1);return false;">{$LANG_ADMIN['cancel']}</button>
+    </div>
 </form>
-<script type="text/javascript">
+<script>
 function delIfNothingShipped()
 {
     flds = document.getElementsByClassName("ship_qty");

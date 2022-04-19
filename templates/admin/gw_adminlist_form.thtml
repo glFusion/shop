@@ -1,0 +1,8 @@
+<form action="{site_admin_url}/plugins/shop/gateways.php" method="post" enctype="multipart/form-data">
+	<input placeholder="Selected File" disabled="disabled" />
+	<div class="tm-fileUpload uk-button uk-button-small uk-button-primary">
+		<span>{lang_select_file}</span>
+		<input type="file" name="gw_file" id="gw_file" class="tm-upload">
+	</div>
+	<button class="uk-button uk-button-success uk-button-small" type="submit" name="gwupload" value="Upload">{lang_upload}</button>
+</form>

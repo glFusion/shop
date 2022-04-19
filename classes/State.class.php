@@ -3,7 +3,7 @@
  * Class to handle State information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2020-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.0
  * @since       v1.1.0
@@ -430,10 +430,9 @@ class State extends RegionBase
      */
     public function Edit()
     {
-        $T = new \Template(__DIR__ . '/../templates');
+        $T = new Template('admin');
         $T->set_file(array(
             'form' => 'state.thtml',
-            'tips' => 'tooltipster.thtml',
         ) );
 
         $T->set_var(array(
@@ -444,9 +443,8 @@ class State extends RegionBase
             'tx_shp_chk'    => $this->tax_shipping ? 'checked="checked"' : '',
             'tx_hdl_chk'    => $this->tax_handling ? 'checked="checked"' : '',
             'country_options' => Country::optionLIst($this->country_iso, false),
-            'doc_url'       => SHOP_getDocUrl('state_form'),
+            'tooltipster_js' => Tooltipster::get('state_form'),
         ) );
-        $T->parse('tooltipster_js', 'tips');
         $T->parse('output', 'form');
         return $T->finish($T->get_var('output'));
     }
@@ -576,14 +574,11 @@ class State extends RegionBase
         );
 
         $display .= COM_startBlock('', '', COM_getBlockTemplate('_admin_block', 'header'));
-        $display .= COM_createLink(
-            $LANG_SHOP['new_state'],
-            SHOP_ADMIN_URL . '/regions.php?editstate=0',
-            array(
-                'class' => 'uk-button uk-button-success',
-                'style' => 'float:left',
-            )
-        );
+        $display .= FieldList::buttonLink(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/regions.php?editstate=0',
+            'style' => 'success',
+        ) );
 
         $query_arr = array(
             'table' => 'shop.states',
@@ -594,7 +589,7 @@ class State extends RegionBase
 
         $text_arr = array(
             'has_extras' => true,
-            'form_url' => SHOP_ADMIN_URL . '/regions.php?states=x&country_id=' . (int)$country_id,
+            'form_url' => SHOP_ADMIN_URL . "/regions.php?states=x&country_id=$country_id",
         );
 
         /*$options = array(
@@ -604,16 +599,26 @@ class State extends RegionBase
             'chkactions' => self::getBulkActionButtons(),
         );*/
 
-        $filter = $LANG_SHOP['country'] . ': <select name="country_id"
-            onchange="javascript: document.location.href=\'' .
-                SHOP_ADMIN_URL .
-                '/regions.php?states&amp;country_id=\'+' .
-                'this.options[this.selectedIndex].value">' .
-            '<option value="0">' . $LANG_SHOP['all'] . '</option>' . LB .
-            COM_optionList(
-                $_TABLES['shop.countries'], 'country_id,country_name', $country_id, 1
-            ) .
-            "</select>" . LB;
+        $T = new Template('admin');
+        $T->set_file(array(
+            'filter' => 'sel_region.thtml',
+        ) );
+        $T->set_var(array(
+            'lang_regiontype' => $LANG_SHOP['country'],
+            'fld_name' => 'country_id',
+            'onchange_url' => SHOP_ADMIN_URL . '/regions.php?states&amp;country_id=',
+        ) );
+        $T->set_block('filter', 'regionOptions', 'rOpts');
+        foreach (self::countrySelection($country_id) as $c_id=>$c_data) {
+            $T->set_var(array(
+                'opt_value' => $c_id,
+                'opt_name' => $c_data['country_name'],
+                'selected' => $c_id == $country_id,
+            ) );
+            $T->parse('rOpts', 'regionOptions', true);
+        }
+        $T->parse('output', 'filter');
+        $filter = $T->finish($T->get_var('output'));
 
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_statelist',
@@ -645,26 +650,20 @@ class State extends RegionBase
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/regions.php?editstate=' . $A['state_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/regions.php?editstate=' . $A['state_id'],
+            ) );
             break;
 
         case 'state_enabled':
         case 'tax_shipping':
         case 'tax_handling':
-            if ($fieldvalue == '1') {
-                $switch = 'checked="checked"';
-                $enabled = 1;
-            } else {
-                $switch = '';
-                $enabled = 0;
-            }
-            $retval .= "<input type=\"checkbox\" $switch value=\"1\" name=\"ena_check\"
-                    id=\"togenabled{$A['state_id']}\"
-                    onclick='SHOP_toggle(this,\"{$A['state_id']}\",\"{$fieldname}\",".
-                    "\"state\");' />" . LB;
+            $retval .= FieldList::checkbox(array(
+                'name' => 'ena_check',
+                'id' => "togenabled{$A['state_id']}",
+                'checked' => $fieldvalue == 1,
+                'onclick' => "SHOP_toggle(this,'{$A['state_id']}','{$fieldname}','state');",
+            ) );
             break;
         default:
             $retval = $fieldvalue;
@@ -685,6 +684,10 @@ class State extends RegionBase
     {
         global $_TABLES;
 
+        if (empty($state_name)) {
+            return '';
+        }
+
         $retval = '';
         $alpha2 = DB_escapeString($alpha2);
         $state_name = DB_escapeString($state_name);
@@ -693,13 +696,38 @@ class State extends RegionBase
                 ON c.country_id = s.country_id
             WHERE c.alpha2='$alpha2' AND  s.state_name='$state_name'";
         $res = DB_query($sql);
-        if ($res) {
+        if ($res && DB_numRows($res) > 0) {
             $A = DB_fetchArray($res, false);
             $retval = $A['iso_code'];
         }
         return $retval;
     }
 
-}
 
-?>
+    /**
+     * Create a country selection dropdown showing only countries with states.
+     *
+     * @param   integer $sel    Selected country ID
+     * @return  array       Array of country_id=>array(country_name, selected)
+     */
+    private static function countrySelection($sel = 0)
+    {
+        global $_TABLES;
+
+        $sql = "SELECT DISTINCT(s.country_id), c.country_name
+            FROM {$_TABLES['shop.states']} s
+            LEFT JOIN {$_TABLES['shop.countries']} c
+            ON s.country_id = c.country_id
+            ORDER BY c.country_name ASC";
+        $res = DB_query($sql);
+        $retval = array();
+        while ($A = DB_fetchArray($res, false)) {
+            $retval[$A['country_id']] = array(
+                'country_name' => $A['country_name'],
+                'selected' => $A['country_id'] == $sel,
+            );
+        }
+        return $retval;
+    }
+
+}

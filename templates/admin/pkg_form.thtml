@@ -1,0 +1,143 @@
+{# begin {templatelocation} #}
+<form action="{site_admin_url}/plugins/shop/packages.php" method="post" class="uk-form uk-form-horizontal">
+	<input type="hidden" name="pkg_id" value="{pkg_id}" />
+	<a href="{site_admin_url}/plugins/shop/packages.php?pkgedit">
+		<button class="uk-button uk-button-success">New Package</button>
+	</a>
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['description']}
+			<span id="pkg_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-large" type="text" name="dscp" value="{dscp}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['pkg_width']}
+			<span id="pkg_width" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="width" value="{width}" />&nbsp;{uom_size}
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['pkg_height']}
+			<span id="pkg_height" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="height" value="{height}" />&nbsp;{uom_size}
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['pkg_length']}
+			<span id="pkg_length" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="length" value="{length}" />&nbsp;{uom_size}
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['pkg_max_weight']}
+			<span id="pkg_max_weight" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="max_weight" value="{max_weight}" />&nbsp;{uom_weight}
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['unit_capacity']}
+			<span id="pkg_max_units" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-input uk-form-small uk-form-width-small" type="text" name="units" value="{units}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['carrier_options']}
+			<span id="pkg_carrier_opts" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<table class="uk-table uk-table-condensed uk-table-small">
+				<tr>
+					<th>{$LANG_SHOP['carrier']}</th>
+					<th>{$LANG_SHOP['pkg_code']}</th>
+					<th>{$LANG_SHOP['svc_code']}</th>
+					<th>{$LANG_SHOP['fixed_rate']}</th>
+				</tr>
+<!-- BEGIN CarrierInfo -->
+				<tr>
+					<!--<td>{carrier_id}</td>-->
+					<td>{carrier_name}</td>
+					<td>
+{!if has_pkgcode_select}
+						<select class="uk-select uk-form-small uk-form-width-medium" name="containers[{carrier_id}][container]">
+							<option value="" {sel_none}>-- {$LANG_SHOP['not_avail']} -- </option>
+<!-- BEGIN PkgCodes -->
+							<option value="{pkg_code}" {sel}>{pkg_dscp}</option>
+<!-- END PkgCodes -->
+						</select>
+{!else}
+						<input class="uk-input uk-form-small uk-form-width-medium" type="text" name="containers[{carrier_id}][container]" value="{container}" />
+{!endif}
+					</td>
+					<td>
+						<select class="uk-select uk-form-small uk-form-width-medium" name="containers[{carrier_id}][service]">
+<!-- BEGIN SvcCodes -->
+							<option value="{svc_code}" {sel}>{svc_dscp}</option>
+<!-- END SvcCodes -->
+						</select>
+					</td>
+					<td>
+						<input class="uk-input uk-form-small uk-form-width-small" type="text" name="containers[{carrier_id}][rate]" value="{rate}" />
+					</td>
+				</tr>
+<!-- END CarrierInfo -->
+			</table>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<div class="uk-form-controls uk-form-controls-text">
+			<button type="submit" name="pkgsave" class="uk-button uk-button-success">{$LANG_ADMIN['save']}</button>
+			<button type="reset" name="reset" class="uk-button uk-button-primary">{$LANG_SHOP['clearform']}</button>
+			<button type="submit" name="packages" class="uk-button">{$LANG_ADMIN['cancel']}</button>
+		</div>
+	</div>
+</form>
+<script>
+var ConfigDocUrl = '{doc_url}';
+$(document).ready(function() {
+	$('.tooltip_cfg').tooltipster({
+		contentAsHTML: true,
+		animation: 'fade',
+		trigger: 'click',
+		iconDesktop: true,
+		iconTouch: true,
+		functionBefore: function(origin, continueTooltip) {
+			var attrHref = ConfigDocUrl;
+			var ajobj = $(this);
+			$.get(attrHref, function(data) {
+				var confVar = ajobj.attr('id');
+				if (data.indexOf(confVar) > 0) {
+					var desc = $(data).find('#desc_' + confVar + ' dd:first').text();
+					//var a = $(data).find('a[name=desc_' + confVar + ']');
+					//var tds = a.parent().parent().children("td");
+					//var desc = tds.eq(1).html();
+					origin.tooltipster('content', desc);
+				} else {
+					origin.tooltipster('content', 'No Help Text Found');
+					console.log('Unable to find help text for desc_%s',confVar);
+				}
+				continueTooltip();
+			});
+		}
+	});
+});
+</script>
+{# end {templatelocation} #}

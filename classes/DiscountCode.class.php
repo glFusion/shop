@@ -3,15 +3,17 @@
  * Class to manage multi-use discount codes.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v1.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Dates;
+
 
 /**
  * Class for multi-use discount codes.
@@ -21,49 +23,41 @@ namespace Shop;
  */
 class DiscountCode
 {
-    /** Minimum possible date.*/
-    const MIN_DATE = '1970-01-01';
-
-    /** Minimum possible time. */
-    const MIN_TIME = '00:00:00';
-
-    /** Maximum possible date. */
-    const MAX_DATE = '9999-12-31';
-
-    /** Maximum possible time. */
-    const MAX_TIME = '23:59:59';
-
     /** Indicate whether the current object is a new entry or not.
      * @var boolean */
-    public $isNew;
+    public $isNew = true;
 
     /** DB Record ID.
-     * @var string */
-    private $code_id;
+     * @var integer */
+    private $code_id = 0;
 
     /** Actual code string.
      * @var string */
-    private $code;
+    private $code = '';
 
     /** Percentage discount when the code is used.
      * @var float */
-    private $percent;
+    private $percent = 0;
 
     /** Starting date/time. Date object.
      * @var object */
-    private $start;
+    private $start = NULL;
 
     /** Expiration date/time. Date object.
      * @var object */
-    private $end;
+    private $end = NULL;
 
     /** Minimum net order value to allow the code to be used.
      * @var float */
-    private $min_order;
+    private $min_order = 0;
+
+    /** Indicator that a valid code was found.
+     * @var bool */
+    private $isValid = false;
 
     /** Message text regarding application of a code.
      * @var string */
-    private $msg_text;
+    private $messages = array();
 
 
     /**
@@ -104,16 +98,21 @@ class DiscountCode
     {
         global $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
-            WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
-        $res = DB_query($sql);
-        if ($res) {
-            $A = DB_fetchArray($res, false);
-            $retval = new self($A);
-        } else {
-            $retval = new self;
+        static $retval = array();
+
+        if (!isset($retval[$code])) {
+            $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
+                WHERE code = '" . DB_escapeString(strtoupper($code)) . "'";
+            $res = DB_query($sql);
+            if ($res && DB_numRows($res) == 1) {
+                $A = DB_fetchArray($res, false);
+                $retval[$code] = new self($A);
+                $retval[$code]->setValid(true);
+            } else {
+                $retval[$code] = new self;
+            }
         }
-        return $retval;
+        return $retval[$code];
     }
 
 
@@ -131,9 +130,10 @@ class DiscountCode
         $sql = "SELECT * FROM {$_TABLES['shop.discountcodes']}
                 WHERE code_id = $id";
         $res = DB_query($sql);
-        if ($res) {
+        if ($res && DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $this->setVars($A);
+            $this->setValid(true);
             return true;
         }
         return false;
@@ -152,21 +152,21 @@ class DiscountCode
             // If coming from the form, convert individual fields to a datetime.
             // Use the minimum start date if none provided.
             if (empty($A['start'])) {
-                $A['start'] = self::MIN_DATE;
+                $A['start'] = Dates::MIN_DATE;
             }
             // Use the minimum start time if none provided.
             if (isset($A['start_allday']) || empty($A['start_time'])) {
-                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
+                $A['start'] = trim($A['start']) . ' ' . Dates::MIN_TIME;
             } else {
                 $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
             }
             // Use the maximum date if none is provided.
             if (empty($A['end'])) {
-                $A['end'] = self::MAX_DATE;
+                $A['end'] = Dates::MAX_DATE;
             }
             // Use tme maximum time if none is provided.
             if (isset($A['end_allday']) || empty($A['end_time'])) {
-                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+                $A['end'] = trim($A['end']) . ' ' . Dates::MAX_TIME;
             } else {
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
@@ -319,6 +319,29 @@ class DiscountCode
 
 
     /**
+     * Set the Valid status.
+     *
+     * @param   bool    $isValid    True or false to set, empty to check
+     * @return  self
+     */
+    public function setValid($isValid=true)
+    {
+        $this->isValid = $isValid ? true : false;
+    }
+
+
+    /**
+     * Check if the code is valid.
+     *
+     * @return  bool    True if valid, False if not
+     */
+    public function isValid()
+    {
+        return $this->isValid ? true : false;
+    }
+
+
+    /**
      * Save the current values to the database.
      *
      * @param   array   $A      Array of values from $_POST
@@ -338,6 +361,7 @@ class DiscountCode
             code_id = '" . (int)$this->code_id . "',
             code = '" . DB_escapeString($this->code) . "',
             percent = '" . (float)$this->percent . "',
+            min_order  = '" . (float)$this->min_order . "',
             start = '" . DB_escapeString($this->start->toMySQL(true)) . "',
             end = '" . DB_escapeString($this->end->toMySQL(true)) . "'
             ON DUPLICATE KEY UPDATE
@@ -352,7 +376,7 @@ class DiscountCode
         if ($err == '') {
             return true;
         } else {
-            COM_setMsg($err);
+            SHOP_setMsg($err);
             return false;
         }
     }
@@ -395,33 +419,46 @@ class DiscountCode
     /**
      * Validate a customer-entered discount code.
      *
-     * @param   float   $amt    Net order amount, to check min order required
+     * @param   object  $Cart   Cart object
      * @return  float       Percentage discount, NULL if invalid
      */
-    public function Validate($amt)
+    public function Validate($Cart)
     {
         global $_CONF, $LANG_SHOP;
 
         $now = $_CONF['_now']->toMySQL(true);
         if ($this->code_id < 1) {  // discount code not created yet
-            $this->msg_text = sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']);
-            return NULL;
-        } elseif ($this->min_order > (float)$amt) {  // order doesn't meet minimum
-            $this->msg_text = sprintf(
-                $LANG_SHOP['min_order_not_met'],
-                Currency::getInstance()->Format($this->min_order)
-            );
+            $this->messages[] = sprintf($LANG_SHOP['coupon_apply_msg3'], $_CONF['site_mail']);
             return NULL;
         } elseif (
             $now > $this->getEnd()->toMySQL(true) ||
             $now < $this->getStart()->toMySQL(true)
         ) {
-            $this->msg_text = $LANG_SHOP['dc_expired'];
+            $this->messages[] = $LANG_SHOP['dc_expired'];
             return NULL;
-        } else {
-            $this->msg_text = $LANG_SHOP['dc_applied'];
-            return $this->getPercent();
         }
+
+        // Get the item total from the order, excluding products that
+        // do not allow discount codes
+        $gross_items = $Cart->getGrossItems();
+        foreach($Cart->getItems() as $Item) {
+            if (!$Item->getProduct()->canApplyDiscountCode()) {
+                $gross_items -= $Item->getGrossExtension();
+            }
+        }
+        if ($gross_items < $Cart->getGrossItems()) {
+            $this->messages[] = $LANG_SHOP['dc_items_excluded'];
+        }
+        if ($this->min_order > (float)$gross_items + .0001) {  // order doesn't meet minimum
+            $this->messages[] = sprintf(
+                $LANG_SHOP['min_order_not_met'],
+                Currency::getInstance()->Format($this->min_order)
+            );
+            return NULL;
+        }
+
+        $this->messages[] = $LANG_SHOP['dc_applied'];
+        return $this->getPercent();
     }
 
 
@@ -432,7 +469,14 @@ class DiscountCode
      */
     public function getMessage()
     {
-        return $this->msg_text;
+        $cnt = count($this->messages);
+        if ($cnt == 0) {
+            return '';
+        } elseif ($cnt == 1) {
+            return $this->messages[0];
+        } elseif ($cnt > 1) {
+            return '<ul><li>' . implode('</li><li>', $this->messages) . '</li></ul>';
+        }
     }
 
 
@@ -474,7 +518,8 @@ class DiscountCode
             $start_date = $this->start->format('Y-m-d', true);
             $start_time = $this->start->format('H:i', true);
         }
-        $T = SHOP_getTemplate('discount_code', 'form');
+        $T = new Template('admin');
+        $T->set_file('form', 'discount_code.thtml');
         $retval = '';
         $T->set_var(array(
             'code_id'       => $this->code_id,
@@ -488,13 +533,14 @@ class DiscountCode
             'start_time'    => $start_time,
             'end_date'      => $end_date,
             'end_time'      => $end_time,
-            'min_date'      => self::MIN_DATE,
+            'min_date'      => Dates::MIN_DATE,
             'min_time'      => '00:00',
-            'max_date'      => self::MAX_DATE,
+            'max_date'      => Dates::MAX_DATE,
             'max_time'      => '23:59',
             'min_order'     => $this->min_order,
+            'lang_new_or_edit' => $this->code_id == 0 ? $LANG_SHOP['new_item'] : $LANG_SHOP['edit_item'],
         ) );
-        if ($this->end->format('H:i:s',true) == self::MAX_TIME) {
+        if ($this->end->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
                 'exp_allday_chk' => 'checked="checked"',
                 'end_time_disabled' => 'disabled="disabled"',
@@ -534,12 +580,6 @@ class DiscountCode
                 'sort' => true,
             ),
             array(
-                'text' => $LANG_SHOP['percent'],
-                'field' => 'percent',
-                'align' => 'right',
-                'sort' => true,
-            ),
-            array(
                 'text' => $LANG_SHOP['start'],
                 'field' => 'start',
                 'align' => 'center',
@@ -549,6 +589,12 @@ class DiscountCode
                 'text' => $LANG_SHOP['end'],
                 'field' => 'end',
                 'align' => 'center',
+                'sort' => true,
+            ),
+            array(
+                'text' => $LANG_SHOP['percent'],
+                'field' => 'percent',
+                'align' => 'right',
                 'sort' => true,
             ),
             array(
@@ -586,10 +632,11 @@ class DiscountCode
             'form_url' => SHOP_ADMIN_URL . '/index.php?discountcodes',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_discount'],
-            SHOP_ADMIN_URL . '/index.php?editcode=x',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $display .= '<div>' . FieldList::buttonLInk(array(
+            'text' => $LANG_SHOP['new_item'],
+            'url' => SHOP_ADMIN_URL . '/index.php?editcode=x',
+            'style' => 'success',
+        ) ). '</div>';
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_codelist',
             array(__CLASS__,  'getAdminField'),
@@ -620,22 +667,20 @@ class DiscountCode
         $retval = '';
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $A['code_id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editcode&code_id=' . $A['code_id'],
+            ) );
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?delcode&code_id=' . $A['code_id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?delcode&code_id=' . $A['code_id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
-                )
-            );
+                ),
+            ) );
             break;
 
         case 'end':
@@ -667,7 +712,7 @@ class DiscountCode
      */
     private static function maxDateTime()
     {
-        return self::MAX_DATE . ' ' . self::MAX_TIME;
+        return Dates::MAX_DATE . ' ' . Dates::MAX_TIME;
     }
 
 
@@ -678,7 +723,7 @@ class DiscountCode
      */
     private static function minDateTime()
     {
-        return self::MIN_DATE . ' ' . self::MIN_TIME;
+        return Dates::MIN_DATE . ' ' . Dates::MIN_TIME;
     }
 
 
@@ -692,13 +737,15 @@ class DiscountCode
     {
         global $_CONF, $_TABLES;
 
-        $now = $_CONF['_now']->toMySQL(true);
-        $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
-            WHERE '$now' > `start` AND '$now' < `end`";
-        $res = DB_query($sql);
-        return (int)DB_numRows($res);
+        static $count = -1;
+        if ($count === -1) {
+            $now = $_CONF['_now']->toMySQL(true);
+            $sql = "SELECT code FROM {$_TABLES['shop.discountcodes']}
+                WHERE '$now' > `start` AND '$now' < `end`";
+            $res = DB_query($sql);
+            $count = (int)DB_numRows($res);
+        }
+        return $count;
     }
 
 }
-
-?>

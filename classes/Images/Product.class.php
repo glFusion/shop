@@ -3,9 +3,9 @@
  * Class to handle product images.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2021 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.2.0
+ * @version     v1.3.1
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -22,15 +22,15 @@ class Product extends \Shop\Image
 {
     /** Key into $_SHOP_CONF where the image path can be found.
      * @var string */
-    static $pathkey = 'products';
+    protected static $pathkey = 'products';
 
     /** Maximum width, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxwidth = 1024;
+    protected static $maxwidth = 1024;
 
     /** Maximum height, in pixels. Used if no width is given in getImage functions.
      * @var integer */
-    static $maxheight = 1024;
+    protected static $maxheight = 1024;
 
 
     /**
@@ -64,7 +64,7 @@ class Product extends \Shop\Image
         // Seed image cache with thumbnails
         $this->MakeThumbs();
         $filenames = array();
-        foreach ($this->goodfiles as $filename) {
+        foreach ($this->getFilenames() as $filename) {
             $parts = pathinfo($filename);
             $basename = $parts['basename'];
             $sql = "INSERT INTO {$_TABLES['shop.images']} SET
@@ -81,6 +81,20 @@ class Product extends \Shop\Image
         }
         self::reOrder($this->record_id);
         return $filenames;
+    }
+
+
+    /**
+     * Check if an image file exists on the filesystem.
+     *
+     * @param   string  $filename   Image filename, no path
+     * @return  boolean     True if image file exists, False if not
+     */
+    public static function imageExists($filename)
+    {
+        global $_SHOP_CONF;
+
+        return is_file($_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $filename);
     }
 
 
@@ -256,7 +270,10 @@ class Product extends \Shop\Image
         if (DB_numRows($res) == 1) {
             $A = DB_fetchArray($res, false);
             $filespec = $_SHOP_CONF['image_dir'] . DIRECTORY_SEPARATOR . $A['filename'];
-            if (is_file($filespec)) {
+            if (
+                is_file($filespec) &&
+                DB_count($_TABLES['shop.images'], 'filename', $A['filename']) == 1
+            ) {
                 // Ignore errors due to file permissions, etc. Worst case is
                 // that an image gets left behind on disk
                 @unlink($filespec);
@@ -288,5 +305,3 @@ class Product extends \Shop\Image
     }
 
 }
-
-?>

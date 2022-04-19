@@ -1,0 +1,82 @@
+{# begin {templatelocation} #}
+<h2>
+{!if state_id}
+	{$LANG_SHOP['edit']}: {$LANG_SHOP['state']}
+{!else}
+	{$LANG_SHOP['new_item']}: {$LANG_SHOP['state']}
+{!endif}
+</h2>
+<form action="{site_admin_url}/plugins/shop/regions.php" method="post"
+	class="uk-form uk-form-horizontal">
+	<input type="hidden" name="state_id" value="{state_id}" />
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="f_country">{$LANG_SHOP['country']}:
+			<span id="hlp_country" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<select class="uk-select uk-form-small uk-form-width-medium" name="country_iso">
+				{country_options}
+			</select>
+			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="f_name">{$LANG_SHOP['name']}:
+			<span id="hlp_state_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-input uk-form-small uk-form-width-medium" required type="text" id="f_name" name="state_name" value="{state_name}" />
+			<i class="uk-icon uk-icon-exclamation-triangle uk-text-danger" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="f_iso">{$LANG_SHOP['iso_code']}:
+			<span id="hlp_iso" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<input class="uk-input uk-form-small uk-form-width-xsmall" type="text" id="f_iso" name="iso_code" value="{iso_code}" maxlength="3" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['tax_shipping']}:
+			<span id="hlp_tax_shipping" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="tax_shipping" {tx_shp_chk} value="1" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['tax_handling']}:
+			<span id="hlp_tax_handling" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" name="tax_handling" {tx_hdl_chk} value="1" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['enabled']}:
+			<span id="hlp_enabled" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls uk-form-controls-text">
+			<input class="uk-checkbox" type="checkbox" id="f_enabled" name="state_enabled" {ena_chk} value="1" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin" style="margin-top:10px;">
+		<label class="uk-form-label">&nbsp;</label>
+		<div class="uk-form-controls" style="text-align:center;">
+			<button class="uk-button uk-button-success" type="submit" name="savestate">{$LANG_ADMIN['submit']}</button>
+			<button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
+			<a class="uk-button" type="reset" name="states"
+				href="{site_admin_url}/plugins/shop/regions.php?states">{$LANG_ADMIN['cancel']}</a>
+		</div>
+	</div>
+</form>
+{tooltipster_js}
+ {# begin {templatelocation} #}

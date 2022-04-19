@@ -74,7 +74,7 @@
 {!if is_invoice}
     <td style="vertical-align:top;text-align:right">{item_price}</td>
     <td style="vertical-align:top;text-align:right">{item_total}</td>
-    <td style="vertical-align:top;text-align:left;padding-left:1em;">
+    <td style="vertical-align:top;text-align:left;padding-left:5em;">&nbsp;
 {!if taxable}
       {tax_icon}*
 {!else}
@@ -85,15 +85,17 @@
   </tr>
   <tr><td></td></tr>
 <!-- END ItemRow -->
-{!!if {is_invoice} && {subtotal} !!}
+{!if is_invoice}
   <tr>
     <td colspan="3" style="text-align:right">
       {$LANG_SHOP['item_total']}
     </td>
     <td colspan="2" style="text-align:right">
-      {subtotal}
+      {item_subtotal}
     </td>
   </tr>
+{!endif}
+{!!if {is_invoice} && {subtotal} !!}
 {!if dc_row_vis}
         <tr>
             <td colspan="3" style="text-align:right;">{$LANG_SHOP['disc_code']}</td>
@@ -106,7 +108,7 @@
 {!endif}
 {!if cart_tax}
   <tr>
-    <td colspan="3" style="text-align:right">{lang_tax_on_items}</td>
+    <td colspan="3" style="text-align:right">{$LANG_SHOP['sales_tax']}</td>
     <td colspan="2" style="text-align:right">{cart_tax}</td>
   </tr>
 {!endif}
@@ -130,6 +132,16 @@
     <td colspan="3" style="text-align:right;"><b>{$LANG_SHOP['total']}</b></td>
     <td colspan="2" style="text-align:right;"><b>{total}</b></td>
   </tr>
+{!if apply_gc}
+  <tr>
+    <td colspan="3" style="text-align:right;">{$LANG_SHOP['apply_gc']}</td>
+    <td colspan="2" style="text-align:right;">- {apply_gc}</td>
+  </tr>
+  <tr>
+    <td colspan="3" style="text-align:right;"><b>{$LANG_SHOP['pmt_total']}</b></td>
+    <td colspan="2" style="text-align:right;"><b>{net_total}</b></td>
+  </tr>
+{!endif}
 {!endif}
 </table>
 
@@ -143,9 +155,9 @@
 </p>
 
 {!if is_invoice}
-<p><b>{$LANG_SHOP['status']}:</b> {status}</p>
+<p><b>{$LANG_SHOP['status']}:</b><br />{status}</p>
 {!if is_admin}
-<p<b>>{$LANG_SHOP['purchaser']}:</b> {purch_name} ({purch_uid})</p>
+<p<b>>{$LANG_SHOP['purchaser']}:</b><br />{purch_name} ({purch_uid})</p>
 <table style="width:100%;">
   <tr>
     <th>{$LANG_SHOP['timestamp']}</th>
@@ -161,8 +173,8 @@
 <!-- END LogMessages -->
 </table>
 {!endif}
-{!if pmt_method}
-<p><b>{$LANG_SHOP['pmt_method']}:</b> {pmt_method}
+{!if pmt_dscp}
+<p><b>{$LANG_SHOP['pmt_method']}:</b><br />{pmt_dscp}
 {!if is_admin}
 {!if pmt_txn_id}
   , {$LANG_SHOP['trans_id']}
@@ -173,7 +185,7 @@
 {!endif}
 {!else}
 {!if shipper_id}
-<p><b>{$LANG_SHOP['ship_via']}:</b> {ship_method}</p>
+<p><b>{$LANG_SHOP['ship_via']}:</b><br />{ship_method}</p>
 {!endif}
 {!endif}
 {!if icon_dscp}

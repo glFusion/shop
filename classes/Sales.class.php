@@ -3,15 +3,17 @@
  * Class to manage product sale prices based on item or category.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018-2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.4.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use Shop\Models\Dates;
+
 
 /**
  * Class for product and category sales.
@@ -19,18 +21,6 @@ namespace Shop;
  */
 class Sales
 {
-    /** Minimum possible date.*/
-    const MIN_DATE = '1970-01-01';
-
-    /** Minimum possible time. */
-    const MIN_TIME = '00:00:00';
-
-    /** Maximum possible date. */
-    const MAX_DATE = '9999-12-31';
-
-    /** Maximum possible time. */
-    const MAX_TIME = '23:59:59';
-
     /** Base tag to use in creating cache IDs.
      * @var string */
     private static $base_tag = 'sales';
@@ -130,21 +120,21 @@ class Sales
             // If coming from the form, convert individual fields to a datetime.
             // Use the minimum start date if none provided.
             if (empty($A['start'])) {
-                $A['start'] = self::MIN_DATE;
+                $A['start'] = Dates::MIN_DATE;
             }
             // Use the minimum start time if none provided.
             if (isset($A['start_allday']) || empty($A['start_time'])) {
-                $A['start'] = trim($A['start']) . ' ' . self::MIN_TIME;
+                $A['start'] = trim($A['start']) . ' ' . Dates::MIN_TIME;
             } else {
                 $A['start'] = trim($A['start']) . ' ' . trim($A['start_time']);
             }
             // Use the maximum date if none is provided.
             if (empty($A['end'])) {
-                $A['end'] = self::MAX_DATE;
+                $A['end'] = Dates::MAX_DATE;
             }
             // Use tme maximum time if none is provided.
             if (isset($A['end_allday']) || empty($A['end_time'])) {
-                $A['end'] = trim($A['end']) . ' ' . self::MAX_TIME;
+                $A['end'] = trim($A['end']) . ' ' . Dates::MAX_TIME;
             } else {
                 $A['end'] = trim($A['end']) . ' ' . trim($A['end_time']);
             }
@@ -434,12 +424,15 @@ class Sales
      */
     public static function Clean()
     {
-        global $_CONF, $_TABLES;
+        global $_TABLES, $_CONF;
 
-        $now = $_CONF['_now']->toMySQL(true);
-        $sql = "DELETE FROM {$_TABLES['shop.sales']}
-                WHERE end < '$now'";
-        DB_query($sql);
+        if (Config::get('purge_sale_prices') > -1) {
+            $days = (int)Config::get('purge_sale_prices');
+            $now = $_CONF['_now']->toMySQL(true);
+            $sql = "DELETE FROM {$_TABLES['shop.sales']}
+                    WHERE end < DATE_SUB('$now', INTERVAL $days DAY)";
+            DB_query($sql);
+        }
     }
 
 
@@ -456,7 +449,7 @@ class Sales
         // If there are no products defined, return a formatted error message
         // instead of the form.
         if (DB_count($_TABLES['shop.products']) == 0) {
-            return SHOP_errMsg($LANG_SHOP['todo_noproducts']);
+            return SHOP_errorMessage($LANG_SHOP['todo_noproducts']);
         }
 
         if ($this->EndDate->toMySQL(true) == self::maxDateTime()) {
@@ -473,7 +466,8 @@ class Sales
             $st_dt = $this->StartDate->format('Y-m-d', true);
             $st_tm = $this->StartDate->format('H:i', true);
         }
-        $T = SHOP_getTemplate('sales_form', 'form');
+        $T = new Template('admin');
+        $T->set_file('form', 'sales_form.thtml');
         $retval = '';
         $T->set_var(array(
             'sale_id'       => $this->sale_id,
@@ -493,18 +487,19 @@ class Sales
             'end_date'      => $end_dt,
             'start_time'    => $st_tm,
             'end_time'      => $end_tm,
-            'min_date'      => self::MIN_DATE,
-            'min_time'      => self::MIN_TIME,
-            'max_date'      => self::MAX_DATE,
-            'max_time'      => self::MAX_TIME,
+            'min_date'      => Dates::MIN_DATE,
+            'min_time'      => Dates::MIN_TIME,
+            'max_date'      => Dates::MAX_DATE,
+            'max_time'      => Dates::MAX_TIME,
+            'lang_new_or_edit' => $this->sale_id == 0 ? $LANG_SHOP['new_item'] : $LANG_SHOP['edit_item'],
         ) );
-        if ($this->EndDate->format('H:i:s',true) == self::MAX_TIME) {
+        if ($this->EndDate->format('H:i:s',true) == Dates::MAX_TIME) {
             $T->set_var(array(
                 'end_allday_chk' => 'checked="checked"',
                 'end_time_disabled' => 'disabled="disabled"',
             ) );
         }
-        if ($this->StartDate->format('H:i:s',true) == self::MIN_TIME) {
+        if ($this->StartDate->format('H:i:s',true) == Dates::MIN_TIME) {
             $T->set_var(array(
                 'st_allday_chk' => 'checked="checked"',
                 'st_time_disabled' => 'disabled="disabled"',
@@ -564,6 +559,9 @@ class Sales
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
         $sql = "SELECT * FROM {$_TABLES['shop.sales']}";
+        if (!isset($_POST['show_inactive'])) {
+            $sql .= " WHERE end >= '" . $_CONF['_now']->toMySQL(true) . "'";
+        }
 
         $header_arr = array(
             array(
@@ -627,19 +625,29 @@ class Sales
         );
 
         $text_arr = array(
-            'has_extras' => false,
-            'form_url' => SHOP_ADMIN_URL . '/index.php',
+            'has_extras' => true,
+            'form_url' => SHOP_ADMIN_URL . '/index.php?sales=x',
         );
 
-        $display .= '<div>' . COM_createLink($LANG_SHOP['new_sale'],
-            SHOP_ADMIN_URL . '/index.php?editsale=x',
-            array('class' => 'uk-button uk-button-success')
-        ) . '</div>';
+        $filter = 'Show Inactive?&nbsp;' . Field::checkbox(array(
+            'name' => 'show_inactive',
+            'id' => 'show_inactive',
+            'checked' => isset($_POST['show_inactive']),
+        ) );
+        $options = array();
+        $form_arr = array(
+            'top' => FieldList::buttonLink(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editsale=x',
+                'text' => $LANG_SHOP['new_item'],
+                'style' => 'success',
+            ) ),
+        );
+
         $display .= ADMIN_list(
             $_SHOP_CONF['pi_name'] . '_discountlist',
             array(__CLASS__,  'getAdminField'),
             $header_arr, $text_arr, $query_arr, $defsort_arr,
-            '', '', '', ''
+            $filter, '', $options, $form_arr
         );
         $display .= COM_endBlock(COM_getBlockTemplate('_admin_block', 'footer'));
         return $display;
@@ -666,22 +674,20 @@ class Sales
 
         switch($fieldname) {
         case 'edit':
-            $retval = COM_createLink(
-                Icon::getHTML('edit'),
-                SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
-            );
+            $retval = FieldList::edit(array(
+                'url' => SHOP_ADMIN_URL . '/index.php?editsale&id=' . $A['id']
+            ) );
             break;
 
         case 'delete':
-            $retval = COM_createLink(
-                Icon::getHTML('delete'),
-                SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
-                array(
+            $retval = FieldList::delete(array(
+                'delete_url' => SHOP_ADMIN_URL . '/index.php?delsale&id=' . $A['id'],
+                'attr' => array(
                     'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
                     'title' => $LANG_SHOP['del_item'],
                     'class' => 'tooltip',
                 )
-            );
+            ) );
             break;
 
         case 'end':
@@ -742,7 +748,7 @@ class Sales
      */
     private static function maxDateTime()
     {
-        return self::MAX_DATE . ' ' . self::MAX_TIME;
+        return Dates::MAX_DATE . ' ' . Dates::MAX_TIME;
     }
 
 
@@ -753,7 +759,7 @@ class Sales
      */
     private static function minDateTime()
     {
-        return self::MIN_DATE . ' ' . self::MIN_TIME;
+        return Dates::MIN_DATE . ' ' . Dates::MIN_TIME;
     }
 
 
@@ -818,7 +824,7 @@ class Sales
      */
     public function getFormattedValue()
     {
-        if ($this->type == 'amount') {
+        if ($this->discount_type == 'amount') {
             return Currency::getInstance()->Format($this->amount);
         } else {
             return $this->amount;
@@ -858,6 +864,5 @@ class Sales
         return $this->sale_id == 0;
     }
 
-}   // class Sales
+}
 
-?>

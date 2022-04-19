@@ -1,0 +1,41 @@
+{header}
+<p>Bedankt voor uw aankoop bij {site_name}. Details van uw aankoop volgen:</p>
+<p>
+{purchase_details}
+</p>
+{!if files}
+<p>
+U kunt uw aangeschafte bestanden downloaden via de volgende links:
+</p>
+{dl_links}
+{!endif}
+
+{!if order_instr}
+<p>Speciale instructies: {order_instr}</p>
+{!endif}
+{!if pending}
+<p>
+Uw betaling is in behandeling. Zodra uw betaling is ontvangen, ontvangt u
+een ander e-mailbericht ter bevestiging van uw betaling.
+</p>
+{!endif}
+<p>U kunt uw bestelling bekijken op {order_url}
+{!if has_downloads}
+<br />Uw downloadbare aankopen kunnen worden gedownload via de bovenstaande link.
+{!endif}
+</p>
+{!if email_extras}
+<p>{email_extras}</p>
+{!endif}
+{!if gw_msg}
+<p><b>Bericht:</b><br />{gw_msg}</p>
+{!endif}
+{!if gc_bal_num}
+<p>
+Je hebt een resterend saldo van de cadeaubon van {gc_bal_fmt}.
+</p>
+{!endif}
+<p>
+Bedankt,<br />
+{footer}
+</p>

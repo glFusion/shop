@@ -17,8 +17,7 @@ require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check('shop.admin')
 ) {
     COM_404();
@@ -75,10 +74,10 @@ case 'saveregion':
     // Save a region record
     $R = Shop\Region::getInstance($_POST['region_id']);
     if ($R->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
     } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
+        SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/regions.php?editregion=' . $R->getID());
     }
     break;
@@ -87,10 +86,10 @@ case 'savecountry':
     // Save a country record
     $C = Shop\Country::getInstance($_POST['country_id']);
     if ($C->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
     } else {
-        COM_setMsg($C->getErrors());
+        SHOP_setMsg($C->getErrors());
         $content = $C->Edit($_POST);
     }
     break;
@@ -99,10 +98,10 @@ case 'savestate':
     // Save a state record
     $S = Shop\State::getInstance((int)$_POST['state_id']);
     if ($S->Save($_POST)) {
-        COM_setMsg($LANG_SHOP['msg_updated']);
+        SHOP_setMsg($LANG_SHOP['msg_updated']);
         COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
     } else {
-        COM_setMsg($LANG_SHOP['msg_nochange']);
+        SHOP_setMsg($LANG_SHOP['msg_nochange']);
         COM_refresh(SHOP_ADMIN_URL . '/regions.php?editstate=' . $S->getID());
     }
     break;
@@ -158,37 +157,37 @@ case 'disa_state':
 
 case 'editregion':
     $region_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('regions');
+    $content .= Shop\Menu::adminRules('regions');
     $content .= Shop\Region::getInstance($region_id)->Edit();
     break;
 
 case 'editcountry':
     $country_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('countries');
+    $content .= Shop\Menu::adminRules('countries');
     $content .= Shop\Country::getInstance($country_id)->Edit();
     break;
 
 case 'editstate':
     $state_id = (int)$actionval;
-    $content .= Shop\Menu::adminRegions('states');
+    $content .= Shop\Menu::adminRules('states');
     $content .= Shop\State::getInstance($state_id)->Edit();
     break;
 
 case 'countries':
     $region_id = SHOP_getVar($_GET, 'region_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Country::adminList($region_id);
     break;
 
 case 'states':
     $country_id = SHOP_getVar($_GET, 'country_id', 'integer', 0);
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\State::adminList($country_id);
     break;
 
 case 'regions':
 default:
-    $content .= Shop\Menu::adminRegions($action);
+    $content .= Shop\Menu::adminRules($action);
     $content .= Shop\Region::adminList();
     break;
 }

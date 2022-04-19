@@ -1,0 +1,84 @@
+{# begin {templatelocation} #}
+	<div id="{addr_type}_addr_form">
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_name">{$LANG_SHOP['fullname']}</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input uk-form-width-large required" type="text" id="{addr_type}_name" name="{addr_type}_name" value="{name}" maxlength="255" />
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_company">{$LANG_SHOP['company']}</label>
+		<div class="uk-form-controls">
+			<input class="uk-input uk-form-width-large" type="text" id="{addr_type}_company" name="{addr_type}_company" size="60" value="{company}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_address1">{$LANG_SHOP['address1']}</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input uk-form-width-large required" type="text" id="{addr_type}_address1" name="{addr_type}_address1" value="{address1}" />
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_address2">{$LANG_SHOP['address2']}</label>
+		<div class="uk-form-controls">
+			<input class="uk-input uk-form-width-large" type="text" id="{addr_type}_address2" name="{addr_type}_address2" size="60" value="{address2}" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_countrySelect">{$LANG_SHOP['country']}</label>
+		<div class="uk-form-controls">
+			<select required class="uk-select required" id="{addr_type}_countrySelect" name="{addr_type}_country"
+				onchange='{addr_type}_chgCountrySel(this.value);' class="shopStateSelect">
+				{country_options}
+			</select>
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin" id="{addr_type}stateSelectDiv" style="display:{state_sel_vis};">
+		<label class="uk-form-label" for="{addr_type}_state">{$LANG_SHOP['state']}</label>
+		<div class="uk-form-controls">
+			<select class="uk-select" id="{addr_type}stateSelect" name="{addr_type}_state" class="shopStateSelect">
+				{state_options}
+			</select>
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_city">{$LANG_SHOP['city']}</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input uk-form-width-large required" type="text" id="{addr_type}_city" name="{addr_type}_city" value="{city}" />
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_zip">{$LANG_SHOP['zip']}</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input uk-form-width-large" type="text" id="{addr_type}_zip" name="{addr_type}_zip" value="{zip}" />
+			<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label" for="{addr_type}_phone">{$LANG_SHOP['phone']}</label>
+		<div class="uk-form-controls">
+			<input required class="uk-input uk-form-width-large required" type="text" id="{addr_type}_phone" name="{addr_type}_phone" value="{phone}" />
+				<i class="uk-icon uk-icon-warning uk-text-warning tooltip" title="{$LANG_SHOP['required']}"></i>
+		</div>
+	</div>
+	</div>
+	<script>
+	function {addr_type}_chgCountrySel(value)
+	{
+		chgCountrySel(value, "{addr_type}");
+	}
+	</script>
+{# end {templatelocation} #}

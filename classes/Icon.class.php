@@ -5,8 +5,8 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
- * @since       v1.0.0
+ * @version     v1.3.0
+ * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -25,7 +25,6 @@ class Icon
         'edit'      => 'uk-icon uk-icon-edit',
         'delete'    => 'uk-icon uk-icon-remove uk-text-danger',
         'copy'      => 'uk-icon uk-icon-clone',
-        'edit'      => 'uk-icon uk-icon-edit',
         'arrow-up'  => 'uk-icon uk-icon-arrow-up',
         'arrow-down' => 'uk-icon uk-icon-arrow-down',
         'arrow-left' => 'uk-icon uk-icon-arrow-left',
@@ -94,5 +93,3 @@ class Icon
     }
 
 }
-
-?>

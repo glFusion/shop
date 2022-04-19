@@ -5,7 +5,7 @@
 <link rel="stylesheet" type="text/css" href="{site_url}/shop/css/style.css" />
 </head>
 <body>
-  <h1 class="aligncenter">{page_title}</h1>
+<h1>{$LANG_SHOP['packinglist']}</h1>
 <p style="text-align:right;padding-bottom:30px;">
     <span style="font-size:24px;">{shop_name}</span>
     <br />{shop_addr}
@@ -20,11 +20,6 @@
 <table style="width:100%;padding-bottom:15px;">
 <tr>
   <td style="width:50%;vertical-align:top;">
-{!if is_invoice}
-      <b>{$LANG_SHOP['bill_to']}:</b>
-      <br />
-      {billto_addr}
-{!endif}
   </td>
   <td style="width:50%;vertical-align:top;">
       <b>{$LANG_SHOP['ship_to']}:</b>
@@ -35,15 +30,16 @@
 </table>
 
 <p style="padding-bottom:15px;">
-  {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_id}<br />
+  {$LANG_SHOP['order_number']}:&nbsp;&nbsp;{order_number}<br />
   {$LANG_SHOP['order_date']}:&nbsp;&nbsp;{order_date}
 </p>
 
 <table style="width:90%;padding-bottom:20px;">
   <tr>
     <th style="width:10%;"></th>
-    <th style="width:75%;text-align:left;">{$LANG_SHOP['description']}</th>
-    <th style="width:10%;text-align:right;">{$LANG_SHOP['quantity']}</th>
+    <th style="width:65%;text-align:left;">{$LANG_SHOP['description']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['ordered']}</th>
+    <th style="width:10%;text-align:right;">{$LANG_SHOP['shipped']}</th>
   </tr>
   <tr><td>&nbsp;</td></tr>
 <!-- BEGIN ItemRow -->
@@ -62,6 +58,7 @@
 <!-- END ItemOptions -->
     </td>
     <td style="vertical-align:top;text-align:right">{item_quantity}</td>
+    <td style="vertical-align:top;text-align:right">{shipped}</td>
   </tr>
   <tr><td></td></tr>
 <!-- END ItemRow -->

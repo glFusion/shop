@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2009-2020 Lee Garner
  * @copyright   Copyright (c) 2005-2006 Vincent Furia
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.2.3
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -19,14 +19,43 @@ if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
 
-/** Include the system configuration class */
-$pp_config = config::get_instance();
-$_SHOP_CONF= $pp_config->get_config('shop');
+spl_autoload_register(function ($class)
+{
+    // project-specific namespace prefix
+    $prefix = 'Shop\\';
+
+    // does the class use the namespace prefix?
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        // no, move to the next registered autoloader
+        return;
+    }
+
+    // base directory for the namespace prefix
+    $base_dir = __DIR__ . '/classes/';
+
+    // get the relative class name
+    $relative_class = substr($class, $len);
+
+    // replace the namespace prefix with the base directory, replace namespace
+    // separators with directory separators in the relative class name, append
+    // with .php
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
+
+    // if the file exists, require it
+    if (file_exists($file)) {
+        require $file;
+    }
+});
+use Shop\Models\Views;
+use Shop\Upgrades;
+use Shop\Config;
+use glFusion\Log\Log;
+Config::getInstance();      // to load $_SHOP_CONF
+global $_SHOP_CONF;
 
 /** Include plugin config file  */
 require_once __DIR__ . '/shop.php';
-
-$_SHOP_CONF['datetime_fmt'] = 'Y-m-d H:i:s T';
 
 /** Define base path to plugin */
 define('SHOP_PI_PATH', __DIR__);
@@ -36,21 +65,10 @@ define('SHOP_URL', "{$_CONF['site_url']}/{$_SHOP_CONF['pi_name']}");
 define('SHOP_ADMIN_URL',
     "{$_CONF['site_admin_url']}/plugins/{$_SHOP_CONF['pi_name']}");
 
-// Define product types
-define('SHOP_PROD_PHYSICAL',  1);
-define('SHOP_PROD_DOWNLOAD',  2);
-define('SHOP_PROD_VIRTUAL',   4);
-define('SHOP_PROD_COUPON',    8);
-define('SHOP_PROD_PLUGIN',    16);
-
 // Define comment status
 define('SHOP_COMMENTS_ENABLED',   0);
 define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
-
-// Order status codes
-//define('SHOP_STATUS_OPEN', 0);
-//define('SHOP_STATUS_PAID', 1);
 
 // Log levels to emulate glFusion 2.0+ logging
 define('SHOP_LOG_DEBUG',    100);
@@ -60,15 +78,11 @@ define('SHOP_LOG_WARNING',  300);
 define('SHOP_LOG_ERROR',    400);
 define('SHOP_LOG_CRITICAL', 500);
 define('SHOP_LOG_ALERT',    550);
-define('SHOP_LOG_EMERGEHCY', 600);
-
-// Homepage layouts
-define('SHOP_HP_PRODUCT',   1);     // Product list (default)
-define('SHOP_HP_CAT',       2);     // Category list
-define('SHOP_HP_CATHOME',   4);     // Include home category
-define('SHOP_HP_CATTOP',    8);     // Category list, top-level only
+define('SHOP_LOG_EMERGENCY', 600);
 
 // Session variables for TimThumb image url, if used
+// This needs to be an array var named for the plugin,
+// can't use the Session class
 SESS_setVar($_SHOP_CONF['pi_name'], array(
     'origpath' => $_SHOP_CONF['image_dir'],
 ));
@@ -77,7 +91,7 @@ SESS_setVar($_SHOP_CONF['pi_name'], array(
 $langpath = __DIR__ . '/language';
 $langfile = "{$_CONF['language']}.php";
 if (!is_file("$langpath/$langfile")) {
-    $langfile = 'english.php';
+    $langfile = 'english_utf-8.php';
 }
 /** Include the proper language file */
 require_once "$langpath/$langfile";
@@ -99,20 +113,16 @@ if (empty($_USER['uid']) || $_USER['uid'] < 2) {
     $_USER['fullname'] = 'Anonymous';
 }
 
-require_once __DIR__ . '/classes/Autoload.class.php';
-Shop\Autoload::register();
+//require_once __DIR__ . '/classes/Autoload.class.php';
+//Shop\Autoload::register();
 
-/*
-if (
-    isset($_SHOP_CONF['tracker']) &&
-    $_SHOP_CONF['tracker'] != ''
-) {
+/*if (Config::get('tracker') != '') {
     $Cart = Shop\Cart::getInstance();
     if (!$Cart->isNew()) {
         Shop\Tracker::getInstance()->addCartView($Cart);
     }
-}
- */
+}*/
+
 
 /**
  * Show the product catalog in the centerblock.
@@ -124,17 +134,17 @@ if (
  */
 function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
 {
-    global $_SHOP_CONF, $LANG_SHOP;
+    global $LANG_SHOP;
 
     $display = '';
 
     // Only show if no topic is requested
-    if ($_SHOP_CONF['centerblock'] == 1 && $topic == '') {
+    if (Config::get('centerblock') == 1 && $topic == '') {
         $display = Shop\Menu::siteHeader();
         $display .= Shop\Menu::pageTitle();
         $cat_id = SHOP_getVar($_REQUEST, 'category', 'integer');
         $Catalog = new Shop\Catalog;
-        $display .= $Cat->setCatID($cat_id)->defaultCatalog();
+        $display .= $Catalog->setCatID($cat_id)->defaultCatalog();
         $display .= Shop\Menu::siteFooter();
     }
     return $display;
@@ -149,8 +159,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
  */
 function plugin_upgrade_shop($dvlp = false)
 {
-    require_once __DIR__ . '/upgrade.inc.php';
-    return SHOP_do_upgrade($dvlp);
+    return Upgrades\Upgrade::doUpgrade($dvlp);
 }
 
 
@@ -164,12 +173,13 @@ function plugin_getmenuitems_shop()
     global $_CONF, $_SHOP_CONF, $LANG_SHOP;
 
     $menuitems = array();
-    if ($_SHOP_CONF['menuitem'] && SHOP_access_check()) {
+    if (Config::get('catalog_enabled') && Config::get('menuitem') && SHOP_access_check()) {
         $a = preg_replace(
             '/\{(.*)\}/i',
-            '<i class="uk-icon uk-icon-${1}"></i>',
-            $LANG_SHOP['mnu_shop']);
-        $menuitems[$a] = SHOP_URL . '/index.php';
+            Shop\FieldList::icon(array('name' => '${1}')),
+            $LANG_SHOP['mnu_shop']
+        );
+        $menuitems[$a] = Config::get('url') . '/index.php';
     }
     return $menuitems;
 }
@@ -227,7 +237,7 @@ function plugin_savecomment_shop($title,$comment,$item_id,$pid,$postmode)
             )
             . COM_siteFooter();
     } else {        // success - update the comment counter for this item
-        return COM_refresh(SHOP_URL . "/detail.php?item_id=$item_id");
+        return COM_refresh(Config::get('url') . "/detail.php?item_id=$item_id");
     }
 }
 
@@ -302,7 +312,7 @@ function plugin_deletecomment_shop($cid, $id)
                     SET comments=$count
                     WHERE id='$id'");
             // Redirect back to the product detail page
-            return COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
+            return COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
         }
     }
 
@@ -321,7 +331,7 @@ function plugin_deletecomment_shop($cid, $id)
  */
 function plugin_editcomment_shop($cid, $id)
 {
-    echo COM_refresh(SHOP_URL . '/detail.php?id=' . $id);
+    COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
     exit;
 }
 
@@ -333,7 +343,7 @@ function plugin_editcomment_shop($cid, $id)
  */
 function plugin_geticon_shop()
 {
-    return SHOP_URL . '/images/shopping_cart2.png';
+    return Config::get('url') . '/images/shopping_cart2.png';
 }
 
 
@@ -365,7 +375,7 @@ function plugin_cclabel_shop()
 
     if (plugin_ismoderator_shop()) {
         return array($_SHOP_CONF['pi_display_name'],
-                    SHOP_ADMIN_URL . '/index.php',
+                    Config::get('admin_url') . '/index.php',
                     plugin_geticon_shop());
     }
 }
@@ -383,7 +393,7 @@ function plugin_getadminoption_shop()
     if (plugin_ismoderator_shop()) {
         return array(
             $_SHOP_CONF['pi_display_name'],
-            SHOP_ADMIN_URL . '/index.php',
+            Config::get('admin_url') . '/index.php',
             DB_count($_TABLES['shop.products']),
         );
     }
@@ -404,14 +414,14 @@ function plugin_getuseroption_shop()
         if (!COM_isAnonUser()) {
             $retval[] = array(
                 $LANG_SHOP['my_account'],
-                SHOP_URL . '/account.php',
+                Config::get('url') . '/account.php',
             );
         }
         // View cart option is available to anonymous users
-        if (Shop\Cart::getCart() && Shop\Cart::getInstance()->hasItems()) {
+        if (Shop\Cart::getCartID() && Shop\Cart::getInstance()->hasItems()) {
             $retval[] = array(
                 $LANG_SHOP['viewcart'],
-                COM_buildUrl(SHOP_URL . '/cart.php'),
+                COM_buildUrl(Config::get('url') . '/cart.php'),
             );
         }
     }
@@ -488,10 +498,11 @@ function plugin_user_move_shop($origUID, $destUID)
  */
 function plugin_autotags_shop ($op, $content = '', $autotag = '')
 {
-    global $_CONF, $_TABLES, $_SHOP_CONF;
+    global $_CONF, $_TABLES, $_SHOP_CONF, $LANG_SHOP;
 
     $pi_name = $_SHOP_CONF['pi_name'];
-    if ($op == 'tagname' ) {
+    switch ($op) {
+    case 'tagname':
         $tags = array(
             $pi_name,
             $pi_name . '_cat',
@@ -505,7 +516,23 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $tags[] = 'paypal_headlines';
         }
         return $tags;
-    } else if ($op == 'parse') {
+        break;
+    case 'tagusage':
+        return array(array('namespace' => $pi_name, 'usage' => 'description'));
+        break;
+    case 'desc':
+        switch ($content) {
+        case $pi_name:
+        case $pi_name . '_cat':
+        case $pi_name . '_headlines':
+            return $LANG_SHOP['at_dscp_' . $content];
+            break;
+        default:
+            return '';
+            break;
+        }
+        break;
+    case 'parse':
         // Do nothing if the user can't view the catalog
         if (!SHOP_access_check()) return $content;
 
@@ -530,7 +557,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
                 $P  = Shop\Product::getByID($id);
                 if (!$P->isNew()) {
                     $url = $P->getLink();
-                    //$url = COM_buildUrl(SHOP_URL . '/detail.php?id=' . $id);
+                    //$url = COM_buildUrl(Config::get('url') . '/detail.php?id=' . $id);
                     // Allow the author to use different text for the link.  Default
                     // is the stored product name.
                     if (empty($autotag['parm2'])) {
@@ -549,7 +576,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $id = COM_applyFilter($autotag['parm1'], true);
             $Cat = Shop\Category::getInstance($id);
             if (!$Cat->isNew()) {
-                $url = SHOP_URL.'/index.php?category='.$id;
+                $url = Config::get('url') .'/index.php?category='.$id;
                 if (empty($autotag['parm2'])) {
                     $linktext = DB_getItem($_TABLES['shop.categories'],
                         'cat_name', "cat_id = '$id'");
@@ -569,6 +596,7 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
             $content = str_replace($autotag['tagstr'], $repl, $content);
         }
         return $content;
+        break;
     }
 }
 
@@ -580,9 +608,11 @@ function plugin_autotags_shop ($op, $content = '', $autotag = '')
  * $rights.  If not log the error, display a generic access denied message
  * and exit.
  *
+ * The default is to check only shop.view and shop.admin to allow view access.
+ *
  * @param   string  $rights     Comma-separated list of allowable rights
  */
-function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
+function SHOP_access_check($rights = 'shop.admin,shop.view')
 {
     global $_PLUGINS, $_SHOP_CONF;
     static $access = array();
@@ -590,11 +620,13 @@ function SHOP_access_check($rights = 'shop.user,shop.admin,shop.view')
     if (!array_key_exists($rights, $access)) {
         SHOP_isMinVersion();    // sets an admin message and closes the shop
         $acc = true;
-        if (!$_SHOP_CONF['shop_enabled'] && !SEC_hasRights('shop.admin')) {
-            $acc = false;
-        }
-        // If this plugin or a required plugin isn't available, abort gracefully
-        if (!in_array('lglib', $_PLUGINS) || !SEC_hasRights($rights, 'OR')) {
+        if (
+            // If shop is closed and user is not an admin...
+            (!$_SHOP_CONF['shop_enabled'] && !plugin_ismoderator_shop()) ||
+            // or this plugin or a required plugin isn't available...
+            !in_array('lglib', $_PLUGINS) ||
+            !SEC_hasRights($rights, 'OR')
+        ) {
             $acc = false;
         }
 
@@ -651,7 +683,7 @@ function plugin_dopluginsearch_shop(
     // Use the SKU or item ID in the resulting url?
     $url_id = $_SHOP_CONF['use_sku'] ? 'p.name' : 'p.id';
     $sql = "SELECT
-                p.id, p.name as title, p.description as description,
+                p.id, p.short_description as title, p.description as description,
                 dt_add as date,  views as hits,
                 CONCAT('/{$_SHOP_CONF['pi_name']}/detail.php?id=',{$url_id},'&query=$htmlquery') as url
             FROM {$_TABLES['shop.products']} p
@@ -681,7 +713,9 @@ function plugin_getheaderjs_shop()
 {
     $files = array(
         //__DIR__ . '/js/toggleEnabled.js',
+        __DIR__ . '/js/util.js',  // uikit v2/v3 compatible notifications
         __DIR__ . '/js/addcart.js',
+        __DIR__ . '/js/datetimepicker.js',
     );
     return $files;
 }
@@ -714,6 +748,29 @@ function plugin_getheadercss_shop()
     }
 
     return $styles;
+}
+
+
+/**
+ * Execute additional functions when COM_siteHeader() is called.
+ * - Check for a Shop referral token and save it if found.
+ */
+function plugin_getheadercode_shop()
+{
+    global $_USER;
+
+    $aff_key = Config::get('aff_key', 'shop_ref');
+    if (isset($_GET[$aff_key]) && !empty($_GET[$aff_key])) {
+        $Referrer = Shop\Customer::findByAffiliate($_GET[$aff_key]);
+        if ($Referrer && $Referrer->getUid() != $_USER['uid']) {
+            Shop\Models\ReferralTag::set($_GET[$aff_key]);
+        }
+    }
+    if (Config::get('tracker') != '') {
+        return Shop\Tracker::getInstance()->getCode();
+    } else {
+        return '';
+    }
 }
 
 
@@ -766,12 +823,12 @@ function SHOP_getDocURL($file='', $doclang='')
         if (!file_exists($doc_path . $file)) {
             $doclang = 'english';
         }
-        $doc_url = SHOP_URL . "/docs/$doclang/$file";
+        $doc_url = Config::get('url') . "/docs/$doclang/$file";
     } else {
         if (!is_dir($doc_path)) {
             $doclang = 'english';
         }
-        $doc_url = SHOP_URL . "/docs/$doclang/";
+        $doc_url = Config::get('url') . "/docs/$doclang/";
     }
     return $doc_url;
 }
@@ -822,7 +879,6 @@ function plugin_autouninstall_shop()
             'shop.product_variants',
             'shop.variantXopt',
             'shop.suppliers',
-            'shop.discountcodes',
             'shop.regions',
             'shop.countries',
             'shop.states',
@@ -832,11 +888,21 @@ function plugin_autouninstall_shop()
             'shop.prodXfeat',
             'shop.zone_rules',
             // v1.3.0
+            'shop.packages',
             'shop.payments',
+            'shop.customerXgateway',
+            'shop.affiliate_sales',
+            'shop.affiliate_saleitems',
+            'shop.affiliate_payments',
+            // v1.4.0
+            'shop.stock',
+            'shop.plugin_products',
+            // v1.5.0
+            'shop.product_rules',
         ),
         // Give the full name of the group, as in the db
         'groups' => array(
-            'shop Admin',
+            'shop Admin',   // deprecated in v1.3.0
         ),
         // Give the full name of the feature, as in the db
         'features' => array(
@@ -856,7 +922,7 @@ function plugin_autouninstall_shop()
         ),
         // List all vars by name
         'vars'=> array(
-            'shop_gid',
+            'shop_gid',     // deprecated in v1.3.0
         ),
     );
     Shop\Cache::clear();  // clear everything from cache
@@ -923,7 +989,7 @@ function plugin_itemdeleted_shop($id, $type)
  */
 function plugin_getcommenturlid_shop()
 {
-    return array(COM_buildUrl(SHOP_URL . '/detail.php'), 'product');
+    return array(COM_buildUrl(Config::get('url') . '/detail.php'), 'product');
 }
 
 
@@ -937,14 +1003,14 @@ function phpblock_shop_cart()
 {
     if (!SHOP_access_check()) return '';
 
-    $T = new Template(__DIR__ . '/templates');
+    $T = new Shop\Template;
     $T->set_file('shopping_cart', 'blk_cart.thtml');
     $contents = phpblock_shop_cart_contents();
     $vis = empty($contents) ? 'none' : 'block';
     $T->set_var(array(
         'cart_contents' => $contents,
         'visibility'    => $vis,
-        'cart_url'      => COM_buildUrl(SHOP_URL . '/cart.php'),
+        'cart_url'      => COM_buildUrl(Config::get('url') . '/cart.php'),
     ) );
     $T->parse('output', 'shopping_cart');
     return $T->finish ($T->get_var('output'));
@@ -965,55 +1031,68 @@ function phpblock_shop_cart_contents()
 {
     global $_SHOP_CONF, $LANG_SHOP;
 
-    if (!SHOP_access_check()) return '';
+    // Cache since it may be called multiple times
+    static $contents = NULL;
 
-    // If the cart is not enabled, or there is no cart, return
-    if ($_SHOP_CONF['ena_cart'] == 0 || !Shop\Cart::getCart()) {
-        return '';
-    }
-
-    $cart = Shop\Cart::getInstance();
-    if (!$cart->canView()) {
-        Shop\Cart::delAnonCart();
-        return '';
-    }
-    // If the cart is empty, the block isn't shown
-    if (!$cart->hasItems()) {
-        return '';
-    }
-
-    $T = new Template(__DIR__ . '/templates');
-    $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
-    $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
-    $total = 0;
-    $Cur = $cart->getCurrency();
-    foreach ($cart->getItems() as $id=>$item) {
-        $item_id = $item->getProductID();
-        $optid_str = $item->getOptionIdString();
-        if (!empty($optid_str)) {
-            $item_id .= '|' . $optid_str;
+    if ($contents === NULL) {
+        $contents = '';
+        if (
+            !SHOP_access_check() ||
+            $_SHOP_CONF['ena_cart'] == 0
+        ) {
+            return $contents;
         }
-        $P = Shop\Product::getByID($item_id);
+        $cart_id = Shop\Cart::getCartID();
+        if (!Shop\Cart::exists($cart_id)) {
+            return $contents;
+        }
 
-        $item_total = (float)$item->getPrice() * $item->getQuantity();
+        $cart = Shop\Cart::getInstance();
+        if (!$cart->canView()) {
+            Shop\Cart::delAnonCart();
+            return $contents;
+        }
+        // If the cart is empty, the block isn't shown
+        if (!$cart->hasItems()) {
+            return $contents;
+        }
+
+        // Passed all the checks, have at least one item to display,
+        // so construct the cart template.
+        $T = new Shop\Template;
+        $T->set_file('shopping_cart_contents', 'blk_cart_contents.thtml');
+        $T->set_block('shopping_cart_contents', 'CartRow', 'cRow');
+        $total = 0;
+        $Cur = $cart->getCurrency();
+        foreach ($cart->getItems() as $id=>$item) {
+            $item_id = $item->getProductID();
+            $optid_str = $item->getOptionIdString();
+            if (!empty($optid_str)) {
+                $item_id .= '|' . $optid_str;
+            }
+            $P = Shop\Product::getByID($item_id);
+
+            $item_total = (float)$item->getPrice() * $item->getQuantity();
+            $T->set_var(array(
+                'item_id'       => $item_id,
+                'oi_id'         => $item->getID(),
+                //'del_link'      => Config::get('url') . '/cart.php?action=delete&id=' . $item_id,
+                'item_name'     => $item->getDscp(),
+                'price'         => $Cur->FormatValue($item->getPrice()),
+                'quantity'      => $item->getQuantity(),
+                'item_total'    => $Cur->FormatValue($item_total),
+                'item_link'     => $P->withOrderItem($item->getID())->getLink(),
+            ) );
+            $T->parse('cRow', 'CartRow', true);
+            $total += $item_total;
+        }
         $T->set_var(array(
-            'item_id'       => $item_id,
-//            'options'       => $P->getOptionDisplay($item),
-            'item_name'     => $item->getDscp(),
-            'price'         => $Cur->FormatValue($item->getPrice()),
-            'quantity'      => $item->getQuantity(),
-            'item_total'    => $Cur->FormatValue($item_total),
-//            'pi_url'        => SHOP_URL,
-            'item_link'     => $P->getLink($item->getID(), $cart->token),
+            'grand_total' => $Cur->Format($total),
         ) );
-        $T->parse('cRow', 'CartRow', true);
-        $total += $item_total;
+        $T->parse('output', 'shopping_cart_contents');
+        $contents = $T->finish ($T->get_var('output'));
     }
-    $T->set_var(array(
-        'grand_total' => $Cur->Format($total),
-    ) );
-    $T->parse('output', 'shopping_cart_contents');
-    return $T->finish ($T->get_var('output'));
+    return $contents;
 }
 
 
@@ -1028,7 +1107,7 @@ function phpblock_shop_search()
 
     if (!SHOP_access_check()) return '';
 
-    $T = new Template(__DIR__ . '/templates/');
+    $T = new Shop\Template;
     $T->set_file('search', 'blk_search.thtml');
 
     $cache_key = 'cat_options_cat_id_cat_name';
@@ -1042,7 +1121,7 @@ function phpblock_shop_search()
     }
     $T->set_var(array(
         'category_options'  => $category_options,
-        'action_url'        => SHOP_URL . '/index.php',
+        'action_url'        => Config::get('url') . '/index.php',
     ) );
     $T->parse('output', 'search');
     return $T->finish($T->get_var('output'));
@@ -1144,7 +1223,7 @@ function phpblock_shop_categories()
         }
         Shop\Cache::set($cache_key, $Cats, array('categories','products'));
     }
-    $T = new Template(__DIR__ . '/templates');
+    $T = new Shop\Template;
     $T->set_file(array('blk_category' => 'blk_categories.thtml'));
 
     if (!empty($Cats)) {
@@ -1159,7 +1238,7 @@ function phpblock_shop_categories()
             $T->set_var(array(
                 'category'  => $A['cat_name'],
                 'count'     => $cnt,
-                'url'       => SHOP_URL . '/index.php?category=' . $A['cat_id'],
+                'url'       => Config::get('url') . '/index.php?category=' . $A['cat_id'],
             ) );
             $T->parse('ItemRow', 'row', true);
         }
@@ -1262,35 +1341,44 @@ function SHOP_errorMessage($msg = '', $type = '', $header = '')
     global $LANG_SHOP;
 
     // Require a valid message
-    if ($msg == '')
+    if ($msg == '') {
         return '';
+    }
+    if (is_array($msg)) {
+        $msg = '<ul><li>' . implode('</li><li>', $msg) . '</li></ul>';
+    }
 
     // If no header text specified, we'll put in a default.
     // Also validate the message type in this switch.
     switch (strtolower($type)) {
     case 'info':
         $class = 'info';
-        if ($header == '') $header = $LANG_SHOP['info'];
+        //if ($header == '') $header = $LANG_SHOP['info'];
         break;
 
     case 'note':
     case 'warn':
-        $class = 'note';
-        if ($header == '') $header = $LANG_SHOP['warning'];
+        $class = 'warning';
+        //if ($header == '') $header = $LANG_SHOP['warning'];
         break;
 
     case 'alert':
+    case 'danger':
     default:
-        $class = 'alert';
-        if ($header == '') $header = $LANG_SHOP['alert'];
+        $class = 'danger';
+        //if ($header == '') $header = $LANG_SHOP['alert'];
         break;
     }
 
-    return "<span class=\"$class\">"
-            . COM_startBlock($header)
-            . $msg
-            . COM_endBlock()
-            . '</span>';
+    $T = new Template(__DIR__ . '/templates');
+    $T->set_file('alert', 'alert.thtml');
+    $T->set_var(array(
+        'level' => $class,
+        'message' => $msg,
+        'header' => $header,
+    ) );
+    $T->parse('output', 'alert');
+    return $T->finish($T->get_var('output'));
 }
 
 
@@ -1361,7 +1449,7 @@ function SHOP_phpblock_product($sql)
     }
     if ($res && DB_numRows($res) > 0) {
 
-        $T = new Template(__DIR__ . '/templates');
+        $T = new Shop\Template;
         $T->set_file(array(
             'blk_random' => 'blk_random.thtml',
             'btn_details' => 'buttons/btn_details.thtml',
@@ -1388,12 +1476,12 @@ function SHOP_phpblock_product($sql)
                 'currency'  => $_SHOP_CONF['currency'],
                 'rec_num'   => $i,      // to separate items by <hr/>
                 'id'        => $A['id'],
-                'pi_url'    => SHOP_URL,
+                'pi_url'    => Config::get('url'),
                 'on_sale'   => $isOnSale,
             ) );
 
             if (!$P->hasOptions()) {
-                $buttons = $P->PurchaseLinks();
+                $buttons = $P->PurchaseLinks(Views::BLOCK);
                 $btn_txt = '';
                 foreach ($buttons as $name=>$html) {
                     $btn_txt .= $html . '<br />';
@@ -1466,29 +1554,46 @@ function plugin_user_login_shop($uid)
 {
     global $_SHOP_CONF;
 
-    if ($uid < 2 || $_SHOP_CONF['ena_cart'] == 0) return;
+    if ($uid < 2 /*|| $_SHOP_CONF['ena_cart'] == 0*/) return;
 
-    $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
-    if (!empty($anon_cart)) {
-        $user_cart = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-        $user_cart->Merge($anon_cart);
-        $user_cart->Validate(true);
+    // Check that the user logging in isn't the same as the affiliate.
+    $token = Shop\Models\ReferralTag::get();
+    if (!empty($token)) {
+        $Referrer = Shop\Customer::findByAffiliate($token);
+        if ($Referrer && $Referrer->getUid() == $uid) {
+            Shop\Models\ReferralTag::remove();
+        }
+    }
+
+    if ($_SHOP_CONF['ena_cart']) {
+        $anon_cart = Shop\Cart::getAnonCartID();  // get the anonymous cart ID
+        if (!empty($anon_cart)) {
+            $user_cart = Shop\Cart::getInstance('', $uid);    // get the logged-in user's cart
+            $user_cart->Merge($anon_cart);
+        }
     }
 }
 
 
 /**
- * Handle actions needed when the current user logs out.
+ * Actions to perform when a user account is created.
+ * - Enroll the user as an affiliates if so configured.
+ * - Link existing anonymous orders to the new ID if email matches.
  *
- * @param   integer $uid    User ID
+ * @param   integer $uid    ID of new user
  */
-function NOOP_plugin_user_logout_shop($uid)
+function plugin_user_create_shop($uid)
 {
-/*    global $_SHOP_CONF;
-
-    $C = Shop\Cart::getInstance($uid);    // get the logged-in user's cart
-    Shop\Cart::storeCartID($C->order_id);    // save the cart ID for the anon user
-*/
+    if (
+        Config::get('aff_auto_enroll') &&
+        Config::get('aff_eligible') == 'allusers'
+    ) {
+        $Affiliate = new Shop\Affiliate($uid);
+        $Affiliate->Approve(false);
+    }
+    if (Config::get('link_orders_new_user')) {
+        Shop\Order::linkByEmail($uid);
+    }
 }
 
 
@@ -1526,9 +1631,11 @@ function plugin_runScheduledTask_shop()
     // Get pending (unpaid) orders not updated in a while
     $days = SHOP_getVar($_SHOP_CONF, 'days_purge_pending', 'integer');
     if ($days > 0) {
-        $conds[] = "(ord.status = 'pending' AND
-                ord.order_seq IS NULL AND
-                ord.last_mod < DATE_SUB(NOW(), INTERVAL $days DAY))";
+        $conds[] = "(
+            (ord.status = 'pending' OR ord.order_total = 0)
+            AND ord.order_seq IS NULL
+            AND ord.last_mod < DATE_SUB(NOW(), INTERVAL $days DAY)
+        )";
     }
 
     if (!empty($conds)) {
@@ -1545,20 +1652,6 @@ function plugin_runScheduledTask_shop()
         }
     }
 
-    // Clean up the HTML cache if used
-    if ((int)$_SHOP_CONF['cache_max_age'] > 0) {
-        $cachedir = "{$_CONF['path_data']}/layout_cache";
-        $files = glob("$cachedir/__shop__*");
-        if ($files) {
-            $timeAgo = time() - (int)$_SHOP_CONF['cache_max_age'];
-            foreach ($files as $file) {
-                if (@filemtime($file) < $timeAgo) {
-                    @unlink($file);
-                }
-            }
-        }
-    }
-
     // Treat disabled and expired products as "deleted" to get them out of
     // search results, etc.
     $sql = "SELECT id, prod_type FROM {$_TABLES['shop.products']}
@@ -1569,7 +1662,7 @@ function plugin_runScheduledTask_shop()
         PLG_itemDeleted($A['id'], $A['prod_type']);
         $clear_cache = true;
         // Toggle to disabled, also clears the product cache
-        //Shop\Product::toggleEnabled(1, $A['id']);
+        Shop\Product::toggleEnabled(1, $A['id']);
     }
 
     // Delete old cached buttons which are keyed by item_id and price.
@@ -1590,10 +1683,10 @@ function plugin_runScheduledTask_shop()
     // Force-clear the cache if items were removed.
     if ($clear_cache) {
         Shop\Cache::clear();
+    } else {
+        // Expire the database-based cache for glFusion < 2.0.0
+        Shop\Cache::expire();
     }
-
-    // Expire the database-based cache for glFusion < 2.0.0
-    Shop\Cache::expire();
 }
 
 
@@ -1770,7 +1863,7 @@ function plugin_configmanager_select_ipgeo_provider_shop()
     foreach ($files as $file) {
         $tmp = explode('/', $file);
         $opt = explode('.', end($tmp))[0];
-        $provider = Shop\GeoLocate::getProvider($opt)->getProviderName();
+        $provider = Shop\GeoLocator::getProvider($opt)->getProviderName();
         $A[$provider] = $opt;
     }
     return $A;
@@ -1812,7 +1905,7 @@ function plugin_configmanager_use_sku_shop_validate($val)
             '1=1'
         );
         if ($uniq_skus < $all_skus) {
-            COM_setMsg($LANG_SHOP_HELP['err_sku_nonuniq'], 'error');
+            SHOP_setMsg($LANG_SHOP_HELP['err_sku_nonuniq'], 'error');
             return 0;
         }
     }
@@ -1820,6 +1913,31 @@ function plugin_configmanager_use_sku_shop_validate($val)
     // caches.
     Shop\Cache::clear();
     return $val;
+}
+
+
+/**
+ * Select the form to use for affiliate registrations.
+ *
+ * @return  array   Form Name => Form ID
+ */
+function plugin_configmanager_select_aff_form_id_shop()
+{
+    $retval = array();
+    $status = PLG_callFunctionForOnePlugin(
+       'service_getMyForms_forms',
+        array(
+            1 => array('basename' => ''),
+            2 => &$A,
+            3 => &$svc_msg,
+        )
+    );
+    if ($status == PLG_RET_OK) {
+        foreach ($A as $id=>$name) {
+            $retval[$name] = $id;
+        }
+    }
+    return $retval;
 }
 
 
@@ -1843,7 +1961,7 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
 
     if ( ($panel == 'useredit') || ($panel == '' && $fieldset == '') ) {
     //if (($panel == '' || $panel == 'useredit') && $fieldset == '') {
-        $LT = new \Template(__DIR__ . '/templates/');
+        $LT = new Shop\Template;
         $LT->set_file(array(
             'block' => 'profileblock.thtml',
         ));
@@ -1860,6 +1978,13 @@ function plugin_profileedit_shop($uid, $panel, $fieldset)
         }
         $ord_count = DB_count($_TABLES['shop.orders'], 'uid', $uid);
         $LT->set_var('orders', $ord_count);
+        if (Config::get('aff_enabled')) {
+            $LT->set_var(array(
+                'aff_link'  => $U->getAffiliateLink(),
+                'lang_copy_clipboard' => $LANG_SHOP['copy_cb'],
+                'lang_copy_success' => $LANG_SHOP['copy_cb_success'],
+            ) );
+        }
         $LT->parse('output', 'block');
         $retval .= $LT->finish($LT->get_var('output'));
     }
@@ -2051,7 +2176,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
             $fields[] = 'c.grp_access';
             break;
         case 'url':
-            $fields[] = 'p.name';
+            $fields[] = 'p.short_description';
             break;
         }
     }
@@ -2096,7 +2221,7 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                 $props[$p] = $A['short_description'] . ' ' . $A['description'];
                 break;
             case 'title':
-                $props[$p] = $A['name'];
+                $props[$p] = $A['short_description'];
                 break;
             case 'searchidx':
                 $props[$p] = $A['name'] . ' ' .
@@ -2120,6 +2245,16 @@ function plugin_getiteminfo_shop($id, $what, $uid=0, $options=array())
                     'perm_members' => 1,
                     'perm_anon' => 1,
                 );
+                break;
+            case 'owner_id':
+            case 'author':
+                $props[$p] = 2;
+                break;
+            case 'author_name':
+                $props[$p] = 'None';
+                break;
+            case 'group_id':
+                $props[$p] = 2;
                 break;
             default:
                 $props[$p] = isset($A[$p]) ? $A[$p] : NULL;
@@ -2218,18 +2353,99 @@ function plugin_itemsaved_shop($id, $type, $old_id = '')
 
 
 /**
- * Get additional code to include in the site header.
+ * Set template variables.
+ * - Display the "View Cart" button, visibile if the cart has contents.
  *
- * @return  string      Additional header code
+ * @param   string  $templatename   Name of template, e.g. 'header'
+ * @param   ref     $template       Reference to actual template
  */
-function plugin_getheadercode_shop()
+function plugin_templateSetVars_shop($templatename, &$template)
 {
-    global $_SHOP_CONF;
+    // Cache the output since this gets called multiple times per page load.
+    static $output = NULL;
 
-    if (isset($_SHOP_CONF['tracker']) && $_SHOP_CONF['tracker'] != '') {
-        return Shop\Tracker::getInstance()->getCode();
+    if ($output === NULL) {
+        $contents = phpblock_shop_cart_contents();
+        $T = new Shop\Template('/buttons');
+        $T->set_file('btn', 'btn_view_cart.thtml');
+        $T->set_var('init_display', empty($contents) ? 'none' : '');
+        $T->parse('output', 'btn');
+        $output = $T->finish($T->get_var('output'));
+    }
+    $template->set_var('shop_cart_button', $output);
+}
+
+
+/**
+ * Get content for the syndication feeds.
+ *
+ * @param   string  $feed       Feed ID to get
+ * @param   string  $link       Pointer to header link value
+ * @param   array   $update_data    Pointer to array of updated item IDs
+ * @param   string  $feedType   Feed type (RSS, ICS, etc.) We only do ICS.
+ * @return  array               Array of event data
+ */
+function plugin_getfeedcontent_shop(
+    $feed, &$link, &$update_data, $feedType, $feedVersion
+) {
+    //$Feed = Shop\Models\Syndication::getById($feed);
+    //return $Feed->getFeedContent();
+    return Shop\Models\Syndication::getFeedcontent(
+        $feed, $link, $update_data, $feedType, $feedVersion
+    );
+}
+
+
+/**
+ * Get the names of RSS feeds that are provided.
+ * For Shop this is a list of feed-enabled categories.
+ *
+ * @return  array   Array of ID=>Name pairs
+ */
+function plugin_getfeednames_shop()
+{
+    return Shop\Models\Syndication::getFeedNames();
+}
+
+
+/**
+ * Checks to see if the RSS feed is up-to-date.
+ *
+ * @param   integer $feed   Feed ID from the RSS configuration
+ * @param   integer $topic  Topic ID being requested
+ * @param   string  $update_data    Comma-separated string of current item IDs
+ * @param   integer $limit  Configured limit on item count for this feed
+ * @return  boolean         True if feed needs updating, False otherwise
+ */
+function plugin_feedupdatecheck_shop(
+    $feed, $topic, $update_data, $limit,
+    $updated_type = '', $updated_topic = '', $updated_id = ''
+) {
+    return Shop\Models\Syndication::feedUpdateCheck(
+        $feed, $topic, $update_data, $limit,
+        $updated_type, $updated_topic, $updated_id
+    );
+}
+
+function plugin_getfeedformats_shop()
+{
+    return Shop\Models\Syndication::getFormats();
+}
+
+
+/**
+ * Get the syndication provider object.
+ *
+ * @since   glFusion 2.0
+ * @return  object      Syndication provider object
+ */
+function plugin_getfeedprovider_shop($format, $A=array())
+{
+    $cls = '\\Shop\\Models\\Feeds\\' . $format;
+    if (class_exists($cls)) {
+        return new $cls($A);
     } else {
-        return '';
+        return NULL;
     }
 }
 
@@ -2279,6 +2495,7 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
     case 'object':
     case 'mixed':
         return $val;
+        break;
     case 'string':
     default:
         return (string)$val;
@@ -2288,48 +2505,9 @@ function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok =
 
 
 /**
- * Helper function to get a template object.
- * If a name is supplied as a string with no ID, an empty template
- * object will be returned with the default path set.
- *
- * @param   string  $name   Base name of template file, e.g. "editor"
- * @param   string  $id     ID of template, e.g. "editform"
- * @param   string  $path   Optional path if not "templates/"
- * @return  s tring      Full filename, e.g. "editor.uikit.thtml"
- */
-function SHOP_getTemplate($name, $id='', $path='')
-{
-    global $_SHOP_CONF;
-
-    $templates = array();
-
-    // Put parameters into an array if not already.
-    if (!is_array($name) && !empty($id)) {
-        $templates = array($id => $name);
-    } elseif (is_array($name)) {
-        $templates = $name;
-    }
-
-    // Add additional path info if needed
-    if (!empty($path) && $path[0] == '/') $path = substr($path, 1);
-    if (substr($path, 0, 9) != 'templates') {
-        $path = 'templates/' . $path;
-    }
-
-    // May use "switch" later, for now there are only two options
-    foreach ($templates as $t_id =>$t_name) {
-        $templates[$t_id] = "$t_name.thtml";
-    }
-    $T = new Template(__DIR__ . '/' . $path);
-    $T->set_file($templates);
-    return $T;
-}
-
-
-/**
  * Check that the currently installed version matches the code version.
  * This is to disable functions that might not work due to a mismatch.
- * Just check the major.minor.revision values.  Any fourth element is ignored.
+ * Just check the major.minor.revision values. Any fourth element is ignored.
  *
  * @param   string  $required   Required version, default to code version
  * @return  boolean     True if current >= installed version, False if not
@@ -2338,8 +2516,22 @@ function SHOP_isMinVersion($required = '')
 {
     global $_SHOP_CONF, $_PLUGIN_INFO, $LANG_SHOP;
 
+    static $isMinVer = NULL;
+    if ($isMinVer !== NULL) {
+        return $isMinVer;
+    }
+
     // If not specified, use the current code version as required.
-    if ($required == '') $required = $_SHOP_CONF['pi_version'];
+    if ($required == '') {
+        $required = $_SHOP_CONF['pi_version'];
+    }
+
+    // Check for a patchlevel and remove if present.
+    $parts = explode('.', $required);
+    if (isset($parts[3])) {
+        unset($parts[3]);
+        $required = implode('.', $parts);
+    }
 
     $pi_name = $_SHOP_CONF['pi_name'];
     if (isset($_PLUGIN_INFO[$pi_name])) {
@@ -2350,15 +2542,17 @@ function SHOP_isMinVersion($required = '')
             $installed = $_PLUGIN_INFO[$pi_name];
         }
     }
+
     if (!COM_checkVersion($installed, $required)) {
         if (plugin_ismoderator_shop()) {
-            COM_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
+            SHOP_setMsg(sprintf($LANG_SHOP['err_not_curr_ver'], $installed, $required), 'error');
         }
         $_SHOP_CONF['shop_enabled'] = 0;    // close the shop
-        return false;
+        $isMinVer = false;
     } else {
-        return true;
+        $isMinVer = true;
     }
+    return $isMinVer;
 }
 
 
@@ -2385,7 +2579,7 @@ function SHOP_setUrl($url='')
     if ($url == '') {
         $url = COM_getCurrentURL();
     }
-    SESS_setVar('shop_ret_url', $url);
+    Shop\Models\Session::set('ret_url', $url);
 }
 
 
@@ -2396,19 +2590,20 @@ function SHOP_setUrl($url='')
  * @param   boolean $keep       True to keep the url in the session var
  * @return  string  URL
  */
-function SHOP_getUrl($def_url = '', $keep=true)
+function SHOP_getUrl($def_url = '', $keep=false)
 {
-    $url = SESS_getVar('shop_ret_url');
-    if (!$url) {
+    $url = Shop\Models\Session::get('ret_url');
+    if ($url === 0) {
         if ($def_url !== '') {
             $url = $def_url;
         } else {
             // final failsafe
-            $url = SHOP_URL . '/index.php';
+            $url = Config::get('url') . '/index.php';
         }
-    } elseif (!$keep) {
+    }
+    if (!$keep) {
         // This is a one-time use value
-        SESS_unSet('shop_ret_url');
+        Shop\Models\Session::clear('ret_url');
     }
     return $url;
 }
@@ -2426,6 +2621,7 @@ function SHOP_getUrl($def_url = '', $keep=true)
  */
 function SHOP_errMsg($msg, $title = '')
 {
+    return __FUNCTION__ . ' - deprecated';
     if (empty($msg)) return '';
 
     $retval = '<div class="uk-alert uk-alert-danger shopErrorMsg">' . LB;
@@ -2463,6 +2659,23 @@ function SHOP_getRatedIds($pi_name)
     return $retval[$pi_name];
 }
 
-require_once __DIR__ . '/services.inc.php';
 
-?>
+/**
+ * Set an error message using COM_setMsg(), wrapped in list tags.
+ *
+ * @param   string|array    $msgs   Error message(s)
+ * @param   string      $severity   Message severity (info, error, etc.)
+ */
+function SHOP_setMsg($msgs, $severity='info')
+{
+    if (!is_array($msgs)) {
+        $msg = $msgs;
+    } elseif (count($msgs) == 1) {
+        $msg = $msgs[0];
+    } else {
+        $msg = '<ul><li>' . implode('</li><li>', $msgs) . '</li></ul>';
+    }
+    COM_setMsg($msg, $severity);
+}
+
+require_once __DIR__ . '/services.inc.php';

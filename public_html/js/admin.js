@@ -1,10 +1,10 @@
 /**
-*   Toggle field for Shop products
-*
-*   @param  object  cbox    Checkbox
-*   @param  string  id      Sitemap ID, e.g. plugin name
-*   @param  string  type    Type of sitemap (XML or HTML)
-*/
+ * Toggle field for Shop products
+ *
+ * @param	object  cbox    Checkbox
+ * @param	string  id      Sitemap ID, e.g. plugin name
+ * @param	string  type    Type of sitemap (XML or HTML)
+ */
 var SHOP_toggle = function(cbox, id, type, component) {
     oldval = cbox.checked ? 0 : 1;
     var dataS = {
@@ -26,7 +26,7 @@ var SHOP_toggle = function(cbox, id, type, component) {
                 if (result.title != null) {
                     cbox.title = result.title;
                 }
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(result.statusMessage, 'success');
             }
             catch(err) {
                 alert(result.statusMessage);
@@ -56,7 +56,7 @@ var SHOPupdateSel = function(sel, id, type, component) {
         data: data,
         success: function(result) {
             try {
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(result.statusMessage, 'success');
             }
             catch(err) {
                 alert(result.statusMessage);
@@ -77,7 +77,6 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
         "comment": comment,
     };
     data = $.param(dataS);
-    console.log(data);
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -125,7 +124,7 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
                     btn.style.visibility = "hidden";
                 }
                 SHOP_setStatus(jsonObj.order_id, jsonObj.newstatus);
-                $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + jsonObj.statusMessage, {timeout: 1000,pos:'top-center'});
+                Shop.notify(jsonObj.statusMessage, 'success');
             }
             catch(err) {
                 alert("Error Updating");
@@ -136,21 +135,23 @@ function SHOP_updateOrderStatus(order_id, oldstatus, newstatus, showlog, comment
 }
 
 
-/*  Show the "update status" submit button if the order status selection has
-    changed.
-*/
+/**
+ * Show the "update status" submit button if the order status selection has
+ * changed.
+ */
 function SHOP_ordShowStatSubmit(order_id, oldvalue, newvalue)
 {
-    var el = document.getElementById("shopSetStat_" + order_id);
-    if (el) {
-        if (newvalue != oldvalue) {
-            el.style.visibility = '';
-        } else {
-            el.style.visibility = 'hidden';
-        }
+	if (newvalue != oldvalue) {
+        $("#shopSetStat_" + order_id).show();
+    } else {
+        $("#shopSetStat_" + order_id).hide();
     }
 }
 
+
+/**
+ * Set the order status value in the dropdown on the admin list.
+ */
 function SHOP_setStatus(order_id, newstatus)
 {
     SHOP_status[order_id] = newstatus;
@@ -160,6 +161,10 @@ function SHOP_setStatus(order_id, newstatus)
     }
 }
 
+/**
+ * Get the current order status.
+ * Just returns the value previusly set in the status array for the admin list.
+ */
 function SHOP_getStatus(order_id)
 {
     return SHOP_status[order_id];
@@ -193,7 +198,7 @@ function SHOP_voidItem(component, item_id, newval, elem)
                     elem.setAttribute('title', result.title);
                 }
                 if (result.msg != '') {
-                    $.UIkit.notify("<i class='uk-icon-check'></i>&nbsp;" + result.statusMessage, {timeout: 2000,pos:'top-center'});
+                    Shop.notify(result.statusMessage, 'success');
                 }
             } catch(err) {
             }

@@ -1,0 +1,144 @@
+{# begin {templatelocation} #}
+<form class="uk-form uk-form-horizontal" action="{action_url}/index.php" method="post">
+	<input type="hidden" name="pov_id" value="{pov_id}" />
+	<fieldset>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['opt_name']}:
+			<span id="opt_name" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+{!if opt_id}
+			<input type="hidden" name="pog_id" value="{pog_id}" />
+			{pog_name}
+{!else}
+		<select class="uk-select uk-form-width-medium" name="pog_id" id="opt_name_sel" onchange="updatePOG(this.value);">
+			{option_group_select}
+		</select>
+		&nbsp; ... or create new: <input class="uk-input uk-form-width-medium" type="text" name="pog_name" value="" />
+{!endif}
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['opt_value']}:
+			<span id="opt_value" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+		<input class="uk-input uk-form-width-medium" type="text" name="pov_value" value="{pov_value}" size="32" maxlength="32" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['opt_price']}:
+			<span id="pov_price" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+		<input class="uk-input uk-form-width-medium" type="text" id="pov_price" name="pov_price" value="{pov_price}" size="32" maxlength="32" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">SKU:
+			<span id="sku" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+		<input class="uk-input uk-form-width-medium" type="text" name="sku" value="{sku}" size="6" maxlength="6" />
+		</div>
+	</div>
+
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['pos_after']}:
+			<span id="orderby" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+			<select class="uk-select uk-form-width-medium" name="orderby" id="orderby_sel">
+				{orderby_opts}
+			</select>
+		</div>
+	</div>
+
+{!if 0}
+	<div class="uk-form-row uk-margin">
+		<label class="uk-form-label">{$LANG_SHOP['enabled']}?
+			<span id="enabled" class="tooltip_cfg tooltipstered"></span>
+		</label>
+		<div class="uk-form-controls">
+		<input type="checkbox" name="enabled" value="1" {ena_chk} />
+		</div>
+	</div>
+{!endif}
+
+	<div class="uk-form-row uk-margin" align="center">
+		<button class="uk-button uk-button-success type="submit" name="pov_save" value="{$LANG_SHOP['saveopt']}">{$LANG_SHOP['saveopt']}</button>
+		<button class="uk-button uk-button-primary" type="reset" />{$LANG_SHOP['clearform']}</button>
+		<button class="uk-button uk-button-danger" type="submit" name="pov_del" value="{$LANG_SHOP['deleteopt']}"
+			onclick="return confirm('{$LANG_SHOP['q_del_item']}');">{$LANG_SHOP['deleteopt']}</button>
+		<a class="uk-button uk-button-default" href="{action_url}/index.php?options">{$LANG_ADMIN['cancel']}</a>
+	</div>
+
+</form>
+<script>
+var ConfigDocUrl = '{doc_url}';
+$(document).ready(function() {
+	$('.tooltip_cfg').tooltipster({
+		contentAsHTML: true,
+		animation: 'fade',
+		trigger: 'click',
+		iconDesktop: true,
+		iconTouch: true,
+		functionBefore: function(origin, continueTooltip) {
+			var attrHref = ConfigDocUrl;
+			var ajobj = $(this);
+			$.get(attrHref, function(data) {
+				var confVar = ajobj.attr('id');
+				if (data.indexOf(confVar) > 0) {
+					var desc = $(data).find('#desc_' + confVar + ' dd:first').text();
+					origin.tooltipster('content', desc);
+				} else {
+					origin.tooltipster('content', 'No Help Text Found');
+					console.log('Unable to find help text for desc_%s',confVar);
+				}
+				continueTooltip();
+			});
+		}
+	});
+});
+
+var og_id = "{ppg_id}";
+
+/**
+ * Update the option group selected.
+ */
+function updatePOG(new_id)
+{
+	og_id = new_id;
+	updateOrderbyOpts()
+}
+
+/**
+ * Update the `orderby` selection list when the product or option group are changed.
+ */
+function updateOrderbyOpts()
+{
+	var dataS = {
+		"action": "opt_orderby_opts",
+		"og_id": og_id,
+	};
+	data = $.param(dataS);
+	$.ajax({
+		type: "POST",
+		dataType: "text",
+		url: site_admin_url	+ "/plugins/shop/ajax.php",
+		data: data,
+		success: function(result) {
+			try {
+				document.getElementById("orderby_sel").innerHTML = result;
+			} catch(err) {
+			}
+		}
+	});
+	return status;
+}
+</script>
+{# end {templatelocation} #}

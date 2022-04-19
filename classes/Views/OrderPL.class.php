@@ -5,9 +5,9 @@
  * order is being shipped together.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.0.0
+ * @version     v1.2.3
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -16,6 +16,7 @@
 namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Order;
+use Shop\Template;
 
 
 /**
@@ -50,7 +51,7 @@ class OrderPL extends Shipment
     {
         global $_SHOP_CONF, $LANG_SHOP;
 
-        $T = new \Template(SHOP_PI_PATH . '/templates');
+        $T = new Template;
         $T->set_file(array(
             'order'     => 'packinglist.thtml',
             'tracking'  => 'shipment_tracking_2.thtml',
@@ -67,7 +68,7 @@ class OrderPL extends Shipment
                 'item_dscp'     => htmlspecialchars($OI->description),
                 'item_options'  => $OI->getOptionDisplay(),
                 'item_quantity' => $OI->quantity,
-                'sku'           => $P->getSKU($OI),
+                'sku'           => $OI->getSKU(),
             ) );
             $T->parse('iRow', 'ItemRow', true);
             $T->clear_var('iOpts');

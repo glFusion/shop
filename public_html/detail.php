@@ -18,8 +18,7 @@ require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||    // first ensure plugin is installed
     !SHOP_access_check()
 ) {
     COM_404();
@@ -31,12 +30,13 @@ if (isset($_GET['item_id'])) {
     // Force reading the item by it's record ID regardless of the use_sku setting.
     // Set $_SHOP_CONF['use_sku'] to false to get the Product class to use the ID.
     $id = $_GET['item_id'];
-    $_SHOP_CONF['use_sku'] = false;
+    Shop\Config::set('use_sku', false);
 } elseif (isset($_GET['id'])) {
     $id = $_GET['id'];
 } else {
     $id = COM_getArgument('id');
 }
+
 if (isset($_GET['oi_id'])) {
     $oi_id = (int)$_GET['oi_id'];
 } else {
@@ -60,7 +60,7 @@ if (!empty($id)) {
     }
 }
 if (empty($content)) {
-    COM_setMsg($LANG_SHOP['item_not_found']);
+    SHOP_setMsg($LANG_SHOP['item_not_found']);
     COM_refresh(SHOP_URL);
 }
 if (empty($breadcrumbs)) {
@@ -77,7 +77,7 @@ if (empty($breadcrumbs)) {
 }
 
 SHOP_setUrl();
-$display = \Shop\Menu::siteHeader();
+$display = \Shop\Menu::siteHeader($P->getShortDscp());
 $display .= \Shop\Menu::pageTitle();
 if (!empty($msg)) {
     //msg block

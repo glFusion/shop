@@ -17,8 +17,7 @@ require_once('../../../lib-common.php');
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check('shop.admin')
 ) {
     COM_404();
@@ -37,7 +36,7 @@ if (isset($_REQUEST['msg'])) $msg[] = $_REQUEST['msg'];
 $action = 'gwadmin';     // Default if no correct view specified
 $expected = array(
     // Actions to perform
-    'gwmove', 'gwsave', 'gwinstall', 'gwdelete',
+    'gwmove', 'gwsave', 'gwinstall', 'gwdelete', 'gwupload', 'gwupgrade',
     // Views to display
     'gwadmin', 'gwedit',
 );
@@ -55,9 +54,27 @@ foreach($expected as $provided) {
 
 
 switch ($action) {
+case 'gwupgrade':
+    $GW = Shop\Gateway::getInstance($actionval);
+    if ($GW->doUpgrade()) {
+        SHOP_setMsg($LANG_SHOP['upgrade_ok']);
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    break;
+
+case 'gwupload':
+    $status = Shop\Gateway::upload();
+    if ($status) {
+        SHOP_setMsg("The gateway was successfully uploaded");
+    } else {
+        SHOP_setMsg("The gateway could not be uploaded");
+    }
+    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    break;
+
 case 'gwinstall':
     $gwname = $_GET['gwname'];
-    $gw = \Shop\Gateway::getInstance($gwname);
+    $gw = Shop\Gateway::create($gwname);
     if ($gw !== NULL) {
         if ($gw->Install()) {
             $msg[] = "Gateway \"$gwname\" installed successfully";
@@ -71,8 +88,9 @@ case 'gwinstall':
 case 'gwdelete':
     $gw = \Shop\Gateway::getInstance($_GET['id']);
     if ($gw !== NULL) {
-        $status = $gw->Remove();
+        $gw->ClearButtonCache();
     }
+    $status = \Shop\Gateway::Remove($_GET['id']);
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
@@ -80,7 +98,7 @@ case 'gwsave':
     // Save a payment gateway configuration
     $gw = \Shop\Gateway::getInstance($_POST['gw_id']);
     if ($gw !== NULL) {
-        $status = $gw->SaveConfig($_POST);
+        $status = $gw->saveConfig($_POST);
     }
     COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;

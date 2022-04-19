@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<script type="text/javascript">
+<script>
 function updateForm(id)
 {
     if (id == 0) {
@@ -106,7 +106,7 @@ function removeAddress(addr_id)
 
   <input type="hidden" name="addr_id" id="addr_id" value="{addr_id}" />
 
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="name">{$LANG_SHOP['fullname']}</label>
     <div class="uk-form-controls">
       <input required type="text" id="name" name="name" value="{name}" size="60" maxlength="255" />
@@ -114,148 +114,96 @@ function removeAddress(addr_id)
     </div>
   </div>
 
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="company">{$LANG_SHOP['company']}</label>
     <div class="uk-form-controls">
       <input type="text" id="company" name="company" size="60" value="{company}" />
     </div>
   </div>
 
-{!if get_street}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="address1">{$LANG_SHOP['address1']}</label>
     <div class="uk-form-controls">
-      <input
-{!if req_street}
-      required
-{!endif}
-      type="text" id="address1" name="address1" size="60" value="{address1}" />
-{!if req_street}
+      <input required type="text" id="address1" name="address1" size="60" value="{address1}" />
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
 
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="address2">{$LANG_SHOP['address2']}</label>
     <div class="uk-form-controls">
       <input type="text" id="address2" name="address2" size="60" value="{address2}" />
     </div>
   </div>
-{!else}
-    <input type="hidden" id="address1" name="address1" value="" />
-    <input type="hidden" id="address2" name="address2" value="" />
-{!endif}
 
-{!if get_country}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="countrySelect">{$LANG_SHOP['country']}</label>
     <div class="uk-form-controls">
-      <select
-{!if req_country}
-        required
-{!endif}
+      <select required
         id="countrySelect" name="country"
             onchange='chgCountrySel(this.value)' class="shopStateSelect">
 {#            onchange='updateState(this.id)' class="shopStateSelect">#}
         {country_options}
       </select>
-{!if req_country}
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
-{!else}
-  <input type="hidden" id="country" name="country" value="" />
-{!endif}
 
-{!if get_state}
-  <div class="uk-form-row" id="stateSelectDiv" style="display:{state_sel_vis};">
+  <div class="uk-form-row uk-margin" id="stateSelectDiv" style="display:{state_sel_vis};">
     <label class="uk-form-label" for="state">{$LANG_SHOP['state']}</label>
     <div class="uk-form-controls">
       <select id="stateSelect" name="state" class="shopStateSelect">
         {state_options}
       </select>
-{!if req_state}
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
-{!else}
-  <input type="hidden" id="state" name="state" value="" />
-{!endif}
 
-{!if get_city}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="city">{$LANG_SHOP['city']}</label>
     <div class="uk-form-controls">
-      <input
-{!if req_city}
-      required
-{!endif}
-      type="text" id="city" name="city" size="60" value="{city}" />
-{!if req_city}
+      <input required type="text" id="city" name="city" size="60" value="{city}" />
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
-{!else}
-  <input type="hidden" id="city" name="city" value="" />
-{!endif}
 
-{!if get_postal}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="zip">{$LANG_SHOP['zip']}</label>
     <div class="uk-form-controls">
-      <input
-{!if req_postal}
-        required
-{!endif}
-        type="text" id="zip" name="zip" size="60" value="{zip}" />
-{!if req_postal}
+      <input required type="text" id="zip" name="zip" size="60" value="{zip}" />
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
-{!else}
-  <input type="hidden" id="zip" name="zip" value="" />
-{!endif}
 
-{!if get_phone}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label" for="zip">{$LANG_SHOP['phone']}</label>
     <div class="uk-form-controls">
-      <input
-{!if req_phone}
-        required
-{!endif}
-        type="text" id="phone" name="phone" size="60" value="{phone}" />
-{!if req_phone}
+      <input required type="text" id="phone" name="phone" size="60" value="{phone}" />
       <i class="uk-icon uk-icon-warning uk-text-warning" data-uk-tooltip title="{$LANG_SHOP['required']}"></i>
-{!endif}
     </div>
   </div>
-{!else}
-  <input type="hidden" id="phone" name="phone" value="" />
-{!endif}
 
-    <div class="uk-form-row">
+{!if allow_default}
+    <div class="uk-form-row uk-margin">
         <label class="uk-form-label">{$LANG_SHOP['def_billto']}</label>
         <div class="uk-form-controls">
             <input type="checkbox" id="billto_def" name="billto_def" value="1" {billto_chk} />
         </div>
     </div>
 
-    <div class="uk-form-row">
+    <div class="uk-form-row uk-margin">
         <label class="uk-form-label">{$LANG_SHOP['def_shipto']}</label>
         <div class="uk-form-controls">
             <input type="checkbox" id="shipto_def" name="shipto_def" value="1" {shipto_chk} />
         </div>
     </div>
-
+{!else}
+    <input type="hidden" id="billto_def" name="billto_def" value="0" />
+    <input type="hidden" id="shipto_def" name="shipto_def" value="0" />
+{!endif}
 
 {!if allow_defaultX}
-  <div class="uk-form-row">
+  <div class="uk-form-row uk-margin">
     <label class="uk-form-label">{$LANG_SHOP['make_def_addr']}</label>
     <div class="uk-form-controls">
 {!!if {ad_type} == "billto" !!}
@@ -270,11 +218,11 @@ function removeAddress(addr_id)
 {!endif}
 
   <input type="hidden" name="next_step" value="{next_step}" />
-  <div class="uk-form-row" style="margin-top:10px;">
+  <div class="uk-form-row uk-margin" style="margin-top:10px;">
     <label class="uk-form-label">&nbsp;</label>
     <div class="uk-form-controls" style="text-align:center;">
       <button class="uk-button uk-button-success" type="submit" name="{action}"
-        onclick="javascript:validateAddress(this.form);return false;"
+        onclick="return validateAddress(this.form);"
         >{$LANG_ADMIN['submit']}</button>
       <button class="uk-button uk-button-primary" type="reset">{$LANG_ADMIN['reset']}</button>
       <button class="uk-button" type="submit" name="nextstep" onclick="history.go(-1);">{$LANG_ADMIN['cancel']}</button>
@@ -282,7 +230,7 @@ function removeAddress(addr_id)
   </div>
 {hiddenvars}
 </form>
-<script type="text/javascript">
+<script>
 {!if addr_id}
 updateForm({addr_id});
 {!endif}
@@ -292,6 +240,7 @@ function validateAddress(form)
     if (typeof(form) == 'undefined') {
         return;
     }
+
     data = $("#" + form.id).serialize();
     $.ajax({
         type: "POST",
@@ -301,7 +250,8 @@ function validateAddress(form)
         success: function(result) {
             try {
                 if (result.status != true) {
-                    modal = UIkit.modal.blockUI(result.form);
+					modal = Shop.modal(result.form);
+					return false;
                 } else {
                     var input = document.createElement("input");
                     input.type = "hidden";
@@ -320,7 +270,7 @@ function validateAddress(form)
             console.log(c);
         }
     });
-    return;
+    return true;
 }
 </script>
  {# end {templatelocation} #}

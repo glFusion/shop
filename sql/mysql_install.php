@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.3.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -29,7 +29,7 @@ $_SQL = array(
   `verified` tinyint(1) DEFAULT '0',
   `txn_id` varchar(255) DEFAULT NULL,
   `gateway` varchar(25) DEFAULT NULL,
-  `event` varchar(40) DEFAULT 'payment',
+  `event` varchar(128) DEFAULT 'payment',
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -65,8 +65,6 @@ $_SQL = array(
   `show_popular` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `options` text,
   `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `onhand` int(10) unsigned NOT NULL DEFAULT '0',
-  `reorder` int(10) unsigned NOT NULL DEFAULT '0',
   `oversell` tinyint(1) NOT NULL DEFAULT '0',
   `qty_discounts` text,
   `custom` varchar(255) NOT NULL DEFAULT '',
@@ -81,6 +79,7 @@ $_SQL = array(
   `lead_time` varchar(64) NOT NULL DEFAULT '',
   `def_pv_id` tinyint(1) unsigned NOT NULL DEFAULT '0',
   `zone_rule` int(11) unsigned NOT NULL DEFAULT '0',
+  `prod_rule` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `products_name` (`name`),
   KEY `products_price` (`price`),
@@ -92,29 +91,29 @@ $_SQL = array(
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `order_id` varchar(40) NOT NULL,
   `product_id` varchar(128) NOT NULL,
-  `variant_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `variant_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `sku` varchar(128) NOT NULL DEFAULT '',
   `description` varchar(255) DEFAULT NULL,
-  `quantity` int(11) NOT NULL DEFAULT '1',
-  `txn_id` varchar(128) DEFAULT '',
-  `txn_type` varchar(255) DEFAULT '',
-  `expiration` int(11) unsigned NOT NULL DEFAULT '0',
-  `base_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `qty_discount` decimal(5,2) NOT NULL DEFAULT '0.00',
-  `net_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `taxable` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `quantity` int(11) NOT NULL DEFAULT 1,
+  `expiration` int(11) unsigned NOT NULL DEFAULT 0,
+  `base_price` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `price` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `qty_discount` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `net_price` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `taxable` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `token` varchar(40) NOT NULL DEFAULT '',
   `options` varchar(40) DEFAULT '',
-  `options_text` text,
-  `extras` text,
-  `shipping` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `handling` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `tax` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `tax_rate` decimal(6,4) NOT NULL DEFAULT '0.0000',
+  `options_text` text DEFAULT NULL,
+  `extras` text DEFAULT NULL,
+  `shipping` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `handling` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `tax` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `tax_rate` decimal(6,4) NOT NULL DEFAULT 0.0000,
+  `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
+  `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000,
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
-  KEY `purchases_productid` (`product_id`),
-  KEY `purchases_txnid` (`txn_id`)
+  KEY `purchases_productid` (`product_id`)
 ) ENGINE=MyISAM",
 
 'shop.images' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.images']} (
@@ -123,22 +122,26 @@ $_SQL = array(
   `orderby` int(3) NOT NULL DEFAULT '999',
   `filename` varchar(255) DEFAULT NULL,
   `nonce` varchar(20) DEFAULT NULL,
-  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `last_update` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`img_id`),
   KEY `idxProd` (`product_id`,`img_id`)
 ) ENGINE=MyISAM",
 
 'shop.categories' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.categories']} (
   `cat_id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
-  `parent_id` smallint(5) unsigned DEFAULT '0',
+  `parent_id` smallint(5) unsigned DEFAULT 0,
   `cat_name` varchar(128) DEFAULT '',
-  `description` text,
-  `enabled` tinyint(1) unsigned DEFAULT '1',
-  `grp_access` mediumint(8) unsigned NOT NULL DEFAULT '1',
+  `description` text DEFAULT NULL,
+  `enabled` tinyint(1) unsigned DEFAULT 1,
+  `grp_access` mediumint(8) unsigned NOT NULL DEFAULT 1,
   `image` varchar(255) DEFAULT '',
-  `google_taxonomy` text,
-  `lft` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `rgt` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `google_taxonomy` text DEFAULT NULL,
+  `brand_id` int(11) NOT NULL DEFAULT 0,
+  `supplier_id` int(11) NOT NULL DEFAULT 0,
+  `zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
+  `prod_rule` int(11) unsigned NOT NULL DEFAULT 0,
+  `lft` smallint(5) unsigned NOT NULL DEFAULT 0,
+  `rgt` smallint(5) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`cat_id`),
   KEY `idxName` (`cat_name`,`cat_id`),
   KEY `cat_lft` (`lft`),
@@ -165,16 +168,16 @@ $_SQL = array(
   `gw_name` varchar(10) NOT NULL DEFAULT '',
   `btn_key` varchar(20) NOT NULL,
   `button` text,
-  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `last_update` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`pi_name`,`item_id`,`gw_name`,`btn_key`)
 ) ENGINE=MyISAM",
 
 'shop.orders' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orders']}` (
   `order_id` varchar(40) NOT NULL,
-  `uid` int(11) NOT NULL DEFAULT '0',
-  `order_date` int(11) unsigned NOT NULL DEFAULT '0',
-  `last_mod` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `billto_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `uid` int(11) unsigned NOT NULL DEFAULT 0,
+  `order_date` int(11) unsigned NOT NULL DEFAULT 0,
+  `last_mod` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `billto_id` int(11) NOT NULL DEFAULT 0,
   `billto_name` varchar(255) DEFAULT NULL,
   `billto_company` varchar(255) DEFAULT NULL,
   `billto_address1` varchar(255) DEFAULT NULL,
@@ -183,7 +186,8 @@ $_SQL = array(
   `billto_state` varchar(255) DEFAULT NULL,
   `billto_country` varchar(255) DEFAULT NULL,
   `billto_zip` varchar(40) DEFAULT NULL,
-  `shipto_id` int(11) unsigned NOT NULL DEFAULT '0',
+  `billto_phone` varchar(30) DEFAULT NULL,
+  `shipto_id` int(11) NOT NULL DEFAULT 0,
   `shipto_name` varchar(255) DEFAULT NULL,
   `shipto_company` varchar(255) DEFAULT NULL,
   `shipto_address1` varchar(255) DEFAULT NULL,
@@ -192,12 +196,12 @@ $_SQL = array(
   `shipto_state` varchar(255) DEFAULT NULL,
   `shipto_country` varchar(255) DEFAULT NULL,
   `shipto_zip` varchar(40) DEFAULT NULL,
-  `phone` varchar(30) DEFAULT NULL,
+  `shipto_phone` varchar(30) DEFAULT NULL,
   `buyer_email` varchar(255) DEFAULT NULL,
-  `gross_items` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `net_nontax` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `net_taxable` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `order_total` decimal(12,4) unsigned DEFAULT '0.0000',
+  `gross_items` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `net_nontax` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `net_taxable` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `order_total` decimal(12,4) unsigned DEFAULT 0.0000,
   `tax` decimal(9,4) unsigned DEFAULT NULL,
   `shipping` decimal(9,4) unsigned DEFAULT NULL,
   `handling` decimal(9,4) unsigned DEFAULT NULL,
@@ -206,17 +210,23 @@ $_SQL = array(
   `pmt_method` varchar(20) DEFAULT NULL,
   `pmt_dscp` varchar(255) DEFAULT '',
   `pmt_txn_id` varchar(255) DEFAULT NULL,
-  `instructions` text,
+  `instructions` text DEFAULT NULL,
   `token` varchar(20) DEFAULT NULL,
-  `tax_rate` decimal(7,5) NOT NULL DEFAULT '0.00000',
-  `info` text,
+  `tax_rate` decimal(7,5) NOT NULL DEFAULT 0.00000,
+  `info` text DEFAULT NULL,
   `currency` varchar(5) NOT NULL DEFAULT 'USD',
   `order_seq` int(11) unsigned DEFAULT NULL,
-  `shipper_id` int(3) unsigned DEFAULT '0',
+  `shipper_id` int(3) DEFAULT -1,
   `discount_code` varchar(20) DEFAULT NULL,
-  `discount_pct` decimal(4,2) DEFAULT '0.00',
-  `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `discount_pct` decimal(4,2) DEFAULT 0.00,
+  `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `shipping_method` varchar(20) DEFAULT NULL,
+  `shipping_dscp` varchar(120) DEFAULT NULL,
+  `gw_order_ref` varchar(128) DEFAULT NULL,
+  `referral_token` varchar(40) NOT NULL DEFAULT '',
+  `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0,
+  `referral_exp` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_seq` (`order_seq`),
   KEY `order_date` (`order_date`)
@@ -242,8 +252,11 @@ $_SQL = array(
 
 'shop.userinfo' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.userinfo']}` (
   `uid` int(11) unsigned NOT NULL,
-  `cart` text,
+  `cart` text DEFAULT NULL,
   `pref_gw` varchar(12) NOT NULL DEFAULT '',
+  `affiliate_id` varchar(40) DEFAULT NULL,
+  `aff_pmt_method` varchar(20) NOT NULL DEFAULT '_coupon',
+  `created` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`uid`)
 ) ENGINE=MyISAM",
 
@@ -255,6 +268,7 @@ $_SQL = array(
   `config` text,
   `services` varchar(255) DEFAULT NULL,
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
+  `version` varchar(12) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
@@ -267,7 +281,7 @@ $_SQL = array(
   `can_disable` tinyint(1) unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `orderby` (`orderby`),
-  KEY `idx_name` (`wf_name`)
+  KEY `key_name` (`wf_name`)
 ) ENGINE=MyISAM",
 
 'shop.orderstatus' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.orderstatus']}` (
@@ -300,14 +314,14 @@ $_SQL = array(
   `symbol_placement` varchar(10) DEFAULT NULL,
   `symbol_spacer` varchar(2) DEFAULT ' ',
   `code_placement` varchar(10) DEFAULT 'after',
-  `decimals` int(3) DEFAULT '2',
-  `rounding_step` float(5,2) DEFAULT '0.00',
+  `decimals` int(3) DEFAULT 2,
+  `rounding_step` float(5,2) DEFAULT 0.00,
   `thousands_sep` varchar(2) DEFAULT ',',
   `decimal_sep` varchar(2) DEFAULT '.',
   `major_unit` varchar(20) DEFAULT NULL,
   `minor_unit` varchar(20) DEFAULT NULL,
-  `conversion_rate` float(7,5) DEFAULT '1.00000',
-  `conversion_ts` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `conversion_rate` float(7,5) DEFAULT 1.00000,
+  `conversion_ts` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`code`)
 ) ENGINE=MyISAM",
 
@@ -326,12 +340,13 @@ $_SQL = array(
   UNIQUE KEY `code` (`code`),
   KEY `owner` (`redeemer`,`balance`,`expires`),
   KEY `purchased` (`purchased`),
-  KEY `expires` (`expires`)
-) ENGINE=MyIsam",
+  KEY `key_expires` (`expires`)
+) ENGINE=MyISAM",
 
 'shop.coupon_log' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.coupon_log']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `uid` int(11) unsigned NOT NULL DEFAULT '0',
+  `done_by` int(11) unsigned NOT NULL DEFAULT '0',
   `code` varchar(128) NOT NULL,
   `ts` int(11) unsigned DEFAULT NULL,
   `order_id` varchar(50) DEFAULT NULL,
@@ -340,7 +355,7 @@ $_SQL = array(
   PRIMARY KEY (`id`),
   KEY `order_id` (`order_id`),
   KEY `code` (`code`)
-) ENGINE=MyIsam",
+) ENGINE=MyISAM",
 
 'shop.sales' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.sales']} (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -353,7 +368,7 @@ $_SQL = array(
   `amount` decimal(6,4) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `item_type` (`item_type`,`item_id`)
-) ENGINE=MyIsam",
+) ENGINE=MyISAM",
 
 'shop.shipping' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.shipping']}` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -369,6 +384,8 @@ $_SQL = array(
   `grp_access` int(3) unsigned NOT NULL DEFAULT '2',
   `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1',
   `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `free_threshold` decimal(9,4) NOT NULL DEFAULT 0,
+  `quote_method` tinyint(1) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM",
 
@@ -383,10 +400,11 @@ $_SQL = array(
   `country` varchar(127) NOT NULL DEFAULT '',
   `zip` varchar(40) NOT NULL DEFAULT '',
   `phone` varchar(40) NOT NULL DEFAULT '',
-  `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT '1',
-  `is_brand` tinyint(1) unsigned NOT NULL DEFAULT '0',
-  `dscp` text,
+  `is_supplier` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  `is_brand` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `dscp` text DEFAULT NULL,
   `lead_time` varchar(64) NOT NULL DEFAULT '',
+  `logo_image` varchar(128) NOT NULL DEFAULT '',
   PRIMARY KEY (`sup_id`),
   KEY `is_supplier` (`is_supplier`,`name`),
   KEY `is_brand` (`is_brand`,`name`)
@@ -394,19 +412,22 @@ $_SQL = array(
 
 'shop.product_variants' => "CREATE TABLE {$_TABLES['shop.product_variants']} (
   `pv_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `item_id` int(11) unsigned NOT NULL,
-  `sku` varchar(64) DEFAULT NULL,
-  `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
-  `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
-  `onhand` int(10) NOT NULL DEFAULT '0',
-  `reorder` int(10) NOT NULL DEFAULT '0',
-  `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
+  `item_id` int(11) unsigned NOT NULL DEFAULT 0,
+  `sku` varchar(64) DEFAULT NULL DEFAULT 0,
+  `price` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `weight` decimal(12,4) NOT NULL DEFAULT 0.0000,
+  `shipping_units` decimal(9,4) NOT NULL DEFAULT 0.0000,
+  `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT 0,
+  `onhand` int(10) NOT NULL DEFAULT 0,
+  `reorder` int(10) NOT NULL DEFAULT 0,
+  `enabled` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `supplier_ref` varchar(64) NOT NULL DEFAULT '',
-  `img_ids` text NOT NULL,
+  `img_ids` text NOT NULL DEFAULT '',
   `dscp` text NOT NULL,
+  `orderby` int(4) NOT NULL DEFAULT 9999,
   PRIMARY KEY (`pv_id`),
-  KEY `prod_id` (`item_id`)
+  KEY `prod_id` (`item_id`),
+  KEY `orderby` (`orderby`)
 ) ENGINE=MyISAM",
 
 'shop.states' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.states']}` (
@@ -418,6 +439,41 @@ $_SQL = array(
   PRIMARY KEY (`state_id`),
   UNIQUE KEY `country_state` (`country_id`,`iso_code`),
   KEY `state_enabled` (`state_enabled`)
+) ENGINE=MyISAM",
+
+'shop.tax_rates' => "CREATE TABLE IF NOT EXISTS `{$_TABLES['shop.tax_rates']}` (
+  `code` varchar(25) NOT NULL,
+  `country` varchar(3) DEFAULT NULL,
+  `state` varchar(10) DEFAULT NULL,
+  `zip_from` varchar(10) DEFAULT NULL,
+  `zip_to` varchar(10) DEFAULT NULL,
+  `region` varchar(128) DEFAULT NULL,
+  `combined_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `state_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `county_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `city_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  `special_rate` float(7,5) NOT NULL DEFAULT '0.00000',
+  PRIMARY KEY (`code`),
+  KEY `country_zipcode` (`country`,`zip_from`),
+  KEY `location` (`country`,`state`,`zip_from`),
+  KEY `zip_from` (`zip_from`),
+  KEY `zip_to` (`zip_to`)
+) ENGINE=MyISAM",
+
+'shop.cache' => "CREATE TABLE `{$_TABLES['shop.cache']}` (
+  `cache_key` varchar(127) NOT NULL,
+  `expires` int(11) unsigned NOT NULL DEFAULT '0',
+  `data` mediumtext,
+  `tags` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`cache_key`),
+  KEY (`expires`)
+) ENGINE=MyISAM",
+
+'shop.customerXgateway' => "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
+  `uid` int(11) unsigned NOT NULL,
+  `gw_id` varchar(40) NOT NULL,
+  `cust_id` varchar(128) DEFAULT NULL,
+  PRIMARY KEY (`uid`,`gw_id`)
 ) ENGINE=MyISAM",
 );
 
@@ -435,7 +491,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
       `pog_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pog_type` varchar(11) NOT NULL DEFAULT 'select',
       `pog_name` varchar(40) NOT NULL DEFAULT '',
-      `pog_orderby` tinyint(2) DEFAULT '0',
+      `pog_orderby` smallint(3) DEFAULT '0',
       PRIMARY KEY (`pog_id`),
       UNIQUE KEY `pog_name` (`pog_name`),
       KEY `orderby` (`pog_orderby`,`pog_name`)
@@ -443,11 +499,11 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.oi_opts']}` (
       `oio_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `oi_id` int(11) unsigned NOT NULL,
-      `pog_id` int(11) unsigned NOT NULL DEFAULT '0',
-      `pov_id` int(11) unsigned NOT NULL DEFAULT '0',
+      `pog_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `pov_id` int(11) unsigned NOT NULL DEFAULT 0,
       `oio_name` varchar(40) DEFAULT NULL,
       `oio_value` varchar(40) DEFAULT NULL,
-      `oio_price` decimal(9,4) NOT NULL DEFAULT '0.0000',
+      `oio_price` decimal(9,4) NOT NULL DEFAULT 0.0000,
       PRIMARY KEY (`oio_id`),
       UNIQUE KEY `key1` (`oi_id`,`pog_id`,`pov_id`,`oio_name`)
     ) ENGINE=MyISAM",
@@ -500,7 +556,7 @@ $SHOP_UPGRADE['1.0.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD qty_discount decimal(5,2) NOT NULL default 0 AFTER price",
     "ALTER TABLE {$_TABLES['shop.categories']} ADD google_taxonomy text AFTER `image`",
     "ALTER TABLE {$_TABLES['shop.images']} ADD `nonce` varchar(20) DEFAULT NULL",
-    "ALTER TABLE {$_TABLES['shop.images']} ADD `last_update` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+    "ALTER TABLE {$_TABLES['shop.images']} ADD `last_update` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp()",
     "RENAME TABLE {$_TABLES['shop.prod_attr']} TO {$_TABLES['shop.prod_opt_vals']}",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_id pov_id int(11) unsigned NOT NULL AUTO_INCREMENT",
     "ALTER TABLE {$_TABLES['shop.prod_opt_vals']} CHANGE attr_value pov_value varchar(64) DEFAULT NULL",
@@ -558,8 +614,6 @@ $SHOP_UPGRADE['1.1.0'] = array(
       `price` decimal(9,4) NOT NULL DEFAULT '0.0000',
       `weight` decimal(12,4) NOT NULL DEFAULT '0.0000',
       `shipping_units` decimal(9,4) NOT NULL DEFAULT '0.0000',
-      `onhand` int(10) NOT NULL DEFAULT '0',
-      `reorder` int(10) NOT NULL DEFAULT '0',
       `enabled` tinyint(1) unsigned NOT NULL DEFAULT '1',
       PRIMARY KEY (`pv_id`),
       KEY `prod_id` (`item_id`)
@@ -701,10 +755,21 @@ $SHOP_UPGRADE['1.2.0'] = array(
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `supplier_ref` varchar(64) NOT NULL DEFAULT '' AFTER `enabled`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `img_ids` text NOT NULL DEFAULT '' AFTER `supplier_ref`",
     "ALTER TABLE {$_TABLES['shop.product_variants']} ADD `dscp` text NOT NULL DEFAULT '' AFTER `img_ids`",
-    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
-    "ALTER IGNORE TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
+    "ALTER TABLE  {$_TABLES['shop.states']} ADD UNIQUE KEY `country_state` (`country_id`, `iso_code`)",
+    "ALTER TABLE  {$_TABLES['shop.states']} ADD KEY `state_enabled` (`state_enabled`)",
 );
 $SHOP_UPGRADE['1.3.0'] = array(
+    "CREATE TABLE {$_TABLES['shop.packages']} (
+      `pkg_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `units` float DEFAULT NULL,
+      `max_weight` float DEFAULT NULL,
+      `width` float DEFAULT NULL,
+      `height` float DEFAULT NULL,
+      `length` float DEFAULT NULL,
+      `dscp` varchar(255) DEFAULT NULL,
+      `containers` text DEFAULT NULL,
+      PRIMARY KEY (`pkg_id`)
+    ) ENGINE=MyISAM",
     "CREATE TABLE `{$_TABLES['shop.payments']}` (
       `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pmt_order_id` varchar(40) DEFAULT NULL,
@@ -714,29 +779,185 @@ $SHOP_UPGRADE['1.3.0'] = array(
       `pmt_amount` decimal(12,4) DEFAULT NULL,
       `pmt_ref_id` varchar(255) DEFAULT NULL,
       `pmt_method` varchar(32) DEFAULT NULL,
+      `is_complete` tinyint(1) unsigned NOT NULL DEFAULT 1,
+      `pmt_status` varchar(40) NOT NULL DEFAULT 'COMPLETED',
       `pmt_comment` text,
       `pmt_uid` int(11) unsigned NOT NULL DEFAULT '0',
       PRIMARY KEY (`pmt_id`),
       KEY `order_id` (`pmt_order_id`)
     ) ENGINE=MyISAM",
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
-    "ALTER TABLE {$_TABLES['shop.orders']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
-    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
-    "ALTER TABLE {$_TABLES['shop.states']} ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
+      `uid` int(11) unsigned NOT NULL,
+      `gw_id` varchar(40) NOT NULL,
+      `cust_id` varchar(128) DEFAULT NULL,
+      PRIMARY KEY (`uid`,`gw_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_sales']}` (
+      `aff_sale_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_sale_uid` int(11) unsigned DEFAULT NULL,
+      `aff_sale_date` datetime DEFAULT NULL,
+      `aff_order_id` varchar(40) DEFAULT NULL,
+      `aff_pmt_id` int(11) unsigned NOT NULL DEFAULT 0,
+      PRIMARY KEY (`aff_sale_id`),
+      KEY `aff_uid` (`aff_sale_uid`),
+      KEY `aff_sale_date` (`aff_sale_date`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_saleitems']}` (
+      `aff_item_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_sale_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `aff_oi_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `aff_item_total` decimal(12,4) DEFAULT NULL,
+      `aff_item_pmt` decimal(12,4) DEFAULT NULL,
+      `aff_percent` decimal(4,2) DEFAULT NULL,
+      PRIMARY KEY (`aff_item_id`),
+      KEY `aff_sale_id` (`aff_sale_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.affiliate_payments']}` (
+      `aff_pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `aff_pmt_uid` int(11) unsigned DEFAULT NULL,
+      `aff_pmt_amount` decimal(12,4) unsigned DEFAULT NULL,
+      `aff_pmt_date` datetime DEFAULT NULL,
+      `aff_pmt_method` varchar(20) DEFAULT NULL,
+      `aff_pmt_txn_id` varchar(128) NOT NULL DEFAULT '',
+      PRIMARY KEY (`aff_pmt_id`),
+      KEY `aff_id` (`aff_pmt_uid`)
+    ) ENGINE=MyISAM",
+    $_SHOP_SAMPLEDATA['shop.packages'],
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `discount_pct`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_method varchar(20) DEFAULT NULL AFTER tax_handling",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD shipping_dscp varchar(128) DEFAULT NULL AFTER shipping_method",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `phone` `shipto_phone` varchar(30)",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `billto_phone` varchar(30) AFTER `billto_zip`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD gw_order_ref varchar(128) DEFAULT NULL AFTER shipping_dscp",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        CHANGE `shipper_id` `shipper_id` int(3) DEFAULT -1",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referral_token` varchar(40) NOT NULL DEFAULT '' AFTER `gw_order_ref`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referrer_uid` int(11) unsigned NOT NULL DEFAULT 0 AFTER `referral_token`",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `referral_exp` int(11) unsigned not null default 0",
+    "ALTER TABLE {$_TABLES['shop.orders']}
+        ADD `pmt_dscp` varchar(255) DEFAULT '' AFTER `pmt_method`",
+    "ALTER TABLE {$_TABLES['shop.states']}
+        ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
+    "ALTER TABLE {$_TABLES['shop.states']}
+        ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
-    "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']} VALUES (0, 5, 1, 'invoiced', 0, 0)",
-    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY (expires)",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE orderby orderby int(3) NOT NULL DEFAULT 999",
+    "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
+        (`name`, `notify_buyer`, `notify_admin`)
+        VALUES ('invoiced', 0, 0)",
+    "ALTER TABLE {$_TABLES['shop.coupons']} ADD KEY `key_expires` (expires)",
     "UPDATE {$_TABLES['shop.orders']} SET status='processing' WHERE status='paid'",
-    "DELETE FROM TABLE {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
-    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(40) DEFAULT 'payment' after `gateway`",
+    "DELETE FROM {$_TABLES['shop.orderstatus']} WHERE name = 'paid'",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `event` varchar(128) DEFAULT 'payment' after `gateway`",
     "UPDATE {$_TABLES['shop.products']} SET avail_end = '9999-12-31' WHERE avail_end = '0000-00-00'",
-    "UPDATE {$_TABLES['shop.workflows']} ADD KEY `idx_name` (`wf_name`)",
-    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `dc_pricd`",
+    "ALTER TABLE {$_TABLES['shop.workflows']} ADD KEY `key_name` (`wf_name`)",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `req_shipto` tinyint(1) unsigned NOT NULL DEFAULT '1' AFTER `grp_access`",
     "ALTER TABLE {$_TABLES['shop.shipping']}
         ADD `tax_loc` tinyint(1) unsigned NOT NULL DEFAULT '0'",
+    "ALTER TABLE {$_TABLES['shop.tax_rates']}
+        CHANGE region region varchar(128)",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        ADD `track_onhand` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER shipping_units",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD free_threshold decimal(9,4) NOT NULL DEFAULT 0 AFTER tax_loc",
+    "ALTER TABLE {$_TABLES['shop.shipping']}
+        ADD `quote_method` tinyint(1) unsigned NOT NULL DEFAULT 1",
+    "ALTER TABLE {$_TABLES['shop.cache']}
+        ADD tags varchar(255) NOT NULL DEFAULT '' AFTER `data`",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        ADD orderby int(4) NOT NULL DEFAULT 9999 AFTER dscp",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        ADD KEY `orderby` (`orderby`)",
+    "ALTER TABLE {$_TABLES['shop.product_variants']}
+        CHANGE `img_ids` `img_ids` text NOT NULL DEFAULT '',
+        CHANGE `item_id` `item_id` int(11) unsigned NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.prod_opt_grps']}
+        CHANGE `pog_orderby` `pog_orderby` SMALLINT(3) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orderitems']}
+        DROP `dc_price`",
+    "ALTER TABLE {$_TABLES['shop.categories']}
+        ADD `zone_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `google_taxonomy`",
+    "UPDATE {$_TABLES['shop.workflows']} SET enabled=3, can_disable=0",
+    "UPDATE {$_TABLES['shop.workflows']} SET wf_name='addresses' WHERE id=2",
+    "UPDATE {$_TABLES['shop.workflows']} SET wf_name='shipping' WHERE id=3",
+    "INSERT IGNORE INTO {$_TABLES['shop.workflows']} VALUES
+        (4, 'payment', 40, 3, 0),
+        (5, 'confirm', 50, 3, 0)",
+    "ALTER TABLE {$_TABLES['shop.orderitems']}
+        ADD sku varchar(128) NOT NULL DEFAULT '' AFTER `variant_id`",
+    "ALTER TABLE {$_TABLES['shop.gateways']}
+        ADD `version` varchar(12) DEFAULT NULL AFTER `grp_access`",
+    "ALTER TABLE {$_TABLES['shop.suppliers']}
+        ADD `logo_image` varchar(128) NOT NULL DEFAULT '' AFTER `lead_time`",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `affiliate_id` varchar(40)",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `aff_pmt_method` varchar(20)",
+    // Sync order totals
+    "UPDATE {$_TABLES['shop.orders']} SET order_total = net_nontax + net_taxable + tax + shipping + handling",
+    // Set initial gateway version to 1.2.2 to allow individual gateway upgrades if needed.
+    "UPDATE {$_TABLES['shop.gateways']} SET version = '1.2.2' WHERE version IS NULL",
+    // Enable customer notification of closed orders
+    "UPDATE {$_TABLES['shop.orderstatus']} SET notify_buyer = 1 where name = 'closed'",
 );
+$SHOP_UPGRADE['1.3.1'] = array(
+    // Note, do not drop reorder or onhand from variant table here, they're
+    // needed to populate vars in the new stock table.
+    "CREATE TABLE `{$_TABLES['shop.stock']}` (
+      `stk_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `stk_item_id` int(11) unsigned NOT NULL,
+      `stk_pv_id` int(11) unsigned NOT NULL DEFAULT 0,
+      `qty_onhand` decimal(10,2) DEFAULT NULL,
+      `qty_reserved` decimal(10,2) DEFAULT NULL,
+      `qty_reorder` decimal(10,2) DEFAULT 0.00,
+      PRIMARY KEY (`stk_id`),
+      UNIQUE KEY `item_variant` (`stk_item_id`,`stk_pv_id`)
+    ) ENGINE=MyISAM",
+    "CREATE TABLE `{$_TABLES['shop.plugin_products']}` (
+      `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+      `pi_name` varchar(127) NOT NULL,
+      `taxable` tinyint(1) unsigned NOT NULL DEFAULT 0,
+      `prod_type` tinyint(1) unsigned NOT NULL DEFAULT 4,
+      `price` decimal(11,4) DEFAULT NULL,
+      PRIMARY KEY (`id`),
+      UNIQUE KEY `pi_name` (`pi_name`)
+    ) ENGINE=MyISAM",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} CHANGE dscp dscp TEXT DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.userinfo']} ADD `created` TIMESTAMP DEFAULT current_timestamp()",
+    "ALTER TABLE {$_TABLES['shop.product_variants']} DROP `track_onhand`",
+);
+$SHOP_UPGRADE['1.5.0'] = array(
+    "CREATE TABLE `{$_TABLES['shop.product_rules']}` (
+      `pr_id` int(11) unsigned NOT NULL,
+      `pr_name` varchar(40) DEFAULT NULL,
+      `pr_dscp` varchar(255) DEFAULT NULL,
+      `pr_hazmat` tinyint(1) unsigned NOT NULL DEFAULT 0,
+      `pr_shipper_ids` text DEFAULT NULL,
+      `pr_zone_rule` int(11) unsigned NOT NULL DEFAULT 0,
+      PRIMARY KEY (`pr_id`)
+    ) ENGINE=MyIsam",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_units` decimal(9,4) unsigned NOT NULL DEFAULT 0.0000",
+    "ALTER TABLE {$_TABLES['shop.coupon_log']} ADD `done_by` int(11) unsigned NOT NULL DEFAULT 0 AFTER `uid`",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `billto_id` `billto_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.orders']} CHANGE `shipto_id` `shipto_id` int(11) NOT NULL DEFAULT 0",
+    "ALTER TABLE {$_TABLES['shop.products']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
+    "ALTER TABLE {$_TABLES['shop.categories']} ADD `prod_rule` int(11) unsigned NOT NULL DEFAULT 0 AFTER `zone_rule`",
+
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_id`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
+    "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
+);
+
 
 // These tables were added as part of upgrades and can reference the upgrade
 // until the schema changes.
@@ -746,8 +967,6 @@ $_SQL['shop.shipments'] = $SHOP_UPGRADE['1.0.0'][2];
 $_SQL['shop.shipment_items'] = $SHOP_UPGRADE['1.0.0'][3];
 $_SQL['shop.shipment_packages'] = $SHOP_UPGRADE['1.0.0'][4];
 $_SQL['shop.carrier_config'] = $SHOP_UPGRADE['1.0.0'][5];
-$_SQL['shop.cache'] = $SHOP_UPGRADE['1.0.0'][6];
-$_SQL['shop.tax_rates'] = $SHOP_UPGRADE['1.1.0'][0];
 $_SQL['shop.discountcodes'] = $SHOP_UPGRADE['1.1.0'][1];
 $_SQL['shop.prodXcat'] = $SHOP_UPGRADE['1.1.0'][2];
 $_SQL['shop.variantXopt'] = $SHOP_UPGRADE['1.1.0'][4];
@@ -757,6 +976,11 @@ $_SQL['shop.features'] = $SHOP_UPGRADE['1.2.0'][0];
 $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
-$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][0];
-
-?>
+$_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
+$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
+$_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
+$_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
+$_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];
+$_SQL['shop.stock'] = $SHOP_UPGRADE['1.3.1'][0];
+$_SQL['shop.plugin_products'] = $SHOP_UPGRADE['1.3.1'][1];
+$_SQL['shop.product_rules'] = $SHOP_UPGRADE['1.5.0'][0];

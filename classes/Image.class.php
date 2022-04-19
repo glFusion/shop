@@ -20,6 +20,18 @@ namespace Shop;
  */
 class Image extends UploadDownload
 {
+    /** Key into the configuration settings where the image path can be found.
+     * @var string */
+    protected static $pathkey = '';
+
+    /** Maximum width, in pixels. Used if no width is given in getImage functions.
+     * @var integer */
+    protected static $maxwidth = 300;
+
+    /** Maximum height, in pixels. Used if no width is given in getImage functions.
+     * @var integer */
+    protected static $maxheight = 300;
+
     /** Path to actual image (without filename).
      * @var string */
     protected $pathImage;
@@ -46,11 +58,9 @@ class Image extends UploadDownload
      */
     public function __construct($record_id, $varname='photo')
     {
-        global $_SHOP_CONF;
-
         $this->record_id = trim($record_id);
         $this->setFieldName($varname);
-        $this->pathImage = $_SHOP_CONF['tmpdir'] . '/images/' . static::$pathkey;
+        $this->pathImage = Config::get('tmpdir') . '/images/' . static::$pathkey;
     }
 
 
@@ -108,14 +118,11 @@ class Image extends UploadDownload
     /**
     * Seed the image cache with the product image thumbnails.
     *
-    * @uses     LGLIB_ImageUrl()
     * @return   string      Blank, error messages are now in parent::_errors
     */
     protected function MakeThumbs()
     {
-        global $_SHOP_CONF;
-
-        $thumbsize = (int)$_SHOP_CONF['max_thumb_size'];
+        $thumbsize = (int)Config::get('max_thumb_size');
         if ($thumbsize < 50) $thumbsize = 100;
 
         $filenames = $this->getFilenames();
@@ -125,7 +132,16 @@ class Image extends UploadDownload
 
         foreach ($filenames as $filename) {
             $src = "{$this->pathImage}/{$filename}";
-            $url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
+            $status = PLG_callFunctionForOnePlugin(
+                'LGLIB_ImageUrl',
+                array(
+                    1 => $src,
+                    2 => $thumbsize,
+                    3 => $thumbsize,
+                    4 => true,
+                )
+            );
+            //$url = LGLIB_ImageUrl($src, $thumbsize, $thumbsize, true);
             if (!empty($url)) {
                 $this->goodfiles[] = $filename;
             }
@@ -136,7 +152,6 @@ class Image extends UploadDownload
 
     /**
      * Delete an image from disk.
-     * Called by Entry::Delete if disk deletion is requested.
      */
     public function Delete()
     {
@@ -156,8 +171,9 @@ class Image extends UploadDownload
      */
     protected function _deleteOneImage($imgpath)
     {
-        if (file_exists($imgpath . '/' . $this->filename))
+        if (file_exists($imgpath . '/' . $this->filename)) {
             unlink($imgpath . '/' . $this->filename);
+        }
     }
 
 
@@ -193,9 +209,7 @@ class Image extends UploadDownload
      */
     public static function getThumbUrl($filename)
     {
-        global $_SHOP_CONF;
-
-        return self::getUrl($filename, $_SHOP_CONF['max_thumb_size']);
+        return self::getUrl($filename, Config::get('max_thumb_size'));
     }
 
 
@@ -210,8 +224,6 @@ class Image extends UploadDownload
      */
     public static function getUrl($filename, $width=0, $height=0)
     {
-        global $_SHOP_CONF;
-
         $default = array(
             'url'   => '',
             'width' => 0,
@@ -231,11 +243,19 @@ class Image extends UploadDownload
             $height = $width;
         }
         $args = array(
-            'filepath'  => $_SHOP_CONF['tmpdir'] . '/images/' . static::$pathkey . '/' . $filename,
+            'filepath'  => Config::get('tmpdir') . '/images/' . static::$pathkey . '/' . $filename,
             'width'     => $width,
             'height'    => $height,
         );
-        $status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
+        $status = PLG_callFunctionForOnePlugin(
+            'service_imageurl_lglib',
+            array(
+                1 => $args,
+                2 => &$output,
+                3 => &$svc_msg,
+            )
+        );
+        //$status = LGLIB_invokeService('lglib', 'imageurl', $args, $output, $svc_msg);
         if ($status == PLG_RET_OK) {
             return $output;
         } else {
@@ -245,4 +265,3 @@ class Image extends UploadDownload
 
 }
 
-?>

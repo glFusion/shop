@@ -16,8 +16,7 @@ require_once '../lib-common.php';
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
-    !isset($_SHOP_CONF) ||
-    !in_array($_SHOP_CONF['pi_name'], $_PLUGINS) ||
+    !function_exists('SHOP_access_check') ||
     !SHOP_access_check()
 ) {
     COM_404();
@@ -51,7 +50,8 @@ case 'redeem':
 default:
     // Submit a gift code for redemption
     $C = \Shop\Currency::getInstance();
-    $T = SHOP_getTemplate('apply_gc', 'tpl');
+    $T = new Shop\Template;
+    $T->set_file('tpl', 'apply_gc.thtml');
     if (empty($_SHOP_CONF['gc_mask'])) {
         $maxlen = (int)$_SHOP_CONF['gc_length'];
     } else {

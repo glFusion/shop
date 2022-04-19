@@ -1,0 +1,21 @@
+Szanowny Administratorze Witryny;
+<p>
+Otrzymałeś nowe zamówienie za pośrednictwem swojej witryny internetowej. Sprawdź informacje o zakupie pod adresem
+{site_admin_url}/plugins/shop/index.php?order={order_id}
+ za wszelkie działania, które mogą być konieczne.
+</p>
+<p>
+Szczegóły zakupu:
+</p>
+<p>
+Kupujący: {payer_name} (ID {Buyer_uid}, {user_name})<br />
+{payer_email}
+</p>
+<p>
+{purchase_details}
+</p>
+{!if order_instr}
+<p>Instrukcje specjalne: {order_instr}</p>
+{!endif}
+<p>Stan zamówienia: {status}</p>
+<p>Płatność została dokonana przez {gateway_name} w dniu {payment_date}</p>
