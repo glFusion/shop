@@ -118,26 +118,6 @@ class Order
     }
 
 
-    public function asPackingList()
-    {
-        $this->type = 'packinglist';
-        return $this;
-    }
-
-    public function asInvoice()
-    {
-        $this->type = 'order';
-        return $this;
-    }
-
-
-    public function withType($type)
-    {
-        $this->type = $type;
-        return $this;
-    }
-
-
     /**
      * Load the order information from the database.
      *

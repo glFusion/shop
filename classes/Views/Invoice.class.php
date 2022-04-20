@@ -121,41 +121,6 @@ class Invoice extends OrderBaseView
 
 
     /**
-     * View the invoice as a packing list.
-     * Suppresses prices and other charges.
-     *
-     * @return  object  $this
-     */
-    public function asPackingList()
-    {
-        $this->type = 'packinglist';
-        $this->is_invoice = false;
-        return $this;
-    }
-
-
-    /**
-     * View the invoice normally.
-     * Includes prices and other charges.
-     *
-     * @return  object  $this
-     */
-    public function asInvoice()
-    {
-        $this->type = 'order';
-        $this->is_invoice = true;
-        return $this;
-    }
-
-
-    public function withType($type)
-    {
-        $this->type = $type;
-        return $this;
-    }
-
-
-    /**
      * Set flag to include shop address and phone.
      *
      * @param   boolean $flag   True to show shop info in header

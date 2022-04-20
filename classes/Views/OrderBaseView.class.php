@@ -203,6 +203,7 @@ class OrderBaseView
     public function asInvoice()
     {
         $this->type = 'order';
+        $this->is_invoice = true;
         return $this;
     }
 
