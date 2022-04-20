@@ -282,14 +282,14 @@ class Upgrade
                 'templates/sales_form.thtml',
                 'templates/option_grp_form.thtml',
                 'templates/option_val_form.thtml',
-                // 1.3.x    Future, these may be needed for a bit
-                //'classes/ipn',
                 // 1.4.1
                 'classes/Validators/taxcloud.class.php',
                 'classes/Tax/taxcloud.class.php',
                 'classes/Tax/taxjar.class.php',
                 'classes/Tax/avatax.class.php',
                 'upgrade.inc.php',
+                // 1.5.0
+                'classes/ipn',
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
