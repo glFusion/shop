@@ -356,12 +356,10 @@ class OrderItem
      */
     public function getVariant() : object
     {
-        static $PVs = array();
-        $pov_id = $this->getVariantId();
-        if (!isset($PVs[$pov_id])) {
-            $PVs[$pov_id] = ProductVariant::getInstance($this->getVariantId());
+        if ($this->Variant === NULL) {
+            $this->Variant = ProductVariant::getInstance($this->getVariantId());
         }
-        return $PVs[$pov_id];
+        return $this->Variant;
     }
 
 
