@@ -22,6 +22,7 @@ use Shop\Tooltipster;
 use Shop\OrderItem;
 use Shop\Models\IPN;
 use Shop\FieldList;
+use Shop\Log;
 
 
 /**
@@ -288,7 +289,7 @@ class Plugin extends \Shop\Product
      */
     public function handlePurchase(OrderItem &$Item, IPN $IPN) : int
     {
-        SHOP_log('handlePurchase pi_info: ' . $this->pi_name, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'handlePurchase pi_info: ' . $this->pi_name);
         $status = PLG_RET_OK;       // Assume OK in case the plugin does nothing
         if ($IPN['uid'] < 1) {
             $IPN->setUid($Item->getOrder()->getUid());
@@ -599,7 +600,6 @@ class Plugin extends \Shop\Product
     public function getDiscountedPrice($qty=1, $opts_price=0, $override=NULL)
     {
         if ($override === NULL) {
-            COM_errorLog("returning price {$this->price}");
             return (float)$this->price;
         } else {
             return (float)$override;

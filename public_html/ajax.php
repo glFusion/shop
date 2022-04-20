@@ -14,6 +14,7 @@
 
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
+use Shop\Log;
 
 // Make sure this is called via Ajax
 if (!COM_isAjax()) {
@@ -111,7 +112,7 @@ case 'cartaddone':
 
 case 'addcartitem':
     if (!isset($_POST['item_number'])) {
-        SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, "Ajax addcartitem:: Missing Item Number");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
@@ -126,7 +127,7 @@ case 'addcartitem':
     $Cart = Shop\Cart::getInstance();
     $nonce = $Cart->makeNonce($item_number . $item_name);
     if (!isset($_POST['nonce']) || $_POST['nonce'] != $nonce) {
-        SHOP_log("Bad nonce: {$_POST['nonce']} for cart {$Cart->getOrderID()}, should be $nonce", SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, "Bad nonce: {$_POST['nonce']} for cart {$Cart->getOrderID()}, should be $nonce");
         echo json_encode(array('content' => '', 'statusMessage' => ''));
         exit;
     }
@@ -155,7 +156,7 @@ case 'addcartitem':
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
     $new_qty = $Cart->addItem($args);
-    SHOP_log("Adding $item_number, qty $new_qty", SHOP_LOG_DEBUG);
+    Log::write('shop_system', Log::DEBUG, "Adding $item_number, qty $new_qty");
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
         $msg = $LANG_SHOP['out_of_stock'];

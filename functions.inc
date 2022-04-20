@@ -50,7 +50,7 @@ spl_autoload_register(function ($class)
 use Shop\Models\Views;
 use Shop\Upgrades;
 use Shop\Config;
-use glFusion\Log\Log;
+use Shop\Log;
 Config::getInstance();      // to load $_SHOP_CONF
 global $_SHOP_CONF;
 
@@ -69,16 +69,6 @@ define('SHOP_ADMIN_URL',
 define('SHOP_COMMENTS_ENABLED',   0);
 define('SHOP_COMMENTS_CLOSED' ,   1);
 define('SHOP_COMMENTS_DISABLED',  -1);
-
-// Log levels to emulate glFusion 2.0+ logging
-define('SHOP_LOG_DEBUG',    100);
-define('SHOP_LOG_INFO',     200);
-define('SHOP_LOG_NOTICE',   250);
-define('SHOP_LOG_WARNING',  300);
-define('SHOP_LOG_ERROR',    400);
-define('SHOP_LOG_CRITICAL', 500);
-define('SHOP_LOG_ALERT',    550);
-define('SHOP_LOG_EMERGENCY', 600);
 
 // Session variables for TimThumb image url, if used
 // This needs to be an array var named for the plugin,
@@ -105,6 +95,24 @@ if (file_exists(__DIR__ . '/config.php')) {
     /** Include local configuration overrides */
     include_once __DIR__ . '/config.php';
 }
+
+Log::config('shop_system',
+    array(
+      'type'  => 'file',
+      'path'  => $_CONF['path_log'],
+      'file'  => 'system.log',
+      'level' => Config::get('log_level'),
+    )
+);
+Log::config('shop_downloads',
+    array(
+      'type'  => 'file',
+      'path'  => $_CONF['path_log'],
+      'file'  => 'shop_downloads.log',
+      'level' => Log::INFO,
+    )
+);
+
 
 //  Set user ID = 1 for anonymous users.
 if (empty($_USER['uid']) || $_USER['uid'] < 2) {
@@ -1428,7 +1436,7 @@ function SHOP_phpblock_product($sql)
     // item to show
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, "SQL error: $sql");
         return '';
     }
     if ($res && DB_numRows($res) > 0) {
@@ -1702,69 +1710,6 @@ function SHOP_is_plugin_item($item_number)
     } else {
         return false;
     }
-}
-
-
-/**
- * Send debug info to the error log.
- *
- * If the plugin configuration is set to log messages indicated by $type,
- * then the message is logged.
- *
- * @param   string  $msg    Text message to display, may be blank.
- * @param   integer $level  Logging level
- */
-function SHOP_log($msg, $level = SHOP_LOG_ERROR)
-{
-    global $_SHOP_CONF;
-
-    if ($level < $_SHOP_CONF['log_level']) {
-        return;
-    }
-
-    $msg1 = 'SHOP ';
-    $show_backtrace = false;
-    switch ($level) {
-    case SHOP_LOG_DEBUG:
-        $msg1 .= 'DEBUG';
-        $show_backtrace = true;
-        break;
-    case SHOP_LOG_INFO:
-        $msg1 .= 'INFO';
-        break;
-    case SHOP_LOG_NOTICE:
-        $msg1 .= 'NOTICE';
-        break;
-    case SHOP_LOG_WARNING:
-        $msg1 .= 'WARNING';
-        break;
-    case SHOP_LOG_ERROR:
-        $msg1 .= 'ERROR';
-        break;
-    case SHOP_LOG_CRITICAL:
-        $msg1 .= 'CRITICAL';
-        break;
-    case SHOP_LOG_ALERT:
-        $msg1 .= 'ALERT';
-        break;
-    case SHOP_LOG_EMERGENCY:
-        $msg1 .= 'EMERGENCY';
-        break;
-    }
-    $msg1 .= ': ';
-
-    if ($show_backtrace) {
-        $bk = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
-        if (isset($bk[1])) {
-            if (isset($bk[1]['class'])) {
-                $msg1 .= $bk[1]['class'] . $bk[1]['type'];
-            }
-            $msg1 .= $bk[1]['function'] . '(): ';
-        } else {
-            $msg1 .= basename($bk[0]['file']) . '(' . $bk[0]['line'] . ') ';
-        }
-    }
-    COM_errorLog($msg1 . $msg, 1);
 }
 
 

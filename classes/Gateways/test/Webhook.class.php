@@ -19,6 +19,7 @@ use Shop\Order;
 use Shop\Payment;
 use Shop\Gateway;
 use Shop\Models\OrderState;
+use Shop\Log;
 
 
 /**
@@ -60,7 +61,7 @@ class Webhook extends \Shop\Webhook
         $this->setID(SHOP_getVar($this->getData(), 'txn_id'));
 
         if (!$this->isUniqueTxnId()) {
-            SHOP_log("Duplicate transaction ID {$this->getID()}");
+            Log::write('shop_system', Log::ERROR, "Duplicate transaction ID {$this->getID()}");
             return false;
         }
 
@@ -70,7 +71,7 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            SHOP_log("Order {$this->getOrderId()} not found");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
             return false;
         }
 
@@ -104,7 +105,7 @@ class Webhook extends \Shop\Webhook
                     ->setOrderID($this->getOrderID())
                     ->Save();
                 if ($this->isSufficientFunds()) {
-                    SHOP_log("Handling purchase", SHOP_LOG_DEBUG);
+                    Log::write('shop_system', Log::DEBUG, "Handling purchase");
                     $status = $this->handlePurchase();
                 }
             }

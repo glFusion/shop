@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Logger;
+use Shop\Log;
 
 
 /**
@@ -177,7 +178,7 @@ class IPN extends \Shop\Logger
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log(__CLASS__ . "::Write() SQL error: $sql", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": SQL error: $sql");
             return 0;
         } else {
             return DB_insertId();
@@ -186,4 +187,3 @@ class IPN extends \Shop\Logger
 
 }
 
-?>

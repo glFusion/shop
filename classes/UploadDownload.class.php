@@ -157,7 +157,7 @@ class UploadDownload
         $nwarnings = $nwarnings + 1;
         $this->_warnings[$nwarnings] = $warningText;
         if ($this->loggingEnabled()) {
-            SHOP_log($warningText, SHOP_LOG_WARNING);
+            Log::write('shop_system', Log::WARNING, $warningText);
         }
     }
 
@@ -173,7 +173,7 @@ class UploadDownload
         $nerrors = $nerrors + 1;
         $this->_errors[$nerrors] = $errorText;
         if ($this->loggingEnabled()) {
-            SHOP_log($errorText, SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, $errorText);
         }
     }
 
@@ -189,7 +189,7 @@ class UploadDownload
         $nmsgs = $nmsgs + 1;
         $this->_debugMessages[$nmsgs] = $debugText;
         if ($this->loggingEnabled()) {
-            SHOP_log($debugText, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, $debugText);
         }
     }
 
@@ -333,9 +333,8 @@ class UploadDownload
         }
 
         if ($this->_currentFile['size'] > $this->_maxFileSize) {
-            SHOP_log(
-                "Uploaded file: ".$this->_currentFile['name']." exceeds max file size of " . $this->_maxFileSize,
-                SHOP_LOG_WARNING
+            Log::write('shop_system', Log::WARNING, 
+                "Uploaded file: ".$this->_currentFile['name']." exceeds max file size of " . $this->_maxFileSize
             );
             return false;
         } else {

@@ -24,6 +24,7 @@ use Shop\Cache;
 use Shop\Models\Token;
 use Shop\Models\Payout;
 use Shop\Models\PayoutHeader;
+use Shop\Log;
 
 
 /**
@@ -330,7 +331,7 @@ class Gateway extends \Shop\Gateway
 
         $access_token = $this->getBearerToken();
         if (!$access_token) {
-            SHOP_log("Could not get Paypal access token", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Could not get Paypal access token");
             return false;
         }
 
@@ -497,12 +498,12 @@ class Gateway extends \Shop\Gateway
                 $http_code = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
                 curl_close($ch);
                 if ($http_code > 299) {
-                    SHOP_log("Error sending invoice for $order_num. Code $http_code, Text: $send_response", SHOP_LOG_ERROR);
+                    Log::write('shop_system', Log::ERROR, "Error sending invoice for $order_num. Code $http_code, Text: $send_response");
                     return false;
                 }
             }
         } else {
-            SHOP_log("Error creating invoice for $order_num", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Error creating invoice for $order_num");
             SHOP_Log("Data: " . var_export($inv, true));
             return false;
         }
@@ -573,10 +574,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error capturing $authorizationId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error capturing $authorizationId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture response: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture response: ' . var_export($response,true));
         return $response;
     }
 
@@ -595,10 +596,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error capturing $captureId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error capturing $captureId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture details: ' . var_export($response,true));
         return $response;
     }
 
@@ -617,10 +618,10 @@ class Gateway extends \Shop\Gateway
         try {
             $response = $client->execute($request);
         } catch (\PaypalCheckoutSdk\PayPalHttp\HttpException $e) {
-            SHOP_log("Error retrieving order $orderId, response " . var_export($response,true));
+            Log::write('shop_system', Log::ERROR, "Error retrieving order $orderId, response " . var_export($response,true));
             $response = NULL;
         }
-        SHOP_log('Capture details: ' . var_export($response,true), SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'Capture details: ' . var_export($response,true));
         return $response;
     }
 

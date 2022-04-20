@@ -368,7 +368,7 @@ class Zone
             states = '" . DB_escapeString(json_encode($this->states)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->rule_id == 0) {

@@ -65,10 +65,9 @@ class RegionBase
                 WHERE " . static::$KEY . "_id IN ($id)";
             // Ignore SQL errors since varname is indeterminate
             //echo $sql;die;
-            //COM_errorLog($sql);
             DB_query($sql, 1);
             if (DB_error()) {
-                SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "SQL error: $sql");
                 return $oldvalue;
             } else {
                 Cache::clear('regions');

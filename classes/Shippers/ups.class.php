@@ -18,6 +18,7 @@ use \Exception;
 use Shop\Company;
 use Shop\Models\ShippingQuote;
 use Shop\Package;
+use Shop\Log;
 
 
 /**
@@ -280,9 +281,8 @@ class ups extends \Shop\Shipper
             $Tracking->setCache($this->key, $tracking);
         } catch ( Exception $ex ) {
             $Tracking->addError($LANG_SHOP['err_getting_info']);
-            SHOP_log(
-                __METHOD__ . '() Line ' . __LINE__ .
-                ' Error getting tracking info: ' . print_r($ex,true)
+            Log::write('shop_system', Log::ERROR,
+                'Error getting tracking info: ' . print_r($ex,true)
             );
         }
         return $Tracking;
@@ -502,9 +502,8 @@ class ups extends \Shop\Shipper
                     ->setPackageCount($fixed_pkgs);
             }
         } catch ( Exception $ex ) {
-            SHOP_log(
-                __METHOD__ . '() Line ' . __LINE__ .
-                ' Error getting quote for order ' . $Order->getOrderID() .
+            Log::write('shop_system', Log::ERROR,
+                'Error getting quote for order ' . $Order->getOrderID() .
                 print_r($ex,true)
             );
         }

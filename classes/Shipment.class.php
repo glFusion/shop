@@ -283,7 +283,7 @@ class Shipment
             comment = '" . DB_escapeString($this->comment) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             $this->shipment_id = DB_insertID();

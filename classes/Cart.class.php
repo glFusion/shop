@@ -20,6 +20,7 @@ use Shop\Models\OrderState;
 use Shop\Models\Session;
 use Shop\Models\Stock;
 use Shop\Products\Coupon;
+use Shop\Log;
 
 
 /**
@@ -775,7 +776,7 @@ class Cart extends Order
             $msg .= " except $save";
         }
         DB_query($sql);
-        SHOP_log($msg, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $msg);
     }
 
 
@@ -943,7 +944,7 @@ class Cart extends Order
     {
         global $_TABLES;
         DB_delete($_TABLES['shop.orders'], 'status', OrderState::CART);
-        SHOP_log("All carts for all users deleted", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::INFO, "All carts for all users deleted");
     }
 
 

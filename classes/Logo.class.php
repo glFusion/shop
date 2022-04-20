@@ -265,7 +265,7 @@ class Logo
         // Calculate the new dimensions
         self::reDim($this->d_width, $this->d_height, $expand);
         if ($this->status == false) {
-            SHOP_log(__CLASS__ . ": Invalid image {$this->src_path}");
+            Log::write('shop_system', Log::ERROR, __CLASS__ . ": Invalid image {$this->src_path}");
             return false;
         }
 
@@ -282,7 +282,7 @@ class Logo
         $JpegQuality = 85;
 
         if ($_CONF['debug_image_upload']) {
-            SHOP_log(
+            Log::write('shop_system', Log::ERROR, 
                 __METHOD__ . '(): ' .
                 ": Resizing using GD2: Src = " . $this->s_path . " mimetype = " . $this->mime_type
             );
@@ -303,15 +303,15 @@ class Logo
             break;
         case 'image/x-targa' :
         case 'image/tga' :
-            SHOP_log("IMG_resizeImage: TGA files not supported by GD2 Libs");
+            Log::write('shop_system', Log::ERROR, "IMG_resizeImage: TGA files not supported by GD2 Libs");
             return false;
         default :
-            SHOP_log("IMG_resizeImage: GD2 only supports JPG, PNG and GIF image types.");
+            Log::write('shop_system', Log::ERROR, "IMG_resizeImage: GD2 only supports JPG, PNG and GIF image types.");
             return false;
         }
 
         if (!$image) {
-            SHOP_log("IMG_resizeImage: GD Libs failed to create working image.");
+            Log::write('shop_system', Log::ERROR, "IMG_resizeImage: GD Libs failed to create working image.");
             return false;
         }
         if (

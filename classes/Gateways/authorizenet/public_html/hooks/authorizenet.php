@@ -15,22 +15,23 @@
 
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
+use Shop\Log;
 
 $gw_name = 'authorizenet';
 if (empty($gw_name)) {
-    SHOP_log("Gateway not specified in Webhook message data");
-    $log_level = SHOP_LOG_ALERT;
+    $log_level = Log::ALERT;
+    Log::write('shop_system', $log_level, "Gateway not specified in Webhook message data");
 } else {
-    SHOP_log("Received $gw_name Webhook:", SHOP_LOG_DEBUG);
-    $log_level = SHOP_LOG_DEBUG;
+    $log_level = Log::DEBUG;
+    Log::write('shop_system', $log_level, "Received $gw_name Webhook:");
 }
 
 // Log everything before instantiating the webhook handler in case
 // something goes wrong later.
-SHOP_log("Got Webhook Headers: " . var_export($_SERVER,true), $log_level);
-SHOP_log("Got Webhook GET: " . var_export($_GET, true), $log_level);
-SHOP_log("Got Webhook POST: " . var_export($_POST, true), $log_level);
-SHOP_log("Got php:://input: " . var_export(@file_get_contents('php://input'), true), $log_level);
+Log::write('shop_system', $log_level, "Got Webhook Headers: " . var_export($_SERVER,true));
+Log::write('shop_system', $log_level, "Got Webhook GET: " . var_export($_GET, true));
+Log::write('shop_system', $log_level, "Got Webhook POST: " . var_export($_POST, true));
+Log::write('shop_system', $log_level, "Got php:://input: " . var_export(@file_get_contents('php://input'), true));
 
 // Get the complete IPN message prior to any processing
 if (!empty($gw_name)) {
@@ -38,7 +39,7 @@ if (!empty($gw_name)) {
     if ($WH && $WH->Verify()) {
         $WH->Dispatch();
     } else {
-        SHOP_log("Webhook verification failed for $gw_name");
+        Log::write('shop_system', Log::ERROR, "Webhook verification failed for $gw_name");
     }
 }
 echo "Completed.";

@@ -1018,7 +1018,7 @@ class ProductVariant
                 shipping_units = $shipping_units,
                 dscp = '" . DB_escapeString(json_encode($dscp)) . "'";
             //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, $sql);
             DB_query($sql);
             if (!DB_error()) {
                 $pv_id = DB_insertID();
@@ -1093,7 +1093,7 @@ class ProductVariant
             //onhand = " . (float)$this->onhand . ",
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->pv_id == 0) {

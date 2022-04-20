@@ -19,6 +19,7 @@ use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
 use Shop\Models\ButtonKey;;
 use Shop\Models\PayoutHeader;
+use glFusion\FileSystem;
 
 
 /**
@@ -410,7 +411,7 @@ class Gateway
             ON DUPLICATE KEY UPDATE
                 button = '{$btn_value}'";
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
     }
 
@@ -473,7 +474,7 @@ class Gateway
                 grp_access = '{$this->grp_access}'
                 WHERE id='$id'";
         //echo $sql;die;
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         $this->clearButtonCache();   // delete all buttons for this gateway
         if (DB_error()) {
@@ -733,7 +734,7 @@ class Gateway
     {
         global $_TABLES, $_CONF, $_SHOP_CONF;
 
-        COM_errorLog('Gateway::handlePurchase deprecated');
+        Log::write('shop_system', Log::ERROR, 'Gateway::handlePurchase deprecated');
         return;
 
         if (!empty($vals['cart_id'])) {
@@ -758,7 +759,7 @@ class Gateway
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                SHOP_log("Plugin item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Plugin item " . $item_number);
 
                 // Initialize item info array to be used later
                 $A = array();
@@ -766,7 +767,7 @@ class Gateway
                 // Split the item number into component parts.  It could
                 // be just a single string, depending on the plugin's needs.
                 $pi_info = explode(':', $item['item_number']);
-                SHOP_log('Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true), SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, 'Paymentgw::handlePurchase() pi_info: ' . print_r($pi_info,true));
 
                 $status = PLG_callFunctionForOnePlugin(
                     'service_' . $pi_info[0] . '_productinfo',
@@ -779,7 +780,7 @@ class Gateway
                 if (is_array($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                SHOP_log("Paymentgw::handlePurchase() Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Paymentgw::handlePurchase() Got name " . $items[$id]['name']);
                 $vars = array(
                     'item' => $item,
                     'ipn_data' => array(),
@@ -796,7 +797,7 @@ class Gateway
                 $prod_types |= ProductType::VIRTUAL;
 
             } else {
-                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Shop item " . $item_number);
                 $P = Product::getByID($item_number);
                 $A = array(
                     'name' => $P->getName(),
@@ -865,7 +866,7 @@ class Gateway
                         "', INTERVAL {$A['expiration']} DAY)";
             }
             //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, $sql);
             DB_query($sql);
 
         }   // foreach item
@@ -2154,7 +2155,7 @@ class Gateway
             ) );
             $upload->setFieldName('gw_file');
             if (!$upload->setPath($_CONF['path_data'] . 'temp')) {
-                SHOP_log("Error setting temp path: " . $upload->printErrors(false));
+                Log::write('shop_system', Log::ERROR, "Error setting temp path: " . $upload->printErrors(false));
             }
 
             $filename = $_FILES['gw_file']['name'];
@@ -2162,12 +2163,12 @@ class Gateway
             $upload->uploadFiles();
 
             if ($upload->areErrors()) {
-                SHOP_log("Errors during upload: " . $upload->printErrors());
+                Log::write('shop_system', Log::ERROR, "Errors during upload: " . $upload->printErrors());
                 return false;
             }
             $Finalfilename = $_CONF['path_data'] . 'temp/' . $filename;
         } else {
-            SHOP_log("No file found to upload");
+            Log::write('shop_system', Log::ERROR, "No file found to upload");
             return false;
         }
 
@@ -2177,19 +2178,19 @@ class Gateway
         }
         $tmp = FileSystem::mkTmpDir();
         if ($tmp === false) {
-            SHOP_log("Failed to create temp directory");
+            Log::write('shop_system', Log::ERROR, "Failed to create temp directory");
             return false;
         }
         $tmp_path = $_CONF['path_data'] . $tmp;
         if (!COM_decompress($Finalfilename, $tmp_path)) {
-            SHOP_log("Failed to decompress $Finalfilename into $tmp_path");
+            Log::write('shop_system', Log::ERROR, "Failed to decompress $Finalfilename into $tmp_path");
             FileSystem::deleteDir($tmp_path);
             return false;
         }
         @unlink($Finalfilename);
 
         if (!$dh = @opendir($tmp_path)) {
-            SHOP_log("Failed to open $tmp_path");
+            Log::write('shop_system', Log::ERROR, "Failed to open $tmp_path");
             return false;
         }
         $upl_path = $tmp_path;
@@ -2205,7 +2206,7 @@ class Gateway
         closedir($dh);
 
         if (empty($upl_path)) {
-            SHOP_log("Could not find upload path under $tmp_path");
+            Log::write('shop_system', Log::ERROR, "Could not find upload path under $tmp_path");
             return false;
         }
 
@@ -2370,7 +2371,7 @@ class Gateway
      */
     public function sendPayouts(PayoutHeader $Header, array $Payouts)
     {
-        SHOP_LOG("Payouts not implemented for gateway {$this->gw_name}", SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, "Payouts not implemented for gateway {$this->gw_name}");
         foreach ($Payouts as $Payout) {
             $Payout['txn_id'] = 'n/a';
         }

@@ -472,6 +472,7 @@ case 'cancel':
             // Only reset if the token is valid, then update the token to
             // invalidate further changes using this token.
             $Cart->cancelFinal();
+            Shop\Tracker::getInstance()->cancelOrder();
         }
     }
     // fall through to view cart

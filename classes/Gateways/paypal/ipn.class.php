@@ -15,6 +15,7 @@
 namespace Shop\Gateways\paypal;
 use Shop\Cart;
 use Shop\Models\OrderState;
+use Shop\Log;
 
 
 // this file can't be used on its own
@@ -163,9 +164,9 @@ class ipn extends \Shop\IPN
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         if ($http_code != 200) {
-            SHOP_log("IPN Verification returned $http_code", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "IPN Verification returned $http_code");
         } elseif (strcmp($response, 'VERIFIED') != 0) {
-            SHOP_log("IPN Verification reponse $response", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "IPN Verification reponse $response");
         } else {
             $verified = true;
         }
@@ -252,7 +253,7 @@ class ipn extends \Shop\IPN
                     'handling'  => $handling,
                 ));
             }
-            SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
             $this->handlePurchase();
             break;
 
@@ -270,12 +271,12 @@ class ipn extends \Shop\IPN
                 ->setPmtHandling($this->Order->getHandling());
             $Cart = $this->Order->getItems();
             if (empty($Cart)) {
-                SHOP_log("Empty Cart for id {$this->Order->getOrderID()}", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Empty Cart for id {$this->Order->getOrderID()}");
                 return false;
             }
 
             $payment_gross = $this->getPmtGross();
-            SHOP_log("Received $payment_gross gross payment", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Received $payment_gross gross payment");
             $this->handlePurchase();
             break;
 

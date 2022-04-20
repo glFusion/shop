@@ -222,7 +222,7 @@ class Feature
             ON DUPLICATE KEY UPDATE
             ft_name = '$ft_name',
             orderby = {$this->getOrderby()}";
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {

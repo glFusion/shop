@@ -14,10 +14,11 @@
 
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
+use Shop\Log;
 
 // Get the complete IPN message prior to any processing
-SHOP_log("Received IPN:", SHOP_LOG_DEBUG);
-SHOP_log(var_export($_POST, true), SHOP_LOG_DEBUG);
+Log::write('shop_system', Log::DEBUG, "Received IPN:");
+Log::write('shop_system', Log::DEBUG, var_export($_POST, true));
 
 // Process IPN request
 $ipn = \Shop\IPN::getInstance('paypal', $_POST);

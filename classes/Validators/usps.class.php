@@ -14,6 +14,7 @@
 namespace Shop\Validators;
 use \SimpleXMLElement;
 use Shop\Cache;
+use Shop\Log;
 
 
 /**
@@ -87,7 +88,7 @@ class usps extends \Shop\Shippers\usps
         }
         $xml = new SimpleXMLElement($result);
         if (property_exists($xml, 'Number')) {
-            SHOP_log("USPS Validator Error {$xml->Number}, {$xml->Description}, {$xml->Source}");
+            Log::write('shop_system', Log::ERROR, "USPS Validator Error {$xml->Number}, {$xml->Description}, {$xml->Source}");
             return false;
         }
         $xml = $xml->Address;

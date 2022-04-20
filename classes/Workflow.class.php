@@ -332,7 +332,7 @@ class Workflow
             Cache::clear('workflows');
             return $newvalue;
         } else {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "SQL error: $sql");
             return -1;
         }
     }

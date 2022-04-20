@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Traits;
+use Shop\Log;
 
 
 /**
@@ -34,7 +35,7 @@ trait PDF
             //$html2pdf->setModeDebug();
             $this->html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
         return true;
@@ -46,7 +47,7 @@ trait PDF
         try {
             $this->html2pdf->writeHTML($content);
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
     }

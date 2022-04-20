@@ -14,6 +14,7 @@
 namespace Shop\Gateways\_internal;
 use Shop\Cart;
 use Shop\Models\OrderState;
+use Shop\Log;
 
 
 // this file can't be used on its own
@@ -138,7 +139,7 @@ class ipn extends \Shop\IPN
                 'handling'  => $handling,
             ));
         }
-        SHOP_log("Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Net Settled: {$this->getPmtGross()} {$this->getCurrency()->getCode()}");
         $this->handlePurchase();
         $this->Log(true);
         SHOP_setMsg('Thank youi for your order.');

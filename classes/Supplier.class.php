@@ -410,7 +410,7 @@ class Supplier extends Address
         $sql = $sql1 . $sql2 . $sql3;
         //var_dump($this);die;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->getID() == 0) {

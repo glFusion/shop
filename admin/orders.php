@@ -14,6 +14,7 @@
 
 /** Import Required glFusion libraries */
 require_once('../../../lib-common.php');
+use Shop\Log;
 
 // If plugin is installed but not enabled, display an error and exit gracefully
 if (
@@ -78,7 +79,7 @@ case 'updstatus':
             $Order = Shop\Order::getInstance($order_id);
             if (!$Order->isNew) {
                 $Order->updateStatus($newstatus);
-                SHOP_log("Updated order $order_id from {$oldstatus[$order_id]} to $newstatus", SHOP_LOG_INFO);
+                Log::write('shop_system', Log::INFO, "Updated order $order_id from {$oldstatus[$order_id]} to $newstatus");
             }
         }
     }

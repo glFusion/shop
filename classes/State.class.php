@@ -495,7 +495,7 @@ class State extends RegionBase
             $status = true;
         } else {
             $this->addError($LANG_SHOP['err_dup_iso']);
-            SHOP_log($sql, SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, $sql);
             $status = false;
         }
         return $status;

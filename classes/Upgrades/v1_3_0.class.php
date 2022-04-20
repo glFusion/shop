@@ -14,6 +14,7 @@ namespace Shop\Upgrades;
 use Shop\Payment;
 use Shop\Config;
 use Shop\OrderItem;
+use Shop\Log;
 
 
 class v1_3_0 extends Upgrade
@@ -109,7 +110,7 @@ class v1_3_0 extends Upgrade
     {
         global $_TABLES, $LANG_SHOP;
 
-        SHOP_log("Loading payments from IPN log", SHOP_LOG_INFO);
+        Log::write('shop_system', Log::INFO, "Loading payments from IPN log");
         $sql = "SELECT * FROM {$_TABLES['shop.ipnlog']}
             ORDER BY ts ASC";
             //WHERE id = 860
@@ -124,14 +125,14 @@ class v1_3_0 extends Upgrade
             if ($ipn_data === false) {
                 $ipn_data = @json_decode($A['ipn_data'], true);
                 if ($ipn_data === NULL) {
-                    SHOP_log("Invalid IPN data found: " . var_export($A['ipn_data']), SHOP_LOG_ERROR);
+                    Log::write('shop_system', Log::ERROR, "Invalid IPN data found: " . var_export($A['ipn_data']));
                     continue;
                 }
             }
 
             $cls = 'Shop\\ipn\\' . $A['gateway'];
             if (!class_exists($cls)) {
-                SHOP_log("Class $cls does not exist", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Class $cls does not exist");
                 continue;
             }
             $ipn = new $cls($ipn_data);
