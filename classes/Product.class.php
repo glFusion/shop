@@ -345,6 +345,10 @@ class Product
      * @var object */
     protected $Stock = NULL;
 
+    /** Effective zone rule object.
+     * @var object */
+    private $_ZoneRule = NULL;
+
 
     /**
      * Constructor.
@@ -924,15 +928,14 @@ class Product
      */
     public function getRule()
     {
-        static $retval = NULL;
-        if ($retval === NULL) {
+        if ($this->_ZoneRule === NULL) {
             if ($this->getEffectiveRuleID() > 0) {
-                $retval = Rules\Zone::getInstance($this->getEffectiveRuleID());
+                $this->_ZoneRule = Rules\Zone::getInstance($this->getEffectiveRuleID());
             } else {
-                $retval = new Rules\Zone;
+                $this->_ZoneRule = new Rules\Zone;
             }
         }
-        return $retval;
+        return $this->_ZoneRule;
     }
 
 
