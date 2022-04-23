@@ -17,6 +17,7 @@ use Shop\Models\Dates;
 use Shop\Models\Views;
 use Shop\Models\Stock;
 use Shop\Models\IPN;
+use Shop\Log;
 
 
 /**
@@ -343,6 +344,10 @@ class Product
      * Variants have their own related Stock objects.
      * @var object */
     protected $Stock = NULL;
+
+    /** Effective zone rule object.
+     * @var object */
+    private $_ZoneRule = NULL;
 
 
     /**
@@ -923,15 +928,14 @@ class Product
      */
     public function getRule()
     {
-        static $retval = NULL;
-        if ($retval === NULL) {
+        if ($this->_ZoneRule === NULL) {
             if ($this->getEffectiveRuleID() > 0) {
-                $retval = Rules\Zone::getInstance($this->getEffectiveRuleID());
+                $this->_ZoneRule = Rules\Zone::getInstance($this->getEffectiveRuleID());
             } else {
-                $retval = new Rules\Zone;
+                $this->_ZoneRule = new Rules\Zone;
             }
         }
-        return $retval;
+        return $this->_ZoneRule;
     }
 
 
@@ -1014,7 +1018,7 @@ class Product
                 } elseif ($filename != '') {
                     $this->filename = $filename;
                 }
-                SHOP_log('Uploaded file: ' . $this->filename, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Uploaded file: ' . $this->filename);
             }
             if ($this->filename == '') {
                 // Not having a file is an error for downloadable products.
@@ -1147,12 +1151,12 @@ class Product
         // Final check to catch error messages from the SQL update
         if (empty($this->Errors)) {
             SHOP_setMsg($LANG_SHOP['msg_updated']);
-            SHOP_log('Update of product ' . $this->id . ' succeeded.', SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Update of product {$this->id} succeeded.");
             PLG_itemSaved($this->id, $_SHOP_CONF['pi_name']);
             return true;
         } else {
             SHOP_setMsg($this->Errors, 'error');
-            SHOP_log('Update of product ' . $this->id . ' failed.', SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Update of product {$this->id} failed.");
             COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
         }
@@ -1170,7 +1174,7 @@ class Product
 
         // Insert or update the record, as appropriate
         if ($this->id > 0) {
-            SHOP_log('Preparing to update product id ' . $this->id, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ": Preparing to update product id {$this->id}");
             $sql1 = "UPDATE {$_TABLES['shop.products']} SET ";
             $sql3 = " WHERE id='{$this->id}'";
             // While we're here, change the existing Variant SKUs if the
@@ -1181,7 +1185,7 @@ class Product
                 }
             }
         } else {
-            SHOP_log('Preparing to save a new product.', SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, __METHOD__ . ': Preparing to save a new product.');
             $sql1 = "INSERT INTO {$_TABLES['shop.products']} SET
                 dt_add = UTC_TIMESTAMP(), ";
             $sql3 = '';
@@ -1228,7 +1232,7 @@ class Product
         //echo $sql;die;
         DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log("Error saving product. SQL=$sql", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Error saving product. SQL=$sql");
             return false;
         } else {
             if ($this->isNew) {
@@ -2715,7 +2719,7 @@ class Product
         $this->name = $this->name . '_' . uniqid();
         $this->saveToDB();
         if ($this->id < 1) {
-            SHOP_log("Error duplicating product id $old_id", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ": Error duplicating product id $old_id");
             return false;
         }
         $new_id = $this->id;

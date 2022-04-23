@@ -14,6 +14,7 @@
 namespace Shop\Models;
 use Shop\Template;
 use Shop\Category;
+use Shop\Log;
 use glFusion\Database\Database;
 
 
@@ -127,7 +128,7 @@ class Syndication extends \glFusion\Syndication\Feed
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', $this->type . '.thtml');
         if (!empty($T->last_error)) {
-            SHOP_log("Missing catalog feed template for {$this->type}");
+            Log::write('shop_system', Log::ERROR, "Missing catalog feed template for {$this->type}");
             return false;
         }
         $Cur = \Shop\Currency::getInstance();

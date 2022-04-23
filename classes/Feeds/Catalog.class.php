@@ -13,6 +13,7 @@
  */
 namespace Shop\Feeds;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -66,7 +67,7 @@ class Catalog
         $T = new Template('feeds/catalog/');
         $T->set_file('feed', $feed . '.thtml');
         if (!empty($T->last_error)) {
-            SHOP_log("Missing catalog feed template for $feed");
+            Log::write('shop_system', Log::ERROR, "Missing catalog feed template for $feed");
             return false;
         }
         $T->set_var(array(

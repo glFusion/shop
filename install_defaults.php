@@ -18,6 +18,7 @@
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own.');
 }
+use Shop\Log;
 
 // Check if the Paypal plugin is installed and has service functions defined.
 // If so, disable Shop service functions.
@@ -1269,9 +1270,8 @@ function plugin_initconfig_shop()
             _addConfigItem($cfgItem);
         }
     } else {
-        COM_errorLog('initconfig error: Shop config group already exists');
+        Log::write('shop_system', Log::ERROR, 'initconfig error: Shop config group already exists');
     }
     return true;
 }
 
-?>

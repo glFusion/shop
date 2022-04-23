@@ -126,7 +126,7 @@ class Webhook
         if (class_exists($cls)) {
             return new $cls($blob);
         } else {
-            SHOP_log("Webhook::getInstance() - $cls doesn't exist");
+            Log::write('shop_system', Log::ERROR, "Webhook::getInstance() - $cls doesn't exist");
             return NULL;
         }
     }
@@ -516,10 +516,10 @@ class Webhook
         $msg = $Cur->FormatValue($this->getPayment()) . ' received, require ' .
             $Cur->FormatValue($bal_due);
         if ($bal_due <= $this->getPayment() + .0001) {
-            SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "OK: $msg");
             return true;
         } else {
-            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Insufficient Funds: $msg");
             return false;
         }
     }
@@ -561,7 +561,7 @@ class Webhook
         }
 
         if ($this->Order->isNew()) {
-            SHOP_log("Error: Order {$this->getOrderID()} is not valid", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Error: Order {$this->getOrderID()} is not valid");
             return false;
         }
 
@@ -572,9 +572,9 @@ class Webhook
             // Handle the purchase for each order item
             $this->Order->handlePurchase($this->IPN);
         } else {
-            SHOP_log('Cannot process order ' . $this->getOrderID(), SHOP_LOG_ERROR);
-            SHOP_log('canprocess? ' . var_export($this->GW->okToProcess($this->Order),true), SHOP_LOG_DEBUG);
-            SHOP_log('status ' . $this->Order->getStatus(), SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::ERROR, 'Cannot process order ' . $this->getOrderID());
+            Log::write('shop_system', Log::DEBUG, 'canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
+            Log::write('shop_system', Log::DEBUG, 'status ' . $this->Order->getStatus());
             return false;
         }
         return true;
@@ -602,7 +602,7 @@ class Webhook
             array($this->GW->getName(), $this->getID(), $this->getEvent())
         );
         if ($count > 0) {
-            SHOP_log("Received duplicate IPN {$this->getID()} for {$this->GW->getName()}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->getID()} for {$this->GW->getName()}");
             return false;
         } else {
             return true;

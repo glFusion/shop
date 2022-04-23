@@ -18,6 +18,7 @@ use Shop\Currency;
 use Shop\Tracking;
 use Shop\Models\ShippingQuote;
 use Shop\Order;
+use Shop\Log;
 
 
 /**
@@ -290,13 +291,13 @@ class fedex extends \Shop\Shipper
                 }
             } catch (\Exception $e) {
                 $Tracking->addError($LANG_SHOP['err_getting_info']);
-                SHOP_log(
+                Log::write('shop_system', Log::ERROR,
                     __METHOD__ . '() Line ' . __LINE__ .
                     ' Error getting tracking info: ' . print_r($ex,true)
                 );
             }
         } else {
-            SHOP_log(
+            Log::write('shop_system', Log::ERROR,
                 __METHOD__ . '()- Error getting tracking info: ' .
                 print_r($response,true)
             );
@@ -353,7 +354,7 @@ class fedex extends \Shop\Shipper
 
         // valid values FEDEX_BOX, FEDEX_PAK, FEDEX_TUBE, YOUR_PACKAGING, ...
         $request['RequestedShipment']['PackagingType'] = 'YOUR_PACKAGING';
-        
+
         $request['RequestedShipment']['TotalInsuredValue']=array(
             'Ammount'=> $Order->getGrossItems(),
             'Currency'=> Currency::getInstance()->getCode(),
@@ -451,7 +452,7 @@ class fedex extends \Shop\Shipper
                     ->setCost($cost + $fixed_cost + $this->item_shipping['amount'])
                     ->setPackageCount(count($Packages));
             } else {
-                SHOP_log(
+                Log::write('shop_system', Log::ERROR,
                     __METHOD__ . "() Error getting Fedex quote for order {$Order->getOrderID()} " .
                     print_r($response,true)
                 );

@@ -509,7 +509,7 @@ class Customer
             cart = '$cart',
             affiliate_id = '" . DB_escapeString($this->affiliate_id) . "',
             aff_pmt_method = '" . DB_escapeString($this->aff_pmt_method) . "'";
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         return DB_error() ? false : true;
     }

@@ -18,6 +18,7 @@ use Shop\Shipper;
 use Shop\Cache;
 use Shop\FieldList;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -409,7 +410,7 @@ class Product
             pr_hazmat = {$this->is_hazmat}";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->id == 0) {

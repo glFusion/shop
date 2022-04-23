@@ -165,7 +165,7 @@ class FeatureValue
         }
         $sql2 = "ft_id = {$this->getFeatureID()}, fv_value = '$fv_value'";
         $sql = $sql1 . $sql2 . $sql3;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql, 1);
         $err = DB_error();
         if ($err == '') {

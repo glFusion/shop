@@ -14,6 +14,7 @@
  */
 namespace Shop\Geo;
 use Shop\Config;
+use Shop\Log;
 
 
 /**
@@ -98,10 +99,10 @@ class ipstack extends \Shop\GeoLocator
                     $msg = $decoded['error']['info'];
                     $decoded = $this->default_data;
                     $decoded['message'] = $msg;
-                    SHOP_log($msg, SHOP_LOG_ERROR);
+                    Log::write('shop_system', Log::ERROR, $msg);
                 }
             } else {
-                SHOP_log("Geo/ipstack error {$status['http_code']}, data: $resp", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Geo/ipstack error {$status['http_code']}, data: $resp");
                 return $this->default_data;
             }
         } else {

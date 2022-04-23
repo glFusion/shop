@@ -946,7 +946,7 @@ class Shipper
             }
             if ($item['packed'] !== true) {
                 // This shipper cannot handle this item
-                SHOP_log(__NAMESPACE__ . '\\' . __CLASS__ . "::Error packing " . print_r($item,true), SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Error packing " . print_r($item,true));
                 // Flag the total rate as NULL to indicate that this shipper
                 // cannot be used.
                 $total_rate = NULL;
@@ -1003,7 +1003,7 @@ class Shipper
             rates = '" . DB_escapeString(json_encode($this->rates)) . "'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         $err = DB_error();
         if ($err == '') {
@@ -1709,7 +1709,7 @@ class Shipper
         //echo $sql;die;
         DB_query($sql);
         if (DB_error()) {
-            SHOP_log("Shipper::saveConfig() error: $sql");
+            Log::write('shop_system', Log::ERROR, "Shipper::saveConfig() error: $sql");
             return false;
         } else {
             return true;

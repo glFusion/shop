@@ -18,6 +18,7 @@
 
 /** Import core glFusion libraries */
 require_once('../lib-common.php');
+
 // Make sure the plugin is available
 if (
     !function_exists('SHOP_access_check') ||
@@ -26,6 +27,7 @@ if (
     COM_404();
     exit;
 }
+use Shop\Log;
 
 // Sanitize the product ID and token
 $id = SHOP_getVar($_GET, 'id', 'int');
@@ -64,15 +66,15 @@ if (is_array($A) && !empty($A['file'])) {
     $DL = new Shop\UploadDownload();
     $DL->setAllowAnyMimeType(true);
     //$DL->setAllowedMimeTypes();
-    $logfile = $_SHOP_CONF['logfile'];
+    /*$logfile = $_SHOP_CONF['logfile'];
     if (!file_exists($logfile)) {
         $fp = fopen($logfile, "w+");
         if (!$fp) {
-            SHOP_log("Failed to create $logfile", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Failed to create $logfile");
         } else {
             fwrite($fp, "**** Created Logfile ***\n");
         }
-    }
+    }*/
     if (file_exists($logfile)) {
         $DL->setLogFile($_CONF['path'] . 'logs/error.log');
         $DL->setLogging(true);
@@ -86,11 +88,12 @@ if (is_array($A) && !empty($A['file'])) {
     // Check for errors
     if ($DL->areErrors()) {
         $errs = $DL->printErrors(false);
-        SHOP_log("SHOP-DWNLD: {$_USER['username']} tried to download " .
-            "the file with id {$id} but for some reason could not",
-            SHOP_LOG_ERROR
+        Log::write(
+            'shop_downloads', Log::ERROR,
+            "{$_USER['username']} tried to download " .
+            "the file with id {$id} but for some reason could not"
         );
-        SHOP_log("SHOP-DWNLD: $errs", SHOP_LOG_ERROR);
+        Log::write('shop_downloads', Log::ERROR, "SHOP-DWNLD: $errs");
         echo COM_refresh($_CONF['site_url']);
     }
 
@@ -98,10 +101,9 @@ if (is_array($A) && !empty($A['file'])) {
             "{$_USER['username']} successfully downloaded "
             . "the file with id {$id}.");
 } else {
-    SHOP_log("SHOP-DWNLD: {$_USER['username']}/{$_USER['uid']} " .
+    Log::write('shop_downloads', Log::ERROR, "{$_USER['username']}/{$_USER['uid']} " .
             "tried to download the file with id {$id} " .
-            "but this is not a downloadable file", SHOP_LOG_ERROR);
+            "but this is not a downloadable file");
     echo COM_refresh($_CONF['site_url']. '/index.php?msg=07&plugin=shop');
 }
 
-?>

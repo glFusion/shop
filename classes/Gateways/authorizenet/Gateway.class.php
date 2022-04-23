@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Gateways\authorizenet;
+use Shop\Log;
 
 
 /**
@@ -241,7 +242,7 @@ class Gateway extends \Shop\Gateway
 
         if ($code != 200) {             // Check for a 200 code before anything else
             SHOP_setMsg("Error checking out");
-            SHOP_log('Bad response from token request: ' . print_r($result,true), SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, 'Bad response from token request: ' . print_r($result,true));
             return false;
         }
         $bom = pack('H*','EFBBBF');

@@ -16,6 +16,7 @@ namespace Shop\Gateways\free;
 use Shop\Config;
 use Shop\Order;
 use Shop\Payment;
+use Shop\Log;
 
 
 /**
@@ -66,13 +67,13 @@ class Webhook extends \Shop\Webhook
         // Get the Shop order record and make sure it's valid.
         $this->Order = Order::getInstance($this->getOrderId());
         if ($this->Order->isNew()) {
-            SHOP_log("Order {$this->getOrderId()} not found");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} not found");
             return false;
         }
 
         // Verify that this is a free order.
         if ($this->Order->getTotal() > .0001) {
-            SHOP_log("Order {$this->getOrderId()} is not a free order");
+            Log::write('shop_system', Log::ERROR, "Order {$this->getOrderId()} is not a free order");
             return false;
         }
 

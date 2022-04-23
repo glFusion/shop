@@ -14,6 +14,7 @@
 
 /** Include required glFusion common functions. */
 require_once '../lib-common.php';
+use Shop\Log;
 
 // Figure out where to redirect after adding to cart.
 // Look for a parameter, then the referrer page, and finally back to
@@ -37,7 +38,7 @@ if (isset($_POST['item'])) {
 } elseif (isset($_GET['item'])) {
     $opts = $_GET;
 } else {
-    SHOP_log("Ajax addcartitem:: Missing Item Number", SHOP_LOG_ERROR);
+    Log::write('shop_system', Log::ERROR, "Ajax addcartitem:: Missing Item Number");
     COM_refresh($ret_url);
 }
 
@@ -106,7 +107,7 @@ if ($price !== NULL) {
     $args['override'] = true;
 }
 $new_qty = $Cart->addItem($args);
-SHOP_log("Adding $item_number, qty $new_qty", SHOP_LOG_DEBUG);
+Log::write('log_system', Log::DEBUG, "Adding $item_number, qty $new_qty");
 $msg = $LANG_SHOP['msg_item_added'];
 if ($new_qty === false) {
     $msg = $LANG_SHOP['out_of_stock'];

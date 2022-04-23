@@ -24,6 +24,7 @@ use Shop\FieldList;
 use Shop\Company;
 use Shop\Currency;
 use Shop\Cache;
+use Shop\Log;
 
 
 /**
@@ -250,7 +251,7 @@ class Coupon extends \Shop\Product
                 WHERE code = '$code'";
         $res = DB_query($sql);
         if (DB_numRows($res) == 0) {
-            SHOP_log("Attempting to redeem coupon $code, not found in database", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Attempting to redeem coupon $code, not found in database");
             return array(
                 3,
                 sprintf(
@@ -261,10 +262,10 @@ class Coupon extends \Shop\Product
         } else {
             $A = DB_fetchArray($res, false);
             if ($A['redeemed'] > 0 && $A['redeemer'] > 0) {
-                SHOP_log("Coupon code $code was already redeemed", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "Coupon code $code was already redeemed");
                 return array(1, $LANG_SHOP['coupon_apply_msg1']);
             } elseif ($A['status'] != self::VALID) {
-                SHOP_log("Coupon $code status is not valid");
+                Log::write('shop_system', Log::ERROR, "Coupon $code status is not valid");
                 return array(1, $LANG_SHOP['coupon_apply_msg3']);
             }
         }
@@ -277,7 +278,7 @@ class Coupon extends \Shop\Product
             Cache::clear('coupons');
             self::writeLog($code, $uid, $amount, 'gc_redeemed');
             if (DB_error()) {
-                SHOP_error("A DB error occurred marking coupon $code as redeemed", SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "A DB error occurred marking coupon $code as redeemed");
                 return array(2, sprintf($LANG_SHOP['coupon_apply_msg2'], $_CONF['site_email']));
             }
         }
@@ -447,7 +448,7 @@ class Coupon extends \Shop\Product
             return;
         }
 
-        SHOP_log("Sending Coupon to " . $recip, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Sending Coupon to " . $recip);
         $T = new Template;
         $T->set_file('message', 'coupon_email_message.thtml');
         if ($exp < self::MAX_EXP) {
@@ -479,7 +480,7 @@ class Coupon extends \Shop\Product
             'subject' => $LANG_SHOP_EMAIL['coupon_subject'],
         );
         COM_emailNotification($email_vars);
-        SHOP_log("Coupon notification sent to $recip.", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Coupon notification sent to $recip.");
     }
 
 
@@ -780,11 +781,11 @@ class Coupon extends \Shop\Product
 
         // Check that the requested status is valid
         if ($newstatus != self::VOID && $newstatus != self::VALID) {
-            SHOP_log("Invalid status sent to Coupon::Void(): $newval");
+            Log::write('shop_system', Log::ERROR, "Invalid status sent to Coupon::Void(): $newval");
             return false;
         }
 
-        SHOP_log("Setting $code as $newstatus", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Setting $code as $newstatus");
         $code = DB_escapeString($code);
         $sql = "SELECT * FROM {$_TABLES['shop.coupons']}
                 WHERE code = '$code'";

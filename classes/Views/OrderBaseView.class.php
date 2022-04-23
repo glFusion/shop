@@ -203,11 +203,18 @@ class OrderBaseView
     public function asInvoice()
     {
         $this->type = 'order';
+        $this->is_invoice = true;
         return $this;
     }
 
 
-    public function withType($type)
+    /**
+     * Set the view type, normally either "packinglist" or "invoice".
+     *
+     * @param   string  $type       View type
+     * @return  object  $this
+     */
+    public function withType(string $type) : self
     {
         $this->type = $type;
         return $this;
@@ -219,7 +226,7 @@ class OrderBaseView
      *
      * @return  boolean     True if html, False if not
      */
-    protected function isHTML()
+    protected function isHTML() : bool
     {
         return $this->output_type == 'html';
     }
@@ -504,6 +511,7 @@ class OrderBaseView
                 'del_item_url'  => COM_buildUrl(SHOP_URL . "/cart.php?action=delete&id={$Item->getID()}"),
                 'embargoed'     => $Item->getInvalid(),
             ) );
+
             if ($P->isPhysical()) {
                 $no_shipping = 0;
             }

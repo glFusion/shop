@@ -13,6 +13,7 @@
  */
 namespace Shop\Validators;
 use Shop\Config;
+use Shop\Log;
 
 
 /**
@@ -118,7 +119,7 @@ class smartystreets
             $resp = curl_exec($ch);
             $http_code = curl_getinfo($ch);
             if ($http_code['http_code'] != 200) {
-                SHOP_log("SmartyStreets Validator: " . $resp, SHOP_LOG_ERROR);
+                Log::write('shop_system', Log::ERROR, "SmartyStreets Validator: " . $resp);
                 // Assume address is ok to avoid interrupting checkout flow
                 return false;
              }

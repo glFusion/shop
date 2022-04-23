@@ -278,9 +278,8 @@ class ShipmentPackage
             shipper_info = '" . DB_escapeString($this->shipper_info) . "',
             tracking_num = '" . DB_escapeString($this->tracking_num) . "'";
         $sql = $sql1 . $sql2 . $sql3;
-        //COM_errorLog($sql);
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             if ($this->pkg_id <= 0) {

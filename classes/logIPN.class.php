@@ -78,7 +78,7 @@ class logIPN
         // Ignore DB error in order to not block IPN
         DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log("Shop\IPN::Log() SQL error: $sql", SHOP_LOG_ERROR);
+            Log::write('shop_systesm', Log::ERROR, "SQL error: $sql");
         }
         return DB_insertId();
     }

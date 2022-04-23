@@ -16,6 +16,7 @@ use Shop\Order;
 use Shop\Gateway;
 use Shop\Payment;
 use Shop\Models\OrderState;
+use Shop\Log;
 
 
 /**
@@ -42,16 +43,16 @@ class Webhook extends \Shop\Webhook
             // Received a webhook, a single parameter string
             $json = file_get_contents('php://input');
             $this->blob = $json;
-            SHOP_log("WEBHOOK: $json", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "WEBHOOK: $json");
             $A = json_decode($json);
         } elseif (isset($_POST['shop_test_ipn'])) {
             // Received POST, testing only. Must already be complete
             $this->blob = json_encode($_POST);
             $A  = json_decode($this->blob); // convert to object
-            SHOP_log("TEST: " . var_export($_POST,true), SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "TEST: " . var_export($_POST,true));
         } else {
             // Received a Silent URL POST. Convert to webhook format.
-            SHOP_log("Silent URL: " . var_export($_POST,true), SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Silent URL: " . var_export($_POST,true));
             switch (SHOP_getVar($_POST, 'x_type')) {
             case 'auth_capture':
                 $eventtype = 'net.authorize.payment.authcapture.created';
@@ -79,7 +80,7 @@ class Webhook extends \Shop\Webhook
                 //OrderState::PAID != $this->getStatus() ||
                 !$this->isUniqueTxnId()
             ) {
-                SHOP_log(
+                Log::write('shop_system', Log::DEBUG, 
                     "Process Failed: status = " . $this->getStatus() .
                     ', not unique txn_id or verification failed'
                 );
@@ -127,7 +128,7 @@ class Webhook extends \Shop\Webhook
         switch ($this->getEvent()) {
         case 'net.authorize.payment.authcapture.created':
             $this->status = self::EV_PAYMENT;
-            SHOP_log("Received {$this->getPayment()} gross payment", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Received {$this->getPayment()} gross payment");
             $Pmt = Payment::getByReference($this->getID());
             if ($Pmt->getPmtID() == 0) {
                 $Pmt->setRefID($this->getID())
@@ -162,12 +163,12 @@ class Webhook extends \Shop\Webhook
         if (isset($this->getData()->shop_test_ipn)) {
             // Use the order ID provided in the constructor to get the order
             $this->Order = Order::getInstance($this->getOrderId());
-            SHOP_log("Testing IPN, automatically returning true");
+            Log::write('shop_system', Log::DEBUG, "Testing IPN, automatically returning true");
             return true;
         }
 
         if (empty($this->getID())) {
-            SHOP_log("Authorize.net IPN: txn_id is empty", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Authorize.net IPN: txn_id is empty");
             return false;
         }
         $json = array(
@@ -190,45 +191,45 @@ class Webhook extends \Shop\Webhook
         $result = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         if ($code != 200) {
-            SHOP_log("Error received during authorize.net verification: code $code", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Error received during authorize.net verification: code $code");
             return false;
         }
         $bom = pack('H*','EFBBBF');
         $result = preg_replace("/^$bom/", '', $result);
         $json = json_decode($result, true);
         if (!$json) {
-            SHOP_log("Error decoding authorize.net verification JSON: $result", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Error decoding authorize.net verification JSON: $result");
             return false;
         }
 
         // Check return fields against known values
         $trans = SHOP_getVar($json, 'transaction', 'array', NULL);
         if (!$trans) {
-            SHOP_log("Transaction not found during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Transaction not found during authorize.net verification.");
             return false;
         }
         if (SHOP_getVar($trans, 'transId') != $this->getID()) {
-            SHOP_log("Transaction ID mismatch during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Transaction ID mismatch during authorize.net verification.");
             return false;
         }
         if (SHOP_getVar($trans, 'responseCode', 'integer') != 1) {
-            SHOP_log("Transaction response code not found during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Transaction response code not found during authorize.net verification.");
             return false;
         }
         if (SHOP_getVar($trans, 'settleAmount', 'float') != $this->getPayment()) {
-            SHOP_log("Settlement amount not found during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Settlement amount not found during authorize.net verification.");
             return false;
         }
 
         $order = SHOP_getVar($trans, 'order', 'array');
         if (empty($order)) {
-            SHOP_log("Order ID not found during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Order ID not found during authorize.net verification.");
             return false;
         }
         $this->setOrderId(SHOP_getVar($order, 'invoiceNumber'));
         $this->Order = Order::getInstance($this->getOrderId());
         if (!$this->Order) {
-            SHOP_log("Order ID $order invalid during authorize.net verification.", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Order ID $order invalid during authorize.net verification.");
             return false;
         }
 

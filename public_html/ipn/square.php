@@ -14,14 +14,12 @@
 
 /** Import core glFusion functions */
 require_once '../../lib-common.php';
+use Shop\Log;
 
 // Get the complete IPN message prior to any processing
-SHOP_log("Received Hook:", SHOP_LOG_DEBUG);
+Log::write('shop_system', Log::DEBUG, "Received Hook:");
 $json = file_get_contents('php://input');
-SHOP_log("INPUT: $json", SHOP_LOG_DEBUG);
-/*COM_errorLog("POST: " . var_export($_POST,true));
-COM_errorLog("GET: " . var_export($_GET,true));
-COM_errorLog("HEADERS: " . var_export($_SERVER,true));*/
+Log::write('shop_system', Log::DEBUG, "INPUT: $json");
 $WH = Shop\Webhook::getInstance('square');
 if ($WH->Verify()) {
     $WH->Dispatch();

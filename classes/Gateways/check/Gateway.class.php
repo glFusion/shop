@@ -15,6 +15,7 @@ namespace Shop\Gateways\check;
 use Shop\Config;
 use Shop\Models\ProductType;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -283,14 +284,13 @@ class Gateway extends \Shop\Gateway
         foreach ($items as $id=>$item) {
             $Order->AddItem($id, $item);
 
-            //SHOP_log("Processing item: $id", SHOP_LOG_DEBUG);
             list($item_number, $item_opts) = explode('|', $id);
 
             // If the item number is numeric, assume it's an
             // inventory item.  Otherwise, it should be a plugin-supplied
             // item with the item number like pi_name:item_number:options
             if (SHOP_is_plugin_item($item_number)) {
-                SHOP_log("handlePurchase for Plugin item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "handlePurchase for Plugin item " . $item_number);
 
                 // Initialize item info array to be used later
                 $A = array();
@@ -316,7 +316,7 @@ class Gateway extends \Shop\Gateway
                 if (!empty($product_info)) {
                     $items[$id]['name'] = $product_info['name'];
                 }
-                SHOP_log("Got name " . $items[$id]['name'], SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Got name " . $items[$id]['name']);
                 $vars = array(
                         'item' => $item,
                         'ipn_data' => array(),
@@ -346,7 +346,7 @@ class Gateway extends \Shop\Gateway
                 $prod_types |= ProductType::VIRTUAL;
 
             } else {
-                SHOP_log("Shop item " . $item_number, SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Shop item " . $item_number);
                 $P = new \Shop\Product($item_number);
                 $A = array('name' => $P->name,
                     'short_description' => $P->short_description,
@@ -371,7 +371,7 @@ class Gateway extends \Shop\Gateway
 
             // An invalid item number, or nothing returned for a plugin
             if (empty($A)) {
-                SHOP_log("Item {$item['item_number']} not found");
+                Log::write('shop_system', Log::DEBUG, "Item {$item['item_number']} not found");
                 continue;
             }
 
@@ -409,7 +409,7 @@ class Gateway extends \Shop\Gateway
                         options = '" . DB_escapeString($item_opts) . "'";
 
             //echo $sql;die;
-            SHOP_log($sql, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, $sql);
             DB_query($sql);
 
         }   // foreach item

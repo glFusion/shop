@@ -633,7 +633,7 @@ class IPN
         $tmp = explode('|', $args['item_id']);
         $P = Product::getByID($tmp[0], $this->custom);
         if ($P->isNew()) {
-            SHOP_log("Product {$args['item_id']} not found in catalog", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Product {$args['item_id']} not found in catalog");
             return;      // no product found to add
         }
         if (isset($tmp[1])) {
@@ -721,7 +721,7 @@ class IPN
             array($this->GW->getName(), $this->txn_id, $this->event)
         );
         if ($count > 0) {
-            SHOP_log("Received duplicate IPN {$this->txn_id} for {$this->gw_id}", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->txn_id} for {$this->gw_id}");
             return false;
         } else {
             return true;
@@ -749,10 +749,10 @@ class IPN
             $Cur->FormatValue($credit) .' credit, require ' .
             $Cur->FormatValue($total_order);
         if ($total_order <= $total_credit + .0001) {
-            SHOP_log("OK: $msg", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "OK: $msg");
             return true;
         } else {
-            SHOP_log("Insufficient Funds: $msg", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "Insufficient Funds: $msg");
             return false;
         }
     }
@@ -832,7 +832,7 @@ class IPN
             $this->IPN['uid'] = $this->Order->getUid();
             $this->Order->handlePurchase($this->IPN);
         } else {
-            SHOP_log('Error creating order: ' . print_r($status,true), SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
             return false;
         }
         return true;
@@ -1073,7 +1073,7 @@ class IPN
     protected function debug($var)
     {
         $msg = print_r($var, true);
-        SHOP_log('IPN Debug: ' . $msg, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, 'IPN Debug: ' . $msg);
     }
 
 
@@ -1085,7 +1085,7 @@ class IPN
      */
     protected function Error($str)
     {
-        SHOP_log($this->gw_id. ' IPN Exception: ' . $str, SHOP_LOG_ERROR);
+        Log::write('shop_system', Log::ERROR, $this->gw_id. ' IPN Exception: ' . $str);
     }
 
 
@@ -1102,7 +1102,7 @@ class IPN
         if (class_exists($cls)) {
             return new $cls($vars);
         } else {
-            SHOP_log("IPN::getInstance() - $cls doesn't exist");
+            Log::write('shop_system', Log::ERROR, "IPN::getInstance() - $cls doesn't exist");
             return NULL;
         }
         return $ipns[$name];
@@ -1184,7 +1184,7 @@ class IPN
                     $retval[$key] = $credit;
                 } else {
                     $gc_bal = Coupon::getUserBalance($this->uid);
-                    SHOP_log("Insufficient Gift Card Balance, need $credit, have $gc_bal", SHOP_LOG_DEBUG);
+                    Log::write('shop_system', Log::DEBUG, "Insufficient Gift Card Balance, need $credit, have $gc_bal");
                     $retval[$key] = 0;
                 }
                 break;

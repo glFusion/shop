@@ -356,12 +356,10 @@ class OrderItem
      */
     public function getVariant() : object
     {
-        static $PVs = array();
-        $pov_id = $this->getVariantId();
-        if (!isset($PVs[$pov_id])) {
-            $PVs[$pov_id] = ProductVariant::getInstance($this->getVariantId());
+        if ($this->Variant === NULL) {
+            $this->Variant = ProductVariant::getInstance($this->getVariantId());
         }
-        return $PVs[$pov_id];
+        return $this->Variant;
     }
 
 
@@ -613,7 +611,7 @@ class OrderItem
             $sql2 .= ", expiration = " . (string)($purchase_ts + ($this->Product->getExpiration() * 86400));
         }
         $sql = $sql1 . $sql2 . $sql3;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql, 1);
         if (!DB_error()) {
             //Cache::deleteOrder($this->order_id);
@@ -624,7 +622,7 @@ class OrderItem
             $this->_tainted = false;
             return true;
         } else {
-            SHOP_log('SQL Error: ' . $sql, SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, 'SQL Error: ' . $sql);
             return false;
         }
     }
@@ -1121,27 +1119,26 @@ class OrderItem
     public function getOptionDisplay()
     {
         $retval = '';
+        $opts = array();    // local var to collect option names and values
         if (!empty($this->options_text)) {
-            $T = new Template;
-            $T->set_file('options', 'view_options.thtml');
-            $T->set_block('options', 'ItemOptions', 'ORow');
             foreach ($this->options_text as $key=>$val) {
-                $T->set_var(array(
-                    'opt_name'  => strip_tags($key),
-                    'opt_value' => strip_tags($val),
-                ) );
-                $T->parse('ORow', 'ItemOptions', true);
+                $opts[] = array('name' => $key, 'value' => $val);
             }
-            $retval .= $T->parse('output', 'options');
         }
         if (!empty($this->options)) {
+            foreach ($this->options as $Opt) {
+                $opts[] = array('name' => $Opt->getName(), 'value' => $Opt->getValue());
+            }
+        }
+        if (!empty($opts)) {
+            // This is double work, but saves instantiating the template if not needed.
             $T = new Template;
             $T->set_file('options', 'view_options.thtml');
             $T->set_block('options', 'ItemOptions', 'ORow');
-            foreach ($this->options as $Opt) {
+            foreach ($opts as $opt_arr) {
                 $T->set_var(array(
-                    'opt_name'  => $Opt->getName(),
-                    'opt_value' => strip_tags($Opt->getValue()),
+                    'opt_name'  => strip_tags($opt_arr['name']),
+                    'opt_value' => strip_tags($opt_arr['value']),
                 ) );
                 $T->parse('ORow', 'ItemOptions', true);
             }

@@ -277,7 +277,7 @@ class ShipmentItem
             quantity = '{$this->quantity}'";
         $sql = $sql1 . $sql2 . $sql3;
         //echo $sql;die;
-        SHOP_log($sql, SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, $sql);
         DB_query($sql);
         if (!DB_error()) {
             //Cache::deleteOrder($this->order_id);

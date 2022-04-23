@@ -14,6 +14,7 @@ namespace Shop\Upgrades;
 use Shop\OrderItem;
 use Shop\Product;
 use Shop\Config;
+use Shop\Log;
 
 class v1_4_1 extends Upgrade
 {
@@ -33,7 +34,7 @@ class v1_4_1 extends Upgrade
             return false;
         }
         if ($populate_units) {
-            SHOP_log("Adding shipping_units to order items for catalog items", SHOP_LOG_INFO);
+            Log::write('shop_system', Log::INFO, "Adding shipping_units to order items for catalog items");
             $sql = "SELECT * FROM {$_TABLES['shop.orderitems']}";
             $res = DB_query($sql, 1);
             if ($res && DB_numRows($res) > 0) {

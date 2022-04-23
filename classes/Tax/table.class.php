@@ -15,6 +15,7 @@ namespace Shop\Tax;
 use Shop\Template;
 use Shop\Config;
 use Shop\FieldList;
+use Shop\Log;
 
 
 /**
@@ -402,7 +403,7 @@ class table extends \Shop\Tax
             special_rate = {$A['special_rate']}";
         DB_query($sql);
         if (DB_error()) {
-            SHOP_log("Error saving tax rate: $sql");
+            Log::write('shop_system', Log::ERROR, "Error saving tax rate: $sql");
             return false;
         } else {
             return true;
@@ -441,7 +442,7 @@ class table extends \Shop\Tax
             foreach ($upload->getFilenames() as $fname) {
                 $filename = $_CONF['path_data'] . $fname;
                 if (!is_file($filename)) { // empty upload form
-                    SHOP_log("Tax upload file $filename not found");
+                    Log::write('shop_system', Log::ERROR, "Tax upload file $filename not found");
                     echo COM_refresh(SHOP_ADMIN_URL . '/index.php?taximport');
                 }
             }

@@ -13,6 +13,7 @@
  */
 namespace Shop\Models;
 use Shop\Customer;
+use Shop\Log;
 
 
 /**
@@ -207,7 +208,7 @@ class AffiliateSale
         }
 
         // Find the affiliate. Also verifies that the referral is valid.
-        SHOP_log("Processing referral bonus for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
+        Log::write('shop_system', Log::DEBUG, "Processing referral bonus for {$Affiliate->getUid()}");
         if (!empty($AffSaleItems)) {
             $AffSale = new self;
             $AffSale->withOrderId($Order->getOrderId())
@@ -222,7 +223,7 @@ class AffiliateSale
             }
             return $AffSale;
         } else {
-            SHOP_log("No eligible referral bonus items found for {$Affiliate->getUid()}", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "No eligible referral bonus items found for {$Affiliate->getUid()}");
             return false;
         }
     }

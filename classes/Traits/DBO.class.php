@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Traits;
+use Shop\Log;
 
 
 /**
@@ -133,7 +134,7 @@ trait DBO
         // Ignore SQL errors since varname is indeterminate
         DB_query($sql, 1);
         if (DB_error()) {
-            SHOP_log("SQL error: $sql", SHOP_LOG_ERROR);
+            Log::write('shop_system', Log::ERROR, "SQL error: $sql");
             return $oldvalue;
         } else {
             return $newvalue;

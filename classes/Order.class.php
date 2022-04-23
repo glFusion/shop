@@ -457,7 +457,6 @@ class Order
         $args['order_id'] = $this->order_id;    // make sure it's set
         $args['token'] = Token::create();  // create a unique token
         $OI = OrderItem::fromArray($args);
-        COM_errorLog(var_export($args,true));
         if (!isset($args['shipping_units'])) {
             $args['shipping_units'] = $OI->getShippingUnits() + $PV->getShippingUnits();
         }
@@ -904,7 +903,7 @@ class Order
             }
         }
         $sql = $sql1 . implode(', ', $fields) . $sql2;
-        //SHOP_log("Save: " . $sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, "Save: " . $sql);
         DB_query($sql);
         $this->isNew = false;
         $this->unTaint();
@@ -1056,7 +1055,7 @@ class Order
                 WHERE order_id = '$db_order_id';";
             DB_query($sql);
         }
-        //SHOP_log($sql, SHOP_LOG_DEBUG);
+        //Log::write('shop_system', Log::DEBUG, $sql);
         if (DB_error()) {
             $this->status = $oldstatus;     // update in-memory object
             return $oldstatus;
@@ -1262,7 +1261,7 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, true);
 
-            SHOP_log("Sending email to " . $this->uid . ' at ' . $this->buyer_email, SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Sending email to " . $this->uid . ' at ' . $this->buyer_email);
             $subject = SHOP_getVar(
                 $LANG_SHOP['subj_email_user'],
                 $status,
@@ -1275,7 +1274,7 @@ class Order
                      ->setSubject(htmlspecialchars($subject))
                      ->setMessage($text, true)
                      ->send();
-            SHOP_log("Buyer Notification Done.", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Buyer Notification Done.");
             $LANG_SHOP = $save_language;    // Restore the default language
         }
 
@@ -1295,12 +1294,12 @@ class Order
 
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
-            SHOP_log("Sending email to admin at " . $Shop->getEmail(), SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Sending email to admin at " . $Shop->getEmail());
             $Notifier->addRecipient(0, $Shop->getEmail(), $Shop->getCompany())
                          ->setSubject($LANG_SHOP['subj_email_admin'])
                          ->setMessage($text, true)
                          ->send();
-            SHOP_log("Admin Notification Done.", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Admin Notification Done.");
         }
         return $this;
     }
@@ -3161,7 +3160,7 @@ class Order
         if (OrderState::isValid($newstatus)) {
             $this->status = $newstatus;
         } else {
-            SHOP_log("Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
+            Log::write('shop_system', Log::ERROR, "Invalid log status '{$newstatus}' specified for order {$this->getOrderID()}");
         }
         return $this;
     }
@@ -3857,7 +3856,7 @@ class Order
         global $_TABLES, $LANG_SHOP, $_CONF;
 
         if ($this->isNew()) {
-            SHOP_log("Cart ID $cart_id was not found", SHOP_LOG_DEBUG);
+            Log::write('shop_system', Log::DEBUG, "Cart ID $cart_id was not found");
             // Cart not found, do nothing
             return $this;
         }
@@ -3886,9 +3885,8 @@ class Order
             // Update the order status and date
             $this->setStatus($newstatus, true, false)->setOrderDate()->Save(false);
 
-            SHOP_log(
-                "Cart {$this->order_id} status changed from $oldstatus to $newstatus",
-                SHOP_LOG_DEBUG
+            Log::write('shop_system', Log::DEBUG,
+                "Cart {$this->order_id} status changed from $oldstatus to $newstatus"
             );
         }
         Session::set('order_id', $this->getOrderID());

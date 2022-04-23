@@ -13,6 +13,7 @@ namespace Shop\Views;
 use Shop\Shipper;
 use Shop\Shipment;
 use Shop\Template;
+use Shop\Log;
 
 
 /**
@@ -172,7 +173,7 @@ class PackingList extends Invoice
             //$html2pdf->setModeDebug();
             $html2pdf->setDefaultFont('Arial');
         } catch(HTML2PDF_exception $e) {
-            SHOP_log($e);
+            Log::write('shop_system', Log::ERROR, $e);
             return false;
         }
 
@@ -189,7 +190,7 @@ class PackingList extends Invoice
             try {
                 $html2pdf->writeHTML($content);
             } catch(HTML2PDF_exception $e) {
-                SHOP_log($e);
+                Log::write('shop_system', Log::ERROR, $e);
                 return false;
             }
         }
@@ -211,4 +212,3 @@ class PackingList extends Invoice
 
 }
 
-?>
