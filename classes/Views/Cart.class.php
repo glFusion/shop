@@ -43,6 +43,8 @@ class Cart extends OrderBaseView
     protected $type = 'cart';
 
 
+    private $view = '';
+
     /**
      * Set internal variables and read the existing order if an id is provided.
      */
@@ -88,6 +90,7 @@ class Cart extends OrderBaseView
      */
     public function withView($view)
     {
+        $this->view = $view;
         $this->TPL = new Template;
         switch ($view) {
         case 'viewcart':
@@ -121,6 +124,7 @@ class Cart extends OrderBaseView
                 Customer::getInstance($this->Order->getUid())->getDefaultAddress('shipto')
             );
         }
+        $this->_trackerCheckoutStep();
         $this->Order->checkRules();
         $output = $this->createHTML2();
         return $output;
@@ -307,6 +311,7 @@ class Cart extends OrderBaseView
         }
         $T->set_var('form_footer', $T->parse('', 'footer'));
         $T->parse('output', 'form');
+        $this->_trackerCheckoutStep('shipping');
         return  $T->finish($T->get_var('output'));
     }
 
@@ -511,6 +516,7 @@ class Cart extends OrderBaseView
 
         $T->parse('output', 'form');
         $retval = $T->finish($T->get_var('output'));
+        $this->_trackerCheckoutStep('address');
         return $retval;
     }
 
@@ -541,7 +547,40 @@ class Cart extends OrderBaseView
             'buyer_email'   => $this->Order->getBuyerEmail(),
             'checkout_button' => $this->Order->checkoutButton($gw),
         ) );
+        $this->_trackerCheckoutStep('confirm');
         return $this->createHTML2(true);
+    }
+
+
+    /**
+     * Add the tracker code for each step of the checkout.
+     *
+     * @param   string  $step   Checkout step
+     * @return  object  $this
+     */
+    private function _trackerCheckoutStep(?string $step=NULL) : self
+    {
+        if ($step === NULL) {
+            $step = $this->view;
+        }
+
+        if ($step == 'viewcart') {
+            COM_errorLog('creating tracker item list');
+            foreach ($this->Order->getItems() as $OI) {
+                \Shop\Tracker::addOrderListItem($OI);
+            }
+            $items = \Shop\Tracker::getProductListItems();
+            SESS_setVar('shop_tracker_itemviews', $items);
+        } else {
+            $items = SESS_getVar('shop_tracker_itemviews');
+            COM_errorLog('setting from session');
+            COM_errorLog('ITEMS: ' . var_export($items,true));
+            if ($items !== 0) {
+                \Shop\Tracker::setProductListItems($items);
+            }
+        }
+        \Shop\Tracker::addProductListView($step);
+        return $this;
     }
 
 }

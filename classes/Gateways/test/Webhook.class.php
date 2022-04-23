@@ -110,8 +110,9 @@ class Webhook extends \Shop\Webhook
                 }
             }*/
             if ($this->recordPayment() && $this->isSufficientFunds()) {
-                SHOP_log("Handling purchase", SHOP_LOG_DEBUG);
+                Log::write('shop_system', Log::DEBUG, "Handling purchase");
                 $status = $this->handlePurchase();
+                \Shop\Tracker::addPurchaseView($this->Order);
             }
             if ($status) {
                 SHOP_setMsg($LANG_SHOP['thanks_title']);

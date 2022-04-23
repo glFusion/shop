@@ -1649,7 +1649,8 @@ class Product
 
         USES_lib_comments();
 
-        Tracker::getInstance()->addProductView($this);
+        Tracker::addProductView($this);
+
         $retval = '';
         $prod_id = $this->id;
         if (!$this->canDisplay()) {

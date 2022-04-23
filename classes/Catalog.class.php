@@ -166,6 +166,7 @@ class Catalog
             $T->set_block('wrapper', 'ProductItems', 'PI');
             $display .= $T->parse('', 'wrapper');
             $display .= $T->parse('', 'end');
+            Tracker::addProductListView('product_list');
             return $display;
         }
 
@@ -414,7 +415,6 @@ class Catalog
                 'cat_desc'  => $cat_desc,
                 'cat_img_url' => $cat_img_url,
             ) );
-            Tracker::getInstance()->addCategoryView($cat_name);
         } else {
             $T->set_var('title', $LANG_SHOP['blocktitle']);
         }
@@ -435,6 +435,9 @@ class Catalog
                 continue;
             }
             $P->setVariant();
+
+            Tracker::addProductListViewItem($P, 'Main Catalog');
+
             $link = $P->withQuery($this->query_str)->getLink();
             $prodrows++;
             $T->set_var(array(
@@ -552,6 +555,7 @@ class Catalog
             $T->set_var('rule_notes', '<li>' . implode('</li><li>', $notes) . '</li>');
         }
         $display .= $T->parse('', 'end');
+        Tracker::addProductListView('product_list');
         return $display;
     }
 

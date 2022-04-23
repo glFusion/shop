@@ -472,6 +472,8 @@ class Order
            ->Save();
         $this->Items[] = $OI;
         $this->calcTotalCharges();
+        Tracker::addOrderListItem($OI);
+        Tracker::addProductListView('add_to_cart');
         //Tracker::getInstance()->addCartItem($OI->getProduct());
         //$this->Save();
     }
