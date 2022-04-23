@@ -774,11 +774,6 @@ function plugin_getheadercode_shop()
             Shop\Models\ReferralTag::set($_GET[$aff_key]);
         }
     }
-    if (Config::get('tracker') != '') {
-        return Shop\Tracker::getInstance()->getCode();
-    } else {
-        return '';
-    }
 }
 
 
