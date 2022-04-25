@@ -155,7 +155,7 @@ case 'addcartitem':
         'extras'        => SHOP_getVar($_POST, 'extras', 'array'),
         'tax'           => SHOP_getVar($_POST, 'tax', 'float'),
     );
-    $new_qty = $Cart->addItem($args);
+    $new_qty = $Cart->addToCart($args);
     Log::write('shop_system', Log::DEBUG, "Adding $item_number, qty $new_qty");
     $msg = $LANG_SHOP['msg_item_added'];
     if ($new_qty === false) {
