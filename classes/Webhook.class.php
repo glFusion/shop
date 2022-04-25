@@ -573,8 +573,6 @@ class Webhook
             $this->Order->handlePurchase($this->IPN);
         } else {
             Log::write('shop_system', Log::ERROR, 'Cannot process order ' . $this->getOrderID());
-            Log::write('shop_system', Log::DEBUG, 'canprocess? ' . var_export($this->GW->okToProcess($this->Order),true));
-            Log::write('shop_system', Log::DEBUG, 'status ' . $this->Order->getStatus());
             return false;
         }
         return true;
