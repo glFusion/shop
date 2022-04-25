@@ -404,10 +404,6 @@ class Webhook
                 ->setComplete(1)
                 ->setStatus($this->getEvent())
                 ->setOrderID($this->getOrderID());
-            /*if (Config::get('tracker') != '') {
-                $Tracker = \Shop\Tracker::getInstance();
-                $Tracker->confirmOrder($this->Order);
-                }*/
             return $Pmt->Save();
         } else {
             return false;

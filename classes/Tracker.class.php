@@ -23,6 +23,25 @@ use Shop\Config;
 class Tracker
 {
     /**
+     * Get all the enabled trackers, if tracking is enabled.
+     *
+     * @return  mixed   Tracker object if available, NULL otherwise
+     */
+    private static function getTrackers() : ?array
+    {
+        static $Trackers = NULL;
+        if (
+            $Trackers === NULL &&
+            Config::get('ena_analytics') &&
+            function_exists('plugin_chkVersion_analytics')
+        ) {
+            $Trackers = \Analytics\Tracker::getEnabled();
+        }
+        return $Trackers;
+    }
+
+
+    /**
      * Get an instance of the Analytics tracker used for Ecommerce.
      * If the Analytics plugin is not installed, return NULL;
      *
@@ -67,8 +86,9 @@ class Tracker
      */
     public static function addOrderListItem(OrderItem $OI, ?string $list_name=NULL) : array
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return array();
         }
 
@@ -86,11 +106,11 @@ class Tracker
      */
     public static function addProductListViewItem(Product $P, ?string $list_name=NULL) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
-
         $LV = \Analytics\Models\Ecommerce\ItemListView::getInstance();
         $LV->addItem(self::makeProductView($P, $list_name));
     }
@@ -103,8 +123,9 @@ class Tracker
      */
     public static function getProductListItems() : array
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return array();
         }
 
@@ -124,8 +145,9 @@ class Tracker
      */
     public static function setProductListItems(array $items) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
 
@@ -144,8 +166,12 @@ class Tracker
      */
     public static function addProductListView(?string $event=NULL) : void
     {
-        $Trk = self::getTracker();
-        if ($Trk) {
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
+            return;
+        }
+
+        foreach ($Trackers as $Trk) {
             $LV = \Analytics\Models\Ecommerce\ItemListView::getInstance();
             $Trk->addProductListView($LV, $event);
         }
@@ -159,9 +185,14 @@ class Tracker
      */
     public static function addProductView(Product $P) : void
     {
-        $Trk = self::getTracker();
-        if ($Trk) {
-            $Trk->addProductView(self::makeProductView($P));
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
+            return;
+        }
+
+        $productView = self::makeProductView($P);
+        foreach ($Trackers as $Trk) {
+            $Trk->addProductView($productView);
         }
     }
 
@@ -175,8 +206,9 @@ class Tracker
      */
     private static function makeProductView($P, ?string $list_name=NULL) : ?object
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return NULL;
         }
 
@@ -215,8 +247,9 @@ class Tracker
      */
     private static function makeOrderItemView($OI, ?string $list_name=NULL) : ?object
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        // Trackers isn't used, this is just to check that the model is available.
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return NULL;
         }
 
@@ -251,8 +284,8 @@ class Tracker
      */
     public static function addPurchaseView(Order $Ord, ?string $event=NULL) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
 
@@ -269,14 +302,16 @@ class Tracker
         $OV->currency = \Shop\Currency::getInstance()->getCode();
         $OV->tax = $Ord->getTax();
         $OV->shipping = $Ord->getShipping();
-        $Trk->addTransactionView($OV, $event);
+        foreach ($Trackers as $Trk) {
+            $Trk->addTransactionView($OV, $event);
+        }
     }
 
 
     public static function addCheckoutView(Order $Ord, ?string $event=NULL) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
 
@@ -293,14 +328,22 @@ class Tracker
         $OV->currency = \Shop\Currency::getInstance()->getCode();
         $OV->tax = $Ord->getTax();
         $OV->shipping = $Ord->getShipping();
-        $Trk->addCheckoutView($OV, $event);
+        foreach ($Trackers as $Trk) {
+            $Trk->addCheckoutView($OV, $event);
+        }
     }
 
 
+    /**
+     * Track the addition of an item to the cart.
+     *
+     * @param   object  $OI     OrderItem object
+     * @param   object  $Ord    Order object
+     */
     public static function addCartItem(OrderItem $OI, Order $Ord) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
 
@@ -315,13 +358,22 @@ class Tracker
         $OV->currency = \Shop\Currency::getInstance()->getCode();
         $OV->tax = $Ord->getTax();
         $OV->shipping = $Ord->getShipping();
-        $Trk->addCartItem($IV, $OV);
+        foreach ($Trackers as $Trk) {
+            $Trk->addCartItem($IV, $OV);
+        }
     }
 
 
+    /**
+     * Create an OrderView object from an Order.
+     * This is called internally, so the existence of the Analytics
+     * plugin has already been verified.
+     *
+     * @param   object  $Ord    Order object
+     * @return  object      Analytics OrderView object
+     */
     private static function makeOrderView(Order $Ord) : \Analytics\Models\Ecommerce\OrderView
     {
-        //$OV = \Analytics\Models\Ecommerce\OrderView::getInstance();
         $OV = new \Analytics\Models\Ecommerce\OrderView;
         foreach ($Ord->getItems() as $OI) {
             $OV->addItem(self::makeOrderItemView($OI));
@@ -341,14 +393,16 @@ class Tracker
      *
      * @return  string      Unique ID, empty string if not found.
      */
-    public static function getTrackerUniqueId() : string
+    public static function getTrackerUniqueIds() : array
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
-            return '';
+        $retval = array();
+        $Trackers = self::getTrackers();
+        if ($Trackers) {
+            foreach ($Trackers as $trk_name=>$Trk) {
+                $retval[$trk_name] = $Trk->getSessionInfo()['s_id'];
+            }
         }
-
-        return $Trk->getSessionInfo()['uniq_id'];
+        return $retval;
     }
 
 
@@ -360,20 +414,24 @@ class Tracker
      */
     public static function trackOrderAsync(Order $Ord, \Shop\Models\IPN $IPN) : void
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
+        $Trackers = self::getTrackers();
+        if (!$Trackers) {
             return;
         }
 
         // Get the tracking unique ID, used by the tracker to get the user session.
-        $trk_id = $Ord->getInfo('trk_id');
-        if ($trk_id !== NULL) {
-            $OV = self::makeOrderView($Ord);
+        $OV = self::makeOrderView($Ord);
+        $ua_info = $Ord->getInfo('ua');
+        if ($ua_info !== NULL) {
             $trk_info = array(
                 'url' => COM_getCurrentUrl(),
-                'trk_id' => $trk_id,
             );
-            $Trk->addTransactionViewAsync($OV, $trk_info, $IPN->toArray());
+            foreach ($Trackers as $trk_name=>$Trk) {
+                if (isset($ua_info[$trk_name])) {
+                    $trk_info['s_id'] = $ua_info[$trk_name];
+                    $Trk->addTransactionViewAsync($OV, $trk_info, $IPN->toArray());
+                }
+            }
         }
     }
 
@@ -387,12 +445,13 @@ class Tracker
      */
     public static function getSessionInfo() : array
     {
-        $Trk = self::getTracker();
-        if (!$Trk) {
-            return array();
+        $retval = array();
+        $Trackers = self::getTrackers();
+        if ($Trackers) {
+            foreach ($Trackers as $trk_name=>$Trk) {
+                $retval[$trk_name] = $Trk->getSessionInfo();
+            }
         }
-
-        $retval = $Trk->getSessionInfo();
         return $retval;
     }
 

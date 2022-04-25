@@ -978,6 +978,7 @@ $LANG_confignames['shop'] = array(
 'smartystreets_license' => 'SmartyStreets License',
 'def_google_category' => 'Default Google Category',
 'link_orders_new_user' => 'Link orders by email to new accounts',
+'ena_analytics' => 'Enable Analytics?',
 );
 
 /** Language strings for the subgroup names in the config section */

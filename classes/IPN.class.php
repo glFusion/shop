@@ -877,8 +877,8 @@ class IPN
             if (isset($this->custom['ref_token']) && !empty($this->custom['ref_token'])) {
                 $this->Order->setReferralToken($this->custom['ref_token']);
             }
-            if (isset($this->custom['trk_id'])) {
-                $this->Order->setInfo('trk_id', $this->custom['trk_id']);
+            if (isset($this->custom['ua'])) {
+                $this->Order->setInfo('ua', $this->custom['ua']);
             }
 
             foreach ($this->items as $id=>$item) {

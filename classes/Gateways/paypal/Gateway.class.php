@@ -200,7 +200,7 @@ class Gateway extends \Shop\Gateway
             'uid' => $_USER['uid'],
             'transtype' => 'cart_upload',
             'cart_id' => $cartID,
-            'session_id' => \Shop\Tracker::getInstance()->makeCid(),
+            'ua' => \Shop\Tracker::getTrackerUniqueIds(),
         ) );
         if (isset($cart->custom_info)) {
             $custom_arr->merge($cart->custom_info);
@@ -501,10 +501,8 @@ class Gateway extends \Shop\Gateway
         $this->AddCustom('transtype', $btn_type);
         $this->AddCustom('ref_token', $U->getReferralToken());
         $this->setReceiver($P->getPrice());
-        $sess_info = \Shop\Tracker::getSessionInfo();
-        if (isset($sess_info['uniq_id'])) {
-            $this->addCustom('trk_id', $sess_info['uniq_id']);
-        }
+        $sess_info = \Shop\Tracker::getTrackerUniqueIds();
+        $this->addCustom('ua', $sess_info);
 
         $vars = array(
             'cmd' => $btn_info['cmd'],

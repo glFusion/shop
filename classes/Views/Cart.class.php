@@ -537,7 +537,7 @@ class Cart extends OrderBaseView
         $this->tplname = 'checkout';
         $this->TPL->set_file('checkout', 'checkout.thtml');
 
-        $this->Order->setInfo('trk_id', \Shop\Tracker::getTrackerUniqueId())->Save();
+        $this->Order->setInfo('ua', \Shop\Tracker::getTrackerUniqueIds())->Save();
         $this->Order->verifyReferralTag();
         $this->Order->checkRules();
         $gw = Gateway::getInstance($this->Order->getPmtMethod());
