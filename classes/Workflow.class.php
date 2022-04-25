@@ -370,25 +370,6 @@ class Workflow
             }
         }
         return $workflows[$i];
-
-        // If the current view is empty, or isn't part of our array,
-        // then set the current key to -1 so we end up returning value 0.
-        if ($currview == '') {
-            $curr_key = -1;
-        } else {
-            $curr_key = array_search($currview, $workflows);
-            if ($curr_key === false) $curr_key = -1;
-        }
-
-        if ($curr_key > -1) {
-            Session::set('prevpage', $workflows[$curr_key]);
-        }
-        if (isset($workflows[$curr_key + 1])) {
-            $view = $workflows[$curr_key + 1];
-        } else {
-            $view = 'checkoutcart';
-        }
-        return $view;
     }
 
 
