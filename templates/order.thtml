@@ -146,7 +146,7 @@
                         ({ship_method})
   {!endif}
                     </div>
-                    <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping}</div>
+                    <div id="shipping_cell" class="uk-width-1-2 uk-width-medium-1-6 cart-item-total money">{shipping_fmt}</div>
                 </div>
 {!endif}
 
@@ -260,10 +260,12 @@
   {!if is_admin}
             <p id="orderPurchaser">{$LANG_SHOP['purchaser']}: <a href="{site_url}/users.php?mode=profile&uid={purch_uid}">{purch_name} ({purch_uid})</a></p>
             <p>
+{!if 0}
             {$LANG_SHOP['pmt_total']}: {amt_paid_fmt}
     {!if is_paid}
             <i class="uk-icon uk-icon-check uk-icon-medium uk-text-success"></i>
     {!endif}
+{!endif}
             <form class="uk-form" action="{site_admin_url}/plugins/shop/index.php" method="post">
                 <input type="hidden" name="order_id" value="{order_number}" />
                 <input type="hidden" name="oldstatus" value="{oldstatus}" />
