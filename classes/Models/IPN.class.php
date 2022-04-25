@@ -35,8 +35,10 @@ class IPN implements \ArrayAccess
         'last_name' => '',      // payer's last name
         'payer_name' => '',     // payer's full name
         'payer_email' => '',    // payer's email address
+        'trk_id' => '',         // analytics tracking uniqid
         'custom' => array(  // backward compatibility for plugins
             'uid' => 0,
+            'trk_id' => '',
         ),
         'data' => array(),
         'reserved_stock' => false,
@@ -170,6 +172,14 @@ class IPN implements \ArrayAccess
     {
         $this->properties['uid'] = (int)$uid;
         $this->properties['custom']['uid'] = (int)$uid;
+        return $this;
+    }
+
+
+    public function setTrkId(string $trkId) : self
+    {
+        $this->properties['trk_id'] = $trkId;
+        $this->properties['custom']['trk_id'] = $trkId;
         return $this;
     }
 

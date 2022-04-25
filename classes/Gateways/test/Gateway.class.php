@@ -86,6 +86,8 @@ class Gateway extends \Shop\Gateway
         if ($cart->getGC() > 0) {
             $pmt_gross -= (float)$cust['by_gc'];
         }
+        $sess_info = \Shop\Tracker::getSessionInfo();
+        $this->addCustom('trk_id', $sess_info['uniq_id']);
         $gatewayVars = array(
             '<input type="hidden" name="processorder" value="by_gc" />',
             '<input type="hidden" name="order_id" value="' . $cart->CartID() . '" />',
@@ -95,6 +97,8 @@ class Gateway extends \Shop\Gateway
             '<input type="hidden" name="status" value="paid" />',
             '<input type="hidden" name="transtype" value="' . $this->gw_name . '" />',
             '<input type="hidden" name="uid" value="' . $_USER['uid'] . '" />',
+            '<input type="hidden" name="custom[trk_id]" value="' . $sess_info['uniq_id'] . '" />',
+            '<input type="hidden" name="trk_id" value="' . $sess_info['uniq_id'] . '" />',
         );
         if (!COM_isAnonUser()) {
             $gateway_vars[] = '<input type="hidden" name="payer_email" value="' . $_USER['email'] . '" />';

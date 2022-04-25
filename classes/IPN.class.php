@@ -830,6 +830,7 @@ class IPN
             //$ipn_data['uid'] = $this->Order->getUid();
             //$ipn_data['sql_date'] = $_CONF['_now']->toMySQL(true);
             $this->IPN['uid'] = $this->Order->getUid();
+            $this->IPN['custom'] = $this->custom;
             $this->Order->handlePurchase($this->IPN);
         } else {
             Log::write('shop_system', Log::ERROR, 'Error creating order: ' . print_r($status,true));
@@ -875,6 +876,9 @@ class IPN
             $this->Order = Order::getInstance(0);
             if (isset($this->custom['ref_token']) && !empty($this->custom['ref_token'])) {
                 $this->Order->setReferralToken($this->custom['ref_token']);
+            }
+            if (isset($this->custom['trk_id'])) {
+                $this->Order->setInfo('trk_id', $this->custom['trk_id']);
             }
 
             foreach ($this->items as $id=>$item) {
@@ -1283,7 +1287,6 @@ class IPN
             ->setComment($LANG_SHOP['ipn_pmt_comment'])
             ->setStatus($this->status)
             ->setOrderID($order_id);
-        Tracker::getInstance()->confirmOrder($this->Order, $this->session_id);
         return $this->Payment->Save();
     }
 

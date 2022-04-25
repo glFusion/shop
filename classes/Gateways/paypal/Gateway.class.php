@@ -501,6 +501,11 @@ class Gateway extends \Shop\Gateway
         $this->AddCustom('transtype', $btn_type);
         $this->AddCustom('ref_token', $U->getReferralToken());
         $this->setReceiver($P->getPrice());
+        $sess_info = \Shop\Tracker::getSessionInfo();
+        if (isset($sess_info['uniq_id'])) {
+            $this->addCustom('trk_id', $sess_info['uniq_id']);
+        }
+
         $vars = array(
             'cmd' => $btn_info['cmd'],
             'business' => $this->receiver_email,

@@ -124,9 +124,9 @@ class Cart extends OrderBaseView
                 Customer::getInstance($this->Order->getUid())->getDefaultAddress('shipto')
             );
         }
-        $this->_trackerCheckoutStep();
         $this->Order->checkRules();
         $output = $this->createHTML2();
+        $this->_trackerCheckoutStep();
         return $output;
     }
 
@@ -537,6 +537,7 @@ class Cart extends OrderBaseView
         $this->tplname = 'checkout';
         $this->TPL->set_file('checkout', 'checkout.thtml');
 
+        $this->Order->setInfo('trk_id', \Shop\Tracker::getTrackerUniqueId())->Save();
         $this->Order->verifyReferralTag();
         $this->Order->checkRules();
         $gw = Gateway::getInstance($this->Order->getPmtMethod());
@@ -565,7 +566,6 @@ class Cart extends OrderBaseView
         }
 
         if ($step == 'viewcart') {
-            COM_errorLog('creating tracker item list');
             foreach ($this->Order->getItems() as $OI) {
                 \Shop\Tracker::addOrderListItem($OI);
             }
@@ -573,8 +573,6 @@ class Cart extends OrderBaseView
             SESS_setVar('shop_tracker_itemviews', $items);
         } else {
             $items = SESS_getVar('shop_tracker_itemviews');
-            COM_errorLog('setting from session');
-            COM_errorLog('ITEMS: ' . var_export($items,true));
             if ($items !== 0) {
                 \Shop\Tracker::setProductListItems($items);
             }

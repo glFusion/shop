@@ -176,7 +176,7 @@ class Cart extends Order
      *  @param  array   $args   Array of arguments. item_number is required.
      *  @return integer             Current item quantity
      */
-    public function addItem($args)
+    public function addToCart(array $args) : ?float
     {
         global $_SHOP_CONF, $_USER;
 
@@ -185,7 +185,7 @@ class Cart extends Order
             ||
             $this->uid != $_USER['uid']
         ) {
-            return false;
+            return NULL;
         }
 
         $need_save = false;     // assume the cart doesn't need to be re-saved
@@ -254,7 +254,7 @@ class Cart extends Order
             $this->Items[$have_id]->setQuantity($new_quantity, $override);
             $this->Items[$have_id]->Save();     // to save updated order value
         } elseif ($quantity == 0) {
-            return false;
+            return NULL;
         } else {
             $tmp = array(
                 'item_id'   => $item_id,
@@ -279,7 +279,8 @@ class Cart extends Order
                     $tmp['taxable'] = $args['taxable'] ? 1 : 0;
                 }
             }
-            parent::addItem($tmp);
+            $OI = parent::addItem($tmp);
+            Tracker::addCartItem($OI, $this);
             $this->Taint();
             $new_quantity = $quantity;
         }

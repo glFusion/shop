@@ -429,9 +429,9 @@ class Order
      *
      * @param   array   $args   Array of item data
      */
-    public function addItem($args)
+    public function addItem(array $args) : ?OrderItem
     {
-        if (!is_array($args)) return;
+        if (!is_array($args)) return NULL;
 
         if (Config::get('aff_enabled') && $this->getReferralToken() == '') {
             $token = ReferralTag::get();
@@ -472,10 +472,7 @@ class Order
            ->Save();
         $this->Items[] = $OI;
         $this->calcTotalCharges();
-        Tracker::addOrderListItem($OI);
-        Tracker::addProductListView('add_to_cart');
-        //Tracker::getInstance()->addCartItem($OI->getProduct());
-        //$this->Save();
+        return $OI;
     }
 
 
@@ -1155,6 +1152,7 @@ class Order
         } else {
             $this->updateStatus(OrderState::SHIPPED);
         }*/
+        \Shop\Tracker::trackOrderAsync($this, $IPN);
         return $this;
     }
 

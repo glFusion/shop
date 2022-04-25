@@ -32,10 +32,12 @@ class Tracker
     {
         static $Trk = NULL;
         $tracker = Config::get('tracker');
-        if ($Trk === NULL && !empty($tracker)) {
-            if (function_exists('plugin_chkVersion_analytics')) {
-                $Trk = \Analytics\Tracker::getInstance($tracker);
-            }
+        if (
+            $Trk === NULL &&
+            !empty($tracker) &&
+            function_exists('plugin_chkVersion_analytics')
+        ) {
+            $Trk = \Analytics\Tracker::getInstance($tracker);
         }
         return $Trk;
     }
@@ -209,7 +211,7 @@ class Tracker
      *
      * @param   object  $OI     OrderItem object
      * @param   string  $list_name  Optional list name
-     * @return  object      ItemView object
+     * @return  object      Analytics ItemView object
      */
     private static function makeOrderItemView($OI, ?string $list_name=NULL) : ?object
     {
@@ -268,6 +270,130 @@ class Tracker
         $OV->tax = $Ord->getTax();
         $OV->shipping = $Ord->getShipping();
         $Trk->addTransactionView($OV, $event);
+    }
+
+
+    public static function addCheckoutView(Order $Ord, ?string $event=NULL) : void
+    {
+        $Trk = self::getTracker();
+        if (!$Trk) {
+            return;
+        }
+
+        if ($event === NULL) {
+            $event = 'viewcart';
+        }
+        $OV = \Analytics\Models\Ecommerce\OrderView::getInstance();
+        foreach ($Ord->getItems() as $OI) {
+            $OV->addItem(self::makeOrderItemView($OI));
+        }
+        $OV->transaction_id = $Ord->getOrderId();
+        $OV->value= $Ord->getTotal();
+        $OV->affiliation = Config::get('company');
+        $OV->currency = \Shop\Currency::getInstance()->getCode();
+        $OV->tax = $Ord->getTax();
+        $OV->shipping = $Ord->getShipping();
+        $Trk->addCheckoutView($OV, $event);
+    }
+
+
+    public static function addCartItem(OrderItem $OI, Order $Ord) : void
+    {
+        $Trk = self::getTracker();
+        if (!$Trk) {
+            return;
+        }
+
+        $IV = self::makeOrderItemView($OI);
+        $OV = \Analytics\Models\Ecommerce\OrderView::getInstance();
+        foreach ($Ord->getItems() as $Item) {
+            $OV->addItem(self::makeOrderItemView($Item));
+        }
+        $OV->transaction_id = $Ord->getOrderId();
+        $OV->value= $Ord->getTotal();
+        $OV->affiliation = Config::get('company');
+        $OV->currency = \Shop\Currency::getInstance()->getCode();
+        $OV->tax = $Ord->getTax();
+        $OV->shipping = $Ord->getShipping();
+        $Trk->addCartItem($IV, $OV);
+    }
+
+
+    private static function makeOrderView(Order $Ord) : \Analytics\Models\Ecommerce\OrderView
+    {
+        //$OV = \Analytics\Models\Ecommerce\OrderView::getInstance();
+        $OV = new \Analytics\Models\Ecommerce\OrderView;
+        foreach ($Ord->getItems() as $OI) {
+            $OV->addItem(self::makeOrderItemView($OI));
+        }
+        $OV->transaction_id = $Ord->getOrderId();
+        $OV->value= $Ord->getTotal();
+        $OV->affiliation = Config::get('company');
+        $OV->currency = \Shop\Currency::getInstance()->getCode();
+        $OV->tax = $Ord->getTax();
+        $OV->shipping = $Ord->getShipping();
+        return $OV;
+    }
+
+
+    /**
+     * Get the unique ID assigned by the Analytics tracker for the user.
+     *
+     * @return  string      Unique ID, empty string if not found.
+     */
+    public static function getTrackerUniqueId() : string
+    {
+        $Trk = self::getTracker();
+        if (!$Trk) {
+            return '';
+        }
+
+        return $Trk->getSessionInfo()['uniq_id'];
+    }
+
+
+    /**
+     * Track a confirmed order asynchronously, such as from IPN or webhook.
+     *
+     * @param   object  $Ord        Order Object
+     * @param   object  $IPN        IPN data object
+     */
+    public static function trackOrderAsync(Order $Ord, \Shop\Models\IPN $IPN) : void
+    {
+        $Trk = self::getTracker();
+        if (!$Trk) {
+            return;
+        }
+
+        // Get the tracking unique ID, used by the tracker to get the user session.
+        $trk_id = $Ord->getInfo('trk_id');
+        if ($trk_id !== NULL) {
+            $OV = self::makeOrderView($Ord);
+            $trk_info = array(
+                'url' => COM_getCurrentUrl(),
+                'trk_id' => $trk_id,
+            );
+            $Trk->addTransactionViewAsync($OV, $trk_info, $IPN->toArray());
+        }
+    }
+
+
+    /**
+     * Get the session info from the tracker, if available.
+     * Used to get the unique record ID to be placed into the order record
+     * and passed to buy-now gateways for tracking when the order is confirmed.
+     *
+     * @return  array   Array of data, including `uniq_id` field
+     */
+    public static function getSessionInfo() : array
+    {
+        $Trk = self::getTracker();
+        if (!$Trk) {
+            return array();
+        }
+
+        $retval = $Trk->getSessionInfo();
+        return $retval;
     }
 
 }
