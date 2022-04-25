@@ -22,6 +22,7 @@ Release TBD
   * Add custom fields and variants to item purchase report.
   * Implement product rules to limit shippers (#69).
     * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
+  * Leverage glFusion 2.0.0+ Log class.
   * Leverage glFusion 2.1.0+ Notifier class.
 
 ## v1.4.1
