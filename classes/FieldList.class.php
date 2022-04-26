@@ -158,4 +158,30 @@ class FieldList extends \glFusion\FieldList
         return $t->finish($t->get_var('output'));
     }
 
+
+    public static function add($args)
+    {
+        $t = self::init();
+        $t->set_block('field','field-add');
+
+        if (isset($args['url'])) {
+            $t->set_var('url',$args['url']);
+        } else {
+            $t->set_var('url','#');
+        }
+
+        if (isset($args['attr']) && is_array($args['attr'])) {
+            $t->set_block('field-add','attr','attributes');
+            foreach($args['attr'] AS $name => $value) {
+                $t->set_var(array(
+                    'name' => $name,
+                    'value' => $value)
+                );
+                $t->parse('attributes','attr',true);
+            }
+        }
+        $t->parse('output','field-add',true);
+        return $t->finish($t->get_var('output'));
+    }
+
 }

@@ -6,7 +6,7 @@
  * glFusion configuration system, such as allowed file types.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
  * @version     v1.3.1
  * @license     http://opensource.org/licenses/gpl-2.0.php
@@ -21,7 +21,7 @@ if (!defined ('GVERSION')) {
 global $_DB_table_prefix, $_TABLES;
 
 Shop\Config::set('pi_version', '1.4.1.1');
-Shop\Config::set('gl_version', '2.0.2');
+Shop\Config::set('gl_version', '2.0.0');
 
 $_SHOP_table_prefix = $_DB_table_prefix . 'shop_';
 
