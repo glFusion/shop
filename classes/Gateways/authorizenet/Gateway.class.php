@@ -5,7 +5,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2012-2020 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.3.1
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -251,7 +251,7 @@ class Gateway extends \Shop\Gateway
         //var_export($result);die;
         if ($result->messages->resultCode != 'Ok') {  // Check for errors due to invalid data, etc.
             foreach ($result->messages->message as $msg) {
-                COM_errorlog($this->gw_provider . ' error: ' . $msg->code . ' - ' . $msg->text);
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $this->gw_provider . ' error: ' . $msg->code . ' - ' . $msg->text);
             }
             SHOP_setMsg("Error checking out");
             return false;
