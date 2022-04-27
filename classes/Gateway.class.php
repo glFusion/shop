@@ -2129,8 +2129,10 @@ class Gateway
 
     /**
      * Upload and install the files for a gateway package.
+     *
+     * @return  boolean     True on success, False on error
      */
-    public static function upload()
+    public static function upload() : bool
     {
         global $_CONF;
 
@@ -2218,18 +2220,31 @@ class Gateway
                 $json = @json_decode($json, true);
                 if ($json) {
                     $gw_name = $json['name'];
-                    $gw_path = SHOP_PI_PATH . __DIR__ . '/Gateways/' . $gw_name;
-                    $fs->dirCopy($upl_path, $gw_path);
-                    // Got the files copied, delete the path.
-                    FileSystem::deleteDir($tmp_path);
-                    if (@is_dir($gw_path . '/public_html')) {
-                        $fs->dirCopy($gw_path . '/public_html', $_CONF['path_html'] . '/shop');
-                        FileSystem::deleteDir($gw_path . '/public_html');
+                    $gw_path = Config::get('path') . 'classes/Gateways/' . $gw_name;
+                    $status = $fs->dirCopy($upl_path, $gw_path);
+                    if ($status) {
+                        // Got the files copied, delete the uploaded files.
+                        FileSystem::deleteDir($tmp_path);
+                        if (@is_dir($gw_path . '/public_html')) {
+                            // Copy any public_html files, like custom webhook handles
+                            $fs->dirCopy($gw_path . '/public_html', $_CONF['path_html'] . Config::PI_NAME);
+                            FileSystem::deleteDir($gw_path . '/public_html');
+                        }
                     }
                 }
             }
         }
-        return empty($fs->getErrors()) ? true : false;
+
+        // If there are any error messages, log them and return false.
+        // Otherwise return true.
+        if (empty($fs->getErrors())) {
+            return true;
+        } else {
+            foreach ($fs->getErrors() as $msg) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $msg);
+            }
+            return false;
+        }
     }
 
 
