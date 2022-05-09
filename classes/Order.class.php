@@ -307,7 +307,7 @@ class Order
     public static function getInstance($key, $uid = 0)
     {
         if (is_array($key)) {
-            $id = SHOP_getVar($key, 'order_id');
+            $id = SHOP_getVar($key, 'order_id', 'string', '');
         } else {
             $id = $key;
         }
@@ -629,7 +629,7 @@ class Order
         $this->buyer_email = SHOP_getVar($A, 'buyer_email');
         $this->billto_id = SHOP_getVar($A, 'billto_id', 'integer');
         $this->shipto_id = SHOP_getVar($A, 'shipto_id', 'integer');
-        $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer');
+        $this->order_seq = SHOP_getVar($A, 'order_seq', 'integer', 0);
         $this->setDiscountPct(SHOP_getVar($A, 'discount_pct', 'float'));
         $this->setDiscountCode(SHOP_getVar($A, 'discount_code'));
         //if ($this->status != 'cart') {
@@ -662,16 +662,16 @@ class Order
             $this->isNew = true;
             Cart::clearSession('order_id');
         }
-        $this->shipper_id = $A['shipper_id'];
+        $this->shipper_id = SHOP_getVar($A, 'shipper_id', 'string');
         $this->gross_items = SHOP_getVar($A, 'gross_items', 'float', 0);
         $this->net_taxable = SHOP_getVar($A, 'net_taxable', 'float', 0);
         $this->net_nontax = SHOP_getVar($A, 'net_nontax', 'float', 0);
         if (isset($A['amt_paid'])) {    // only present in DB record
             $this->_amt_paid = (float)$A['amt_paid'];
         }
-        $this->shipping_method = $A['shipping_method'];
-        $this->shipping_dscp = $A['shipping_dscp'];
-        $this->last_mod = $A['last_mod'];
+        $this->shipping_method = SHOP_getVar($A, 'shipping_method', 'string');
+        $this->shipping_dscp = SHOP_getVar($A, 'shipping_dscp', 'string');
+        $this->last_mod = SHOP_getVar($A, 'last_mod', 'string');
         $this->gw_order_ref = SHOP_getVar($A, 'gw_order_ref', 'string', NULL);
         $this->referrer_uid = SHOP_getVar($A, 'referrer_uid', 'integer');
         $this->referral_token = SHOP_getVar($A, 'referral_token');
@@ -955,7 +955,7 @@ class Order
      * @param   boolean $notify     True to allow buyer notification.
      * @return  object  $this
      */
-    public function updatePmtStatus(bool $notify=true)
+    public function updatePmtStatus(bool $notify=true) : self
     {
         // Recalculate amount paid in case this order is cached.
         $Pmts = $this->getPayments();
@@ -1041,6 +1041,8 @@ class Order
                 WHERE order_id = '$db_order_id';
                 COMMIT;";
             DB_query($sql);
+            //Log::write('shop_system', Log::DEBUG, $sql);
+            // Now assign the sequence number
             $this->order_seq = (int)DB_getItem(
                 $_TABLES['shop.orders'],
                 'order_seq',
@@ -1049,14 +1051,13 @@ class Order
         } else {
             // Update the status but leave the sequence alone
             $sql = "UPDATE {$_TABLES['shop.orders']} SET
-                    status = '". DB_escapeString($newstatus) . "'
+                    status = '". DB_escapeString($this->status) . "'
                 WHERE order_id = '$db_order_id';";
             DB_query($sql);
-        }
-        //Log::write('shop_system', Log::DEBUG, $sql);
-        if (DB_error()) {
-            $this->status = $oldstatus;     // update in-memory object
-            return $oldstatus;
+            if (DB_error()) {
+                $this->status = $oldstatus;     // update in-memory object
+                return $oldstatus;
+            }
         }
 
         // Process affiliate bonus if the required status has been reached
@@ -1072,7 +1073,7 @@ class Order
             $this->Log($msg, $log_user);
         }
         if ($notify) {
-            $this->Notify($newstatus, $msg);
+            $this->Notify($this->status, $msg);
         }
         return $newstatus;
     }

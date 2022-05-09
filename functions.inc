@@ -2394,7 +2394,7 @@ function plugin_getfeedprovider_shop($format, $A=array())
  */
 function SHOP_getVar($A, $varname, $type = 'string', $default = NULL, $emptyok = true)
 {
-    if (!isset($A[$varname])) {
+    if (!array_key_exists($varname, $A)) {
         return $default;
     } else {
         $val = $A[$varname];
