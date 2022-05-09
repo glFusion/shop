@@ -75,6 +75,11 @@ class Payment
      * @var status */
     private $status = '';
 
+    /** Order object related to this payment.
+     * This is to easily retrieve the order object without having to
+     * recreate it, since an order object is updated in Save() anyway.
+     * @var object */
+    private $Order = NULL;
 
 
     /**
@@ -420,7 +425,7 @@ class Payment
      * @param   boolean $notify_buyer   True to notify the buyer
      * @return  object  $this
      */
-    public function Save($notify_buyer=true)
+    public function Save($notify_buyer=true) : self
     {
         global $_TABLES, $LANG_SHOP;
 
@@ -479,9 +484,9 @@ class Payment
 
         if ($stat && $this->isComplete()) {
             $lang_str = $this->getAmount() < 0 ? $LANG_SHOP['amt_credit_gw'] : $LANG_SHOP['amt_paid_gw'];
-            $Order = Order::getInstance($this->getOrderID());
-            $Order->updatePmtStatus();
-            $Order->Log(
+            $this->Order = Order::getInstance($this->getOrderID());
+            $this->Order->updatePmtStatus();
+            $this->Order->Log(
                 sprintf(
                     $lang_str,
                     $this->getAmount(),
@@ -628,6 +633,18 @@ class Payment
         }
         //return $P[$order_id];
         return $retval;
+    }
+
+
+    /**
+     * Get the order object after saving.
+     * This saves the caller from having to read the order data yet again.
+     *
+     * @return  object      Order object, NULL if not instantiated
+     */
+    public function getOrder() :: ?Order
+    {
+        return $this->Order;
     }
 
 

@@ -105,7 +105,7 @@ class Webhook extends \Shop\Webhook
                     ->setOrderID($this->getOrderID())
                     ->Save();
                 if ($this->isSufficientFunds()) {
-                    Log::write('shop_system', Log::DEBUG, "Handling purchase");
+                    Log::write('shop_system', Log::DEBUG, "Handling purchase for {$this->getOrderID()}");
                     $status = $this->handlePurchase();
                 }
             }

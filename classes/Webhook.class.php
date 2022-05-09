@@ -403,7 +403,9 @@ class Webhook
             ->setComplete(1)
             ->setStatus($this->getData()->type)
             ->setOrderID($this->getOrderID());
-        return $Payment->Save();
+        $Payment->Save();
+        // Get the latest order object for the new status and amt due.
+        $this->Order = $Payment->getOrder();
     }
 
 
