@@ -3867,7 +3867,7 @@ class Product
             'style' => 'primary',
             'attr' => array(
                 'title' => $LANG_SHOP['bulk_reset'],
-                'onclick' => "return confirm'" . $LANG_SHOP['q_reset_ratings'] . "');",
+                'onclick' => "return confirm('{$LANG_SHOP['q_reset_ratings']}');",
             ),
         ) );
         $options = array(
