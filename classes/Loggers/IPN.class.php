@@ -3,16 +3,17 @@
  * IPN Log class to save IPN information.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v1.3.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Shop\Logger;
+namespace Shop\Loggers;
 use Shop\Log;
+use glFusion\Database\Database;
 
 
 /**
@@ -66,7 +67,7 @@ class IPN extends \Shop\Logger
      * @param   string  $ip_addr    IP Address
      * @return  object  $this
      */
-    public function setIP($ip_addr)
+    public function setIP(string $ip_addr) : self
     {
         $this->ip_addr = $ip_addr;
         return $this;
@@ -79,7 +80,7 @@ class IPN extends \Shop\Logger
      * @param   boolean $verified   Zero if not verified, Nonzero if verified
      * @return  object  $this
      */
-    public function setVerified($verified)
+    public function setVerified(bool $verified) : self
     {
         $this->verified = $verified ? 1 : 0;
         return $this;
@@ -92,7 +93,7 @@ class IPN extends \Shop\Logger
      * @param   string  $id     Transaction ID
      * @return  object  $this
      */
-    public function setTxnID($id)
+    public function setTxnID(string $id) : self
     {
         $this->txn_id = $id;
         return $this;
@@ -105,7 +106,7 @@ class IPN extends \Shop\Logger
      * @param   string  $gw_id  Gateway ID (name)
      * @return  object  $this
      */
-    public function setGateway($gw_id)
+    public function setGateway(string $gw_id) : self
     {
         $this->gw_id = $gw_id;
         return $this;
@@ -118,7 +119,7 @@ class IPN extends \Shop\Logger
      * @param   string  $event  Type of IPN message
      * @return  object  $this
      */
-    public function setEvent($event)
+    public function setEvent(string $event) : self
     {
         $this->event = substr($event, 0, 128);
         return $this;
@@ -131,7 +132,7 @@ class IPN extends \Shop\Logger
      * @param   array   $data   Raw IPN data array
      * @return  object  $this
      */
-    public function setData($data)
+    public function setData(array $data) : self
     {
         $this->ipn_data = $data;
         return $this;
@@ -144,7 +145,7 @@ class IPN extends \Shop\Logger
      * @param   string  $order_id   Order ID
      * @return  object  $this
      */
-    public function setOrderID($order_id)
+    public function setOrderID(string $order_id) : self
     {
         $this->order_id = $order_id;
         return $this;
@@ -156,7 +157,7 @@ class IPN extends \Shop\Logger
      *
      * @return  integer     New log record ID, 0 on error
      */
-    public function Write()
+    public function Write() : int
     {
         global $_TABLES;
 
@@ -165,8 +166,12 @@ class IPN extends \Shop\Logger
         } else {
             $data = $this->ipn_data;
         }
+
         // Log to database
-        $sql = "INSERT INTO {$_TABLES['shop.ipnlog']} SET
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "INSERT INTO {$_TABLES['shop.ipnlog']} SET
                 ip_addr = '" . DB_escapeString($this->ip_addr) . "',
                 ts = UNIX_TIMESTAMP(),
                 verified = '$this->verified',
@@ -174,14 +179,22 @@ class IPN extends \Shop\Logger
                 gateway = '{$this->gw_id}',
                 event = '" . DB_escapeString($this->event) . "',
                 order_id = '" . DB_escapeString($this->order_id) . "',
-                ipn_data = '" . DB_escapeString($data) . "'";
-        // Ignore DB error in order to not block IPN
-        DB_query($sql, 1);
-        if (DB_error()) {
+                ipn_data = '" . DB_escapeString($data) . "'",
+                array(
+                    $this->ip_addr, time(), $this->verified,
+                    $this->txn_id, $this->gw_id, $this->event,
+                    $this->order_id, $data,
+                ),
+                array(
+                    Database::STRING, Database::INTEGER, Database::INTEGER,
+                    Database::STRING, Database::STRING, Database::STRING,
+                    Database::STRING, Database::STRING,
+                )
+            );
+            return $db->conn->lastInsertId();
+        } catch (\Exception $e) {
             Log::write('shop_system', Log::ERROR, __METHOD__ . ": SQL error: $sql");
             return 0;
-        } else {
-            return DB_insertId();
         }
     }
 

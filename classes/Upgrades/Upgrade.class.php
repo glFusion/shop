@@ -290,6 +290,7 @@ class Upgrade
                 'upgrade.inc.php',
                 // 1.5.0
                 'classes/ipn',
+                'classes/Logger',   // renamed to "Loggers"
             ),
             // public_html/shop
             $_CONF['path_html'] . 'shop' => array(
