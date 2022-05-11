@@ -51,6 +51,8 @@ use Shop\Models\Views;
 use Shop\Upgrades;
 use Shop\Config;
 use Shop\Log;
+use glFusion\Database\Database;
+
 Config::getInstance();      // to load $_SHOP_CONF
 global $_SHOP_CONF;
 
@@ -448,15 +450,10 @@ function plugin_chkVersion_shop()
  */
 function plugin_user_delete_shop($uid)
 {
-    global $_TABLES;
-
-    $uid = (int)$uid;
-    $sql = "UPDATE {$_TABLES['shop.orders']}
-            SET uid = 1
-            WHERE uid = '$uid'";
-
     Shop\Customer::deleteUser($uid);
     Shop\Cart::deleteUser($uid);
+    Shop\Order::anonymize($uid);    // After deleting carts
+    Shop\Cache::clear();
 }
 
 
@@ -468,17 +465,8 @@ function plugin_user_delete_shop($uid)
  */
 function plugin_user_move_shop($origUID, $destUID)
 {
-    global $_TABLES;
-
-    $origUID = (int)$origUID;
-    $destUID = (int)$destUID;
-
-    DB_query("UPDATE {$_TABLES['shop.address']}
-            SET uid = $destUID WHERE uid = $origUID", 1);
-    DB_query("UPDATE {$_TABLES['shop.orders']}
-            SET uid = $destUID WHERE uid = $origUID", 1);
-    DB_query("UPDATE {$_TABLES['shop.userinfo']}
-            SET uid = $destUID WHERE uid = $origUID", 1);
+    Shop\Order::changeUid($origUID, $destUID);
+    Shop\Customer::changeUid($origUID, $destUID);
 }
 
 
@@ -1596,15 +1584,48 @@ function plugin_user_create_shop($uid)
  */
 function plugin_runScheduledTask_shop()
 {
-    global $_SHOP_CONF, $_TABLES, $_CONF;
+    global $_TABLES, $_CONF, $_VARS;
 
+    // First, run any tasks that should happen intra-day
+
+    // Clean up the sale price table if so configured.
+    if (Config::get('purge_sale_prices')) {
+        Shop\Sales::Clean();
+    }
+
+    // Handle any expired coupons
+    if (Config::get('gc_enabled')) {
+        Shop\Products\Coupon::Expire();
+    }
+
+    // Next, run tasks that are more processor-intensive and should only run daily
+    $today = $_CONF['_now']->format('Ymd', true);
+    $lastrun = isset($_VARS['shop_lastdaily']) ? $_VARS['shop_lastdaily'] : '';
+    if ($lastrun == $today) {
+        return;     // already ran today
+    }
+
+    $db = Database::getInstance();
+    try {
+        $db->conn->executeUpdate(
+            "INSERT INTO {$_TABLES['vars']} VALUES('shop_lastdaily', ?)
+            ON DUPLICATE KEY UPDATE value = ?",
+            array($today, $today),
+            array(Database::STRING, Database::STRING)
+        );
+    } catch (\Exception $e) {
+        Logger::System(__FUNCTION__ . ': ' . $e->getMessage());
+    }
+
+    $qb = $db->conn->createQueryBuilder();
+
+    // Get old carts and non-finalized orders that need to be purged.
     $orders = array();
     $conds = array();
-    $sql = "SELECT ord.order_id FROM {$_TABLES['shop.orders']} ord
-        LEFT JOIN {$_TABLES['shop.orderitems']} pur
-            ON ord.order_id = pur.order_id WHERE ";
-
-    if ($_SHOP_CONF['ena_cart'] == 1) {
+    $qb->select('ord.order_id')
+       ->from($_TABLES['shop.orders'], 'ord')
+       ->leftJoin('ord', $_TABLES['shop.orderitems'], 'pur', 'pur.order_id = ord.order_id');
+    if (Config::get('ena_cart')) {
         // Get empty carts over 2 days old, no need to keep them around
         $conds[] = "(ord.status='cart'
                 AND order_seq IS NULL
@@ -1612,7 +1633,7 @@ function plugin_runScheduledTask_shop()
                 AND pur.order_id IS NULL)";
 
         // Get all carts not updated in a while
-        $days = SHOP_getVar($_SHOP_CONF, 'days_purge_cart', 'integer');
+        $days = (int)Config::get('days_purge_cart');
         if ($days > 0) {
             $conds[] = "(ord.status = 'cart' AND
                 ord.order_seq IS NULL AND
@@ -1621,7 +1642,7 @@ function plugin_runScheduledTask_shop()
     }
 
     // Get pending (unpaid) orders not updated in a while
-    $days = SHOP_getVar($_SHOP_CONF, 'days_purge_pending', 'integer');
+    $days = (int)Config::get('days_purge_pending');
     if ($days > 0) {
         $conds[] = "(
             (ord.status = 'pending' OR ord.order_total = 0)
@@ -1629,47 +1650,60 @@ function plugin_runScheduledTask_shop()
             AND ord.last_mod < DATE_SUB(NOW(), INTERVAL $days DAY)
         )";
     }
-
     if (!empty($conds)) {
-        $res = DB_query($sql . implode(' OR ', $conds));
-        $A = DB_fetchAll($res, false);
-        foreach ($A as $B) {
-            $orders[] = DB_escapeString($B['order_id']);
+        try {
+            $data = $qb->where(implode(' OR ', $conds))
+                       ->execute()
+                       ->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (!empty($data)) {
+            foreach ($data as $A) {
+                Shop\Order::Delete($A['order_id']);
+            }
         }
     }
 
-    if (!empty($orders)) {
-        foreach ($orders as $order_id) {
-            Shop\Order::Delete($order_id);
-        }
-    }
+    // Flag to indicate if the cache needs to be cleared, to only do it once.
+    $clear_cache = false;
 
     // Treat disabled and expired products as "deleted" to get them out of
     // search results, etc.
-    $sql = "SELECT id, prod_type FROM {$_TABLES['shop.products']}
-            WHERE enabled = 1 AND avail_end < '" . SHOP_now()->format('Y-m-d', true) . "'";
-    $res = DB_query($sql);
-    $clear_cache = false;
-    while ($A = DB_fetchArray($res, false)) {
-        PLG_itemDeleted($A['id'], $A['prod_type']);
+    try {
+        $data = $db->conn->executeQuery(
+            "SELECT id, prod_type FROM {$_TABLES['shop.products']}
+            WHERE enabled = 1 AND avail_end < ?",
+            array($_CONF['_now']->format('Y-m-d', true)),
+            array(Database::STRING)
+        )->fetchAllAssociative();
+    } catch (\Exception $e) {
+        Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
+        $data = false;
+    }
+    if (!empty($data)) {
         $clear_cache = true;
-        // Toggle to disabled, also clears the product cache
-        Shop\Product::toggleEnabled(1, $A['id']);
+        foreach ($data as $A) {
+            PLG_itemDeleted($A['id'], $A['prod_type']);
+            // Toggle to disabled, also clears the product cache
+            Shop\Product::toggleEnabled(1, $A['id']);
+        }
     }
 
     // Delete old cached buttons which are keyed by item_id and price.
     // Sale-priced items will get stuck in the DB.
-    DB_query("DELETE FROM {$_TABLES['shop.buttons']}
-            WHERE last_update < NOW() - INTERVAL 120 DAY");
-
-    // Clean up the sale price table if so configured.
-    if ($_SHOP_CONF['purge_sale_prices']) {
-        Shop\Sales::Clean();
+    try {
+        $db->conn->executeUpdate(
+            "DELETE FROM {$_TABLES['shop.buttons']}
+            WHERE last_update < NOW() - INTERVAL 120 DAY"
+        );
+    } catch (\Exception $e) {
+        Log::write('system', Log::ERRROR, __FUNCTION__ . ': ' . $e->getMessage());
     }
 
-    // Handle any expired coupons
-    if ($_SHOP_CONF['gc_enabled']) {
-        Shop\Products\Coupon::Expire();
+    if (Shop\Order::redactPII() > 0) {
+        $clear_cache = true;
     }
 
     // Force-clear the cache if items were removed.
@@ -2240,7 +2274,8 @@ function plugin_privacy_export_shop($uid, $email='', $username='', $ip='')
 {
     $retval = '';
     $U = Shop\Customer::getInstance($uid);
-    foreach ($U->getAddresses() as $addr) {
+    foreach ($U->getAddresses() as $Address) {
+        $addr = $Address->toArray();
         foreach (Shop\Customer::Fields() as $fld) {
             if ($addr[$fld] != '') {
                 $d = addSlashes(htmlentities($addr[$fld]));

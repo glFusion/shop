@@ -13,6 +13,7 @@
  */
 namespace Shop;
 use Shop\Models\ReferralTag;
+use glFusion\Database\Database;
 
 
 /**
@@ -529,6 +530,41 @@ class Customer
         $uid = (int)$uid;
         DB_delete($_TABLES['shop.userinfo'], 'uid', $uid);
         DB_delete($_TABLES['shop.address'], 'uid', $uid);
+    }
+
+
+    /**
+     * Change a customer's user ID. Called from plugin_user_merge function.
+     *
+     * @param   integer $old_uid    Original user ID
+     * @param   integer $new_uid    New user ID
+     */
+    public static function changeUid(int $old_uid, int $new_uid) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeQuery(
+                "UPDATE {$_TABLES['shop.address']} SET uid = ? WHERE uid = ?",
+                array($new_uid, $old_uid),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
+
+        try {
+            $db->conn->executeQuery(
+                "UPDATE {$_TABLES['shop.userinfo']} SET uid = ? WHERE uid = ?",
+                array($new_uid, $old_uid),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return;
+        }
     }
 
 

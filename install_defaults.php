@@ -197,6 +197,17 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
+        'name' => 'years_redact_data',
+        'default_value' => '7',
+        'type' => 'text',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 0,
+        'sort' => 205,
+        'set' => true,
+        'group' => 'shop',
+    ),
+    array(
         'name' => 'product_tpl_ver',
         'default_value' => 'v2',
         'type' => 'select',

@@ -930,6 +930,7 @@ $LANG_confignames['shop'] = array(
     'centerblock'   => 'Centerblock',
     'days_purge_cart' => 'Days before purging carts',
     'days_purge_pending' => 'Days before purging unpaid orders',
+    'years_redact_data' => 'Years before redacting data for deleted users',
     'purge_sale_prices' => 'Purge Expired Sale Prices?',
     'catalog_columns' => 'Catalog Columns',
     'enable_svc_funcs' => 'Enable Service Function Wrappers',

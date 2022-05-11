@@ -3,9 +3,9 @@
  * Order class for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2021 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.4.1
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -18,7 +18,8 @@ use Shop\Models\Token;
 use Shop\Models\ReferralTag;
 use Shop\Models\Session;
 use Shop\Models\AffiliateSale;
-use glFusion\Notifier;
+use glFusion\Database\Database;
+//use glFusion\Notifier;
 
 
 /**
@@ -1236,7 +1237,7 @@ class Order
             return $this;
         }
 
-        $Notifier = Notifier::getProvider('email');
+        //$Notifier = Notifier::getProvider('email');
         $Shop = new Company;
         if ($this->buyer_email != '' && ($force || $notify_buyer)) {
             $save_language = $LANG_SHOP;    // save the site language
@@ -1269,10 +1270,16 @@ class Order
             );
             $subject = sprintf($subject, $Shop->getCompany());
 
-            $Notifier->addRecipient($this->uid, $this->buyer_email)
+            COM_emailNotification(array(
+                'to' => array($this->Order->buyer_email),
+                'from' => Company::getInstance()->getEmail(),
+                'htmlmessage' => $text,
+                'subject' => $subject,
+            ) );
+            /*$Notifier->addRecipient($this->uid, $this->buyer_email)
                      ->setSubject(htmlspecialchars($subject))
                      ->setMessage($text, true)
-                     ->send();
+                     ->send();*/
             Log::write('shop_system', Log::DEBUG, "Buyer Notification Done.");
             $LANG_SHOP = $save_language;    // Restore the default language
         }
@@ -1294,10 +1301,16 @@ class Order
             $text = $this->_prepareNotification($T, $gw_msg, false);
 
             Log::write('shop_system', Log::DEBUG, "Sending email to admin at " . $Shop->getEmail());
-            $Notifier->addRecipient(0, $Shop->getEmail(), $Shop->getCompany())
-                         ->setSubject($LANG_SHOP['subj_email_admin'])
-                         ->setMessage($text, true)
-                         ->send();
+            COM_emailNotification(array(
+                'to' => array('email' => $Shop->getEmail(), 'name' => $Shop->getCompany()),
+                'from' => Company::getInstance()->getEmail(),
+                'htmlmessage' => $text,
+                'subject' => $subject,
+            ) );
+            /*$Notifier->addRecipient(0, $Shop->getEmail(), $Shop->getCompany())
+                     ->setSubject($LANG_SHOP['subj_email_admin'])
+                     ->setMessage($text, true)
+                     ->send();*/
             Log::write('shop_system', Log::DEBUG, "Admin Notification Done.");
         }
         return $this;
@@ -2082,7 +2095,7 @@ class Order
         return ($units > 0 || $weight > 0);
     }
 
-        
+
     /**
      * Check if this order has only downloadable items.
      *
@@ -4050,6 +4063,109 @@ class Order
         }
         $retval->setDscp('Final product classification for order ' . $this->getOrderId());
         return $retval;
+    }
+
+
+    /**
+     * Change a customer's user ID. Called from plugin_user_merge function.
+     *
+     * @param   integer $old_uid    Original user ID
+     * @param   integer $new_uid    New user ID
+     */
+    public static function changeUid(int $old_uid, int $new_uid) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "UPDATE {$_TABLES['shop.orders']} SET uid = ? WHERE uid = ?",
+                array($new_uid, $old_uid),
+                array(Database::INTEGER, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Anonymize an order. Called from plugin_user_delete function.
+     *
+     * @param   integer $uid    User ID that was deleted
+     */
+    public static function anonymize(int $uid) : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "UPDATE {$_TABLES['shop.orders']} SET uid = 1 WHERE uid = ?",
+                array($uid),
+                array(Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+    }
+
+
+    /**
+     * Anonymize orders after a period of time for deleted users.
+     * This is to comply with data retention laws.
+     *
+     * @return  integer     Number of rows updated
+     */
+    public static function redactPII() : int
+    {
+        global $_TABLES, $LANG_SHOP;
+
+        $years = (int)Config::get('years_redact_data');
+        if ($years == 0) {
+            return 0;
+        }
+
+        $order_states = array_keys(OrderState::allAtLeast(OrderState::CLOSED));
+        $cutoff = time() - ($years * 31536000); // convert to int timestamp
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
+        try {
+            $rows = $qb->update($_TABLES['shop.orders'])
+                       ->set('uid', 0)
+                       ->set('billto_id', -1)
+                       ->set('billto_name', ':redacted')
+                       ->set('billto_company', ':redacted')
+                       ->set('billto_address1', ':redacted')
+                       ->set('billto_address2', ':redacted')
+                       ->set('billto_city', ':redacted')
+                       ->set('billto_state', ':redacted')
+                       ->set('billto_country', ':redacted')
+                       ->set('billto_zip', ':redacted')
+                       ->set('billto_phone', ':redacted')
+                       ->set('shipto_id', -1)
+                       ->set('shipto_name', ':redacted')
+                       ->set('shipto_company', ':redacted')
+                       ->set('shipto_address1', ':redacted')
+                       ->set('shipto_address2', ':redacted')
+                       ->set('shipto_city', ':redacted')
+                       ->set('shipto_state', ':redacted')
+                       ->set('shipto_country', ':redacted')
+                       ->set('shipto_zip', ':redacted')
+                       ->set('shipto_phone', ':redacted')
+                       ->set('buyer_email', ':redacted')
+                       ->where('uid = 1')   // deleted users converted to anon already
+                       ->andWhere('UNIX_TIMESTAMP(last_mod) < :cutoff')
+                       ->andWhere('status IN (:states)')
+                       ->setParameter('cutoff', $cutoff, Database::INTEGER)
+                       ->setParameter('redacted', $LANG_SHOP['redacted'], Database::STRING)
+                       ->setParameter('states', $order_states, Database::PARAM_STR_ARRAY)
+                       ->execute();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $rows = 0;
+        }
+        return $rows;
     }
 
 }
