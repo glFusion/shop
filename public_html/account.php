@@ -3,9 +3,9 @@
  * View information related to a user's account, e.g. Cart, History, etc.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner
+ * @copyright   Copyright (c) 2019-2022 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -40,11 +40,10 @@ $mode = '';
 // Get the mode first from possibly posted variables
 $expected = array(
     // Actions
-    'saveaddr', 'savevalidated',
+    'saveaddr', 'savevalidated', 'delbutton_x',
     // Views
     'orderhist', 'addresses', 'editaddr',
 );
-//var_dump($_POST);die;
 
 foreach($expected as $provided) {
     if (isset($_POST[$provided])) {
@@ -130,11 +129,17 @@ case 'redeem':
     ) );
     break;
 
-case 'deladdr':
-    $Addr = Shop\Address::getInstance($id);
-    if ($Addr->getUid() == $_USER['uid']) {
-        $Addr->Delete();
+case 'delbutton_x':
+    // Deleting multiple addresses at once
+    if (isset($_POST['delitem']) && is_array($_POST['delitem'])) {
+        Shop\Address::deleteMulti($_POST['delitem']);
     }
+    COM_refresh(SHOP_URL . '/account.php?addresses');
+    break;
+
+case 'deladdr':
+    // Delete one single address
+    Shop\Address::deleteMulti(array($id));
     COM_refresh(SHOP_URL . '/account.php?addresses');
     break;
 
@@ -185,6 +190,14 @@ case 'editaddr':
 case 'addresses':
     SHOP_setUrl($_SERVER['REQUEST_URI']);
     $content .= Shop\Menu::User($mode);
+    if ($_USER['uid'] > 1) {
+        $content .= Shop\Address::adminList($_USER['uid']);
+    } else {
+        $content .= ' not available';
+    }
+    /*
+    SHOP_setUrl($_SERVER['REQUEST_URI']);
+    $content .= Shop\Menu::User($mode);
     $A = Shop\Customer::getInstance()->getAddresses();
     $T = new Template;
     $T->set_file('list', 'acc_addresses.thtml');
@@ -201,6 +214,7 @@ case 'addresses':
     }
     $T->parse('output', 'list');
     $content .= $T->finish($T->get_var('output'));
+*/
     break;
 
 case 'orderhist':

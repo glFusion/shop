@@ -3,15 +3,16 @@
  * Class to handle billing and shipping addresses.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2019-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2019-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.1.0
+ * @version     v1.5.0
  * @since       v1.0.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
 
 
 /**
@@ -74,7 +75,7 @@ class Address
 
     /** DB table name, to facilitate inherited classes.
      * @var string */
-    protected $table = 'shop.addresses';
+    protected $table = 'shop.address';
 
     /** Address field names.
      * @var array */
@@ -1020,6 +1021,33 @@ class Address
 
 
     /**
+     * Delete multiple addresses for a user.
+     *
+     * @param   array   $addr_ids   Array of address record IDs to delete
+     * @param   integer $uid        User ID, default is current user
+     */
+    public static function deleteMulti(array $ids, ?int $uid=NULL) : void
+    {
+        global $_TABLES, $_USER;
+
+        if (empty($uid)) {
+            $uid = (int)$_USER['uid'];
+        }
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeUpdate(
+                "DELETE FROM {$_TABLES['shop.address']}
+                WHERE addr_id IN (?) AND uid = ?",
+                array($ids, $uid),
+                array(Database::PARAM_INT_ARRAY, Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
+    }
+
+
+    /**
      * Check if this address object matches the supplied object.
      *
      * @param   object  $Addr   Address to compare to this one
@@ -1150,6 +1178,136 @@ class Address
             ) );
         } else {
             $retval = new self;
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Product Admin List View.
+     *
+     * @param   integer $uid    User ID
+     * @return  string      HTML for the product list.
+     */
+    public static function adminList(int $uid) : string
+    {
+        global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
+            $LANG_ADMIN, $LANG_SHOP_HELP;
+
+        $display = '';
+        $sql = "SELECT * FROM {$_TABLES['shop.address']} WHERE uid = $uid";
+        $header_arr = array(
+            array(
+                'text'  => $LANG_ADMIN['edit'],
+                'field' => 'edit',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['hdr_def_billto'],
+                'field' => 'billto_def',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['hdr_def_shipto'],
+                'field' => 'shipto_def',
+                'align' => 'center',
+            ),
+            array(
+                'text'  => $LANG_SHOP['address'],
+                'field' => 'address',
+            ),
+            array(
+                'text'  => $LANG_ADMIN['delete'],
+                'field' => 'delete',
+                'align' => 'center',
+            ),
+        );
+        $query_arr = array(
+            'table' => 'shop.address',
+            'sql'   => $sql,
+            'query_fields' => array(),
+            'default_filter' => '',
+        );
+
+        $text_arr = array(
+            'has_extras' => true,
+            'form_url' => Config::get('url') . "/account.php?addresses",
+        );
+        $defsort_arr = array(
+            'field' => 'addr_id',
+            'direction' => 'ASC',
+        );
+        $filter = '';
+        $options = array(
+            'chkdelete' => true,
+            'chkfield' => 'addr_id',
+        );
+
+        $T = new Template;
+        $T->set_file('list', 'acc_addresses.thtml');
+        $T->set_var(array(
+            'uid' =>  $uid,
+            'addr_list' => ADMIN_list(
+                Config::PI_NAME . '_address_' . $uid,
+                array(__CLASS__,  'adminListField'),
+                $header_arr, $text_arr, $query_arr, $defsort_arr,
+                $filter, '', $options, ''
+            ),
+        ) );
+        $T->parse('output', 'list');
+        $display .= $T->finish($T->get_var('output'));
+        return $display;
+    }
+
+
+    /**
+     * Get an individual field for the admin list.
+     *
+     * @param   string  $fieldname  Name of field (from the array, not the db)
+     * @param   mixed   $fieldvalue Value of the field
+     * @param   array   $A          Array of all fields from the database
+     * @param   array   $icon_arr   System icon array (not used)
+     * @return  string              HTML for field display in the table
+     */
+    public static function adminListField($fieldname, $fieldvalue, $A, $icon_arr, $extra=array()) : string
+    {
+        global $_CONF, $_SHOP_CONF, $LANG_SHOP, $LANG_ADMIN;
+
+        switch ($fieldname) {
+        case 'edit':
+            $retval = FieldList::edit(array(
+                'url' => Config::get('url') . "/account.php?mode=editaddr&return=addresses&id=" . $A['addr_id'],
+            ) );
+            break;
+
+        case 'delete':
+            $retval = FieldList::delete(array(
+                'delete_url' => Config::get('url') . '/account.php?mode=deladdr&id=' . $A['addr_id'],
+                'attr' => array(
+                    'onclick' => 'return confirm(\'' . $LANG_SHOP['q_del_item'] . '\');',
+                    'title' => $LANG_SHOP['del_item'],
+                    'class' => 'tooltip',
+                ),
+            ) );
+            break;
+
+        case 'billto_def':
+        case 'shipto_def':
+            $retval = FieldList::radio(array(
+                'name' => $fieldname,
+                'checked' => (int)$fieldvalue,
+                'value' => (int)$A['addr_id'],
+                'onclick' => "SHOP_setDefAddr('shipto', {$A['addr_id']});return false;",
+            ) );
+            break;
+
+        case 'address':
+            $retval = $A['name'] . ', ' . $A['address1'] . ', ' . $A['city'];
+            break;
+
+        default:
+            $retval = (string)$fieldvalue;
+            break;
         }
         return $retval;
     }

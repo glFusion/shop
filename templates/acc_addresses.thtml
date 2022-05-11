@@ -35,42 +35,5 @@ function SHOP_setDefAddr(type, addr_id)
 <a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id=0">
 	<button class="uk-button uk-button-success">{$LANG_SHOP['new_address']}</button>
 </a>
-<table class="uk-table uk-text-center">
-	<thead>
-	<tr>
-		<th class="uk-text-center">{$LANG_ADMIN['edit']}</th>
-		<th class="uk-text-center">{$LANG_SHOP['hdr_def_billto']}</th>
-		<th class="uk-text-center">{$LANG_SHOP['hdr_def_shipto']}</th>
-		<th class="uk-text-center">{$LANG_SHOP['address']}</th>
-		<th class="uk-text-center">{$LANG_ADMIN['delete']}</th>
-	</tr>
-	</thead>
-<!-- BEGIN Addresses -->
-	<tr>
-		<td>
-			<a href="{site_url}/shop/account.php?mode=editaddr&return=addresses&id={addr_id}">
-				<i class="uk-icon uk-icon-edit"></i>
-			</a>
-		<td>
-			<input type="radio" class="billto" id="billto_{addr_id}" name="def_billto" value="{addr_id}"
-				{!if def_billto}checked="checked"{!endif}
-				onclick="SHOP_setDefAddr('billto', {addr_id});return false;" />
-		</td>
-		<td>
-			<input type="radio" class="shipto" id="shipto_{addr_id}" name="def_shipto" value="{addr_id}"
-				{!if def_shipto}checked="checked"{!endif}
-				onclick="SHOP_setDefAddr('shipto', {addr_id});return false;" />
-		</td>
-		<td class="uk-text-left">
-			{address}
-		</td>
-		<td>
-			<a href="{site_url}/shop/account.php?mode=deladdr&id={addr_id}"
-				onclick="return confirm('{$LANG_SHOP['q_del_item']}');">
-				<i class="uk-icon uk-icon-remove uk-text-danger"></i>
-			</a>
-		</td>
-	</tr>
-<!-- END Addresses -->
-</table>
+{addr_list}
 {# end {templatelocation} #}
