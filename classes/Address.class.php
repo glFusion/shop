@@ -677,12 +677,18 @@ class Address
      * @param   string  $sep    Line separator, simple `\n` by default.
      * @return  string      HTML formatted address
      */
-    public function toText($part="all", $sep="\n")
+    public function toText(?string $part=NULL, ?string $sep=NULL) : string
     {
         $parts = array();
-        if (is_string($part)) {
+        if ($part === NULL) {
+            $part = array('all');
+        } elseif (is_string($part)) {
             $part = array($part);
         }
+        if ($sep === NULL) {
+            $sep = "\n";
+        }
+
         foreach ($part as $p) {
             switch ($p) {
             case 'all':
@@ -899,12 +905,12 @@ class Address
 
 
     /**
-     *  Return the properties array.
-     *  Keys can be prefixed with billto_ or shipto_ to match Orders schema.
+     * Return the properties array.
+     * Keys can be prefixed with billto_ or shipto_ to match Orders schema.
      *
-     *  @return array   Address properties
+     * @return array   Address properties
      */
-    public function toArray()
+    public function toArray() : array
     {
         return array(
             'id'        => $this->addr_id,
@@ -928,9 +934,9 @@ class Address
      * @param   string  $prefix Optional prefix used in array indexes
      * @return  object  $this
      */
-    public function fromArray($A, $prefix='')
+    public function fromArray(array $A, ?string $prefix=NULL) : self
     {
-        if ($prefix !== '') {
+        if (!empty($prefix)) {
             $prefix .= '_';
         }
         if (isset($A[$prefix . 'id'])) {
@@ -954,7 +960,7 @@ class Address
      * @param   boolean $required   True if an address is required at all
      * @return  string      List of invalid items, or empty string for success
      */
-    public function isValid($required=true)
+    public function isValid($required=true) : string
     {
         global $LANG_SHOP, $_SHOP_CONF;
 
@@ -1302,7 +1308,8 @@ class Address
             break;
 
         case 'address':
-            $retval = $A['name'] . ', ' . $A['address1'] . ', ' . $A['city'];
+            $Addr = new self;
+            $retval = $Addr->fromArray($A)->toText(NULL, ', ');
             break;
 
         default:
