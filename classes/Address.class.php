@@ -1192,14 +1192,15 @@ class Address
     /**
      * Product Admin List View.
      *
-     * @param   integer $uid    User ID
+     * @param   integer $uid    User ID, optional for child classes
      * @return  string      HTML for the product list.
      */
-    public static function adminList(int $uid) : string
+    public static function adminList(?int $uid=NULL) : string
     {
         global $_SHOP_CONF, $_TABLES, $LANG_SHOP,
             $LANG_ADMIN, $LANG_SHOP_HELP;
 
+        $uid = (int)$uid;
         $display = '';
         $sql = "SELECT * FROM {$_TABLES['shop.address']} WHERE uid = $uid";
         $header_arr = array(

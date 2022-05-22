@@ -17,6 +17,7 @@ namespace Shop;
 use Shop\Logger\IPN as logIPN;
 use Shop\Models\IPN as IPNModel;
 use Shop\Models\OrderState;
+use glFusion\Database\Database;
 
 
 /**
@@ -590,10 +591,12 @@ class Webhook
         }
 
         // Count IPN log records with txn_id = this one.
-        $count = DB_count(
+        $db = Database::getInstance();
+        $count = $db->getCount(
             $_TABLES['shop.ipnlog'],
             array('gateway', 'txn_id', 'event'),
-            array($this->GW->getName(), $this->getID(), $this->getEvent())
+            array($this->GW->getName(), $this->getID(), $this->getEvent()),
+            array(Database::STRING, Database::STRING, Database::STRING)
         );
         if ($count > 0) {
             Log::write('shop_system', Log::ERROR, "Received duplicate IPN {$this->getID()} for {$this->GW->getName()}");

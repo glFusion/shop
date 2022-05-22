@@ -516,9 +516,10 @@ class Supplier extends Address
     /**
      * Supplier/Brand admin list view.
      *
+     * @param   integer $uid    Optional user ID (not used here)
      * @return  string      HTML for the list.
      */
-    public static function adminList()
+    public static function adminList(?int $uid=NULL) : string
     {
         global $_CONF, $_SHOP_CONF, $_TABLES, $LANG_SHOP, $_USER, $LANG_ADMIN;
 
