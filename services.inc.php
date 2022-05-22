@@ -16,6 +16,8 @@
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
 }
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -364,11 +366,22 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
         $exp = $dt->format('Y-m-d', true);
     }
     if ($gid > 0) {
-        $sql = "SELECT ug_uid FROM {$_TABLES['group_assignments']}
-                WHERE ug_main_grp_id = $gid AND ug_uid > 1";
-        $res = DB_query($sql);
-        while ($A = DB_fetchArray($res, false)) {
-            $uids[] = $A['ug_uid'];
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT ug_uid FROM {$_TABLES['group_assignments']}
+                WHERE ug_main_grp_id = ? AND ug_uid > 1",
+                array($gid),
+                array(Database::INTEGER)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __FUNCTION__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            foreach ($data as $A) {
+                $uids[] = $A['ug_uid'];
+            }
         }
     }
     if (empty($uids)) {
@@ -381,7 +394,7 @@ function service_sendcards_shop($args, &$output, &$svc_msg)
         $uids = array_filter(array_unique($uids));
         foreach ($uids as $uid) {
             $code = Shop\Products\Coupon::Purchase($amt, $uid, $exp);
-            $email = DB_getItem($_TABLES['users'], 'email', "uid = $uid");
+            $email = $db->getItem($_TABLES['users'], 'email', array('uid' => $uid));
             $name = COM_getDisplayName($uid);
             $output[$uid] = array(
                 'code' => $code,
