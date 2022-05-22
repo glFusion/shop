@@ -16,6 +16,7 @@ use Shop\Config;
 use Shop\Models\ProductType;
 use Shop\Template;
 use Shop\Log;
+use glFusion\Database\Database;
 
 
 /**
@@ -273,10 +274,8 @@ class Gateway extends \Shop\Gateway
         }
 
         // Create an order record to get the order ID
-        //$order_id = $this->CreateOrder($vals, $cart);
-        //$db_order_id = DB_escapeString($order_id);
         $Order = $this->CreateOrder($vals, $cart);
-        $db_order_id = DB_escapeString($Order->getOrderID());
+        $db = Database::getInstance();
 
         $prod_types = 0;
 
@@ -303,12 +302,6 @@ class Gateway extends \Shop\Gateway
                         3 => &$svc_msg,
                     )
                 );
-                /*$status = LGLIB_invokeService(
-                    $pi_info[0], 'productinfo',
-                    array($item_number, $item_opts),
-                    $product_info,
-                    $svc_msg
-                );*/
                 if ($status != PLG_RET_OK) {
                     $product_info = array();
                 }
@@ -332,12 +325,6 @@ class Gateway extends \Shop\Gateway
                         3 => &$svc_msg,
                     )
                 );
-                /*$status = LGLIB_invokeService(
-                    $pi_info[0], 'handlePurchase',
-                    $vars,
-                    $A,
-                    $svc_msg
-                );*/
                 if ($status != PLG_RET_OK) {
                     $A = array();
                 }
@@ -396,29 +383,46 @@ class Gateway extends \Shop\Gateway
             // Add the purchase to the shop purchase table
             $uid = isset($vals['uid']) ? (int)$vals['uid'] : $_USER['uid'];
 
-            $sql = "INSERT INTO {$_TABLES['shop.orderitems']} SET
-                        order_id = '{$db_order_id}',
-                        product_id = '{$item_number}',
-                        description = '{$items[$id]['name']}',
-                        quantity = '{$item['quantity']}',
-                        txn_type = '{$this->gw_id}',
+            try {
+                $db->conn->executeUpdate(
+                    "INSERT INTO {$_TABLES['shop.orderitems']} SET
+                        order_id = ?,
+                        product_id = ?,
+                        description = ?,
+                        quantity = ?,
+                        txn_type = ?,
                         txn_id = '',
                         status = 'pending',
-                        token = '$token',
-                        price = " . (float)$item['price'] . ",
-                        options = '" . DB_escapeString($item_opts) . "'";
-
-            //echo $sql;die;
-            Log::write('shop_system', Log::DEBUG, $sql);
-            DB_query($sql);
-
+                        token = ?,
+                        price = ?,
+                        options = ?",
+                    array(
+                        $order_id, $item_number,
+                        $items[$id]['name'], $item['quantity'],
+                        $this->gw_id, $token,
+                        $item['price'], $item_opts,
+                    ),
+                    array(
+                        Database::STRING, Database::STRING,
+                        Database::STRING, Database::STRING,
+                        Database::STRING, Database::STRING,
+                        Database::STRING, Database::STRING,
+                    )
+                );
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            }
         }   // foreach item
 
         $Order->Save();
 
         // If this was a user's cart, then clear that also
         if (isset($vals['cart_id']) && !empty($vals['cart_id'])) {
-            DB_delete($_TABLES['shop.cart'], 'cart_id', $vals['cart_id']);
+            $db->conn->delete(
+                $_TABLES['shop.cart'],
+                array('cart_id' => $vals['cart_id']),
+                array(Database::STRING)
+            );
         }
 
         $Company = Company::getInstance();
