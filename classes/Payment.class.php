@@ -129,9 +129,9 @@ class Payment
             )->fetchAssociative();
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-            $data = NULL;
+            $data = false;
         }
-        return new self($A);
+        return new self($data);
     }
 
 
@@ -642,7 +642,7 @@ class Payment
      *
      * @return  object      Order object, NULL if not instantiated
      */
-    public function getOrder() :: ?Order
+    public function getOrder() : ?Order
     {
         return $this->Order;
     }
@@ -705,8 +705,7 @@ class Payment
         try {
             $db->conn->delete(
                 $_TABLES['shop.payments'],
-                array('pmt_id'),
-                array($pmt_id),
+                array('pmt_id' => $pmt_id),
                 array(Database::INTEGER)
             );
         } catch (\Exception $e) {
@@ -740,7 +739,7 @@ class Payment
      * @param   string  $order_id   Optional Order ID to limit listing
      * @return  string      HTML for payment list
      */
-    public static function adminList($order_id='')
+    public static function adminList(?string $order_id=NULL) : string
     {
         global $LANG_SHOP;
 
