@@ -344,7 +344,7 @@ class payment extends \Shop\Report
 
         case 'delete':
             $retval = FieldList::delete(array(
-                'delet_url' => SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
+                'delete_url' => SHOP_ADMIN_URL . '/payments.php?delpayment=' . $A['pmt_id'] . '&order_id=' . $extra['order_id'],
                 'attr' => array(
                     'onclick' => "return confirm('{$LANG_SHOP['q_del_item']}');",
                 ),
