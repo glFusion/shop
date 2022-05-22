@@ -1271,7 +1271,7 @@ class Order
             $subject = sprintf($subject, $Shop->getCompany());
 
             COM_emailNotification(array(
-                'to' => array($this->Order->buyer_email),
+                'to' => array($this->buyer_email),
                 'from' => Company::getInstance()->getEmail(),
                 'htmlmessage' => $text,
                 'subject' => $subject,
