@@ -460,15 +460,6 @@ $_SQL = array(
   KEY `zip_to` (`zip_to`)
 ) ENGINE=MyISAM",
 
-'shop.cache' => "CREATE TABLE `{$_TABLES['shop.cache']}` (
-  `cache_key` varchar(127) NOT NULL,
-  `expires` int(11) unsigned NOT NULL DEFAULT '0',
-  `data` mediumtext,
-  `tags` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`cache_key`),
-  KEY (`expires`)
-) ENGINE=MyISAM",
-
 'shop.customerXgateway' => "CREATE TABLE `{$_TABLES['shop.customerXgateway']}` (
   `uid` int(11) unsigned NOT NULL,
   `gw_id` varchar(40) NOT NULL,
@@ -956,6 +947,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_id`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
+    "DROP TABLE {$_TABLES['shop.cache']}",
 );
 
 

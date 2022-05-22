@@ -146,7 +146,7 @@ $tables = array(
     'shipping',
     // v1.0.0
     'oi_opts', 'prod_opt_grps', 'shipments', 'shipment_items',
-    'shipment_packages', 'carrier_config', 'cache',
+    'shipment_packages', 'carrier_config',// 'cache',
     // v1.1.0
     'tax_rates', 'prodXcat', 'product_variants', 'variantXopt', 'suppliers',
     'discountcodes', 'regions', 'countries', 'states',

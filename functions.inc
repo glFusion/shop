@@ -851,7 +851,7 @@ function plugin_autouninstall_shop()
             'shop.shipment_items',
             'shop.shipment_packages',
             'shop.carrier_config',
-            'shop.cache',
+            //'shop.cache',     @deprecated
             // v1.1.0
             'shop.tax_rates',
             'shop.discountcodes',
@@ -1709,9 +1709,6 @@ function plugin_runScheduledTask_shop()
     // Force-clear the cache if items were removed.
     if ($clear_cache) {
         Shop\Cache::clear();
-    } else {
-        // Expire the database-based cache for glFusion < 2.0.0
-        Shop\Cache::expire();
     }
 }
 
