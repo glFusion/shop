@@ -794,6 +794,7 @@ $LANG_SHOP = array (
 'adm_mnu_zr' => 'Zone rules can allow or disallow purchasing and shipping for specific regions.',
 'adm_mnu_region' => 'Purchases and shipping will be complegely disallowed for any region, country, or state that is unchecked.',
 'adm_mnu_states' => 'Uncheck any state for which sales should be disallowed.<br />You can also indicat whether a state charges sales tax on shipping and/or handling charges (USA only).',
+'redacted' => 'Redacted',
 );
 if (isset($_SHOP_CONF['ena_ratings']) && $_SHOP_CONF['ena_ratings']) {
     $LANG_SHOP['list_sort_options']['top_rated'] = 'Top Rated';
