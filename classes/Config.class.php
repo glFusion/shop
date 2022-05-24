@@ -39,7 +39,7 @@ final class Config
      *
      * @return  object      Configuration object
      */
-    public static function getInstance()
+    public static function getInstance() : self
     {
         if (self::$instance === NULL) {
             self::$instance = new self;
@@ -88,7 +88,7 @@ final class Config
      * @param   mixed       $default    Default value if item is not set
      * @return  mixed       Value of config item
      */
-    private function _get($key=NULL, $default=NULL)
+    private function _get(?string $key=NULL, $default=NULL)
     {
         if ($key === NULL) {
             return $this->properties;
@@ -108,7 +108,7 @@ final class Config
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set
      */
-    private function _set($key, $val)
+    private function _set(string $key, $val) : self
     {
         global $_SHOP_CONF;
 
@@ -126,7 +126,7 @@ final class Config
      * @param   string  $key    Configuration item name
      * @param   mixed   $val    Value to set, NULL to unset
      */
-    public static function set($key, $val=NULL)
+    public static function set(string $key, $val=NULL) : self
     {
         return self::getInstance()->_set($key, $val);
     }
@@ -140,7 +140,7 @@ final class Config
      * @param   mixed       $default    Default value if item is not set
      * @return  mixed       Value of config item
      */
-    public static function get($key=NULL, $default=NULL)
+    public static function get(?string $key=NULL, $default=NULL)
     {
         return self::getInstance()->_get($key, $default);
     }
@@ -151,7 +151,7 @@ final class Config
      *
      * @return  string      Path to main plugin directory.
      */
-    public static function path()
+    public static function path() : string
     {
         return self::_get('path');
     }
@@ -162,7 +162,7 @@ final class Config
      *
      * @return  string      Template path
      */
-    public static function path_template()
+    public static function path_template() : string
     {
         return self::get('path') . 'templates/';
     }
