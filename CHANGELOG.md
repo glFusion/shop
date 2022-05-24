@@ -2,7 +2,7 @@
 
 ## v1.5.0
 Release TBD
-  * Require glFusion 2.1.0+
+  * Require glFusion 2.0.0+
   * Save shipping units and weights with orderitems to facilitate injected products from plugins.
   * Don't calculate shipping where units = 0, use only fixed if present.
   * Add flag to disable catalog if used only to support plugins.
@@ -23,7 +23,6 @@ Release TBD
   * Implement product rules to limit shippers (#69).
     * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
   * Leverage glFusion 2.0.0+ Log class.
-  * Leverage glFusion 2.1.0+ Notifier class.
 
 ## v1.4.1
 Release 2022-04-07
