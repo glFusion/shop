@@ -22,7 +22,7 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Logger\IPN as logIPN;
+use Shop\Loggers\IPN as logIPN;
 use Shop\Products\Coupon;
 use Shop\Models\OrderState;
 use Shop\Models\CustomInfo;

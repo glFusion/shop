@@ -14,7 +14,7 @@
  * @filesource
  */
 namespace Shop;
-use Shop\Logger\IPN as logIPN;
+use Shop\Loggers\IPN as logIPN;
 use Shop\Models\IPN as IPNModel;
 use Shop\Models\OrderState;
 use glFusion\Database\Database;
