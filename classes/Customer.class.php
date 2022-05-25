@@ -270,15 +270,17 @@ class Customer
      * @param   integer $add_id     DB Id of address
      * @return  array               Array of address values
      */
-    public function getAddress($add_id)
+    public function getAddress($add_id) ? Address
     {
         global $_TABLES;
 
         $add_id = (int)$add_id;
         if (array_key_exists($add_id, $this->addresses)) {
             return $this->addresses[$add_id];
-        } else {
+        } elseif (!empty($this->addresses)) {
             return reset($this->addresses);
+        } else {
+            return new self;
         }
     }
 
@@ -288,7 +290,7 @@ class Customer
      *
      * @return  array       Array of addresses
      */
-    public function getAddresses()
+    public function getAddresses() : array
     {
         return $this->addresses;
     }
@@ -302,7 +304,7 @@ class Customer
      * @param   string  $type   Type of address to get
      * @return  mixed   Address array (name, street, city, etc.), or NULL
      */
-    public function getDefaultAddress($type='billto')
+    public function getDefaultAddress($type='billto') : Address
     {
         if ($this->uid < 2) {
             // Anonymous has no saved address
@@ -801,11 +803,11 @@ class Customer
      * @param   integer $uid    User ID
      * @return  object          Customer object for the user
      */
-    public static function getInstance($uid = 0)
+    public static function getInstance(?int $uid = NULL) : self
     {
         global $_USER;
 
-        if ($uid == 0) {
+        if (empty($uid)) {
             $uid = $_USER['uid'];
         }
         $uid = (int)$uid;
