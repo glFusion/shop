@@ -13,13 +13,13 @@
 {!if unique}
 	<input type="hidden" name="unique" value="{unique}" />
 {!endif}
-	<div class="uk-form-row frmAddCart {tpl_ver}">
+	<div class="uk-form-row uk-margin-small frmAddCart {tpl_ver}">
 		<div>
 {!if quantity}
 			<input type="hidden" name="quantity" value="{quantity}" />
 			{$LANG_SHOP['qty']}: {quantity}
 {!else}
-			<input class="uk-input uk-form-small uk-form-width-xsmall" name="quantity" type="number" min="{min_ord_qty}" onchange="ProcessForm(this.form.id);"
+			<input class="uk-input uk-form-width-small" name="quantity" type="number" min="{min_ord_qty}" onchange="ProcessForm(this.form.id);"
 				value="{min_ord_qty}"/>
 {!endif}
 			&nbsp;&nbsp;<button id="btn_add_cart_{frm_id}" type="submit" class="uk-button uk-button-small uk-button-{btn_cls}"
