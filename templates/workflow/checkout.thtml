@@ -103,7 +103,7 @@
 {!if shipping}
 				<div uk-grid class="uk-grid" style="margin-top:5px;">
 					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-4-10 cart-total-info">{$LANG_SHOP['shipping']} ({shipping_method})</div>
-					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-2-5 cart-item-total money">{shipping}</div>
+					<div class="uk-width-1-2@s uk-width-2-5@m uk-width-1-2 uk-width-medium-2-5 cart-item-total money">{shipping_fmt}</div>
 				</div>
 {!endif}
 
