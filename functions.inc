@@ -158,6 +158,7 @@ function plugin_centerblock_shop($where = 1, $page = 1, $topic = '')
  */
 function plugin_upgrade_shop($dvlp = false)
 {
+    $dvlp = empty($dvlp) ? false : true;
     return Upgrades\Upgrade::doUpgrade($dvlp);
 }
 
@@ -1432,7 +1433,6 @@ function SHOP_phpblock_product($sql)
         $T = new Shop\Template;
         $T->set_file(array(
             'blk_random' => 'blk_random.thtml',
-            'btn_details' => 'buttons/btn_details.thtml',
         ));
         for ($i = 0; $A = DB_fetchArray($res, false); $i++) {
             $P = Shop\Product::getByID($A['id']);
@@ -1460,7 +1460,7 @@ function SHOP_phpblock_product($sql)
                 'on_sale'   => $isOnSale,
             ) );
 
-            if (!$P->hasOptions()) {
+            if (!$P->hasOptions() && !$P->hasCustomFields()) {
                 $buttons = $P->PurchaseLinks(Views::BLOCK);
                 $btn_txt = '';
                 foreach ($buttons as $name=>$html) {
@@ -1471,9 +1471,15 @@ function SHOP_phpblock_product($sql)
                 if ($_SHOP_CONF['ena_cart']) {
                     // If the product has attributes, then the cart must be
                     // enabled to allow purchasing
-                    $button = $T->parse('', 'btn_details') . '&nbsp;';
-                    $T->set_var('button', $button);
-                    //$T->parse('Btn', 'BtnBlock', true);
+                    $B = new \Template(__DIR__ . '/templates/buttons');
+                    $B->set_file(array(
+                        'btn_details' => 'btn_details.thtml',
+                    ));
+                    $B->set_var(array(
+                        'item_url'  => $P->getLink(),
+                    ) );
+                    $B->parse('output', 'btn_details');
+                    $T->set_var('button', $B->finish($B->get_var('output')));
                 }
             }
 
