@@ -1272,6 +1272,7 @@ class IPN
 
         $this->Payment = new Payment;
         $this->Payment->setRefID($this->getTxnId())
+            ->setTxnID($this->getTxnId())
             ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)

@@ -30,7 +30,8 @@ class Payment
      * @var integer */
     private $pmt_id = 0;
 
-    /** Transaction reference ID provided by the payment gateway.
+    /** Payment reference ID provided by the payment gateway.
+     * Not the Webhook ID, see $txn_id for that.
      * @var string */
     private $ref_id = '';
 
@@ -74,6 +75,10 @@ class Payment
     /** Payment status from latest webhook.
      * @var status */
     private $status = '';
+
+    /** Webhook or IPN transaction ID for linking to the IPN log table.
+     * @var string */
+    private $txn_id = '';
 
     /** Order object related to this payment.
      * This is to easily retrieve the order object without having to
@@ -170,6 +175,30 @@ class Payment
     {
         $this->pmt_id = (int)$id;
         return $this;
+    }
+
+
+    /**
+     * Set the transaction notification ID, typically a Webhook event ID.
+     *
+     * @param   string  $id     Transaction ID
+     * @return  object  $this
+     */
+    public function setTxnId(string $id) : self
+    {
+        $this->txn_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Get the payment notification (Webhook) event ID.
+     *
+     * @return  string      Transaction ID
+     */
+    public function getTxnId() : string
+    {
+        return $this->txn_id;
     }
 
 
@@ -443,6 +472,7 @@ class Payment
                ->setValue('pmt_comment', ':pmt_comment')
                ->setValue('pmt_status', ':pmt_status')
                ->setValue('is_complete', ':is_complete')
+               ->setValue('txn_id', ':txn_id')
                ->setValue('pmt_uid', ':pmt_uid');
         } else {
             $qb->update($_TABLES['shop.payments'])
@@ -457,6 +487,7 @@ class Payment
                ->set('pmt_status', ':pmt_status')
                ->set('is_complete', ':is_complete')
                ->set('pmt_uid', ':pmt_uid')
+               ->set('txn_id', ':txn_id')
                ->where('pmt_id = :pmt_id')
                ->setParameter('pmt_id', $this->pmt_id);
         }
@@ -470,6 +501,7 @@ class Payment
            ->setParameter('pmt_comment', $this->comment, Database::STRING)
            ->setParameter('pmt_status', $this->getStatus(), Database::STRING)
            ->setParameter('is_complete', $this->isComplete(), Database::INTEGER)
+           ->setParameter('txn_id', $this->getTxnId(), Database::STRING)
            ->setParameter('pmt_uid', $this->uid, Database::INTEGER);
         try {
             $qb->execute();

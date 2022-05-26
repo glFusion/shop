@@ -3,9 +3,9 @@
  * Database creation and update statements for the Shop plugin.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2009-2022 Lee Garner <lee@leegarner.com>
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -465,6 +465,25 @@ $_SQL = array(
   `gw_id` varchar(40) NOT NULL,
   `cust_id` varchar(128) DEFAULT NULL,
   PRIMARY KEY (`uid`,`gw_id`)
+) ENGINE=MyISAM",
+
+'shop.payments' => "CREATE TABLE `{$_TABLES['shop.payments']}` (
+  `pmt_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `pmt_order_id` varchar(40) DEFAULT NULL,
+  `pmt_ts` int(11) unsigned DEFAULT NULL,
+  `is_money` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  `pmt_gateway` varchar(12) DEFAULT NULL,
+  `pmt_amount` decimal(12,4) DEFAULT NULL,
+  `pmt_ref_id` varchar(255) DEFAULT NULL,
+  `pmt_method` varchar(32) DEFAULT NULL,
+  `pmt_comment` text DEFAULT NULL,
+  `is_complete` tinyint(1) unsigned NOT NULL DEFAULT 1,
+  `pmt_uid` int(11) unsigned NOT NULL DEFAULT 0,
+  `pmt_status` varchar(40) NOT NULL DEFAULT 'COMPLETED',
+  `txn_id` varchar(127) NOT NULL DEFAULT '',
+  PRIMARY KEY (`pmt_id`),
+  KEY `order_id` (`pmt_order_id`),
+  KEY `txn_id` (`txn_id`)
 ) ENGINE=MyISAM",
 );
 
@@ -948,6 +967,8 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
     "DROP TABLE {$_TABLES['shop.cache']}",
+    "ALTER TABLE {$_TABLES['shop.payments']} ADD `txn_id` varchar(127) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.payments']} ADD KEY `txn_id` (`txn_id`)",
 );
 
 
@@ -969,7 +990,6 @@ $_SQL['shop.features_values'] = $SHOP_UPGRADE['1.2.0'][1];
 $_SQL['shop.prodXfeat'] = $SHOP_UPGRADE['1.2.0'][2];
 $_SQL['shop.zone_rules'] = $SHOP_UPGRADE['1.2.0'][3];
 $_SQL['shop.packages'] = $SHOP_UPGRADE['1.3.0'][0];
-$_SQL['shop.payments'] = $SHOP_UPGRADE['1.3.0'][1];
 $_SQL['shop.affiliate_sales'] = $SHOP_UPGRADE['1.3.0'][3];
 $_SQL['shop.affiliate_saleitems'] = $SHOP_UPGRADE['1.3.0'][4];
 $_SQL['shop.affiliate_payments'] = $SHOP_UPGRADE['1.3.0'][5];

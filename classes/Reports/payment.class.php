@@ -14,6 +14,8 @@
 namespace Shop\Reports;
 use Shop\Currency;
 use Shop\FieldList;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -240,12 +242,20 @@ class payment extends \Shop\Report
         global $_TABLES, $_CONF, $LANG_SHOP;
 
         $pmt_id = (int)$pmt_id;
-        $sql = "SELECT * FROM {$_TABLES['shop.payments']} pmts
-            LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
-            ON ipn.txn_id = pmts.pmt_ref_id
-            WHERE pmts.pmt_id = '$pmt_id'";
-        $res = DB_query($sql);
-        $A = DB_fetchArray($res, false);
+        $db = Database::getInstance();
+        try {
+            $A = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.payments']} pmts
+                LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
+                ON ipn.txn_id = pmts.txn_id
+                WHERE pmts.pmt_id = ?",
+                array($pmt_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $A = false;
+        }
         if (empty($A)) {
             return "Nothing Found";
         }

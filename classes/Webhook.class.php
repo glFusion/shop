@@ -403,6 +403,7 @@ class Webhook
             ->setComment('Webhook ' . $this->getData()->id)
             ->setComplete(1)
             ->setStatus($this->getData()->type)
+            ->setTxnId($this->whID)
             ->setOrderID($this->getOrderID());
         $Payment->Save();
         // Get the latest order object for the new status and amt due.
