@@ -172,14 +172,14 @@ class IPN extends \Shop\Logger
         try {
             $db->conn->executeUpdate(
                 "INSERT INTO {$_TABLES['shop.ipnlog']} SET
-                ip_addr = '" . DB_escapeString($this->ip_addr) . "',
-                ts = UNIX_TIMESTAMP(),
-                verified = '$this->verified',
-                txn_id = '" . DB_escapeString($this->txn_id) . "',
-                gateway = '{$this->gw_id}',
-                event = '" . DB_escapeString($this->event) . "',
-                order_id = '" . DB_escapeString($this->order_id) . "',
-                ipn_data = '" . DB_escapeString($data) . "'",
+                ip_addr = ?,
+                ts = ?,
+                verified = ?,
+                txn_id = ?,
+                gateway = ?,
+                event = ?,
+                order_id = ?,
+                ipn_data = ?",
                 array(
                     $this->ip_addr, time(), $this->verified,
                     $this->txn_id, $this->gw_id, $this->event,
@@ -193,7 +193,7 @@ class IPN extends \Shop\Logger
             );
             return $db->conn->lastInsertId();
         } catch (\Exception $e) {
-            Log::write('shop_system', Log::ERROR, __METHOD__ . ": SQL error: $sql");
+            Log::write('shop_system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             return 0;
         }
     }
