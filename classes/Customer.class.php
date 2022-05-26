@@ -179,7 +179,7 @@ class Customer
      * @param   string  $cust_id    Gateway's reference ID
      * @return  object  $this
      */
-    public function setGatewayID($gw_id, $cust_id)
+    public function setGatewayId($gw_id, $cust_id)
     {
         global $_TABLES;
 
@@ -940,6 +940,41 @@ class Customer
         } else {
             return '';
         }
+    }
+
+
+    /**
+     * Parse a fullname string into component parts.
+     *
+     * @param   string  $name       Full name to parse
+     * @return  mixed       Array of parts, or specified format
+     */
+    public static function parseName(string $name, ?string $format=NULL)
+    {
+        $args = array(1 => $name);
+        if ($format !== NULL) {
+            $args[2] = $format;
+        }
+        $retval = PLG_callFunctionForOnePlugin(
+            'plugin_parseName_lglib',
+            $args,
+        );
+        if (empty($retval)) {
+            $p = explode(' ', $name);
+            $parts = array();
+            $parts['fname'] = $p[0];
+            $parts['lname'] = isset($p[1]) ? $p[1] : '';
+            if ($format == 'LCF') {
+                if (!empty($parts['lname'])) {
+                    $retval = $parts['lname'] . ', ' . $parts['fname'];
+                } else {
+                    $retval = $parts['fname'];
+                }
+            } else {
+                $retval = $parts;
+            }
+        }
+        return $retval;
     }
 
 }
