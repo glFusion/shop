@@ -97,17 +97,18 @@ class Payment
         if (is_array($A)) {
             $pmt_id = isset($A['pmt_id']) ? $A['pmt_id'] : 0;
             $this->setPmtID($pmt_id)
-                ->setRefID($A['pmt_ref_id'])
-                ->setAmount($A['pmt_amount'])
-                ->setTS($A['pmt_ts'])
-                ->setIsMoney($A['is_money'])
-                ->setGateway($A['pmt_gateway'])
-                ->setOrderID($A['pmt_order_id'])
-                ->setComment($A['pmt_comment'])
-                ->setMethod($A['pmt_method'])
-                ->setStatus($A['pmt_status'])
-                ->setComplete($A['is_complete'])
-                ->setUid($A['pmt_uid']);
+                 ->setRefID($A['pmt_ref_id'])
+                 ->setTxnId($A['txn_id'])
+                 ->setAmount($A['pmt_amount'])
+                 ->setTS($A['pmt_ts'])
+                 ->setIsMoney($A['is_money'])
+                 ->setGateway($A['pmt_gateway'])
+                 ->setOrderID($A['pmt_order_id'])
+                 ->setComment($A['pmt_comment'])
+                 ->setMethod($A['pmt_method'])
+                 ->setStatus($A['pmt_status'])
+                 ->setComplete($A['is_complete'])
+                 ->setUid($A['pmt_uid']);
         } else {
             $this->ts = time();
             $this->ref_id = COM_makeSid() . rand(100,999);
