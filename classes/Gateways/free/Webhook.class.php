@@ -108,7 +108,7 @@ class Webhook extends \Shop\Webhook
             } else {
                 SHOP_setMsg($LANG_SHOP['pmt_error']);
             }
-            COM_refresh(SHOP_URL . '/index.php');
+            echo COM_refresh(SHOP_URL . '/index.php');
             break;
         }
         return true;

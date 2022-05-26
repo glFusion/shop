@@ -40,12 +40,12 @@ if (!empty($order_id)) {
         $Order->setFinal();
         $redirect = $GW->confirmOrder($Order);
         if (!empty($redirect)) {
-            COM_refresh($redirect);
+            echo COM_refresh($redirect);
         } else {
-            COM_refresh(Shop\Config::get('url'));
+            echo COM_refresh(Shop\Config::get('url'));
         }
     }
 } else {
     SHOP_setMsg("There was an error processing your order");
-    COM_refresh(Shop\Config::get('url') . '/cart.php');
+    echo COM_refresh(Shop\Config::get('url') . '/cart.php');
 }

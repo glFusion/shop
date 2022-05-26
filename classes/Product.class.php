@@ -1157,7 +1157,7 @@ class Product
         } else {
             SHOP_setMsg($this->Errors, 'error');
             Log::write('shop_system', Log::ERROR, __METHOD__ . ": Update of product {$this->id} failed.");
-            COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
+            echo COM_refresh(SHOP_ADMIN_URL . '/index.php?return=products&editproduct=x&id=' . $this->id);
             return false;
         }
     }
@@ -3605,7 +3605,7 @@ class Product
 
         if (empty($ids)) {
             SHOP_setMsg("No products selected");
-            COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
+            echo COM_refresh(SHOP_ADMIN_URL . '/index.php?products');
         }
         $ids = implode(',', $ids);
         $T = new Template;

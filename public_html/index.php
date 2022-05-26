@@ -166,13 +166,13 @@ case 'addcartitem_x':   // using the image submit button, such as Shop's
         'extras' => isset($_POST['extras']) ? $_POST['extras'] : array(),
     ) );
     if (isset($_POST['_ret_url'])) {
-        COM_refresh($_POST['_ret_url']);
+        echo COM_refresh($_POST['_ret_url']);
         exit;
     } elseif (SHOP_is_plugin_item($$_POST['item_number'])) {
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     } else {
-        COM_refresh(SHOP_URL.'/detail.php?id='.$_POST['item_number']);
+        echo COM_refresh(SHOP_URL.'/detail.php?id='.$_POST['item_number']);
         exit;
     }
     break;
@@ -365,7 +365,7 @@ case 'viewcart':
     $cid = SHOP_getVar($_REQUEST, 'cid');
     if (!empty($cid)) {
         Shop\Cart::getInstance($cid)->setFinal('cart');
-        COM_refresh(SHOP_URL. '/index.php?view=cart');
+        echo COM_refresh(SHOP_URL. '/index.php?view=cart');
     }
     $menu_opt = $LANG_SHOP['viewcart'];
     $Cart = \Shop\Cart::getInstance();
@@ -373,7 +373,7 @@ case 'viewcart':
         $content .= $Cart->getView(0);
     } else {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
     break;

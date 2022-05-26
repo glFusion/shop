@@ -59,7 +59,7 @@ case 'gwupgrade':
     if ($GW->doUpgrade()) {
         SHOP_setMsg($LANG_SHOP['upgrade_ok']);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwupload':
@@ -69,7 +69,7 @@ case 'gwupload':
     } else {
         SHOP_setMsg("The gateway could not be uploaded");
     }
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwinstall':
@@ -82,7 +82,7 @@ case 'gwinstall':
             $msg[] = "Failed to install the \"$gwname\" gateway";
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwdelete':
@@ -91,7 +91,7 @@ case 'gwdelete':
         $gw->ClearButtonCache();
     }
     $status = \Shop\Gateway::Remove($_GET['id']);
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwsave':
@@ -100,12 +100,12 @@ case 'gwsave':
     if ($gw !== NULL) {
         $status = $gw->saveConfig($_POST);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwmove':
     \Shop\Gateway::moveRow($_GET['id'], $actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/gateways.php');
     break;
 
 case 'gwedit':

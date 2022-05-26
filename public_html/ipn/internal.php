@@ -27,7 +27,7 @@ if ($ipn) {
 }
 
 if (!isset($_GET['debug'])) {
-    COM_refresh(SHOP_URL . '/index.php?thanks');
+    echo COM_refresh(SHOP_URL . '/index.php?thanks');
 } else {
     echo 'Debug Finished';
 }

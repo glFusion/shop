@@ -83,7 +83,7 @@ class Webhook extends \Shop\Webhook
             $this->setVerified(true);
             return $retval;
         } else {
-            COM_refresh(Config::get('url'));
+            echo COM_refresh(Config::get('url'));
         }
     }
 
@@ -146,7 +146,7 @@ class Webhook extends \Shop\Webhook
                 SHOP_setMsg($LANG_SHOP['pmt_error']);
                 return false;
             }
-            COM_refresh(SHOP_URL . '/index.php');
+            echo COM_refresh(SHOP_URL . '/index.php');
             break;
         }
         return true;
@@ -160,7 +160,7 @@ class Webhook extends \Shop\Webhook
      */
     public function redirectAfterCompletion()
     {
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
     }
 
 }

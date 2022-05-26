@@ -32,7 +32,7 @@ if (
 if (COM_isAnonUser()) {
     SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
     SHOP_setMsg($LANG_SHOP['gc_need_acct']);
-    COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+    echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
     exit;
 }
 
@@ -124,7 +124,7 @@ case 'redeem':
     }
     // Redirect back to the provided view, or to the default page
     SHOP_setMsg($msg, $type, $persist);
-    COM_refresh(COM_buildUrl(
+    echo COM_refresh(COM_buildUrl(
         SHOP_URL . '/account.php?mode=couponlog'
     ) );
     break;
@@ -134,13 +134,13 @@ case 'delbutton_x':
     if (isset($_POST['delitem']) && is_array($_POST['delitem'])) {
         Shop\Address::deleteMulti($_POST['delitem']);
     }
-    COM_refresh(SHOP_URL . '/account.php?addresses');
+    echo COM_refresh(SHOP_URL . '/account.php?addresses');
     break;
 
 case 'deladdr':
     // Delete one single address
     Shop\Address::deleteMulti(array($id));
-    COM_refresh(SHOP_URL . '/account.php?addresses');
+    echo COM_refresh(SHOP_URL . '/account.php?addresses');
     break;
 
 case 'savevalidated':
@@ -175,13 +175,13 @@ case 'saveaddr':
     } else {
         SHOP_setMsg("Saving address failed");
     }
-    COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
+    echo COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
     break;
 
 case 'editaddr':
     $Addr = Shop\Address::getInstance($id);
     if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
-        COM_refresh(SHOP_URL . '/account.php?addresses');
+        echo COM_refresh(SHOP_URL . '/account.php?addresses');
     }
     $content .= Shop\Menu::User('none');
     $content .= $Addr->Edit();
@@ -223,7 +223,7 @@ default:
     if (COM_isAnonUser()) {
         SESS_setVar('login_referer', $_CONF['site_url'] . $_SERVER['REQUEST_URI']);
         SHOP_setMsg($LANG_SHOP['gc_need_acct']);
-        COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
+        echo COM_refresh($_CONF['site_url'] . '/users.php?mode=login');
         exit;
     }
 

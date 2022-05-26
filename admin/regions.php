@@ -67,7 +67,7 @@ case 'rule_add':
             break;
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?' . http_build_query($_GET));
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?' . http_build_query($_GET));
     break;
 
 case 'saveregion':
@@ -75,10 +75,10 @@ case 'saveregion':
     $R = Shop\Region::getInstance($_POST['region_id']);
     if ($R->Save($_POST)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
+        echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
     } else {
         SHOP_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/regions.php?editregion=' . $R->getID());
+        echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?editregion=' . $R->getID());
     }
     break;
 
@@ -87,7 +87,7 @@ case 'savecountry':
     $C = Shop\Country::getInstance($_POST['country_id']);
     if ($C->Save($_POST)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
+        echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
     } else {
         SHOP_setMsg($C->getErrors());
         $content = $C->Edit($_POST);
@@ -99,10 +99,10 @@ case 'savestate':
     $S = Shop\State::getInstance((int)$_POST['state_id']);
     if ($S->Save($_POST)) {
         SHOP_setMsg($LANG_SHOP['msg_updated']);
-        COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
+        echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
     } else {
         SHOP_setMsg($LANG_SHOP['msg_nochange']);
-        COM_refresh(SHOP_ADMIN_URL . '/regions.php?editstate=' . $S->getID());
+        echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?editstate=' . $S->getID());
     }
     break;
 
@@ -111,7 +111,7 @@ case 'ena_region':
     if (!empty($regions)) {
         Shop\Region::BulkToggle(0, 'region_enabled', $regions);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
     break;
 
 case 'disa_region':
@@ -119,7 +119,7 @@ case 'disa_region':
     if (!empty($regions)) {
         Shop\Region::BulkToggle(1, 'region_enabled', $regions);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?regions');
     break;
 
 
@@ -128,7 +128,7 @@ case 'ena_country':
     if (!empty($countries)) {
         Shop\Country::BulkToggle(0, 'country_enabled', $countries);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
     break;
 
 case 'disa_country':
@@ -136,7 +136,7 @@ case 'disa_country':
     if (!empty($countries)) {
         Shop\Country::BulkToggle(1, 'country_enabled', $countries);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?countries');
     break;
 
 case 'ena_state':
@@ -144,7 +144,7 @@ case 'ena_state':
     if (!empty($states)) {
         Shop\State::BulkToggle(0, 'state_enabled', $states);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
     break;
 
 case 'disa_state':
@@ -152,7 +152,7 @@ case 'disa_state':
     if (!empty($states)) {
         Shop\State::BulkToggle(1, 'state_enabled', $states);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
+    echo COM_refresh(SHOP_ADMIN_URL . '/regions.php?states');
     break;
 
 case 'editregion':

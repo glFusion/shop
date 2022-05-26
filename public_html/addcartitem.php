@@ -39,7 +39,7 @@ if (isset($_POST['item'])) {
     $opts = $_GET;
 } else {
     Log::write('shop_system', Log::ERROR, "Ajax addcartitem:: Missing Item Number");
-    COM_refresh($ret_url);
+    echo COM_refresh($ret_url);
 }
 
 // Set other fixed parameters.
@@ -83,7 +83,7 @@ if (isset($opts['options'])) {
 
 if (empty($item_number)) {
     COM_setMsg('Missing item number', 'error');
-    COM_refresh($ret_url);
+    echo COM_refresh($ret_url);
 }
 $Cart = Shop\Cart::getInstance();
 
@@ -117,4 +117,4 @@ if ($new_qty === false) {
 }
 $Cart->saveIfTainted();
 COM_setMsg($msg);
-COM_refresh($ret_url);
+echo COM_refresh($ret_url);

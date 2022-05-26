@@ -321,7 +321,7 @@ class Cart extends OrderBaseView
         global $_SHOP_CONF;
 
         if (!$this->Order->hasItems()) {
-            COM_refresh(Config::get('url'));
+            echo COM_refresh(Config::get('url'));
         }
 
         $retval = '';
@@ -524,7 +524,7 @@ class Cart extends OrderBaseView
     public function confirmCheckout()
     {
         if (!$this->Order->isCurrent()) {
-            COM_refresh(SHOP_URL . '/cart.php');
+            echo COM_refresh(SHOP_URL . '/cart.php');
         }
 
         $this->TPL = new Template('workflow/');

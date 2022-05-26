@@ -66,15 +66,15 @@ case 'save_viewcart':
     $Cart->Update($_POST);
     if (empty($Cart->getBuyerEmail())) {
         SHOP_setMsg($LANG_SHOP['err_missing_email'], 'error');
-        COM_refresh(SHOP_URL . '/cart.php');
+        echo COM_refresh(SHOP_URL . '/cart.php');
     }
     $wf = Shop\Workflow::getNextView('viewcart', $Cart);
-    COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
+    echo COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
     break;
 
 case 'update':
     Shop\Cart::getInstance()->Update($_POST);
-    COM_refresh(SHOP_URL . '/cart.php');
+    echo COM_refresh(SHOP_URL . '/cart.php');
     break;
 
 case 'delete':
@@ -82,9 +82,9 @@ case 'delete':
     $id = COM_getArgument('id');
     \Shop\Cart::getInstance()->Remove($id);
     if (isset($_GET['return']) && !empty($_GET['return'])) {
-        COM_refresh($_GET['return']);
+        echo COM_refresh($_GET['return']);
     } else {
-        COM_refresh(SHOP_URL . '/cart.php');
+        echo COM_refresh(SHOP_URL . '/cart.php');
     }
     break;
 
@@ -104,14 +104,14 @@ case 'save_payment':
     // Validate the cart items
     $invalid = $Cart->updateItems();
     if (!empty($invalid)) {
-        COM_refresh(SHOP_URL . '/cart.php');
+        echo COM_refresh(SHOP_URL . '/cart.php');
     }
 
     // Check that the cart has items. Could be empty if the session or login
     // has expired.
     if (!$Cart->hasItems()) {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
     if (empty($invalid)) {
@@ -123,7 +123,7 @@ case 'save_payment':
                 // Save to keep the instructions, email, etc.
                 $Cart->Save();
             }
-            COM_refresh(SHOP_URL . '/cart.php?' . $set_wf);
+            echo COM_refresh(SHOP_URL . '/cart.php?' . $set_wf);
         }
     }
     $Cart->Save(false);
@@ -132,7 +132,7 @@ case 'save_payment':
     if ($Cart->getUid() > 1) {
         Shop\Customer::getInstance()->setPrefGW($gwname)->saveUser();
     }
-    COM_refresh(SHOP_URL . '/cart.php?confirm');
+    echo COM_refresh(SHOP_URL . '/cart.php?confirm');
     break;
 
 case 'checkout':
@@ -144,14 +144,14 @@ case 'checkout':
     // Validate the cart items
     $invalid = $Cart->updateItems();
     if (!empty($invalid)) {
-        COM_refresh(SHOP_URL . '/cart.php');
+        echo COM_refresh(SHOP_URL . '/cart.php');
     }
 
     // Check that the cart has items. Could be empty if the session or login
     // has expired.
     if (!$Cart->hasItems()) {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
 /*
@@ -197,7 +197,7 @@ case 'checkout':
                 // Save to keep the instructions, email, etc.
                 $Cart->Save();
             }
-            COM_refresh(SHOP_URL . '/cart.php');
+            echo COM_refresh(SHOP_URL . '/cart.php');
         }
     }
 /*    if (isset($_POST['quantity'])) {
@@ -236,7 +236,7 @@ case 'save_shipping':
         );
         $Cart->setShipper($method);
     }*/
-    COM_refresh(SHOP_URL . '/cart.php?payment');
+    echo COM_refresh(SHOP_URL . '/cart.php?payment');
     break;
 
 case 'save_addresses':
@@ -276,7 +276,7 @@ case 'save_addresses':
         $Cart->Save(false);
     }
     $wf = Shop\Workflow::getNextView('addresses', $Cart);
-    COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
+    echo COM_refresh(SHOP_URL . '/cart.php?' . $wf->getName());
     break;
 
 case 'savebillto':
@@ -317,7 +317,7 @@ case 'saveshipto':
     //$next_step = SHOP_getVar($_POST, 'next_step', 'integer');
     //$content = $Cart->getView($next_step);
     //$content = $Cart->getView(0);
-    COM_refresh(SHOP_URL . '/cart.php');
+    echo COM_refresh(SHOP_URL . '/cart.php');
     $view = 'none';
     break;
 
@@ -341,7 +341,7 @@ case 'addresses':
     $Cart = Shop\Cart::getInstance();
     if (!$Cart->hasItems() || !$Cart->canView()) {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
     }
     $V = new Shop\Views\Cart;
     $content .= Shop\Menu::checkoutFlow($Cart, 'addresses');
@@ -383,14 +383,14 @@ case 'saveaddr':
         }
     }
     $Cart = Shop\Cart::getInstance();
-    COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
+    echo COM_refresh(Shop\URL::get(SHOP_getVar($_POST, 'return')));
     break;
 
 case 'editaddr':
     $Addr = Shop\Address::getInstance($id);
     if ($id > 0 && $Addr->getUid() != $_USER['uid']) {
         echo "her";die;
-        COM_refresh(SHOP_URL . '/account.php?addresses');
+        echo COM_refresh(SHOP_URL . '/account.php?addresses');
     }
     $content .= Shop\Menu::User('none');
     $content .= $Addr->Edit();
@@ -419,11 +419,11 @@ case 'shipping':
     $Cart = Shop\Cart::getInstance();
     if (!$Cart->hasItems() || !$Cart->canView()) {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
     }
     $addr_wf = Shop\Workflow::getInstance('addresses');
     if (!$addr_wf->isSatisfied($Cart)) {
-        COM_refresh(SHOP_URL . '/cart.php?addresses');
+        echo COM_refresh(SHOP_URL . '/cart.php?addresses');
     }
     $V = new Shop\Views\Cart;
     $content .= Shop\Menu::checkoutFlow($Cart, 'shipping');
@@ -434,11 +434,11 @@ case 'payment':
     $Cart = Shop\Cart::getInstance();
     $addr_wf = Shop\Workflow::getInstance('addresses');
     if (!$addr_wf->isSatisfied($Cart)) {
-        COM_refresh(SHOP_URL . '/cart.php?addresses');
+        echo COM_refresh(SHOP_URL . '/cart.php?addresses');
     }
     $ship_wf = Shop\Workflow::getInstance('shipping');
     if (!$ship_wf->isSatisfied($Cart)) {
-        COM_refresh(SHOP_URL . '/cart.php?shipping');
+        echo COM_refresh(SHOP_URL . '/cart.php?shipping');
     }
     if ($Cart->getPmtMethod() == '') {
         // Set the payment method to the customer's preferred method
@@ -456,7 +456,7 @@ case 'confirm':
     $Cart = Shop\Cart::getInstance();
     $wf_needed = Shop\Workflow::findFirstNeeded($Cart);
     if (!empty($wf_needed) && $wf_needed != 'confirm') {
-        COM_refresh(SHOP_URL . '/cart.php?' . $wf_needed);
+        echo COM_refresh(SHOP_URL . '/cart.php?' . $wf_needed);
     }
     $V = new Shop\Views\Cart;
     $content .= Shop\Menu::checkoutFlow($Cart, 'confirm');
@@ -493,14 +493,14 @@ default:
     $Cart->validateDiscountCode();
     if (!empty($invalid)) {
         // Items have been removed, refresh to update and view the info msg.
-        COM_refresh(SHOP_URL . '/cart.php');
+        echo COM_refresh(SHOP_URL . '/cart.php');
     }
     if ($Cart->hasItems() && $Cart->canView()) {
         $content .= Shop\Menu::checkoutFlow($Cart, 'viewcart');
         $content .= $Cart->getView(0);
     } else {
         SHOP_setMsg($LANG_SHOP['cart_empty']);
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         exit;
     }
     break;

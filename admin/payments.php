@@ -72,13 +72,13 @@ case 'savepayment':
         ->setIsMoney(isset($_POST['is_money']) ? 1 : 0)
         ->setComment($_POST['comment']);
     $Pmt->Save();
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_POST['order_id']);
     break;
 
 case 'delete':
 case 'delpayment':
     Shop\Payment::delete($actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
+    echo COM_refresh(SHOP_ADMIN_URL . '/payments.php?payments=' . $_GET['order_id']);
     break;
 
 default:

@@ -143,7 +143,7 @@ class ipn extends \Shop\IPN
         $this->handlePurchase();
         $this->Log(true);
         SHOP_setMsg('Thank youi for your order.');
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
         return true;
     }
 

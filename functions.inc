@@ -331,7 +331,7 @@ function plugin_deletecomment_shop($cid, $id)
  */
 function plugin_editcomment_shop($cid, $id)
 {
-    COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
+    echo COM_refresh(Config::get('url') . '/detail.php?id=' . $id);
     exit;
 }
 

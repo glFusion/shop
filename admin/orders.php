@@ -64,7 +64,7 @@ case 'delete':
     $S = new Shop\Shipment($actionval);
     $S->Delete();
     $url = SHOP_getUrl(SHOP_ADMIN_URL . '/shipments.php');
-    COM_refresh($url);
+    echo COM_refresh($url);
     break;
 
 case 'updstatus':

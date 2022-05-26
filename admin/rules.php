@@ -66,14 +66,14 @@ case 'rule_add':
             break;
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php');
     break;
 
 case 'rule_del':
     if ($actionval) {
         Shop\Rules\Zone::deleteRule($actionval);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
 case 'delbutton_x':
@@ -83,7 +83,7 @@ case 'delbutton_x':
             Shop\Rules\Zone::deleteRule($opt_id);
         }
     }
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php');
     break;
 
 case 'rule_save':
@@ -101,7 +101,7 @@ case 'rule_save':
         }
     }
     $Rule->Save($_POST);
-    COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
+    echo COM_refresh(SHOP_ADMIN_URL . '/rules.php?zr_list');
     break;
 
 case 'rule_edit':

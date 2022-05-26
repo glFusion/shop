@@ -125,7 +125,7 @@ class Webhook extends \Shop\Webhook
      */
     public function redirectAfterCompletion()
     {
-        COM_refresh(SHOP_URL . '/index.php');
+        echo COM_refresh(SHOP_URL . '/index.php');
     }
 
 }

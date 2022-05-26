@@ -55,7 +55,7 @@ foreach($expected as $provided) {
 switch ($action) {
 case 'pkgdelete':
     Shop\Package::Delete($actionval);
-    COM_refresh(SHOP_ADMIN_URL . '/packages.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
 
 case 'pkgsave':
@@ -64,7 +64,7 @@ case 'pkgsave':
     if ($Pkg !== NULL) {
         $status = $Pkg->Save($_POST);
     }
-    COM_refresh(SHOP_ADMIN_URL . '/packages.php');
+    echo COM_refresh(SHOP_ADMIN_URL . '/packages.php');
     break;
 
 case 'pkgedit':
