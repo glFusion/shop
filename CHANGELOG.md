@@ -23,6 +23,7 @@ Release TBD
   * Implement product rules to limit shippers (#69).
     * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
   * Leverage glFusion 2.0.0+ Log class.
+  * Save actual IPN/Webhook event ID with payment record for linking.
 
 ## v1.4.1
 Release 2022-04-07
