@@ -4125,45 +4125,72 @@ class Order
         if ($years == 0) {
             return 0;
         }
+        $action = Config::get('redact_action');
 
         $order_states = array_keys(OrderState::allAtLeast(OrderState::CLOSED));
         $cutoff = time() - ($years * 31536000); // convert to int timestamp
         $db = Database::getInstance();
         $qb = $db->conn->createQueryBuilder();
-        try {
-            $rows = $qb->update($_TABLES['shop.orders'])
-                       ->set('uid', 0)
-                       ->set('billto_id', -1)
-                       ->set('billto_name', ':redacted')
-                       ->set('billto_company', ':redacted')
-                       ->set('billto_address1', ':redacted')
-                       ->set('billto_address2', ':redacted')
-                       ->set('billto_city', ':redacted')
-                       ->set('billto_state', ':redacted')
-                       ->set('billto_country', ':redacted')
-                       ->set('billto_zip', ':redacted')
-                       ->set('billto_phone', ':redacted')
-                       ->set('shipto_id', -1)
-                       ->set('shipto_name', ':redacted')
-                       ->set('shipto_company', ':redacted')
-                       ->set('shipto_address1', ':redacted')
-                       ->set('shipto_address2', ':redacted')
-                       ->set('shipto_city', ':redacted')
-                       ->set('shipto_state', ':redacted')
-                       ->set('shipto_country', ':redacted')
-                       ->set('shipto_zip', ':redacted')
-                       ->set('shipto_phone', ':redacted')
-                       ->set('buyer_email', ':redacted')
-                       ->where('uid = 1')   // deleted users converted to anon already
-                       ->andWhere('UNIX_TIMESTAMP(last_mod) < :cutoff')
-                       ->andWhere('status IN (:states)')
-                       ->setParameter('cutoff', $cutoff, Database::INTEGER)
-                       ->setParameter('redacted', $LANG_SHOP['redacted'], Database::STRING)
-                       ->setParameter('states', $order_states, Database::PARAM_STR_ARRAY)
-                       ->execute();
-        } catch (\Exception $e) {
-            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+
+        switch ($action) {
+        case 'purge':
             $rows = 0;
+            try {
+                $ids = $db->conn->executeQuery(
+                    "SELECT id FROM {$_TABLES['shop.orders']}
+                    WHERE UNIX_TIMESTAMP(last_mod) < ?
+                    AND status IN (?)",
+                    array($cutoff, $order_states),
+                    array(Database::INTEGER, Database::PARAM_INT_ARRAY)
+                )->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $ids = false;
+            }
+            if (is_array($ids)) {
+                $rows = count($ids);
+                foreach ($ids as $id) {
+                    self::Delete($id);
+                }
+            }
+            break;
+        default:
+            try {
+                $rows = $qb->update($_TABLES['shop.orders'])
+                           ->set('uid', 0)
+                           ->set('billto_id', -1)
+                           ->set('billto_name', ':redacted')
+                           ->set('billto_company', ':redacted')
+                           ->set('billto_address1', ':redacted')
+                           ->set('billto_address2', ':redacted')
+                           ->set('billto_city', ':redacted')
+                           ->set('billto_state', ':redacted')
+                           ->set('billto_country', ':redacted')
+                           ->set('billto_zip', ':redacted')
+                           ->set('billto_phone', ':redacted')
+                           ->set('shipto_id', -1)
+                           ->set('shipto_name', ':redacted')
+                           ->set('shipto_company', ':redacted')
+                           ->set('shipto_address1', ':redacted')
+                           ->set('shipto_address2', ':redacted')
+                           ->set('shipto_city', ':redacted')
+                           ->set('shipto_state', ':redacted')
+                           ->set('shipto_country', ':redacted')
+                           ->set('shipto_zip', ':redacted')
+                           ->set('shipto_phone', ':redacted')
+                           ->set('buyer_email', ':redacted')
+                           ->where('uid = 1')   // deleted users converted to anon already
+                           ->andWhere('UNIX_TIMESTAMP(last_mod) < :cutoff')
+                           ->andWhere('status IN (:states)')
+                           ->setParameter('cutoff', $cutoff, Database::INTEGER)
+                           ->setParameter('redacted', $LANG_SHOP['redacted'], Database::STRING)
+                           ->setParameter('states', $order_states, Database::PARAM_STR_ARRAY)
+                           ->execute();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $rows = 0;
+            }
+            break;
         }
         return $rows;
     }

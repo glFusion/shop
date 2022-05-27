@@ -25,6 +25,7 @@ Release TBD
   * Leverage glFusion 2.0.0+ Log class.
   * Save actual IPN/Webhook event ID with payment record for linking.
   * Control catalog block display via CSS, remove column setting.
+  * Add option to purge orders or redact PII after some years.
 
 ## v1.4.1
 Release 2022-04-07

@@ -929,8 +929,8 @@ $LANG_confignames['shop'] = array(
     'days_purge_cart' => 'Days before purging carts',
     'days_purge_pending' => 'Days before purging unpaid orders',
     'years_redact_data' => 'Years before redacting data for deleted users',
+    'redact_action' => 'Action taken on redacted orders',
     'purge_sale_prices' => 'Purge Expired Sale Prices?',
-    'catalog_columns' => 'Catalog Columns',
     'enable_svc_funcs' => 'Enable Service Functions',
     'shop_enabled'  => 'Enable public access?',
     'catalog_enabled'  => 'Enable Catalog?',
@@ -1165,5 +1165,9 @@ $LANG_configselects['shop'] = array(
     24 => array(
         'All Users' => 'allusers',
         'Customers' => 'customers',
+    ),
+    25 => array(
+        'purge' => 'Purge Orders',
+        'redact' => 'Redact PII',
     ),
 );
