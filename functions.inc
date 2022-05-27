@@ -394,7 +394,7 @@ function plugin_getadminoption_shop()
         return array(
             $_SHOP_CONF['pi_display_name'],
             Config::get('admin_url') . '/index.php',
-            DB_count($_TABLES['shop.products']),
+            0
         );
     }
 }
