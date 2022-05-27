@@ -948,7 +948,7 @@ $SHOP_UPGRADE['1.3.1'] = array(
 );
 $SHOP_UPGRADE['1.5.0'] = array(
     "CREATE TABLE `{$_TABLES['shop.product_rules']}` (
-      `pr_id` int(11) unsigned NOT NULL,
+      `pr_id` int(11) unsigned NOT NULL AUTO_INCREMENT,
       `pr_name` varchar(40) DEFAULT NULL,
       `pr_dscp` varchar(255) DEFAULT NULL,
       `pr_hazmat` tinyint(1) unsigned NOT NULL DEFAULT 0,

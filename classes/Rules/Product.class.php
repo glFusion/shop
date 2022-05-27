@@ -12,13 +12,14 @@
  * @filesource
  */
 namespace Shop\Rules;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Product as ProductClass;
 use Shop\Category;
 use Shop\Shipper;
 use Shop\Cache;
 use Shop\FieldList;
 use Shop\Template;
-use Shop\Log;
 
 
 /**
@@ -123,7 +124,7 @@ class Product
             if (count($Cats) > 0) {
                 foreach ($Cats as $Cat) {
                     if ($Cat->getProductRuleId() > 0) {
-                        $retval[$Product->getProductRuleId()] = new self($Cat->getProductRuleId());
+                        $retval[$Cat->getProductRuleId()] = new self($Cat->getProductRuleId());
                     }
                 }
             }
@@ -179,17 +180,22 @@ class Product
     {
         global $_SHOP_CONF, $_TABLES;
 
-        $sql = "SELECT * FROM {$_TABLES['shop.product_rules']} pr
-            WHERE pr_id = $rec_id";
-            //LEFT JOIN {$_TABLES['shop.zone_rules']} zr ON zr.rule_id = pr.pr_zone_rule
-        $res = DB_query($sql);
-        if ($res && DB_numRows($res) == 1) {
-            $A = DB_fetchArray($res, false);
-            $this->setVars($A, true);
-            //$this->ZoneRule = new Zon
+        $db = Database::getInstance();
+        try {
+            $data = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.product_rules']} pr
+                WHERE pr_id = ?",
+                array($rec_id),
+                array(Database::INTEGER)
+            )->fetchAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $data = false;
+        }
+        if (is_array($data)) {
+            $this->setVars($data, true);
             return true;
         } else {
-            // Create a dummy Stock object to avoid errors with NULL.
             return false;
         }
     }
@@ -215,7 +221,7 @@ class Product
         if ($fromDB) {
             $shipper_ids = json_decode($A['pr_shipper_ids'], true);
         } else {
-            $shipper_ids = SHOP_getVar($A, 'pr_shipper_ids', 'array');
+            $shipper_ids = (array)SHOP_getVar($A, 'pr_shipper_ids', 'array');
         }
         $this->setShipperIds($shipper_ids);
         return $this;
@@ -324,8 +330,11 @@ class Product
      * @param   array   $ids    Array of ID numbers
      * @return  object  $this
      */
-    public function setShipperIds(array $ids) : self
+    public function setShipperIds(?array $ids=NULL) : self
     {
+        if (!$ids) {
+            $ids = array();
+        }
         $this->shipper_ids = $ids;
         return $this;
     }
@@ -397,31 +406,38 @@ class Product
             $this->setVars($A, false);
         }
 
+        $db = Database::getInstance();
+        $qb = $db->conn->createQueryBuilder();
         if ($this->id == 0) {
-            $sql1 = "INSERT INTO {$_TABLES['shop.product_rules']} SET ";
-            $sql3 = '';
+            $qb->insert($_TABLES['shop.product_rules'])
+               ->setValue('pr_name', ':name')
+               ->setValue('pr_dscp', ':dscp')
+               ->setValue('pr_shipper_ids', ':shipper_ids')
+               ->setValue('pr_hazmat', ':is_hazmat');
         } else {
-            $sql1 = "UPDATE {$_TABLES['shop.product_rules']} SET ";
-            $sql3 = " WHERE pr_id = '{$this->id}'";
+            $qb->update($_TABLES['shop.product_rules'])
+               ->set('pr_name', ':name')
+               ->set('pr_dscp', ':dscp')
+               ->set('pr_shipper_ids', ':shipper_ids')
+               ->set('pr_hazmat', ':is_hazmat')
+               ->where('pr_id = :id');
         }
-        $sql2 = "pr_name = '" . DB_escapeString($this->name) . "',
-            pr_dscp = '" . DB_escapeString($this->dscp) . "',
-            pr_shipper_ids = '" . DB_escapeString(json_encode($this->shipper_ids)) . "',
-            pr_hazmat = {$this->is_hazmat}";
-        $sql = $sql1 . $sql2 . $sql3;
-        //echo $sql;die;
-        Log::write('shop_system', Log::DEBUG, $sql);
-        DB_query($sql);
-        if (!DB_error()) {
-            if ($this->id == 0) {
-                $this->id = DB_insertID();
-            }
-            $retval = true;
-        } else {
-            $retval = false;;
+        try {
+            $qb->setParameter('name', $this->name, Database::STRING)
+               ->setParameter('dscp', $this->dscp, Database::STRING)
+               ->setParameter('shipper_ids', json_encode($this->shipper_ids), DATABASE::STRING)
+               ->setParameter('is_hazmat', $this->is_hazmat, Database::INTEGER)
+               ->setParameter('id', $this->id, Database::INTEGER)
+               ->execute();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            return false;
+        }
+        if ($this->id == 0) {
+            $this->id = $db->conn->lastInsertId();
         }
         Cache::clear(self::TAG);
-        return $retval;
+        return true;
     }
 
 
@@ -434,10 +450,26 @@ class Product
     {
         global $_TABLES;
 
-        $id = (int)$id;
-        DB_delete($_TABLES['shop.product_rules'], 'pr_id', $id);
-        DB_query("UPDATE {$_TABLES['products']} SET prod_class = 0 WHERE prod_class = $id");
-        DB_query("UPDATE {$_TABLES['categories']} SET prod_class = 0 WHERE prod_class = $id");
+        $db = Database::getInstance();
+        try {
+            $db->conn->delete(
+                $_TABLES['shop.product_rules'],
+                array('pr_id' => $id),
+                array(Database::INTEGER)
+            );
+            $db->conn->executeStatement(
+                "UPDATE {$_TABLES['shop.products']} SET prod_rule = 0 WHERE prod_rule = ?",
+                array($id),
+                array(Database::INTEGER)
+            );
+            $db->conn->executeUpdate(
+                "UPDATE {$_TABLES['shop.categories']} SET prod_rule = 0 WHERE prod_rule = ?",
+                array($id),
+                array(Database::INTEGER)
+            );
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+        }
         Cache::clear(self::TAG);
     }
 
