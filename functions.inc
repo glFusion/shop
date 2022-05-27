@@ -102,7 +102,7 @@ Log::config('shop_system',
     array(
       'type'  => 'file',
       'path'  => $_CONF['path_log'],
-      'file'  => 'system.log',
+      'file'  => 'shop_system.log',
       'level' => Config::get('log_level'),
     )
 );
