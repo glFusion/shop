@@ -156,8 +156,8 @@ class Product
                     $retval = new self;
                     foreach ($Cats as $Cat) {
                         if ($Cat->getProductRuleId() > 0) {
-                            $PC = new self($Cat->getProductRuleId());
-                            $retval->Merge($PC);
+                            $Rule = new self($Cat->getProductRuleId());
+                            $retval->Merge($Rule);
                         }
                     }
 
@@ -488,18 +488,18 @@ class Product
     /**
      * Merge another product class into this one to restrict further.
      *
-     * @param   object  $PC     Product Rule object
+     * @param   object  $Rule   Product Rule object
      * @return  void
      */
-    public function Merge(self $PC) : void
+    public function Merge(self $Rule) : void
     {
-        if ($PC->isHazmat()) {
+        if ($Rule->isHazmat()) {
             $this->is_hazmat= 1;
         }
         if (empty($this->shipper_ids)) {
-            $this->shipper_ids = $PC->getShipperIds();
-        } elseif (!empty($PC->getShipperIds())) {
-            $this->shipper_ids = array_intersect($this->shipper_ids, $PC->getShipperIds());
+            $this->shipper_ids = $Rule->getShipperIds();
+        } elseif (!empty($Rule->getShipperIds())) {
+            $this->shipper_ids = array_intersect($this->shipper_ids, $Rule->getShipperIds());
         }
     }
 
