@@ -24,6 +24,7 @@ Release TBD
     * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
   * Leverage glFusion 2.0.0+ Log class.
   * Save actual IPN/Webhook event ID with payment record for linking.
+  * Control catalog block display via CSS, remove column setting.
 
 ## v1.4.1
 Release 2022-04-07

@@ -398,7 +398,6 @@ class Catalog
             'tpl_ver'       => $_SHOP_CONF['list_tpl_ver'],
             'sortby_options' => $sortby_options,
             'sortby'        => $sortby,
-            'table_columns' => $_SHOP_CONF['catalog_columns'],
             'cat_id'        => $this->cat_id == 0 ? '' : $this->cat_id,
             'brand_id'      => $this->brand_id,
             'prod_by_brand' => $prod_by_brand,

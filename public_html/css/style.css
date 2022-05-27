@@ -295,6 +295,9 @@ li.shopListItemBlock a,
 li.shopListItemBlock a:hover {
     text-decoration: none;
 }
+li.shopListItemBlock {
+	width: 175px;
+}
 
 .shopProductListItemUrl2 div.ratingbar,
 .shopRatingBar {

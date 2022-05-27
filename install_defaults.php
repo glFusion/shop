@@ -109,17 +109,6 @@ $shopConfigData = array(
         'group' => 'shop',
     ),
     array(
-        'name' => 'catalog_columns',
-        'default_value' => '5',
-        'type' => 'text',
-        'subgroup' => 0,
-        'fieldset' => 0,
-        'selection_array' => 0,
-        'sort' => 80,
-        'set' => true,
-        'group' => 'shop',
-    ),
-    array(
         'name' => 'show_plugins',
         'default_value' => '0',
         'type' => 'select',
