@@ -1049,7 +1049,7 @@ class ProductVariant
      * @param   array   $A  Optional array of data to save
      * @return  boolean     True on success, False on DB error
      */
-    public function Save($A= NULL)
+    public function Save(?array $A= NULL) : bool
     {
         global $_TABLES;
 
@@ -1235,12 +1235,11 @@ class ProductVariant
      * @param   array   $ids    Array of image record IDs
      * @return  object  $this
      */
-    public function setImageIDs($ids)
+    public function setImageIDs($ids=NULL) : self
     {
         if ($ids === NULL) {
-            return $this;
-        }
-        if (is_string($ids)) {
+            $ids = array();
+        } elseif (is_string($ids)) {
             $ids = explode(',', $ids);
         }
         $this->images = array_filter($ids, 'intval');
