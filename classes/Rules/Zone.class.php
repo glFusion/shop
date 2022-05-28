@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop\Rules;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 use Shop\Region;
 use Shop\Country;
 use Shop\State;
@@ -111,19 +113,35 @@ class Zone
     /**
      * Get all rule records from the database.
      *
+     * @param   boolean $enabled    True to return only enabled rules
      * @return  array       Array of Rule objects.
      */
-    public static function getAll()
+    public static function getAll(?bool $enabled=NULL) : array
     {
         global $_TABLES;
 
         static $Rules = NULL;
         if ($Rules === NULL) {
-            $sql = "SELECT * FROM {$_TABLES['shop.zone_rules']}
-                ORDER BY rule_id ASC";
-            $res = DB_query($sql);
-            while ($A = DB_fetchArray($res, false)) {
-                $Rules[$A['rule_id']] = new self($A);
+            $Rules = array();
+            $db = Database::getInstance();
+            $qb = $db->conn->createQueryBuilder();
+            try {
+                $qb->select('*')
+                   ->from($_TABLES['shop.zone_rules'])
+                   ->orderBy('rule_id', 'ASC');
+                if ($enabled) {
+                    $qb->where('enabled = :enabled')
+                       ->setParameter('enabled', 1, Database::INTEGER);
+                }
+                $data = $qb->execute()->fetchAllAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $data = false;
+            }
+            if (is_array($data)) {
+                foreach ($data as $A) {
+                    $Rules[$A['rule_id']] = new self($A);
+                }
             }
         }
         return $Rules;

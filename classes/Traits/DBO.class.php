@@ -13,6 +13,7 @@
  */
 namespace Shop\Traits;
 use Shop\Log;
+use Shop\Cache;
 
 
 /**
@@ -137,6 +138,7 @@ trait DBO
             Log::write('shop_system', Log::ERROR, "SQL error: $sql");
             return $oldvalue;
         } else {
+            Cache::clear(self::$TABLE);
             return $newvalue;
         }
     }

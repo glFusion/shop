@@ -3628,7 +3628,7 @@ class Order
         $this->hasInvalid = false;
         foreach ($this->Items as $id=>$Item) {
             $Product = $Item->getProduct();
-            $Rule = $Product->getRule();
+            $Rule = $Product->getEffectiveZoneRule();
             if ($Product->isPhysical()) {
                 $status = $Rule->isOK($this->getShipto());
             } else {

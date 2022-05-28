@@ -1353,7 +1353,7 @@ class Category
      *
      * @return  integer     Zone rule ID
      */
-    public function getEffectiveZoneRule() : int
+    public function getEffectiveZoneRuleId() : int
     {
         $retval = 0;
         if ($this->getRuleID() > 0) {

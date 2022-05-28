@@ -26,6 +26,7 @@ Release TBD
   * Save actual IPN/Webhook event ID with payment record for linking.
   * Control catalog block display via CSS, remove column setting.
   * Add option to purge orders or redact PII after some years.
+  * Fix getting actual enabled zone rule for a product.
 
 ## v1.4.1
 Release 2022-04-07

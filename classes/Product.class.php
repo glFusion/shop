@@ -888,55 +888,52 @@ class Product
 
 
     /**
-     * Get the zone rule ID.
+     * Get the effective zone rule.
      * Looks first for a rule affecting this specific product. If none found,
      * recurse backwards through the categories to determine if any has a
-     * rule set. First non-zero rule ID is returned.
+     * rule set. First enabled rule is returned.
      *
      * @param   boolean $incl_prod  True to include the product rule
      * @return  integer     Rule record ID
      */
-    public function getEffectiveRuleID($incl_prod=true)
+    public function getEffectiveZoneRule($incl_prod=true) : Rules\Zone
     {
-        $retval = 0;
-        if ($this->zone_rule > 0 && $incl_prod) {
-            $retval = $this->zone_rule;
-        } else {
-            $cache_key = 'prod_eff_rule_id_' . $this->id;
-            $retval = Cache::get($cache_key);
-            if ($retval === NULL) {
-                $Cats = $this->getCategories();
-                $Cats = array_reverse($Cats, true);
-                foreach ($Cats as $Cat) {
-                    $retval = $Cat->getEffectiveZoneRule();
-                    if ($retval > 0) {
-                        // Found a rule, no need to look further
-                        break;
+        if ($this->_ZoneRule === NULL) {
+            $Rules = Rules\Zone::getAll(true);
+            if (
+                $incl_prod &&
+                $this->zone_rule > 0 &&
+                isset($Rules[$this->zone_rule])
+            ) {
+                $this->_ZoneRule = $Rules[$this->zone_rule];
+            } else {
+                $cache_key = 'prod_eff_rule_' . $this->id;
+                $this->_ZoneRule = Cache::get($cache_key);
+                if ($this->_ZoneRule === NULL) {
+                    $Cats = $this->getCategories();
+                    $Cats = array_reverse($Cats, true);
+                    foreach ($Cats as $Cat) {
+                        $rule_id = $Cat->getEffectiveZoneRuleId();
+                        if (
+                            $rule_id > 0 &&
+                            isset($Rules[$rule_id])
+                        ) {
+                            // Found a rule, no need to look further
+                            $this->_ZoneRule = $Rules[$rule_id];
+                            break;
+                        }
                     }
                 }
             }
-            Cache::set($cache_key, $retval, array('categories', 'products'));
-        }
-        return (int)$retval;
-    }
-
-
-    /**
-     * Get the zone rule object.
-     *
-     * @return  object      Rule object
-     */
-    public function getRule()
-    {
-        if ($this->_ZoneRule === NULL) {
-            if ($this->getEffectiveRuleID() > 0) {
-                $this->_ZoneRule = Rules\Zone::getInstance($this->getEffectiveRuleID());
-            } else {
+            if ($this->_ZoneRule === NULL) {
+                // Final check to make sure there's a valid rule object returned.
                 $this->_ZoneRule = new Rules\Zone;
             }
+            Cache::set($cache_key, $this->_ZoneRule, array('categories', 'products', 'shop.zone_rules'));
         }
         return $this->_ZoneRule;
     }
+
 
 
     /**
@@ -1940,7 +1937,7 @@ class Product
         }
 
         $Features = $this->getFeatures();
-        $zonerule_dscp = $this->getRule()->getDscp();
+        $zonerule_dscp = $this->getEffectiveZoneRule()->getDscp();
         $T->set_block('prod_info', 'FeatList', 'FL');
         foreach ($Features as $FT) {
             $T->set_var(array(
@@ -2123,7 +2120,7 @@ class Product
         // in the buyer's location.
         // Physical item rule checks are done during checkout after the
         // shipping address is known.
-        if ($this->isDownload() && !$this->getRule()->isOK()) {
+        if ($this->isDownload() && !$this->getEffectiveZoneRule()->isOK()) {
             return $buttons;
         }
 
