@@ -1120,3 +1120,6 @@ div.cart-item {
 	cursor: pointer;
 }
 
+div.shopIpnLog a {
+	text-decoration: none;
+}

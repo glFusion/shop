@@ -12,18 +12,26 @@
 <!-- END DataBlock -->
 </table>
 
+{!if ipn_count}
 <b>{$LANG_SHOP['ipn_data']}:</b>
+<div class="shopIpnLog">
 <!-- BEGIN ipnRows -->
-<div>
-	<a data-uk-toggle="{target:'#ipn{ipn_id}'}">
-	{ipn_event}
+	<a data-uk-toggle="{target:'.toggle_ipn{ipn_id}'}">
+		<div class="uk-alert">
+			<div class="uk-margin-right tooltip" title="Click to view" style="display:inline;">
+				<i class="uk-icon uk-icon-compress toggle_ipn{ipn_id} uk-hidden"></i>
+				<i class="uk-icon uk-icon-expand toggle_ipn{ipn_id}"></i>
+			</div>
+			{ipn_date} {ipn_event}
+		</div>
 	</a>
-</div>
-<div id="ipn{ipn_id}" class="uk-hidden">
-<pre>{ipn_data}</pre>
-</div>
+	<div class="toggle_ipn{ipn_id} uk-hidden">
+		<pre>{ipn_data}</pre>
+	</div>
 <!-- END ipnRows -->
 {!if single_ipn}
 <pre>{single_ipn}</pre>
 {!endif}
+{!endif}
+</div>
 {# end {templatelocation} #}

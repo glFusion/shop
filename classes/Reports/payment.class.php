@@ -272,6 +272,11 @@ class payment extends \Shop\Report
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $ipns = false;
         }
+        if (is_array($ipns)) {
+            $ipn_count = count($ipns);
+        } else {
+            $ipn_count = 0;
+        }
 
         // Allow all json-encoded data to be available to the template
         $gw = Gateway::create($A['pmt_gateway']);
@@ -286,23 +291,31 @@ class payment extends \Shop\Report
                 'txn_id'    => $A['pmt_ref_id'],
                 'gateway'   => $A['pmt_gateway'],
                 'comment'   => $A['pmt_comment'],
+                'ipn_count' => $ipn_count,
             ) );
 
-            if (!empty($ipns)) {
-                if (count($ipns) > 1) {
-                    $T->set_block('report', 'ipnRows', 'ipnRow');
-                    foreach ($ipns as $ipn) {
-                        $T->set_var(array(
-                            'ipn_id' => $ipn['id'],
-                            'ipn_event' => $ipn['event'],
-                            'ipn_data' => print_r(json_decode($ipn['ipn_data'], true), true),
-                        ) );
-                        $T->parse('ipnRow', 'ipnRows', true);
-                    }
-                } else {
-                    // Set the one ipn not in a dropdown block
-                    $T->set_var('single_ipn', print_r(json_decode($ipns[0]['ipn_data'], true), true));
+            switch ($ipn_count) {
+            case 0:
+                // Nothing to display
+                break;
+            case 1:
+                // Set the single ipn on the page, not in a dropdown block
+                $T->set_var('single_ipn', print_r(json_decode($ipns[0]['ipn_data'], true), true));
+                break;
+            default:
+                // Show the clickable links to expand each IPN log
+                $T->set_block('report', 'ipnRows', 'ipnRow');
+                foreach ($ipns as $ipn) {
+                    $dt = new \Date($ipn['ts']);
+                    $T->set_var(array(
+                        'ipn_id' => $ipn['id'],
+                        'ipn_date' => $dt->toMySQL(true),
+                        'ipn_event' => $ipn['event'],
+                        'ipn_data' => print_r(json_decode($ipn['ipn_data'], true), true),
+                    ) );
+                    $T->parse('ipnRow', 'ipnRows', true);
                 }
+                break;
             }
             $retval = $T->parse('output', 'report');
         }
