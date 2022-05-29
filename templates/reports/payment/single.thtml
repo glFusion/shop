@@ -1,15 +1,13 @@
 {# begin {templatelocation} #}
 <h1 style="text-align:center;">{$LANG_SHOP['pmt_detail']}</h1>
 <table class="uk-table" border="0">
-    <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{pmt_id}</td></tr>
-    <tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}<br /></td></tr>
-    <tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}<br /></td></tr>
-    <tr><td><b>{$LANG_SHOP['comment']}:</b></td><td>{comment}<br /></td></tr>
-<!-- BEGIN DataBlock -->
-  <tr><td><b>{prompt}:</b></td><td>{value}</td></tr>
-<!-- END DataBlock -->
+	<tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{pmt_id}</td></tr>
+	<tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}</td></tr>
+	<tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}</td></tr>
+	<tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}</td></tr>
+	<tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}</td></tr>
+	<tr><td><b>{$LANG_SHOP['order_number']}:</b></td><td>{order_link}</td></tr>
+	<tr><td><b>{$LANG_SHOP['comment']}:</b></td><td>{comment}</td></tr>
 </table>
 
 {!if ipn_count}

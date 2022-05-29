@@ -288,6 +288,10 @@ class payment extends \Shop\Report
                 'pmt_id'    => $A['pmt_id'],
                 'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
                 'time'      => SHOP_dateTooltip($Dt),
+                'order_link' => COM_createLink(
+                    $A['pmt_order_id'],
+                    SHOP_ADMIN_URL . '/orders.php?order=' . $A['pmt_order_id']
+                ),
                 'txn_id'    => $A['pmt_ref_id'],
                 'gateway'   => $A['pmt_gateway'],
                 'comment'   => $A['pmt_comment'],
