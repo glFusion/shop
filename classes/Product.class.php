@@ -1677,7 +1677,14 @@ class Product
         }
 
         if ($this->hasVariants()) {              // also sets $this->Variants
-            $def_id = $this->getDefVariantID();
+            if ($OI) {
+                // Linked from a cart or order so there is an order ID,
+                // make the default variant match.
+                $def_id = $OI->getVariantId();
+            } else {
+                // Get the default variant ID, if any.
+                $def_id = $this->getDefVariantID();
+            }
             if ($def_id > 0) {
                 foreach ($this->Variants as $Variant) {
                     if ($Variant->getID() == $def_id) {
