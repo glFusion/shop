@@ -967,7 +967,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
     "DROP TABLE {$_TABLES['shop.cache']}",
-    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `ref_id` varchar(127) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `ref_id` varchar(127) NOT NULL DEFAULT '' AFTER `txn_id`",
     "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD KEY `gw_ref` (`gateway`,`ref_id`)",
 );
 
