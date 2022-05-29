@@ -169,6 +169,10 @@ class IPN
      * @var object */
     protected $IPN = NULL;
 
+    /** Record number of the IPN log entry.
+     * @var integer */
+    protected $ipnLogId = 0;
+
 
     /**
      * Set up variables received in the IPN message.
@@ -692,7 +696,8 @@ class IPN
             ->setEvent($this->event)
             ->setVerified($verified)
             ->setData($this->ipn_data);
-        return $ipn->Write();
+        $this->ipnLogId = $ipn->Write();
+        return $this->ipnLogId;
     }
 
 
@@ -1270,9 +1275,12 @@ class IPN
     {
         global $LANG_SHOP;
 
+        if ($this->ipnLogId == 0) {     // IPN not logged yet
+            $this->Log();
+        }
         $this->Payment = new Payment;
         $this->Payment->setRefID($this->getTxnId())
-            ->setTxnID($this->getTxnId())
+            ->setTxnID($this->ipnLogId)
             ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)

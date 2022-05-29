@@ -480,7 +480,7 @@ $_SQL = array(
   `is_complete` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `pmt_uid` int(11) unsigned NOT NULL DEFAULT 0,
   `pmt_status` varchar(40) NOT NULL DEFAULT 'COMPLETED',
-  `txn_id` varchar(127) NOT NULL DEFAULT '',
+  `txn_id` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`pmt_id`),
   KEY `order_id` (`pmt_order_id`),
   KEY `txn_id` (`txn_id`)
@@ -967,7 +967,7 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
     "DROP TABLE {$_TABLES['shop.cache']}",
-    "ALTER TABLE {$_TABLES['shop.payments']} ADD `txn_id` varchar(127) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.payments']} ADD `txn_id` int(11) unsigned  NOT NULL DEFAULT 0",
     "ALTER TABLE {$_TABLES['shop.payments']} ADD KEY `txn_id` (`txn_id`)",
 );
 

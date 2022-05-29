@@ -247,7 +247,7 @@ class payment extends \Shop\Report
             $A = $db->conn->executeQuery(
                 "SELECT * FROM {$_TABLES['shop.payments']} pmts
                 LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
-                ON ipn.txn_id = pmts.txn_id
+                ON ipn.id = pmts.txn_id
                 WHERE pmts.pmt_id = ?",
                 array($pmt_id),
                 array(Database::INTEGER)

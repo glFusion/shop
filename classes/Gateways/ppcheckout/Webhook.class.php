@@ -117,6 +117,7 @@ class Webhook extends \Shop\Webhook
             }
         case 'PAYMENT.CAPTURE.COMPLETED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
+                $LogID = $this->logIPN();
                 $this->setOrderID($resource->custom_id);
                 $this->Order = Order::getInstance($this->getOrderID());
                 $this->setPayment($resource->amount->value);
@@ -126,6 +127,7 @@ class Webhook extends \Shop\Webhook
                 $Pmt = Payment::getByReference($ref_id);
                 if ($Pmt->getPmtID() == 0) {
                     $Pmt->setRefID($ref_id)
+                        ->setTxnId($LogID)
                         ->setAmount($this->getPayment())
                         ->setGateway($this->getSource())
                         ->setMethod($this->GW->getDisplayName())
@@ -136,7 +138,6 @@ class Webhook extends \Shop\Webhook
                     }
                 }
                 $this->setID($ref_id);  // use the payment ID
-                $this->logIPN();
             }
             break;
 

@@ -113,6 +113,10 @@ class Webhook
      * @var string */
     protected $blob = '';
 
+    /** IPN Log record ID.
+     * @var integer */
+    protected $ipnLogId = 0;
+
 
     /**
      * Instantiate and return a Webhook object.
@@ -395,6 +399,10 @@ class Webhook
      */
     public function recordPayment()
     {
+        if ($this->ipnLogId == 0) { // Webhook not logged yet
+            $this->logIPN();
+        }
+
         $Payment = new Payment();
         $Payment->setRefID($this->getID())
             ->setAmount($this->getPayment())
@@ -403,7 +411,7 @@ class Webhook
             ->setComment('Webhook ' . $this->getData()->id)
             ->setComplete(1)
             ->setStatus($this->getData()->type)
-            ->setTxnId($this->whID)
+            ->setTxnId($this->ipnLogId)
             ->setOrderID($this->getOrderID());
         $Payment->Save();
         // Get the latest order object for the new status and amt due.
@@ -416,7 +424,7 @@ class Webhook
      *
      * @return  integer     Record ID returned from Logger\IPN::Write()
      */
-    public function logIPN()
+    public function logIPN() : int
     {
         $ipn = new logIPN();
         $ipn->setOrderID($this->whOrderID)
@@ -425,7 +433,8 @@ class Webhook
             ->setEvent($this->whEvent)
             ->setVerified($this->isVerified())
             ->setData(json_decode($this->blob, true));
-        return $ipn->Write();
+        $this->ipnLogId = $ipn->Write();
+        return $this->ipnLogId;
     }
 
 
