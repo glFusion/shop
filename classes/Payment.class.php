@@ -120,6 +120,10 @@ class Payment
     {
         global $_TABLES;
 
+        if ($id == 0) {
+            return new self;
+        }
+
         $db = Database::getInstance();
         try {
             $data = $db->conn->executeQuery(
@@ -131,7 +135,11 @@ class Payment
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
             $data = false;
         }
-        return new self($data);
+        if (is_array($data)) {
+            return new self($data);
+        } else {
+            return new self;
+        }
     }
 
 
