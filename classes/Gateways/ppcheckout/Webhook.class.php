@@ -342,32 +342,11 @@ class Webhook extends \Shop\Webhook
             return $status;
         }
 
-        if (isset($_GET['testhook'])) {
+        if (isset($_SHOP_CONF['sys_test_ipn']) && $_SHOP_CONF['sys_test_ipn']) {
             $this->setVerified(true);
             return true;
         }
         $gw = \Shop\Gateway::getInstance($this->getSource());
-        /*for ($i = 0; $i < 3; $i++) {
-            if ($i > 0) {
-                sleep(10);
-            }
-            $resp = json_decode($gw->getWebhookDetails($this->getID()));
-            Log::write('shop_system', Log::DEBUG, var_export($resp, true));
-            if ($resp) {
-                if (
-                    isset($resp->id) && isset($resp->event_id) &&
-                    $resp->id == $data->id &&
-                    $resp->event_type == $data->event_type
-                ) {
-                    $status = true;
-                    break;
-                }
-            }
-        }
-        $this->setVerified($status);
-        return $status;
-         */
-
         $body = '{
             "auth_algo": "' . $this->getHeader('Paypal-Auth-Algo') . '",
             "cert_url": "' . $this->getHeader('Paypal-Cert-Url') . '",
