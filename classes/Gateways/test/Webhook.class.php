@@ -59,6 +59,7 @@ class Webhook extends \Shop\Webhook
         $this->setEvent(SHOP_getVar($this->getData(), 'status'));
         $this->setOrderID(SHOP_getVar($this->getData(), 'order_id'));
         $this->setID(SHOP_getVar($this->getData(), 'txn_id'));
+        $this->setRefID($this->getID());
 
         if (!$this->isUniqueTxnId()) {
             Log::write('shop_system', Log::ERROR, "Duplicate transaction ID {$this->getID()}");

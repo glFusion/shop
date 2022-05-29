@@ -692,6 +692,7 @@ class IPN
         $ipn = new logIPN();
         $ipn->setOrderID($order_id)
             ->setTxnID($this->txn_id)
+            ->setRefID($this->txn_id)   // same as TxnID for IPN messages
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
             ->setVerified($verified)

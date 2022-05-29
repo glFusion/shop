@@ -4,8 +4,6 @@
     <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{pmt_id}</td></tr>
     <tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}<br /></td></tr>
     <tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}<br /></td></tr>
-  <tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{id}</td></tr>
-  <tr><td><b>{$LANG_SHOP['ip_addr']}:</b></td><td>{ip_addr}<br/ ></td></tr>
   <tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}<br /></td></tr>
   <tr><td><b>{$LANG_SHOP['gateway']}:</b></td><td>{gateway}<br /></td></tr>
     <tr><td><b>{$LANG_SHOP['comment']}:</b></td><td>{comment}<br /></td></tr>
@@ -14,9 +12,18 @@
 <!-- END DataBlock -->
 </table>
 
-<hr />
-{!if ipn_data}
 <b>{$LANG_SHOP['ipn_data']}:</b>
+<!-- BEGIN ipnRows -->
+<div>
+	<a data-uk-toggle="{target:'#ipn{ipn_id}'}">
+	{ipn_event}
+	</a>
+</div>
+<div id="ipn{ipn_id}" class="uk-hidden">
 <pre>{ipn_data}</pre>
+</div>
+<!-- END ipnRows -->
+{!if single_ipn}
+<pre>{single_ipn}</pre>
 {!endif}
 {# end {templatelocation} #}

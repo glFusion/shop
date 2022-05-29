@@ -57,9 +57,13 @@ class Webhook
      * @var array */
     protected $whData = array();
 
-    /** Webhook Reference ID.
+    /** Webhook ID.
      * @var string */
     protected $whID = '';
+
+    /** Reference ID, e.g. payment transaction ID.
+     * @var string */
+    protected $refID = '';
 
     /** Webhook source, eg. gateway name.
      * @var string */
@@ -80,6 +84,10 @@ class Webhook
     /** Status of webhook verification via callback.
      * @var boolean */
     protected $whVerified = 0;
+
+    /** Timestamp of the webhook.
+     * @var integer */
+    protected $whTS = 0;
 
     /** Headers sent with the webhook.
      * @var array */
@@ -212,6 +220,21 @@ class Webhook
             $dt = $_CONF['_now']->toMySQL(true);
         }
         $this->IPN['sql_date'] = $dt;
+        $Date = new \Date($dt, $_CONF['timezone']);
+        $this->whTS = $Date->toUnix();
+    }
+
+
+    /**
+     * Set the payment reference ID to tie multiple webhooks together.
+     *
+     * @param   string  $id     Payment ID
+     * @return  object  $this
+     */
+    public function setRefID(string $id) : self
+    {
+        $this->refID = $id;
+        return $this;
     }
 
 
@@ -429,10 +452,14 @@ class Webhook
         $ipn = new logIPN();
         $ipn->setOrderID($this->whOrderID)
             ->setTxnID($this->whID)
+            ->setRefID($this->refID)
             ->setGateway($this->whSource)
             ->setEvent($this->whEvent)
             ->setVerified($this->isVerified())
             ->setData(json_decode($this->blob, true));
+        if ($this->whTS > 0) {
+            $ipn->setTimestamp($this->whTS);
+        }
         $this->ipnLogId = $ipn->Write();
         return $this->ipnLogId;
     }

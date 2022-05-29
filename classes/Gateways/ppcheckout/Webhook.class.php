@@ -117,16 +117,16 @@ class Webhook extends \Shop\Webhook
             }
         case 'PAYMENT.CAPTURE.COMPLETED':
             if (isset($resource->amount) && isset($resource->custom_id)) {
-                $LogID = $this->logIPN();
                 $this->setOrderID($resource->custom_id);
                 $this->Order = Order::getInstance($this->getOrderID());
                 $this->setPayment($resource->amount->value);
                 $this->setCurrency($resource->amount->currency_code);
-                $ref_id = $resource->id;
+                $this->setRefID($resource->id);
+                $LogID = $this->logIPN();
                 // Get the payment by reference ID to make sure it's unique
-                $Pmt = Payment::getByReference($ref_id);
+                $Pmt = Payment::getByReference($this->refID);
                 if ($Pmt->getPmtID() == 0) {
-                    $Pmt->setRefID($ref_id)
+                    $Pmt->setRefID($this->refID)
                         ->setTxnId($LogID)
                         ->setAmount($this->getPayment())
                         ->setGateway($this->getSource())
@@ -137,7 +137,7 @@ class Webhook extends \Shop\Webhook
                         $retval = $this->handlePurchase();
                     }
                 }
-                $this->setID($ref_id);  // use the payment ID
+                $this->setID($this->refID);  // use the payment ID
             }
             break;
 
@@ -183,14 +183,14 @@ class Webhook extends \Shop\Webhook
                         is_array($unit->payments->captures)
                     ) {
                         $capture = $unit->payments->captures[0];
-                        $ref_id = $capture->id;
+                        $this->setRefID($capture->id);
                         if (isset($capture->amount)) {
                             $this->setPayment($unit->amount->value);
                             $this->setCurrency($unit->amount->currency_code);
                         }
-                        $Pmt = Payment::getByReference($ref_id);
+                        $Pmt = Payment::getByReference($this->refID);
                         //if ($Pmt->getPmtID() == 0) {
-                            $Pmt->setRefID($ref_id)
+                            $Pmt->setRefID($this->refID)
                                 ->setAmount($this->getPayment())
                                 ->setGateway($this->getSource())
                                 ->setMethod('Paypal Checkout')
@@ -199,7 +199,7 @@ class Webhook extends \Shop\Webhook
                             return $Pmt->Save();
                             $this->handlePurchase();
                         //}
-                        $this->setID($ref_id);  // use the payment ID for logging
+                        $this->setID($this->refID);  // use the payment ID for logging
                         $this->logIPN();
                     }
                 }
@@ -242,13 +242,15 @@ class Webhook extends \Shop\Webhook
                     ) {
                         // Get just the latest payment.
                         // If there are multiple payments for the order, all are included.
+                        $this->logIPN();
                         $payment = array_pop($payments->transactions);
                         if ($payment) {
-                            $ref_id = $payment->payment_id;
+                            $this->setRefID($payment->payment_id);
                             // Get the payment by reference ID to make sure it's unique
-                            $Pmt = Payment::getByReference($ref_id);
+                            $Pmt = Payment::getByReference($this->refID);
                             if ($Pmt->getPmtID() == 0) {
-                                $Pmt->setRefID($ref_id)
+                                $Pmt->setRefID($this->refID)
+                                    ->setTxnID($this->logID)
                                     ->setAmount($payment->amount->value)
                                     ->setGateway($this->getSource())
                                     ->setMethod($payment->method)
@@ -258,8 +260,7 @@ class Webhook extends \Shop\Webhook
                                 $retval = $Pmt->Save();
                             }
                         }
-                        $this->setID($ref_id);  // use the payment ID
-                        $this->logIPN();
+                        $this->setID($this->refID);  // use the payment ID
                      }
                 }
             }
@@ -297,11 +298,11 @@ class Webhook extends \Shop\Webhook
                 $this->setOrderID($resource->custom_id);
                 $this->setPayment($resource->amount->value);
                 $this->setCurrency($resource->amount->currency_code);
-                $ref_id = $resource->id;
+                $this->setRefID($resource->id);
                 // Get the payment by reference ID to make sure it's unique
-                $Pmt = Payment::getByReference($ref_id);
+                $Pmt = Payment::getByReference($this->refID);
                 if ($Pmt->getPmtID() == 0) {
-                    $Pmt->setRefID($ref_id)
+                    $Pmt->setRefID($this->refID)
                         ->setAmount($this->getPayment() * -1)
                         ->setGateway($this->getSource())
                         ->setMethod($this->getSource())
@@ -309,7 +310,7 @@ class Webhook extends \Shop\Webhook
                         ->setOrderID($this->getOrderID());
                     $retval = $Pmt->Save();
                 }
-                $this->setID($ref_id);  // use the payment ID
+                $this->setID($this->refID);  // use the payment ID
                 $this->logIPN();
             } else {
                 Log::write('shop_system', Log::ERROR, "Order number not found for refund");

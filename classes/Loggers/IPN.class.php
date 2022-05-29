@@ -34,6 +34,10 @@ class IPN extends \Shop\Logger
      * @var string */
     private $txn_id = '';
 
+    /** Reference ID, e.g. payment ID.
+     * @var string */
+    private $ref_id = '';
+
     /** Gateway name.
      * @var string */
     private $gw_id = '';
@@ -45,6 +49,10 @@ class IPN extends \Shop\Logger
     /** Type of message, typically "payment".
      * @var string */
     private $event = 'payment';
+
+    /** Event timestamp, default will be current Unix time.
+     * @var integer */
+    private $ts = 0;
 
     /** Related order ID.
      * @var string */
@@ -58,6 +66,7 @@ class IPN extends \Shop\Logger
     {
         $this->setIP($_SERVER['REMOTE_ADDR']);
         $this->verified = 0;
+        $this->ts = time();
     }
 
 
@@ -88,7 +97,7 @@ class IPN extends \Shop\Logger
 
 
     /**
-     * Set the transactdion ID
+     * Set the webhook ID.
      *
      * @param   string  $id     Transaction ID
      * @return  object  $this
@@ -96,6 +105,19 @@ class IPN extends \Shop\Logger
     public function setTxnID(string $id) : self
     {
         $this->txn_id = $id;
+        return $this;
+    }
+
+
+    /**
+     * Set the transaction reference ID.
+     *
+     * @param   string  $id     Transaction ID
+     * @return  object  $this
+     */
+    public function setRefID(string $id) : self
+    {
+        $this->ref_id = $id;
         return $this;
     }
 
@@ -153,6 +175,19 @@ class IPN extends \Shop\Logger
 
 
     /**
+     * Override the event timestamp to get the actual creation time.
+     *
+     * @param   integer $ts     Event timestamp
+     * @return  object  $this
+     */
+    public function setTimestamp(int $ts) : self
+    {
+        $this->ts = $ts;
+        return $this;
+    }
+
+
+    /**
      * Write the log entry
      *
      * @return  integer     New log record ID, 0 on error
@@ -176,18 +211,19 @@ class IPN extends \Shop\Logger
                 ts = ?,
                 verified = ?,
                 txn_id = ?,
+                ref_id = ?,
                 gateway = ?,
                 event = ?,
                 order_id = ?,
                 ipn_data = ?",
                 array(
                     $this->ip_addr, time(), $this->verified,
-                    $this->txn_id, $this->gw_id, $this->event,
+                    $this->txn_id, $this->ref_id, $this->gw_id, $this->event,
                     $this->order_id, $data,
                 ),
                 array(
                     Database::STRING, Database::INTEGER, Database::INTEGER,
-                    Database::STRING, Database::STRING, Database::STRING,
+                    Database::STRING, Database::STRING, Database::STRING, Database::STRING,
                     Database::STRING, Database::STRING,
                 )
             );

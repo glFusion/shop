@@ -13,6 +13,8 @@
  */
 namespace Shop\Reports;
 use Shop\Currency;
+use Shop\Gateway;
+use Shop\Payment as pmtClass;
 use Shop\FieldList;
 use glFusion\Database\Database;
 use glFusion\Log\Log;
@@ -67,7 +69,7 @@ class payment extends \Shop\Report
     {
         $retval = '';
         $T = $this->getTemplate('config');
-        $gws = \Shop\Gateway::getAll();
+        $gws = Gateway::getAll();
         $gateway = self::_getSessVar('gateway');
         $T->set_block('config', 'gw_opts', 'opt');
         foreach ($gws as $GW) {
@@ -191,7 +193,7 @@ class payment extends \Shop\Report
             $T->set_var(array(
                 'output' => \ADMIN_list(
                     $_SHOP_CONF['pi_name'] . '_payments',
-                    array('\Shop\Report', 'getReportField'),
+                    array(get_parent_class(), 'getReportField'),
                     $header_arr, $text_arr, $query_arr, $defsort_arr,
                     '', $this->extra, '', ''
                 ),
@@ -246,8 +248,6 @@ class payment extends \Shop\Report
         try {
             $A = $db->conn->executeQuery(
                 "SELECT * FROM {$_TABLES['shop.payments']} pmts
-                LEFT JOIN {$_TABLES['shop.ipnlog']} ipn
-                ON ipn.id = pmts.txn_id
                 WHERE pmts.pmt_id = ?",
                 array($pmt_id),
                 array(Database::INTEGER)
@@ -260,46 +260,49 @@ class payment extends \Shop\Report
             return "Nothing Found";
         }
 
-        // Allow all json-encoded data to be available to the template
-        $gw = \Shop\Gateway::create($A['pmt_gateway']);
-        $gw->loadSDK();
-        $ipn = @json_decode($A['ipn_data'],true);
-        if ($gw !== NULL) {
-            if ($ipn) {
-                $vals = $gw->ipnlogVars($ipn);
-            } else {
-                $vals = array();
-                $A['id'] = $LANG_SHOP['manual_entry'];
-                $A['ip_addr'] = 'n/a';
-            }
-            // Create ipnlog template
-            $T = $this->getTemplate('single');
+        try {
+            $ipns = $db->conn->executeQuery(
+                "SELECT * FROM {$_TABLES['shop.ipnlog']}
+                WHERE gateway = ? AND ref_id = ?
+                ORDER BY ts ASC",
+                array($A['pmt_gateway'], $A['pmt_ref_id']),
+                array(Database::STRING, Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $ipns = false;
+        }
 
-            // Display the specified ipnlog row
-            $Dt = new \Date($A['ts'], $_CONF['timezone']);
+        // Allow all json-encoded data to be available to the template
+        $gw = Gateway::create($A['pmt_gateway']);
+        $gw->loadSDK();
+        if ($gw !== NULL) {
+            $Dt = new \Date($A['pmt_ts'], $_CONF['timezone']);
+            $T = $this->getTemplate('single');
             $T->set_var(array(
                 'pmt_id'    => $A['pmt_id'],
                 'pmt_amount' => Currency::getInstance()->Format($A['pmt_amount']),
-                'id'        => $A['id'],
-                'ip_addr'   => $A['ip_addr'],
                 'time'      => SHOP_dateTooltip($Dt),
                 'txn_id'    => $A['pmt_ref_id'],
                 'gateway'   => $A['pmt_gateway'],
                 'comment'   => $A['pmt_comment'],
             ) );
 
-            if (!empty($vals)) {
-                $T->set_block('report', 'DataBlock', 'Data');
-                foreach ($vals as $key=>$value) {
-                    $T->set_var(array(
-                        'prompt'    => isset($LANG_SHOP[$key]) ? $LANG_SHOP[$key] : $key,
-                        'value'     => htmlspecialchars($value, ENT_QUOTES, COM_getEncodingt()),
-                    ) );
-                    $T->parse('Data', 'DataBlock', true);
+            if (!empty($ipns)) {
+                if (count($ipns) > 1) {
+                    $T->set_block('report', 'ipnRows', 'ipnRow');
+                    foreach ($ipns as $ipn) {
+                        $T->set_var(array(
+                            'ipn_id' => $ipn['id'],
+                            'ipn_event' => $ipn['event'],
+                            'ipn_data' => print_r(json_decode($ipn['ipn_data'], true), true),
+                        ) );
+                        $T->parse('ipnRow', 'ipnRows', true);
+                    }
+                } else {
+                    // Set the one ipn not in a dropdown block
+                    $T->set_var('single_ipn', print_r(json_decode($ipns[0]['ipn_data'], true), true));
                 }
-            }
-            if ($ipn) {
-                $T->set_var('ipn_data', print_r($ipn, true));
             }
             $retval = $T->parse('output', 'report');
         }
@@ -335,7 +338,7 @@ class payment extends \Shop\Report
         case 'pmt_ref_id':
             $retval = COM_createLink(
                 $fieldvalue,
-                \Shop\Payment::getDetailUrl($A['pmt_id']),
+                pmtClass::getDetailUrl($A['pmt_id']),
                 array(
                     'class' => 'tooltip',
                     'title' => $LANG_SHOP['see_details'],
