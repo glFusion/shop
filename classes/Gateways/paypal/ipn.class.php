@@ -4,9 +4,9 @@
  * Based on the gl-shop Plugin for Geeklog CMS by Vincent Furia.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2009-2020 Lee Garner
+ * @copyright   Copyright (c) 2009-2022 Lee Garner
  * @package     shop
- * @version     v1.3.0
+ * @version     v1.5.0
  * @since       v0.7.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
@@ -232,6 +232,7 @@ class ipn extends \Shop\IPN
             );
             return false;
         }
+        $this->Log(true);
 
         // Set the custom data field to the exploded value.  This has to
         // be done after Verify() or the Shop verification will fail.
@@ -297,10 +298,8 @@ class ipn extends \Shop\IPN
             break;
         }
 
-        $this->Log(true);
         return true;
-    }   // function Process
+    }
 
 }
 
-?>
