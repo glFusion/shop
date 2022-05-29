@@ -22,19 +22,21 @@ include_once __DIR__ . '/mysql_sample_data.php';
 $SHOP_UPGRADE = array();
 
 $_SQL = array(
-'shop.ipnlog' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
+  'shop.ipnlog' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.ipnlog']} (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `ip_addr` varchar(15) NOT NULL,
   `ts` int(11) unsigned DEFAULT NULL,
-  `verified` tinyint(1) DEFAULT '0',
+  `verified` tinyint(1) DEFAULT 0,
   `txn_id` varchar(255) DEFAULT NULL,
+  `ref_id` varchar(127) NOT NULL DEFAULT '',
   `gateway` varchar(25) DEFAULT NULL,
-  `event` varchar(128) DEFAULT 'payment',
+  `event` varchar(128) DEFAULT NULL,
   `ipn_data` text NOT NULL,
   `order_id` varchar(40) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `ipnlog_ts` (`ts`),
-  KEY `ipnlog_txnid` (`txn_id`)
+  KEY `ipnlog_txnid` (`txn_id`),
+  KEY `gw_ref` (`gateway`,`ref_id`)
 ) ENGINE=MyISAM",
 
 'shop.products' => "CREATE TABLE IF NOT EXISTS {$_TABLES['shop.products']} (
@@ -480,10 +482,8 @@ $_SQL = array(
   `is_complete` tinyint(1) unsigned NOT NULL DEFAULT 1,
   `pmt_uid` int(11) unsigned NOT NULL DEFAULT 0,
   `pmt_status` varchar(40) NOT NULL DEFAULT 'COMPLETED',
-  `txn_id` int(11) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`pmt_id`),
-  KEY `order_id` (`pmt_order_id`),
-  KEY `txn_id` (`txn_id`)
+  KEY `order_id` (`pmt_order_id`)
 ) ENGINE=MyISAM",
 );
 
@@ -967,8 +967,8 @@ $SHOP_UPGRADE['1.5.0'] = array(
     "ALTER TABLE {$_TABLES['shop.orderitems']} DROP `txn_type`",
     "ALTER TABLE {$_TABLES['shop.orderitems']} ADD `shipping_weight` decimal(9,4) unsigned NOT NULL DEFAULT 0 AFTER `shipping_units`",
     "DROP TABLE {$_TABLES['shop.cache']}",
-    "ALTER TABLE {$_TABLES['shop.payments']} ADD `txn_id` int(11) unsigned  NOT NULL DEFAULT 0",
-    "ALTER TABLE {$_TABLES['shop.payments']} ADD KEY `txn_id` (`txn_id`)",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD `ref_id` varchar(127) NOT NULL DEFAULT ''",
+    "ALTER TABLE {$_TABLES['shop.ipnlog']} ADD KEY `gw_ref` (`gateway`,`ref_id`)",
 );
 
 
