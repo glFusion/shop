@@ -56,6 +56,12 @@ class OrderState
      */
     public const CANCELED = 'canceled';
 
+    /** Order is archived.
+     * One use of this is after anonymous order data is redacted.
+     */
+    public const ARCHIVED = 'archived';
+
+
         /**
          * Put the statuses into an ordered array.
          * Used to check an order's progress.
@@ -66,7 +72,9 @@ class OrderState
             self::INVOICED => 1,
             self::PROCESSING => 2,
             self::SHIPPED => 3,
+            self::CANCELED => 4,
             self::CLOSED => 4,
+            self::ARCHIVED => 64,
         );
 
     /**
