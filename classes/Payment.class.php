@@ -162,9 +162,13 @@ class Payment
             )->fetchAssociative();
         } catch (\Exception $e) {
             Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
-            $data = NULL;
+            $data = false;
         }
-        return new self($data);
+        if (is_array($data)) {
+            return new self($data);
+        } else {
+            return new self;
+        }
     }
 
 
