@@ -1592,27 +1592,6 @@ class Gateway
                 }
             }
         }
-        /*$files = glob(__DIR__ . '/Gateways/*');
-        if (is_array($files)) {
-            foreach ($files as $fullpath) {
-                $parts = explode('/', $fullpath);
-                list($class,$x1,$x2) = explode('.', $parts[count($parts)-1]);
-                //if ($class[0] == '_') continue;     // special internal gateway
-                if (array_key_exists($class, $installed)) {
-                    continue; // already installed
-                }
-                $clsfile = 'Shop\\Gateways\\' . $class;
-                $gw = new $clsfile;
-                if (is_object($gw)) {
-                    $data_arr[] = array(
-                        'id'    => $gw->getName(),
-                        'description' => $gw->getDscp(),
-                        'enabled' => 'na',
-                        'orderby' => 999,
-                    );
-                }
-            }
-        }*/
     }
 
 
@@ -1752,7 +1731,8 @@ class Gateway
         $sql = "SELECT *, g.grp_name
             FROM {$_TABLES['shop.gateways']} gw
             LEFT JOIN {$_TABLES['groups']} g
-                ON g.grp_id = gw.grp_access";
+                ON g.grp_id = gw.grp_access
+            ORDER BY orderby ASC";
         $res = DB_query($sql);
         while ($A = DB_fetchArray($res, false)) {
             $gw = self::create($A['id']);
@@ -1972,13 +1952,13 @@ class Gateway
         case 'bundled':
             if (in_array($A['id'], self::$_bundledGateways)) {
                 $retval .= FieldList::checkmark(array(
-                    'active' => true,
+                    'active' => $A['enabled'] != 'na',
                 ) );
             }
             break;
 
         case 'delete':
-            if ($A['enabled'] != 'na') {
+            if ($A['enabled'] != 'na' && $A['id'][0] != '_') {
                 $retval = FieldList::delete(array(
                     'delete_url' => SHOP_ADMIN_URL. '/gateways.php?gwdelete&amp;id=' . $A['id'],
                     'attr' => array(
