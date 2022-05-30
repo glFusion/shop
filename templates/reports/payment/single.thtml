@@ -1,7 +1,7 @@
 {# begin {templatelocation} #}
 <h1 style="text-align:center;">{$LANG_SHOP['pmt_detail']}</h1>
 <table class="uk-table" border="0">
-	<tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{pmt_id}</td></tr>
+	<tr><td><b>{$LANG_SHOP['ipnlog_id']}:</b></td><td>{pmt_id}</td></tr>
 	<tr><td><b>{$LANG_SHOP['datetime']}:</b></td><td>{time}</td></tr>
 	<tr><td><b>{$LANG_SHOP['amount']}:</b></td><td>{pmt_amount}</td></tr>
 	<tr><td><b>{$LANG_SHOP['trans_id']}:</b></td><td>{txn_id}</td></tr>
