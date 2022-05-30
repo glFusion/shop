@@ -1,4 +1,7 @@
 {
     "name": "ppcheckout",
-    "version": "1.3.0"
+    "version": "1.3.0",
+	"repo": {
+		"type": "bundled"
+	}
 }

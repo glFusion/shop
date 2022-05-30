@@ -19,6 +19,7 @@ use Shop\Models\ProductType;
 use Shop\Models\CustomInfo;;
 use Shop\Models\ButtonKey;;
 use Shop\Models\PayoutHeader;
+use Shop\Cache;
 use glFusion\FileSystem;
 
 
@@ -1761,7 +1762,7 @@ class Gateway
         self::getInstalled($data_arr);
         self::getUninstalled($data_arr);
         // Future - check versions of pluggable gateways
-        //self::_checkAvailableVersions($data_arr);
+        self::_checkAvailableVersions($data_arr);
 
         $header_arr = array(
             array(
@@ -1905,6 +1906,14 @@ class Gateway
                         'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
                     ) );
                     $retval .= $A['code_version'];
+                }
+                if (!COM_checkVersion($A['code_version'], $A['available'])) {
+                    $retval .= ' ' . COM_createLink('Get ' . $A['available'],
+                        $A['upgrade_url'],
+                        array(
+                            'target' => '_blank',
+                        )
+                    );
                 }
             }
             break;
@@ -2401,38 +2410,113 @@ class Gateway
      *
      * @param   array   $data_arr   Reference to data array
      */
-    private static function _checkAvailableVersions(&$data_arr)
+    private static function _checkAvailableVersions(&$data_arr) : void
     {
         global $_VARS;
 
         // Only check in sync with other update checks.
-        $last_check = SHOP_getVar($_VARS, 'updatecheck', 'integer');
-        $versions = NULL;
-        if ($last_check < time() - 7200) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://raw.githubusercontent.com/leegarner-glfusion/versions/master/shop_gateways.json');
-            curl_setopt($ch, CURLOPT_HEADER, 0);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            $result = curl_exec($ch);
-            curl_close($ch);
-            if ($result) {
-                $versions = json_decode($result, true);
-            }
-        }
-        if (!$versions) {
-            // In case of a curl error
+        $versions = Cache::get('shop_gw_versions');
+        if ($versions === NULL) {
             $versions = array();
+            foreach ($data_arr as $idx=>$gw) {
+                $key = $gw['id'];
+                $versions[$key] = self::_checkAvailableVersion($key);
+            }
+            Cache::set('shop_gw_versions', $versions);
         }
 
-        $retval = array();
         foreach ($data_arr as $key=>$gw) {
             if (array_key_exists($gw['id'], $versions)) {
-                $data_arr[$key]['available'] = $versions[$gw['id']]['version'];
+                $data_arr[$key]['available'] = $versions[$gw['id']]['available'];
+                $data_arr[$key]['upgrade_url'] = $versions[$gw['id']]['upgrade_url'];
             } else {
                 // Bundled or no version available
                 $data_arr[$key]['available'] = '0.0.0';
+                $data_arr[$key]['upgrade_url'] = '';
             }
         }
+    }
+
+
+    /**
+     * Get the latest release and download URL for a single gateway.
+     * Queries Github or Gitlab based on gateway.json.
+     *
+     * @param   string  $gwname     Gateway name
+     * @return  array       Array of (available, download_link)
+     */
+    private static function _checkAvailableVersion(string $gwname) : array
+    {
+        $default = array(
+            'available' => '0.0.0',
+            'upgrade_url' => '',
+        );
+
+        $filename = __DIR__ . '/Gateways/' . $gwname . '/gateway.json';
+        if (is_file($filename)) {
+            $json = @file_get_contents($filename);
+            $json = @json_decode($json, true);
+            if (!$json || !isset($json['repo']['type'])) {
+                return $default;
+            }
+        } else {
+            return $default;
+        }
+
+        switch ($json['repo']['type']) {
+        case 'gitlab':
+            $releases_url = 'https://gitlab.com/api/v4/projects/' . $json['repo']['project_id'] . '/releases/';
+            break;
+        case 'github':
+            $releases_url = 'https://api.github.com/repos/glshop-gateways/' . $json['repo']['project_id'] . '/releases/latest';
+            break;
+        default:
+            $releases_url = '';
+            break;
+        }
+        if (empty($releases_url)) {
+            return $default;
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $releases_url);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Accept: application/vnd.github.v3+json"));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'glFusion Shop');
+        $result = curl_exec($ch);
+        curl_close($ch);
+        if ($result) {
+            $data = @json_decode($result, true);
+        }
+        if (!$data) {
+            return $default;
+        }
+
+        switch ($json['repo']['type']) {
+        case 'gitlab':
+            $data = $data[0];
+            $releases_link = $data['_links']['self'];
+            break;
+        case 'github':
+            $releases_link = $data['html_url'];
+            break;
+        default:
+            $releases_link = '';
+            break;
+        }
+        if (empty($releases_link)) {
+            return $default;
+        }
+
+        $latest = $data['tag_name'];
+        if ($latest[0] == 'v') {
+            $latest = substr($latest, 1);
+        }
+        return array(
+            'available' => $latest,
+            'upgrade_url' => $releases_link,
+        );
     }
 
 }

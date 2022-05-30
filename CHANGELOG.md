@@ -23,12 +23,13 @@ Release TBD
   * Implement product rules to limit shippers (#69).
     * Admin menu changed from `Regions` to `Rules`, all rules and regions managed from there.
   * Leverage glFusion 2.0.0+ Log class.
-  * Save actual IPN/Webhook event ID with payment record for linking.
+  * Save actual IPN/Webhook payment ID with payment record for linking.
+    * Link to multiple webhook details from payment record.
   * Control catalog block display via CSS, remove column setting.
   * Add option to purge orders or redact PII after some years.
   * Fix getting actual enabled zone rule for a product.
   * Accept an empty value for ProductVariant::setImageIDs().
-  * IPN/Webhook log is linked to payments by the payment reference.
+  * Enable direct querying of release info for payment gateways.
 
 ## v1.4.1
 Release 2022-04-07
