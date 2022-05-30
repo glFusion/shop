@@ -539,7 +539,7 @@ class Cart extends OrderBaseView
             'shipping_method' => $this->Order->getShipperDscp(),
             'pmt_method' => $this->Order->getPmtDscp(),
             'buyer_email'   => $this->Order->getBuyerEmail(),
-            'checkout_button' => $this->Order->checkoutButton($gw),
+            'checkout_button' => $this->Order->hasInvalid() ? '' : $this->Order->checkoutButton($gw),
         ) );
         return $this->createHTML2(true);
     }
