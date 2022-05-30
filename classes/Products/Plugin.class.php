@@ -126,13 +126,6 @@ class Plugin extends \Shop\Product
         // Try to call the plugin's function to get product info.
         // TODO - Deprecate, this is legacy. Plugins should return product info
         // from plugin_iteminfo functions.
-        /*$status = LGLIB_invokeService(
-            $this->pi_name,
-            'productinfo',
-            $this->pi_info,
-            $A,
-            $svc_msg
-        );*/
         $status = PLG_callFunctionForOnePlugin(
             'service_productinfo_' . $this->pi_name,
             array(
@@ -310,13 +303,6 @@ class Plugin extends \Shop\Product
                 'ref_token' => $Item->getOrder()->getReferralToken(),
             ),
         );
-        /*$status = LGLIB_invokeService(
-            $this->pi_name,
-            'handlePurchase',
-            $args,
-            $output,
-            $svc_msg
-        );*/
         $status = PLG_callFunctionForOnePlugin(
             'service_handlePurchase_' . $this->pi_name,
             array(
@@ -351,13 +337,6 @@ class Plugin extends \Shop\Product
                 3 => &$svc_msg,
             )
         );
-        /*$status = LGLIB_invokeService(
-            $this->pi_name,
-            'handleRefund',
-            $args,
-            $output,
-            $svc_msg
-        );*/
         return $status == PLG_RET_OK ? true : false;
     }
 
@@ -400,13 +379,6 @@ class Plugin extends \Shop\Product
                     3 => &$svc_msg,
                 )
             );
-            /*$status = LGLIB_invokeService(
-                $this->pi_name,
-                'productinfo',
-                $this->pi_info,
-                $A,
-                $svc_msg
-            );*/
             if ($status == PLG_RET_OK && isset($A['price'])) {
                 $this->price = (float)$A['price'];
             }
@@ -497,13 +469,6 @@ class Plugin extends \Shop\Product
                 3 => &$svc_msg,
             )
         );
-        /*LGLIB_invokeService(
-            $this->pi_name,
-            'emailReceiptInfo',
-            $this->pi_info,
-            $text,
-            $svc_msg
-        );*/
         return $text;
     }
 

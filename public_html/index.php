@@ -342,13 +342,6 @@ case 'pidetail':
             3 => &$svc_msg,
         )
     );
-    /*$status = LGLIB_invokeService($item[0], 'getDetailPage',
-        array(
-            'item_id' => $actionval,
-        ),
-        $output,
-        $svc_msg
-    );*/
     if ($status != PLG_RET_OK) {
         $output = $LANG_SHOP['item_not_found'];
     }
