@@ -18,7 +18,7 @@ require_once __DIR__  . '/functions.inc';
 require_once __DIR__ . '/sql/mysql_install.php';
 /** Include default values */
 require_once __DIR__ . '/install_defaults.php';
-use Shop\Log;
+use glFusion\Log\Log;
 
 global $_CONF;
 $language = $_CONF['language'];
