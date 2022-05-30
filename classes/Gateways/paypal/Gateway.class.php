@@ -45,11 +45,6 @@ class Gateway extends \Shop\Gateway
      * @var string */
     protected $gw_desc = 'PayPal Web Payments Standard';
 
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
-
     /** Business e-mail to be used for creating buttons.
      * @var string */
     private $receiver_email;

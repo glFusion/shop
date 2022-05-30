@@ -30,6 +30,7 @@ Release TBD
   * Fix getting actual enabled zone rule for a product.
   * Accept an empty value for ProductVariant::setImageIDs().
   * Enable direct querying of release info for payment gateways.
+  * Use fixed array of gateway names to determind if bundled or not.
 
 ## v1.4.1
 Release 2022-04-07

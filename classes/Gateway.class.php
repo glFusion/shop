@@ -21,6 +21,8 @@ use Shop\Models\ButtonKey;;
 use Shop\Models\PayoutHeader;
 use Shop\Cache;
 use glFusion\FileSystem;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -32,10 +34,6 @@ class Gateway
 {
     use \Shop\Traits\DBO;        // Import database operations
 
-    /** Gateway version.
-     * @const string */
-    public const VERSION = '1.3.0';
-
     /** Gateway logo width, in pixels.
      * @const integer */
     protected const LOGO_WIDTH = 240;
@@ -43,6 +41,10 @@ class Gateway
     /** Gateway logo height, in pixels.
      * @const integer */
     protected const LOGO_HEIGHT = 40;
+
+    /** Gateway version.
+     * @var string */
+    protected $VERSION = NULL;
 
     /** Table name, used by DBO class.
      * @var string */
@@ -98,10 +100,6 @@ class Gateway
      * Other installable gateways will have their own versions.
      * @var string */
     protected $version = '';
-
-    /** Indicator of a bundled gateway, vs an installable one.
-     * @var integer */
-    protected $bundled = 0;
 
     /** Environment configuration for prod or test.
      * Also contains global settings. This is a subset of `$config`.
@@ -165,6 +163,13 @@ class Gateway
      * @var boolean */
     protected $can_pay_online = 1;
 
+    /** List of bundled gateways.
+     * @var array */
+    private static $_bundledGateways = array(
+        'paypal', 'ppcheckout', 'test', '_coupon',
+        'check', 'terms', '_internal', 'free',
+    );
+
 
     /**
      * Constructor. Initializes variables.
@@ -182,6 +187,10 @@ class Gateway
     function __construct($A = array())
     {
         global $_SHOP_CONF, $_TABLES, $_USER;
+
+        if ($this->isBundled()) {
+            $this->VERSION = Config::get('pi_version');
+        }
 
         $this->custom = new CustomInfo;
         $this->properties = array();
@@ -207,11 +216,18 @@ class Gateway
         }
 
         if (empty($A)) {
-            $sql = "SELECT *
-                FROM {$_TABLES['shop.gateways']}
-                WHERE id = '" . DB_escapeString($this->gw_name) . "'";
-            $res = DB_query($sql);
-            if ($res) $A = DB_fetchArray($res, false);
+            $db = Database::getInstance();
+            try {
+                $A = $db->conn->executeQuery(
+                    "SELECT * FROM {$_TABLES['shop.gateways']}
+                    WHERE id = ?",
+                    array($this->gw_name),
+                    array(Database::STRING)
+                )->fetchAssociative();
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                $A = false;
+            }
         }
 
         if (!empty($A)) {
@@ -376,9 +392,16 @@ class Gateway
             'price' => $P->getPrice(),
         ) );
         $btn_key = DB_escapeString((string)$BtnKey);
-        $btn  = DB_getItem($_TABLES['shop.buttons'], 'button',
-                "pi_name = '{$pi_name}' AND item_id = '{$item_id}' AND
-                gw_name = '{$this->gw_name}' AND btn_key = '{$btn_key}'"
+        $db = Database::getInstance();
+        $btn = $db->getItem(
+            $_TABLES['shop.buttons'],
+            'button',
+            array(
+                'pi_name' => $pi_name,
+                'item_id' => $item_id,
+                'gw_name' => $this->gw_name,
+                'btn_key' => $btn_key,
+            )
         );
         return $btn;
     }
@@ -1198,8 +1221,8 @@ class Gateway
                 $this->grp_access
             ),
             'inst_version'  => $this->version,
-            'code_version'  => static::VERSION,
-            'need_upgrade'  => !COM_checkVersion($this->version, static::VERSION),
+            'code_version'  => $this->VERSION,
+            'need_upgrade'  => !COM_checkVersion($this->version, $this->VERSION),
         ), false, false);
 
         foreach ($this->cfgFields as $env=>$flds) {
@@ -1902,15 +1925,17 @@ class Gateway
             if (isset($A['version'])) {
                 $retval = $fieldvalue;
                 if (!COM_checkVersion($fieldvalue, $A['code_version'])) {
-                    $retval .= FieldList::up(array(
+                    $retval .= ' ' . FieldList::update(array(
                         'url' => Config::get('admin_url') . '/gateways.php?gwupgrade=' . $A['id'],
                     ) );
                     $retval .= $A['code_version'];
                 }
                 if (!COM_checkVersion($A['code_version'], $A['available'])) {
-                    $retval .= ' ' . COM_createLink('Get ' . $A['available'],
+                    $retval .= ' ' . COM_createLink(
+                        $A['available'],
                         $A['upgrade_url'],
                         array(
+                            'class' => 'uk-button uk-button-success uk-button-mini',
                             'target' => '_blank',
                         )
                     );
@@ -2272,14 +2297,16 @@ class Gateway
 
 
     /**
-     * Perform actions required during plugin upgrades.
+     * Upgrade all bundled gateways. Called during plugin update.
      *
-     * @param   string  $to     Target version
+     * @param   string  $to     New version
      */
-    public static function UpgradeAll($to)
+    public static function upgradeAll() : void
     {
         foreach (self::getAll() as $gw) {
-            $gw->doUpgrade($to);
+            if ($gw->isBundled()) {
+                $gw->doUpgrade();
+            }
         }
     }
 
@@ -2289,16 +2316,26 @@ class Gateway
      * Just sets the current version for bundled gateways,
      * ignores others.
      */
-    public function doUpgrade()
+    public function doUpgrade() : bool
     {
         global $_TABLES;
 
         if ($this->_doUpgrade()) {
-            $sql = "UPDATE {$_TABLES['shop.gateways']}
-                SET version = '{$this->version}'
-                WHERE id = '{$this->gw_name}'";
-            DB_query($sql);
-            return true;
+            $this->version = $this->VERSION;
+            $db = Database::getInstance();
+            try {
+                $db->conn->executeStatement(
+                    "UPDATE {$_TABLES['shop.gateways']}
+                    SET version = ?
+                    WHERE id = ?",
+                    array($this->version, $this->gw_name),
+                    array(Database::STRING, Database::STRING)
+                );
+                return true;
+            } catch (\Exception $e) {
+                Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+                return false;
+            }
         } else {
             return false;
         }
@@ -2313,7 +2350,7 @@ class Gateway
     protected function _doUpgrade()
     {
         // nothing to do by default, just update the version.
-        $this->version = static::VERSION;
+        $this->version = $this->VERSION;
         return true;
     }
 
@@ -2325,7 +2362,7 @@ class Gateway
      */
     public function getCodeVersion()
     {
-        return static::VERSION;
+        return $this->VERSION;
     }
 
 
@@ -2345,9 +2382,9 @@ class Gateway
      *
      * return   integer     1 if bundled, 0 if not.
      */
-    public function isBundled()
+    public function isBundled() : bool
     {
-        return $this->bundled ? 1 : 0;
+        return in_array($this->gw_name, self::$_bundledGateways);
     }
 
 

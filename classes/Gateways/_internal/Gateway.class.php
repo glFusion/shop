@@ -32,11 +32,6 @@ class Gateway extends \Shop\Gateway
      * @var string */
     protected $gw_desc = 'Internal Payment Gateway';
 
-    /** Flag this gateway as bundled with the Shop plugin.
-     * Gateway version will be set to the Shop plugin's version.
-     * @var integer */
-    protected $bundled = 1;
-
 
     /**
      * Constructor.

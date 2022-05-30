@@ -35,10 +35,6 @@ class Gateway extends \Shop\Gateway
      * @var string */
     protected $gw_desc = 'Free Order';
 
-    /** Flag this gateway as bundled with the Shop plugin.
-     * @var integer */
-    protected $bundled = 1;
-
 
     /**
      * Constructor.

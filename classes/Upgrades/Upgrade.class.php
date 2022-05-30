@@ -14,7 +14,7 @@
 namespace Shop\Upgrades;
 use Shop\Cache;
 use Shop\Gateway;
-use Shop\Log;
+use glFusion\Log\Log;
 
 
 /** Include the table creation strings */
@@ -102,7 +102,7 @@ class Upgrade
         // Clear caches, update the configuration options, delete old files.
         Cache::clear();
         self::updateConfig();
-        Gateway::UpgradeAll(self::$current_ver);
+        Gateway::upgradeAll(self::$current_ver);
         self::removeOldFiles();
         CTL_clearCache();   // clear cache to ensure CSS updates come through
         Log::write('shop_system', Log::INFO, "Successfully updated the {$_SHOP_CONF['pi_display_name']} Plugin");
