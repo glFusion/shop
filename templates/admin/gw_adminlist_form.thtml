@@ -1,6 +1,13 @@
+<script>
+    $(window).load(function() {
+        $( "#gw_file" ).change(function() {
+            $("#uploadFile").val(this.value)
+        });
+    });
+</script>
 <form action="{site_admin_url}/plugins/shop/gateways.php" method="post" enctype="multipart/form-data">
 	<input placeholder="Selected File" disabled="disabled" />
-	<div class="tm-fileUpload uk-button uk-button-small uk-button-primary">
+	<div id-"uploadFile" class="tm-fileUpload uk-button uk-button-small uk-button-primary">
 		<span>{lang_select_file}</span>
 		<input type="file" name="gw_file" id="gw_file" class="tm-upload">
 	</div>
