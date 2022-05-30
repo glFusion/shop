@@ -861,7 +861,7 @@ $SHOP_UPGRADE['1.3.0'] = array(
         ADD `tax_shipping` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `state_enabled`",
     "ALTER TABLE {$_TABLES['shop.states']}
         ADD `tax_handling` tinyint(1) unsigned NOT NULL DEFAULT '0' AFTER `tax_shipping`",
-    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY (`name`)",
+    "ALTER TABLE {$_TABLES['shop.orderstatus']} ADD UNIQUE KEY `name` (`name`)",
     "ALTER TABLE {$_TABLES['shop.orderstatus']} CHANGE orderby orderby int(3) NOT NULL DEFAULT 999",
     "INSERT IGNORE INTO {$_TABLES['shop.orderstatus']}
         (`name`, `notify_buyer`, `notify_admin`)

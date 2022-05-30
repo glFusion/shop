@@ -26,6 +26,7 @@ class v1_5_0 extends Upgrade
     {
         global $_TABLES, $SHOP_UPGRADE;
 
+        $db = Database::getInstance();
         $admin_email = Config::get('admin_email_addr');
         $shop_email = Config::get('shop_email');
         if (empty($shop_email) && !empty($admin_email)) {
@@ -42,12 +43,31 @@ class v1_5_0 extends Upgrade
                 SET ref_id = txn_id WHERE gateway IN
                 ('paypal', 'test', 'check', 'coingate', 'authorizenet', 'paylike');";
         }
+        global $_DB_name;
+        try {
+            $keys = $db->conn->executeQuery(
+                "SELECT index_name FROM information_schema.statistics
+                WHERE table_schema = ?
+                AND table_name = ?
+                AND index_name like 'name_%'",
+                array($_DB_name, $_TABLES['shop.orderstatus']),
+                array(Database::STRING, Database::STRING)
+            )->fetchAllAssociative();
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
+            $keys = false;
+        }
+        if (!empty($keys)) {
+            foreach ($keys as $key) {
+                $SHOP_UPGRADE['1.5.0'][] = "ALTER TABLE {$_TABLES['shop.orderstatus']} DROP KEY `{$key['index_name']}`";
+            }
+        }
+
         if (!self::doUpgradeSql(self::$ver, self::$dvlp)) {
             return false;
         }
 
         // Now update gateways where the payment ID is different than the Webhook ID.
-        $db = Database::getInstance();
         if ($upd_ref_id) {
             try {
                 $ipns = $db->conn->executeQuery(
