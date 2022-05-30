@@ -691,7 +691,6 @@ class IPN
         $order_id = $this->Order !== NULL ? DB_escapeString($this->Order->getOrderId()) : '';
         $ipn = new logIPN();
         $ipn->setOrderID($order_id)
-            ->setTxnID($this->txn_id)
             ->setRefID($this->txn_id)   // same as TxnID for IPN messages
             ->setGateway($this->gw_id)
             ->setEvent($this->event)
@@ -1281,7 +1280,6 @@ class IPN
         }
         $this->Payment = new Payment;
         $this->Payment->setRefID($this->getTxnId())
-            ->setTxnID($this->ipnLogId)
             ->setUid($this->getUid())
             ->setAmount($this->getPmtGross())
             ->setGateway($this->gw_id)
