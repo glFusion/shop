@@ -234,7 +234,7 @@ case 'pv_del_bulk':
     foreach ($ids as $id) {
         Shop\ProductVariant::Delete($id);
     }
-    Shop\Cache::clear('products');
+    Shop\Cache::clear('shop.products');
     Shop\Cache::clear('options');
     echo COM_refresh(
         SHOP_ADMIN_URL . '/index.php?pv_bulk&item_id=' . SHOP_getVar($_GET, 'item_id', 'integer')

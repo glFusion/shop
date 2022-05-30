@@ -23,7 +23,7 @@ class Sales
 {
     /** Base tag to use in creating cache IDs.
      * @var string */
-    private static $base_tag = 'sales';
+    private static $base_tag = 'shop.sales';
 
     /** Sale record ID.
      * @var integer */

@@ -105,7 +105,7 @@ class ProductVariant
 
     /** Cache tag used for ProductOptions.
      * @var string */
-    private const TAG = 'variants';
+    private const TAG = 'shop.product_variants';
 
 
     /**
@@ -310,7 +310,7 @@ class ProductVariant
                 Cache::set(
                     $cache_key,
                     $this->Options,
-                    array(self::TAG, 'products', 'options', $this->getID())
+                    array('shop.products', 'options', $this->getID())
                 );
             }
         }
@@ -921,7 +921,7 @@ class ProductVariant
                 return false;
             }
         }
-        Cache::clear('products');
+        Cache::clear('shop.products');
         Cache::clear(self::TAG);
         return true;
     }
@@ -1779,8 +1779,8 @@ class ProductVariant
     {
         $newval = self::_toggle($oldvalue, 'enabled', $id);
         if ($newval != $oldvalue) {
-            Cache::clear('products');
-            Cache::clear(self::TAGS);
+            Cache::clear('shop.products');
+            Cache::clear(self::TAG);
         }
         return $newval;
     }
@@ -1856,8 +1856,8 @@ class ProductVariant
                 SELECT $pv_id, pov_id FROM {$_TABLES['shop.variantXopt']} WHERE pv_id = {$PV->getID()}";
             DB_query($sql);
         }
-        Cache::clear('products');
-        Cache::clear('options');
+        Cache::clear('shop.products');
+        Cache::clear(self::TAG);
     }
 
     /**

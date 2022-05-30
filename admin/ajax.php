@@ -132,12 +132,6 @@ case 'orderImages':
         'status' => false,
         'statusMessage' => 'Not implemented',
     );
-    /*$retval = array(
-        'status' => true,
-    );
-    Shop\Images\Product::updateOrder($_POST['ordering']);
-    Shop\Cache::clear('products');
-     */
     break;
 
 case 'dropupload_cat':
@@ -174,7 +168,7 @@ case 'dropupload_cat':
         $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
         $msg .= '</ul>';
         $retval['statusMessage'] = $msg;
-        Shop\Cache::clear('categories');
+        Shop\Cache::clear('shop.categories');
     } else {
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];
@@ -214,7 +208,7 @@ case 'dropupload':
         $msg .= '<li>' . sprintf($LANG_SHOP['x_of_y_uploaded'], $processed, $sent) . '</li>';
         $msg .= '</ul>';
         $retval['statusMessage'] = $msg;
-        Shop\Cache::clear('products');
+        Shop\Cache::clear('shop.products');
     } else {
         $retval['status'] = false;
         $retval['statusMessage'] = $LANG_SHOP['no_files_uploaded'];

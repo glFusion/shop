@@ -97,7 +97,7 @@ class Product
                 }
             }
         }
-        Cache::set($cache_key, $retval, array(self::TAG, 'categories'));
+        Cache::set($cache_key, $retval, array(self::TAG, 'shop.categories'));
         return $retval;
     }
 
@@ -129,7 +129,7 @@ class Product
                 }
             }
         }
-        Cache::set($cache_key, $retval, array(self::TAG, 'products'));
+        Cache::set($cache_key, $retval, array(self::TAG, 'shop.products'));
         return $retval;
     }
 
@@ -658,8 +658,8 @@ class Product
      */
     public static function clearCache() : void
     {
-        Cache::clear(array(self::TAG, 'products'));
-        Cache::clear(array(self::TAG, 'categories'));
+        Cache::clear(array(self::TAG, 'shop.products'));
+        Cache::clear(array(self::TAG, 'shop.categories'));
     }
 
 }

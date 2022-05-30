@@ -501,7 +501,7 @@ class ProductOptionGroup
      */
     public static function clearCache()
     {
-        Cache::clear('products');
+        Cache::clear('shop.products');
         Cache::clear('attributes');
     }
 

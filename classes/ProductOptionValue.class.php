@@ -198,8 +198,8 @@ class ProductOptionValue
                 $this->pov_id = DB_insertID();
             }
             self::reOrder($this->pog_id);
-            Cache::clear('products');
-            Cache::clear('options');
+            Cache::clear('shop.products');
+            Cache::clear('shop.prod_opt_vals');
             return true;
         } else {
             $this->AddError($err);
@@ -227,7 +227,7 @@ class ProductOptionValue
         // Delete from the option->value reference table
         ProductVariant::deleteOptionValue($opt_id);
         DB_delete($_TABLES['shop.prod_opt_vals'], 'pov_id', $opt_id);
-        Cache::clear('products');
+        Cache::clear('shop.products');
         Cache::clear('options');
         return true;
     }
@@ -367,7 +367,7 @@ class ProductOptionValue
             $order += $stepNumber;
         }
         if ($changed) {
-            Cache::clear('products');
+            Cache::clear('shop.products');
             Cache::clear('options');
         }
     }
@@ -659,7 +659,7 @@ class ProductOptionValue
             while ($A = DB_fetchArray($res, false)) {
                 $opts[$A['pov_id']] = new self($A);
             }
-            Cache::set($cache_key, $opts, array('products', 'options'));
+            Cache::set($cache_key, $opts, array('shop.products', 'shop.prod_opt_vals'));
         }
         return $opts;
     }
@@ -699,7 +699,7 @@ class ProductOptionValue
             while ($A = DB_fetchArray($result, false)) {
                 $opts[$A['pov_id']] = new self($A);
             }
-            Cache::set($cache_key, $opts, array('products', 'options', $prod_id));
+            Cache::set($cache_key, $opts, array('shop.products', 'shop.prod_opt_vals', $prod_id));
         }
         return $opts;
     }

@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Shop\Images;
+use Shop\Cache;
 use Shop\Log;
 
 
@@ -130,7 +131,7 @@ class Product extends \Shop\Image
             }
         }
         DB_delete($_TABLES['shop.images'], 'img_id', $img_id);
-        \Shop\Cache::clear('products');
+        Cache::clear('shop.products');
         return true;
     }
 
@@ -148,7 +149,7 @@ class Product extends \Shop\Image
 
         $img_id = (int)$img_id;
         $prod_id = (int)$prod_id;
-        \Shop\Cache::clear('products');
+        Cache::clear('shop.products');
         $sql = "UPDATE {$_TABLES['shop.images']}
             SET orderby = 5
             WHERE product_id = $prod_id AND img_id = $img_id";
@@ -191,7 +192,7 @@ class Product extends \Shop\Image
             $order += $stepNumber;
         }
         if ($changed) {
-            \Shop\Cache::clear('products');
+            Cache::clear('shop.products');
         }
     }
 
