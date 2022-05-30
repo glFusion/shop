@@ -318,6 +318,7 @@ case 'purge_trans':
         \Shop\Payment::Purge();
         \Shop\Products\Coupon::Purge();
         \Shop\Shipment::Purge();
+        \Shop\Affiliate::Purge();
         \Shop\Cache::clear();
         SHOP_setMsg($LANG_SHOP['trans_purged']);
     }

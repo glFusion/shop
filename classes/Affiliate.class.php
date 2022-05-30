@@ -12,6 +12,8 @@
  * @filesource
  */
 namespace Shop;
+use glFusion\Database\Database;
+use glFusion\Log\Log;
 
 
 /**
@@ -505,6 +507,24 @@ class Affiliate
             return false;
         } else {
             return $this->isActiveCustomer();
+        }
+    }
+
+
+    /**
+     * Purge all affiliate referral data.
+     */
+    public static function Purge() : void
+    {
+        global $_TABLES;
+
+        $db = Database::getInstance();
+        try {
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_saleitems']}");
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_sales']}");
+            $db->conn->executeStatement("TRUNCATE {$_TABLES['shop.affiliate_payments']}");
+        } catch (\Exception $e) {
+            Log::write('system', Log::ERROR, __METHOD__ . ': ' . $e->getMessage());
         }
     }
 
