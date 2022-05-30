@@ -1349,7 +1349,7 @@ class Gateway
 
         static $gateways = NULL;
         if ($gateways === NULL) {
-            // Load the gateeways once
+            // Load the gateways once
             $gateways = self::getAll(false);
         }
         if (!array_key_exists($gw_name, $gateways)) {
@@ -2262,6 +2262,7 @@ class Gateway
 
         // Copy the extracted upload into the Gateways class directory.
         $fs = new FileSystem;
+        $gw_name = '';
         if (is_file($upl_path . '/gateway.json')) {
             $json = @file_get_contents($upl_path . '/gateway.json');
             if ($json) {
@@ -2286,6 +2287,10 @@ class Gateway
         // If there are any error messages, log them and return false.
         // Otherwise return true.
         if (empty($fs->getErrors())) {
+            if (!empty($gw_name)) {
+                $gw = self::getInstance($gw_name);
+                $gw->doUpgrade();
+            }
             return true;
         } else {
             foreach ($fs->getErrors() as $msg) {
